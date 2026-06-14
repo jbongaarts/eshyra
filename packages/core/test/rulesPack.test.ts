@@ -515,6 +515,32 @@ describe('rules pack validation', () => {
     expect(() => validateRulesPack(pack)).toThrow(/data\.text/);
   });
 
+  it('accepts optional rule tableRefs and rejects non-string entries', () => {
+    const rule = record('rule:half-dragon-template', {
+      kind: 'rule',
+      name: 'Half-Dragon Template',
+      data: {
+        text: 'A creature can become a half-dragon.',
+        tableRefs: ['table:half-dragon-damage-resistance'],
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [rule] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...rule,
+              data: { ...rule.data, tableRefs: [42] },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/tableRefs/);
+  });
+
   it('rejects table records without columns and rows arrays', () => {
     const pack = validRulesPack({
       records: [

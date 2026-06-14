@@ -301,6 +301,7 @@ const BASE_KIND_VALIDATORS: Record<RulesRecordKind, Validator> = {
     // Rule records always carry the rule body as `text`.
     const data = dataObj(record, path);
     reqStr(data, 'text', `${path}.data`);
+    optStrArray(data, 'tableRefs', `${path}.data`);
   },
   spell: baseObjectKind,
   // An abbreviated inline combat stat block (eshyra-4a7.4); baseline only
