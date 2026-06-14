@@ -651,14 +651,6 @@ const MAGIC_ITEM_TABLE_INVENTORY_RECORDS: ReadonlyArray<
   [252, 'd10 Purpose', 'table:sentient-magic-item-special-purpose'],
 ];
 
-const SENTIENT_MAGIC_ITEM_HEADINGS: ReadonlySet<string> = new Set([
-  'Creating Sentient Magic Items', // p251-252 DM guidance after the A-Z items
-  'Abilities',
-  'Communication',
-  'Special Purpose',
-  'Conflict',
-]);
-
 /**
  * Coverage rules for the real SRD 5.1 import. Every rule carries a comment
  * naming the source structures it accounts for; the committed
@@ -1028,6 +1020,34 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       i.context === 'Half-Dragon Template' &&
       i.text === 'Optional',
   ),
+  // Magic Items pp251-252 "Sentient Magic Items" DM construction guidance
+  // (eshyra-4a7.10.4). The region's prose headings auto-match the emitted rules
+  // by name (Sentient Magic Items, Creating Sentient Magic Items, Abilities,
+  // Communication, Special Purpose, Conflict); only the two collision titles
+  // need explicit mappings. "Senses" emits the parent-qualified
+  // `rule:creating-sentient-magic-items-senses`, which sorts before
+  // `rule:senses` and would otherwise steal the Monsters stat-block "Senses"
+  // heading by name auto-match — so both Senses headings are pinned. "Alignment"
+  // emits `rule:creating-sentient-magic-items-alignment`, which sorts AFTER the
+  // Beyond-1st-Level `rule:alignment` the bare name auto-matches, so the Magic
+  // Items heading must be pinned to its own record. The four roll tables in this
+  // region stay owned by the `table` kind (the `table:sentient-magic-item-*`
+  // record rules above).
+  recordRule(
+    'rule:creating-sentient-magic-items-senses',
+    (i) => i.section === 'Magic Items' && i.text === 'Senses',
+  ),
+  recordRule(
+    'rule:senses',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.structure === 'heading' &&
+      i.text === 'Senses',
+  ),
+  recordRule(
+    'rule:creating-sentient-magic-items-alignment',
+    (i) => i.section === 'Magic Items' && i.text === 'Alignment',
+  ),
   // Unimported prose regions, tracked region-by-region in eshyra-4a7.10.
   knownGapRule(
     'eshyra-4a7.10',
@@ -1042,8 +1062,6 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
         i.structure === 'heading' &&
         (i.tier === 'subsection' || i.tier === 'leaf') &&
         i.text !== 'Half-Dragon Template') ||
-      (i.section === 'Magic Items' &&
-        SENTIENT_MAGIC_ITEM_HEADINGS.has(i.text)) ||
       (i.section?.startsWith('Appendix PH-B') ?? false) ||
       (i.section?.startsWith('Appendix PH-C') ?? false) ||
       i.text === 'Customizing NPCs',

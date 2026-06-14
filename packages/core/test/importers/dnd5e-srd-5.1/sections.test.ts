@@ -332,6 +332,16 @@ describe('SRD_5_1_DEFAULT_SECTION_ANCHORS — sanity', () => {
     expect(anchor.matchHeadings).toBe(true);
   });
 
+  it('sentient-magic-items anchor matches "Sentient Magic Items", bounds at "Artifacts", and fails closed on a missing end (eshyra-4a7.10.4)', () => {
+    const anchor = SRD_5_1_DEFAULT_SECTION_ANCHORS.sentientMagicItems;
+    expect(anchor.startHeading.test('Sentient Magic Items')).toBe(true);
+    // Body prose mentioning the words should not false-positive.
+    expect(anchor.startHeading.test('Some sentient magic items')).toBe(false);
+    expect(anchor.endHeading?.test('Artifacts')).toBe(true);
+    expect(anchor.requireEndHeading).toBe(true);
+    expect(anchor.matchHeadings).toBe(true);
+  });
+
   it('artifacts anchor matches "Artifacts", bounds at "Monsters", and fails closed on a missing end (eshyra-0m9.16)', () => {
     const anchor = SRD_5_1_DEFAULT_SECTION_ANCHORS.artifacts;
     expect(anchor.startHeading.test('Artifacts')).toBe(true);

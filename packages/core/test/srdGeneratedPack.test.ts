@@ -204,9 +204,13 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // eshyra-0m9.17), plus the 16 Races/Equipment prose rules from
   // eshyra-4a7.10.1: eight racial-trait category rules, Getting Into and Out
   // of Armor, six weapon-guidance rules, and Self-Sufficiency, plus the
-  // Half-Dragon Template guidance (eshyra-4a7.10.3). Validated exactly against
-  // EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 273,
+  // Half-Dragon Template guidance (eshyra-4a7.10.3), plus the eight Magic Items
+  // "Sentient Magic Items" construction-guidance rules (eshyra-4a7.10.4): the
+  // Sentient Magic Items intro, Creating Sentient Magic Items, Abilities,
+  // Communication, Senses, Alignment, Special Purpose, and Conflict (Senses and
+  // Alignment parent-qualified because other slices own the bare titles).
+  // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
+  rule: 281,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -311,6 +315,10 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
   'rule:weapon-properties',
   'rule:self-sufficiency',
   'rule:half-dragon-template',
+  // Sentient Magic Items construction guidance (eshyra-4a7.10.4): the intro
+  // root rule and a parent-qualified collision title.
+  'rule:sentient-magic-items',
+  'rule:creating-sentient-magic-items-senses',
   // Gamemastering Traps section general rules (eshyra-0m9.20).
   'rule:traps',
   'rule:complex-traps',
@@ -586,8 +594,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 272,
-    totalInKind: 273,
+    missingCount: 280,
+    totalInKind: 281,
   },
   {
     kind: 'spell',

@@ -174,7 +174,14 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // at their source-correct parent-qualified records without changing count.
     // record 1934 -> 1937 (eshyra-4a7.10.3): the Half-Dragon Template heading
     // and its two caption-less table runs now map to emitted records.
-    expect(coverage.summary.record).toBe(1937);
+    // record 1937 -> 1943 (eshyra-4a7.10.4): the "Sentient Magic Items" section
+    // heading (formerly document-structure) and the five Creating/Abilities/
+    // Communication/Special Purpose/Conflict headings (formerly known-gap) now
+    // map to emitted rule records. The Senses and Alignment headings were
+    // already record-status through incorrect same-name auto-matches; explicit
+    // rules now point them at their source-correct parent-qualified records
+    // without changing count.
+    expect(coverage.summary.record).toBe(1943);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -189,9 +196,12 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // subclass spell-table headings (their tables are emitted + linked via
     // subclass.data.spellTableRefs). The 8 subclass-group section headings fall
     // to the document-structure default (41 -> 49).
+    // eshyra-4a7.10.4: the "Sentient Magic Items" section heading now maps to
+    // its emitted intro rule instead of the document-structure default
+    // (49 -> 48).
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
-      'document-structure': 49,
+      'document-structure': 48,
       'equipment-category-heading': 3,
       'front-matter': 2,
       'record-group-heading': 3,
@@ -204,8 +214,11 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
     // subclass:oath-of-devotion (its prose is a named section on that record),
     // so the eshyra-citg known-gap rule is gone.
+    // eshyra-4a7.10.4: the five Creating Sentient Magic Items / Abilities /
+    // Communication / Special Purpose / Conflict guidance headings moved from
+    // known-gap to their emitted rule records (56 -> 51).
     expect(coverage.summary.knownGap).toEqual({
-      'eshyra-4a7.10': 56,
+      'eshyra-4a7.10': 51,
     });
   });
 });
@@ -293,6 +306,43 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     expect(sizes.status).toBe('record:table:half-dragon-breath-weapon');
   });
 
+  it('the Sentient Magic Items construction guidance (p251-252) is emitted as rule records (eshyra-4a7.10.4)', () => {
+    expect(entryFor(251, 'Sentient Magic Items').status).toBe(
+      'record:rule:sentient-magic-items',
+    );
+    expect(entryFor(251, 'Creating Sentient Magic Items').status).toBe(
+      'record:rule:creating-sentient-magic-items',
+    );
+    expect(entryFor(251, 'Abilities').status).toBe('record:rule:abilities');
+    expect(entryFor(251, 'Communication').status).toBe(
+      'record:rule:communication',
+    );
+    expect(entryFor(251, 'Special Purpose').status).toBe(
+      'record:rule:special-purpose',
+    );
+    expect(entryFor(252, 'Conflict').status).toBe('record:rule:conflict');
+  });
+
+  it('the Magic Items Senses/Alignment headings map to the sentient rules without stealing the Monsters headings (eshyra-4a7.10.4)', () => {
+    // The sentient "Senses"/"Alignment" rules are parent-qualified, so they
+    // share their bare title with the Monsters stat-block "Senses" rule and the
+    // Beyond-1st-Level "Alignment" rule. Explicit record rules keep each source
+    // heading on its source-correct record rather than letting the name
+    // auto-match collide them.
+    expect(entryFor(251, 'Senses').section).toBe('Magic Items');
+    expect(entryFor(251, 'Senses').status).toBe(
+      'record:rule:creating-sentient-magic-items-senses',
+    );
+    expect(entryFor(257, 'Senses').section).toBe('Monsters');
+    expect(entryFor(257, 'Senses').status).toBe('record:rule:senses');
+    expect(entryFor(251, 'Alignment').section).toBe('Magic Items');
+    expect(entryFor(251, 'Alignment').status).toBe(
+      'record:rule:creating-sentient-magic-items-alignment',
+    );
+    expect(entryFor(255, 'Alignment').section).toBe('Monsters');
+    expect(entryFor(255, 'Alignment').status).toBe('record:rule:alignment');
+  });
+
   it('the Self-Sufficiency prose sidebar (p73, table-shaped by typography) is emitted as a rule', () => {
     const entry = entryFor(73, 'Self-Sufficiency');
     expect(entry.structure).toBe('table-caption');
@@ -353,10 +403,15 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-4a7.10.1 adds parent-qualified racial Alignment/Languages/Speed
     // records to existing collision groups and creates a new Size collision
     // group, increasing the group count by one (82 -> 83).
-    expect(coverage.ambiguous.shadowedRecords).toHaveLength(83);
+    // eshyra-4a7.10.4: the sentient-item "Senses" rule adds a new two-record
+    // "senses" collision group (83 -> 84); the sentient-item "Alignment" rule
+    // joins the existing "alignment" collision group without adding a group.
+    expect(coverage.ambiguous.shadowedRecords).toHaveLength(84);
     // The explicit p3/p254 Size mappings prevent those two source headings
-    // from collapsing onto one record (58 -> 57).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(57);
+    // from collapsing onto one record (58 -> 57). eshyra-4a7.10.4: the explicit
+    // Magic Items / Monsters Senses mappings split the former two-source-item
+    // "Senses" collapse onto their own records (57 -> 56).
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(56);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {

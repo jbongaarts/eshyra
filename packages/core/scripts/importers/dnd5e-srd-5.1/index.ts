@@ -1133,6 +1133,19 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:weapon-proficiency',
   'rule:weapon-properties',
   'rule:weapons',
+  // Magic Items pp251-252 "Sentient Magic Items" DM construction guidance
+  // (eshyra-4a7.10.4). The four roll tables in this region stay owned by the
+  // `table` kind; these are the prose rules. "Senses" and "Alignment" collide
+  // with the Monsters/Beyond-1st-Level rules of the same title, so they
+  // parent-qualify to `creating-sentient-magic-items-*`.
+  'rule:sentient-magic-items',
+  'rule:creating-sentient-magic-items',
+  'rule:creating-sentient-magic-items-alignment',
+  'rule:creating-sentient-magic-items-senses',
+  'rule:abilities',
+  'rule:communication',
+  'rule:conflict',
+  'rule:special-purpose',
   'rule:sphere',
   'rule:targeting-yourself',
   'rule:targets',
@@ -2754,12 +2767,37 @@ export async function runImporter(
   const selfSufficiencyRule = parseSelfSufficiency(
     sliceSectionOrEmptyPages(pages, anchors.selfSufficiency),
   );
+
+  // Magic Items pp251-252 "Sentient Magic Items" DM construction guidance
+  // (eshyra-4a7.10.4). The slice starts after the "Sentient Magic Items"
+  // heading, so chapterIntro restores that root rule and seeds it as the
+  // tier-0 ancestor for the child titles "Senses" and "Alignment" that the
+  // Monsters and Beyond-1st-Level slices already own. The region's four roll
+  // tables (Communication, Senses, Alignment, Special Purpose) are owned by the
+  // `table` kind (eshyra-4a7.3); their cell-height rows are stripped with
+  // `removeTableCellLines` so they are referenced, not duplicated, in prose.
+  const sentientMagicItemRules = parseRules(
+    removeTableCellLines(
+      sliceSectionOrEmptyPagesBestEffortBounds(
+        pages,
+        anchors.sentientMagicItems,
+      ),
+    ),
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+      ...weaponGuidanceRules,
+    ]),
+    { name: 'Sentient Magic Items', keySlug: 'sentient-magic-items' },
+  );
   const rules = [
     ...rulesBeforeUnrepresentedProse,
     ...racialTraitRules,
     ...armorGuidanceRules,
     ...weaponGuidanceRules,
     ...(selfSufficiencyRule === undefined ? [] : [selfSufficiencyRule]),
+    ...sentientMagicItemRules,
   ];
   // Fail closed before any output is written when the real import (CLI) supplies
   // the exact expected rule-key set and any implemented rule slice drifts from
@@ -2931,6 +2969,33 @@ function sliceSectionOrEmptyPages(
     return sliceSection(pages, anchor);
   } catch (error) {
     if (error instanceof SectionNotFoundError && error.which === 'start') {
+      return [];
+    }
+    throw error;
+  }
+}
+
+/**
+ * Like `sliceSectionOrEmptyPages` but ALSO degrades to empty when a required
+ * end heading is absent. Used for the "Sentient Magic Items" guidance slice
+ * (eshyra-4a7.10.4): the reduced fixture PDFs deliberately use the "Sentient
+ * Magic Items" line as the terminal sentinel that bounds the Magic Items A-Z
+ * slice, with no "Artifacts" boundary after it (the lone artifact entry is a
+ * full-SRD-only structure). Its `requireEndHeading: true` still prevents a
+ * missing boundary from slicing to EOF and bleeding later chapters into the
+ * sentient rules; that throw is converted to an empty slice here instead of
+ * failing the reduced fixture. The real import always has both boundaries and
+ * stays fail-closed via the exact `EXPECTED_SRD_5_1_RULE_KEYS` gate, which
+ * throws if the eight sentient rule keys go missing.
+ */
+function sliceSectionOrEmptyPagesBestEffortBounds(
+  pages: readonly import('./types.js').PageText[],
+  anchor: SectionAnchorOptions,
+): readonly import('./types.js').PageText[] {
+  try {
+    return sliceSection(pages, anchor);
+  } catch (error) {
+    if (error instanceof SectionNotFoundError) {
       return [];
     }
     throw error;
