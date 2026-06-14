@@ -1310,6 +1310,8 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:backgrounds-equipment',
   'rule:suggested-characteristics',
   'rule:customizing-a-background',
+  // Appendix MM-B p395 "Customizing NPCs" guidance (eshyra-4a7.10.6).
+  'rule:customizing-npcs',
 ];
 
 export const EXPECTED_SRD_5_1_TABLE_NAMES: readonly string[] = [
@@ -2791,6 +2793,30 @@ export async function runImporter(
     ]),
     { name: 'Sentient Magic Items', keySlug: 'sentient-magic-items' },
   );
+
+  // Appendix MM-B p395 "Customizing NPCs" guidance (eshyra-4a7.10.6). The
+  // appendix slice opens with its preamble prose, then the "Customizing NPCs"
+  // sub-subsection heading and its body, then the first NPC stat block
+  // ("Acolyte"). `truncateBeforeFirst(/^Acolyte$/, 'empty')` carves the
+  // guidance region off the front of the already-bounded `npcPages` slice
+  // (the entry heading is h≈12, below the heading-flag threshold, so it cannot
+  // be a matchHeadings end anchor — same pattern as the Traps "Sample Traps"
+  // and Backgrounds "Acolyte" cuts). `parseRules` then emits the "Customizing
+  // NPCs" heading as `rule:customizing-npcs`; the appendix preamble prose
+  // before that heading is navigational scaffolding with no inventory item and
+  // is intentionally not emitted. `missingBoundary: 'empty'` degrades reduced
+  // fixture PDFs whose MM-B section has no "Acolyte" entry to no rule; the real
+  // import stays fail-closed via the exact `EXPECTED_SRD_5_1_RULE_KEYS` gate.
+  const customizingNpcsRules = parseRules(
+    truncateBeforeFirst(npcPages, /^Acolyte$/, 'empty'),
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+      ...weaponGuidanceRules,
+      ...sentientMagicItemRules,
+    ]),
+  );
   const rules = [
     ...rulesBeforeUnrepresentedProse,
     ...racialTraitRules,
@@ -2798,6 +2824,7 @@ export async function runImporter(
     ...weaponGuidanceRules,
     ...(selfSufficiencyRule === undefined ? [] : [selfSufficiencyRule]),
     ...sentientMagicItemRules,
+    ...customizingNpcsRules,
   ];
   // Fail closed before any output is written when the real import (CLI) supplies
   // the exact expected rule-key set and any implemented rule slice drifts from

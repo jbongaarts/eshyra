@@ -208,9 +208,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // "Sentient Magic Items" construction-guidance rules (eshyra-4a7.10.4): the
   // Sentient Magic Items intro, Creating Sentient Magic Items, Abilities,
   // Communication, Senses, Alignment, Special Purpose, and Conflict (Senses and
-  // Alignment parent-qualified because other slices own the bare titles).
+  // Alignment parent-qualified because other slices own the bare titles), plus
+  // the Appendix MM-B "Customizing NPCs" guidance record (eshyra-4a7.10.6).
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 281,
+  rule: 282,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -334,6 +335,8 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
   'rule:backgrounds',
   'rule:customizing-a-background',
   'rule:backgrounds-proficiencies',
+  // Appendix MM-B NPC customization guidance (eshyra-4a7.10.6).
+  'rule:customizing-npcs',
   'spell:fire-bolt',
   'spell:wish',
   'subclass:champion',
@@ -594,8 +597,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 280,
-    totalInKind: 281,
+    missingCount: 281,
+    totalInKind: 282,
   },
   {
     kind: 'spell',
@@ -2412,6 +2415,41 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Gargantuan', 'As an adult dragon', 'Challenge 8 or higher'],
         ],
       });
+    });
+  });
+
+  describe('Customizing NPCs guidance region (eshyra-4a7.10.6)', () => {
+    it('emits the complete guidance prose with no adjacent NPC stat-block bleed', () => {
+      const rule = pack.records.find(
+        (record) => record.key === 'rule:customizing-npcs',
+      );
+      expect(rule?.name).toBe('Customizing NPCs');
+      expect(rule?.data).toEqual({
+        text:
+          'There are many easy ways to customize the NPCs in this appendix ' +
+          'for your home campaign. Racial Traits. You can add racial traits ' +
+          'to an NPC. For example, a halfling druid might have a speed of 25 ' +
+          'feet and the Lucky trait. Adding racial traits to an NPC doesn’t ' +
+          'alter its challenge rating. For more on racial traits, see the ' +
+          'Player’s Handbook. Spell Swaps. One way to customize an NPC ' +
+          'spellcaster is to replace one or more of its spells. You can ' +
+          'substitute any spell on the NPC’s spell list with a different ' +
+          'spell of the same level from the same spell list. Swapping spells ' +
+          'in this manner doesn’t alter an NPC’s challenge rating. Armor and ' +
+          'Weapon Swaps. You can upgrade or downgrade an NPC’s armor, or add ' +
+          'or switch weapons. Adjustments to Armor Class and damage can ' +
+          'change an NPC’s challenge rating. Magic Items. The more powerful ' +
+          'an NPC, the more likely it has one or more magic items in its ' +
+          'possession. An archmage, for example, might have a magic staff or ' +
+          'wand, as well as one or more potions and scrolls. Giving an NPC a ' +
+          'potent damage-dealing magic item could alter its challenge rating.',
+      });
+      // Boundary guard: the slice is truncated before the first NPC stat block
+      // ("Acolyte"), so none of its stat-block lines may appear in the body.
+      const text = (rule?.data as { text?: string }).text ?? '';
+      expect(text).not.toContain('Acolyte');
+      expect(text).not.toContain('Armor Class 10');
+      expect(text).not.toContain('Challenge 1/4');
     });
   });
 

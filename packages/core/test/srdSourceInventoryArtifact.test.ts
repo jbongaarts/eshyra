@@ -181,7 +181,10 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // already record-status through incorrect same-name auto-matches; explicit
     // rules now point them at their source-correct parent-qualified records
     // without changing count.
-    expect(coverage.summary.record).toBe(1943);
+    // record 1943 -> 1944 (eshyra-4a7.10.6): the Appendix MM-B "Customizing
+    // NPCs" subsection heading (formerly known-gap) now maps to its emitted
+    // rule record.
+    expect(coverage.summary.record).toBe(1944);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -217,8 +220,10 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // eshyra-4a7.10.4: the five Creating Sentient Magic Items / Abilities /
     // Communication / Special Purpose / Conflict guidance headings moved from
     // known-gap to their emitted rule records (56 -> 51).
+    // eshyra-4a7.10.6: the Appendix MM-B "Customizing NPCs" heading moved from
+    // known-gap to its emitted rule record (51 -> 50).
     expect(coverage.summary.knownGap).toEqual({
-      'eshyra-4a7.10': 51,
+      'eshyra-4a7.10': 50,
     });
   });
 });
@@ -341,6 +346,19 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     );
     expect(entryFor(255, 'Alignment').section).toBe('Monsters');
     expect(entryFor(255, 'Alignment').status).toBe('record:rule:alignment');
+  });
+
+  it('the Customizing NPCs guidance (p395) is emitted as a rule without absorbing the adjacent NPC stat blocks (eshyra-4a7.10.6)', () => {
+    const guidance = entryFor(395, 'Customizing NPCs');
+    expect(guidance.section).toBe('Appendix MM-B: Nonplayer Characters');
+    expect(guidance.status).toBe('record:rule:customizing-npcs');
+    // The first NPC stat block immediately follows the guidance prose; it must
+    // stay its own record rather than bleeding into the rule body. (Its name
+    // auto-matches the Acolyte background, but the point here is that it is NOT
+    // swallowed by the guidance slice.)
+    const firstNpc = entryFor(395, 'Acolyte');
+    expect(firstNpc.structure).toBe('stat-block');
+    expect(firstNpc.status).toBe('record:background:acolyte');
   });
 
   it('the Self-Sufficiency prose sidebar (p73, table-shaped by typography) is emitted as a rule', () => {
