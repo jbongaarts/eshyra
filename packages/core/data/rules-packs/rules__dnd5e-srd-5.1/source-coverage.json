@@ -1,10 +1,10 @@
 {
   "summary": {
-    "record": 1937,
+    "record": 1943,
     "childOf": 99,
     "ignored": {
       "class-progression-table-internal": 9,
-      "document-structure": 49,
+      "document-structure": 48,
       "equipment-category-heading": 3,
       "front-matter": 2,
       "record-group-heading": 3,
@@ -14,7 +14,7 @@
       "variant-rule-excluded": 2
     },
     "knownGap": {
-      "eshyra-4a7.10": 56
+      "eshyra-4a7.10": 51
     },
     "unaccounted": 0
   },
@@ -55,6 +55,7 @@
         "normalizedName": "alignment",
         "winnerKey": "rule:alignment",
         "shadowedKeys": [
+          "rule:creating-sentient-magic-items-alignment",
           "rule:monsters-alignment",
           "rule:racial-traits-alignment"
         ]
@@ -510,6 +511,13 @@
         ]
       },
       {
+        "normalizedName": "senses",
+        "winnerKey": "rule:creating-sentient-magic-items-senses",
+        "shadowedKeys": [
+          "rule:senses"
+        ]
+      },
+      {
         "normalizedName": "shield",
         "winnerKey": "equipment:shield",
         "shadowedKeys": [
@@ -734,7 +742,7 @@
       {
         "text": "Alignment",
         "resolvedKey": "rule:alignment",
-        "count": 3
+        "count": 2
       },
       {
         "text": "Armor Class",
@@ -864,11 +872,6 @@
       {
         "text": "Proficiency Bonus",
         "resolvedKey": "rule:multiclassing-proficiency-bonus",
-        "count": 2
-      },
-      {
-        "text": "Senses",
-        "resolvedKey": "rule:senses",
         "count": 2
       },
       {
@@ -13752,7 +13755,7 @@
       "structure": "heading",
       "text": "Sentient Magic Items",
       "section": "Magic Items",
-      "status": "ignored:document-structure"
+      "status": "record:rule:sentient-magic-items"
     },
     {
       "page": 251,
@@ -13761,7 +13764,7 @@
       "structure": "heading",
       "text": "Creating Sentient Magic Items",
       "section": "Magic Items",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:creating-sentient-magic-items"
     },
     {
       "page": 251,
@@ -13770,7 +13773,7 @@
       "structure": "heading",
       "text": "Abilities",
       "section": "Magic Items",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:abilities"
     },
     {
       "page": 251,
@@ -13779,7 +13782,7 @@
       "structure": "heading",
       "text": "Communication",
       "section": "Magic Items",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:communication"
     },
     {
       "page": 251,
@@ -13797,7 +13800,7 @@
       "structure": "heading",
       "text": "Senses",
       "section": "Magic Items",
-      "status": "record:rule:senses"
+      "status": "record:rule:creating-sentient-magic-items-senses"
     },
     {
       "page": 251,
@@ -13815,7 +13818,7 @@
       "structure": "heading",
       "text": "Alignment",
       "section": "Magic Items",
-      "status": "record:rule:alignment"
+      "status": "record:rule:creating-sentient-magic-items-alignment"
     },
     {
       "page": 251,
@@ -13833,7 +13836,7 @@
       "structure": "heading",
       "text": "Special Purpose",
       "section": "Magic Items",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:special-purpose"
     },
     {
       "page": 252,
@@ -13851,7 +13854,7 @@
       "structure": "heading",
       "text": "Conflict",
       "section": "Magic Items",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:conflict"
     },
     {
       "page": 252,

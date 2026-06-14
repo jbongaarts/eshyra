@@ -513,6 +513,27 @@ export const SRD_5_1_DEFAULT_SECTION_ANCHORS = {
     requireEndHeading: true,
     matchHeadings: true,
   },
+  // SRD 5.1 "Sentient Magic Items" DM construction guidance (pp251-252). The
+  // A-Z slice ends at this heading and the artifacts slice starts at the
+  // following "Artifacts" heading, so this guidance prose is its own slice.
+  // The start heading is consumed as the slice anchor, so `parseRules`'
+  // `chapterIntro` restores it as the root `rule:sentient-magic-items` and
+  // seeds it as the tier-0 ancestor for child titles ("Senses", "Alignment")
+  // that other slices already own. The four sentient-item roll tables in this
+  // region (Communication, Senses, Alignment, Special Purpose) are owned by the
+  // `table` kind (eshyra-4a7.3), so their cell-height rows are stripped with
+  // `removeTableCellLines` before the prose parse rather than duplicated.
+  // matchHeadings keeps the bounds on real headings. requireEndHeading is true
+  // because the emitted rules are gated by `EXPECTED_SRD_5_1_RULE_KEYS`, so a
+  // missing "Artifacts" boundary that let artifact prose bleed in must fail
+  // closed. Best-effort START so reduced fixture PDFs without the region
+  // degrade to no sentient-item rules.
+  sentientMagicItems: {
+    startHeading: /^Sentient Magic Items$/,
+    endHeading: /^Artifacts$/,
+    requireEndHeading: true,
+    matchHeadings: true,
+  },
   // SRD 5.1 "Artifacts" subsection (p252-p253). Unlike "Sentient Magic Items"
   // (pure DM construction guidance), the Artifacts subsection contains one real,
   // lookupable magic-item entry — Orb of Dragonkind — in the same
@@ -697,6 +718,7 @@ export type Srd51SectionAnchors = {
   readonly mountsAndVehicles: SectionAnchorOptions;
   readonly magicItemRules: SectionAnchorOptions;
   readonly magicItems: SectionAnchorOptions;
+  readonly sentientMagicItems: SectionAnchorOptions;
   readonly artifacts: SectionAnchorOptions;
   readonly conditions: SectionAnchorOptions;
   readonly feats: SectionAnchorOptions;
