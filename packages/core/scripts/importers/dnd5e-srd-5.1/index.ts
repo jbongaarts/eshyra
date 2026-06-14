@@ -61,6 +61,7 @@ import { parseEquipment, parseMountsAndVehicles } from './parseEquipment.js';
 import { parseFeats } from './parseFeats.js';
 import { parseFeatures } from './parseFeatures.js';
 import { parseGamemasteringRules } from './parseGamemasteringRules.js';
+import { parseHalfDragonTemplate } from './parseHalfDragonTemplate.js';
 import { parseHazards } from './parseHazards.js';
 import { parseMagicItems } from './parseMagicItems.js';
 import { parseMulticlassing } from './parseMulticlassing.js';
@@ -1278,6 +1279,7 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:a-legendary-creatures-lair',
   'rule:lair-actions',
   'rule:regional-effects',
+  'rule:half-dragon-template',
   // "Backgrounds" chapter intro rules (p60, eshyra-0m9.17): the chapter-intro
   // paragraph (`rule:backgrounds`, emitted via parseRules's chapterIntro
   // option because it precedes any heading) plus the chapter's five h≈12 intro
@@ -1369,6 +1371,8 @@ export const EXPECTED_SRD_5_1_TABLE_NAMES: readonly string[] = [
   'Donning and Doffing Armor',
   'Draconic Ancestry',
   'Draconic Bloodline Draconic Ancestry',
+  'Half-Dragon Breath Weapon',
+  'Half-Dragon Damage Resistance',
   'Fiend Expanded Spells',
   'Gray Bag of Tricks',
   'Life Domain Spells',
@@ -2583,6 +2587,7 @@ export async function runImporter(
     ),
     { name: 'Monsters', keySlug: 'monsters' },
   );
+  const halfDragonTemplate = parseHalfDragonTemplate(monsterPages);
   // SRD 5.1 "Backgrounds" chapter (p60-61, eshyra-0m9.17): the chapter-intro
   // sections plus the lone Acolyte entry. The entry parses into a `background`
   // record (plus its four suggested-characteristics roll tables, emitted under
@@ -2628,6 +2633,7 @@ export async function runImporter(
     ...magicItemRules,
     ...trapRules,
     ...monsterRules,
+    ...(halfDragonTemplate === undefined ? [] : [halfDragonTemplate]),
     ...backgroundRules,
   ];
   // The core-rules slice carries the Difficulty Classes table plus the two

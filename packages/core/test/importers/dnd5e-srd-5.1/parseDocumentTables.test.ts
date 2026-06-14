@@ -148,6 +148,61 @@ describe('parseDocumentTables — Draconic Ancestry (line-per-row, shared captio
   });
 });
 
+describe('parseDocumentTables — Half-Dragon Template tables', () => {
+  const pages = [
+    tieredPage(320, [
+      ['Half-Dragon Template', SUBSECTION],
+      ['A beast, humanoid, giant, or monstrosity can become', BODY],
+      ['a half-dragon. It keeps its statistics, except as follows.', BODY],
+      ['Color Damage Resistance', CELL],
+      ['Black or copper Acid', CELL],
+      ['Blue or bronze Lightning', CELL],
+    ]),
+    tieredPage(321, [
+      ['Brass, gold, or red Fire', CELL],
+      ['Green Poison', CELL],
+      ['Silver or white Cold', CELL],
+      ['Languages. The half-dragon speaks Draconic in', BODY],
+      ['addition to any other languages it knows.', BODY],
+      ['Optional', CELL],
+      ['Size Breath Weapon Prerequisite', CELL],
+      ['Large or As a wyrmling Challenge 2 or higher', CELL],
+      ['smaller', CELL],
+      ['Huge As a young dragon Challenge 7 or higher', CELL],
+      ['Gargantuan As an adult dragon Challenge 8 or higher', CELL],
+      ['Half-Red Dragon Veteran', LEAF],
+    ]),
+  ];
+
+  it('reconstructs the cross-page color and damage-resistance rows', () => {
+    expect(byName(pages).get('Half-Dragon Damage Resistance')).toMatchObject({
+      columns: ['Color', 'Damage Resistance'],
+      rows: [
+        ['Black or copper', 'Acid'],
+        ['Blue or bronze', 'Lightning'],
+        ['Brass, gold, or red', 'Fire'],
+        ['Green', 'Poison'],
+        ['Silver or white', 'Cold'],
+      ],
+      sourcePage: 320,
+      ownerRecordKey: 'rule:half-dragon-template',
+    });
+  });
+
+  it('reconstructs the wrapped Large-or-smaller breath-weapon row', () => {
+    expect(byName(pages).get('Half-Dragon Breath Weapon')).toMatchObject({
+      columns: ['Size', 'Breath Weapon', 'Prerequisite'],
+      rows: [
+        ['Large or smaller', 'As a wyrmling', 'Challenge 2 or higher'],
+        ['Huge', 'As a young dragon', 'Challenge 7 or higher'],
+        ['Gargantuan', 'As an adult dragon', 'Challenge 8 or higher'],
+      ],
+      sourcePage: 321,
+      ownerRecordKey: 'rule:half-dragon-template',
+    });
+  });
+});
+
 // ---------------------------------------------------------------------------
 // wrapped last column: subclass spell tables (Oath of Devotion + a circle)
 // ---------------------------------------------------------------------------

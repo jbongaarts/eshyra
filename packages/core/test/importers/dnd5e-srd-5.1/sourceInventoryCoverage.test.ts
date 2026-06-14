@@ -20,6 +20,7 @@ import {
   knownGapRule,
   recordRule,
   SourceInventoryCoverageError,
+  SRD_5_1_COVERAGE_RULES,
 } from '../../../scripts/importers/dnd5e-srd-5.1/sourceInventoryCoverage.js';
 
 function item(overrides: Partial<SourceInventoryItem>): SourceInventoryItem {
@@ -104,6 +105,65 @@ describe('evaluateSourceCoverage — name auto-match', () => {
 });
 
 describe('evaluateSourceCoverage — rules and defaults', () => {
+  it('accounts for the complete Half-Dragon Template region as records', () => {
+    const inventory = [
+      item({
+        page: 320,
+        text: 'Half-Dragon Template',
+        tier: 'subsection',
+        section: 'Monsters',
+        context: 'Actions',
+      }),
+      item({
+        page: 320,
+        lineIndex: 87,
+        text: 'Color Damage Resistance',
+        tier: null,
+        structure: 'table-shape',
+        section: 'Monsters',
+        context: 'Half-Dragon Template',
+      }),
+      item({
+        page: 321,
+        lineIndex: 8,
+        text: 'Optional',
+        tier: null,
+        structure: 'table-shape',
+        section: 'Monsters',
+        context: 'Half-Dragon Template',
+      }),
+    ];
+    const templateRecords = [
+      {
+        kind: 'rule',
+        key: 'rule:half-dragon-template',
+        name: 'Half-Dragon Template',
+      },
+      {
+        kind: 'table',
+        key: 'table:half-dragon-damage-resistance',
+        name: 'Half-Dragon Damage Resistance',
+      },
+      {
+        kind: 'table',
+        key: 'table:half-dragon-breath-weapon',
+        name: 'Half-Dragon Breath Weapon',
+      },
+    ];
+
+    expect(
+      evaluateSourceCoverage(
+        inventory,
+        templateRecords,
+        SRD_5_1_COVERAGE_RULES,
+      ).map((entry) => entry.status),
+    ).toEqual([
+      { kind: 'record', key: 'rule:half-dragon-template' },
+      { kind: 'record', key: 'table:half-dragon-damage-resistance' },
+      { kind: 'record', key: 'table:half-dragon-breath-weapon' },
+    ]);
+  });
+
   it('applies ignore, known-gap, and child-of rules in order after auto-match', () => {
     const inventory = [
       item({ text: 'Aboleth' }), // auto-match wins even though a rule would also match

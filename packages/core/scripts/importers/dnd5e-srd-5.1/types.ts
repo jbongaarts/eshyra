@@ -224,6 +224,8 @@ export interface RuleExtraction {
   readonly keySlug?: string;
   /** Full rule body text, re-flowed into paragraphs. */
   readonly text: string;
+  /** Embedded reference tables owned by this rule, emitted as record keys. */
+  readonly tableRefs?: readonly string[];
   /** 1-based page in the source PDF where the rule heading begins. */
   readonly sourcePage: number;
 }

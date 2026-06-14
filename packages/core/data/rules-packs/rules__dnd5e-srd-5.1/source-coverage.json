@@ -1,6 +1,6 @@
 {
   "summary": {
-    "record": 1934,
+    "record": 1937,
     "childOf": 99,
     "ignored": {
       "class-progression-table-internal": 9,
@@ -14,7 +14,7 @@
       "variant-rule-excluded": 2
     },
     "knownGap": {
-      "eshyra-4a7.10": 59
+      "eshyra-4a7.10": 56
     },
     "unaccounted": 0
   },
@@ -17028,7 +17028,7 @@
       "structure": "heading",
       "text": "Half-Dragon Template",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:half-dragon-template"
     },
     {
       "page": 320,
@@ -17037,7 +17037,7 @@
       "structure": "table-shape",
       "text": "Color Damage Resistance",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:table:half-dragon-damage-resistance"
     },
     {
       "page": 321,
@@ -17046,7 +17046,7 @@
       "structure": "table-shape",
       "text": "Optional",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:table:half-dragon-breath-weapon"
     },
     {
       "page": 321,

@@ -1009,23 +1009,39 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     'rule:self-sufficiency',
     (i) => i.section === 'Equipment' && i.text === 'Self-Sufficiency',
   ),
+  // Monsters pp320-321 Half-Dragon Template region (eshyra-4a7.10.3).
+  // The subsection heading auto-matches its rule record by name; the two
+  // caption-less table runs need explicit mappings to their synthesized names.
+  recordRule(
+    'table:half-dragon-damage-resistance',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.structure === 'table-shape' &&
+      i.context === 'Half-Dragon Template' &&
+      i.text === 'Color Damage Resistance',
+  ),
+  recordRule(
+    'table:half-dragon-breath-weapon',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.structure === 'table-shape' &&
+      i.context === 'Half-Dragon Template' &&
+      i.text === 'Optional',
+  ),
   // Unimported prose regions, tracked region-by-region in eshyra-4a7.10.
   knownGapRule(
     'eshyra-4a7.10',
     (i) =>
       // Monsters-chapter creature-family lore headings (Angels … Zombies,
-      // the ten per-color dragon group intros, Half-Dragon Template) plus the
-      // two Half-Dragon Template tables (Color/Damage Resistance p320 and the
-      // size/breath-weapon table p321), which belong to the same unimported
-      // template region. Section-tier items there are the alphabetical
+      // the ten per-color dragon group intros). The Half-Dragon Template
+      // subsection and its two tables are implemented above. Section-tier items
+      // there are the alphabetical
       // "Monsters (A)" … navigation headings — left to the
       // document-structure default.
       (i.section === 'Monsters' &&
         i.structure === 'heading' &&
-        (i.tier === 'subsection' || i.tier === 'leaf')) ||
-      (i.section === 'Monsters' &&
-        i.structure === 'table-shape' &&
-        i.context === 'Half-Dragon Template') ||
+        (i.tier === 'subsection' || i.tier === 'leaf') &&
+        i.text !== 'Half-Dragon Template') ||
       (i.section === 'Magic Items' &&
         SENTIENT_MAGIC_ITEM_HEADINGS.has(i.text)) ||
       (i.section?.startsWith('Appendix PH-B') ?? false) ||

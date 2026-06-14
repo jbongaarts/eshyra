@@ -203,9 +203,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // `rule:backgrounds-*` because other slices own their bare titles;
   // eshyra-0m9.17), plus the 16 Races/Equipment prose rules from
   // eshyra-4a7.10.1: eight racial-trait category rules, Getting Into and Out
-  // of Armor, six weapon-guidance rules, and Self-Sufficiency. Validated
-  // exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 272,
+  // of Armor, six weapon-guidance rules, and Self-Sufficiency, plus the
+  // Half-Dragon Template guidance (eshyra-4a7.10.3). Validated exactly against
+  // EXPECTED_SRD_5_1_RULE_KEYS.
+  rule: 273,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -247,7 +248,9 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 93 -> 102 (eshyra-o4j7): the nine spell-embedded tables from Animate
   // Objects, Confusion, Control Weather (three), Creation, Reincarnate,
   // Scrying, and Teleport.
-  table: 102,
+  // 102 -> 104 (eshyra-4a7.10.3): the Half-Dragon Template color/resistance
+  // and size/breath-weapon tables.
+  table: 104,
 };
 
 /**
@@ -307,6 +310,7 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
   'rule:getting-into-and-out-of-armor',
   'rule:weapon-properties',
   'rule:self-sufficiency',
+  'rule:half-dragon-template',
   // Gamemastering Traps section general rules (eshyra-0m9.20).
   'rule:traps',
   'rule:complex-traps',
@@ -332,6 +336,8 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
   // Monsters-chapter reference tables (eshyra-0m9.22).
   'table:experience-points-by-challenge-rating',
   'table:size-categories',
+  'table:half-dragon-breath-weapon',
+  'table:half-dragon-damage-resistance',
   // Acolyte suggested-characteristics roll tables (eshyra-0m9.17).
   'table:acolyte-personality-traits',
   'table:acolyte-flaws',
@@ -574,6 +580,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     field: 'variants',
     missingCount: 239,
     totalInKind: 240,
+  },
+  // Half-Dragon Template owns its two reconstructed reference tables; other
+  // rule records have no embedded table.
+  {
+    kind: 'rule',
+    field: 'tableRefs',
+    missingCount: 272,
+    totalInKind: 273,
   },
   {
     kind: 'spell',
@@ -2338,6 +2352,61 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  describe('Half-Dragon Template region (eshyra-4a7.10.3)', () => {
+    it('emits complete guidance linked to both structured tables', () => {
+      const rule = pack.records.find(
+        (record) => record.key === 'rule:half-dragon-template',
+      );
+      expect(rule?.data).toEqual({
+        text:
+          'A beast, humanoid, giant, or monstrosity can become a half-dragon. ' +
+          'It keeps its statistics, except as follows. Challenge. To avoid ' +
+          'recalculating the creature’s challenge rating, apply the template ' +
+          'only to a creature that meets the optional prerequisite in the ' +
+          'Breath Weapon table below. Otherwise, recalculate the rating after ' +
+          'you apply the template. Senses. The half-dragon gains blindsight ' +
+          'with a radius of 10 feet and darkvision with a radius of 60 feet. ' +
+          'Resistances. The half-dragon gains resistance to a type of damage ' +
+          'based on its color. Languages. The half-dragon speaks Draconic in ' +
+          'addition to any other languages it knows. New Action: Breath Weapon. ' +
+          'The half-dragon has the breath weapon of its dragon half. The ' +
+          'half-dragon’s size determines how this action functions.',
+        tableRefs: [
+          'table:half-dragon-damage-resistance',
+          'table:half-dragon-breath-weapon',
+        ],
+      });
+    });
+
+    it('pins both reconstructed table payloads', () => {
+      const damageResistance = pack.records.find(
+        (record) => record.key === 'table:half-dragon-damage-resistance',
+      );
+      expect(damageResistance?.data).toEqual({
+        columns: ['Color', 'Damage Resistance'],
+        rows: [
+          ['Black or copper', 'Acid'],
+          ['Blue or bronze', 'Lightning'],
+          ['Brass, gold, or red', 'Fire'],
+          ['Green', 'Poison'],
+          ['Silver or white', 'Cold'],
+        ],
+      });
+
+      const breathWeapon = pack.records.find(
+        (record) => record.key === 'table:half-dragon-breath-weapon',
+      );
+      expect(breathWeapon?.data).toEqual({
+        columns: ['Size', 'Breath Weapon', 'Prerequisite'],
+        rows: [
+          ['Large or smaller', 'As a wyrmling', 'Challenge 2 or higher'],
+          ['Huge', 'As a young dragon', 'Challenge 7 or higher'],
+          ['Gargantuan', 'As an adult dragon', 'Challenge 8 or higher'],
+        ],
+      });
+    });
+  });
+
   // The canonical table set is Difficulty Classes, two trap tables, three
   // Madness tables, and two Objects tables. XP/treasure reconstruction remains
   // fixture-only because those families are absent from this SRD source.
@@ -2409,6 +2478,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:fiend-expanded-spells',
         'table:food-drink-and-lodging',
         'table:gray-bag-of-tricks',
+        // Half-Dragon Template reference tables (eshyra-4a7.10.3).
+        'table:half-dragon-breath-weapon',
+        'table:half-dragon-damage-resistance',
         'table:hit-dice-by-size',
         'table:horn-of-valhalla',
         'table:indefinite-madness',

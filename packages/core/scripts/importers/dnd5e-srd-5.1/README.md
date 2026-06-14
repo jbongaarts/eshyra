@@ -416,8 +416,9 @@ reconstructions preserve wrapped cells for Animated Objects, Scrying, and
 Teleport. Each owning spell links those records through optional
 `data.tableRefs`; Control Weather links all three weather tables. The original
 spell descriptions remain source-preserving and retain their flattened table
-prose. The Appendix PH-B deity tables and Half-Dragon Template tables stay
-with eshyra-4a7.10 because those source regions remain unimported. A
+prose. The Half-Dragon Template p320-321 is emitted as a rule plus two linked
+table records (eshyra-4a7.10.3). The Appendix PH-B deity tables stay with
+eshyra-4a7.10 because that source region remains unimported. A
 table caption that shares its name with an emitted record is normally claimed
 by that record via the name auto-match (e.g. the exhaustion-levels caption
 resolves to `condition:exhaustion`, which carries structured `levels[]`). The
@@ -469,7 +470,7 @@ table section above):
 
 | Table family | Reason deferred | Follow-up |
 |--------------|-----------------|-----------|
-| Appendix PH-B deity tables (Celtic/Greek/Egyptian/Norse) + Half-Dragon Template tables | The deity tables' name and alignment/domain/symbol column blocks interleave across pages in extraction order; both regions are unimported. | `eshyra-4a7.10` |
+| Appendix PH-B deity tables (Celtic/Greek/Egyptian/Norse) | The deity tables' name and alignment/domain/symbol column blocks interleave across pages in extraction order. | `eshyra-4a7.10` |
 
 ## Section-anchor table
 

@@ -793,6 +793,9 @@ export function ruleExtractionsToRecords(
     const data: Record<string, unknown> = {
       text: rule.text,
     };
+    if (rule.tableRefs !== undefined) {
+      data.tableRefs = [...rule.tableRefs];
+    }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'rule',
