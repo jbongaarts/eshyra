@@ -524,6 +524,52 @@ describe('parseCreatures — keyed defensive / sense fields', () => {
   });
 });
 
+describe('parseCreatures — non-creature region boundaries', () => {
+  it('stops the Sea Hag body before the Half-Dragon Template subsection', () => {
+    const lines = [
+      'Sea Hag',
+      'Medium fey, chaotic evil',
+      'Armor Class 14 (natural armor)',
+      'Hit Points 52 (7d8 + 21)',
+      'Speed 30 ft., swim 40 ft.',
+      'STR DEX CON INT WIS CHA',
+      '16 (+3) 13 (+1) 16 (+3) 12 (+1) 12 (+1) 13 (+1)',
+      'Senses darkvision 60 ft., passive Perception 11',
+      'Languages Aquan, Common, Giant',
+      'Challenge 2 (450 XP)',
+      'Amphibious. The hag can breathe air and water.',
+      'Actions',
+      'Claws. Melee Weapon Attack: +5 to hit, reach 5 ft., one target.',
+      'Half-Dragon Template',
+      'A beast, humanoid, giant, or monstrosity can become a half-dragon.',
+      'Half-Red Dragon Veteran',
+      'Medium humanoid (human), any alignment',
+      'Armor Class 18 (plate)',
+      'Hit Points 65 (10d8 + 20)',
+      'Speed 30 ft.',
+      'STR DEX CON INT WIS CHA',
+      '16 (+3) 13 (+1) 14 (+2) 10 (+0) 11 (+0) 10 (+0)',
+      'Challenge 5 (1,800 XP)',
+    ];
+    const heights = lines.map((line) =>
+      line === 'Half-Dragon Template' ? 13.92 : 9.84,
+    );
+    const [veteran, seaHag] = parseCreatures([
+      { pageNumber: 320, lines, lineHeights: heights },
+    ]);
+
+    expect(seaHag.name).toBe('Sea Hag');
+    expect(seaHag.actions).toEqual([
+      {
+        name: 'Claws',
+        text: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target.',
+      },
+    ]);
+    expect(JSON.stringify(seaHag)).not.toContain('Half-Dragon Template');
+    expect(veteran.name).toBe('Half-Red Dragon Veteran');
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Narrative body sections — traits, actions, reactions, legendary actions
 // (eshyra-yevt / eshyra-4a7.5). Excerpts reproduced verbatim from the SRD 5.1

@@ -126,6 +126,8 @@ export interface DocumentTableSpec {
   readonly anchorHeading: string;
   /** Whether the anchor is the printed caption or the owning entry heading. */
   readonly anchor: 'caption' | 'item';
+  /** Typography tier of the anchor; table captions default to leaf. */
+  readonly anchorTier?: 'leaf' | 'subsection';
   /**
    * Exact trimmed text of the table's column-header line(s) at cell tier,
    * in order. The first header line is also the spec's disambiguator when
@@ -257,6 +259,51 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
       pattern: new RegExp(`^(${DRAGON_COLOR})\\s+(${DRAGON_DAMAGE})$`),
     },
     expectedRows: 10,
+  },
+  // --- Monsters: Half-Dragon Template (pp320-321) --------------------------
+  // Both tables are caption-less and owned by the template subsection. The
+  // damage-resistance run crosses the page boundary; the breath-weapon run's
+  // first Size cell wraps onto its own physical line, so it uses an exact
+  // reviewed reconstruction.
+  {
+    name: 'Half-Dragon Damage Resistance',
+    columns: ['Color', 'Damage Resistance'],
+    anchorHeading: 'Half-Dragon Template',
+    anchor: 'item',
+    anchorTier: 'subsection',
+    headerLines: ['Color Damage Resistance'],
+    rows: {
+      kind: 'line-per-row',
+      pattern:
+        /^(Black or copper|Blue or bronze|Brass, gold, or red|Green|Silver or white) (Acid|Lightning|Fire|Poison|Cold)$/,
+    },
+    expectedRows: 5,
+    ownerRecordKey: 'rule:half-dragon-template',
+  },
+  {
+    name: 'Half-Dragon Breath Weapon',
+    columns: ['Size', 'Breath Weapon', 'Prerequisite'],
+    anchorHeading: 'Half-Dragon Template',
+    anchor: 'item',
+    anchorTier: 'subsection',
+    headerLines: ['Optional', 'Size Breath Weapon Prerequisite'],
+    searchPastCellRuns: true,
+    rows: {
+      kind: 'reviewed-reconstruction',
+      sourceLines: [
+        'Large or As a wyrmling Challenge 2 or higher',
+        'smaller',
+        'Huge As a young dragon Challenge 7 or higher',
+        'Gargantuan As an adult dragon Challenge 8 or higher',
+      ],
+      rows: [
+        ['Large or smaller', 'As a wyrmling', 'Challenge 2 or higher'],
+        ['Huge', 'As a young dragon', 'Challenge 7 or higher'],
+        ['Gargantuan', 'As an adult dragon', 'Challenge 8 or higher'],
+      ],
+    },
+    expectedRows: 3,
+    ownerRecordKey: 'rule:half-dragon-template',
   },
   // --- Class chapters: progression + option tables --------------------------
   // The Barbarian (p8) is the one SRD class progression table whose columns
@@ -1329,7 +1376,7 @@ function parseSpec(
     // Collapse inner whitespace: column-spaced headings ("School   of
     // Evocation") arrive with multi-space gaps.
     if (normalizeWhitespace(rows[i].text) !== spec.anchorHeading) continue;
-    if (classifyTier(rows[i].height) !== 'leaf') continue;
+    if (classifyTier(rows[i].height) !== (spec.anchorTier ?? 'leaf')) continue;
     // Class progression tables locate their pinned source block(s) past the
     // interleaved proficiency/Equipment prose, then return reviewed rows; they
     // never use the caption-immediate header + contiguous-run path below.

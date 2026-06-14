@@ -143,9 +143,9 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // record 1849 -> 1873 (eshyra-4a7.3): the 24 document-wide table records
     // claim their captions / caption-less runs. The eshyra-4a7.3 catch-all
     // known-gap rule is gone; its remaining items moved to scoped owners. The
-    // The deity tables (5 items), Half-Dragon Template tables (2), and the
+    // The deity tables (5 items), Half-Dragon Template region (3), and the
     // Self-Sufficiency prose sidebar (1) joined their regions under
-    // eshyra-4a7.10 (62 -> 70).
+    // eshyra-4a7.10.
     // eshyra-4a7.6 dropped 128 -> 116 (the Barbarian progression caption,
     // seven Circle of the Land tables, Life Domain / Oath of Devotion /
     // Fiend Expanded spell tables, and Creating Spell Slots are now records);
@@ -172,7 +172,9 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // rule records. Four additional Races headings were already record-status
     // through incorrect same-name auto-matches; explicit rules now point them
     // at their source-correct parent-qualified records without changing count.
-    expect(coverage.summary.record).toBe(1934);
+    // record 1934 -> 1937 (eshyra-4a7.10.3): the Half-Dragon Template heading
+    // and its two caption-less table runs now map to emitted records.
+    expect(coverage.summary.record).toBe(1937);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -203,7 +205,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // subclass:oath-of-devotion (its prose is a named section on that record),
     // so the eshyra-citg known-gap rule is gone.
     expect(coverage.summary.knownGap).toEqual({
-      'eshyra-4a7.10': 59,
+      'eshyra-4a7.10': 56,
     });
   });
 });
@@ -279,13 +281,16 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     expect(entry.status).toBe('known-gap:eshyra-4a7.10');
   });
 
-  it('the Half-Dragon Template tables (p320-321) belong to the template region tracked by eshyra-4a7.10', () => {
+  it('the Half-Dragon Template region (p320-321) is emitted as rule and table records', () => {
+    expect(entryFor(320, 'Half-Dragon Template').status).toBe(
+      'record:rule:half-dragon-template',
+    );
     const colors = entryFor(320, 'Color Damage Resistance');
     expect(colors.structure).toBe('table-shape');
-    expect(colors.status).toBe('known-gap:eshyra-4a7.10');
+    expect(colors.status).toBe('record:table:half-dragon-damage-resistance');
     const sizes = entryFor(321, 'Optional');
     expect(sizes.structure).toBe('table-shape');
-    expect(sizes.status).toBe('known-gap:eshyra-4a7.10');
+    expect(sizes.status).toBe('record:table:half-dragon-breath-weapon');
   });
 
   it('the Self-Sufficiency prose sidebar (p73, table-shaped by typography) is emitted as a rule', () => {

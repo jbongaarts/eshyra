@@ -29,6 +29,7 @@
  *     than emit a record that can't satisfy the kindSchema.
  */
 
+import { classifyTier } from './sourceInventory.js';
 import type {
   CreatureAbilityScores,
   CreatureCategory,
@@ -832,7 +833,16 @@ export function parseCreatures(
   for (let i = 0; i < candidates.length; i++) {
     const candidate = candidates[i];
     const next = candidates[i + 1];
-    const bodyEnd = next?.nameIdx ?? flat.length;
+    const nextCandidateIdx = next?.nameIdx ?? flat.length;
+    const templateBoundaryIdx = flat.findIndex(
+      (entry, index) =>
+        index > candidate.metaIdx &&
+        index < nextCandidateIdx &&
+        entry.line.trim() === 'Half-Dragon Template' &&
+        classifyTier(entry.height) === 'subsection',
+    );
+    const bodyEnd =
+      templateBoundaryIdx < 0 ? nextCandidateIdx : templateBoundaryIdx;
     const bodyLines = flat.slice(candidate.metaIdx + 1, bodyEnd);
     const body = bodyLines.map((f) => f.line);
     const fields = readStatBlock(body);
