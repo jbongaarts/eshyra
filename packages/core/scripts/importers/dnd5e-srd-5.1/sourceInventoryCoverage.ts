@@ -1048,6 +1048,19 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     'rule:creating-sentient-magic-items-alignment',
     (i) => i.section === 'Magic Items' && i.text === 'Alignment',
   ),
+  // Appendix PH-B deity-table column-group header (eshyra-4a7.10.5). The four
+  // pantheon-prose headings and four "<Pantheon> Deities" captions auto-match
+  // their emitted records; the deity tables themselves are reconstructed by
+  // `parseDeityTables` and own the Deity/Alignment/Suggested Domains/Symbol
+  // columns. The lone remaining inventory item is the right-side column-group
+  // header the extractor surfaces as a standalone table-shape — a table
+  // internal of those emitted tables, not its own record.
+  ignoreRule(
+    'deity-table-column-header',
+    (i) =>
+      (i.section?.startsWith('Appendix PH-B') ?? false) &&
+      i.text === 'Suggested Domains Symbol',
+  ),
   // Unimported prose regions, tracked region-by-region in eshyra-4a7.10.
   knownGapRule(
     'eshyra-4a7.10',
@@ -1058,11 +1071,9 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       // there are the alphabetical
       // "Monsters (A)" … navigation headings — left to the
       // document-structure default.
-      (i.section === 'Monsters' &&
-        i.structure === 'heading' &&
-        (i.tier === 'subsection' || i.tier === 'leaf') &&
-        i.text !== 'Half-Dragon Template') ||
-      (i.section?.startsWith('Appendix PH-B') ?? false) ||
-      (i.section?.startsWith('Appendix PH-C') ?? false),
+      i.section === 'Monsters' &&
+      i.structure === 'heading' &&
+      (i.tier === 'subsection' || i.tier === 'leaf') &&
+      i.text !== 'Half-Dragon Template',
   ),
 ];

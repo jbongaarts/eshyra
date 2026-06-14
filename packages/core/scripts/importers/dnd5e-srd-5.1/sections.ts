@@ -601,6 +601,32 @@ export const SRD_5_1_DEFAULT_SECTION_ANCHORS = {
     startHeading: /^Appendix MM-B:\s*Nonplayer Characters$/,
     matchHeadings: true,
   },
+  // SRD 5.1 "Appendix PH-B: Fantasy-Historical Pantheons" (pp360-362,
+  // eshyra-4a7.10.5). The appendix intro plus four pantheon-prose sections
+  // (The Celtic/Greek/Egyptian/Norse Pantheon) and four deity tables
+  // (Celtic/Greek/Egyptian/Norse Deities). The orchestrator feeds the slice to
+  // `parseRules` (prose, with the deity-table cell rows stripped) and to
+  // `parseDeityTables` (the tables). It ends at the next appendix
+  // ("Appendix PH-C: The Planes of Existence"). matchHeadings keeps the start
+  // anchor on the real h≈25.9 chapter title rather than a body/TOC mention.
+  fantasyHistoricalPantheons: {
+    startHeading: /^Appendix PH-B:\s*Fantasy-Historical Pantheons$/,
+    endHeading: /^Appendix PH-C:|^Appendix [A-Z]{0,3}-?[A-Z]?:/,
+    requireEndHeading: true,
+    matchHeadings: true,
+  },
+  // SRD 5.1 "Appendix PH-C: The Planes of Existence" (pp363-365,
+  // eshyra-4a7.10.5). Pure prose: the appendix intro, two h≈18 sections (The
+  // Material Plane, Beyond the Material), and the planar subsections (Planar
+  // Travel, Transitive Planes, Inner Planes, Outer Planes, Demiplanes). Fed to
+  // `parseRules`. It ends at the next appendix ("Appendix MM-A: Miscellaneous
+  // Creatures"). matchHeadings keeps the anchor on the real chapter title.
+  planesOfExistence: {
+    startHeading: /^Appendix PH-C:\s*The Planes of Existence$/,
+    endHeading: /^Appendix MM-A:|^Appendix [A-Z]{0,3}-?[A-Z]?:/,
+    requireEndHeading: true,
+    matchHeadings: true,
+  },
   // SRD 5.1 has no standalone "Treasure" chapter — magic items are under
   // the "Magic Items" chapter, and the treasure tables that the original
   // anchor targeted are not present in the SRD 5.1 PDF. Like `hazards`,
@@ -715,6 +741,8 @@ export type Srd51SectionAnchors = {
   readonly monsters: SectionAnchorOptions;
   readonly miscellaneousCreatures: SectionAnchorOptions;
   readonly nonplayerCharacters: SectionAnchorOptions;
+  readonly fantasyHistoricalPantheons: SectionAnchorOptions;
+  readonly planesOfExistence: SectionAnchorOptions;
   readonly mountsAndVehicles: SectionAnchorOptions;
   readonly magicItemRules: SectionAnchorOptions;
   readonly magicItems: SectionAnchorOptions;

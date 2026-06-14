@@ -320,6 +320,17 @@ const TABLE_CAPTION_LEAF_TITLES = new Set([
   // table records. The surrounding h≈13.9/h≈18 prose headings remain rules.
   'Donning and Doffing Armor',
   'Weapons',
+  // Appendix PH-B deity tables (eshyra-4a7.10.5): these h≈12 captions are
+  // reconstructed as `table` records by `parseDeityTables`. The surrounding
+  // h≈12 pantheon-prose headings ("The Celtic Pantheon" …) remain rules. The
+  // PH-B prose slice is additionally passed through `removeTableCellLines` so
+  // the h≈8.9 deity-table rows do not bleed into the prose rules; excluding
+  // the captions here drops the now-empty caption headings that would
+  // otherwise emit as spurious bodyless rules.
+  'Celtic Deities',
+  'Greek Deities',
+  'Egyptian Deities',
+  'Norse Deities',
 ]);
 
 const INLINE_PROSE_RESUMPTION_TABLE_CAPTIONS = new Set(['Weapons']);

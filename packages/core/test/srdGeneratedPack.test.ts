@@ -210,8 +210,12 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // Communication, Senses, Alignment, Special Purpose, and Conflict (Senses and
   // Alignment parent-qualified because other slices own the bare titles), plus
   // the Appendix MM-B "Customizing NPCs" guidance record (eshyra-4a7.10.6).
+  // 282 -> 296 (eshyra-4a7.10.5): the Appendix PH-B pantheon prose (the
+  // appendix intro and four pantheon sections, 5) and the Appendix PH-C planes
+  // prose (the appendix intro, two sections, and seven planar subsections
+  // including the two parent-qualified "Outer Planes" tiers, 9).
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 282,
+  rule: 296,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -255,7 +259,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // Scrying, and Teleport.
   // 102 -> 104 (eshyra-4a7.10.3): the Half-Dragon Template color/resistance
   // and size/breath-weapon tables.
-  table: 104,
+  // 104 -> 108 (eshyra-4a7.10.5): the four Appendix PH-B deity tables
+  // (Celtic/Greek/Egyptian/Norse Deities), reconstructed by parseDeityTables
+  // from the page-interleaved column blocks.
+  table: 108,
 };
 
 /**
@@ -593,12 +600,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 240,
   },
   // Half-Dragon Template owns its two reconstructed reference tables; other
-  // rule records have no embedded table.
+  // rule records have no embedded table. eshyra-4a7.10.5 adds 14 PH-B/PH-C
+  // prose rules, none of which carry tableRefs (281 -> 295, 282 -> 296).
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 281,
-    totalInKind: 282,
+    missingCount: 295,
+    totalInKind: 296,
   },
   {
     kind: 'spell',
@@ -2491,6 +2499,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:belt-of-giant-strength',
         'table:candle-of-invocation',
         'table:carpet-of-flying',
+        // Appendix PH-B deity tables (eshyra-4a7.10.5), reconstructed by
+        // parseDeityTables from the page-interleaved column blocks.
+        'table:celtic-deities',
         'table:character-advancement',
         'table:circle-of-the-land-arctic',
         'table:circle-of-the-land-coast',
@@ -2517,6 +2528,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:draconic-bloodline-draconic-ancestry',
         'table:dragon-scale-mail',
         'table:efreeti-bottle',
+        'table:egyptian-deities',
         'table:elemental-gem',
         'table:exotic-languages',
         'table:experience-points-by-challenge-rating',
@@ -2524,6 +2536,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:fiend-expanded-spells',
         'table:food-drink-and-lodging',
         'table:gray-bag-of-tricks',
+        'table:greek-deities',
         // Half-Dragon Template reference tables (eshyra-4a7.10.3).
         'table:half-dragon-breath-weapon',
         'table:half-dragon-damage-resistance',
@@ -2539,6 +2552,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:multiclassing-prerequisites',
         'table:multiclassing-proficiencies',
         'table:necklace-of-prayer-beads',
+        'table:norse-deities',
         'table:oath-of-devotion-spells',
         'table:object-armor-class',
         'table:object-hit-points',

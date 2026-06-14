@@ -1,9 +1,10 @@
 {
   "summary": {
-    "record": 1944,
+    "record": 1960,
     "childOf": 99,
     "ignored": {
       "class-progression-table-internal": 9,
+      "deity-table-column-header": 1,
       "document-structure": 48,
       "equipment-category-heading": 3,
       "front-matter": 2,
@@ -14,7 +15,7 @@
       "variant-rule-excluded": 2
     },
     "knownGap": {
-      "eshyra-4a7.10": 50
+      "eshyra-4a7.10": 33
     },
     "unaccounted": 0
   },
@@ -411,6 +412,13 @@
         ]
       },
       {
+        "normalizedName": "outer planes",
+        "winnerKey": "rule:beyond-the-material-outer-planes",
+        "shadowedKeys": [
+          "rule:outer-planes-outer-planes"
+        ]
+      },
+      {
         "normalizedName": "pony",
         "winnerKey": "creature:pony",
         "shadowedKeys": [
@@ -768,6 +776,11 @@
         "text": "Proficiencies",
         "resolvedKey": "rule:backgrounds-proficiencies",
         "count": 14
+      },
+      {
+        "text": "Outer Planes",
+        "resolvedKey": "rule:beyond-the-material-outer-planes",
+        "count": 2
       },
       {
         "text": "Blindsight",
@@ -18948,7 +18961,7 @@
       "structure": "heading",
       "text": "The Celtic Pantheon",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:the-celtic-pantheon"
     },
     {
       "page": 360,
@@ -18957,7 +18970,7 @@
       "structure": "heading",
       "text": "The Greek Pantheon",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:the-greek-pantheon"
     },
     {
       "page": 360,
@@ -18966,7 +18979,7 @@
       "structure": "table-caption",
       "text": "Celtic Deities",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:table:celtic-deities"
     },
     {
       "page": 360,
@@ -18975,7 +18988,7 @@
       "structure": "heading",
       "text": "The Egyptian Pantheon",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:the-egyptian-pantheon"
     },
     {
       "page": 360,
@@ -18984,7 +18997,7 @@
       "structure": "heading",
       "text": "The Norse Pantheon",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:the-norse-pantheon"
     },
     {
       "page": 360,
@@ -18993,7 +19006,7 @@
       "structure": "table-shape",
       "text": "Suggested Domains Symbol",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "ignored:deity-table-column-header"
     },
     {
       "page": 361,
@@ -19002,7 +19015,7 @@
       "structure": "table-caption",
       "text": "Greek Deities",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:table:greek-deities"
     },
     {
       "page": 361,
@@ -19011,7 +19024,7 @@
       "structure": "table-caption",
       "text": "Egyptian Deities",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:table:egyptian-deities"
     },
     {
       "page": 361,
@@ -19020,7 +19033,7 @@
       "structure": "table-caption",
       "text": "Norse Deities",
       "section": "Appendix PH-B: Fantasy-Historical Pantheons",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:table:norse-deities"
     },
     {
       "page": 363,
@@ -19038,7 +19051,7 @@
       "structure": "heading",
       "text": "The Material Plane",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:the-material-plane"
     },
     {
       "page": 363,
@@ -19047,7 +19060,7 @@
       "structure": "heading",
       "text": "Beyond the Material",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:beyond-the-material"
     },
     {
       "page": 363,
@@ -19056,7 +19069,7 @@
       "structure": "heading",
       "text": "Planar Travel",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:planar-travel"
     },
     {
       "page": 363,
@@ -19065,7 +19078,7 @@
       "structure": "heading",
       "text": "Transitive Planes",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:transitive-planes"
     },
     {
       "page": 364,
@@ -19074,7 +19087,7 @@
       "structure": "heading",
       "text": "Inner Planes",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:inner-planes"
     },
     {
       "page": 364,
@@ -19083,7 +19096,7 @@
       "structure": "heading",
       "text": "Outer Planes",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:beyond-the-material-outer-planes"
     },
     {
       "page": 364,
@@ -19092,7 +19105,7 @@
       "structure": "heading",
       "text": "Outer Planes",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:beyond-the-material-outer-planes"
     },
     {
       "page": 364,
@@ -19101,7 +19114,7 @@
       "structure": "heading",
       "text": "Demiplanes",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:demiplanes"
     },
     {
       "page": 366,

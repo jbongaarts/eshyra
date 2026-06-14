@@ -184,7 +184,11 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // record 1943 -> 1944 (eshyra-4a7.10.6): the Appendix MM-B "Customizing
     // NPCs" subsection heading (formerly known-gap) now maps to its emitted
     // rule record.
-    expect(coverage.summary.record).toBe(1944);
+    // record 1944 -> 1960 (eshyra-4a7.10.5): the Appendix PH-B four pantheon
+    // headings + four deity-table captions (8) and the Appendix PH-C eight
+    // plane headings (8) moved from known-gap to their emitted rule/table
+    // records.
+    expect(coverage.summary.record).toBe(1960);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -202,8 +206,12 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // eshyra-4a7.10.4: the "Sentient Magic Items" section heading now maps to
     // its emitted intro rule instead of the document-structure default
     // (49 -> 48).
+    // eshyra-4a7.10.5: the Appendix PH-B "Suggested Domains Symbol" deity-table
+    // column-group header (a table internal of the emitted deity tables) is
+    // ignored with its own reason.
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
+      'deity-table-column-header': 1,
       'document-structure': 48,
       'equipment-category-heading': 3,
       'front-matter': 2,
@@ -222,8 +230,12 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // known-gap to their emitted rule records (56 -> 51).
     // eshyra-4a7.10.6: the Appendix MM-B "Customizing NPCs" heading moved from
     // known-gap to its emitted rule record (51 -> 50).
+    // eshyra-4a7.10.5: the 17 Appendix PH-B / PH-C headings, captions, and the
+    // deity-table column header moved out of known-gap (16 to records, 1 to the
+    // deity-table-column-header ignore), leaving only the Monsters-chapter
+    // creature-family lore headings (50 -> 33).
     expect(coverage.summary.knownGap).toEqual({
-      'eshyra-4a7.10': 50,
+      'eshyra-4a7.10': 33,
     });
   });
 });
@@ -293,10 +305,48 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     ).toBe(false);
   });
 
-  it('the Celtic Deities table (p360) belongs to the Appendix PH-B region tracked by eshyra-4a7.10', () => {
-    const entry = entryFor(360, 'Celtic Deities');
-    expect(entry.structure).toBe('table-caption');
-    expect(entry.status).toBe('known-gap:eshyra-4a7.10');
+  it('the Appendix PH-B pantheons region (p360-362) is emitted as rule and deity-table records (eshyra-4a7.10.5)', () => {
+    // The appendix intro and four pantheon-prose headings are rule records.
+    expect(entryFor(360, 'The Celtic Pantheon').status).toBe(
+      'record:rule:the-celtic-pantheon',
+    );
+    expect(entryFor(360, 'The Norse Pantheon').status).toBe(
+      'record:rule:the-norse-pantheon',
+    );
+    // The four deity-table captions auto-match their reconstructed table
+    // records (parseDeityTables).
+    const celtic = entryFor(360, 'Celtic Deities');
+    expect(celtic.structure).toBe('table-caption');
+    expect(celtic.status).toBe('record:table:celtic-deities');
+    expect(entryFor(361, 'Norse Deities').status).toBe(
+      'record:table:norse-deities',
+    );
+    // The deity tables' right-side column-group header is a table internal,
+    // ignored with its own reason rather than emitted as a record.
+    const header = entryFor(360, 'Suggested Domains Symbol');
+    expect(header.structure).toBe('table-shape');
+    expect(header.status).toBe('ignored:deity-table-column-header');
+  });
+
+  it('the Appendix PH-C planes region (p363-364) is emitted as rule records (eshyra-4a7.10.5)', () => {
+    expect(entryFor(363, 'The Material Plane').status).toBe(
+      'record:rule:the-material-plane',
+    );
+    expect(entryFor(363, 'Planar Travel').status).toBe(
+      'record:rule:planar-travel',
+    );
+    expect(entryFor(364, 'Demiplanes').status).toBe('record:rule:demiplanes');
+    // The two same-named "Outer Planes" headings (an h≈13.9 subsection and an
+    // h≈12 sub-leaf) both auto-match by name to the lexicographically-first
+    // parent-qualified key; the shadowing is pinned by the ambiguous-match
+    // diagnostic below.
+    const outerPlanes = coverage.entries.filter(
+      (e) => e.page === 364 && e.text === 'Outer Planes',
+    );
+    expect(outerPlanes).toHaveLength(2);
+    for (const entry of outerPlanes) {
+      expect(entry.status).toBe('record:rule:beyond-the-material-outer-planes');
+    }
   });
 
   it('the Half-Dragon Template region (p320-321) is emitted as rule and table records', () => {
@@ -424,12 +474,18 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-4a7.10.4: the sentient-item "Senses" rule adds a new two-record
     // "senses" collision group (83 -> 84); the sentient-item "Alignment" rule
     // joins the existing "alignment" collision group without adding a group.
-    expect(coverage.ambiguous.shadowedRecords).toHaveLength(84);
+    // eshyra-4a7.10.5: the Appendix PH-C section repeats the heading "Outer
+    // Planes" at two tiers, so two emitted rule records share the normalized
+    // name "outer planes", adding one shadowed-record group (84 -> 85).
+    expect(coverage.ambiguous.shadowedRecords).toHaveLength(85);
     // The explicit p3/p254 Size mappings prevent those two source headings
     // from collapsing onto one record (58 -> 57). eshyra-4a7.10.4: the explicit
     // Magic Items / Monsters Senses mappings split the former two-source-item
     // "Senses" collapse onto their own records (57 -> 56).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(56);
+    // eshyra-4a7.10.5: the two same-named "Outer Planes" PH-C source headings
+    // both auto-match the lexicographically-first key, collapsing onto one
+    // record (56 -> 57).
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(57);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {
