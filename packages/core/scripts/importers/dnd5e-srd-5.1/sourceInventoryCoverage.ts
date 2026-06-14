@@ -1063,7 +1063,6 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
         (i.tier === 'subsection' || i.tier === 'leaf') &&
         i.text !== 'Half-Dragon Template') ||
       (i.section?.startsWith('Appendix PH-B') ?? false) ||
-      (i.section?.startsWith('Appendix PH-C') ?? false) ||
-      i.text === 'Customizing NPCs',
+      (i.section?.startsWith('Appendix PH-C') ?? false),
   ),
 ];

@@ -1,6 +1,6 @@
 {
   "summary": {
-    "record": 1943,
+    "record": 1944,
     "childOf": 99,
     "ignored": {
       "class-progression-table-internal": 9,
@@ -14,7 +14,7 @@
       "variant-rule-excluded": 2
     },
     "knownGap": {
-      "eshyra-4a7.10": 51
+      "eshyra-4a7.10": 50
     },
     "unaccounted": 0
   },
@@ -20838,7 +20838,7 @@
       "structure": "heading",
       "text": "Customizing NPCs",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:customizing-npcs"
     },
     {
       "page": 395,
