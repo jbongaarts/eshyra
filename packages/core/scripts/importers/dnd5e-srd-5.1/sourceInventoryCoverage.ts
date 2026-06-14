@@ -694,6 +694,17 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     'rule:racial-traits-alignment',
     (i) => i.section === 'Races' && i.text === 'Alignment',
   ),
+  // The Monsters stat-block interpretation chapter has its own "Size"
+  // subsection. Once the racial-traits Size record exists, generic name
+  // auto-match would otherwise choose `rule:racial-traits-size` for both
+  // source headings. Keep the p254 Monsters heading on its original rule.
+  recordRule(
+    'rule:size',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.structure === 'heading' &&
+      i.text === 'Size',
+  ),
   recordRule(
     'rule:racial-traits-size',
     (i) => i.section === 'Races' && i.text === 'Size',

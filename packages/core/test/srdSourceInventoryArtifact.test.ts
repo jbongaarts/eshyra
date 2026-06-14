@@ -304,6 +304,13 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     expect(entryFor(3, 'Size').status).toBe('record:rule:racial-traits-size');
   });
 
+  it('the Monsters p254 Size heading remains mapped to the stat-block interpretation rule', () => {
+    const entry = entryFor(254, 'Size');
+    expect(entry.section).toBe('Monsters');
+    expect(entry.structure).toBe('heading');
+    expect(entry.status).toBe('record:rule:size');
+  });
+
   it('Tenets of Devotion (p33) is child-of subclass:oath-of-devotion, not a known-gap (eshyra-citg)', () => {
     // Regression: before eshyra-citg the "Tenets of Devotion" heading was
     // known-gap:eshyra-citg. Now the parser collects its prose as a named
@@ -342,7 +349,9 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // records to existing collision groups and creates a new Size collision
     // group, increasing the group count by one (82 -> 83).
     expect(coverage.ambiguous.shadowedRecords).toHaveLength(83);
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(58);
+    // The explicit p3/p254 Size mappings prevent those two source headings
+    // from collapsing onto one record (58 -> 57).
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(57);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {

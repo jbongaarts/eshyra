@@ -867,11 +867,6 @@
         "count": 2
       },
       {
-        "text": "Size",
-        "resolvedKey": "rule:racial-traits-size",
-        "count": 2
-      },
-      {
         "text": "Senses",
         "resolvedKey": "rule:senses",
         "count": 2
@@ -13892,7 +13887,7 @@
       "structure": "heading",
       "text": "Size",
       "section": "Monsters",
-      "status": "record:rule:racial-traits-size"
+      "status": "record:rule:size"
     },
     {
       "page": 254,
