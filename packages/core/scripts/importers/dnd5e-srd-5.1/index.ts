@@ -65,7 +65,8 @@ import { parseHazards } from './parseHazards.js';
 import { parseMagicItems } from './parseMagicItems.js';
 import { parseMulticlassing } from './parseMulticlassing.js';
 import { parsePoisons } from './parsePoisons.js';
-import { parseRules } from './parseRules.js';
+import { parseRules, removeTableCellLines } from './parseRules.js';
+import { parseSelfSufficiency } from './parseSelfSufficiency.js';
 import { parseSpellcastingServices } from './parseSpellcastingServices.js';
 import { parseSpellClassLists, parseSpells } from './parseSpells.js';
 import { parseStatBlocks } from './parseStatBlocks.js';
@@ -1112,6 +1113,25 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   // Equipment-chapter Expenses region: the Spellcasting Services prose has no
   // rate table, so it is emitted as a rule (eshyra-0m9.19).
   'rule:spellcasting-services',
+  // Races p3 trait-category guidance (eshyra-4a7.10.1).
+  'rule:ability-score-increase',
+  'rule:age',
+  'rule:racial-traits',
+  'rule:racial-traits-alignment',
+  'rule:racial-traits-languages',
+  'rule:racial-traits-size',
+  'rule:racial-traits-speed',
+  'rule:subraces',
+  // Equipment pp64-65 guidance and p73 Self-Sufficiency sidebar
+  // (eshyra-4a7.10.1).
+  'rule:getting-into-and-out-of-armor',
+  'rule:improvised-weapons',
+  'rule:self-sufficiency',
+  'rule:silvered-weapons',
+  'rule:special-weapons',
+  'rule:weapon-proficiency',
+  'rule:weapon-properties',
+  'rule:weapons',
   'rule:sphere',
   'rule:targeting-yourself',
   'rule:targets',
@@ -2668,7 +2688,73 @@ export async function runImporter(
   // pack without classes (the classes anchor sets requireEndHeading: true).
   const classPages = sliceSection(pages, anchors.classes);
   const classCalloutRules = parseClassCallouts(classPages);
-  const rules = [...nonClassRules, ...classCalloutRules];
+  const rulesBeforeUnrepresentedProse = [
+    ...nonClassRules,
+    ...classCalloutRules,
+  ];
+  const reservedRuleSlugs = (
+    priorRules: readonly import('./types.js').RuleExtraction[],
+  ): ReadonlySet<string> =>
+    new Set(
+      priorRules
+        .map((rule) => rule.keySlug)
+        .filter((slug): slug is string => slug !== undefined),
+    );
+
+  // Races p3 trait-category guidance. The slice starts after "Racial Traits",
+  // so chapterIntro restores that root rule and seeds it as the parent for
+  // colliding child titles such as Alignment, Size, Speed, and Languages.
+  const racialTraitPages = sliceSectionOrEmptyPages(
+    pages,
+    anchors.racialTraits,
+  );
+  const racialTraitRules = parseRules(
+    racialTraitPages,
+    reservedRuleSlugs(rulesBeforeUnrepresentedProse),
+    { name: 'Racial Traits', keySlug: 'racial-traits' },
+  );
+
+  // Equipment pp64-65 guidance around the armor and weapon tables. The
+  // reviewed table captions are excluded in parseRules, while prose-height
+  // lines that resume after a physical table return to their owning rule.
+  const armorGuidancePages = sliceSectionOrEmptyPages(
+    pages,
+    anchors.armorGuidance,
+  );
+  const armorGuidanceRules = parseRules(
+    removeTableCellLines(armorGuidancePages),
+    reservedRuleSlugs([...rulesBeforeUnrepresentedProse, ...racialTraitRules]),
+    {
+      name: 'Getting Into and Out of Armor',
+      keySlug: 'getting-into-and-out-of-armor',
+    },
+  );
+  const weaponGuidancePages = sliceSectionOrEmptyPages(
+    pages,
+    anchors.weaponGuidance,
+  );
+  const weaponGuidanceRules = parseRules(
+    removeTableCellLines(weaponGuidancePages),
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+    ]),
+    { name: 'Weapons Guidance', keySlug: 'weapons' },
+  );
+
+  // The p73 sidebar body is table-cell-sized text, so it uses its dedicated
+  // bounded prose parser rather than the heading-hierarchy parser.
+  const selfSufficiencyRule = parseSelfSufficiency(
+    sliceSectionOrEmptyPages(pages, anchors.selfSufficiency),
+  );
+  const rules = [
+    ...rulesBeforeUnrepresentedProse,
+    ...racialTraitRules,
+    ...armorGuidanceRules,
+    ...weaponGuidanceRules,
+    ...(selfSufficiencyRule === undefined ? [] : [selfSufficiencyRule]),
+  ];
   // Fail closed before any output is written when the real import (CLI) supplies
   // the exact expected rule-key set and any implemented rule slice drifts from
   // it (loreweaver-yli, loreweaver-3hp, and loreweaver-0m9.5.23).

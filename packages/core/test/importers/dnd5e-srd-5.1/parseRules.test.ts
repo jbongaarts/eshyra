@@ -9,7 +9,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { parseRules } from '../../../scripts/importers/dnd5e-srd-5.1/parseRules.js';
+import {
+  parseRules,
+  removeTableCellLines,
+} from '../../../scripts/importers/dnd5e-srd-5.1/parseRules.js';
 import type { PageText } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
 
 function page(pageNumber: number, lines: string[]): PageText {
@@ -372,5 +375,92 @@ describe('parseRules (heading-hierarchy path)', () => {
     expect(spellcasting?.keySlug).toBe('spellcasting');
     expect(spellcasting?.text).toMatch(/combined levels/);
     expect(spellcasting?.text).not.toMatch(/Lvl\./);
+  });
+
+  it('emits the racial-trait category guidance with colliding keys parent-qualified', () => {
+    const rules = parseRules(
+      [
+        pageH(3, [
+          ['Racial Traits', SUBSUB_H],
+          [
+            'The description of each race includes racial traits common to that race.',
+            BODY_H,
+          ],
+          ['Ability Score Increase', LEAF_H],
+          ['Every race increases one or more ability scores.', BODY_H],
+          ['Alignment', LEAF_H],
+          ['Most races have tendencies toward certain alignments.', BODY_H],
+          ['Size', LEAF_H],
+          ['Characters of most races are Medium.', BODY_H],
+          ['Languages', LEAF_H],
+          [
+            'Your character can speak, read, and write certain languages.',
+            BODY_H,
+          ],
+          ['Subraces', LEAF_H],
+          ['Some races have subraces.', BODY_H],
+        ]),
+      ],
+      new Set(['alignment', 'languages', 'size']),
+    );
+
+    expect(rules.map((rule) => rule.keySlug)).toEqual([
+      'ability-score-increase',
+      'racial-traits-alignment',
+      'racial-traits-languages',
+      'racial-traits',
+      'racial-traits-size',
+      'subraces',
+    ]);
+  });
+
+  it('drops equipment table rows while retaining weapon prose that resumes after the table', () => {
+    const rules = parseRules(
+      removeTableCellLines([
+        pageH(64, [
+          ['Weapons', SUB_H],
+          ['The Weapons table shows the most common weapons.', BODY_H],
+          ['Weapon Proficiency', SUBSUB_H],
+          ['Most people', BODY_H],
+          ['— Disadvantage 45 lb.', 8.88],
+          ['can use simple weapons with proficiency.', BODY_H],
+          ['Weapon Properties', SUBSUB_H],
+          ['Many weapons have special properties.', BODY_H],
+        ]),
+        pageH(65, [
+          ['Improvised Weapons', LEAF_H],
+          [
+            'Sometimes characters attack with whatever is at hand. An improvised weapon includes any object you can',
+            BODY_H,
+          ],
+          ['Weapons', LEAF_H],
+          ['Name Cost Damage Weight Properties', 8.88],
+          ['Club 1 sp 1d4 bludgeoning 2 lb. Light', 8.88],
+          [
+            'wield. An improvised weapon can resemble an actual weapon.',
+            BODY_H,
+          ],
+          ['Silvered Weapons', LEAF_H],
+          ['You can silver a single weapon for 100 gp.', BODY_H],
+        ]),
+      ]),
+      new Set(),
+    );
+
+    expect(rules.map((rule) => rule.name)).toEqual([
+      'Improvised Weapons',
+      'Silvered Weapons',
+      'Weapon Proficiency',
+      'Weapon Properties',
+      'Weapons',
+    ]);
+    const improvised = rules.find((rule) => rule.name === 'Improvised Weapons');
+    expect(improvised?.text).toContain('any object you can wield');
+    expect(improvised?.text).toContain('resemble an actual weapon');
+    expect(improvised?.text).not.toContain('can\n\nwield');
+    expect(improvised?.text).not.toContain('Club 1 sp');
+    expect(
+      rules.find((rule) => rule.name === 'Weapon Proficiency')?.text,
+    ).not.toContain('Disadvantage 45 lb.');
   });
 });

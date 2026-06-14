@@ -167,7 +167,12 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // table:destroy-undead, so the count is unchanged by that one.
     // record 1914 -> 1923 (eshyra-o4j7): all nine spell-embedded table
     // structures now resolve to emitted table records.
-    expect(coverage.summary.record).toBe(1923);
+    // record 1923 -> 1934 (eshyra-4a7.10.1): four Races headings and seven
+    // Equipment/Self-Sufficiency headings moved from known-gap to their new
+    // rule records. Four additional Races headings were already record-status
+    // through incorrect same-name auto-matches; explicit rules now point them
+    // at their source-correct parent-qualified records without changing count.
+    expect(coverage.summary.record).toBe(1934);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -198,7 +203,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // subclass:oath-of-devotion (its prose is a named section on that record),
     // so the eshyra-citg known-gap rule is gone.
     expect(coverage.summary.knownGap).toEqual({
-      'eshyra-4a7.10': 70,
+      'eshyra-4a7.10': 59,
     });
   });
 });
@@ -283,10 +288,27 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     expect(sizes.status).toBe('known-gap:eshyra-4a7.10');
   });
 
-  it('the Self-Sufficiency prose sidebar (p73, table-shaped by typography) is tracked by eshyra-4a7.10', () => {
+  it('the Self-Sufficiency prose sidebar (p73, table-shaped by typography) is emitted as a rule', () => {
     const entry = entryFor(73, 'Self-Sufficiency');
     expect(entry.structure).toBe('table-caption');
-    expect(entry.status).toBe('known-gap:eshyra-4a7.10');
+    expect(entry.status).toBe('record:rule:self-sufficiency');
+  });
+
+  it('the Races p3 headings map to their source-correct rule records', () => {
+    expect(entryFor(3, 'Racial Traits').status).toBe(
+      'record:rule:racial-traits',
+    );
+    expect(entryFor(3, 'Alignment').status).toBe(
+      'record:rule:racial-traits-alignment',
+    );
+    expect(entryFor(3, 'Size').status).toBe('record:rule:racial-traits-size');
+  });
+
+  it('the Monsters p254 Size heading remains mapped to the stat-block interpretation rule', () => {
+    const entry = entryFor(254, 'Size');
+    expect(entry.section).toBe('Monsters');
+    expect(entry.structure).toBe('heading');
+    expect(entry.status).toBe('record:rule:size');
   });
 
   it('Tenets of Devotion (p33) is child-of subclass:oath-of-devotion, not a known-gap (eshyra-citg)', () => {
@@ -323,8 +345,13 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // (81 -> 82). With the table caption now claimed by an explicit recordRule
     // rather than the auto-match, "Destroy Undead" is no longer a collapsed
     // two-source-item group (59 -> 58).
-    expect(coverage.ambiguous.shadowedRecords).toHaveLength(82);
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(58);
+    // eshyra-4a7.10.1 adds parent-qualified racial Alignment/Languages/Speed
+    // records to existing collision groups and creates a new Size collision
+    // group, increasing the group count by one (82 -> 83).
+    expect(coverage.ambiguous.shadowedRecords).toHaveLength(83);
+    // The explicit p3/p254 Size mappings prevent those two source headings
+    // from collapsing onto one record (58 -> 57).
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(57);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {

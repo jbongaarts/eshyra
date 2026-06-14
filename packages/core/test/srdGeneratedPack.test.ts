@@ -201,8 +201,11 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 6 Backgrounds-chapter intro rules (the chapter-intro paragraph plus the
   // five h≈12 intro leaves, three of them parent-qualified to
   // `rule:backgrounds-*` because other slices own their bare titles;
-  // eshyra-0m9.17). Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 256,
+  // eshyra-0m9.17), plus the 16 Races/Equipment prose rules from
+  // eshyra-4a7.10.1: eight racial-trait category rules, Getting Into and Out
+  // of Armor, six weapon-guidance rules, and Self-Sufficiency. Validated
+  // exactly against EXPECTED_SRD_5_1_RULE_KEYS.
+  rule: 272,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -298,6 +301,12 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
   // Equipment-chapter Expenses region: Spellcasting Services prose rule
   // (eshyra-0m9.19).
   'rule:spellcasting-services',
+  // Races and Equipment prose recovered by eshyra-4a7.10.1.
+  'rule:racial-traits',
+  'rule:racial-traits-alignment',
+  'rule:getting-into-and-out-of-armor',
+  'rule:weapon-properties',
+  'rule:self-sufficiency',
   // Gamemastering Traps section general rules (eshyra-0m9.20).
   'rule:traps',
   'rule:complex-traps',
@@ -3462,6 +3471,89 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // "Feats" heading should bleed in.
       expect(text).not.toContain('Feats');
       expect(rule?.provenance.locator).toBe('p. 74');
+    });
+  });
+
+  describe('Races and Equipment guidance (eshyra-4a7.10.1)', () => {
+    function rule(key: string): (typeof pack.records)[number] {
+      const record = pack.records.find((candidate) => candidate.key === key);
+      expect(record, `expected ${key} in the committed pack`).toBeDefined();
+      return record as (typeof pack.records)[number];
+    }
+
+    function ruleText(key: string): string {
+      return (rule(key).data as { text: string }).text;
+    }
+
+    it('emits the complete racial-trait category hierarchy from p3', () => {
+      const expectedKeys = [
+        'rule:racial-traits',
+        'rule:ability-score-increase',
+        'rule:age',
+        'rule:racial-traits-alignment',
+        'rule:racial-traits-size',
+        'rule:racial-traits-speed',
+        'rule:racial-traits-languages',
+        'rule:subraces',
+      ];
+      for (const key of expectedKeys) {
+        expect(rule(key).provenance.locator).toBe('p. 3');
+      }
+      expect(ruleText('rule:racial-traits')).toContain(
+        'following entries appear among the traits of most races',
+      );
+      expect(ruleText('rule:age')).toContain('expected lifespan');
+      expect(ruleText('rule:racial-traits-size')).toContain(
+        'Small characters have trouble wielding heavy weapons',
+      );
+      expect(ruleText('rule:subraces')).toContain('traits of the parent race');
+    });
+
+    it('emits armor and weapon guidance without table-cell leakage', () => {
+      expect(
+        rule('rule:getting-into-and-out-of-armor').provenance.locator,
+      ).toBe('p. 64');
+      expect(ruleText('rule:getting-into-and-out-of-armor')).toContain(
+        'reduce this time by half',
+      );
+      expect(ruleText('rule:weapons')).toContain(
+        'classified as either melee or ranged',
+      );
+      expect(rule('rule:weapons').name).toBe('Weapons Guidance');
+      expect(ruleText('rule:weapon-proficiency')).toContain(
+        'you do not add your proficiency bonus',
+      );
+      expect(ruleText('rule:weapon-properties')).toContain(
+        'Ammunition. You can use a weapon',
+      );
+      expect(ruleText('rule:improvised-weapons')).toContain(
+        'any object you can wield in one or two hands',
+      );
+      expect(ruleText('rule:silvered-weapons')).toContain(
+        'ten pieces of ammunition for 100 gp',
+      );
+      expect(ruleText('rule:special-weapons')).toContain(
+        'a net is restrained until it is freed',
+      );
+      for (const key of [
+        'rule:weapon-proficiency',
+        'rule:improvised-weapons',
+        'rule:special-weapons',
+      ]) {
+        const text = ruleText(key);
+        expect(text).not.toContain('Name Cost Damage Weight Properties');
+        expect(text).not.toContain('Disadvantage 45 lb.');
+        expect(text).not.toContain('Club 1 sp 1d4');
+      }
+    });
+
+    it('emits the bounded Self-Sufficiency sidebar from p73', () => {
+      const selfSufficiency = rule('rule:self-sufficiency');
+      expect(selfSufficiency.provenance.locator).toBe('p. 73');
+      const text = (selfSufficiency.data as { text: string }).text;
+      expect(text).toContain('doesn’t require you to spend any coin');
+      expect(text).toContain('equivalent of a comfortable lifestyle');
+      expect(text).not.toContain('Food, Drink, and Lodging');
     });
   });
 

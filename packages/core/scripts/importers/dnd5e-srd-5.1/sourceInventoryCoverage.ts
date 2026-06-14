@@ -651,25 +651,6 @@ const MAGIC_ITEM_TABLE_INVENTORY_RECORDS: ReadonlyArray<
   [252, 'd10 Purpose', 'table:sentient-magic-item-special-purpose'],
 ];
 
-/**
- * Unimported prose regions tracked by eshyra-4a7.10 (see that bead for the
- * region-by-region inventory). Grouped here so the predicates below stay
- * readable.
- */
-const RACES_INTRO_PROSE_HEADINGS: ReadonlySet<string> = new Set([
-  'Racial Traits', // p3 chapter intro explaining the trait categories below
-  'Ability Score Increase',
-  'Age',
-  'Subraces',
-]);
-const EQUIPMENT_PROSE_HEADINGS: ReadonlySet<string> = new Set([
-  'Getting Into and Out of Armor', // p64 prose (its Donning and Doffing table IS emitted — eshyra-4a7.3)
-  'Weapon Proficiency', // p64
-  'Weapon Properties', // p64-65 (defines the property tokens equipment records carry)
-  'Improvised Weapons', // p65
-  'Silvered Weapons', // p65
-  'Special Weapons', // p65
-]);
 const SENTIENT_MAGIC_ITEM_HEADINGS: ReadonlySet<string> = new Set([
   'Creating Sentient Magic Items', // p251-252 DM guidance after the A-Z items
   'Abilities',
@@ -695,6 +676,50 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   recordRule(
     'ancestry:lightfoot-halfling',
     (i) => i.section === 'Races' && i.text === 'Lightfoot',
+  ),
+  // Races p3 trait-category guidance (eshyra-4a7.10.1). Explicit mappings are
+  // required for Alignment / Size / Speed / Languages: name auto-match would
+  // otherwise claim these source headings for unrelated rules in later
+  // chapters instead of the parent-qualified racial-traits records.
+  recordRule(
+    'rule:racial-traits',
+    (i) => i.section === 'Races' && i.text === 'Racial Traits',
+  ),
+  recordRule(
+    'rule:ability-score-increase',
+    (i) => i.section === 'Races' && i.text === 'Ability Score Increase',
+  ),
+  recordRule('rule:age', (i) => i.section === 'Races' && i.text === 'Age'),
+  recordRule(
+    'rule:racial-traits-alignment',
+    (i) => i.section === 'Races' && i.text === 'Alignment',
+  ),
+  // The Monsters stat-block interpretation chapter has its own "Size"
+  // subsection. Once the racial-traits Size record exists, generic name
+  // auto-match would otherwise choose `rule:racial-traits-size` for both
+  // source headings. Keep the p254 Monsters heading on its original rule.
+  recordRule(
+    'rule:size',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.structure === 'heading' &&
+      i.text === 'Size',
+  ),
+  recordRule(
+    'rule:racial-traits-size',
+    (i) => i.section === 'Races' && i.text === 'Size',
+  ),
+  recordRule(
+    'rule:racial-traits-speed',
+    (i) => i.section === 'Races' && i.text === 'Speed',
+  ),
+  recordRule(
+    'rule:racial-traits-languages',
+    (i) => i.section === 'Races' && i.text === 'Languages',
+  ),
+  recordRule(
+    'rule:subraces',
+    (i) => i.section === 'Races' && i.text === 'Subraces',
   ),
   // The caption reads "Typical Difficulty Classes" in source; the emitted
   // table record is named "Difficulty Classes".
@@ -944,17 +969,50 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       (EQUIPMENT_ROWS_AS_RECORDS_CAPTIONS.has(i.text) ||
         i.structure === 'table-shape'),
   ),
+  // Equipment prose around the armor/weapon tables and the p73 sidebar
+  // (eshyra-4a7.10.1). The leaf-tier Donning/Weapons captions remain owned by
+  // table records; these predicates target only prose headings.
+  recordRule(
+    'rule:getting-into-and-out-of-armor',
+    (i) =>
+      i.section === 'Equipment' && i.text === 'Getting Into and Out of Armor',
+  ),
+  recordRule(
+    'rule:weapons',
+    (i) =>
+      i.section === 'Equipment' &&
+      i.structure === 'heading' &&
+      i.tier === 'subsection' &&
+      i.text === 'Weapons',
+  ),
+  recordRule(
+    'rule:weapon-proficiency',
+    (i) => i.section === 'Equipment' && i.text === 'Weapon Proficiency',
+  ),
+  recordRule(
+    'rule:weapon-properties',
+    (i) => i.section === 'Equipment' && i.text === 'Weapon Properties',
+  ),
+  recordRule(
+    'rule:improvised-weapons',
+    (i) => i.section === 'Equipment' && i.text === 'Improvised Weapons',
+  ),
+  recordRule(
+    'rule:silvered-weapons',
+    (i) => i.section === 'Equipment' && i.text === 'Silvered Weapons',
+  ),
+  recordRule(
+    'rule:special-weapons',
+    (i) => i.section === 'Equipment' && i.text === 'Special Weapons',
+  ),
+  recordRule(
+    'rule:self-sufficiency',
+    (i) => i.section === 'Equipment' && i.text === 'Self-Sufficiency',
+  ),
   // Unimported prose regions, tracked region-by-region in eshyra-4a7.10.
   knownGapRule(
     'eshyra-4a7.10',
     (i) =>
-      (i.section === 'Races' && RACES_INTRO_PROSE_HEADINGS.has(i.text)) ||
-      (i.section === 'Equipment' && EQUIPMENT_PROSE_HEADINGS.has(i.text)) ||
-      // The "Self-Sufficiency" downtime sidebar (p73): a prose callout box
-      // whose body renders at table-cell height, so the inventory classifies
-      // it as a table-caption; it belongs to the unimported-prose bead with
-      // the rest of the Expenses region.
-      (i.section === 'Equipment' && i.text === 'Self-Sufficiency') ||
       // Monsters-chapter creature-family lore headings (Angels … Zombies,
       // the ten per-color dragon group intros, Half-Dragon Template) plus the
       // two Half-Dragon Template tables (Color/Damage Resistance p320 and the

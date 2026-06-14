@@ -1,6 +1,6 @@
 {
   "summary": {
-    "record": 1923,
+    "record": 1934,
     "childOf": 99,
     "ignored": {
       "class-progression-table-internal": 9,
@@ -14,7 +14,7 @@
       "variant-rule-excluded": 2
     },
     "knownGap": {
-      "eshyra-4a7.10": 70
+      "eshyra-4a7.10": 59
     },
     "unaccounted": 0
   },
@@ -55,7 +55,8 @@
         "normalizedName": "alignment",
         "winnerKey": "rule:alignment",
         "shadowedKeys": [
-          "rule:monsters-alignment"
+          "rule:monsters-alignment",
+          "rule:racial-traits-alignment"
         ]
       },
       {
@@ -369,7 +370,8 @@
         "winnerKey": "rule:backgrounds-languages",
         "shadowedKeys": [
           "rule:languages",
-          "rule:monsters-languages"
+          "rule:monsters-languages",
+          "rule:racial-traits-languages"
         ]
       },
       {
@@ -515,6 +517,13 @@
         ]
       },
       {
+        "normalizedName": "size",
+        "winnerKey": "rule:racial-traits-size",
+        "shadowedKeys": [
+          "rule:size"
+        ]
+      },
+      {
         "normalizedName": "skills",
         "winnerKey": "rule:monsters-skills",
         "shadowedKeys": [
@@ -525,6 +534,7 @@
         "normalizedName": "speed",
         "winnerKey": "rule:monsters-speed",
         "shadowedKeys": [
+          "rule:racial-traits-speed",
           "rule:speed"
         ]
       },
@@ -724,7 +734,7 @@
       {
         "text": "Alignment",
         "resolvedKey": "rule:alignment",
-        "count": 4
+        "count": 3
       },
       {
         "text": "Armor Class",
@@ -744,7 +754,7 @@
       {
         "text": "Languages",
         "resolvedKey": "rule:backgrounds-languages",
-        "count": 4
+        "count": 3
       },
       {
         "text": "Proficiencies",
@@ -844,7 +854,7 @@
       {
         "text": "Speed",
         "resolvedKey": "rule:monsters-speed",
-        "count": 3
+        "count": 2
       },
       {
         "text": "Difficult Terrain",
@@ -864,11 +874,6 @@
       {
         "text": "Truesight",
         "resolvedKey": "rule:senses-truesight",
-        "count": 2
-      },
-      {
-        "text": "Size",
-        "resolvedKey": "rule:size",
         "count": 2
       },
       {
@@ -958,7 +963,7 @@
       "structure": "heading",
       "text": "Racial Traits",
       "section": "Races",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:racial-traits"
     },
     {
       "page": 3,
@@ -967,7 +972,7 @@
       "structure": "heading",
       "text": "Ability Score Increase",
       "section": "Races",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:ability-score-increase"
     },
     {
       "page": 3,
@@ -976,7 +981,7 @@
       "structure": "heading",
       "text": "Age",
       "section": "Races",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:age"
     },
     {
       "page": 3,
@@ -985,7 +990,7 @@
       "structure": "heading",
       "text": "Alignment",
       "section": "Races",
-      "status": "record:rule:alignment"
+      "status": "record:rule:racial-traits-alignment"
     },
     {
       "page": 3,
@@ -994,7 +999,7 @@
       "structure": "heading",
       "text": "Size",
       "section": "Races",
-      "status": "record:rule:size"
+      "status": "record:rule:racial-traits-size"
     },
     {
       "page": 3,
@@ -1003,7 +1008,7 @@
       "structure": "heading",
       "text": "Speed",
       "section": "Races",
-      "status": "record:rule:monsters-speed"
+      "status": "record:rule:racial-traits-speed"
     },
     {
       "page": 3,
@@ -1012,7 +1017,7 @@
       "structure": "heading",
       "text": "Languages",
       "section": "Races",
-      "status": "record:rule:backgrounds-languages"
+      "status": "record:rule:racial-traits-languages"
     },
     {
       "page": 3,
@@ -1021,7 +1026,7 @@
       "structure": "heading",
       "text": "Subraces",
       "section": "Races",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:subraces"
     },
     {
       "page": 3,
@@ -5296,7 +5301,7 @@
       "structure": "heading",
       "text": "Getting Into and Out of Armor",
       "section": "Equipment",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:getting-into-and-out-of-armor"
     },
     {
       "page": 64,
@@ -5323,7 +5328,7 @@
       "structure": "heading",
       "text": "Weapon Proficiency",
       "section": "Equipment",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:weapon-proficiency"
     },
     {
       "page": 64,
@@ -5341,7 +5346,7 @@
       "structure": "heading",
       "text": "Weapon Properties",
       "section": "Equipment",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:weapon-properties"
     },
     {
       "page": 65,
@@ -5350,7 +5355,7 @@
       "structure": "heading",
       "text": "Improvised Weapons",
       "section": "Equipment",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:improvised-weapons"
     },
     {
       "page": 65,
@@ -5368,7 +5373,7 @@
       "structure": "heading",
       "text": "Silvered Weapons",
       "section": "Equipment",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:silvered-weapons"
     },
     {
       "page": 65,
@@ -5377,7 +5382,7 @@
       "structure": "heading",
       "text": "Special Weapons",
       "section": "Equipment",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:special-weapons"
     },
     {
       "page": 66,
@@ -5539,7 +5544,7 @@
       "structure": "table-caption",
       "text": "Self-Sufficiency",
       "section": "Equipment",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "record:rule:self-sufficiency"
     },
     {
       "page": 73,

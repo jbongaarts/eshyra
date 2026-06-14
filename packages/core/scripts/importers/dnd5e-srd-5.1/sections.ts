@@ -235,6 +235,14 @@ export const SRD_5_1_DEFAULT_SECTION_ANCHORS = {
     requireEndHeading: true,
     matchHeadings: true,
   },
+  // Introductory race-trait category guidance on p3. The h≈13.9 start and
+  // h≈18 Dwarf boundary are below/at different extractor heading tiers, so
+  // match all exact lines inside the already source-specific full document.
+  racialTraits: {
+    startHeading: /^Racial Traits$/,
+    endHeading: /^Dwarf$/,
+    requireEndHeading: true,
+  },
   // SRD 5.1 base-classes span from "Barbarian" (first class chapter) to
   // "Beyond 1st Level" (the multiclassing / customization chapter that
   // immediately follows Wizard). The parser keys off each class's "Hit Dice:
@@ -432,6 +440,21 @@ export const SRD_5_1_DEFAULT_SECTION_ANCHORS = {
     startHeading: /^Equipment$/,
     endHeading:
       /^(Mounts and Vehicles|Trade Goods|Expenses|Trinkets|Multiclassing|Spellcasting|Using Ability Scores|Adventuring|Combat|Monsters|Magic Items|Feats)$/i,
+    requireEndHeading: true,
+    matchHeadings: true,
+  },
+  // Equipment prose around the armor and weapon reference tables (pp64-65).
+  // These are separate slices because the physical tables interrupt prose in
+  // extraction order; parseRules drops the reviewed table captions/rows and
+  // reattaches prose-height lines that resume below them.
+  armorGuidance: {
+    startHeading: /^Getting Into and Out of Armor$/,
+    endHeading: /^Weapons$/,
+    requireEndHeading: true,
+  },
+  weaponGuidance: {
+    startHeading: /^Weapons$/,
+    endHeading: /^Adventuring Gear$/,
     requireEndHeading: true,
     matchHeadings: true,
   },
@@ -649,10 +672,19 @@ export const SRD_5_1_DEFAULT_SECTION_ANCHORS = {
     requireEndHeading: true,
     matchHeadings: true,
   },
+  // The p73 gray sidebar renders its body at table-cell height, so it gets a
+  // dedicated bounded prose parser rather than running the whole Expenses
+  // slice through parseRules.
+  selfSufficiency: {
+    startHeading: /^Self-Sufficiency$/,
+    endHeading: /^Food, Drink, and Lodging$/,
+    requireEndHeading: true,
+  },
 } as const satisfies Record<string, SectionAnchorOptions>;
 
 export type Srd51SectionAnchors = {
   readonly races: SectionAnchorOptions;
+  readonly racialTraits: SectionAnchorOptions;
   readonly classes: SectionAnchorOptions;
   readonly coreRules: SectionAnchorOptions;
   readonly spellcastingRules: SectionAnchorOptions;
@@ -675,9 +707,12 @@ export type Srd51SectionAnchors = {
   readonly objects: SectionAnchorOptions;
   readonly hazards: SectionAnchorOptions;
   readonly equipment: SectionAnchorOptions;
+  readonly armorGuidance: SectionAnchorOptions;
+  readonly weaponGuidance: SectionAnchorOptions;
   readonly treasureTables: SectionAnchorOptions;
   readonly multiclassing: SectionAnchorOptions;
   readonly beyondFirstLevel: SectionAnchorOptions;
   readonly backgrounds: SectionAnchorOptions;
   readonly expenses: SectionAnchorOptions;
+  readonly selfSufficiency: SectionAnchorOptions;
 };

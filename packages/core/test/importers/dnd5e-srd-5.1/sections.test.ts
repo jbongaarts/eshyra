@@ -287,6 +287,32 @@ describe('SRD_5_1_DEFAULT_SECTION_ANCHORS — sanity', () => {
     expect(anchor.requireEndHeading).toBe(true);
   });
 
+  it('unrepresented-prose anchors tightly bound the racial and equipment guidance regions', () => {
+    const racialTraits = SRD_5_1_DEFAULT_SECTION_ANCHORS.racialTraits;
+    expect(racialTraits.startHeading.test('Racial Traits')).toBe(true);
+    expect(racialTraits.endHeading?.test('Dwarf')).toBe(true);
+    expect(racialTraits.requireEndHeading).toBe(true);
+
+    const armorGuidance = SRD_5_1_DEFAULT_SECTION_ANCHORS.armorGuidance;
+    expect(
+      armorGuidance.startHeading.test('Getting Into and Out of Armor'),
+    ).toBe(true);
+    expect(armorGuidance.endHeading?.test('Weapons')).toBe(true);
+    expect(armorGuidance.requireEndHeading).toBe(true);
+
+    const weaponGuidance = SRD_5_1_DEFAULT_SECTION_ANCHORS.weaponGuidance;
+    expect(weaponGuidance.startHeading.test('Weapons')).toBe(true);
+    expect(weaponGuidance.endHeading?.test('Adventuring Gear')).toBe(true);
+    expect(weaponGuidance.requireEndHeading).toBe(true);
+
+    const selfSufficiency = SRD_5_1_DEFAULT_SECTION_ANCHORS.selfSufficiency;
+    expect(selfSufficiency.startHeading.test('Self-Sufficiency')).toBe(true);
+    expect(selfSufficiency.endHeading?.test('Food, Drink, and Lodging')).toBe(
+      true,
+    );
+    expect(selfSufficiency.requireEndHeading).toBe(true);
+  });
+
   it('treasure-tables anchor matches "Treasure" and requires a magic-item boundary', () => {
     const anchor = SRD_5_1_DEFAULT_SECTION_ANCHORS.treasureTables;
     expect(anchor.startHeading.test('Treasure')).toBe(true);

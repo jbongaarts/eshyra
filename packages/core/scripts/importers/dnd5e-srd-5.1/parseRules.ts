@@ -31,6 +31,36 @@
 
 import type { PageText, RuleExtraction } from './types.js';
 
+/**
+ * Remove table-cell-height lines before parsing a prose-only bounded slice.
+ *
+ * This is intentionally opt-in. General rule slices contain legitimate gray
+ * sidebar prose at h≈8.9, but the Equipment guidance slices have no such body
+ * prose and are interrupted by armor/weapon table cells at that height.
+ */
+export function removeTableCellLines(
+  pages: readonly PageText[],
+): readonly PageText[] {
+  return pages
+    .map((page) => {
+      if (page.lineHeights === undefined) return page;
+      const lines: string[] = [];
+      const lineHeights: number[] = [];
+      for (let i = 0; i < page.lines.length; i++) {
+        const height = page.lineHeights[i];
+        if (height !== undefined && height < BODY_PROSE_MIN_H) continue;
+        lines.push(page.lines[i]);
+        if (height !== undefined) lineHeights.push(height);
+      }
+      return {
+        pageNumber: page.pageNumber,
+        lines,
+        lineHeights,
+      };
+    })
+    .filter((page) => page.lines.length > 0);
+}
+
 interface FlatLine {
   readonly line: string;
   readonly page: number;
@@ -286,7 +316,13 @@ const TABLE_CAPTION_LEAF_TITLES = new Set([
   'Hit Dice by Size',
   'Proficiency Bonus by Challenge Rating',
   'Experience Points by Challenge Rating',
+  // Equipment chapter (eshyra-4a7.10.1): these h≈12 captions are structured
+  // table records. The surrounding h≈13.9/h≈18 prose headings remain rules.
+  'Donning and Doffing Armor',
+  'Weapons',
 ]);
+
+const INLINE_PROSE_RESUMPTION_TABLE_CAPTIONS = new Set(['Weapons']);
 
 function isExcludedHeading(
   name: string,
@@ -368,7 +404,13 @@ function collectHeadingEntries(
           const prev = entries[entries.length - 1];
           entries[entries.length - 1] = {
             ...prev,
-            bodyLines: [...prev.bodyLines, '', ...resumingProse],
+            bodyLines: [
+              ...prev.bodyLines,
+              ...(INLINE_PROSE_RESUMPTION_TABLE_CAPTIONS.has(cur.line.trim())
+                ? []
+                : ['']),
+              ...resumingProse,
+            ],
           };
         }
       }
