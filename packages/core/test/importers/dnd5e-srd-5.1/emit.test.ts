@@ -555,6 +555,19 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
     expect(Object.keys(data)).not.toContain('conditionImmunities');
     expect(data.skills).toBe('Perception +3');
   });
+
+  it('emits source-derived creature family taxonomy when present', () => {
+    const angel: CreatureExtraction = {
+      ...ABOLETH,
+      name: 'Deva',
+      familyPath: ['Angels'],
+    };
+    const data = creatureExtractionsToRecords([angel])[0].data as Record<
+      string,
+      unknown
+    >;
+    expect(data.familyPath).toEqual(['Angels']);
+  });
 });
 
 describe('SRD_5_1_LICENSE — attribution text', () => {

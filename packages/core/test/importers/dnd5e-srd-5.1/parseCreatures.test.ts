@@ -18,6 +18,33 @@ function page(pageNumber: number, lines: string[]): PageText {
   return { pageNumber, lines };
 }
 
+function taxonomyPage(
+  pageNumber: number,
+  entries: readonly (readonly [string, number])[],
+): PageText {
+  return {
+    pageNumber,
+    lines: entries.map(([line]) => line),
+    lineHeights: entries.map(([, height]) => height),
+  };
+}
+
+function minimalStatBlock(
+  name: string,
+  meta = 'Medium celestial, lawful good',
+): readonly (readonly [string, number])[] {
+  return [
+    [name, 12],
+    [meta, 9.84],
+    ['Armor Class 10', 9.84],
+    ['Hit Points 10 (2d8 + 1)', 9.84],
+    ['Speed 30 ft.', 9.84],
+    ['STR DEX CON INT WIS CHA', 9.84],
+    ['10 (+0) 10 (+0) 10 (+0) 10 (+0) 10 (+0) 10 (+0)', 9.84],
+    ['Challenge 1 (200 XP)', 9.84],
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // SRD 5.1 representative stat blocks. Note the Unicode minus (−) in modifiers,
 // matching the real PDF; only the leading score is read by the parser.
@@ -211,6 +238,112 @@ describe('parseCreatures — category tag', () => {
     expect(captain.hitPoints).toBe(65);
     expect(captain.challengeRating).toBe('2');
     expect(captain.abilityScores.charisma).toBe(14);
+  });
+});
+
+describe('parseCreatures — source-derived family taxonomy', () => {
+  it('assigns an ordinary family heading to every bounded member', () => {
+    const creatures = parseCreatures([
+      taxonomyPage(261, [
+        ['Angels', 13.92],
+        ...minimalStatBlock('Deva'),
+        ...minimalStatBlock('Planetar'),
+        ...minimalStatBlock('Solar'),
+        ...minimalStatBlock('Ankheg', 'Large monstrosity, unaligned'),
+      ]),
+    ]);
+
+    expect(
+      creatures
+        .filter((creature) =>
+          ['Deva', 'Planetar', 'Solar'].includes(creature.name),
+        )
+        .map((creature) => creature.familyPath),
+    ).toEqual([['Angels'], ['Angels'], ['Angels']]);
+    expect(
+      creatures.find((creature) => creature.name === 'Ankheg'),
+    ).not.toHaveProperty('familyPath');
+  });
+
+  it('bounds Animated Objects before the following standalone creature', () => {
+    const creatures = parseCreatures([
+      taxonomyPage(263, [
+        ['Animated Objects', 13.92],
+        ...minimalStatBlock('Animated Armor', 'Medium construct, unaligned'),
+        ...minimalStatBlock('Flying Sword', 'Small construct, unaligned'),
+        ...minimalStatBlock('Rug of Smothering', 'Large construct, unaligned'),
+        ...minimalStatBlock('Ankheg', 'Large monstrosity, unaligned'),
+      ]),
+    ]);
+
+    expect(
+      creatures.find((creature) => creature.name === 'Rug of Smothering')
+        ?.familyPath,
+    ).toEqual(['Animated Objects']);
+    expect(
+      creatures.find((creature) => creature.name === 'Ankheg'),
+    ).not.toHaveProperty('familyPath');
+  });
+
+  it('preserves chromatic and color nesting without treating age names as taxonomy', () => {
+    const creatures = parseCreatures([
+      taxonomyPage(280, [
+        ['Dragons, Chromatic', 13.92],
+        ['Black Dragon', 12],
+        ...minimalStatBlock(
+          'Ancient Black Dragon',
+          'Gargantuan dragon, chaotic evil',
+        ),
+        ...minimalStatBlock('Adult Black Dragon', 'Huge dragon, chaotic evil'),
+        ...minimalStatBlock('Young Black Dragon', 'Large dragon, chaotic evil'),
+        ...minimalStatBlock(
+          'Black Dragon Wyrmling',
+          'Medium dragon, chaotic evil',
+        ),
+        ...minimalStatBlock('Dragon Turtle', 'Gargantuan dragon, neutral'),
+      ]),
+    ]);
+
+    expect(
+      creatures.find((creature) => creature.name === 'Ancient Black Dragon')
+        ?.familyPath,
+    ).toEqual(['Dragons', 'Chromatic Dragons', 'Black Dragons']);
+    expect(
+      creatures.find((creature) => creature.name === 'Black Dragon Wyrmling')
+        ?.familyPath,
+    ).toEqual(['Dragons', 'Chromatic Dragons', 'Black Dragons']);
+    expect(
+      creatures.find((creature) => creature.name === 'Dragon Turtle'),
+    ).not.toHaveProperty('familyPath');
+  });
+
+  it('assigns a late Monsters family and stops at its reviewed last member', () => {
+    const creatures = parseCreatures([
+      taxonomyPage(352, [
+        ['Vampires', 13.92],
+        ...minimalStatBlock(
+          'Vampire',
+          'Medium undead (shapechanger), lawful evil',
+        ),
+        ...minimalStatBlock('Vampire Spawn', 'Medium undead, neutral evil'),
+        ...minimalStatBlock('Wight', 'Medium undead, neutral evil'),
+      ]),
+      taxonomyPage(356, [
+        ['Zombies', 13.92],
+        ...minimalStatBlock('Zombie', 'Medium undead, neutral evil'),
+        ...minimalStatBlock('Ogre Zombie', 'Large undead, neutral evil'),
+      ]),
+    ]);
+
+    expect(
+      creatures.find((creature) => creature.name === 'Vampire')?.familyPath,
+    ).toEqual(['Vampires']);
+    expect(
+      creatures.find((creature) => creature.name === 'Wight'),
+    ).not.toHaveProperty('familyPath');
+    expect(
+      creatures.find((creature) => creature.name === 'Ogre Zombie')?.familyPath,
+    ).toEqual(['Zombies']);
   });
 });
 

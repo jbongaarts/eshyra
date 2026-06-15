@@ -29,6 +29,7 @@
  *     than emit a record that can't satisfy the kindSchema.
  */
 
+import { creatureTaxonomySpecForLine } from './creatureTaxonomy.js';
 import { classifyTier } from './sourceInventory.js';
 import type {
   CreatureAbilityScores,
@@ -830,8 +831,25 @@ export function parseCreatures(
   // Second pass: each candidate's body runs from its meta line to the next
   // candidate's name (exclusive), or to EOF for the last candidate.
   const out: CreatureExtraction[] = [];
+  let taxonomyCursor = 0;
+  let activeTaxonomy:
+    | ReturnType<typeof creatureTaxonomySpecForLine>
+    | undefined;
   for (let i = 0; i < candidates.length; i++) {
     const candidate = candidates[i];
+    for (let j = taxonomyCursor; j < candidate.nameIdx; j++) {
+      const entry = flat[j];
+      const taxonomy = creatureTaxonomySpecForLine(entry.line, entry.height);
+      if (taxonomy !== undefined) {
+        activeTaxonomy = taxonomy;
+      } else if (
+        entry.line.trim() === 'Half-Dragon Template' &&
+        classifyTier(entry.height) === 'subsection'
+      ) {
+        activeTaxonomy = undefined;
+      }
+    }
+    taxonomyCursor = candidate.nameIdx + 1;
     const next = candidates[i + 1];
     const nextCandidateIdx = next?.nameIdx ?? flat.length;
     const templateBoundaryIdx = flat.findIndex(
@@ -875,6 +893,9 @@ export function parseCreatures(
     out.push({
       name: candidate.name,
       category,
+      ...(activeTaxonomy === undefined
+        ? {}
+        : { familyPath: [...activeTaxonomy.familyPath] }),
       size: candidate.meta.size,
       type: candidate.meta.type,
       alignment: candidate.meta.alignment,
@@ -887,6 +908,9 @@ export function parseCreatures(
       ...narrative,
       sourcePage,
     });
+    if (candidate.name === activeTaxonomy?.endCreature) {
+      activeTaxonomy = undefined;
+    }
   }
 
   // Attach variant sidebars to the creatures they modify (eshyra-70xr). A

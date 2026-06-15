@@ -21,6 +21,7 @@ import {
   recordRule,
   SourceInventoryCoverageError,
   SRD_5_1_COVERAGE_RULES,
+  taxonomyRule,
 } from '../../../scripts/importers/dnd5e-srd-5.1/sourceInventoryCoverage.js';
 
 function item(overrides: Partial<SourceInventoryItem>): SourceInventoryItem {
@@ -195,6 +196,43 @@ describe('evaluateSourceCoverage — rules and defaults', () => {
       { kind: 'known-gap', beadId: 'eshyra-4a7.8' },
       { kind: 'child-of', key: 'magic-item:ring-of-resistance' },
     ]);
+  });
+
+  it('accounts for a heading only when emitted creatures carry its taxonomy path', () => {
+    const angels = item({
+      page: 261,
+      text: 'Angels',
+      tier: 'subsection',
+      section: 'Monsters',
+    });
+    const rule = taxonomyRule(
+      ['Angels'],
+      (candidate) => candidate.text === 'Angels',
+    );
+    const covered = evaluateSourceCoverage(
+      [angels],
+      [
+        {
+          kind: 'creature',
+          key: 'creature:deva',
+          name: 'Deva',
+          data: { familyPath: ['Angels'] },
+        },
+      ],
+      [rule],
+    );
+    expect(covered[0].status).toEqual({
+      kind: 'taxonomy',
+      field: 'creature.familyPath',
+      path: ['Angels'],
+    });
+
+    const missing = evaluateSourceCoverage(
+      [angels],
+      [{ kind: 'creature', key: 'creature:deva', name: 'Deva', data: {} }],
+      [rule],
+    );
+    expect(missing[0].status).toEqual({ kind: 'unaccounted' });
   });
 
   it('auto-ignores chapter and section tiers as document structure when unmatched', () => {
@@ -502,6 +540,13 @@ describe('coverage report serialization', () => {
       formatCoverageStatus({ kind: 'child-of', key: 'background:acolyte' }),
     ).toBe('child-of:background:acolyte');
     expect(
+      formatCoverageStatus({
+        kind: 'taxonomy',
+        field: 'creature.familyPath',
+        path: ['Dragons', 'Chromatic Dragons'],
+      }),
+    ).toBe('taxonomy:creature.familyPath:Dragons > Chromatic Dragons');
+    expect(
       formatCoverageStatus({ kind: 'ignored', reason: 'front-matter' }),
     ).toBe('ignored:front-matter');
     expect(
@@ -529,6 +574,7 @@ describe('coverage report serialization', () => {
     expect(report.summary).toEqual({
       record: 1,
       childOf: 0,
+      taxonomy: 0,
       ignored: { 'spell-list-header': 2 },
       knownGap: { 'eshyra-4a7.8': 1 },
       unaccounted: 1,

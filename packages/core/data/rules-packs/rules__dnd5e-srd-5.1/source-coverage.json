@@ -2,6 +2,7 @@
   "summary": {
     "record": 1960,
     "childOf": 99,
+    "taxonomy": 33,
     "ignored": {
       "class-progression-table-internal": 9,
       "deity-table-column-header": 1,
@@ -14,9 +15,7 @@
       "table-rows-emitted-as-records": 18,
       "variant-rule-excluded": 2
     },
-    "knownGap": {
-      "eshyra-4a7.10": 33
-    },
+    "knownGap": {},
     "unaccounted": 0
   },
   "ambiguous": {
@@ -14357,7 +14356,7 @@
       "structure": "heading",
       "text": "Angels",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Angels"
     },
     {
       "page": 261,
@@ -14429,7 +14428,7 @@
       "structure": "heading",
       "text": "Animated Objects",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Animated Objects"
     },
     {
       "page": 263,
@@ -14753,7 +14752,7 @@
       "structure": "heading",
       "text": "Demons",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Demons"
     },
     {
       "page": 270,
@@ -14915,7 +14914,7 @@
       "structure": "heading",
       "text": "Devils",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Devils"
     },
     {
       "page": 274,
@@ -15122,7 +15121,7 @@
       "structure": "heading",
       "text": "Dinosaurs",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dinosaurs"
     },
     {
       "page": 279,
@@ -15203,7 +15202,7 @@
       "structure": "heading",
       "text": "Dragons, Chromatic",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Chromatic Dragons"
     },
     {
       "page": 280,
@@ -15212,7 +15211,7 @@
       "structure": "heading",
       "text": "Black Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Chromatic Dragons > Black Dragons"
     },
     {
       "page": 280,
@@ -15311,7 +15310,7 @@
       "structure": "heading",
       "text": "Blue Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Chromatic Dragons > Blue Dragons"
     },
     {
       "page": 282,
@@ -15410,7 +15409,7 @@
       "structure": "heading",
       "text": "Green Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Chromatic Dragons > Green Dragons"
     },
     {
       "page": 284,
@@ -15509,7 +15508,7 @@
       "structure": "heading",
       "text": "Red Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Chromatic Dragons > Red Dragons"
     },
     {
       "page": 286,
@@ -15608,7 +15607,7 @@
       "structure": "heading",
       "text": "White Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Chromatic Dragons > White Dragons"
     },
     {
       "page": 288,
@@ -15707,7 +15706,7 @@
       "structure": "heading",
       "text": "Dragons, Metallic",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Metallic Dragons"
     },
     {
       "page": 290,
@@ -15716,7 +15715,7 @@
       "structure": "heading",
       "text": "Brass Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Metallic Dragons > Brass Dragons"
     },
     {
       "page": 290,
@@ -15815,7 +15814,7 @@
       "structure": "heading",
       "text": "Bronze Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Metallic Dragons > Bronze Dragons"
     },
     {
       "page": 293,
@@ -15914,7 +15913,7 @@
       "structure": "heading",
       "text": "Copper Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Metallic Dragons > Copper Dragons"
     },
     {
       "page": 295,
@@ -16013,7 +16012,7 @@
       "structure": "heading",
       "text": "Gold Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Metallic Dragons > Gold Dragons"
     },
     {
       "page": 298,
@@ -16112,7 +16111,7 @@
       "structure": "heading",
       "text": "Silver Dragon",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Dragons > Metallic Dragons > Silver Dragons"
     },
     {
       "page": 301,
@@ -16292,7 +16291,7 @@
       "structure": "heading",
       "text": "Elementals",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Elementals"
     },
     {
       "page": 305,
@@ -16436,7 +16435,7 @@
       "structure": "heading",
       "text": "Fungi",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Fungi"
     },
     {
       "page": 309,
@@ -16508,7 +16507,7 @@
       "structure": "heading",
       "text": "Genies",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Genies"
     },
     {
       "page": 310,
@@ -16571,7 +16570,7 @@
       "structure": "heading",
       "text": "Ghouls",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Ghouls"
     },
     {
       "page": 311,
@@ -16616,7 +16615,7 @@
       "structure": "heading",
       "text": "Giants",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Giants"
     },
     {
       "page": 312,
@@ -16814,7 +16813,7 @@
       "structure": "heading",
       "text": "Golems",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Golems"
     },
     {
       "page": 315,
@@ -16976,7 +16975,7 @@
       "structure": "heading",
       "text": "Hags",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Hags"
     },
     {
       "page": 319,
@@ -17345,7 +17344,7 @@
       "structure": "heading",
       "text": "Lycanthropes",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Lycanthropes"
     },
     {
       "page": 326,
@@ -17507,7 +17506,7 @@
       "structure": "heading",
       "text": "Mephits",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Mephits"
     },
     {
       "page": 330,
@@ -17660,7 +17659,7 @@
       "structure": "heading",
       "text": "Mummies",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Mummies"
     },
     {
       "page": 333,
@@ -17723,7 +17722,7 @@
       "structure": "heading",
       "text": "Nagas",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Nagas"
     },
     {
       "page": 335,
@@ -17831,7 +17830,7 @@
       "structure": "heading",
       "text": "Oozes",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Oozes"
     },
     {
       "page": 337,
@@ -18272,7 +18271,7 @@
       "structure": "heading",
       "text": "Skeletons",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Skeletons"
     },
     {
       "page": 346,
@@ -18353,7 +18352,7 @@
       "structure": "heading",
       "text": "Sphinxes",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Sphinxes"
     },
     {
       "page": 347,
@@ -18587,7 +18586,7 @@
       "structure": "heading",
       "text": "Vampires",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Vampires"
     },
     {
       "page": 352,
@@ -18758,7 +18757,7 @@
       "structure": "heading",
       "text": "Zombies",
       "section": "Monsters",
-      "status": "known-gap:eshyra-4a7.10"
+      "status": "taxonomy:creature.familyPath:Zombies"
     },
     {
       "page": 356,

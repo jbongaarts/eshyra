@@ -64,6 +64,7 @@ interface CoverageReport {
   readonly summary: {
     readonly record: number;
     readonly childOf: number;
+    readonly taxonomy: number;
     readonly ignored: Readonly<Record<string, number>>;
     readonly knownGap: Readonly<Record<string, number>>;
     readonly unaccounted: number;
@@ -120,6 +121,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     const counted =
       coverage.summary.record +
       coverage.summary.childOf +
+      coverage.summary.taxonomy +
       coverage.summary.unaccounted +
       Object.values(coverage.summary.ignored).reduce((a, b) => a + b, 0) +
       Object.values(coverage.summary.knownGap).reduce((a, b) => a + b, 0);
@@ -197,6 +199,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // 98 -> 99 (eshyra-citg): "Tenets of Devotion" heading now maps child-of
     // subclass:oath-of-devotion (its prose is a named section on that record).
     expect(coverage.summary.childOf).toBe(99);
+    expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.unaccounted).toBe(0);
     // eshyra-4a7.6 (PR2) added two class-chapter ignore reasons: the 9 class
     // progression-table column-header fragments (table internals) and the 2
@@ -234,13 +237,37 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // deity-table column header moved out of known-gap (16 to records, 1 to the
     // deity-table-column-header ignore), leaving only the Monsters-chapter
     // creature-family lore headings (50 -> 33).
-    expect(coverage.summary.knownGap).toEqual({
-      'eshyra-4a7.10': 33,
-    });
+    expect(coverage.summary.knownGap).toEqual({});
   });
 });
 
 describe('committed SRD source-coverage artifacts — known-gap sentinels', () => {
+  it('accounts for all 33 Monsters family headings as creature taxonomy', () => {
+    const taxonomyEntries = coverage.entries.filter(
+      (entry) =>
+        entry.section === 'Monsters' &&
+        entry.status.startsWith('taxonomy:creature.familyPath:'),
+    );
+    expect(taxonomyEntries).toHaveLength(33);
+    expect(entryFor(261, 'Angels').status).toBe(
+      'taxonomy:creature.familyPath:Angels',
+    );
+    expect(entryFor(280, 'Dragons, Chromatic').status).toBe(
+      'taxonomy:creature.familyPath:Dragons > Chromatic Dragons',
+    );
+    expect(entryFor(280, 'Black Dragon').status).toBe(
+      'taxonomy:creature.familyPath:Dragons > Chromatic Dragons > Black Dragons',
+    );
+    expect(entryFor(356, 'Zombies').status).toBe(
+      'taxonomy:creature.familyPath:Zombies',
+    );
+    expect(
+      coverage.entries.some(
+        (entry) => entry.status === 'known-gap:eshyra-4a7.10',
+      ),
+    ).toBe(false);
+  });
+
   it('Figurine of Wondrous Power (p221) is emitted as a magic-item record', () => {
     const entry = entryFor(221, 'Figurine of Wondrous Power');
     expect(entry.status).toBe('record:magic-item:figurine-of-wondrous-power');

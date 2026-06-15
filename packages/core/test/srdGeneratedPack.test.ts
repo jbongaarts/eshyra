@@ -370,8 +370,11 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
  *     races-with-subraces carry `subraces`.
  *   - creature.category: only the 21 Appendix MM-B NPC stat blocks carry
  *     `category: 'npc'`; the 296 Monsters/Appendix MM-A creatures omit it (its
- *     absence means "monster") so they stay byte-identical to the pre-NPC pack
- *     (loreweaver-bn0).
+ *     absence means "monster"; loreweaver-bn0).
+ *   - creature.familyPath: the 116 main-chapter creatures under the 33
+ *     heading-only taxonomy labels carry source-derived family paths;
+ *     standalone monsters, Appendix MM-A creatures, and MM-B NPCs omit it
+ *     (eshyra-4a7.10.2).
  *   - creature.{conditionImmunities,damageImmunities,damageResistances,
  *     damageVulnerabilities,savingThrows,skills}: optional keyed stat-block
  *     fields emitted only when the SRD prints that label for the creature
@@ -462,6 +465,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // `condition` because auditPack sorts the summary by kind:
   //   - category: only the 21 Appendix MM-B NPCs carry data.category='npc';
   //     monsters omit it (loreweaver-bn0).
+  //   - familyPath: 116 main Monsters-chapter records are members of the 33
+  //     source heading-only family/group labels (eshyra-4a7.10.2).
   //   - keyed defensive/sense fields (eshyra-ez6v): emitted only when the SRD
   //     prints that label. `senses`/`languages` are NOT listed — every one of the
   //     317 stat blocks prints them (missingCount 0).
@@ -492,6 +497,12 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     kind: 'creature',
     field: 'damageVulnerabilities',
     missingCount: 302,
+    totalInKind: 317,
+  },
+  {
+    kind: 'creature',
+    field: 'familyPath',
+    missingCount: 201,
     totalInKind: 317,
   },
   {
@@ -2423,6 +2434,64 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Gargantuan', 'As an adult dragon', 'Challenge 8 or higher'],
         ],
       });
+    });
+  });
+
+  describe('Monsters family taxonomy (eshyra-4a7.10.2)', () => {
+    function familyPath(key: string): readonly string[] | undefined {
+      const record = pack.records.find((candidate) => candidate.key === key);
+      return (record?.data as { familyPath?: readonly string[] }).familyPath;
+    }
+
+    it('emits ordinary, multi-member, nested-dragon, and late family paths', () => {
+      expect(familyPath('creature:deva')).toEqual(['Angels']);
+      expect(familyPath('creature:rug-of-smothering')).toEqual([
+        'Animated Objects',
+      ]);
+      expect(familyPath('creature:ancient-black-dragon')).toEqual([
+        'Dragons',
+        'Chromatic Dragons',
+        'Black Dragons',
+      ]);
+      expect(familyPath('creature:ancient-silver-dragon')).toEqual([
+        'Dragons',
+        'Metallic Dragons',
+        'Silver Dragons',
+      ]);
+      expect(familyPath('creature:vampire-spawn')).toEqual(['Vampires']);
+      expect(familyPath('creature:ogre-zombie')).toEqual(['Zombies']);
+      expect(
+        pack.records.filter(
+          (record) =>
+            record.kind === 'creature' &&
+            (record.data as { familyPath?: unknown }).familyPath !== undefined,
+        ),
+      ).toHaveLength(116);
+    });
+
+    it('does not leak family paths onto adjacent standalone or appendix creatures', () => {
+      expect(familyPath('creature:ankheg')).toBeUndefined();
+      expect(familyPath('creature:dragon-turtle')).toBeUndefined();
+      expect(familyPath('creature:wight')).toBeUndefined();
+      expect(familyPath('creature:ape')).toBeUndefined();
+    });
+
+    it('does not emit empty rules for taxonomy headings', () => {
+      const ruleNames = new Set(
+        pack.records
+          .filter((record) => record.kind === 'rule')
+          .map((record) => record.name),
+      );
+      for (const heading of [
+        'Angels',
+        'Animated Objects',
+        'Dragons, Chromatic',
+        'Black Dragon',
+        'Vampires',
+        'Zombies',
+      ]) {
+        expect(ruleNames.has(heading), heading).toBe(false);
+      }
     });
   });
 

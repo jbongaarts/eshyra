@@ -306,6 +306,30 @@ describe('rules pack validation', () => {
     expect(() => validateRulesPack(pack)).toThrow(/abilityScores\.strength/);
   });
 
+  it('accepts a non-empty source-derived creature family path', () => {
+    const pack = validRulesPack({
+      records: [
+        record('creature:deva', {
+          data: { ...creatureData(), familyPath: ['Angels'] },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).not.toThrow();
+  });
+
+  it('rejects an empty or malformed creature family path', () => {
+    for (const familyPath of [[], ['Angels', '']] as const) {
+      const pack = validRulesPack({
+        records: [
+          record('creature:deva', {
+            data: { ...creatureData(), familyPath },
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).toThrow(/data\.familyPath/);
+    }
+  });
+
   it('rejects dnd5e spell records missing the level field', () => {
     const pack = validRulesPack({
       records: [

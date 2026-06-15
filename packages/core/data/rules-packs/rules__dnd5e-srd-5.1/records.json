@@ -7231,6 +7231,11 @@
     "key": "creature:adult-black-dragon",
     "name": "Adult Black Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Black Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -7337,6 +7342,11 @@
     "key": "creature:adult-blue-dragon",
     "name": "Adult Blue Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Blue Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -7439,6 +7449,11 @@
     "key": "creature:adult-brass-dragon",
     "name": "Adult Brass Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Brass Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -7549,6 +7564,11 @@
     "key": "creature:adult-bronze-dragon",
     "name": "Adult Bronze Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Bronze Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful good",
@@ -7667,6 +7687,11 @@
     "key": "creature:adult-copper-dragon",
     "name": "Adult Copper Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Copper Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -7777,6 +7802,11 @@
     "key": "creature:adult-gold-dragon",
     "name": "Adult Gold Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Gold Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful good",
@@ -7895,6 +7925,11 @@
     "key": "creature:adult-green-dragon",
     "name": "Adult Green Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Green Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -8002,6 +8037,11 @@
     "key": "creature:adult-red-dragon",
     "name": "Adult Red Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Red Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -8104,6 +8144,11 @@
     "key": "creature:adult-silver-dragon",
     "name": "Adult Silver Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Silver Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful good",
@@ -8217,6 +8262,11 @@
     "key": "creature:adult-white-dragon",
     "name": "Adult White Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "White Dragons"
+      ],
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -8324,6 +8374,9 @@
     "key": "creature:air-elemental",
     "name": "Air Elemental",
     "data": {
+      "familyPath": [
+        "Elementals"
+      ],
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
@@ -8396,6 +8449,11 @@
     "key": "creature:ancient-black-dragon",
     "name": "Ancient Black Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Black Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -8502,6 +8560,11 @@
     "key": "creature:ancient-blue-dragon",
     "name": "Ancient Blue Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Blue Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -8604,6 +8667,11 @@
     "key": "creature:ancient-brass-dragon",
     "name": "Ancient Brass Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Brass Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -8718,6 +8786,11 @@
     "key": "creature:ancient-bronze-dragon",
     "name": "Ancient Bronze Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Bronze Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful good",
@@ -8836,6 +8909,11 @@
     "key": "creature:ancient-copper-dragon",
     "name": "Ancient Copper Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Copper Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -8950,6 +9028,11 @@
     "key": "creature:ancient-gold-dragon",
     "name": "Ancient Gold Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Gold Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful good",
@@ -9068,6 +9151,11 @@
     "key": "creature:ancient-green-dragon",
     "name": "Ancient Green Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Green Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -9175,6 +9263,11 @@
     "key": "creature:ancient-red-dragon",
     "name": "Ancient Red Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Red Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -9277,6 +9370,11 @@
     "key": "creature:ancient-silver-dragon",
     "name": "Ancient Silver Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Silver Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful good",
@@ -9390,6 +9488,11 @@
     "key": "creature:ancient-white-dragon",
     "name": "Ancient White Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "White Dragons"
+      ],
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -9497,6 +9600,9 @@
     "key": "creature:androsphinx",
     "name": "Androsphinx",
     "data": {
+      "familyPath": [
+        "Sphinxes"
+      ],
       "size": "Large",
       "type": "monstrosity",
       "alignment": "lawful neutral",
@@ -9607,6 +9713,9 @@
     "key": "creature:animated-armor",
     "name": "Animated Armor",
     "data": {
+      "familyPath": [
+        "Animated Objects"
+      ],
       "size": "Medium",
       "type": "construct",
       "alignment": "unaligned",
@@ -10319,6 +10428,9 @@
     "key": "creature:balor",
     "name": "Balor",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Huge",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
@@ -10538,6 +10650,9 @@
     "key": "creature:barbed-devil",
     "name": "Barbed Devil",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -10748,6 +10863,9 @@
     "key": "creature:bearded-devil",
     "name": "Bearded Devil",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -11032,6 +11150,11 @@
     "key": "creature:black-dragon-wyrmling",
     "name": "Black Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Black Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -11101,6 +11224,9 @@
     "key": "creature:black-pudding",
     "name": "Black Pudding",
     "data": {
+      "familyPath": [
+        "Oozes"
+      ],
       "size": "Large",
       "type": "ooze",
       "alignment": "unaligned",
@@ -11309,6 +11435,11 @@
     "key": "creature:blue-dragon-wyrmling",
     "name": "Blue Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Blue Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -11436,6 +11567,9 @@
     "key": "creature:bone-devil",
     "name": "Bone Devil",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -11514,6 +11648,11 @@
     "key": "creature:brass-dragon-wyrmling",
     "name": "Brass Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Brass Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -11585,6 +11724,11 @@
     "key": "creature:bronze-dragon-wyrmling",
     "name": "Bronze Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Bronze Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful good",
@@ -12056,6 +12200,9 @@
     "key": "creature:chain-devil",
     "name": "Chain Devil",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -12282,6 +12429,9 @@
     "key": "creature:clay-golem",
     "name": "Clay Golem",
     "data": {
+      "familyPath": [
+        "Golems"
+      ],
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
@@ -12450,6 +12600,9 @@
     "key": "creature:cloud-giant",
     "name": "Cloud Giant",
     "data": {
+      "familyPath": [
+        "Giants"
+      ],
       "size": "Huge",
       "type": "giant",
       "alignment": "neutral good (50%) or neutral evil (50%)",
@@ -12693,6 +12846,11 @@
     "key": "creature:copper-dragon-wyrmling",
     "name": "Copper Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Copper Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -13289,6 +13447,9 @@
     "key": "creature:deva",
     "name": "Deva",
     "data": {
+      "familyPath": [
+        "Angels"
+      ],
       "size": "Medium",
       "type": "celestial",
       "alignment": "lawful good",
@@ -13439,6 +13600,9 @@
     "key": "creature:djinni",
     "name": "Djinni",
     "data": {
+      "familyPath": [
+        "Genies"
+      ],
       "size": "Large",
       "type": "elemental",
       "alignment": "chaotic good",
@@ -13725,6 +13889,9 @@
     "key": "creature:dretch",
     "name": "Dretch",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Small",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
@@ -14100,6 +14267,9 @@
     "key": "creature:dust-mephit",
     "name": "Dust Mephit",
     "data": {
+      "familyPath": [
+        "Mephits"
+      ],
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
@@ -14235,6 +14405,9 @@
     "key": "creature:earth-elemental",
     "name": "Earth Elemental",
     "data": {
+      "familyPath": [
+        "Elementals"
+      ],
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
@@ -14308,6 +14481,9 @@
     "key": "creature:efreeti",
     "name": "Efreeti",
     "data": {
+      "familyPath": [
+        "Genies"
+      ],
       "size": "Large",
       "type": "elemental",
       "alignment": "lawful evil",
@@ -14584,6 +14760,9 @@
     "key": "creature:erinyes",
     "name": "Erinyes",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -14822,6 +15001,9 @@
     "key": "creature:fire-elemental",
     "name": "Fire Elemental",
     "data": {
+      "familyPath": [
+        "Elementals"
+      ],
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
@@ -14897,6 +15079,9 @@
     "key": "creature:fire-giant",
     "name": "Fire Giant",
     "data": {
+      "familyPath": [
+        "Giants"
+      ],
       "size": "Huge",
       "type": "giant",
       "alignment": "lawful evil",
@@ -14962,6 +15147,9 @@
     "key": "creature:flesh-golem",
     "name": "Flesh Golem",
     "data": {
+      "familyPath": [
+        "Golems"
+      ],
       "size": "Medium",
       "type": "construct",
       "alignment": "neutral",
@@ -15110,6 +15298,9 @@
     "key": "creature:flying-sword",
     "name": "Flying Sword",
     "data": {
+      "familyPath": [
+        "Animated Objects"
+      ],
       "size": "Small",
       "type": "construct",
       "alignment": "unaligned",
@@ -15238,6 +15429,9 @@
     "key": "creature:frost-giant",
     "name": "Frost Giant",
     "data": {
+      "familyPath": [
+        "Giants"
+      ],
       "size": "Huge",
       "type": "giant",
       "alignment": "neutral evil",
@@ -15375,6 +15569,9 @@
     "key": "creature:gelatinous-cube",
     "name": "Gelatinous Cube",
     "data": {
+      "familyPath": [
+        "Oozes"
+      ],
       "size": "Large",
       "type": "ooze",
       "alignment": "unaligned",
@@ -15444,6 +15641,9 @@
     "key": "creature:ghast",
     "name": "Ghast",
     "data": {
+      "familyPath": [
+        "Ghouls"
+      ],
       "size": "Medium",
       "type": "undead",
       "alignment": "chaotic evil",
@@ -15595,6 +15795,9 @@
     "key": "creature:ghoul",
     "name": "Ghoul",
     "data": {
+      "familyPath": [
+        "Ghouls"
+      ],
       "size": "Medium",
       "type": "undead",
       "alignment": "chaotic evil",
@@ -17545,6 +17748,9 @@
     "key": "creature:glabrezu",
     "name": "Glabrezu",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
@@ -17972,6 +18178,11 @@
     "key": "creature:gold-dragon-wyrmling",
     "name": "Gold Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Gold Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful good",
@@ -18119,6 +18330,9 @@
     "key": "creature:gray-ooze",
     "name": "Gray Ooze",
     "data": {
+      "familyPath": [
+        "Oozes"
+      ],
       "size": "Medium",
       "type": "ooze",
       "alignment": "unaligned",
@@ -18191,6 +18405,11 @@
     "key": "creature:green-dragon-wyrmling",
     "name": "Green Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Green Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -18261,6 +18480,9 @@
     "key": "creature:green-hag",
     "name": "Green Hag",
     "data": {
+      "familyPath": [
+        "Hags"
+      ],
       "size": "Medium",
       "type": "fey",
       "alignment": "neutral evil",
@@ -18604,6 +18826,9 @@
     "key": "creature:guardian-naga",
     "name": "Guardian Naga",
     "data": {
+      "familyPath": [
+        "Nagas"
+      ],
       "size": "Large",
       "type": "monstrosity",
       "alignment": "lawful good",
@@ -18675,6 +18900,9 @@
     "key": "creature:gynosphinx",
     "name": "Gynosphinx",
     "data": {
+      "familyPath": [
+        "Sphinxes"
+      ],
       "size": "Large",
       "type": "monstrosity",
       "alignment": "lawful neutral",
@@ -19040,6 +19268,9 @@
     "key": "creature:hezrou",
     "name": "Hezrou",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
@@ -19116,6 +19347,9 @@
     "key": "creature:hill-giant",
     "name": "Hill Giant",
     "data": {
+      "familyPath": [
+        "Giants"
+      ],
       "size": "Huge",
       "type": "giant",
       "alignment": "chaotic evil",
@@ -19376,6 +19610,9 @@
     "key": "creature:horned-devil",
     "name": "Horned Devil",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -19662,6 +19899,9 @@
     "key": "creature:ice-devil",
     "name": "Ice Devil",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -19746,6 +19986,9 @@
     "key": "creature:ice-mephit",
     "name": "Ice Mephit",
     "data": {
+      "familyPath": [
+        "Mephits"
+      ],
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
@@ -19823,6 +20066,9 @@
     "key": "creature:imp",
     "name": "Imp",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Tiny",
       "type": "fiend (devil, shapechanger)",
       "alignment": "lawful evil",
@@ -19973,6 +20219,9 @@
     "key": "creature:iron-golem",
     "name": "Iron Golem",
     "data": {
+      "familyPath": [
+        "Golems"
+      ],
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
@@ -20520,6 +20769,9 @@
     "key": "creature:lemure",
     "name": "Lemure",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -20958,6 +21210,9 @@
     "key": "creature:magma-mephit",
     "name": "Magma Mephit",
     "data": {
+      "familyPath": [
+        "Mephits"
+      ],
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
@@ -21238,6 +21493,9 @@
     "key": "creature:marilith",
     "name": "Marilith",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
@@ -21749,6 +22007,9 @@
     "key": "creature:minotaur-skeleton",
     "name": "Minotaur Skeleton",
     "data": {
+      "familyPath": [
+        "Skeletons"
+      ],
       "size": "Large",
       "type": "undead",
       "alignment": "lawful evil",
@@ -21880,6 +22141,9 @@
     "key": "creature:mummy",
     "name": "Mummy",
     "data": {
+      "familyPath": [
+        "Mummies"
+      ],
       "size": "Medium",
       "type": "undead",
       "alignment": "lawful evil",
@@ -21947,6 +22211,9 @@
     "key": "creature:mummy-lord",
     "name": "Mummy Lord",
     "data": {
+      "familyPath": [
+        "Mummies"
+      ],
       "size": "Medium",
       "type": "undead",
       "alignment": "lawful evil",
@@ -22053,6 +22320,9 @@
     "key": "creature:nalfeshnee",
     "name": "Nalfeshnee",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
@@ -22134,6 +22404,9 @@
     "key": "creature:night-hag",
     "name": "Night Hag",
     "data": {
+      "familyPath": [
+        "Hags"
+      ],
       "size": "Medium",
       "type": "fiend",
       "alignment": "neutral evil",
@@ -22341,6 +22614,9 @@
     "key": "creature:ochre-jelly",
     "name": "Ochre Jelly",
     "data": {
+      "familyPath": [
+        "Oozes"
+      ],
       "size": "Large",
       "type": "ooze",
       "alignment": "unaligned",
@@ -22547,6 +22823,9 @@
     "key": "creature:ogre-zombie",
     "name": "Ogre Zombie",
     "data": {
+      "familyPath": [
+        "Zombies"
+      ],
       "size": "Large",
       "type": "undead",
       "alignment": "neutral evil",
@@ -23159,6 +23438,9 @@
     "key": "creature:pit-fiend",
     "name": "Pit Fiend",
     "data": {
+      "familyPath": [
+        "Devils"
+      ],
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
@@ -23252,6 +23534,9 @@
     "key": "creature:planetar",
     "name": "Planetar",
     "data": {
+      "familyPath": [
+        "Angels"
+      ],
       "size": "Large",
       "type": "celestial",
       "alignment": "lawful good",
@@ -23337,6 +23622,9 @@
     "key": "creature:plesiosaurus",
     "name": "Plesiosaurus",
     "data": {
+      "familyPath": [
+        "Dinosaurs"
+      ],
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
@@ -23788,6 +24076,9 @@
     "key": "creature:quasit",
     "name": "Quasit",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Tiny",
       "type": "fiend (demon, shapechanger)",
       "alignment": "chaotic evil",
@@ -24122,6 +24413,11 @@
     "key": "creature:red-dragon-wyrmling",
     "name": "Red Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Red Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -24584,6 +24880,9 @@
     "key": "creature:rug-of-smothering",
     "name": "Rug of Smothering",
     "data": {
+      "familyPath": [
+        "Animated Objects"
+      ],
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
@@ -25141,6 +25440,9 @@
     "key": "creature:sea-hag",
     "name": "Sea Hag",
     "data": {
+      "familyPath": [
+        "Hags"
+      ],
       "size": "Medium",
       "type": "fey",
       "alignment": "chaotic evil",
@@ -25495,6 +25797,9 @@
     "key": "creature:shrieker",
     "name": "Shrieker",
     "data": {
+      "familyPath": [
+        "Fungi"
+      ],
       "size": "Medium",
       "type": "plant",
       "alignment": "unaligned",
@@ -25556,6 +25861,11 @@
     "key": "creature:silver-dragon-wyrmling",
     "name": "Silver Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Silver Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful good",
@@ -25626,6 +25936,9 @@
     "key": "creature:skeleton",
     "name": "Skeleton",
     "data": {
+      "familyPath": [
+        "Skeletons"
+      ],
       "size": "Medium",
       "type": "undead",
       "alignment": "lawful evil",
@@ -25687,6 +26000,9 @@
     "key": "creature:solar",
     "name": "Solar",
     "data": {
+      "familyPath": [
+        "Angels"
+      ],
       "size": "Large",
       "type": "celestial",
       "alignment": "lawful good",
@@ -25936,6 +26252,9 @@
     "key": "creature:spirit-naga",
     "name": "Spirit Naga",
     "data": {
+      "familyPath": [
+        "Nagas"
+      ],
       "size": "Large",
       "type": "monstrosity",
       "alignment": "chaotic evil",
@@ -26145,6 +26464,9 @@
     "key": "creature:steam-mephit",
     "name": "Steam Mephit",
     "data": {
+      "familyPath": [
+        "Mephits"
+      ],
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
@@ -26271,6 +26593,9 @@
     "key": "creature:stone-giant",
     "name": "Stone Giant",
     "data": {
+      "familyPath": [
+        "Giants"
+      ],
       "size": "Huge",
       "type": "giant",
       "alignment": "neutral",
@@ -26347,6 +26672,9 @@
     "key": "creature:stone-golem",
     "name": "Stone Golem",
     "data": {
+      "familyPath": [
+        "Golems"
+      ],
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
@@ -26425,6 +26753,9 @@
     "key": "creature:storm-giant",
     "name": "Storm Giant",
     "data": {
+      "familyPath": [
+        "Giants"
+      ],
       "size": "Huge",
       "type": "giant",
       "alignment": "chaotic good",
@@ -27383,6 +27714,9 @@
     "key": "creature:triceratops",
     "name": "Triceratops",
     "data": {
+      "familyPath": [
+        "Dinosaurs"
+      ],
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
@@ -27520,6 +27854,9 @@
     "key": "creature:tyrannosaurus-rex",
     "name": "Tyrannosaurus Rex",
     "data": {
+      "familyPath": [
+        "Dinosaurs"
+      ],
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
@@ -27686,6 +28023,9 @@
     "key": "creature:vampire",
     "name": "Vampire",
     "data": {
+      "familyPath": [
+        "Vampires"
+      ],
       "size": "Medium",
       "type": "undead (shapechanger)",
       "alignment": "lawful evil",
@@ -27818,6 +28158,9 @@
     "key": "creature:vampire-spawn",
     "name": "Vampire Spawn",
     "data": {
+      "familyPath": [
+        "Vampires"
+      ],
       "size": "Medium",
       "type": "undead",
       "alignment": "neutral evil",
@@ -27981,6 +28324,9 @@
     "key": "creature:violet-fungus",
     "name": "Violet Fungus",
     "data": {
+      "familyPath": [
+        "Fungi"
+      ],
       "size": "Medium",
       "type": "plant",
       "alignment": "unaligned",
@@ -28046,6 +28392,9 @@
     "key": "creature:vrock",
     "name": "Vrock",
     "data": {
+      "familyPath": [
+        "Demons"
+      ],
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
@@ -28253,6 +28602,9 @@
     "key": "creature:warhorse-skeleton",
     "name": "Warhorse Skeleton",
     "data": {
+      "familyPath": [
+        "Skeletons"
+      ],
       "size": "Large",
       "type": "undead",
       "alignment": "lawful evil",
@@ -28310,6 +28662,9 @@
     "key": "creature:water-elemental",
     "name": "Water Elemental",
     "data": {
+      "familyPath": [
+        "Elementals"
+      ],
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
@@ -28447,6 +28802,9 @@
     "key": "creature:werebear",
     "name": "Werebear",
     "data": {
+      "familyPath": [
+        "Lycanthropes"
+      ],
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "neutral",
@@ -28526,6 +28884,9 @@
     "key": "creature:wereboar",
     "name": "Wereboar",
     "data": {
+      "familyPath": [
+        "Lycanthropes"
+      ],
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "neutral evil",
@@ -28604,6 +28965,9 @@
     "key": "creature:wererat",
     "name": "Wererat",
     "data": {
+      "familyPath": [
+        "Lycanthropes"
+      ],
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "lawful evil",
@@ -28678,6 +29042,9 @@
     "key": "creature:weretiger",
     "name": "Weretiger",
     "data": {
+      "familyPath": [
+        "Lycanthropes"
+      ],
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "neutral",
@@ -28764,6 +29131,9 @@
     "key": "creature:werewolf",
     "name": "Werewolf",
     "data": {
+      "familyPath": [
+        "Lycanthropes"
+      ],
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "chaotic",
@@ -28842,6 +29212,11 @@
     "key": "creature:white-dragon-wyrmling",
     "name": "White Dragon Wyrmling",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "White Dragons"
+      ],
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -29481,6 +29856,11 @@
     "key": "creature:young-black-dragon",
     "name": "Young Black Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Black Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -29558,6 +29938,11 @@
     "key": "creature:young-blue-dragon",
     "name": "Young Blue Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Blue Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -29629,6 +30014,11 @@
     "key": "creature:young-brass-dragon",
     "name": "Young Brass Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Brass Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -29708,6 +30098,11 @@
     "key": "creature:young-bronze-dragon",
     "name": "Young Bronze Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Bronze Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful good",
@@ -29793,6 +30188,11 @@
     "key": "creature:young-copper-dragon",
     "name": "Young Copper Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Copper Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic good",
@@ -29872,6 +30272,11 @@
     "key": "creature:young-gold-dragon",
     "name": "Young Gold Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Gold Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful good",
@@ -29957,6 +30362,11 @@
     "key": "creature:young-green-dragon",
     "name": "Young Green Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Green Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful evil",
@@ -30035,6 +30445,11 @@
     "key": "creature:young-red-dragon",
     "name": "Young Red Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "Red Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -30106,6 +30521,11 @@
     "key": "creature:young-silver-dragon",
     "name": "Young Silver Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Metallic Dragons",
+        "Silver Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful good",
@@ -30184,6 +30604,11 @@
     "key": "creature:young-white-dragon",
     "name": "Young White Dragon",
     "data": {
+      "familyPath": [
+        "Dragons",
+        "Chromatic Dragons",
+        "White Dragons"
+      ],
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic evil",
@@ -30262,6 +30687,9 @@
     "key": "creature:zombie",
     "name": "Zombie",
     "data": {
+      "familyPath": [
+        "Zombies"
+      ],
       "size": "Medium",
       "type": "undead",
       "alignment": "neutral evil",
