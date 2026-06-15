@@ -260,13 +260,46 @@ export class SourceInventoryCoverageError extends Error {
   }
 }
 
-/** Throw when any entry is unaccounted; the import must fail closed. */
+export class StatBlockCoverageError extends Error {
+  constructor(invalid: readonly SourceCoverageEntry[]) {
+    const lines = invalid.map(
+      ({ item, status }) =>
+        `  p${item.page}#${item.lineIndex} "${item.text}" -> ${formatCoverageStatus(status)}`,
+    );
+    super(
+      `SRD stat-block source inventory has ${invalid.length} invalid mapping(s) — every stat-block must resolve to a creature or stat-block record:\n${lines.join('\n')}`,
+    );
+    this.name = 'StatBlockCoverageError';
+  }
+}
+
+/** Throw when any entry is unaccounted or a stat block maps to the wrong kind. */
 export function assertSourceCoverage(
   entries: readonly SourceCoverageEntry[],
+  options: {
+    readonly statBlockExceptionReasons?: readonly string[];
+  } = {},
 ): void {
   const unaccounted = entries.filter((e) => e.status.kind === 'unaccounted');
   if (unaccounted.length > 0) {
     throw new SourceInventoryCoverageError(unaccounted);
+  }
+  const statBlockExceptionReasons = new Set(
+    options.statBlockExceptionReasons ?? [],
+  );
+  const invalidStatBlocks = entries.filter(
+    ({ item, status }) =>
+      item.structure === 'stat-block' &&
+      !(
+        status.kind === 'ignored' &&
+        statBlockExceptionReasons.has(status.reason)
+      ) &&
+      (status.kind !== 'record' ||
+        (!status.key.startsWith('creature:') &&
+          !status.key.startsWith('stat-block:'))),
+  );
+  if (invalidStatBlocks.length > 0) {
+    throw new StatBlockCoverageError(invalidStatBlocks);
   }
 }
 
@@ -728,6 +761,25 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   recordRule(
     'ancestry:lightfoot-halfling',
     (i) => i.section === 'Races' && i.text === 'Lightfoot',
+  ),
+  // Appendix MM-B NPC stat blocks whose names collide with non-creature
+  // records. Explicit structure/page mappings must outrank the generic
+  // lexicographic name auto-match.
+  recordRule(
+    'creature:acolyte',
+    (i) =>
+      i.section === 'Appendix MM-B: Nonplayer Characters' &&
+      i.page === 395 &&
+      i.structure === 'stat-block' &&
+      i.text === 'Acolyte',
+  ),
+  recordRule(
+    'creature:druid',
+    (i) =>
+      i.section === 'Appendix MM-B: Nonplayer Characters' &&
+      i.page === 398 &&
+      i.structure === 'stat-block' &&
+      i.text === 'Druid',
   ),
   // Monsters chapter heading-only family/group labels (eshyra-4a7.10.2).
   // Each taxonomy rule is accepted only when at least one emitted creature

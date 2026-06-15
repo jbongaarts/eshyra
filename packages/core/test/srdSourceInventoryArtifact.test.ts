@@ -298,14 +298,30 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
   });
 
   it('an Appendix MM-B NPC stat block (Berserker) is detected and accounted as a creature record', () => {
-    // Berserker is chosen because it has no cross-kind name collision; the SRD's
-    // Acolyte NPC shares its name with the Acolyte background, whose record sorts
-    // first and legitimately claims that shared inventory item.
     const berserker = coverage.entries.filter(
       (e) => e.text === 'Berserker' && e.structure === 'stat-block',
     );
     expect(berserker).toHaveLength(1);
     expect(berserker[0].status).toBe('record:creature:berserker');
+  });
+
+  it('Appendix MM-B Acolyte and Druid stat blocks resolve to NPC creature records despite cross-kind name collisions', () => {
+    const acolyte = entryFor(395, 'Acolyte');
+    expect(acolyte.structure).toBe('stat-block');
+    expect(acolyte.status).toBe('record:creature:acolyte');
+
+    const druid = entryFor(398, 'Druid');
+    expect(druid.structure).toBe('stat-block');
+    expect(druid.status).toBe('record:creature:druid');
+  });
+
+  it('every stat-block inventory entry resolves to a creature or inline stat-block record', () => {
+    const invalid = coverage.entries.filter(
+      (entry) =>
+        entry.structure === 'stat-block' &&
+        !/^record:(creature|stat-block):/.test(entry.status),
+    );
+    expect(invalid).toEqual([]);
   });
 
   it('the Ring of Resistance embedded d10 table (p237) is emitted as a table record', () => {
@@ -436,12 +452,10 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     expect(guidance.section).toBe('Appendix MM-B: Nonplayer Characters');
     expect(guidance.status).toBe('record:rule:customizing-npcs');
     // The first NPC stat block immediately follows the guidance prose; it must
-    // stay its own record rather than bleeding into the rule body. (Its name
-    // auto-matches the Acolyte background, but the point here is that it is NOT
-    // swallowed by the guidance slice.)
+    // stay its own creature record rather than bleeding into the rule body.
     const firstNpc = entryFor(395, 'Acolyte');
     expect(firstNpc.structure).toBe('stat-block');
-    expect(firstNpc.status).toBe('record:background:acolyte');
+    expect(firstNpc.status).toBe('record:creature:acolyte');
   });
 
   it('the Self-Sufficiency prose sidebar (p73, table-shaped by typography) is emitted as a rule', () => {
@@ -521,7 +535,10 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // rule:outer-planes-outer-planes), so neither collapse group forms. The two
     // emitted records still share the name "outer planes", so the
     // shadowed-record diagnostic above stays at 85.
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(56);
+    // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
+    // stat-blocks to their creature records, removing the two false
+    // background/class collapse groups (56 -> 54).
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(54);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {

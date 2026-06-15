@@ -106,6 +106,40 @@ describe('evaluateSourceCoverage — name auto-match', () => {
 });
 
 describe('evaluateSourceCoverage — rules and defaults', () => {
+  it('maps colliding Appendix MM-B stat blocks to their creature records', () => {
+    const inventory = [
+      item({
+        page: 395,
+        text: 'Acolyte',
+        structure: 'stat-block',
+        section: 'Appendix MM-B: Nonplayer Characters',
+      }),
+      item({
+        page: 398,
+        text: 'Druid',
+        structure: 'stat-block',
+        section: 'Appendix MM-B: Nonplayer Characters',
+      }),
+    ];
+    const collisionRecords = [
+      { kind: 'background', key: 'background:acolyte', name: 'Acolyte' },
+      { kind: 'class', key: 'class:druid', name: 'Druid' },
+      { kind: 'creature', key: 'creature:acolyte', name: 'Acolyte' },
+      { kind: 'creature', key: 'creature:druid', name: 'Druid' },
+    ];
+
+    expect(
+      evaluateSourceCoverage(
+        inventory,
+        collisionRecords,
+        SRD_5_1_COVERAGE_RULES,
+      ).map((entry) => entry.status),
+    ).toEqual([
+      { kind: 'record', key: 'creature:acolyte' },
+      { kind: 'record', key: 'creature:druid' },
+    ]);
+  });
+
   it('accounts for the complete Half-Dragon Template region as records', () => {
     const inventory = [
       item({
@@ -400,6 +434,39 @@ describe('assertSourceCoverage', () => {
       [],
     );
     expect(() => assertSourceCoverage(entries)).not.toThrow();
+  });
+
+  it('rejects stat-block inventory entries mapped to non-stat records', () => {
+    const entries = evaluateSourceCoverage(
+      [
+        item({
+          text: 'Acolyte',
+          structure: 'stat-block',
+          section: 'Appendix MM-B: Nonplayer Characters',
+        }),
+      ],
+      [{ kind: 'background', key: 'background:acolyte', name: 'Acolyte' }],
+      [],
+    );
+
+    expect(() => assertSourceCoverage(entries)).toThrow(
+      /record:background:acolyte/i,
+    );
+  });
+
+  it('allows only explicitly named stat-block exception reasons', () => {
+    const entries = evaluateSourceCoverage(
+      [item({ text: 'Fixture Row', structure: 'stat-block' })],
+      [],
+      [ignoreRule('fixture-body', () => true)],
+    );
+
+    expect(() => assertSourceCoverage(entries)).toThrow(/fixture-body/i);
+    expect(() =>
+      assertSourceCoverage(entries, {
+        statBlockExceptionReasons: ['fixture-body'],
+      }),
+    ).not.toThrow();
   });
 });
 
