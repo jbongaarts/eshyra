@@ -336,17 +336,23 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
       'record:rule:planar-travel',
     );
     expect(entryFor(364, 'Demiplanes').status).toBe('record:rule:demiplanes');
-    // The two same-named "Outer Planes" headings (an h≈13.9 subsection and an
-    // h≈12 sub-leaf) both auto-match by name to the lexicographically-first
-    // parent-qualified key; the shadowing is pinned by the ambiguous-match
-    // diagnostic below.
+    // The SRD prints the title "Outer Planes" twice on p364 — an h≈13.9
+    // subsection under "Beyond the Material" and an h≈12 sub-leaf below it.
+    // Each emits its own rule record, and explicit tier-based recordRules pin
+    // each source heading to its source-correct record rather than letting the
+    // bare name auto-match collapse both onto the lexicographically-first key.
     const outerPlanes = coverage.entries.filter(
       (e) => e.page === 364 && e.text === 'Outer Planes',
     );
     expect(outerPlanes).toHaveLength(2);
-    for (const entry of outerPlanes) {
-      expect(entry.status).toBe('record:rule:beyond-the-material-outer-planes');
-    }
+    const subsection = outerPlanes.find((e) => e.tier === 'subsection');
+    const leaf = outerPlanes.find((e) => e.tier === 'leaf');
+    expect(subsection?.status).toBe(
+      'record:rule:beyond-the-material-outer-planes',
+    );
+    expect(leaf?.status).toBe('record:rule:outer-planes-outer-planes');
+    // The two headings resolve to DIFFERENT records — no same-name collapse.
+    expect(subsection?.status).not.toBe(leaf?.status);
   });
 
   it('the Half-Dragon Template region (p320-321) is emitted as rule and table records', () => {
@@ -483,9 +489,12 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // Magic Items / Monsters Senses mappings split the former two-source-item
     // "Senses" collapse onto their own records (57 -> 56).
     // eshyra-4a7.10.5: the two same-named "Outer Planes" PH-C source headings
-    // both auto-match the lexicographically-first key, collapsing onto one
-    // record (56 -> 57).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(57);
+    // are pinned to their distinct records by explicit tier-based recordRules
+    // (subsection -> rule:beyond-the-material-outer-planes, leaf ->
+    // rule:outer-planes-outer-planes), so neither collapse group forms. The two
+    // emitted records still share the name "outer planes", so the
+    // shadowed-record diagnostic above stays at 85.
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(56);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {

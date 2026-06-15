@@ -778,11 +778,6 @@
         "count": 14
       },
       {
-        "text": "Outer Planes",
-        "resolvedKey": "rule:beyond-the-material-outer-planes",
-        "count": 2
-      },
-      {
         "text": "Blindsight",
         "resolvedKey": "rule:blindsight",
         "count": 2
@@ -19105,7 +19100,7 @@
       "structure": "heading",
       "text": "Outer Planes",
       "section": "Appendix PH-C: The Planes of Existence",
-      "status": "record:rule:beyond-the-material-outer-planes"
+      "status": "record:rule:outer-planes-outer-planes"
     },
     {
       "page": 364,
