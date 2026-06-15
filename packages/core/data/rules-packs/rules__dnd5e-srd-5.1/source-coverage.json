@@ -1,19 +1,19 @@
 {
   "summary": {
-    "record": 1420,
+    "record": 1430,
     "childOf": 456,
-    "ambiguous": 186,
+    "ambiguous": 188,
     "taxonomy": 33,
     "ignored": {
       "class-progression-table-internal": 9,
       "deity-table-column-header": 1,
-      "document-structure": 47,
+      "document-structure": 42,
       "equipment-category-heading": 3,
       "front-matter": 2,
-      "record-group-heading": 3,
+      "record-group-heading": 1,
       "spell-list-header": 78,
       "subclass-spell-table-heading": 2,
-      "table-rows-emitted-as-records": 18
+      "table-rows-emitted-as-records": 13
     },
     "knownGap": {},
     "unaccounted": 0
@@ -316,6 +316,13 @@
         ]
       },
       {
+        "normalizedName": "food, drink, and lodging",
+        "winnerKey": "rule:food-drink-and-lodging",
+        "shadowedKeys": [
+          "table:food-drink-and-lodging"
+        ]
+      },
+      {
         "normalizedName": "help",
         "winnerKey": "action:help",
         "shadowedKeys": [
@@ -377,8 +384,9 @@
       },
       {
         "normalizedName": "lifestyle expenses",
-        "winnerKey": "rule:lifestyle-expenses",
+        "winnerKey": "rule:expenses-lifestyle-expenses",
         "shadowedKeys": [
+          "rule:lifestyle-expenses",
           "table:lifestyle-expenses"
         ]
       },
@@ -525,6 +533,13 @@
         ]
       },
       {
+        "normalizedName": "services",
+        "winnerKey": "rule:services",
+        "shadowedKeys": [
+          "table:services"
+        ]
+      },
+      {
         "normalizedName": "shield",
         "winnerKey": "equipment:shield",
         "shadowedKeys": [
@@ -619,6 +634,13 @@
         ]
       },
       {
+        "normalizedName": "trade goods",
+        "winnerKey": "rule:trade-goods",
+        "shadowedKeys": [
+          "table:trade-goods"
+        ]
+      },
+      {
         "normalizedName": "truesight",
         "winnerKey": "rule:senses-truesight",
         "shadowedKeys": [
@@ -682,6 +704,11 @@
         "count": 2
       },
       {
+        "text": "Poisons",
+        "resolvedKey": "rule:poisons",
+        "count": 2
+      },
+      {
         "text": "Spell Slots",
         "resolvedKey": "rule:spell-slots",
         "count": 5
@@ -697,6 +724,11 @@
         "count": 2
       },
       {
+        "text": "Tools",
+        "resolvedKey": "rule:tools",
+        "count": 2
+      },
+      {
         "text": "Two-Weapon Fighting",
         "resolvedKey": "rule:two-weapon-fighting",
         "count": 3
@@ -707,23 +739,8 @@
         "count": 2
       },
       {
-        "text": "Food, Drink, and Lodging",
-        "resolvedKey": "table:food-drink-and-lodging",
-        "count": 2
-      },
-      {
-        "text": "Services",
-        "resolvedKey": "table:services",
-        "count": 2
-      },
-      {
         "text": "Size Categories",
         "resolvedKey": "table:size-categories",
-        "count": 2
-      },
-      {
-        "text": "Trade Goods",
-        "resolvedKey": "table:trade-goods",
         "count": 2
       },
       {
@@ -1035,6 +1052,14 @@
         "count": 3
       },
       {
+        "text": "Food, Drink, and Lodging",
+        "candidateKeys": [
+          "rule:food-drink-and-lodging",
+          "table:food-drink-and-lodging"
+        ],
+        "count": 1
+      },
+      {
         "text": "Help",
         "candidateKeys": [
           "action:help",
@@ -1105,10 +1130,11 @@
       {
         "text": "Lifestyle Expenses",
         "candidateKeys": [
+          "rule:expenses-lifestyle-expenses",
           "rule:lifestyle-expenses",
           "table:lifestyle-expenses"
         ],
-        "count": 3
+        "count": 2
       },
       {
         "text": "Manual of Golems",
@@ -1232,6 +1258,14 @@
         "count": 1
       },
       {
+        "text": "Services",
+        "candidateKeys": [
+          "rule:services",
+          "table:services"
+        ],
+        "count": 1
+      },
+      {
         "text": "Skills",
         "candidateKeys": [
           "rule:monsters-skills",
@@ -1312,6 +1346,14 @@
           "feature:monk:timeless-body"
         ],
         "count": 2
+      },
+      {
+        "text": "Trade Goods",
+        "candidateKeys": [
+          "rule:trade-goods",
+          "table:trade-goods"
+        ],
+        "count": 1
       },
       {
         "text": "Truesight",
@@ -5658,7 +5700,7 @@
       "structure": "heading",
       "text": "Selling Treasure",
       "section": "Equipment",
-      "status": "ignored:document-structure"
+      "status": "record:rule:selling-treasure"
     },
     {
       "page": 62,
@@ -5667,7 +5709,7 @@
       "structure": "heading",
       "text": "Armor",
       "section": "Equipment",
-      "status": "ignored:table-rows-emitted-as-records"
+      "status": "record:rule:armor-guidance"
     },
     {
       "page": 63,
@@ -5856,7 +5898,7 @@
       "structure": "table-caption",
       "text": "Equipment Packs",
       "section": "Equipment",
-      "status": "ignored:table-rows-emitted-as-records"
+      "status": "record:rule:equipment-packs"
     },
     {
       "page": 70,
@@ -5865,7 +5907,7 @@
       "structure": "heading",
       "text": "Tools",
       "section": "Equipment",
-      "status": "ignored:table-rows-emitted-as-records"
+      "status": "record:rule:tools"
     },
     {
       "page": 70,
@@ -5874,7 +5916,7 @@
       "structure": "table-caption",
       "text": "Tools",
       "section": "Equipment",
-      "status": "ignored:table-rows-emitted-as-records"
+      "status": "record:rule:tools"
     },
     {
       "page": 71,
@@ -5883,7 +5925,7 @@
       "structure": "heading",
       "text": "Mounts and Vehicles",
       "section": "Equipment",
-      "status": "ignored:document-structure"
+      "status": "record:rule:mounts-and-vehicles"
     },
     {
       "page": 71,
@@ -5919,7 +5961,7 @@
       "structure": "heading",
       "text": "Trade Goods",
       "section": "Equipment",
-      "status": "record:table:trade-goods"
+      "status": "record:rule:trade-goods"
     },
     {
       "page": 72,
@@ -5928,7 +5970,7 @@
       "structure": "table-caption",
       "text": "Trade Goods",
       "section": "Equipment",
-      "status": "record:table:trade-goods"
+      "status": "ambiguous:rule:trade-goods|table:trade-goods"
     },
     {
       "page": 72,
@@ -5937,7 +5979,7 @@
       "structure": "heading",
       "text": "Expenses",
       "section": "Equipment",
-      "status": "ignored:document-structure"
+      "status": "record:rule:expenses"
     },
     {
       "page": 72,
@@ -5946,7 +5988,7 @@
       "structure": "heading",
       "text": "Lifestyle Expenses",
       "section": "Equipment",
-      "status": "ambiguous:rule:lifestyle-expenses|table:lifestyle-expenses"
+      "status": "record:rule:expenses-lifestyle-expenses"
     },
     {
       "page": 72,
@@ -5955,7 +5997,7 @@
       "structure": "table-caption",
       "text": "Lifestyle Expenses",
       "section": "Equipment",
-      "status": "ambiguous:rule:lifestyle-expenses|table:lifestyle-expenses"
+      "status": "ambiguous:rule:expenses-lifestyle-expenses|rule:lifestyle-expenses|table:lifestyle-expenses"
     },
     {
       "page": 73,
@@ -5973,7 +6015,7 @@
       "structure": "heading",
       "text": "Food, Drink, and Lodging",
       "section": "Equipment",
-      "status": "record:table:food-drink-and-lodging"
+      "status": "record:rule:food-drink-and-lodging"
     },
     {
       "page": 73,
@@ -5982,7 +6024,7 @@
       "structure": "table-caption",
       "text": "Food, Drink, and Lodging",
       "section": "Equipment",
-      "status": "record:table:food-drink-and-lodging"
+      "status": "ambiguous:rule:food-drink-and-lodging|table:food-drink-and-lodging"
     },
     {
       "page": 74,
@@ -5991,7 +6033,7 @@
       "structure": "heading",
       "text": "Services",
       "section": "Equipment",
-      "status": "record:table:services"
+      "status": "record:rule:services"
     },
     {
       "page": 74,
@@ -6000,7 +6042,7 @@
       "structure": "table-caption",
       "text": "Services",
       "section": "Equipment",
-      "status": "record:table:services"
+      "status": "ambiguous:rule:services|table:services"
     },
     {
       "page": 74,
@@ -6639,7 +6681,7 @@
       "structure": "heading",
       "text": "Lifestyle Expenses",
       "section": "Using Ability Scores",
-      "status": "ambiguous:rule:lifestyle-expenses|table:lifestyle-expenses"
+      "status": "ambiguous:rule:expenses-lifestyle-expenses|rule:lifestyle-expenses|table:lifestyle-expenses"
     },
     {
       "page": 88,
@@ -11436,7 +11478,7 @@
       "structure": "heading",
       "text": "Diseases",
       "section": "Spellcasting",
-      "status": "ignored:document-structure"
+      "status": "record:rule:diseases"
     },
     {
       "page": 199,
@@ -11445,7 +11487,7 @@
       "structure": "heading",
       "text": "Sample Diseases",
       "section": "Spellcasting",
-      "status": "ignored:record-group-heading"
+      "status": "record:rule:sample-diseases"
     },
     {
       "page": 199,
@@ -11580,7 +11622,7 @@
       "structure": "heading",
       "text": "Poisons",
       "section": "Spellcasting",
-      "status": "ignored:document-structure"
+      "status": "record:rule:poisons"
     },
     {
       "page": 204,
@@ -11589,7 +11631,7 @@
       "structure": "table-caption",
       "text": "Poisons",
       "section": "Spellcasting",
-      "status": "ignored:table-rows-emitted-as-records"
+      "status": "record:rule:poisons"
     },
     {
       "page": 204,
@@ -11598,7 +11640,7 @@
       "structure": "heading",
       "text": "Sample Poisons",
       "section": "Spellcasting",
-      "status": "ignored:record-group-heading"
+      "status": "record:rule:sample-poisons"
     },
     {
       "page": 206,

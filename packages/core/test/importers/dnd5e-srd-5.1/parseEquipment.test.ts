@@ -435,6 +435,10 @@ describe('parseEquipment — column-block mismatch fails closed', () => {
 
 const GEAR_PAGE = page(69, [
   'Adventuring Gear',
+  'Acid. As an action, you can splash the contents of this vial onto a',
+  'creature within 5 feet of you. On a hit, the target takes 2d6 acid damage.',
+  'Hunting Trap. A creature that steps on the plate must succeed on a',
+  'DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving.',
   'Item',
   'Abacus',
   'Acid (vial)',
@@ -507,6 +511,17 @@ describe('parseEquipment — Adventuring Gear', () => {
       weight: '5 lb.',
       capacity: '1 cubic foot/30 pounds of gear',
     });
+  });
+
+  it('attaches inline item mechanics to the owning equipment records', () => {
+    expect(byName(gear, 'Acid (vial)')).toMatchObject({
+      description:
+        'Acid. As an action, you can splash the contents of this vial onto a creature within 5 feet of you. On a hit, the target takes 2d6 acid damage.',
+      descriptionSourcePage: 69,
+    });
+    expect(byName(gear, 'Hunting trap')?.description).toContain(
+      'DC 13 Dexterity saving throw',
+    );
   });
 
   it('throws when names and values disagree in count (extraction drift)', () => {

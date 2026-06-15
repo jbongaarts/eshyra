@@ -488,6 +488,15 @@ export const SRD_5_1_DEFAULT_SECTION_ANCHORS = {
       /^(Trade Goods|Expenses|Selling Treasure|Spellcasting|Using Ability Scores|Adventuring|Combat|Monsters|Magic Items|Feats)$/i,
     matchHeadings: true,
   },
+  // SRD 5.1 p72 Trade Goods prose and its reference table. The table is
+  // already emitted from the broader Expenses-region table pass; this slice
+  // gives the surrounding prose a source-bounded rule owner.
+  tradeGoods: {
+    startHeading: /^Trade Goods$/,
+    endHeading: /^Expenses$/,
+    requireEndHeading: true,
+    matchHeadings: true,
+  },
   // SRD 5.1 "Magic Items" chapter intro (pp206-207, eshyra-0m9.21): the
   // general usage rules that precede the A-Z item entries — Attunement,
   // Wearing and Wielding Items (Multiple Items of the Same Kind, Paired
@@ -755,6 +764,7 @@ export type Srd51SectionAnchors = {
   readonly fantasyHistoricalPantheons: SectionAnchorOptions;
   readonly planesOfExistence: SectionAnchorOptions;
   readonly mountsAndVehicles: SectionAnchorOptions;
+  readonly tradeGoods: SectionAnchorOptions;
   readonly magicItemRules: SectionAnchorOptions;
   readonly magicItems: SectionAnchorOptions;
   readonly sentientMagicItems: SectionAnchorOptions;

@@ -305,6 +305,11 @@ describe('SRD_5_1_DEFAULT_SECTION_ANCHORS — sanity', () => {
     expect(weaponGuidance.endHeading?.test('Adventuring Gear')).toBe(true);
     expect(weaponGuidance.requireEndHeading).toBe(true);
 
+    const tradeGoods = SRD_5_1_DEFAULT_SECTION_ANCHORS.tradeGoods;
+    expect(tradeGoods.startHeading.test('Trade Goods')).toBe(true);
+    expect(tradeGoods.endHeading?.test('Expenses')).toBe(true);
+    expect(tradeGoods.requireEndHeading).toBe(true);
+
     const selfSufficiency = SRD_5_1_DEFAULT_SECTION_ANCHORS.selfSufficiency;
     expect(selfSufficiency.startHeading.test('Self-Sufficiency')).toBe(true);
     expect(selfSufficiency.endHeading?.test('Food, Drink, and Lodging')).toBe(

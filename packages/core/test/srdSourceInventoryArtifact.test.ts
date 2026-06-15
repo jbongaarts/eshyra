@@ -205,7 +205,9 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // Ambiguous bare-name matches no longer count as records. Contextual
     // stat-block headings move to childOf; unresolved collisions remain
     // reviewer-visible in the ambiguous total.
-    expect(coverage.summary.record).toBe(1420);
+    // eshyra-7qit maps ten previously ignored/ambiguous Equipment,
+    // Expenses, Diseases, and Poisons headings to their new rules.
+    expect(coverage.summary.record).toBe(1430);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -214,7 +216,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // 98 -> 99 (eshyra-citg): "Tenets of Devotion" heading now maps child-of
     // subclass:oath-of-devotion (its prose is a named section on that record).
     expect(coverage.summary.childOf).toBe(456);
-    expect(coverage.summary.ambiguous).toBe(186);
+    expect(coverage.summary.ambiguous).toBe(188);
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.unaccounted).toBe(0);
     // eshyra-4a7.6 (PR2) added two class-chapter ignore reasons: the 9 class
@@ -234,13 +236,13 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
-      'document-structure': 47,
+      'document-structure': 42,
       'equipment-category-heading': 3,
       'front-matter': 2,
-      'record-group-heading': 3,
+      'record-group-heading': 1,
       'spell-list-header': 78,
       'subclass-spell-table-heading': 2,
-      'table-rows-emitted-as-records': 18,
+      'table-rows-emitted-as-records': 13,
     });
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
@@ -484,6 +486,35 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     expect(entry.status).toBe('record:rule:self-sufficiency');
   });
 
+  it('maps prose-heavy Equipment and hazard guidance headings to their rules', () => {
+    const headingFor = (page: number, text: string, tier: string) => {
+      const matches = coverage.entries.filter(
+        (entry) =>
+          entry.page === page && entry.text === text && entry.tier === tier,
+      );
+      expect(matches).toHaveLength(1);
+      return matches[0];
+    };
+    expect(entryFor(62, 'Selling Treasure').status).toBe(
+      'record:rule:selling-treasure',
+    );
+    expect(entryFor(62, 'Armor').status).toBe('record:rule:armor-guidance');
+    expect(headingFor(70, 'Tools', 'section').status).toBe('record:rule:tools');
+    expect(entryFor(71, 'Mounts and Vehicles').status).toBe(
+      'record:rule:mounts-and-vehicles',
+    );
+    expect(entryFor(199, 'Diseases').status).toBe('record:rule:diseases');
+    expect(entryFor(199, 'Sample Diseases').status).toBe(
+      'record:rule:sample-diseases',
+    );
+    expect(headingFor(204, 'Poisons', 'section').status).toBe(
+      'record:rule:poisons',
+    );
+    expect(entryFor(204, 'Sample Poisons').status).toBe(
+      'record:rule:sample-poisons',
+    );
+  });
+
   it('the Races p3 headings map to their source-correct rule records', () => {
     expect(entryFor(3, 'Racial Traits').status).toBe(
       'record:rule:racial-traits',
@@ -544,7 +575,9 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-4a7.10.5: the Appendix PH-C section repeats the heading "Outer
     // Planes" at two tiers, so two emitted rule records share the normalized
     // name "outer planes", adding one shadowed-record group (84 -> 85).
-    expect(coverage.ambiguous.shadowedRecords).toHaveLength(85);
+    // New same-name rule/table pairs for Trade Goods, Lifestyle Expenses, and
+    // Services add three shadowed-record groups.
+    expect(coverage.ambiguous.shadowedRecords).toHaveLength(88);
     // The explicit p3/p254 Size mappings prevent those two source headings
     // from collapsing onto one record (58 -> 57). eshyra-4a7.10.4: the explicit
     // Magic Items / Monsters Senses mappings split the former two-source-item
@@ -558,8 +591,8 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
     // stat-blocks to their creature records, removing the two false
     // background/class collapse groups (56 -> 54).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(15);
-    expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(72);
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(14);
+    expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(75);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {

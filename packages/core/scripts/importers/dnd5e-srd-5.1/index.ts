@@ -59,6 +59,7 @@ import { parseDeityTables } from './parseDeityTables.js';
 import { parseDiseases } from './parseDiseases.js';
 import { parseDocumentTables } from './parseDocumentTables.js';
 import { parseEquipment, parseMountsAndVehicles } from './parseEquipment.js';
+import { parseEquipmentGuidance } from './parseEquipmentGuidance.js';
 import { parseFeats } from './parseFeats.js';
 import { parseFeatures } from './parseFeatures.js';
 import { parseGamemasteringRules } from './parseGamemasteringRules.js';
@@ -1124,6 +1125,22 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   // Equipment-chapter Expenses region: the Spellcasting Services prose has no
   // rate table, so it is emitted as a rule (eshyra-0m9.19).
   'rule:spellcasting-services',
+  // Equipment chapter, expenses, diseases, and poisons prose (eshyra-7qit).
+  'rule:armor-guidance',
+  'rule:coinage',
+  'rule:diseases',
+  'rule:equipment-packs',
+  'rule:expenses',
+  'rule:expenses-lifestyle-expenses',
+  'rule:food-drink-and-lodging',
+  'rule:mounts-and-vehicles',
+  'rule:poisons',
+  'rule:sample-diseases',
+  'rule:sample-poisons',
+  'rule:selling-treasure',
+  'rule:services',
+  'rule:tools',
+  'rule:trade-goods',
   // Races p3 trait-category guidance (eshyra-4a7.10.1).
   'rule:ability-score-increase',
   'rule:age',
@@ -1345,6 +1362,34 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:outer-planes-outer-planes',
   'rule:demiplanes',
 ];
+
+export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel[] =
+  [
+    { recordKey: 'equipment:acid-vial', phrase: 'Acid.' },
+    {
+      recordKey: 'equipment:alchemists-fire-flask',
+      phrase: 'Alchemist’s Fire.',
+    },
+    { recordKey: 'equipment:antitoxin-vial', phrase: 'Antitoxin.' },
+    { recordKey: 'equipment:healers-kit', phrase: 'Healer’s Kit.' },
+    { recordKey: 'equipment:hunting-trap', phrase: 'Hunting Trap.' },
+    { recordKey: 'equipment:poison-basic-vial', phrase: 'Poison, Basic.' },
+    { recordKey: 'rule:tools', phrase: 'Proficiency with a tool' },
+    { recordKey: 'rule:mounts-and-vehicles', phrase: 'Barding.' },
+    {
+      recordKey: 'rule:mounts-and-vehicles',
+      phrase: 'Vehicle Proficiency.',
+    },
+    { recordKey: 'rule:selling-treasure', phrase: 'half their cost' },
+    {
+      recordKey: 'rule:poisons',
+      phrase: 'Poisons come in the following four types',
+    },
+    { recordKey: 'rule:poisons', phrase: 'Contact poison' },
+    { recordKey: 'rule:poisons', phrase: 'Ingested.' },
+    { recordKey: 'rule:poisons', phrase: 'Inhaled.' },
+    { recordKey: 'rule:poisons', phrase: 'Injury.' },
+  ];
 
 export const EXPECTED_SRD_5_1_TABLE_NAMES: readonly string[] = [
   // The four Acolyte suggested-characteristics roll tables (eshyra-0m9.17).
@@ -1673,6 +1718,26 @@ export class TableCoverageError extends Error {
   }
 }
 
+export interface RecordTextSentinel {
+  readonly phrase: string;
+  readonly recordKey?: string;
+}
+
+export class RecordTextCoverageError extends Error {
+  constructor(public readonly missing: readonly RecordTextSentinel[]) {
+    super(
+      `SRD generated-record text coverage failed: ${missing
+        .map(({ phrase, recordKey }) =>
+          recordKey === undefined
+            ? JSON.stringify(phrase)
+            : `${JSON.stringify(phrase)} in ${recordKey}`,
+        )
+        .join(', ')}. Refusing to write a pack with missing source prose.`,
+    );
+    this.name = 'RecordTextCoverageError';
+  }
+}
+
 export interface RunImporterInput {
   /** Absolute path to the vendored SRD 5.1 PDF. */
   readonly pdfPath: string;
@@ -1816,6 +1881,12 @@ export interface RunImporterInput {
    * parent-qualified keys.
    */
   readonly expectedRuleKeys?: readonly string[];
+  /**
+   * Source-text phrases that must survive into generated records. Optional
+   * `recordKey` ownership makes inline body-prose coverage fail closed even
+   * though the typography inventory cannot see those bold lead-ins.
+   */
+  readonly expectedRecordTextSentinels?: readonly RecordTextSentinel[];
   /**
    * Exact set of reference-table names the import must yield. The real importer
    * passes `EXPECTED_SRD_5_1_TABLE_NAMES`; reduced fixtures may omit the check.
@@ -2281,6 +2352,23 @@ function ruleCoverageKey(rule: RuleExtraction): string {
   return `rule:${keySlug}`;
 }
 
+function validateRecordTextCoverage(
+  records: readonly import('../../../src/rules/types.js').RulesRecord[],
+  sentinels: readonly RecordTextSentinel[] | undefined,
+): void {
+  if (sentinels === undefined) return;
+  const missing = sentinels.filter(({ phrase, recordKey }) => {
+    const candidates =
+      recordKey === undefined
+        ? records
+        : records.filter((record) => record.key === recordKey);
+    return candidates.every(
+      (record) => !JSON.stringify(record).includes(phrase),
+    );
+  });
+  if (missing.length > 0) throw new RecordTextCoverageError(missing);
+}
+
 function validateTableCoverage(
   tables: readonly TableExtraction[],
   expectedTableNames: readonly string[] | undefined,
@@ -2406,9 +2494,11 @@ export async function runImporter(
   // degrades to no records), but each anchor's requireEndHeading bound still
   // fails closed if the section starts and its end boundary is missing, so a
   // disease/poison body cannot run on into the following gamemastering section.
-  const diseases = sliceSectionOrEmpty(pages, anchors.diseases, parseDiseases);
+  const diseasePages = sliceSectionOrEmptyPages(pages, anchors.diseases);
+  const diseases = parseDiseases(diseasePages);
   validateDiseaseCoverage(diseases, input.expectedDiseaseNames);
-  const poisons = sliceSectionOrEmpty(pages, anchors.poisons, parsePoisons);
+  const poisonPages = sliceSectionOrEmptyPages(pages, anchors.poisons);
+  const poisons = parsePoisons(poisonPages);
   validatePoisonCoverage(poisons, input.expectedPoisonNames);
   // Madness and Objects are absent from many reduced fixture PDFs, so a
   // missing start degrades to no records. Once either start is present its
@@ -2425,13 +2515,13 @@ export async function runImporter(
   // anchor leaves requireEndHeading off because parseMountsAndVehicles is
   // internally header-bounded (see sections.ts), so a missing end cannot
   // over-extract.
+  const mountsAndVehiclesPages = sliceSectionOrEmptyPages(
+    pages,
+    anchors.mountsAndVehicles,
+  );
   const equipment = [
     ...parseEquipment(equipmentPages),
-    ...sliceSectionOrEmpty(
-      pages,
-      anchors.mountsAndVehicles,
-      parseMountsAndVehicles,
-    ),
+    ...parseMountsAndVehicles(mountsAndVehiclesPages),
   ];
   // Magic Items A-Z (p207-p251) plus the "Artifacts" subsection (p252-p253),
   // which carries the lone artifact magic item — Orb of Dragonkind — in the
@@ -2526,6 +2616,7 @@ export async function runImporter(
   // no established rates exist), so it is emitted as a standalone `rule` record
   // rather than lost prose.
   const expensesPages = sliceSectionOrEmptyPages(pages, anchors.expenses);
+  const tradeGoodsPages = sliceSectionOrEmptyPages(pages, anchors.tradeGoods);
   const spellcastingServicesRule = parseSpellcastingServices(expensesPages);
   const rulesBeforeBeyondFirstLevel = [
     ...coreRules,
@@ -2826,6 +2917,47 @@ export async function runImporter(
     ]),
     { name: 'Weapons Guidance', keySlug: 'weapons' },
   );
+  const equipmentGuidanceRules = parseEquipmentGuidance(
+    equipmentPages,
+    mountsAndVehiclesPages,
+    tradeGoodsPages,
+    expensesPages,
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+      ...weaponGuidanceRules,
+    ]),
+  );
+  const diseaseGuidanceRules = parseRules(
+    truncateBeforeFirst(diseasePages, /^Cackle Fever$/, 'empty'),
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+      ...weaponGuidanceRules,
+      ...equipmentGuidanceRules,
+    ]),
+    { name: 'Diseases', keySlug: 'diseases' },
+  );
+  const poisonGuidanceRules = parseRules(
+    removeTableCellLines(
+      truncateBeforeFirst(
+        poisonPages,
+        /^Assassin’s Blood \(Ingested\)\./,
+        'empty',
+      ),
+    ),
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+      ...weaponGuidanceRules,
+      ...equipmentGuidanceRules,
+      ...diseaseGuidanceRules,
+    ]),
+    { name: 'Poisons', keySlug: 'poisons' },
+  );
 
   // The p73 sidebar body is table-cell-sized text, so it uses its dedicated
   // bounded prose parser rather than the heading-hierarchy parser.
@@ -2877,6 +3009,9 @@ export async function runImporter(
       ...racialTraitRules,
       ...armorGuidanceRules,
       ...weaponGuidanceRules,
+      ...equipmentGuidanceRules,
+      ...diseaseGuidanceRules,
+      ...poisonGuidanceRules,
       ...sentientMagicItemRules,
     ]),
   );
@@ -2944,6 +3079,9 @@ export async function runImporter(
     ...racialTraitRules,
     ...armorGuidanceRules,
     ...weaponGuidanceRules,
+    ...equipmentGuidanceRules,
+    ...diseaseGuidanceRules,
+    ...poisonGuidanceRules,
     ...(selfSufficiencyRule === undefined ? [] : [selfSufficiencyRule]),
     ...sentientMagicItemRules,
     ...customizingNpcsRules,
@@ -3014,6 +3152,7 @@ export async function runImporter(
     backgrounds,
     sourceHash,
   });
+  validateRecordTextCoverage(pack.records, input.expectedRecordTextSentinels);
   // Source-structure coverage gate (eshyra-4a7.1): every typography-derived
   // source structure must be an emitted record, structured child data,
   // intentionally ignored with a reason, or a tracked known gap. Evaluated

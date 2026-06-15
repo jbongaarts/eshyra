@@ -304,7 +304,8 @@ export type EquipmentCategory =
  *   - gear may carry `capacity` (attached from the Container Capacity table);
  *   - mounts carry `speed` (e.g. "50 ft.") and `carryingCapacity` (e.g.
  *     "480 lb."); waterborne vehicles carry `speed` (e.g. "4 mph");
- *   - packs carry a `description` (the verbatim bundled-contents sentence).
+ *   - described armor, weapons, gear, and tools carry source prose in
+ *     `description`; packs carry their verbatim bundled-contents sentence.
  */
 export interface EquipmentExtraction {
   readonly name: string;
@@ -338,6 +339,8 @@ export interface EquipmentExtraction {
   readonly carryingCapacity?: string;
   /** Equipment-pack bundled-contents sentence, verbatim. */
   readonly description?: string;
+  /** Source page where `description` begins when it differs from the table row. */
+  readonly descriptionSourcePage?: number;
   /** 1-based page in the source PDF where the entry's row appears. */
   readonly sourcePage: number;
 }

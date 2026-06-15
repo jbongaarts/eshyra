@@ -320,6 +320,10 @@ const TABLE_CAPTION_LEAF_TITLES = new Set([
   // table records. The surrounding h≈13.9/h≈18 prose headings remain rules.
   'Donning and Doffing Armor',
   'Weapons',
+  'Lifestyle Expenses',
+  'Food, Drink, and Lodging',
+  'Services',
+  'Poisons',
   // Appendix PH-B deity tables (eshyra-4a7.10.5): these h≈12 captions are
   // reconstructed as `table` records by `parseDeityTables`. The surrounding
   // h≈12 pantheon-prose headings ("The Celtic Pantheon" …) remain rules. The
