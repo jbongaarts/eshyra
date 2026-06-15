@@ -500,6 +500,16 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 317,
   },
   {
+    // Source-derived flavor prose the SRD prints after a stat block (eshyra-76b7).
+    // Present on the 47 Appendix MM-A creatures and MM-B NPCs that carry a
+    // trailing description; absent (missingCount 270) on the rest, including the
+    // Monsters-chapter entries the SRD describes before the stat block.
+    kind: 'creature',
+    field: 'description',
+    missingCount: 270,
+    totalInKind: 317,
+  },
+  {
     kind: 'creature',
     field: 'familyPath',
     missingCount: 201,
@@ -779,6 +789,78 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       for (const expected of EXPECTED_STABLE_KEYS) {
         expect(keys.has(expected)).toBe(true);
       }
+    });
+  });
+
+  describe('creature/NPC lore boundary regression (eshyra-76b7)', () => {
+    const creatures = pack.records.filter((r) => r.kind === 'creature');
+    function creatureData(key: string): Record<string, unknown> {
+      const found = creatures.find((r) => r.key === key);
+      if (found === undefined) throw new Error(`missing creature ${key}`);
+      return found.data as Record<string, unknown>;
+    }
+    function mechanicalTexts(data: Record<string, unknown>): string[] {
+      const entries = (value: unknown): string[] =>
+        Array.isArray(value)
+          ? value.map((e) => String((e as { text?: unknown }).text ?? ''))
+          : [];
+      const legendary = data.legendaryActions as
+        | { entries?: unknown }
+        | undefined;
+      return [
+        ...entries(data.actions),
+        ...entries(data.reactions),
+        ...entries(legendary?.entries),
+      ];
+    }
+
+    it('acolyte Club action is mechanical-only; lore is in description', () => {
+      const data = creatureData('creature:acolyte');
+      const club = (data.actions as { name: string; text: string }[])[0];
+      expect(club.name).toBe('Club');
+      expect(club.text).not.toContain('Acolytes are');
+      expect(club.text.endsWith('bludgeoning damage.')).toBe(true);
+      expect(String(data.description)).toContain(
+        'Acolytes are junior members of a clergy',
+      );
+    });
+
+    it('knight Parry reaction is mechanical-only; lore is in description', () => {
+      const data = creatureData('creature:knight');
+      const parry = (data.reactions as { name: string; text: string }[])[0];
+      expect(parry.name).toBe('Parry');
+      expect(parry.text).not.toContain('Knights are');
+      expect(String(data.description)).toContain(
+        'Knights are warriors who pledge service',
+      );
+    });
+
+    it('ogre-zombie Morningstar does not contain the appendix intro prose', () => {
+      const data = creatureData('creature:ogre-zombie');
+      for (const text of mechanicalTexts(data)) {
+        expect(text).not.toContain('This appendix contains statistics');
+      }
+      // The appendix intro is the appendix's, not this creature's: it is not
+      // attached to ogre-zombie in any form.
+      expect(data.description).toBeUndefined();
+    });
+
+    it('a beast lore case (mastiff) preserves source prose in description', () => {
+      const data = creatureData('creature:mastiff');
+      const bite = (data.actions as { name: string; text: string }[])[0];
+      expect(bite.text).not.toContain('Mastiffs are');
+      expect(String(data.description)).toContain(
+        'Mastiffs are impressive hounds prized by humanoids',
+      );
+    });
+
+    it('no creature action/reaction/legendary text carries lore/document prose bleed', () => {
+      // Broad invariant over the whole pack: the structure audit reports no
+      // creature stat-block prose-bleed findings.
+      const findings = auditSrdStructure(pack).filter(
+        (f) => f.category === 'creature-stat-block-prose-bleed',
+      );
+      expect(findings).toEqual([]);
     });
   });
 

@@ -1066,3 +1066,153 @@ describe('parseCreatures — variant sidebars', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Trailing flavor/description boundary (eshyra-76b7). The SRD prints a creature
+// description after the stat block, set off by a larger paragraph gap; it must
+// land in `data.description`, never appended to the last action/reaction. These
+// fixtures carry `lineGaps`/`lineHeights` the way the real extractor supplies
+// them (body height ≈ 9.8; intra-paragraph gap ≈ 12; flavor break ≈ 27; a null
+// gap marks a column/page start).
+// ---------------------------------------------------------------------------
+
+describe('parseCreatures — stat-block / flavor boundary (eshyra-76b7)', () => {
+  type Row = readonly [text: string, height: number, gap: number | null];
+  function gappedPage(pageNumber: number, rows: readonly Row[]): PageText {
+    return {
+      pageNumber,
+      lines: rows.map((r) => r[0]),
+      lineHeights: rows.map((r) => r[1]),
+      lineGaps: rows.map((r) => r[2]),
+    };
+  }
+  // The header stat lines shared by these fixtures, parameterized by name/meta.
+  function header(name: string, meta: string): Row[] {
+    return [
+      [name, 12, null],
+      [meta, 9.8, 12],
+      ['Armor Class 12', 9.8, 12],
+      ['Hit Points 18 (4d8)', 9.8, 12],
+      ['Speed 30 ft.', 9.8, 12],
+      ['STR DEX CON INT WIS CHA', 9.8, 12],
+      ['10 (+0) 14 (+2) 10 (+0) 10 (+0) 12 (+1) 11 (+0)', 9.8, 12],
+      ['Challenge 1/4 (50 XP)', 9.8, 12],
+    ];
+  }
+
+  it('splits an in-column flavor paragraph into description', () => {
+    const [creature] = parseCreatures([
+      gappedPage(395, [
+        ...header('Acolyte', 'Medium humanoid (any race), any alignment'),
+        ['Actions', 10.8, 23],
+        [
+          'Club. Melee Weapon Attack: +2 to hit, reach 5 ft., one target. Hit: 2 (1d4) bludgeoning damage.',
+          9.8,
+          17,
+        ],
+        [
+          'Acolytes are junior members of a clergy, usually answerable to a priest.',
+          9.8,
+          27,
+        ],
+        ['They perform a variety of functions in a temple.', 9.8, 12],
+      ]),
+    ]);
+    expect(creature.actions?.[0].name).toBe('Club');
+    expect(creature.actions?.[0].text).toBe(
+      'Melee Weapon Attack: +2 to hit, reach 5 ft., one target. Hit: 2 (1d4) bludgeoning damage.',
+    );
+    expect(creature.actions?.[0].text).not.toContain('Acolytes are');
+    expect(creature.description).toBe(
+      'Acolytes are junior members of a clergy, usually answerable to a priest. They perform a variety of functions in a temple.',
+    );
+  });
+
+  it('splits a flavor paragraph that begins at a column break (null gap)', () => {
+    // Giant Shark: the description starts at the top of the next column, so its
+    // first line has a null gap rather than an in-column paragraph gap.
+    const [creature] = parseCreatures([
+      gappedPage(379, [
+        ...header('Giant Shark', 'Huge beast, unaligned'),
+        ['Actions', 10.8, 23],
+        [
+          'Bite. Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 22 (3d10 + 6) piercing damage.',
+          9.8,
+          17,
+        ],
+        [
+          'A giant shark is 30 feet long and normally found in deep oceans.',
+          9.8,
+          null,
+        ],
+        [
+          'Utterly fearless, it preys on anything that crosses its path.',
+          9.8,
+          12,
+        ],
+      ]),
+    ]);
+    expect(creature.actions?.[0].text).toBe(
+      'Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 22 (3d10 + 6) piercing damage.',
+    );
+    expect(creature.actions?.[0].text).not.toContain('A giant shark');
+    expect(creature.description).toContain('A giant shark is 30 feet long');
+  });
+
+  it('keeps a mechanical clause that wraps to a new column with its action', () => {
+    // Djinni's Whirlwind escape clause wraps to the next column after a complete
+    // sentence; it carries mechanical vocabulary (a save DC), so it must stay in
+    // the action, not become a description.
+    const [creature] = parseCreatures([
+      gappedPage(310, [
+        ...header('Djinni', 'Large elemental, chaotic good'),
+        ['Actions', 10.8, 23],
+        [
+          'Whirlwind. A 5-foot-radius, 30-foot-tall cyclone forms until the djinni loses sight of it.',
+          9.8,
+          17,
+        ],
+        [
+          'A creature can use its action to free a creature restrained by the whirlwind by succeeding on a DC 18 Strength check.',
+          9.8,
+          null,
+        ],
+      ]),
+    ]);
+    expect(creature.description).toBeUndefined();
+    expect(creature.actions?.[0].text).toContain('DC 18 Strength check');
+  });
+
+  it('does not pull appendix prose across a page jump into the last creature', () => {
+    // Ogre Zombie ends a chapter; the next slice's appendix intro sits on a far
+    // page and must not be appended to its Morningstar action.
+    const [creature] = parseCreatures([
+      gappedPage(357, [
+        ...header('Ogre Zombie', 'Large undead, neutral evil'),
+        ['Actions', 10.8, 23],
+        [
+          'Morningstar. Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 13 (2d8 + 4) bludgeoning damage.',
+          9.8,
+          17,
+        ],
+      ]),
+      gappedPage(366, [
+        [
+          'This appendix contains statistics for various animals, vermin, and other critters.',
+          9.8,
+          null,
+        ],
+        [
+          'The stat blocks are organized alphabetically by creature name.',
+          9.8,
+          12,
+        ],
+      ]),
+    ]);
+    expect(creature.actions?.[0].text).toBe(
+      'Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 13 (2d8 + 4) bludgeoning damage.',
+    );
+    expect(creature.actions?.[0].text).not.toContain('This appendix');
+    expect(creature.description).toBeUndefined();
+  });
+});

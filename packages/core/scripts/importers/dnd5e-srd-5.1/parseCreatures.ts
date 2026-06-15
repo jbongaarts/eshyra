@@ -106,6 +106,16 @@ export interface FlatLine {
    * Undefined for fixture pages built without per-line heights.
    */
   readonly height?: number;
+  /**
+   * Vertical baseline gap from the previous line in the same column
+   * (`PageText.lineGaps`). `null` marks a column/page discontinuity (the first
+   * line of a column or page, with no in-column predecessor); `undefined` for
+   * fixture pages built without gaps. Lets the narrative parser tell a stat
+   * block's mechanical body from the trailing flavor paragraph the SRD prints
+   * after it (same font height, so otherwise indistinguishable) and refuse
+   * content that arrives across a column/page break (eshyra-76b7).
+   */
+  readonly gap?: number | null;
 }
 
 /**
@@ -140,10 +150,12 @@ export function flatten(pages: readonly PageText[]): readonly FlatLine[] {
   for (const page of pages) {
     page.lines.forEach((line, idx) => {
       const height = page.lineHeights?.[idx];
+      const gap = page.lineGaps?.[idx];
       out.push({
         line: normalizeLine(line),
         page: page.pageNumber,
         ...(height === undefined ? {} : { height }),
+        ...(gap === undefined ? {} : { gap }),
       });
     });
   }
@@ -338,6 +350,40 @@ const SPELL_LIST_LINE =
 // supplied a height.
 const MIN_STRUCTURAL_HEADING_HEIGHT = 11.5;
 
+// A line whose leading vertical gap (`FlatLine.gap`) is at least this multiple
+// of its own font height starts a NEW paragraph rather than continuing the
+// previous line. In SRD 5.1 stat blocks an intra-paragraph wrap sits ~1.2x the
+// line height below its predecessor, while the flavor paragraph the SRD prints
+// after the last action/reaction is set off by ~2.8x (≈27pt vs ≈9.8pt height).
+// 1.6x sits cleanly between the two, so it fires on the flavor break without
+// splitting a wrapped mechanical sentence (eshyra-76b7). Applied only when the
+// extractor supplied a numeric gap (a `null` gap is a column/page break, handled
+// separately); section headers and bold "Name." lead-ins are matched by text
+// before this is consulted, so their (also-large) gaps are irrelevant here.
+const PARAGRAPH_BREAK_GAP_RATIO = 1.6;
+
+// Fallback absolute paragraph-break gap for fixture pages that supply gaps but
+// no per-line height. Chosen between the intra-paragraph (~12pt) and flavor
+// (~27pt) gaps of the real SRD body font.
+const PARAGRAPH_BREAK_GAP_ABS = 18;
+
+/**
+ * True when `gap` (the line's leading vertical gap) marks a new paragraph within
+ * the same column. A `null`/`undefined` gap is NOT a paragraph break here — it
+ * is a column/page discontinuity the caller treats as a hard boundary.
+ */
+function isParagraphBreak(
+  gap: number | null | undefined,
+  height?: number,
+): boolean {
+  if (gap === null || gap === undefined) return false;
+  const threshold =
+    height !== undefined && height > 0
+      ? height * PARAGRAPH_BREAK_GAP_RATIO
+      : PARAGRAPH_BREAK_GAP_ABS;
+  return gap >= threshold;
+}
+
 // Section header lines that switch the active narrative section. SRD 5.1 prints
 // no in-body "Lair Actions" / "Regional Effects" headers (those appear only in
 // the general Legendary Creatures rules on p260), but they are recognized as a
@@ -413,6 +459,108 @@ interface NarrativeSections {
   readonly actions?: readonly CreatureStatBlockEntry[];
   readonly reactions?: readonly CreatureStatBlockEntry[];
   readonly legendaryActions?: CreatureLegendaryActions;
+  /** Trailing flavor/description prose printed after the stat block. */
+  readonly description?: string;
+}
+
+/** A post-Challenge narrative line carrying its paragraph-gap metadata. */
+interface NarrativeLine {
+  readonly text: string;
+  readonly gap?: number | null;
+  readonly height?: number;
+}
+
+// Markers that only mechanical stat-block prose carries — a save DC, an attack
+// lead-in, a saving-throw clause, an attack "Hit:" rider, or dice notation. A
+// trailing paragraph that contains any of these is a wrapped mechanical entry
+// body, NOT flavor, so it is never split into `description` (eshyra-76b7). This
+// is what keeps Djinni's column-wrapped Whirlwind escape clause ("…by
+// succeeding on a DC 18 Strength check.") attached to its action while Giant
+// Shark's mechanic-free description ("A giant shark is 30 feet long…") is split
+// off. The same predicate backs the audit guard against lore/document prose
+// bleeding the other way (see `srdAudit`). Kept deliberately specific so it
+// never rejects legitimate descriptive prose (which carries no DC/dice/attack
+// vocabulary).
+const MECHANICAL_PROSE_MARKER =
+  /\bDC\s*\d|Weapon Attack:|Spell Attack:|saving throw|\bHit:\s|\b\d+d\d+\b/;
+
+/**
+ * True when a narrative line opens a structured stat-block element — a section
+ * header, a deferred/variant boundary, or a bold "Name." entry lead-in. Used to
+ * find where the mechanical sections end so the trailing flavor paragraph can be
+ * split off behind the LAST such line (eshyra-76b7).
+ */
+function isStructuralNarrativeLine(text: string): boolean {
+  return (
+    text === ACTIONS_HEADER ||
+    text === REACTIONS_HEADER ||
+    text === LEGENDARY_HEADER ||
+    DEFERRED_HEADERS.has(text) ||
+    VARIANT_CAPTION_RE.test(text) ||
+    matchEntryLabel(text) !== null
+  );
+}
+
+/**
+ * Locate the trailing flavor paragraph and return the index in `lines` where it
+ * begins, or -1 when there is none. The flavor block is the maximal suffix that
+ * follows the LAST structured line (header or entry lead-in) and begins at an
+ * in-column paragraph break (`isParagraphBreak`). Everything before it — the
+ * last entry's own wrapped body — stays mechanical; everything from it on is
+ * the SRD's descriptive prose. A `null`-gap (column/page discontinuity) line is
+ * never a flavor start: foreign cross-boundary content is cut upstream, and a
+ * creature's own flavor is set off by an in-column gap, not a column break.
+ */
+function findFlavorStart(lines: readonly NarrativeLine[]): number {
+  let lastStructural = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (isStructuralNarrativeLine(lines[i].text)) lastStructural = i;
+  }
+  let candidate = -1;
+  let candidateFromColumnBreak = false;
+  for (let i = lastStructural + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (isParagraphBreak(line.gap, line.height)) {
+      candidate = i;
+      break;
+    }
+    // A column/page break (`null` gap) can also start the trailing flavor when
+    // the stat block's last mechanical line ended a sentence and the new column
+    // opens a fresh capitalized sentence — e.g. Giant Shark, whose description
+    // begins at the top of the next column (eshyra-76b7). Requiring the previous
+    // line to be sentence-complete keeps a mid-sentence mechanical wrap across a
+    // column (the previous line ends with no terminal punctuation) attached to
+    // its entry. Foreign cross-slice content is already cut upstream
+    // (`truncateAtForeignPageJump`), so a `null` gap here is an in-flow column
+    // break, not appendix prose.
+    if (
+      line.gap === null &&
+      i > 0 &&
+      ENTRY_TERMINAL_PUNCTUATION.test(lines[i - 1].text) &&
+      /^[A-Z]/.test(line.text)
+    ) {
+      candidate = i;
+      candidateFromColumnBreak = true;
+      break;
+    }
+  }
+  if (candidate < 0) return -1;
+  // A column-break candidate is weaker evidence than an in-column paragraph gap:
+  // a mechanical action body can also wrap to the top of a new column right
+  // after a complete sentence (Djinni's Whirlwind escape clause). Reject it when
+  // the trailing block carries mechanical vocabulary so such a wrap stays with
+  // its action. The in-column paragraph-break branch needs no such guard — the
+  // larger gap is unambiguous SRD flavor typography, and real descriptions can
+  // legitimately mention dice (Giant Fire Beetle's glands "shed light for 1d6
+  // days"), which this marker would otherwise reject (eshyra-76b7).
+  if (candidateFromColumnBreak) {
+    const blockText = lines
+      .slice(candidate)
+      .map((l) => l.text)
+      .join(' ');
+    if (MECHANICAL_PROSE_MARKER.test(blockText)) return -1;
+  }
+  return candidate;
 }
 
 /**
@@ -433,7 +581,7 @@ export function parseNarrativeSections(
   }
   if (challengeIdx < 0) return {};
 
-  const lines: string[] = [];
+  const collected: NarrativeLine[] = [];
   for (let i = challengeIdx + 1; i < body.length; i++) {
     const entry = body[i];
     if (
@@ -443,8 +591,36 @@ export function parseNarrativeSections(
       continue; // structural heading (group/running header / leaked name)
     }
     const trimmed = entry.line.trim();
-    if (trimmed.length > 0) lines.push(trimmed);
+    if (trimmed.length > 0) {
+      collected.push({ text: trimmed, gap: entry.gap, height: entry.height });
+    }
   }
+
+  // Split the trailing flavor paragraph (eshyra-76b7) off the mechanical body so
+  // it lands in `description` instead of being appended to the last action /
+  // reaction. The flavor lines are re-flowed into paragraphs on the same
+  // in-column paragraph-break signal used to find the block's start.
+  let description: string | undefined;
+  const flavorStart = findFlavorStart(collected);
+  if (flavorStart >= 0) {
+    const flavorLines = collected.slice(flavorStart);
+    const paragraphs: string[] = [];
+    let para: string[] = [];
+    for (let i = 0; i < flavorLines.length; i++) {
+      const fl = flavorLines[i];
+      if (i > 0 && isParagraphBreak(fl.gap, fl.height) && para.length > 0) {
+        paragraphs.push(para.join(' '));
+        para = [];
+      }
+      para.push(fl.text);
+    }
+    if (para.length > 0) paragraphs.push(para.join(' '));
+    const joined = paragraphs.join('\n\n').trim();
+    if (joined.length > 0) description = joined;
+    collected.length = flavorStart;
+  }
+
+  const lines = collected.map((l) => l.text);
 
   const traits: CreatureStatBlockEntry[] = [];
   const actions: CreatureStatBlockEntry[] = [];
@@ -533,17 +709,21 @@ export function parseNarrativeSections(
     actions?: CreatureStatBlockEntry[];
     reactions?: CreatureStatBlockEntry[];
     legendaryActions?: CreatureLegendaryActions;
+    description?: string;
   } = {};
   if (traits.length > 0) out.traits = traits;
   if (actions.length > 0) out.actions = actions;
   if (reactions.length > 0) out.reactions = reactions;
   if (legendaryEntries.length > 0 || legendaryIntro.length > 0) {
-    const description = legendaryIntro.join(' ').trim();
+    const legendaryDescription = legendaryIntro.join(' ').trim();
     out.legendaryActions = {
-      ...(description.length > 0 ? { description } : {}),
+      ...(legendaryDescription.length > 0
+        ? { description: legendaryDescription }
+        : {}),
       entries: legendaryEntries,
     };
   }
+  if (description !== undefined) out.description = description;
   return out;
 }
 
@@ -797,6 +977,30 @@ function readStatBlock(lines: readonly string[]): StatBlockFields {
 }
 
 /**
+ * Truncate a creature body at the first line that jumps more than one page past
+ * the running content page (eshyra-76b7). A real stat block is contiguous —
+ * consecutive body lines stay on the same or the next page — so a larger jump
+ * means foreign content from a later slice has been concatenated in. The worked
+ * case: Ogre Zombie ends the Monsters chapter on p357, and the Appendix MM-A
+ * intro prose ("This appendix contains statistics …") sits on p366 BEFORE the
+ * first appendix creature (Ape). Without this cut that intro lands in Ogre
+ * Zombie's body and is appended to its Morningstar action. The intro is the
+ * appendix's, not a creature's; it is dropped here and intentionally not
+ * attached to any creature (see the importer source-coverage notes).
+ */
+function truncateAtForeignPageJump(
+  lines: readonly FlatLine[],
+  anchorPage: number,
+): readonly FlatLine[] {
+  let prevPage = anchorPage;
+  for (let k = 0; k < lines.length; k++) {
+    if (lines[k].page - prevPage > 1) return lines.slice(0, k);
+    prevPage = lines[k].page;
+  }
+  return lines;
+}
+
+/**
  * Parse creature stat blocks from a narrowed `PageText[]`. Returns a
  * `CreatureExtraction[]` sorted by name.
  *
@@ -861,7 +1065,10 @@ export function parseCreatures(
     );
     const bodyEnd =
       templateBoundaryIdx < 0 ? nextCandidateIdx : templateBoundaryIdx;
-    const bodyLines = flat.slice(candidate.metaIdx + 1, bodyEnd);
+    const bodyLines = truncateAtForeignPageJump(
+      flat.slice(candidate.metaIdx + 1, bodyEnd),
+      flat[candidate.metaIdx].page,
+    );
     const body = bodyLines.map((f) => f.line);
     const fields = readStatBlock(body);
 
