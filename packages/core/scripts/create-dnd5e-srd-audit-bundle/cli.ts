@@ -617,6 +617,7 @@ async function main(): Promise<void> {
     summary: {
       record: number;
       childOf: number;
+      ambiguous: number;
       ignored: Record<string, number>;
       knownGap: Record<string, number>;
       unaccounted: number;
@@ -628,7 +629,7 @@ async function main(): Promise<void> {
     0,
   );
   log(
-    `  ${sourceCoverage.entries.length} source structures: ${sourceCoverage.summary.unaccounted} unaccounted, ${knownGapTotal} known-gap`,
+    `  ${sourceCoverage.entries.length} source structures: ${sourceCoverage.summary.unaccounted} unaccounted, ${sourceCoverage.summary.ambiguous} ambiguous, ${knownGapTotal} known-gap`,
   );
 
   // 7. Record keys by kind
@@ -726,6 +727,7 @@ async function main(): Promise<void> {
     sourceCoverage: {
       inventoryItems: sourceCoverage.entries.length,
       unaccounted: sourceCoverage.summary.unaccounted,
+      ambiguous: sourceCoverage.summary.ambiguous,
       knownGapTotal,
       knownGapByBead: sourceCoverage.summary.knownGap,
     },
@@ -796,7 +798,7 @@ async function main(): Promise<void> {
     log(`  SRD structure/coverage findings: ${srdAudit.findings.length}`);
   }
   log(
-    `  Source coverage: ${sourceCoverage.entries.length} structures, ${sourceCoverage.summary.unaccounted} unaccounted, ${knownGapTotal} known-gap`,
+    `  Source coverage: ${sourceCoverage.entries.length} structures, ${sourceCoverage.summary.unaccounted} unaccounted, ${sourceCoverage.summary.ambiguous} ambiguous, ${knownGapTotal} known-gap`,
   );
 }
 

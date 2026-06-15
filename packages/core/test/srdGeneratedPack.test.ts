@@ -217,8 +217,9 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 296 -> 297 (eshyra-76b7): the Appendix MM-A intro prose
   // (rule:appendix-mm-a-miscellaneous-creatures), captured as its own rule
   // instead of bleeding into the preceding creature's last action.
+  // 297 -> 299 (eshyra-bw95): the two substantive core-rules Variant sections.
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 297,
+  rule: 299,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -627,11 +628,12 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // rule records have no embedded table. eshyra-4a7.10.5 adds 14 PH-B/PH-C
   // prose rules, none of which carry tableRefs (281 -> 295, 282 -> 296).
   // eshyra-76b7 adds the Appendix MM-A intro rule (no tableRefs): 296 -> 297.
+  // eshyra-bw95 adds two variant rules without tableRefs: 297 -> 299.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 296,
-    totalInKind: 297,
+    missingCount: 298,
+    totalInKind: 299,
   },
   {
     kind: 'spell',
@@ -792,6 +794,33 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const keys = new Set(pack.records.map((record) => record.key));
       for (const expected of EXPECTED_STABLE_KEYS) {
         expect(keys.has(expected)).toBe(true);
+      }
+    });
+  });
+
+  describe('core variant rules', () => {
+    it('preserves the two substantive Variant sections as standalone rules', () => {
+      const variants = [
+        {
+          key: 'rule:variant-skills-with-different-abilities',
+          page: 'p. 78',
+          text: 'Normally, your proficiency in a skill applies only to a specific kind of ability check.',
+        },
+        {
+          key: 'rule:variant-encumbrance',
+          page: 'p. 80',
+          text: 'The rules for lifting and carrying are intentionally simple.',
+        },
+      ];
+      for (const expected of variants) {
+        const record = pack.records.find((r) => r.key === expected.key);
+        expect(record).toBeDefined();
+        expect(record?.kind).toBe('rule');
+        expect(record?.source).toBe(`SRD 5.1 ${expected.page}`);
+        expect(record?.provenance?.locator).toBe(expected.page);
+        expect((record?.data as { text?: string }).text).toContain(
+          expected.text,
+        );
       }
     });
   });

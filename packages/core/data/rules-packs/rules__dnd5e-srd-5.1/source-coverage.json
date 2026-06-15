@@ -1,7 +1,8 @@
 {
   "summary": {
-    "record": 1961,
-    "childOf": 99,
+    "record": 1420,
+    "childOf": 456,
+    "ambiguous": 186,
     "taxonomy": 33,
     "ignored": {
       "class-progression-table-internal": 9,
@@ -12,8 +13,7 @@
       "record-group-heading": 3,
       "spell-list-header": 78,
       "subclass-spell-table-heading": 2,
-      "table-rows-emitted-as-records": 18,
-      "variant-rule-excluded": 2
+      "table-rows-emitted-as-records": 18
     },
     "knownGap": {},
     "unaccounted": 0
@@ -657,138 +657,8 @@
     ],
     "collapsedSourceItems": [
       {
-        "text": "Ability Score Improvement",
-        "resolvedKey": "feature:barbarian:ability-score-improvement",
-        "count": 12
-      },
-      {
-        "text": "Extra Attack",
-        "resolvedKey": "feature:barbarian:extra-attack",
-        "count": 6
-      },
-      {
-        "text": "Unarmored Defense",
-        "resolvedKey": "feature:barbarian:unarmored-defense",
-        "count": 3
-      },
-      {
-        "text": "Expertise",
-        "resolvedKey": "feature:bard:expertise",
-        "count": 2
-      },
-      {
-        "text": "Spellcasting",
-        "resolvedKey": "feature:bard:spellcasting",
-        "count": 10
-      },
-      {
-        "text": "Land’s Stride",
-        "resolvedKey": "feature:circle-of-the-land:lands-stride",
-        "count": 2
-      },
-      {
-        "text": "Cantrips",
-        "resolvedKey": "feature:cleric:cantrips",
-        "count": 7
-      },
-      {
-        "text": "Channel Divinity",
-        "resolvedKey": "feature:cleric:channel-divinity",
-        "count": 4
-      },
-      {
-        "text": "Timeless Body",
-        "resolvedKey": "feature:druid:timeless-body",
-        "count": 2
-      },
-      {
-        "text": "Fighting Style",
-        "resolvedKey": "feature:fighter:fighting-style",
-        "count": 3
-      },
-      {
-        "text": "Multiattack",
-        "resolvedKey": "feature:hunter:multiattack",
-        "count": 2
-      },
-      {
-        "text": "Evasion",
-        "resolvedKey": "feature:monk:evasion",
-        "count": 2
-      },
-      {
         "text": "Eldritch Invocations",
         "resolvedKey": "feature:warlock:eldritch-invocations",
-        "count": 2
-      },
-      {
-        "text": "Sphere of Annihilation",
-        "resolvedKey": "hazard:sphere-of-annihilation",
-        "count": 2
-      },
-      {
-        "text": "Ability Scores and Modifiers",
-        "resolvedKey": "rule:ability-scores-and-modifiers",
-        "count": 2
-      },
-      {
-        "text": "Actions",
-        "resolvedKey": "rule:actions",
-        "count": 316
-      },
-      {
-        "text": "Alignment",
-        "resolvedKey": "rule:alignment",
-        "count": 2
-      },
-      {
-        "text": "Armor Class",
-        "resolvedKey": "rule:armor-class",
-        "count": 2
-      },
-      {
-        "text": "Attack Rolls",
-        "resolvedKey": "rule:attack-rolls",
-        "count": 2
-      },
-      {
-        "text": "Equipment",
-        "resolvedKey": "rule:backgrounds-equipment",
-        "count": 15
-      },
-      {
-        "text": "Languages",
-        "resolvedKey": "rule:backgrounds-languages",
-        "count": 3
-      },
-      {
-        "text": "Proficiencies",
-        "resolvedKey": "rule:backgrounds-proficiencies",
-        "count": 14
-      },
-      {
-        "text": "Blindsight",
-        "resolvedKey": "rule:blindsight",
-        "count": 2
-      },
-      {
-        "text": "Range",
-        "resolvedKey": "rule:casting-a-spell-range",
-        "count": 2
-      },
-      {
-        "text": "Saving Throws",
-        "resolvedKey": "rule:casting-a-spell-saving-throws",
-        "count": 3
-      },
-      {
-        "text": "Reactions",
-        "resolvedKey": "rule:casting-time-reactions",
-        "count": 15
-      },
-      {
-        "text": "Experience Points",
-        "resolvedKey": "rule:challenge-experience-points",
         "count": 2
       },
       {
@@ -797,24 +667,9 @@
         "count": 2
       },
       {
-        "text": "Spellcasting Ability",
-        "resolvedKey": "rule:charisma-spellcasting-ability",
-        "count": 11
-      },
-      {
         "text": "Class Features",
         "resolvedKey": "rule:class-features",
         "count": 13
-      },
-      {
-        "text": "Hit Points",
-        "resolvedKey": "rule:constitution-hit-points",
-        "count": 15
-      },
-      {
-        "text": "Darkvision",
-        "resolvedKey": "rule:darkvision",
-        "count": 3
       },
       {
         "text": "Dexterity",
@@ -822,58 +677,8 @@
         "count": 2
       },
       {
-        "text": "Attack Rolls and Damage",
-        "resolvedKey": "rule:dexterity-attack-rolls-and-damage",
-        "count": 2
-      },
-      {
-        "text": "Initiative",
-        "resolvedKey": "rule:dexterity-initiative",
-        "count": 2
-      },
-      {
-        "text": "Fly",
-        "resolvedKey": "rule:fly",
-        "count": 2
-      },
-      {
         "text": "Intelligence",
         "resolvedKey": "rule:intelligence",
-        "count": 2
-      },
-      {
-        "text": "Legendary Actions",
-        "resolvedKey": "rule:legendary-actions",
-        "count": 31
-      },
-      {
-        "text": "Lifestyle Expenses",
-        "resolvedKey": "rule:lifestyle-expenses",
-        "count": 3
-      },
-      {
-        "text": "Skills",
-        "resolvedKey": "rule:monsters-skills",
-        "count": 2
-      },
-      {
-        "text": "Speed",
-        "resolvedKey": "rule:monsters-speed",
-        "count": 2
-      },
-      {
-        "text": "Difficult Terrain",
-        "resolvedKey": "rule:movement-and-position-difficult-terrain",
-        "count": 2
-      },
-      {
-        "text": "Proficiency Bonus",
-        "resolvedKey": "rule:multiclassing-proficiency-bonus",
-        "count": 2
-      },
-      {
-        "text": "Truesight",
-        "resolvedKey": "rule:senses-truesight",
         "count": 2
       },
       {
@@ -925,6 +730,621 @@
         "text": "Travel Pace",
         "resolvedKey": "table:travel-pace",
         "count": 2
+      }
+    ],
+    "unresolvedSourceItems": [
+      {
+        "text": "Ability Score Improvement",
+        "candidateKeys": [
+          "feature:barbarian:ability-score-improvement",
+          "feature:bard:ability-score-improvement",
+          "feature:cleric:ability-score-improvement",
+          "feature:druid:ability-score-improvement",
+          "feature:fighter:ability-score-improvement",
+          "feature:monk:ability-score-improvement",
+          "feature:paladin:ability-score-improvement",
+          "feature:ranger:ability-score-improvement",
+          "feature:rogue:ability-score-improvement",
+          "feature:sorcerer:ability-score-improvement",
+          "feature:warlock:ability-score-improvement",
+          "feature:wizard:ability-score-improvement"
+        ],
+        "count": 12
+      },
+      {
+        "text": "Ability Scores and Modifiers",
+        "candidateKeys": [
+          "rule:ability-scores-and-modifiers",
+          "table:ability-scores-and-modifiers"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Acolyte",
+        "candidateKeys": [
+          "background:acolyte",
+          "creature:acolyte"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Alignment",
+        "candidateKeys": [
+          "rule:alignment",
+          "rule:creating-sentient-magic-items-alignment",
+          "rule:monsters-alignment",
+          "rule:racial-traits-alignment"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Armor Class",
+        "candidateKeys": [
+          "rule:armor-class",
+          "rule:monsters-armor-class"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Armor of Resistance",
+        "candidateKeys": [
+          "magic-item:armor-of-resistance",
+          "table:armor-of-resistance"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Attack",
+        "candidateKeys": [
+          "action:attack",
+          "rule:attack"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Attack Rolls",
+        "candidateKeys": [
+          "rule:attack-rolls",
+          "rule:casting-a-spell-attack-rolls"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Attack Rolls and Damage",
+        "candidateKeys": [
+          "rule:dexterity-attack-rolls-and-damage",
+          "rule:strength-attack-rolls-and-damage"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Bag of Beans",
+        "candidateKeys": [
+          "magic-item:bag-of-beans",
+          "table:bag-of-beans"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Belt of Giant Strength",
+        "candidateKeys": [
+          "magic-item:belt-of-giant-strength",
+          "table:belt-of-giant-strength"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Blindsight",
+        "candidateKeys": [
+          "rule:blindsight",
+          "rule:senses-blindsight"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Candle of Invocation",
+        "candidateKeys": [
+          "magic-item:candle-of-invocation",
+          "table:candle-of-invocation"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Cantrips",
+        "candidateKeys": [
+          "feature:cleric:cantrips",
+          "feature:druid:cantrips",
+          "feature:sorcerer:cantrips",
+          "feature:wizard:cantrips",
+          "rule:cantrips"
+        ],
+        "count": 7
+      },
+      {
+        "text": "Carpet of Flying",
+        "candidateKeys": [
+          "magic-item:carpet-of-flying",
+          "table:carpet-of-flying"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Cast a Spell",
+        "candidateKeys": [
+          "action:cast-a-spell",
+          "rule:cast-a-spell"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Channel Divinity",
+        "candidateKeys": [
+          "feature:cleric:channel-divinity",
+          "feature:oath-of-devotion:channel-divinity",
+          "rule:channel-divinity"
+        ],
+        "count": 4
+      },
+      {
+        "text": "Dash",
+        "candidateKeys": [
+          "action:dash",
+          "rule:dash"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Deck of Illusions",
+        "candidateKeys": [
+          "magic-item:deck-of-illusions",
+          "table:deck-of-illusions"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Deck of Many Things",
+        "candidateKeys": [
+          "magic-item:deck-of-many-things",
+          "table:deck-of-many-things"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Destroy Undead",
+        "candidateKeys": [
+          "feature:cleric:destroy-undead",
+          "table:destroy-undead"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Difficult Terrain",
+        "candidateKeys": [
+          "rule:movement-and-position-difficult-terrain",
+          "rule:speed-difficult-terrain"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Disengage",
+        "candidateKeys": [
+          "action:disengage",
+          "rule:disengage"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Dodge",
+        "candidateKeys": [
+          "action:dodge",
+          "rule:dodge"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Dragon Scale Mail",
+        "candidateKeys": [
+          "magic-item:dragon-scale-mail",
+          "table:dragon-scale-mail"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Druid",
+        "candidateKeys": [
+          "class:druid",
+          "creature:druid"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Efreeti Bottle",
+        "candidateKeys": [
+          "magic-item:efreeti-bottle",
+          "table:efreeti-bottle"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Elemental Gem",
+        "candidateKeys": [
+          "magic-item:elemental-gem",
+          "table:elemental-gem"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Equipment",
+        "candidateKeys": [
+          "rule:backgrounds-equipment",
+          "rule:equipment"
+        ],
+        "count": 15
+      },
+      {
+        "text": "Evasion",
+        "candidateKeys": [
+          "feature:monk:evasion",
+          "feature:rogue:evasion"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Experience Points",
+        "candidateKeys": [
+          "rule:challenge-experience-points",
+          "rule:experience-points"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Expertise",
+        "candidateKeys": [
+          "feature:bard:expertise",
+          "feature:rogue:expertise"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Extra Attack",
+        "candidateKeys": [
+          "feature:barbarian:extra-attack",
+          "feature:fighter:extra-attack",
+          "feature:monk:extra-attack",
+          "feature:paladin:extra-attack",
+          "feature:ranger:extra-attack",
+          "rule:extra-attack"
+        ],
+        "count": 6
+      },
+      {
+        "text": "Feather Token",
+        "candidateKeys": [
+          "magic-item:feather-token",
+          "table:feather-token"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Fighting Style",
+        "candidateKeys": [
+          "feature:fighter:fighting-style",
+          "feature:paladin:fighting-style",
+          "feature:ranger:fighting-style"
+        ],
+        "count": 3
+      },
+      {
+        "text": "Help",
+        "candidateKeys": [
+          "action:help",
+          "rule:help"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Hide",
+        "candidateKeys": [
+          "action:hide",
+          "equipment:hide",
+          "rule:hide"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Hit Points",
+        "candidateKeys": [
+          "rule:constitution-hit-points",
+          "rule:damage-and-healing-hit-points",
+          "rule:hit-points"
+        ],
+        "count": 15
+      },
+      {
+        "text": "Horn of Valhalla",
+        "candidateKeys": [
+          "magic-item:horn-of-valhalla",
+          "table:horn-of-valhalla"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Initiative",
+        "candidateKeys": [
+          "rule:dexterity-initiative",
+          "rule:the-order-of-combat-initiative"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Iron Flask",
+        "candidateKeys": [
+          "magic-item:iron-flask",
+          "table:iron-flask"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Land’s Stride",
+        "candidateKeys": [
+          "feature:circle-of-the-land:lands-stride",
+          "feature:ranger:lands-stride"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Languages",
+        "candidateKeys": [
+          "rule:backgrounds-languages",
+          "rule:languages",
+          "rule:monsters-languages",
+          "rule:racial-traits-languages"
+        ],
+        "count": 3
+      },
+      {
+        "text": "Lifestyle Expenses",
+        "candidateKeys": [
+          "rule:lifestyle-expenses",
+          "table:lifestyle-expenses"
+        ],
+        "count": 3
+      },
+      {
+        "text": "Manual of Golems",
+        "candidateKeys": [
+          "magic-item:manual-of-golems",
+          "table:manual-of-golems"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Multiattack",
+        "candidateKeys": [
+          "feature:hunter:multiattack",
+          "rule:multiattack"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Necklace of Prayer Beads",
+        "candidateKeys": [
+          "magic-item:necklace-of-prayer-beads",
+          "table:necklace-of-prayer-beads"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Potion of Giant Strength",
+        "candidateKeys": [
+          "magic-item:potion-of-giant-strength",
+          "table:potion-of-giant-strength"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Potion of Healing",
+        "candidateKeys": [
+          "equipment:potion-of-healing",
+          "magic-item:potion-of-healing"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Potion of Resistance",
+        "candidateKeys": [
+          "magic-item:potion-of-resistance",
+          "table:potion-of-resistance"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Proficiencies",
+        "candidateKeys": [
+          "rule:backgrounds-proficiencies",
+          "rule:proficiencies"
+        ],
+        "count": 14
+      },
+      {
+        "text": "Proficiency Bonus",
+        "candidateKeys": [
+          "rule:multiclassing-proficiency-bonus",
+          "rule:proficiency-bonus"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Range",
+        "candidateKeys": [
+          "rule:casting-a-spell-range",
+          "rule:range"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Ready",
+        "candidateKeys": [
+          "action:ready",
+          "rule:ready"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Ring of Resistance",
+        "candidateKeys": [
+          "magic-item:ring-of-resistance",
+          "table:ring-of-resistance"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Ring of Shooting Stars",
+        "candidateKeys": [
+          "magic-item:ring-of-shooting-stars",
+          "table:ring-of-shooting-stars"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Robe of Useful Items",
+        "candidateKeys": [
+          "magic-item:robe-of-useful-items",
+          "table:robe-of-useful-items"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Saving Throws",
+        "candidateKeys": [
+          "rule:casting-a-spell-saving-throws",
+          "rule:monsters-saving-throws",
+          "rule:saving-throws"
+        ],
+        "count": 3
+      },
+      {
+        "text": "Search",
+        "candidateKeys": [
+          "action:search",
+          "rule:search"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Skills",
+        "candidateKeys": [
+          "rule:monsters-skills",
+          "rule:skills"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Speed",
+        "candidateKeys": [
+          "rule:monsters-speed",
+          "rule:racial-traits-speed",
+          "rule:speed"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Spellbook",
+        "candidateKeys": [
+          "equipment:spellbook",
+          "feature:wizard:spellbook"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Spellcasting",
+        "candidateKeys": [
+          "feature:bard:spellcasting",
+          "feature:cleric:spellcasting",
+          "feature:druid:spellcasting",
+          "feature:paladin:spellcasting",
+          "feature:ranger:spellcasting",
+          "feature:sorcerer:spellcasting",
+          "feature:wizard:spellcasting",
+          "rule:special-traits-spellcasting",
+          "rule:spellcasting"
+        ],
+        "count": 10
+      },
+      {
+        "text": "Spellcasting Ability",
+        "candidateKeys": [
+          "rule:charisma-spellcasting-ability",
+          "rule:intelligence-spellcasting-ability",
+          "rule:wisdom-spellcasting-ability"
+        ],
+        "count": 11
+      },
+      {
+        "text": "Sphere of Annihilation",
+        "candidateKeys": [
+          "hazard:sphere-of-annihilation",
+          "magic-item:sphere-of-annihilation",
+          "table:sphere-of-annihilation"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Staff of Power",
+        "candidateKeys": [
+          "magic-item:staff-of-power",
+          "table:staff-of-power"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Staff of the Magi",
+        "candidateKeys": [
+          "magic-item:staff-of-the-magi",
+          "table:staff-of-the-magi"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Timeless Body",
+        "candidateKeys": [
+          "feature:druid:timeless-body",
+          "feature:monk:timeless-body"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Truesight",
+        "candidateKeys": [
+          "rule:senses-truesight",
+          "rule:truesight"
+        ],
+        "count": 2
+      },
+      {
+        "text": "Unarmored Defense",
+        "candidateKeys": [
+          "feature:barbarian:unarmored-defense",
+          "feature:monk:unarmored-defense",
+          "rule:unarmored-defense"
+        ],
+        "count": 3
+      },
+      {
+        "text": "Use an Object",
+        "candidateKeys": [
+          "action:use-an-object",
+          "rule:use-an-object"
+        ],
+        "count": 1
+      },
+      {
+        "text": "Wand of Wonder",
+        "candidateKeys": [
+          "magic-item:wand-of-wonder",
+          "table:wand-of-wonder"
+        ],
+        "count": 1
       }
     ]
   },
@@ -1260,7 +1680,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Barbarian",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 8,
@@ -1269,7 +1689,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Barbarian",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 8,
@@ -1278,7 +1698,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Barbarian",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 8,
@@ -1305,7 +1725,7 @@
       "structure": "heading",
       "text": "Unarmored Defense",
       "section": "Barbarian",
-      "status": "record:feature:barbarian:unarmored-defense"
+      "status": "ambiguous:feature:barbarian:unarmored-defense|feature:monk:unarmored-defense|rule:unarmored-defense"
     },
     {
       "page": 9,
@@ -1341,7 +1761,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Barbarian",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 9,
@@ -1350,7 +1770,7 @@
       "structure": "heading",
       "text": "Extra Attack",
       "section": "Barbarian",
-      "status": "record:feature:barbarian:extra-attack"
+      "status": "ambiguous:feature:barbarian:extra-attack|feature:fighter:extra-attack|feature:monk:extra-attack|feature:paladin:extra-attack|feature:ranger:extra-attack|rule:extra-attack"
     },
     {
       "page": 9,
@@ -1485,7 +1905,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Bard",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 11,
@@ -1494,7 +1914,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Bard",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 11,
@@ -1512,7 +1932,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Bard",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 11,
@@ -1530,7 +1950,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Bard",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 12,
@@ -1539,7 +1959,7 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Bard",
-      "status": "record:feature:cleric:cantrips"
+      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips"
     },
     {
       "page": 12,
@@ -1566,7 +1986,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Bard",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 12,
@@ -1629,7 +2049,7 @@
       "structure": "heading",
       "text": "Expertise",
       "section": "Bard",
-      "status": "record:feature:bard:expertise"
+      "status": "ambiguous:feature:bard:expertise|feature:rogue:expertise"
     },
     {
       "page": 13,
@@ -1638,7 +2058,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Bard",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 13,
@@ -1746,7 +2166,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Cleric",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 15,
@@ -1755,7 +2175,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Cleric",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 15,
@@ -1773,7 +2193,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Cleric",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 15,
@@ -1791,7 +2211,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Cleric",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 15,
@@ -1800,7 +2220,7 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Cleric",
-      "status": "record:feature:cleric:cantrips"
+      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips"
     },
     {
       "page": 16,
@@ -1818,7 +2238,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Cleric",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 16,
@@ -1863,7 +2283,7 @@
       "structure": "heading",
       "text": "Channel Divinity",
       "section": "Cleric",
-      "status": "record:feature:cleric:channel-divinity"
+      "status": "ambiguous:feature:cleric:channel-divinity|feature:oath-of-devotion:channel-divinity|rule:channel-divinity"
     },
     {
       "page": 16,
@@ -1881,7 +2301,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Cleric",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 17,
@@ -1890,7 +2310,7 @@
       "structure": "heading",
       "text": "Destroy Undead",
       "section": "Cleric",
-      "status": "record:feature:cleric:destroy-undead"
+      "status": "ambiguous:feature:cleric:destroy-undead|table:destroy-undead"
     },
     {
       "page": 17,
@@ -1989,7 +2409,7 @@
       "structure": "heading",
       "text": "Druid",
       "section": null,
-      "status": "record:class:druid"
+      "status": "ambiguous:class:druid|creature:druid"
     },
     {
       "page": 19,
@@ -2007,7 +2427,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Druid",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 19,
@@ -2016,7 +2436,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Druid",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 19,
@@ -2034,7 +2454,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Druid",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 19,
@@ -2061,7 +2481,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Druid",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 20,
@@ -2070,7 +2490,7 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Druid",
-      "status": "record:feature:cleric:cantrips"
+      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips"
     },
     {
       "page": 20,
@@ -2088,7 +2508,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Druid",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 20,
@@ -2142,7 +2562,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Druid",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 21,
@@ -2151,7 +2571,7 @@
       "structure": "heading",
       "text": "Timeless Body",
       "section": "Druid",
-      "status": "record:feature:druid:timeless-body"
+      "status": "ambiguous:feature:druid:timeless-body|feature:monk:timeless-body"
     },
     {
       "page": 21,
@@ -2277,7 +2697,7 @@
       "structure": "heading",
       "text": "Land’s Stride",
       "section": "Druid",
-      "status": "record:feature:circle-of-the-land:lands-stride"
+      "status": "ambiguous:feature:circle-of-the-land:lands-stride|feature:ranger:lands-stride"
     },
     {
       "page": 22,
@@ -2340,7 +2760,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Fighter",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 24,
@@ -2349,7 +2769,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Fighter",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 24,
@@ -2358,7 +2778,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Fighter",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 24,
@@ -2376,7 +2796,7 @@
       "structure": "heading",
       "text": "Fighting Style",
       "section": "Fighter",
-      "status": "record:feature:fighter:fighting-style"
+      "status": "ambiguous:feature:fighter:fighting-style|feature:paladin:fighting-style|feature:ranger:fighting-style"
     },
     {
       "page": 24,
@@ -2466,7 +2886,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Fighter",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 25,
@@ -2475,7 +2895,7 @@
       "structure": "heading",
       "text": "Extra Attack",
       "section": "Fighter",
-      "status": "record:feature:barbarian:extra-attack"
+      "status": "ambiguous:feature:barbarian:extra-attack|feature:fighter:extra-attack|feature:monk:extra-attack|feature:paladin:extra-attack|feature:ranger:extra-attack|rule:extra-attack"
     },
     {
       "page": 25,
@@ -2574,7 +2994,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Monk",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 26,
@@ -2583,7 +3003,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Monk",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 26,
@@ -2601,7 +3021,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Monk",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 26,
@@ -2619,7 +3039,7 @@
       "structure": "heading",
       "text": "Unarmored Defense",
       "section": "Monk",
-      "status": "record:feature:barbarian:unarmored-defense"
+      "status": "ambiguous:feature:barbarian:unarmored-defense|feature:monk:unarmored-defense|rule:unarmored-defense"
     },
     {
       "page": 26,
@@ -2700,7 +3120,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Monk",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 27,
@@ -2718,7 +3138,7 @@
       "structure": "heading",
       "text": "Extra Attack",
       "section": "Monk",
-      "status": "record:feature:barbarian:extra-attack"
+      "status": "ambiguous:feature:barbarian:extra-attack|feature:fighter:extra-attack|feature:monk:extra-attack|feature:paladin:extra-attack|feature:ranger:extra-attack|rule:extra-attack"
     },
     {
       "page": 28,
@@ -2745,7 +3165,7 @@
       "structure": "heading",
       "text": "Evasion",
       "section": "Monk",
-      "status": "record:feature:monk:evasion"
+      "status": "ambiguous:feature:monk:evasion|feature:rogue:evasion"
     },
     {
       "page": 28,
@@ -2790,7 +3210,7 @@
       "structure": "heading",
       "text": "Timeless Body",
       "section": "Monk",
-      "status": "record:feature:druid:timeless-body"
+      "status": "ambiguous:feature:druid:timeless-body|feature:monk:timeless-body"
     },
     {
       "page": 28,
@@ -2889,7 +3309,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Paladin",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 30,
@@ -2898,7 +3318,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Paladin",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 30,
@@ -2916,7 +3336,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Paladin",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 30,
@@ -2952,7 +3372,7 @@
       "structure": "heading",
       "text": "Fighting Style",
       "section": "Paladin",
-      "status": "record:feature:fighter:fighting-style"
+      "status": "ambiguous:feature:fighter:fighting-style|feature:paladin:fighting-style|feature:ranger:fighting-style"
     },
     {
       "page": 31,
@@ -2997,7 +3417,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Paladin",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 31,
@@ -3015,7 +3435,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Paladin",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 31,
@@ -3069,7 +3489,7 @@
       "structure": "heading",
       "text": "Channel Divinity",
       "section": "Paladin",
-      "status": "record:feature:cleric:channel-divinity"
+      "status": "ambiguous:feature:cleric:channel-divinity|feature:oath-of-devotion:channel-divinity|rule:channel-divinity"
     },
     {
       "page": 32,
@@ -3078,7 +3498,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Paladin",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 32,
@@ -3087,7 +3507,7 @@
       "structure": "heading",
       "text": "Extra Attack",
       "section": "Paladin",
-      "status": "record:feature:barbarian:extra-attack"
+      "status": "ambiguous:feature:barbarian:extra-attack|feature:fighter:extra-attack|feature:monk:extra-attack|feature:paladin:extra-attack|feature:ranger:extra-attack|rule:extra-attack"
     },
     {
       "page": 32,
@@ -3177,7 +3597,7 @@
       "structure": "heading",
       "text": "Channel Divinity",
       "section": "Paladin",
-      "status": "record:feature:cleric:channel-divinity"
+      "status": "ambiguous:feature:cleric:channel-divinity|feature:oath-of-devotion:channel-divinity|rule:channel-divinity"
     },
     {
       "page": 33,
@@ -3240,7 +3660,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Ranger",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 35,
@@ -3249,7 +3669,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Ranger",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 35,
@@ -3267,7 +3687,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Ranger",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 35,
@@ -3303,7 +3723,7 @@
       "structure": "heading",
       "text": "Fighting Style",
       "section": "Ranger",
-      "status": "record:feature:fighter:fighting-style"
+      "status": "ambiguous:feature:fighter:fighting-style|feature:paladin:fighting-style|feature:ranger:fighting-style"
     },
     {
       "page": 36,
@@ -3348,7 +3768,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Ranger",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 36,
@@ -3375,7 +3795,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Ranger",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 37,
@@ -3402,7 +3822,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Ranger",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 37,
@@ -3411,7 +3831,7 @@
       "structure": "heading",
       "text": "Extra Attack",
       "section": "Ranger",
-      "status": "record:feature:barbarian:extra-attack"
+      "status": "ambiguous:feature:barbarian:extra-attack|feature:fighter:extra-attack|feature:monk:extra-attack|feature:paladin:extra-attack|feature:ranger:extra-attack|rule:extra-attack"
     },
     {
       "page": 37,
@@ -3420,7 +3840,7 @@
       "structure": "heading",
       "text": "Land’s Stride",
       "section": "Ranger",
-      "status": "record:feature:circle-of-the-land:lands-stride"
+      "status": "ambiguous:feature:circle-of-the-land:lands-stride|feature:ranger:lands-stride"
     },
     {
       "page": 37,
@@ -3501,7 +3921,7 @@
       "structure": "heading",
       "text": "Multiattack",
       "section": "Ranger",
-      "status": "record:feature:hunter:multiattack"
+      "status": "ambiguous:feature:hunter:multiattack|rule:multiattack"
     },
     {
       "page": 38,
@@ -3537,7 +3957,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Rogue",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 39,
@@ -3546,7 +3966,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Rogue",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 39,
@@ -3555,7 +3975,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Rogue",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 39,
@@ -3573,7 +3993,7 @@
       "structure": "heading",
       "text": "Expertise",
       "section": "Rogue",
-      "status": "record:feature:bard:expertise"
+      "status": "ambiguous:feature:bard:expertise|feature:rogue:expertise"
     },
     {
       "page": 39,
@@ -3618,7 +4038,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Rogue",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 40,
@@ -3636,7 +4056,7 @@
       "structure": "heading",
       "text": "Evasion",
       "section": "Rogue",
-      "status": "record:feature:monk:evasion"
+      "status": "ambiguous:feature:monk:evasion|feature:rogue:evasion"
     },
     {
       "page": 40,
@@ -3771,7 +4191,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Sorcerer",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 42,
@@ -3780,7 +4200,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Sorcerer",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 42,
@@ -3798,7 +4218,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Sorcerer",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 42,
@@ -3816,7 +4236,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Sorcerer",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 43,
@@ -3825,7 +4245,7 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Sorcerer",
-      "status": "record:feature:cleric:cantrips"
+      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips"
     },
     {
       "page": 43,
@@ -3852,7 +4272,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Sorcerer",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 43,
@@ -3996,7 +4416,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Sorcerer",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 44,
@@ -4104,7 +4524,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Warlock",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 46,
@@ -4113,7 +4533,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Warlock",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 46,
@@ -4131,7 +4551,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Warlock",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 46,
@@ -4167,7 +4587,7 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Warlock",
-      "status": "record:feature:cleric:cantrips"
+      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips"
     },
     {
       "page": 47,
@@ -4194,7 +4614,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Warlock",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 47,
@@ -4257,7 +4677,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Warlock",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 48,
@@ -4680,7 +5100,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Wizard",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 52,
@@ -4689,7 +5109,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Wizard",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 52,
@@ -4707,7 +5127,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Wizard",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 52,
@@ -4725,7 +5145,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Wizard",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 52,
@@ -4734,7 +5154,7 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Wizard",
-      "status": "record:feature:cleric:cantrips"
+      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips"
     },
     {
       "page": 52,
@@ -4743,7 +5163,7 @@
       "structure": "heading",
       "text": "Spellbook",
       "section": "Wizard",
-      "status": "record:equipment:spellbook"
+      "status": "ambiguous:equipment:spellbook|feature:wizard:spellbook"
     },
     {
       "page": 53,
@@ -4761,7 +5181,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Wizard",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 53,
@@ -4815,7 +5235,7 @@
       "structure": "heading",
       "text": "Ability Score Improvement",
       "section": "Wizard",
-      "status": "record:feature:barbarian:ability-score-improvement"
+      "status": "ambiguous:feature:barbarian:ability-score-improvement|feature:bard:ability-score-improvement|feature:cleric:ability-score-improvement|feature:druid:ability-score-improvement|feature:fighter:ability-score-improvement|feature:monk:ability-score-improvement|feature:paladin:ability-score-improvement|feature:ranger:ability-score-improvement|feature:rogue:ability-score-improvement|feature:sorcerer:ability-score-improvement|feature:warlock:ability-score-improvement|feature:wizard:ability-score-improvement"
     },
     {
       "page": 53,
@@ -4959,7 +5379,7 @@
       "structure": "heading",
       "text": "Experience Points",
       "section": "Beyond 1st Level",
-      "status": "record:rule:challenge-experience-points"
+      "status": "ambiguous:rule:challenge-experience-points|rule:experience-points"
     },
     {
       "page": 57,
@@ -4977,7 +5397,7 @@
       "structure": "heading",
       "text": "Proficiency Bonus",
       "section": "Beyond 1st Level",
-      "status": "record:rule:multiclassing-proficiency-bonus"
+      "status": "ambiguous:rule:multiclassing-proficiency-bonus|rule:proficiency-bonus"
     },
     {
       "page": 57,
@@ -4986,7 +5406,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Beyond 1st Level",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 57,
@@ -5013,7 +5433,7 @@
       "structure": "heading",
       "text": "Channel Divinity",
       "section": "Beyond 1st Level",
-      "status": "record:feature:cleric:channel-divinity"
+      "status": "ambiguous:feature:cleric:channel-divinity|feature:oath-of-devotion:channel-divinity|rule:channel-divinity"
     },
     {
       "page": 57,
@@ -5022,7 +5442,7 @@
       "structure": "heading",
       "text": "Extra Attack",
       "section": "Beyond 1st Level",
-      "status": "record:feature:barbarian:extra-attack"
+      "status": "ambiguous:feature:barbarian:extra-attack|feature:fighter:extra-attack|feature:monk:extra-attack|feature:paladin:extra-attack|feature:ranger:extra-attack|rule:extra-attack"
     },
     {
       "page": 57,
@@ -5031,7 +5451,7 @@
       "structure": "heading",
       "text": "Unarmored Defense",
       "section": "Beyond 1st Level",
-      "status": "record:feature:barbarian:unarmored-defense"
+      "status": "ambiguous:feature:barbarian:unarmored-defense|feature:monk:unarmored-defense|rule:unarmored-defense"
     },
     {
       "page": 57,
@@ -5040,7 +5460,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Beyond 1st Level",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 58,
@@ -5058,7 +5478,7 @@
       "structure": "heading",
       "text": "Alignment",
       "section": "Beyond 1st Level",
-      "status": "record:rule:alignment"
+      "status": "ambiguous:rule:alignment|rule:creating-sentient-magic-items-alignment|rule:monsters-alignment|rule:racial-traits-alignment"
     },
     {
       "page": 59,
@@ -5076,7 +5496,7 @@
       "structure": "heading",
       "text": "Languages",
       "section": "Beyond 1st Level",
-      "status": "record:rule:backgrounds-languages"
+      "status": "ambiguous:rule:backgrounds-languages|rule:languages|rule:monsters-languages|rule:racial-traits-languages"
     },
     {
       "page": 59,
@@ -5139,7 +5559,7 @@
       "structure": "heading",
       "text": "Proficiencies",
       "section": "Beyond 1st Level",
-      "status": "record:rule:backgrounds-proficiencies"
+      "status": "ambiguous:rule:backgrounds-proficiencies|rule:proficiencies"
     },
     {
       "page": 60,
@@ -5148,7 +5568,7 @@
       "structure": "heading",
       "text": "Languages",
       "section": "Beyond 1st Level",
-      "status": "record:rule:backgrounds-languages"
+      "status": "ambiguous:rule:backgrounds-languages|rule:languages|rule:monsters-languages|rule:racial-traits-languages"
     },
     {
       "page": 60,
@@ -5157,7 +5577,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Beyond 1st Level",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 60,
@@ -5184,7 +5604,7 @@
       "structure": "heading",
       "text": "Acolyte",
       "section": "Beyond 1st Level",
-      "status": "record:background:acolyte"
+      "status": "ambiguous:background:acolyte|creature:acolyte"
     },
     {
       "page": 61,
@@ -5220,7 +5640,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": null,
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 62,
@@ -5526,7 +5946,7 @@
       "structure": "heading",
       "text": "Lifestyle Expenses",
       "section": "Equipment",
-      "status": "record:rule:lifestyle-expenses"
+      "status": "ambiguous:rule:lifestyle-expenses|table:lifestyle-expenses"
     },
     {
       "page": 72,
@@ -5535,7 +5955,7 @@
       "structure": "table-caption",
       "text": "Lifestyle Expenses",
       "section": "Equipment",
-      "status": "record:rule:lifestyle-expenses"
+      "status": "ambiguous:rule:lifestyle-expenses|table:lifestyle-expenses"
     },
     {
       "page": 73,
@@ -5625,7 +6045,7 @@
       "structure": "heading",
       "text": "Ability Scores and Modifiers",
       "section": "Using Ability Scores",
-      "status": "record:rule:ability-scores-and-modifiers"
+      "status": "ambiguous:rule:ability-scores-and-modifiers|table:ability-scores-and-modifiers"
     },
     {
       "page": 76,
@@ -5634,7 +6054,7 @@
       "structure": "table-caption",
       "text": "Ability Scores and Modifiers",
       "section": "Using Ability Scores",
-      "status": "record:rule:ability-scores-and-modifiers"
+      "status": "ambiguous:rule:ability-scores-and-modifiers|table:ability-scores-and-modifiers"
     },
     {
       "page": 76,
@@ -5652,7 +6072,7 @@
       "structure": "heading",
       "text": "Proficiency Bonus",
       "section": "Using Ability Scores",
-      "status": "record:rule:multiclassing-proficiency-bonus"
+      "status": "ambiguous:rule:multiclassing-proficiency-bonus|rule:proficiency-bonus"
     },
     {
       "page": 77,
@@ -5688,7 +6108,7 @@
       "structure": "heading",
       "text": "Skills",
       "section": "Using Ability Scores",
-      "status": "record:rule:monsters-skills"
+      "status": "ambiguous:rule:monsters-skills|rule:skills"
     },
     {
       "page": 78,
@@ -5742,7 +6162,7 @@
       "structure": "heading",
       "text": "Variant: Skills with Different Abilities",
       "section": "Using Ability Scores",
-      "status": "ignored:variant-rule-excluded"
+      "status": "record:rule:variant-skills-with-different-abilities"
     },
     {
       "page": 78,
@@ -5805,7 +6225,7 @@
       "structure": "heading",
       "text": "Attack Rolls and Damage",
       "section": "Using Ability Scores",
-      "status": "record:rule:dexterity-attack-rolls-and-damage"
+      "status": "ambiguous:rule:dexterity-attack-rolls-and-damage|rule:strength-attack-rolls-and-damage"
     },
     {
       "page": 79,
@@ -5823,7 +6243,7 @@
       "structure": "heading",
       "text": "Variant: Encumbrance",
       "section": "Using Ability Scores",
-      "status": "ignored:variant-rule-excluded"
+      "status": "record:rule:variant-encumbrance"
     },
     {
       "page": 80,
@@ -5850,7 +6270,7 @@
       "structure": "heading",
       "text": "Attack Rolls and Damage",
       "section": "Using Ability Scores",
-      "status": "record:rule:dexterity-attack-rolls-and-damage"
+      "status": "ambiguous:rule:dexterity-attack-rolls-and-damage|rule:strength-attack-rolls-and-damage"
     },
     {
       "page": 80,
@@ -5859,7 +6279,7 @@
       "structure": "heading",
       "text": "Armor Class",
       "section": "Using Ability Scores",
-      "status": "record:rule:armor-class"
+      "status": "ambiguous:rule:armor-class|rule:monsters-armor-class"
     },
     {
       "page": 80,
@@ -5868,7 +6288,7 @@
       "structure": "heading",
       "text": "Initiative",
       "section": "Using Ability Scores",
-      "status": "record:rule:dexterity-initiative"
+      "status": "ambiguous:rule:dexterity-initiative|rule:the-order-of-combat-initiative"
     },
     {
       "page": 80,
@@ -5904,7 +6324,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Using Ability Scores",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 81,
@@ -5931,7 +6351,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Using Ability Scores",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 82,
@@ -5958,7 +6378,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Using Ability Scores",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 82,
@@ -5985,7 +6405,7 @@
       "structure": "heading",
       "text": "Spellcasting Ability",
       "section": "Using Ability Scores",
-      "status": "record:rule:charisma-spellcasting-ability"
+      "status": "ambiguous:rule:charisma-spellcasting-ability|rule:intelligence-spellcasting-ability|rule:wisdom-spellcasting-ability"
     },
     {
       "page": 83,
@@ -5994,7 +6414,7 @@
       "structure": "heading",
       "text": "Saving Throws",
       "section": "Using Ability Scores",
-      "status": "record:rule:casting-a-spell-saving-throws"
+      "status": "ambiguous:rule:casting-a-spell-saving-throws|rule:monsters-saving-throws|rule:saving-throws"
     },
     {
       "page": 84,
@@ -6021,7 +6441,7 @@
       "structure": "heading",
       "text": "Speed",
       "section": "Using Ability Scores",
-      "status": "record:rule:monsters-speed"
+      "status": "ambiguous:rule:monsters-speed|rule:racial-traits-speed|rule:speed"
     },
     {
       "page": 84,
@@ -6048,7 +6468,7 @@
       "structure": "heading",
       "text": "Difficult Terrain",
       "section": "Using Ability Scores",
-      "status": "record:rule:movement-and-position-difficult-terrain"
+      "status": "ambiguous:rule:movement-and-position-difficult-terrain|rule:speed-difficult-terrain"
     },
     {
       "page": 85,
@@ -6120,7 +6540,7 @@
       "structure": "heading",
       "text": "Blindsight",
       "section": "Using Ability Scores",
-      "status": "record:rule:blindsight"
+      "status": "ambiguous:rule:blindsight|rule:senses-blindsight"
     },
     {
       "page": 86,
@@ -6138,7 +6558,7 @@
       "structure": "heading",
       "text": "Truesight",
       "section": "Using Ability Scores",
-      "status": "record:rule:senses-truesight"
+      "status": "ambiguous:rule:senses-truesight|rule:truesight"
     },
     {
       "page": 86,
@@ -6219,7 +6639,7 @@
       "structure": "heading",
       "text": "Lifestyle Expenses",
       "section": "Using Ability Scores",
-      "status": "record:rule:lifestyle-expenses"
+      "status": "ambiguous:rule:lifestyle-expenses|table:lifestyle-expenses"
     },
     {
       "page": 88,
@@ -6309,7 +6729,7 @@
       "structure": "heading",
       "text": "Initiative",
       "section": "Using Ability Scores",
-      "status": "record:rule:dexterity-initiative"
+      "status": "ambiguous:rule:dexterity-initiative|rule:the-order-of-combat-initiative"
     },
     {
       "page": 90,
@@ -6345,7 +6765,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Using Ability Scores",
-      "status": "record:rule:casting-time-reactions"
+      "status": "record:rule:reactions"
     },
     {
       "page": 91,
@@ -6390,7 +6810,7 @@
       "structure": "heading",
       "text": "Difficult Terrain",
       "section": "Using Ability Scores",
-      "status": "record:rule:movement-and-position-difficult-terrain"
+      "status": "ambiguous:rule:movement-and-position-difficult-terrain|rule:speed-difficult-terrain"
     },
     {
       "page": 91,
@@ -6480,7 +6900,7 @@
       "structure": "heading",
       "text": "Attack",
       "section": "Using Ability Scores",
-      "status": "record:action:attack"
+      "status": "ambiguous:action:attack|rule:attack"
     },
     {
       "page": 93,
@@ -6489,7 +6909,7 @@
       "structure": "heading",
       "text": "Cast a Spell",
       "section": "Using Ability Scores",
-      "status": "record:action:cast-a-spell"
+      "status": "ambiguous:action:cast-a-spell|rule:cast-a-spell"
     },
     {
       "page": 93,
@@ -6498,7 +6918,7 @@
       "structure": "heading",
       "text": "Dash",
       "section": "Using Ability Scores",
-      "status": "record:action:dash"
+      "status": "ambiguous:action:dash|rule:dash"
     },
     {
       "page": 93,
@@ -6507,7 +6927,7 @@
       "structure": "heading",
       "text": "Disengage",
       "section": "Using Ability Scores",
-      "status": "record:action:disengage"
+      "status": "ambiguous:action:disengage|rule:disengage"
     },
     {
       "page": 93,
@@ -6516,7 +6936,7 @@
       "structure": "heading",
       "text": "Dodge",
       "section": "Using Ability Scores",
-      "status": "record:action:dodge"
+      "status": "ambiguous:action:dodge|rule:dodge"
     },
     {
       "page": 93,
@@ -6525,7 +6945,7 @@
       "structure": "heading",
       "text": "Help",
       "section": "Using Ability Scores",
-      "status": "record:action:help"
+      "status": "ambiguous:action:help|rule:help"
     },
     {
       "page": 93,
@@ -6534,7 +6954,7 @@
       "structure": "heading",
       "text": "Hide",
       "section": "Using Ability Scores",
-      "status": "record:action:hide"
+      "status": "ambiguous:action:hide|equipment:hide|rule:hide"
     },
     {
       "page": 93,
@@ -6543,7 +6963,7 @@
       "structure": "heading",
       "text": "Ready",
       "section": "Using Ability Scores",
-      "status": "record:action:ready"
+      "status": "ambiguous:action:ready|rule:ready"
     },
     {
       "page": 94,
@@ -6552,7 +6972,7 @@
       "structure": "heading",
       "text": "Search",
       "section": "Using Ability Scores",
-      "status": "record:action:search"
+      "status": "ambiguous:action:search|rule:search"
     },
     {
       "page": 94,
@@ -6561,7 +6981,7 @@
       "structure": "heading",
       "text": "Use an Object",
       "section": "Using Ability Scores",
-      "status": "record:action:use-an-object"
+      "status": "ambiguous:action:use-an-object|rule:use-an-object"
     },
     {
       "page": 94,
@@ -6579,7 +6999,7 @@
       "structure": "heading",
       "text": "Attack Rolls",
       "section": "Using Ability Scores",
-      "status": "record:rule:attack-rolls"
+      "status": "ambiguous:rule:attack-rolls|rule:casting-a-spell-attack-rolls"
     },
     {
       "page": 94,
@@ -6624,7 +7044,7 @@
       "structure": "heading",
       "text": "Range",
       "section": "Using Ability Scores",
-      "status": "record:rule:casting-a-spell-range"
+      "status": "ambiguous:rule:casting-a-spell-range|rule:range"
     },
     {
       "page": 95,
@@ -6714,7 +7134,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Using Ability Scores",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 96,
@@ -6876,7 +7296,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": null,
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 100,
@@ -6939,7 +7359,7 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Spellcasting",
-      "status": "record:feature:cleric:cantrips"
+      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips"
     },
     {
       "page": 101,
@@ -7002,7 +7422,7 @@
       "structure": "heading",
       "text": "Range",
       "section": "Spellcasting",
-      "status": "record:rule:casting-a-spell-range"
+      "status": "ambiguous:rule:casting-a-spell-range|rule:range"
     },
     {
       "page": 101,
@@ -7155,7 +7575,7 @@
       "structure": "heading",
       "text": "Saving Throws",
       "section": "Spellcasting",
-      "status": "record:rule:casting-a-spell-saving-throws"
+      "status": "ambiguous:rule:casting-a-spell-saving-throws|rule:monsters-saving-throws|rule:saving-throws"
     },
     {
       "page": 103,
@@ -7164,7 +7584,7 @@
       "structure": "heading",
       "text": "Attack Rolls",
       "section": "Spellcasting",
-      "status": "record:rule:attack-rolls"
+      "status": "ambiguous:rule:attack-rolls|rule:casting-a-spell-attack-rolls"
     },
     {
       "page": 103,
@@ -8613,7 +9033,7 @@
       "structure": "heading",
       "text": "Darkvision",
       "section": "Spellcasting",
-      "status": "record:rule:darkvision"
+      "status": "record:spell:darkvision"
     },
     {
       "page": 133,
@@ -9081,7 +9501,7 @@
       "structure": "heading",
       "text": "Fly",
       "section": "Spellcasting",
-      "status": "record:rule:fly"
+      "status": "record:spell:fly"
     },
     {
       "page": 146,
@@ -10323,7 +10743,7 @@
       "structure": "heading",
       "text": "Shield",
       "section": "Spellcasting",
-      "status": "record:equipment:shield"
+      "status": "record:spell:shield"
     },
     {
       "page": 179,
@@ -11007,7 +11427,7 @@
       "structure": "heading",
       "text": "Sphere of Annihilation",
       "section": "Spellcasting",
-      "status": "record:hazard:sphere-of-annihilation"
+      "status": "ambiguous:hazard:sphere-of-annihilation|magic-item:sphere-of-annihilation|table:sphere-of-annihilation"
     },
     {
       "page": 199,
@@ -11376,7 +11796,7 @@
       "structure": "heading",
       "text": "Armor of Resistance",
       "section": "Magic Items",
-      "status": "record:magic-item:armor-of-resistance"
+      "status": "ambiguous:magic-item:armor-of-resistance|table:armor-of-resistance"
     },
     {
       "page": 209,
@@ -11421,7 +11841,7 @@
       "structure": "heading",
       "text": "Bag of Beans",
       "section": "Magic Items",
-      "status": "record:magic-item:bag-of-beans"
+      "status": "ambiguous:magic-item:bag-of-beans|table:bag-of-beans"
     },
     {
       "page": 209,
@@ -11511,7 +11931,7 @@
       "structure": "heading",
       "text": "Belt of Giant Strength",
       "section": "Magic Items",
-      "status": "record:magic-item:belt-of-giant-strength"
+      "status": "ambiguous:magic-item:belt-of-giant-strength|table:belt-of-giant-strength"
     },
     {
       "page": 211,
@@ -11637,7 +12057,7 @@
       "structure": "heading",
       "text": "Candle of Invocation",
       "section": "Magic Items",
-      "status": "record:magic-item:candle-of-invocation"
+      "status": "ambiguous:magic-item:candle-of-invocation|table:candle-of-invocation"
     },
     {
       "page": 213,
@@ -11664,7 +12084,7 @@
       "structure": "heading",
       "text": "Carpet of Flying",
       "section": "Magic Items",
-      "status": "record:magic-item:carpet-of-flying"
+      "status": "ambiguous:magic-item:carpet-of-flying|table:carpet-of-flying"
     },
     {
       "page": 213,
@@ -11835,7 +12255,7 @@
       "structure": "heading",
       "text": "Deck of Illusions",
       "section": "Magic Items",
-      "status": "record:magic-item:deck-of-illusions"
+      "status": "ambiguous:magic-item:deck-of-illusions|table:deck-of-illusions"
     },
     {
       "page": 216,
@@ -11853,7 +12273,7 @@
       "structure": "heading",
       "text": "Deck of Many Things",
       "section": "Magic Items",
-      "status": "record:magic-item:deck-of-many-things"
+      "status": "ambiguous:magic-item:deck-of-many-things|table:deck-of-many-things"
     },
     {
       "page": 217,
@@ -11880,7 +12300,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Magic Items",
-      "status": "record:rule:actions"
+      "status": "child-of:stat-block:avatar-of-death"
     },
     {
       "page": 218,
@@ -11916,7 +12336,7 @@
       "structure": "heading",
       "text": "Dragon Scale Mail",
       "section": "Magic Items",
-      "status": "record:magic-item:dragon-scale-mail"
+      "status": "ambiguous:magic-item:dragon-scale-mail|table:dragon-scale-mail"
     },
     {
       "page": 219,
@@ -11997,7 +12417,7 @@
       "structure": "heading",
       "text": "Efreeti Bottle",
       "section": "Magic Items",
-      "status": "record:magic-item:efreeti-bottle"
+      "status": "ambiguous:magic-item:efreeti-bottle|table:efreeti-bottle"
     },
     {
       "page": 220,
@@ -12015,7 +12435,7 @@
       "structure": "heading",
       "text": "Elemental Gem",
       "section": "Magic Items",
-      "status": "record:magic-item:elemental-gem"
+      "status": "ambiguous:magic-item:elemental-gem|table:elemental-gem"
     },
     {
       "page": 220,
@@ -12078,7 +12498,7 @@
       "structure": "heading",
       "text": "Feather Token",
       "section": "Magic Items",
-      "status": "record:magic-item:feather-token"
+      "status": "ambiguous:magic-item:feather-token|table:feather-token"
     },
     {
       "page": 221,
@@ -12303,7 +12723,7 @@
       "structure": "heading",
       "text": "Horn of Valhalla",
       "section": "Magic Items",
-      "status": "record:magic-item:horn-of-valhalla"
+      "status": "ambiguous:magic-item:horn-of-valhalla|table:horn-of-valhalla"
     },
     {
       "page": 226,
@@ -12375,7 +12795,7 @@
       "structure": "heading",
       "text": "Iron Flask",
       "section": "Magic Items",
-      "status": "record:magic-item:iron-flask"
+      "status": "ambiguous:magic-item:iron-flask|table:iron-flask"
     },
     {
       "page": 228,
@@ -12474,7 +12894,7 @@
       "structure": "heading",
       "text": "Manual of Golems",
       "section": "Magic Items",
-      "status": "record:magic-item:manual-of-golems"
+      "status": "ambiguous:magic-item:manual-of-golems|table:manual-of-golems"
     },
     {
       "page": 229,
@@ -12555,7 +12975,7 @@
       "structure": "heading",
       "text": "Necklace of Prayer Beads",
       "section": "Magic Items",
-      "status": "record:magic-item:necklace-of-prayer-beads"
+      "status": "ambiguous:magic-item:necklace-of-prayer-beads|table:necklace-of-prayer-beads"
     },
     {
       "page": 231,
@@ -12753,7 +13173,7 @@
       "structure": "heading",
       "text": "Potion of Giant Strength",
       "section": "Magic Items",
-      "status": "record:magic-item:potion-of-giant-strength"
+      "status": "ambiguous:magic-item:potion-of-giant-strength|table:potion-of-giant-strength"
     },
     {
       "page": 234,
@@ -12780,7 +13200,7 @@
       "structure": "heading",
       "text": "Potion of Healing",
       "section": "Magic Items",
-      "status": "record:equipment:potion-of-healing"
+      "status": "ambiguous:equipment:potion-of-healing|magic-item:potion-of-healing"
     },
     {
       "page": 234,
@@ -12834,7 +13254,7 @@
       "structure": "heading",
       "text": "Potion of Resistance",
       "section": "Magic Items",
-      "status": "record:magic-item:potion-of-resistance"
+      "status": "ambiguous:magic-item:potion-of-resistance|table:potion-of-resistance"
     },
     {
       "page": 235,
@@ -12978,7 +13398,7 @@
       "structure": "heading",
       "text": "Ring of Resistance",
       "section": "Magic Items",
-      "status": "record:magic-item:ring-of-resistance"
+      "status": "ambiguous:magic-item:ring-of-resistance|table:ring-of-resistance"
     },
     {
       "page": 237,
@@ -12996,7 +13416,7 @@
       "structure": "heading",
       "text": "Ring of Shooting Stars",
       "section": "Magic Items",
-      "status": "record:magic-item:ring-of-shooting-stars"
+      "status": "ambiguous:magic-item:ring-of-shooting-stars|table:ring-of-shooting-stars"
     },
     {
       "page": 237,
@@ -13131,7 +13551,7 @@
       "structure": "heading",
       "text": "Robe of Useful Items",
       "section": "Magic Items",
-      "status": "record:magic-item:robe-of-useful-items"
+      "status": "ambiguous:magic-item:robe-of-useful-items|table:robe-of-useful-items"
     },
     {
       "page": 239,
@@ -13293,7 +13713,7 @@
       "structure": "heading",
       "text": "Sphere of Annihilation",
       "section": "Magic Items",
-      "status": "record:hazard:sphere-of-annihilation"
+      "status": "ambiguous:hazard:sphere-of-annihilation|magic-item:sphere-of-annihilation|table:sphere-of-annihilation"
     },
     {
       "page": 243,
@@ -13347,7 +13767,7 @@
       "structure": "heading",
       "text": "Staff of Power",
       "section": "Magic Items",
-      "status": "record:magic-item:staff-of-power"
+      "status": "ambiguous:magic-item:staff-of-power|table:staff-of-power"
     },
     {
       "page": 244,
@@ -13383,7 +13803,7 @@
       "structure": "heading",
       "text": "Staff of the Magi",
       "section": "Magic Items",
-      "status": "record:magic-item:staff-of-the-magi"
+      "status": "ambiguous:magic-item:staff-of-the-magi|table:staff-of-the-magi"
     },
     {
       "page": 245,
@@ -13689,7 +14109,7 @@
       "structure": "heading",
       "text": "Wand of Wonder",
       "section": "Magic Items",
-      "status": "record:magic-item:wand-of-wonder"
+      "status": "ambiguous:magic-item:wand-of-wonder|table:wand-of-wonder"
     },
     {
       "page": 250,
@@ -13932,7 +14352,7 @@
       "structure": "heading",
       "text": "Alignment",
       "section": "Monsters",
-      "status": "record:rule:alignment"
+      "status": "record:rule:monsters-alignment"
     },
     {
       "page": 255,
@@ -13941,7 +14361,7 @@
       "structure": "heading",
       "text": "Armor Class",
       "section": "Monsters",
-      "status": "record:rule:armor-class"
+      "status": "ambiguous:rule:armor-class|rule:monsters-armor-class"
     },
     {
       "page": 255,
@@ -13950,7 +14370,7 @@
       "structure": "heading",
       "text": "Hit Points",
       "section": "Monsters",
-      "status": "record:rule:constitution-hit-points"
+      "status": "ambiguous:rule:constitution-hit-points|rule:damage-and-healing-hit-points|rule:hit-points"
     },
     {
       "page": 256,
@@ -13968,7 +14388,7 @@
       "structure": "heading",
       "text": "Speed",
       "section": "Monsters",
-      "status": "record:rule:monsters-speed"
+      "status": "ambiguous:rule:monsters-speed|rule:racial-traits-speed|rule:speed"
     },
     {
       "page": 256,
@@ -14022,7 +14442,7 @@
       "structure": "heading",
       "text": "Saving Throws",
       "section": "Monsters",
-      "status": "record:rule:casting-a-spell-saving-throws"
+      "status": "ambiguous:rule:casting-a-spell-saving-throws|rule:monsters-saving-throws|rule:saving-throws"
     },
     {
       "page": 256,
@@ -14040,7 +14460,7 @@
       "structure": "heading",
       "text": "Skills",
       "section": "Monsters",
-      "status": "record:rule:monsters-skills"
+      "status": "ambiguous:rule:monsters-skills|rule:skills"
     },
     {
       "page": 257,
@@ -14067,7 +14487,7 @@
       "structure": "heading",
       "text": "Blindsight",
       "section": "Monsters",
-      "status": "record:rule:blindsight"
+      "status": "ambiguous:rule:blindsight|rule:senses-blindsight"
     },
     {
       "page": 257,
@@ -14076,7 +14496,7 @@
       "structure": "heading",
       "text": "Darkvision",
       "section": "Monsters",
-      "status": "record:rule:darkvision"
+      "status": "record:rule:senses-darkvision"
     },
     {
       "page": 257,
@@ -14103,7 +14523,7 @@
       "structure": "heading",
       "text": "Truesight",
       "section": "Monsters",
-      "status": "record:rule:senses-truesight"
+      "status": "ambiguous:rule:senses-truesight|rule:truesight"
     },
     {
       "page": 257,
@@ -14112,7 +14532,7 @@
       "structure": "heading",
       "text": "Languages",
       "section": "Monsters",
-      "status": "record:rule:backgrounds-languages"
+      "status": "ambiguous:rule:backgrounds-languages|rule:languages|rule:monsters-languages|rule:racial-traits-languages"
     },
     {
       "page": 257,
@@ -14139,7 +14559,7 @@
       "structure": "heading",
       "text": "Experience Points",
       "section": "Monsters",
-      "status": "record:rule:challenge-experience-points"
+      "status": "ambiguous:rule:challenge-experience-points|rule:experience-points"
     },
     {
       "page": 258,
@@ -14175,7 +14595,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Monsters",
-      "status": "record:feature:bard:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
     },
     {
       "page": 259,
@@ -14211,7 +14631,7 @@
       "structure": "heading",
       "text": "Multiattack",
       "section": "Monsters",
-      "status": "record:feature:hunter:multiattack"
+      "status": "ambiguous:feature:hunter:multiattack|rule:multiattack"
     },
     {
       "page": 259,
@@ -14229,7 +14649,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "record:rule:monsters-reactions"
     },
     {
       "page": 259,
@@ -14256,7 +14676,7 @@
       "structure": "heading",
       "text": "Equipment",
       "section": "Monsters",
-      "status": "record:rule:backgrounds-equipment"
+      "status": "ambiguous:rule:backgrounds-equipment|rule:equipment"
     },
     {
       "page": 260,
@@ -14328,7 +14748,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:aboleth"
     },
     {
       "page": 261,
@@ -14337,7 +14757,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:aboleth"
     },
     {
       "page": 261,
@@ -14364,7 +14784,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:deva"
     },
     {
       "page": 262,
@@ -14382,7 +14802,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:planetar"
     },
     {
       "page": 262,
@@ -14400,7 +14820,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:solar"
     },
     {
       "page": 263,
@@ -14409,7 +14829,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:solar"
     },
     {
       "page": 263,
@@ -14436,7 +14856,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:animated-armor"
     },
     {
       "page": 264,
@@ -14454,7 +14874,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:flying-sword"
     },
     {
       "page": 264,
@@ -14472,7 +14892,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:rug-of-smothering"
     },
     {
       "page": 264,
@@ -14490,7 +14910,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ankheg"
     },
     {
       "page": 265,
@@ -14508,7 +14928,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:azer"
     },
     {
       "page": 265,
@@ -14535,7 +14955,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:basilisk"
     },
     {
       "page": 265,
@@ -14553,7 +14973,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:behir"
     },
     {
       "page": 266,
@@ -14571,7 +14991,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bugbear"
     },
     {
       "page": 266,
@@ -14589,7 +15009,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bulette"
     },
     {
       "page": 267,
@@ -14616,7 +15036,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:centaur"
     },
     {
       "page": 267,
@@ -14634,7 +15054,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:chimera"
     },
     {
       "page": 267,
@@ -14652,7 +15072,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:chuul"
     },
     {
       "page": 268,
@@ -14670,7 +15090,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:cloaker"
     },
     {
       "page": 268,
@@ -14688,7 +15108,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:cockatrice"
     },
     {
       "page": 269,
@@ -14706,7 +15126,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:couatl"
     },
     {
       "page": 269,
@@ -14733,7 +15153,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:darkmantle"
     },
     {
       "page": 270,
@@ -14760,7 +15180,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:balor"
     },
     {
       "page": 270,
@@ -14778,7 +15198,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:dretch"
     },
     {
       "page": 271,
@@ -14796,7 +15216,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:glabrezu"
     },
     {
       "page": 271,
@@ -14814,7 +15234,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hezrou"
     },
     {
       "page": 272,
@@ -14832,7 +15252,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:marilith"
     },
     {
       "page": 272,
@@ -14841,7 +15261,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:marilith"
     },
     {
       "page": 272,
@@ -14859,7 +15279,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:nalfeshnee"
     },
     {
       "page": 273,
@@ -14877,7 +15297,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:quasit"
     },
     {
       "page": 273,
@@ -14895,7 +15315,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:vrock"
     },
     {
       "page": 274,
@@ -14922,7 +15342,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:barbed-devil"
     },
     {
       "page": 274,
@@ -14940,7 +15360,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bearded-devil"
     },
     {
       "page": 275,
@@ -14958,7 +15378,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bone-devil"
     },
     {
       "page": 275,
@@ -14976,7 +15396,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:chain-devil"
     },
     {
       "page": 275,
@@ -14985,7 +15405,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:chain-devil"
     },
     {
       "page": 276,
@@ -15003,7 +15423,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:erinyes"
     },
     {
       "page": 276,
@@ -15012,7 +15432,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:erinyes"
     },
     {
       "page": 276,
@@ -15030,7 +15450,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:horned-devil"
     },
     {
       "page": 277,
@@ -15048,7 +15468,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ice-devil"
     },
     {
       "page": 277,
@@ -15066,7 +15486,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:imp"
     },
     {
       "page": 278,
@@ -15084,7 +15504,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:lemure"
     },
     {
       "page": 278,
@@ -15102,7 +15522,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:pit-fiend"
     },
     {
       "page": 279,
@@ -15129,7 +15549,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:plesiosaurus"
     },
     {
       "page": 279,
@@ -15147,7 +15567,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:triceratops"
     },
     {
       "page": 279,
@@ -15165,7 +15585,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:tyrannosaurus-rex"
     },
     {
       "page": 279,
@@ -15183,7 +15603,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:doppelganger"
     },
     {
       "page": 280,
@@ -15219,7 +15639,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-black-dragon"
     },
     {
       "page": 280,
@@ -15228,7 +15648,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-black-dragon"
     },
     {
       "page": 281,
@@ -15246,7 +15666,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-black-dragon"
     },
     {
       "page": 281,
@@ -15255,7 +15675,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-black-dragon"
     },
     {
       "page": 281,
@@ -15273,7 +15693,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-black-dragon"
     },
     {
       "page": 282,
@@ -15291,7 +15711,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:black-dragon-wyrmling"
     },
     {
       "page": 282,
@@ -15318,7 +15738,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-blue-dragon"
     },
     {
       "page": 283,
@@ -15327,7 +15747,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-blue-dragon"
     },
     {
       "page": 283,
@@ -15345,7 +15765,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-blue-dragon"
     },
     {
       "page": 283,
@@ -15354,7 +15774,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-blue-dragon"
     },
     {
       "page": 283,
@@ -15372,7 +15792,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-blue-dragon"
     },
     {
       "page": 284,
@@ -15390,7 +15810,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:blue-dragon-wyrmling"
     },
     {
       "page": 284,
@@ -15417,7 +15837,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-green-dragon"
     },
     {
       "page": 285,
@@ -15426,7 +15846,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-green-dragon"
     },
     {
       "page": 285,
@@ -15444,7 +15864,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-green-dragon"
     },
     {
       "page": 285,
@@ -15453,7 +15873,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-green-dragon"
     },
     {
       "page": 285,
@@ -15471,7 +15891,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-green-dragon"
     },
     {
       "page": 286,
@@ -15489,7 +15909,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:green-dragon-wyrmling"
     },
     {
       "page": 286,
@@ -15516,7 +15936,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-red-dragon"
     },
     {
       "page": 287,
@@ -15525,7 +15945,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-red-dragon"
     },
     {
       "page": 287,
@@ -15543,7 +15963,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-red-dragon"
     },
     {
       "page": 287,
@@ -15552,7 +15972,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-red-dragon"
     },
     {
       "page": 288,
@@ -15570,7 +15990,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-red-dragon"
     },
     {
       "page": 288,
@@ -15588,7 +16008,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:red-dragon-wyrmling"
     },
     {
       "page": 288,
@@ -15615,7 +16035,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-white-dragon"
     },
     {
       "page": 289,
@@ -15624,7 +16044,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-white-dragon"
     },
     {
       "page": 289,
@@ -15642,7 +16062,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-white-dragon"
     },
     {
       "page": 289,
@@ -15651,7 +16071,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-white-dragon"
     },
     {
       "page": 290,
@@ -15669,7 +16089,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-white-dragon"
     },
     {
       "page": 290,
@@ -15687,7 +16107,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:white-dragon-wyrmling"
     },
     {
       "page": 290,
@@ -15723,7 +16143,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-brass-dragon"
     },
     {
       "page": 291,
@@ -15732,7 +16152,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-brass-dragon"
     },
     {
       "page": 291,
@@ -15750,7 +16170,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-brass-dragon"
     },
     {
       "page": 292,
@@ -15759,7 +16179,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-brass-dragon"
     },
     {
       "page": 292,
@@ -15777,7 +16197,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-brass-dragon"
     },
     {
       "page": 292,
@@ -15795,7 +16215,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:brass-dragon-wyrmling"
     },
     {
       "page": 293,
@@ -15822,7 +16242,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-bronze-dragon"
     },
     {
       "page": 293,
@@ -15831,7 +16251,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-bronze-dragon"
     },
     {
       "page": 294,
@@ -15849,7 +16269,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-bronze-dragon"
     },
     {
       "page": 294,
@@ -15858,7 +16278,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-bronze-dragon"
     },
     {
       "page": 295,
@@ -15876,7 +16296,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-bronze-dragon"
     },
     {
       "page": 295,
@@ -15894,7 +16314,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bronze-dragon-wyrmling"
     },
     {
       "page": 295,
@@ -15921,7 +16341,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-copper-dragon"
     },
     {
       "page": 296,
@@ -15930,7 +16350,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-copper-dragon"
     },
     {
       "page": 296,
@@ -15948,7 +16368,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-copper-dragon"
     },
     {
       "page": 297,
@@ -15957,7 +16377,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-copper-dragon"
     },
     {
       "page": 297,
@@ -15975,7 +16395,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-copper-dragon"
     },
     {
       "page": 298,
@@ -15993,7 +16413,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:copper-dragon-wyrmling"
     },
     {
       "page": 298,
@@ -16020,7 +16440,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-gold-dragon"
     },
     {
       "page": 299,
@@ -16029,7 +16449,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-gold-dragon"
     },
     {
       "page": 299,
@@ -16047,7 +16467,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-gold-dragon"
     },
     {
       "page": 300,
@@ -16056,7 +16476,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-gold-dragon"
     },
     {
       "page": 300,
@@ -16074,7 +16494,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-gold-dragon"
     },
     {
       "page": 300,
@@ -16092,7 +16512,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gold-dragon-wyrmling"
     },
     {
       "page": 301,
@@ -16119,7 +16539,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ancient-silver-dragon"
     },
     {
       "page": 302,
@@ -16128,7 +16548,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:ancient-silver-dragon"
     },
     {
       "page": 302,
@@ -16146,7 +16566,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:adult-silver-dragon"
     },
     {
       "page": 302,
@@ -16155,7 +16575,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:adult-silver-dragon"
     },
     {
       "page": 303,
@@ -16173,7 +16593,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:young-silver-dragon"
     },
     {
       "page": 303,
@@ -16191,7 +16611,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:silver-dragon-wyrmling"
     },
     {
       "page": 303,
@@ -16209,7 +16629,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:dragon-turtle"
     },
     {
       "page": 304,
@@ -16227,7 +16647,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:drider"
     },
     {
       "page": 304,
@@ -16245,7 +16665,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:dryad"
     },
     {
       "page": 305,
@@ -16263,7 +16683,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:duergar"
     },
     {
       "page": 305,
@@ -16299,7 +16719,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:air-elemental"
     },
     {
       "page": 306,
@@ -16317,7 +16737,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:earth-elemental"
     },
     {
       "page": 306,
@@ -16335,7 +16755,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:fire-elemental"
     },
     {
       "page": 307,
@@ -16353,7 +16773,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:water-elemental"
     },
     {
       "page": 307,
@@ -16371,7 +16791,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:elf-drow"
     },
     {
       "page": 308,
@@ -16389,7 +16809,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ettercap"
     },
     {
       "page": 308,
@@ -16407,7 +16827,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ettin"
     },
     {
       "page": 309,
@@ -16443,7 +16863,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:shrieker"
     },
     {
       "page": 309,
@@ -16461,7 +16881,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:violet-fungus"
     },
     {
       "page": 309,
@@ -16488,7 +16908,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gargoyle"
     },
     {
       "page": 310,
@@ -16515,7 +16935,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:djinni"
     },
     {
       "page": 310,
@@ -16533,7 +16953,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:efreeti"
     },
     {
       "page": 311,
@@ -16551,7 +16971,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ghost"
     },
     {
       "page": 311,
@@ -16578,7 +16998,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ghast"
     },
     {
       "page": 312,
@@ -16596,7 +17016,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ghoul"
     },
     {
       "page": 312,
@@ -16623,7 +17043,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:cloud-giant"
     },
     {
       "page": 312,
@@ -16641,7 +17061,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:fire-giant"
     },
     {
       "page": 313,
@@ -16659,7 +17079,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:frost-giant"
     },
     {
       "page": 313,
@@ -16677,7 +17097,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hill-giant"
     },
     {
       "page": 313,
@@ -16695,7 +17115,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:stone-giant"
     },
     {
       "page": 313,
@@ -16704,7 +17124,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:stone-giant"
     },
     {
       "page": 313,
@@ -16722,7 +17142,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:storm-giant"
     },
     {
       "page": 314,
@@ -16740,7 +17160,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gibbering-mouther"
     },
     {
       "page": 314,
@@ -16758,7 +17178,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gnoll"
     },
     {
       "page": 315,
@@ -16776,7 +17196,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gnome-deep-svirfneblin"
     },
     {
       "page": 315,
@@ -16794,7 +17214,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:goblin"
     },
     {
       "page": 315,
@@ -16821,7 +17241,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:clay-golem"
     },
     {
       "page": 316,
@@ -16839,7 +17259,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:flesh-golem"
     },
     {
       "page": 317,
@@ -16857,7 +17277,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:iron-golem"
     },
     {
       "page": 317,
@@ -16875,7 +17295,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:stone-golem"
     },
     {
       "page": 317,
@@ -16893,7 +17313,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gorgon"
     },
     {
       "page": 318,
@@ -16911,7 +17331,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:grick"
     },
     {
       "page": 318,
@@ -16929,7 +17349,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:griffon"
     },
     {
       "page": 318,
@@ -16947,7 +17367,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:grimlock"
     },
     {
       "page": 319,
@@ -16983,7 +17403,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:green-hag"
     },
     {
       "page": 319,
@@ -17001,7 +17421,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:night-hag"
     },
     {
       "page": 320,
@@ -17019,7 +17439,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:sea-hag"
     },
     {
       "page": 320,
@@ -17064,7 +17484,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:half-red-dragon-veteran"
     },
     {
       "page": 321,
@@ -17082,7 +17502,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:harpy"
     },
     {
       "page": 321,
@@ -17100,7 +17520,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hell-hound"
     },
     {
       "page": 322,
@@ -17118,7 +17538,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hippogriff"
     },
     {
       "page": 322,
@@ -17136,7 +17556,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hobgoblin"
     },
     {
       "page": 322,
@@ -17154,7 +17574,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:homunculus"
     },
     {
       "page": 323,
@@ -17172,7 +17592,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hydra"
     },
     {
       "page": 323,
@@ -17199,7 +17619,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:invisible-stalker"
     },
     {
       "page": 324,
@@ -17226,7 +17646,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:kobold"
     },
     {
       "page": 324,
@@ -17244,7 +17664,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:kraken"
     },
     {
       "page": 325,
@@ -17253,7 +17673,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:kraken"
     },
     {
       "page": 325,
@@ -17280,7 +17700,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:lamia"
     },
     {
       "page": 325,
@@ -17298,7 +17718,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:lich"
     },
     {
       "page": 326,
@@ -17307,7 +17727,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:lich"
     },
     {
       "page": 326,
@@ -17325,7 +17745,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:lizardfolk"
     },
     {
       "page": 326,
@@ -17352,7 +17772,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:werebear"
     },
     {
       "page": 327,
@@ -17370,7 +17790,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:wereboar"
     },
     {
       "page": 327,
@@ -17388,7 +17808,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:wererat"
     },
     {
       "page": 328,
@@ -17406,7 +17826,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:weretiger"
     },
     {
       "page": 328,
@@ -17424,7 +17844,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:werewolf"
     },
     {
       "page": 329,
@@ -17451,7 +17871,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:magmin"
     },
     {
       "page": 329,
@@ -17469,7 +17889,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:manticore"
     },
     {
       "page": 330,
@@ -17487,7 +17907,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:medusa"
     },
     {
       "page": 330,
@@ -17514,7 +17934,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:dust-mephit"
     },
     {
       "page": 331,
@@ -17532,7 +17952,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ice-mephit"
     },
     {
       "page": 331,
@@ -17550,7 +17970,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:magma-mephit"
     },
     {
       "page": 331,
@@ -17568,7 +17988,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:steam-mephit"
     },
     {
       "page": 332,
@@ -17586,7 +18006,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:merfolk"
     },
     {
       "page": 332,
@@ -17604,7 +18024,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:merrow"
     },
     {
       "page": 332,
@@ -17622,7 +18042,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:mimic"
     },
     {
       "page": 333,
@@ -17640,7 +18060,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:minotaur"
     },
     {
       "page": 333,
@@ -17667,7 +18087,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:mummy"
     },
     {
       "page": 334,
@@ -17685,7 +18105,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:mummy-lord"
     },
     {
       "page": 334,
@@ -17694,7 +18114,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:mummy-lord"
     },
     {
       "page": 335,
@@ -17730,7 +18150,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:guardian-naga"
     },
     {
       "page": 335,
@@ -17748,7 +18168,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:spirit-naga"
     },
     {
       "page": 336,
@@ -17766,7 +18186,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:nightmare"
     },
     {
       "page": 336,
@@ -17793,7 +18213,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ogre"
     },
     {
       "page": 336,
@@ -17811,7 +18231,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:oni"
     },
     {
       "page": 337,
@@ -17838,7 +18258,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:black-pudding"
     },
     {
       "page": 337,
@@ -17847,7 +18267,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:black-pudding"
     },
     {
       "page": 337,
@@ -17865,7 +18285,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gelatinous-cube"
     },
     {
       "page": 338,
@@ -17883,7 +18303,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gray-ooze"
     },
     {
       "page": 338,
@@ -17901,7 +18321,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ochre-jelly"
     },
     {
       "page": 339,
@@ -17910,7 +18330,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:ochre-jelly"
     },
     {
       "page": 339,
@@ -17928,7 +18348,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:orc"
     },
     {
       "page": 339,
@@ -17946,7 +18366,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:otyugh"
     },
     {
       "page": 339,
@@ -17964,7 +18384,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:owlbear"
     },
     {
       "page": 340,
@@ -17991,7 +18411,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:pegasus"
     },
     {
       "page": 340,
@@ -18009,7 +18429,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:pseudodragon"
     },
     {
       "page": 340,
@@ -18027,7 +18447,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:purple-worm"
     },
     {
       "page": 341,
@@ -18054,7 +18474,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:rakshasa"
     },
     {
       "page": 341,
@@ -18072,7 +18492,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:remorhaz"
     },
     {
       "page": 342,
@@ -18090,7 +18510,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:roc"
     },
     {
       "page": 342,
@@ -18108,7 +18528,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:roper"
     },
     {
       "page": 343,
@@ -18126,7 +18546,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:rust-monster"
     },
     {
       "page": 343,
@@ -18153,7 +18573,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:sahuagin"
     },
     {
       "page": 344,
@@ -18171,7 +18591,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:salamander"
     },
     {
       "page": 344,
@@ -18189,7 +18609,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:satyr"
     },
     {
       "page": 344,
@@ -18207,7 +18627,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:shadow"
     },
     {
       "page": 345,
@@ -18225,7 +18645,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:shambling-mound"
     },
     {
       "page": 345,
@@ -18243,7 +18663,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:shield-guardian"
     },
     {
       "page": 346,
@@ -18252,7 +18672,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Monsters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:shield-guardian"
     },
     {
       "page": 346,
@@ -18279,7 +18699,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:skeleton"
     },
     {
       "page": 346,
@@ -18297,7 +18717,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:minotaur-skeleton"
     },
     {
       "page": 346,
@@ -18315,7 +18735,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:warhorse-skeleton"
     },
     {
       "page": 346,
@@ -18333,7 +18753,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:specter"
     },
     {
       "page": 347,
@@ -18360,7 +18780,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:androsphinx"
     },
     {
       "page": 348,
@@ -18369,7 +18789,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:androsphinx"
     },
     {
       "page": 348,
@@ -18387,7 +18807,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gynosphinx"
     },
     {
       "page": 348,
@@ -18396,7 +18816,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:gynosphinx"
     },
     {
       "page": 348,
@@ -18414,7 +18834,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:sprite"
     },
     {
       "page": 349,
@@ -18432,7 +18852,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:stirge"
     },
     {
       "page": 349,
@@ -18450,7 +18870,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:succubus-incubus"
     },
     {
       "page": 350,
@@ -18477,7 +18897,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:tarrasque"
     },
     {
       "page": 350,
@@ -18486,7 +18906,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:tarrasque"
     },
     {
       "page": 351,
@@ -18504,7 +18924,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:treant"
     },
     {
       "page": 351,
@@ -18522,7 +18942,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:troll"
     },
     {
       "page": 351,
@@ -18549,7 +18969,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:unicorn"
     },
     {
       "page": 352,
@@ -18558,7 +18978,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:unicorn"
     },
     {
       "page": 352,
@@ -18594,7 +19014,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:vampire"
     },
     {
       "page": 353,
@@ -18603,7 +19023,7 @@
       "structure": "heading",
       "text": "Legendary Actions",
       "section": "Monsters",
-      "status": "record:rule:legendary-actions"
+      "status": "child-of:creature:vampire"
     },
     {
       "page": 354,
@@ -18621,7 +19041,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:vampire-spawn"
     },
     {
       "page": 354,
@@ -18648,7 +19068,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:wight"
     },
     {
       "page": 355,
@@ -18666,7 +19086,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:will-o-wisp"
     },
     {
       "page": 355,
@@ -18684,7 +19104,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:wraith"
     },
     {
       "page": 356,
@@ -18702,7 +19122,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:wyvern"
     },
     {
       "page": 356,
@@ -18729,7 +19149,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:xorn"
     },
     {
       "page": 356,
@@ -18765,7 +19185,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:zombie"
     },
     {
       "page": 357,
@@ -18783,7 +19203,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Monsters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ogre-zombie"
     },
     {
       "page": 358,
@@ -19125,7 +19545,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:ape"
     },
     {
       "page": 366,
@@ -19143,7 +19563,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:awakened-shrub"
     },
     {
       "page": 366,
@@ -19161,7 +19581,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:awakened-tree"
     },
     {
       "page": 366,
@@ -19179,7 +19599,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:axe-beak"
     },
     {
       "page": 367,
@@ -19197,7 +19617,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:baboon"
     },
     {
       "page": 367,
@@ -19215,7 +19635,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:badger"
     },
     {
       "page": 367,
@@ -19233,7 +19653,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bat"
     },
     {
       "page": 367,
@@ -19251,7 +19671,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:black-bear"
     },
     {
       "page": 368,
@@ -19269,7 +19689,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:blink-dog"
     },
     {
       "page": 368,
@@ -19287,7 +19707,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:blood-hawk"
     },
     {
       "page": 368,
@@ -19305,7 +19725,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:boar"
     },
     {
       "page": 369,
@@ -19323,7 +19743,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:brown-bear"
     },
     {
       "page": 369,
@@ -19341,7 +19761,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:camel"
     },
     {
       "page": 369,
@@ -19359,7 +19779,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:cat"
     },
     {
       "page": 369,
@@ -19377,7 +19797,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:constrictor-snake"
     },
     {
       "page": 370,
@@ -19395,7 +19815,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:crab"
     },
     {
       "page": 370,
@@ -19413,7 +19833,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:crocodile"
     },
     {
       "page": 370,
@@ -19431,7 +19851,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:death-dog"
     },
     {
       "page": 370,
@@ -19449,7 +19869,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:deer"
     },
     {
       "page": 371,
@@ -19467,7 +19887,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:dire-wolf"
     },
     {
       "page": 371,
@@ -19485,7 +19905,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:draft-horse"
     },
     {
       "page": 371,
@@ -19503,7 +19923,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:eagle"
     },
     {
       "page": 371,
@@ -19521,7 +19941,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:elephant"
     },
     {
       "page": 372,
@@ -19539,7 +19959,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:elk"
     },
     {
       "page": 372,
@@ -19557,7 +19977,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:flying-snake"
     },
     {
       "page": 372,
@@ -19584,7 +20004,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-ape"
     },
     {
       "page": 373,
@@ -19602,7 +20022,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-badger"
     },
     {
       "page": 373,
@@ -19620,7 +20040,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-bat"
     },
     {
       "page": 373,
@@ -19638,7 +20058,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-boar"
     },
     {
       "page": 374,
@@ -19656,7 +20076,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-centipede"
     },
     {
       "page": 374,
@@ -19674,7 +20094,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-constrictor-snake"
     },
     {
       "page": 374,
@@ -19692,7 +20112,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-crab"
     },
     {
       "page": 374,
@@ -19710,7 +20130,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-crocodile"
     },
     {
       "page": 375,
@@ -19728,7 +20148,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-eagle"
     },
     {
       "page": 375,
@@ -19746,7 +20166,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-elk"
     },
     {
       "page": 375,
@@ -19764,7 +20184,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-fire-beetle"
     },
     {
       "page": 376,
@@ -19782,7 +20202,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-frog"
     },
     {
       "page": 376,
@@ -19800,7 +20220,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-goat"
     },
     {
       "page": 376,
@@ -19818,7 +20238,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-hyena"
     },
     {
       "page": 377,
@@ -19836,7 +20256,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-lizard"
     },
     {
       "page": 377,
@@ -19854,7 +20274,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-octopus"
     },
     {
       "page": 377,
@@ -19872,7 +20292,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-owl"
     },
     {
       "page": 378,
@@ -19890,7 +20310,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-poisonous-snake"
     },
     {
       "page": 378,
@@ -19908,7 +20328,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-rat"
     },
     {
       "page": 378,
@@ -19935,7 +20355,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-scorpion"
     },
     {
       "page": 378,
@@ -19953,7 +20373,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-sea-horse"
     },
     {
       "page": 379,
@@ -19971,7 +20391,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-shark"
     },
     {
       "page": 379,
@@ -19989,7 +20409,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-spider"
     },
     {
       "page": 380,
@@ -20007,7 +20427,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-toad"
     },
     {
       "page": 380,
@@ -20025,7 +20445,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-vulture"
     },
     {
       "page": 380,
@@ -20043,7 +20463,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-wasp"
     },
     {
       "page": 381,
@@ -20061,7 +20481,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-weasel"
     },
     {
       "page": 381,
@@ -20079,7 +20499,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:giant-wolf-spider"
     },
     {
       "page": 381,
@@ -20097,7 +20517,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:goat"
     },
     {
       "page": 382,
@@ -20115,7 +20535,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hawk"
     },
     {
       "page": 382,
@@ -20133,7 +20553,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hunter-shark"
     },
     {
       "page": 382,
@@ -20151,7 +20571,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:hyena"
     },
     {
       "page": 382,
@@ -20169,7 +20589,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:jackal"
     },
     {
       "page": 383,
@@ -20187,7 +20607,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:killer-whale"
     },
     {
       "page": 383,
@@ -20205,7 +20625,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:lion"
     },
     {
       "page": 383,
@@ -20223,7 +20643,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:lizard"
     },
     {
       "page": 384,
@@ -20241,7 +20661,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:mammoth"
     },
     {
       "page": 384,
@@ -20259,7 +20679,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:mastiff"
     },
     {
       "page": 384,
@@ -20277,7 +20697,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:mule"
     },
     {
       "page": 384,
@@ -20295,7 +20715,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:octopus"
     },
     {
       "page": 385,
@@ -20313,7 +20733,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:owl"
     },
     {
       "page": 385,
@@ -20331,7 +20751,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:panther"
     },
     {
       "page": 385,
@@ -20349,7 +20769,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:phase-spider"
     },
     {
       "page": 386,
@@ -20367,7 +20787,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:poisonous-snake"
     },
     {
       "page": 386,
@@ -20385,7 +20805,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:polar-bear"
     },
     {
       "page": 386,
@@ -20403,7 +20823,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:pony"
     },
     {
       "page": 387,
@@ -20421,7 +20841,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:quipper"
     },
     {
       "page": 387,
@@ -20439,7 +20859,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:rat"
     },
     {
       "page": 387,
@@ -20457,7 +20877,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:raven"
     },
     {
       "page": 387,
@@ -20475,7 +20895,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:reef-shark"
     },
     {
       "page": 388,
@@ -20493,7 +20913,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:rhinoceros"
     },
     {
       "page": 388,
@@ -20511,7 +20931,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:riding-horse"
     },
     {
       "page": 388,
@@ -20529,7 +20949,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:saber-toothed-tiger"
     },
     {
       "page": 388,
@@ -20547,7 +20967,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:scorpion"
     },
     {
       "page": 389,
@@ -20574,7 +20994,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:spider"
     },
     {
       "page": 389,
@@ -20592,7 +21012,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:swarm-of-bats"
     },
     {
       "page": 389,
@@ -20610,7 +21030,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:swarm-of-insects"
     },
     {
       "page": 390,
@@ -20628,7 +21048,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:swarm-of-poisonous-snakes"
     },
     {
       "page": 390,
@@ -20646,7 +21066,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:swarm-of-quippers"
     },
     {
       "page": 390,
@@ -20664,7 +21084,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:swarm-of-rats"
     },
     {
       "page": 391,
@@ -20682,7 +21102,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:swarm-of-ravens"
     },
     {
       "page": 391,
@@ -20709,7 +21129,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:tiger"
     },
     {
       "page": 392,
@@ -20727,7 +21147,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:vulture"
     },
     {
       "page": 392,
@@ -20745,7 +21165,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:warhorse"
     },
     {
       "page": 392,
@@ -20763,7 +21183,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:weasel"
     },
     {
       "page": 392,
@@ -20781,7 +21201,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:winter-wolf"
     },
     {
       "page": 393,
@@ -20799,7 +21219,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:wolf"
     },
     {
       "page": 393,
@@ -20817,7 +21237,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-A: Miscellaneous Creatures",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:worg"
     },
     {
       "page": 395,
@@ -20853,7 +21273,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:acolyte"
     },
     {
       "page": 395,
@@ -20871,7 +21291,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:archmage"
     },
     {
       "page": 396,
@@ -20889,7 +21309,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:assassin"
     },
     {
       "page": 396,
@@ -20907,7 +21327,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bandit"
     },
     {
       "page": 397,
@@ -20925,7 +21345,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:bandit-captain"
     },
     {
       "page": 397,
@@ -20934,7 +21354,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:bandit-captain"
     },
     {
       "page": 397,
@@ -20952,7 +21372,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:berserker"
     },
     {
       "page": 398,
@@ -20970,7 +21390,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:commoner"
     },
     {
       "page": 398,
@@ -20988,7 +21408,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:cultist"
     },
     {
       "page": 398,
@@ -21006,7 +21426,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:cult-fanatic"
     },
     {
       "page": 398,
@@ -21024,7 +21444,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:druid"
     },
     {
       "page": 399,
@@ -21042,7 +21462,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:gladiator"
     },
     {
       "page": 399,
@@ -21051,7 +21471,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:gladiator"
     },
     {
       "page": 399,
@@ -21069,7 +21489,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:guard"
     },
     {
       "page": 400,
@@ -21087,7 +21507,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:knight"
     },
     {
       "page": 400,
@@ -21096,7 +21516,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:knight"
     },
     {
       "page": 400,
@@ -21114,7 +21534,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:mage"
     },
     {
       "page": 401,
@@ -21132,7 +21552,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:noble"
     },
     {
       "page": 401,
@@ -21141,7 +21561,7 @@
       "structure": "heading",
       "text": "Reactions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:casting-time-reactions"
+      "status": "child-of:creature:noble"
     },
     {
       "page": 401,
@@ -21159,7 +21579,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:priest"
     },
     {
       "page": 401,
@@ -21177,7 +21597,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:scout"
     },
     {
       "page": 402,
@@ -21195,7 +21615,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:spy"
     },
     {
       "page": 402,
@@ -21213,7 +21633,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:thug"
     },
     {
       "page": 402,
@@ -21231,7 +21651,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:tribal-warrior"
     },
     {
       "page": 403,
@@ -21249,7 +21669,7 @@
       "structure": "heading",
       "text": "Actions",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:rule:actions"
+      "status": "child-of:creature:veteran"
     }
   ]
 }

@@ -7,6 +7,8 @@
  *
  *   - `record`     — an emitted top-level record covers it (name auto-match);
  *   - `child-of`   — represented as structured child data on a record;
+ *   - `ambiguous`  — multiple emitted records share the normalized heading;
+ *                    this is visible but does not count as covered;
  *   - `taxonomy`   — represented by creature.familyPath metadata;
  *   - `ignored`    — intentionally not a record, with a stable reason code;
  *   - `known-gap`  — SHOULD become a record/child but doesn't yet; carries the
@@ -18,10 +20,11 @@
  * Resolution order: explicit `record`-type rules first (a curated mapping is
  * more precise than the name heuristic, so it can disambiguate duplicate
  * source captions — e.g. the two "Draconic Ancestry" tables on p5 and p44
- * map to two different emitted records), then the name auto-match (an
- * emitted record claims its own heading without curation), then the caller's
- * remaining rules in order (first match wins), then the document-structure
- * default for chapter/section tiers, else unaccounted.
+ * map to two different emitted records), then contextual stat-block ownership,
+ * then unique-name auto-match, then the caller's remaining rules in order
+ * (first match wins). A multi-record name match becomes `ambiguous` rather
+ * than arbitrarily choosing a winner. Finally, chapter/section tiers use the
+ * document-structure default; anything else is unaccounted.
  *
  * Rules are PREDICATES with stable reason codes, not per-item lists: one rule
  * accounts for a whole class of source items (e.g. every spell-list header),
@@ -37,6 +40,7 @@ import type { SourceInventoryItem } from './sourceInventory.js';
 export type CoverageStatus =
   | { readonly kind: 'record'; readonly key: string }
   | { readonly kind: 'child-of'; readonly key: string }
+  | { readonly kind: 'ambiguous'; readonly candidateKeys: readonly string[] }
   | {
       readonly kind: 'taxonomy';
       readonly field: 'creature.familyPath';
@@ -194,19 +198,35 @@ export function evaluateSourceCoverage(
   records: readonly CoverageRecordRef[],
   rules: readonly CoverageRule[],
 ): readonly SourceCoverageEntry[] {
-  // name -> lexicographically-first record key. Duplicate names (e.g. the
-  // per-class "Ability Score Improvement" features) resolve deterministically;
-  // for accounting purposes any emitted record with the name covers the item.
-  const keyByName = new Map<string, string>();
+  const keysByName = new Map<string, string[]>();
   for (const record of records) {
     const name = normalizeName(record.name);
-    const existing = keyByName.get(name);
-    if (existing === undefined || record.key < existing) {
-      keyByName.set(name, record.key);
+    const existing = keysByName.get(name);
+    if (existing === undefined) keysByName.set(name, [record.key]);
+    else existing.push(record.key);
+  }
+  for (const keys of keysByName.values()) keys.sort();
+
+  const statBlockKeyByName = new Map<string, string>();
+  for (const record of records) {
+    if (record.kind === 'creature' || record.kind === 'stat-block') {
+      statBlockKeyByName.set(normalizeName(record.name), record.key);
     }
   }
 
+  let activeStatBlockKey: string | undefined;
   const entries = inventory.map((item): SourceCoverageEntry => {
+    if (item.structure === 'stat-block') {
+      activeStatBlockKey = statBlockKeyByName.get(normalizeName(item.text));
+    } else if (
+      item.tier === 'chapter' ||
+      item.tier === 'section' ||
+      item.tier === 'subsection' ||
+      item.tier === 'leaf'
+    ) {
+      activeStatBlockKey = undefined;
+    }
+
     // Explicit record mappings outrank the name auto-match: a curated rule
     // is more precise than the name heuristic, which cannot tell duplicate
     // source captions apart (the p5 vs p44 "Draconic Ancestry" tables) and
@@ -216,9 +236,25 @@ export function evaluateSourceCoverage(
         return { item, status: statusForRule(rule) };
       }
     }
-    const matchedKey = keyByName.get(normalizeName(item.text));
-    if (matchedKey !== undefined) {
-      return { item, status: { kind: 'record', key: matchedKey } };
+    if (item.structure === 'stat-block' && activeStatBlockKey !== undefined) {
+      return {
+        item,
+        status: { kind: 'record', key: activeStatBlockKey },
+      };
+    }
+    if (
+      activeStatBlockKey !== undefined &&
+      item.tier === 'sidebar' &&
+      /^(Actions|Reactions|Legendary Actions)$/.test(item.text)
+    ) {
+      return {
+        item,
+        status: { kind: 'child-of', key: activeStatBlockKey },
+      };
+    }
+    const matchedKeys = keysByName.get(normalizeName(item.text)) ?? [];
+    if (matchedKeys.length === 1) {
+      return { item, status: { kind: 'record', key: matchedKeys[0] } };
     }
     for (const rule of rules) {
       if (rule.type !== 'record' && rule.match(item)) {
@@ -230,6 +266,12 @@ export function evaluateSourceCoverage(
         }
         return { item, status: statusForRule(rule) };
       }
+    }
+    if (matchedKeys.length > 1) {
+      return {
+        item,
+        status: { kind: 'ambiguous', candidateKeys: matchedKeys },
+      };
     }
     if (item.tier === 'chapter' || item.tier === 'section') {
       return {
@@ -306,6 +348,7 @@ export function assertSourceCoverage(
 /**
  * One-line status form used in the `source-coverage.json` artifact and the
  * sentinel regression tests: `record:<key>` | `child-of:<key>` |
+ * `ambiguous:<key>|<key>` |
  * `taxonomy:creature.familyPath:<path>` | `ignored:<reason>` |
  * `known-gap:<beadId>` | `unaccounted`.
  */
@@ -315,6 +358,8 @@ export function formatCoverageStatus(status: CoverageStatus): string {
       return `record:${status.key}`;
     case 'child-of':
       return `child-of:${status.key}`;
+    case 'ambiguous':
+      return `ambiguous:${status.candidateKeys.join('|')}`;
     case 'taxonomy':
       return `taxonomy:${status.field}:${status.path.join(' > ')}`;
     case 'ignored':
@@ -360,11 +405,18 @@ export interface CollapsedSourceGroup {
   readonly count: number;
 }
 
+export interface AmbiguousSourceGroup {
+  readonly text: string;
+  readonly candidateKeys: readonly string[];
+  readonly count: number;
+}
+
 /** JSON shape of the `source-coverage.json` artifact. */
 export interface SourceCoverageReport {
   readonly summary: {
     readonly record: number;
     readonly childOf: number;
+    readonly ambiguous: number;
     readonly taxonomy: number;
     readonly ignored: Readonly<Record<string, number>>;
     readonly knownGap: Readonly<Record<string, number>>;
@@ -373,6 +425,7 @@ export interface SourceCoverageReport {
   readonly ambiguous: {
     readonly shadowedRecords: readonly AmbiguousNameCollision[];
     readonly collapsedSourceItems: readonly CollapsedSourceGroup[];
+    readonly unresolvedSourceItems: readonly AmbiguousSourceGroup[];
   };
   readonly entries: readonly SourceCoverageReportEntry[];
 }
@@ -383,7 +436,7 @@ export interface SourceCoverageReport {
  * every entry in reading order. Pure and deterministic — sub-summary keys are
  * sorted so the emitted JSON is byte-stable for identical input.
  *
- * The `ambiguous` section surfaces two classes of silent collisions in the
+ * The `ambiguous` section surfaces three classes of name collisions:
  * name auto-matcher:
  *
  *   - `shadowedRecords`: emitted records whose normalized name is shared with
@@ -397,6 +450,10 @@ export interface SourceCoverageReport {
  *     group shows the count so reviewers can see how many source items are
  *     silently folded into one match (e.g. 12 per-class "Ability Score
  *     Improvement" headings all resolving to one feature key).
+ *
+ *   - `unresolvedSourceItems`: source headings with multiple candidate record
+ *     keys after contextual and curated mappings. These entries carry an
+ *     `ambiguous:` status and are excluded from the covered-record count.
  */
 export function buildSourceCoverageReport(
   entries: readonly SourceCoverageEntry[],
@@ -404,6 +461,7 @@ export function buildSourceCoverageReport(
 ): SourceCoverageReport {
   let record = 0;
   let childOf = 0;
+  let ambiguous = 0;
   let taxonomy = 0;
   let unaccounted = 0;
   const ignored = new Map<string, number>();
@@ -415,6 +473,9 @@ export function buildSourceCoverageReport(
         break;
       case 'child-of':
         childOf += 1;
+        break;
+      case 'ambiguous':
+        ambiguous += 1;
         break;
       case 'taxonomy':
         taxonomy += 1;
@@ -495,16 +556,40 @@ export function buildSourceCoverageReport(
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([resolvedKey, { text, count }]) => ({ text, resolvedKey, count }));
 
+  const unresolvedGroups = new Map<string, AmbiguousSourceGroup>();
+  for (const { item, status } of entries) {
+    if (status.kind !== 'ambiguous') continue;
+    const groupKey = `${normalizeName(item.text)}\0${status.candidateKeys.join('\0')}`;
+    const existing = unresolvedGroups.get(groupKey);
+    unresolvedGroups.set(groupKey, {
+      text: existing?.text ?? item.text,
+      candidateKeys: status.candidateKeys,
+      count: (existing?.count ?? 0) + 1,
+    });
+  }
+  const unresolvedSourceItems = [...unresolvedGroups.values()].sort((a, b) =>
+    a.text < b.text
+      ? -1
+      : a.text > b.text
+        ? 1
+        : a.candidateKeys.join().localeCompare(b.candidateKeys.join()),
+  );
+
   return {
     summary: {
       record,
       childOf,
+      ambiguous,
       taxonomy,
       ignored: sortedCounts(ignored),
       knownGap: sortedCounts(knownGap),
       unaccounted,
     },
-    ambiguous: { shadowedRecords, collapsedSourceItems },
+    ambiguous: {
+      shadowedRecords,
+      collapsedSourceItems,
+      unresolvedSourceItems,
+    },
     entries: entries.map(({ item, status }) => ({
       page: item.page,
       lineIndex: item.lineIndex,
@@ -522,9 +607,10 @@ export function buildSourceCoverageReport(
 //
 // Resolution order matters: explicit `record`-type rules run FIRST (a curated
 // mapping outranks the name heuristic, so duplicate source captions can map
-// to distinct records), then the name auto-match (an emitted record claims
-// its own heading without curation), then the remaining rules apply
-// first-match-wins. Rules are predicates over understood CLASSES of source
+// to distinct records), then contextual stat-block ownership and unique-name
+// auto-match, then the remaining rules apply first-match-wins. Multi-record
+// name matches become visible ambiguous statuses. Rules are predicates over
+// understood CLASSES of source
 // structure, not per-item allowlists, so a new item of an already-understood
 // shape is auto-accounted while a genuinely novel structure stays
 // unaccounted and fails the import.
@@ -750,6 +836,60 @@ const MAGIC_ITEM_TABLE_INVENTORY_RECORDS: ReadonlyArray<
  * `source-coverage.json` artifact shows the resulting per-item statuses.
  */
 export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
+  // Cross-kind and repeated rule names require source-context mappings. A
+  // bare name match is intentionally non-covering when multiple records share
+  // the normalized title.
+  recordRule(
+    'rule:darkvision',
+    (i) => i.page === 86 && i.text === 'Darkvision',
+  ),
+  recordRule('rule:reactions', (i) => i.page === 91 && i.text === 'Reactions'),
+  recordRule(
+    'rule:casting-time-reactions',
+    (i) => i.section === 'Spellcasting' && i.text === 'Reactions',
+  ),
+  recordRule(
+    'spell:darkvision',
+    (i) => i.section === 'Spellcasting' && i.text === 'Darkvision',
+  ),
+  recordRule(
+    'spell:fly',
+    (i) => i.section === 'Spellcasting' && i.text === 'Fly',
+  ),
+  recordRule(
+    'spell:shield',
+    (i) => i.section === 'Spellcasting' && i.text === 'Shield',
+  ),
+  recordRule('rule:fly', (i) => i.section === 'Monsters' && i.text === 'Fly'),
+  recordRule(
+    'rule:monsters-alignment',
+    (i) => i.section === 'Monsters' && i.text === 'Alignment',
+  ),
+  recordRule(
+    'rule:senses-darkvision',
+    (i) => i.section === 'Monsters' && i.text === 'Darkvision',
+  ),
+  recordRule(
+    'rule:actions',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.tier === 'subsection' &&
+      i.text === 'Actions',
+  ),
+  recordRule(
+    'rule:monsters-reactions',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.tier === 'subsection' &&
+      i.text === 'Reactions',
+  ),
+  recordRule(
+    'rule:legendary-actions',
+    (i) =>
+      i.section === 'Monsters' &&
+      i.tier === 'subsection' &&
+      i.text === 'Legendary Actions',
+  ),
   // Pre-chapter legal front matter: the p1 "Legal Information" heading and
   // the p3 erratum line, both before the first chapter heading so their
   // `section` is null. Chapter-tier titles also carry a null section by
@@ -921,10 +1061,6 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     'creature:swarm-of-insects',
     (i) => i.text === 'Variant: Insect Swarms',
   ),
-  // Rules-chapter "Variant:" optional rules (Skills with Different Abilities
-  // p78, Encumbrance p80) — documented intentional exclusion; see the
-  // EXPECTED_SRD_5_1_RULE_KEYS baseline comment in index.ts.
-  ignoreRule('variant-rule-excluded', (i) => /^Variant: /.test(i.text)),
   // --- Class chapters (eshyra-4a7.6) -------------------------------------
   // The broad class-chapter known-gap is gone; every remaining class-chapter
   // structure is now explicitly accounted. Progression-table captions ("The

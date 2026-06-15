@@ -60,10 +60,17 @@ interface CollapsedSourceGroup {
   readonly count: number;
 }
 
+interface AmbiguousSourceGroup {
+  readonly text: string;
+  readonly candidateKeys: readonly string[];
+  readonly count: number;
+}
+
 interface CoverageReport {
   readonly summary: {
     readonly record: number;
     readonly childOf: number;
+    readonly ambiguous: number;
     readonly taxonomy: number;
     readonly ignored: Readonly<Record<string, number>>;
     readonly knownGap: Readonly<Record<string, number>>;
@@ -72,6 +79,7 @@ interface CoverageReport {
   readonly ambiguous: {
     readonly shadowedRecords: readonly AmbiguousNameCollision[];
     readonly collapsedSourceItems: readonly CollapsedSourceGroup[];
+    readonly unresolvedSourceItems: readonly AmbiguousSourceGroup[];
   };
   readonly entries: readonly CoverageEntry[];
 }
@@ -121,6 +129,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     const counted =
       coverage.summary.record +
       coverage.summary.childOf +
+      coverage.summary.ambiguous +
       coverage.summary.taxonomy +
       coverage.summary.unaccounted +
       Object.values(coverage.summary.ignored).reduce((a, b) => a + b, 0) +
@@ -193,7 +202,10 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // record 1960 -> 1961 (eshyra-76b7): the "Appendix MM-A: Miscellaneous
     // Creatures" heading now name-matches its emitted intro rule record instead
     // of falling to the document-structure ignore default.
-    expect(coverage.summary.record).toBe(1961);
+    // Ambiguous bare-name matches no longer count as records. Contextual
+    // stat-block headings move to childOf; unresolved collisions remain
+    // reviewer-visible in the ambiguous total.
+    expect(coverage.summary.record).toBe(1420);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -201,7 +213,8 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // present.
     // 98 -> 99 (eshyra-citg): "Tenets of Devotion" heading now maps child-of
     // subclass:oath-of-devotion (its prose is a named section on that record).
-    expect(coverage.summary.childOf).toBe(99);
+    expect(coverage.summary.childOf).toBe(456);
+    expect(coverage.summary.ambiguous).toBe(186);
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.unaccounted).toBe(0);
     // eshyra-4a7.6 (PR2) added two class-chapter ignore reasons: the 9 class
@@ -228,7 +241,6 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
       'spell-list-header': 78,
       'subclass-spell-table-heading': 2,
       'table-rows-emitted-as-records': 18,
-      'variant-rule-excluded': 2,
     });
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
@@ -450,7 +462,9 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
       'record:rule:creating-sentient-magic-items-alignment',
     );
     expect(entryFor(255, 'Alignment').section).toBe('Monsters');
-    expect(entryFor(255, 'Alignment').status).toBe('record:rule:alignment');
+    expect(entryFor(255, 'Alignment').status).toBe(
+      'record:rule:monsters-alignment',
+    );
   });
 
   it('the Customizing NPCs guidance (p395) is emitted as a rule without absorbing the adjacent NPC stat blocks (eshyra-4a7.10.6)', () => {
@@ -544,12 +558,13 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
     // stat-blocks to their creature records, removing the two false
     // background/class collapse groups (56 -> 54).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(54);
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(15);
+    expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(72);
   });
 
   it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {
-    const asi = coverage.ambiguous.collapsedSourceItems.find(
-      (g) => g.resolvedKey === 'feature:barbarian:ability-score-improvement',
+    const asi = coverage.ambiguous.unresolvedSourceItems.find(
+      (g) => g.text === 'Ability Score Improvement',
     );
     expect(asi).toBeDefined();
     expect(asi?.text).toBe('Ability Score Improvement');
@@ -565,16 +580,12 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     expect(shadow?.shadowedKeys).toContain('creature:acolyte');
   });
 
-  it('surfaces the Actions collapse (monster stat-block sections all map to the rule:actions key)', () => {
-    const actions = coverage.ambiguous.collapsedSourceItems.find(
-      (g) => g.resolvedKey === 'rule:actions',
+  it('attributes stat-block section headings to their owning records', () => {
+    expect(entryFor(261, 'Actions').status).toBe('child-of:creature:aboleth');
+    expect(entryFor(261, 'Legendary Actions').status).toBe(
+      'child-of:creature:aboleth',
     );
-    expect(actions).toBeDefined();
-    expect(actions?.text).toBe('Actions');
-    // 296 creature + 21 NPC stat blocks each have an Actions section; the
-    // exact count may change as the monster chapter parser evolves. Gate on
-    // a minimum so a regression that drops entries fails, not the exact value.
-    expect(actions?.count).toBeGreaterThanOrEqual(300);
+    expect(entryFor(395, 'Actions').status).toBe('child-of:creature:acolyte');
   });
 
   it('shadowedRecords entries are sorted by normalizedName', () => {
@@ -616,6 +627,35 @@ describe('committed SRD source-coverage artifacts — covered-structure sentinel
     );
     expect(entryFor(391, 'Variant: Insect Swarms').status).toBe(
       'child-of:creature:swarm-of-insects',
+    );
+  });
+
+  it('every Variant heading is represented as a record or attached child', () => {
+    const variants = coverage.entries.filter((entry) =>
+      entry.text.startsWith('Variant:'),
+    );
+    expect(variants.map((entry) => entry.text)).toEqual([
+      'Variant: Skills with Different Abilities',
+      'Variant: Encumbrance',
+      'Variant: Diseased Giant Rats',
+      'Variant: Insect Swarms',
+    ]);
+    expect(variants.map((entry) => entry.status)).toEqual([
+      'record:rule:variant-skills-with-different-abilities',
+      'record:rule:variant-encumbrance',
+      'child-of:creature:giant-rat',
+      'child-of:creature:swarm-of-insects',
+    ]);
+  });
+
+  it('maps reviewed cross-kind headings to their source-correct records', () => {
+    expect(entryFor(86, 'Darkvision').status).toBe('record:rule:darkvision');
+    expect(entryFor(133, 'Darkvision').status).toBe('record:spell:darkvision');
+    expect(entryFor(146, 'Fly').status).toBe('record:spell:fly');
+    expect(entryFor(179, 'Shield').status).toBe('record:spell:shield');
+    expect(entryFor(256, 'Fly').status).toBe('record:rule:fly');
+    expect(entryFor(257, 'Darkvision').status).toBe(
+      'record:rule:senses-darkvision',
     );
   });
 
