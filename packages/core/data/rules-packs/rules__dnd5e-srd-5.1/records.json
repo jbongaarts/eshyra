@@ -53165,6 +53165,36 @@
   {
     "systemId": "dnd5e-srd",
     "kind": "rule",
+    "key": "rule:appendix-mm-a-miscellaneous-creatures",
+    "name": "Appendix MM-A: Miscellaneous Creatures",
+    "data": {
+      "text": "This appendix contains statistics for various animals, vermin, and other critters. The stat blocks are organized alphabetically by creature name."
+    },
+    "source": "SRD 5.1 p. 366",
+    "license": {
+      "licenseClass": "open",
+      "licenseName": "Creative Commons Attribution 4.0 International",
+      "attributionText": "This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+      "requiresAttribution": true,
+      "commercialUseAllowed": true,
+      "hostedUseAllowed": true,
+      "redistributionAllowed": true,
+      "publicSharingAllowed": true,
+      "derivativeAllowed": true,
+      "containsUserSuppliedText": false,
+      "containsTrademarkedSettingMaterial": false,
+      "sourceMaterialDescription": "System Reference Document 5.1 at https://dnd.wizards.com/resources/systems-reference-document",
+      "provenancePolicy": "Every record names the SRD page it was extracted from.",
+      "outputRestrictions": "Preserve the SRD 5.1 attribution text on redistributed records and derivatives."
+    },
+    "provenance": {
+      "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
+      "locator": "p. 366"
+    }
+  },
+  {
+    "systemId": "dnd5e-srd",
+    "kind": "rule",
     "key": "rule:areas-of-effect",
     "name": "Areas of Effect",
     "data": {

@@ -65,6 +65,7 @@ import { parseGamemasteringRules } from './parseGamemasteringRules.js';
 import { parseHalfDragonTemplate } from './parseHalfDragonTemplate.js';
 import { parseHazards } from './parseHazards.js';
 import { parseMagicItems } from './parseMagicItems.js';
+import { parseMiscellaneousCreaturesIntro } from './parseMiscellaneousCreaturesIntro.js';
 import { parseMulticlassing } from './parseMulticlassing.js';
 import { parsePoisons } from './parsePoisons.js';
 import { parseRules, removeTableCellLines } from './parseRules.js';
@@ -1315,6 +1316,8 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:backgrounds-equipment',
   'rule:suggested-characteristics',
   'rule:customizing-a-background',
+  // Appendix MM-A p366 Miscellaneous Creatures intro prose (eshyra-76b7).
+  'rule:appendix-mm-a-miscellaneous-creatures',
   // Appendix MM-B p395 "Customizing NPCs" guidance (eshyra-4a7.10.6).
   'rule:customizing-npcs',
   // Appendix PH-B Fantasy-Historical Pantheons prose (eshyra-4a7.10.5): the
@@ -2874,6 +2877,20 @@ export async function runImporter(
     ]),
   );
 
+  // Appendix MM-A p366 intro prose (eshyra-76b7). The appendix opens with two
+  // scaffolding sentences before its first creature ("Ape"). The slicer drops
+  // the h≈25.9 appendix title, leaving header-less body prose that the
+  // heading-hierarchy rule parser cannot emit, so a dedicated bounded-prose
+  // parser captures it as `rule:appendix-mm-a-miscellaneous-creatures`. The
+  // region is carved off the front of the already-bounded `miscCreaturePages`
+  // slice by truncating before the first creature; `'empty'` degrades reduced
+  // fixture PDFs without an MM-A appendix (or without an "Ape" entry) to no
+  // rule. This is the source text that previously bled into Ogre Zombie's
+  // Morningstar action; it belongs to the appendix, not a creature.
+  const miscCreatureIntroRule = parseMiscellaneousCreaturesIntro(
+    truncateBeforeFirst(miscCreaturePages, /^Ape$/, 'empty'),
+  );
+
   // Appendix PH-B pantheon prose (eshyra-4a7.10.5). The slice carries the
   // appendix intro, four h≈12 pantheon-prose headings ("The Celtic Pantheon"
   // …), and four h≈12 deity-table captions whose h≈8.9 rows interleave the
@@ -2926,6 +2943,7 @@ export async function runImporter(
     ...(selfSufficiencyRule === undefined ? [] : [selfSufficiencyRule]),
     ...sentientMagicItemRules,
     ...customizingNpcsRules,
+    ...(miscCreatureIntroRule === undefined ? [] : [miscCreatureIntroRule]),
     ...pantheonRules,
     ...planeRules,
   ];

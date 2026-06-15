@@ -1,12 +1,12 @@
 {
   "summary": {
-    "record": 1960,
+    "record": 1961,
     "childOf": 99,
     "taxonomy": 33,
     "ignored": {
       "class-progression-table-internal": 9,
       "deity-table-column-header": 1,
-      "document-structure": 48,
+      "document-structure": 47,
       "equipment-category-heading": 3,
       "front-matter": 2,
       "record-group-heading": 3,
@@ -19107,7 +19107,7 @@
       "structure": "heading",
       "text": "Appendix MM-A: Miscellaneous Creatures",
       "section": null,
-      "status": "ignored:document-structure"
+      "status": "record:rule:appendix-mm-a-miscellaneous-creatures"
     },
     {
       "page": 366,

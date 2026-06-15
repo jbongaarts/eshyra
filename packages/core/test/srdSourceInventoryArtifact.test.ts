@@ -190,7 +190,10 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // headings + four deity-table captions (8) and the Appendix PH-C eight
     // plane headings (8) moved from known-gap to their emitted rule/table
     // records.
-    expect(coverage.summary.record).toBe(1960);
+    // record 1960 -> 1961 (eshyra-76b7): the "Appendix MM-A: Miscellaneous
+    // Creatures" heading now name-matches its emitted intro rule record instead
+    // of falling to the document-structure ignore default.
+    expect(coverage.summary.record).toBe(1961);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -212,10 +215,13 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // eshyra-4a7.10.5: the Appendix PH-B "Suggested Domains Symbol" deity-table
     // column-group header (a table internal of the emitted deity tables) is
     // ignored with its own reason.
+    // eshyra-76b7: the "Appendix MM-A: Miscellaneous Creatures" heading now
+    // maps to its emitted intro rule instead of the document-structure default
+    // (48 -> 47).
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
-      'document-structure': 48,
+      'document-structure': 47,
       'equipment-category-heading': 3,
       'front-matter': 2,
       'record-group-heading': 3,
