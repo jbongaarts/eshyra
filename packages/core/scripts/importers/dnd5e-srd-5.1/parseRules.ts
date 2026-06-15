@@ -340,8 +340,6 @@ function isExcludedHeading(
   tier: number,
   bodyLines: readonly string[],
 ): boolean {
-  const trimmed = name.trim();
-  if (/^Variant\b/i.test(trimmed)) return true;
   if (isTableCaptionHeading(name, tier)) return true;
   if (bodyLeadsWithBullet(bodyLines)) return true;
   return false;
@@ -405,8 +403,7 @@ function collectHeadingEntries(
       // after the rows are the enclosing section's text resuming below the
       // printed table, so they re-flow into the most recent emitted rule as a
       // fresh paragraph instead of being swallowed with the caption
-      // (eshyra-0m9.22). Other exclusion classes (Variant boxes, bullet
-      // scaffolding) keep their drop-everything behavior.
+      // (eshyra-0m9.22). Bullet scaffolding keeps its drop-everything behavior.
       if (isTableCaptionHeading(cur.line, cur.tier) && entries.length > 0) {
         const resumingProse = body
           .filter((b) => (b.height ?? 0) >= BODY_PROSE_MIN_H)
