@@ -92,16 +92,60 @@ describe('evaluateSourceCoverage — name auto-match', () => {
     });
   });
 
-  it('resolves duplicate record names to the lexicographically first key', () => {
+  it('surfaces duplicate record names instead of choosing an arbitrary key', () => {
     const entries = evaluateSourceCoverage(
       [item({ text: 'Improved Critical' })],
       records,
       [],
     );
     expect(entries[0].status).toEqual({
-      kind: 'record',
-      key: 'feature:fighter:improved-critical',
+      kind: 'ambiguous',
+      candidateKeys: [
+        'feature:fighter:improved-critical',
+        'feature:paladin:improved-critical',
+      ],
     });
+  });
+
+  it('attributes stat-block section headings to the active stat block', () => {
+    const entries = evaluateSourceCoverage(
+      [
+        item({
+          text: 'Aboleth',
+          structure: 'stat-block',
+          section: 'Monsters',
+        }),
+        item({
+          text: 'Actions',
+          tier: 'sidebar',
+          section: 'Monsters',
+          context: 'Aboleth',
+          lineIndex: 1,
+        }),
+        item({
+          text: 'Legendary Actions',
+          tier: 'sidebar',
+          section: 'Monsters',
+          context: 'Actions',
+          lineIndex: 2,
+        }),
+      ],
+      [
+        { kind: 'creature', key: 'creature:aboleth', name: 'Aboleth' },
+        { kind: 'rule', key: 'rule:actions', name: 'Actions' },
+        {
+          kind: 'rule',
+          key: 'rule:legendary-actions',
+          name: 'Legendary Actions',
+        },
+      ],
+      [],
+    );
+    expect(entries.map((entry) => entry.status)).toEqual([
+      { kind: 'record', key: 'creature:aboleth' },
+      { kind: 'child-of', key: 'creature:aboleth' },
+      { kind: 'child-of', key: 'creature:aboleth' },
+    ]);
   });
 });
 
@@ -488,6 +532,16 @@ describe('ambiguous-match diagnostic', () => {
         shadowedKeys: ['feature:paladin:improved-critical'],
       },
     ]);
+    expect(report.ambiguous.unresolvedSourceItems).toEqual([
+      {
+        text: 'Improved Critical',
+        candidateKeys: [
+          'feature:fighter:improved-critical',
+          'feature:paladin:improved-critical',
+        ],
+        count: 1,
+      },
+    ]);
   });
 
   it('reports collapsed source items when multiple source items auto-match the same key', () => {
@@ -557,6 +611,7 @@ describe('ambiguous-match diagnostic', () => {
     expect(report.ambiguous).toEqual({
       shadowedRecords: [],
       collapsedSourceItems: [],
+      unresolvedSourceItems: [],
     });
   });
 
@@ -608,6 +663,12 @@ describe('coverage report serialization', () => {
     ).toBe('child-of:background:acolyte');
     expect(
       formatCoverageStatus({
+        kind: 'ambiguous',
+        candidateKeys: ['equipment:shield', 'spell:shield'],
+      }),
+    ).toBe('ambiguous:equipment:shield|spell:shield');
+    expect(
+      formatCoverageStatus({
         kind: 'taxonomy',
         field: 'creature.familyPath',
         path: ['Dragons', 'Chromatic Dragons'],
@@ -641,6 +702,7 @@ describe('coverage report serialization', () => {
     expect(report.summary).toEqual({
       record: 1,
       childOf: 0,
+      ambiguous: 0,
       taxonomy: 0,
       ignored: { 'spell-list-header': 2 },
       knownGap: { 'eshyra-4a7.8': 1 },

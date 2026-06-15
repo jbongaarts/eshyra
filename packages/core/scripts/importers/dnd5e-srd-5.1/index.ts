@@ -943,13 +943,15 @@ export const SRD_5_1_STAT_BLOCK_CONTAINING_ITEMS: ReadonlyMap<string, string> =
  * `rule:constitution-hit-points` vs `rule:damage-and-healing-hit-points`) while
  * the record `name` stays the bare SRD title.
  *
- * Intentionally excluded (recorded so a reviewer can see the boundary):
- * `Variant:` optional rules, the per-ability skill-list captions under Ability
- * Checks (their bodies lead with bullet items), and the leaf table captions the
- * `table` kind owns (Ability Scores and Modifiers score table, Typical
- * Difficulty Classes, Travel Pace, Size Categories).
+ * Intentionally excluded (recorded so a reviewer can see the boundary): the
+ * per-ability skill-list captions under Ability Checks (their bodies lead with
+ * bullet items), and the leaf table captions the `table` kind owns (Ability
+ * Scores and Modifiers score table, Typical Difficulty Classes, Travel Pace,
+ * Size Categories). `Variant:` gameplay rules are emitted as ordinary rule
+ * records; creature-specific variant sidebars are parsed separately as child
+ * data on their creature records.
  *
- * The full baseline is 127 core-rules keys, 34 general Spellcasting keys, five
+ * The full baseline is 129 core-rules keys, 34 general Spellcasting keys, five
  * gamemastering Madness/Objects keys, five Classes-chapter callout keys, and six
  * gamemastering Traps keys (eshyra-0m9.20). Spellcasting is a separate slice
  * (`spellcastingRules`, "Spellcasting" → "Spell Lists") parsed by the same
@@ -1080,6 +1082,8 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:use-an-object',
   'rule:using-different-speeds',
   'rule:using-each-ability',
+  'rule:variant-encumbrance',
+  'rule:variant-skills-with-different-abilities',
   'rule:vision-and-light',
   'rule:water',
   'rule:wisdom',

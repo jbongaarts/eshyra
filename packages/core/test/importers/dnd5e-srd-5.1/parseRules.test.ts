@@ -212,25 +212,43 @@ describe('parseRules (heading-hierarchy path)', () => {
     ]);
   });
 
-  it('excludes Variant rules, bullet-led skill captions, and table captions', () => {
+  it('emits Variant rules while excluding bullet-led skill captions and table captions', () => {
     const rules = parseRules([
       pageH(78, [
         ['Skills', SUBSUB_H],
         ['Each ability covers several skills.', BODY_H],
         ['Strength', LEAF_H],
         ['• Athletics', BODY_H],
-        ['Variant: Skills with Different Abilities', LEAF_H],
-        ['Normally you use a fixed ability for a skill.', BODY_H],
         ['Typical Difficulty Classes', LEAF_H],
         ['Task Difficulty DC', BODY_H],
         ['Very easy 5', BODY_H],
+        ['Variant: Skills with Different Abilities', LEAF_H],
+        ['Normally you use a fixed ability for a skill.', BODY_H],
+        ['Ability Checks', SUBSUB_H],
+        ['An ability check tests a character.', BODY_H],
+        ['Variant: Encumbrance', LEAF_H],
+        [
+          'If you carry weight in excess of 5 times your Strength score, you are encumbered.',
+          BODY_H,
+        ],
       ]),
     ]);
     const names = rules.map((r) => r.name);
     expect(names).toContain('Skills');
     expect(names).not.toContain('Strength');
-    expect(names).not.toContain('Variant: Skills with Different Abilities');
     expect(names).not.toContain('Typical Difficulty Classes');
+    expect(
+      rules.find((r) => r.name === 'Variant: Skills with Different Abilities'),
+    ).toMatchObject({
+      keySlug: 'variant-skills-with-different-abilities',
+      text: 'Normally you use a fixed ability for a skill.',
+      sourcePage: 78,
+    });
+    expect(rules.find((r) => r.name === 'Variant: Encumbrance')).toMatchObject({
+      keySlug: 'variant-encumbrance',
+      text: 'If you carry weight in excess of 5 times your Strength score, you are encumbered.',
+      sourcePage: 78,
+    });
   });
 
   it('captures a sub-leaf callout box and does not bleed it into the prior rule', () => {
