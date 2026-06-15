@@ -102,13 +102,18 @@ export class ContainerCapacityError extends Error {
 interface FlatLine {
   readonly line: string;
   readonly page: number;
+  readonly height?: number;
 }
 
 function flatten(pages: readonly PageText[]): readonly FlatLine[] {
   const out: FlatLine[] = [];
   for (const page of pages) {
-    for (const line of page.lines) {
-      out.push({ line: line.trim(), page: page.pageNumber });
+    for (let index = 0; index < page.lines.length; index++) {
+      out.push({
+        line: page.lines[index].trim(),
+        page: page.pageNumber,
+        height: page.lineHeights?.[index],
+      });
     }
   }
   return out;
@@ -202,6 +207,127 @@ function splitNameAndCost(
 
 function normalize(cell: string): string {
   return cell.replace(/\s+/g, ' ').trim();
+}
+
+function normalizeDescriptionName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[’']/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+const SHARED_DESCRIPTION_TARGETS: ReadonlyMap<string, readonly string[]> =
+  new Map([
+    ['arcane focus', ['Crystal', 'Orb', 'Rod', 'Staff', 'Wand']],
+    [
+      'druidic focus',
+      ['Sprig of mistletoe', 'Totem', 'Wooden staff', 'Yew wand'],
+    ],
+    ['holy symbol', ['Amulet', 'Emblem', 'Reliquary']],
+    [
+      'artisans tools',
+      [
+        'Alchemist’s supplies',
+        'Brewer’s supplies',
+        "Calligrapher's supplies",
+        'Carpenter’s tools',
+        'Cartographer’s tools',
+        'Cobbler’s tools',
+        'Cook’s utensils',
+        'Glassblower’s tools',
+        'Jeweler’s tools',
+        'Leatherworker’s tools',
+        'Mason’s tools',
+        'Painter’s supplies',
+        'Potter’s tools',
+        'Smith’s tools',
+        'Tinker’s tools',
+        'Weaver’s tools',
+        'Woodcarver’s tools',
+      ],
+    ],
+    ['gaming set', ['Dice set', 'Playing card set']],
+    [
+      'musical instrument',
+      [
+        'Bagpipes',
+        'Drum',
+        'Dulcimer',
+        'Flute',
+        'Horn',
+        'Lute',
+        'Lyre',
+        'Pan flute',
+        'Shawm',
+        'Viol',
+      ],
+    ],
+    ['rope', ['Rope, hempen (50 feet)', 'Rope, silk (50 feet)']],
+    ['tent', ['Tent, two-person']],
+  ]);
+
+const DESCRIPTION_LEAD_IN = /^(.{1,40}?)\.\s+(.+)$/;
+const DESCRIPTION_REGION_BOUNDARY =
+  /^(?:Item|Cost Weight.*|Container Capacity|Equipment Packs|Tools|Mounts and Vehicles)$/;
+
+function attachDescriptions(
+  items: readonly EquipmentExtraction[],
+  flat: readonly FlatLine[],
+): EquipmentExtraction[] {
+  const targets = new Map<string, string[]>();
+  for (const item of items) {
+    if (item.category === 'pack') continue;
+    const key = normalizeDescriptionName(item.name);
+    const bucket = targets.get(key);
+    if (bucket === undefined) targets.set(key, [item.name]);
+    else bucket.push(item.name);
+  }
+  for (const [label, names] of SHARED_DESCRIPTION_TARGETS) {
+    targets.set(label, [...names]);
+  }
+
+  const descriptions = new Map<
+    string,
+    { readonly page: number; readonly parts: string[] }
+  >();
+  let currentNames: readonly string[] = [];
+  for (const { line, page, height } of flat) {
+    if (DESCRIPTION_REGION_BOUNDARY.test(line)) {
+      currentNames = [];
+      continue;
+    }
+    if (height !== undefined && height >= 10.3) {
+      currentNames = [];
+      continue;
+    }
+    if (height !== undefined && height < 9.3) continue;
+    const leadIn = DESCRIPTION_LEAD_IN.exec(line);
+    if (leadIn !== null) {
+      const names = targets.get(normalizeDescriptionName(leadIn[1]));
+      if (names !== undefined) {
+        currentNames = names;
+        for (const name of names) {
+          descriptions.set(name, { page, parts: [line] });
+        }
+        continue;
+      }
+    }
+    for (const name of currentNames) {
+      descriptions.get(name)?.parts.push(line);
+    }
+  }
+
+  return items.map((item) => {
+    const description = descriptions.get(item.name);
+    if (description === undefined) return item;
+    return {
+      ...item,
+      description: normalize(description.parts.join(' ')),
+      descriptionSourcePage: description.page,
+    };
+  });
 }
 
 /** Split a trailing property list on commas into trimmed, non-empty entries. */
@@ -806,13 +932,16 @@ export function parseEquipment(
   pages: readonly PageText[],
 ): EquipmentExtraction[] {
   const flat = flatten(pages);
-  const out: EquipmentExtraction[] = [
-    ...collectArmor(flat),
-    ...collectWeapons(flat),
-    ...collectTools(flat),
-    ...collectGear(flat),
-    ...collectEquipmentPacks(flat),
-  ];
+  const out = attachDescriptions(
+    [
+      ...collectArmor(flat),
+      ...collectWeapons(flat),
+      ...collectTools(flat),
+      ...collectGear(flat),
+      ...collectEquipmentPacks(flat),
+    ],
+    flat,
+  );
   out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return out;
 }

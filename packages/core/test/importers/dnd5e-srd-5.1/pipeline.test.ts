@@ -956,6 +956,8 @@ const IMPLEMENTED_KINDS_FIXTURE_PAGES = [
 ] as const;
 
 const IMPLEMENTED_KINDS_FIXTURE_RULE_KEYS = [
+  'rule:armor-guidance',
+  'rule:coinage',
   'rule:cover',
   'rule:curing-madness',
   // The Backgrounds chapter-intro section (eshyra-0m9.17). Uniform-font
@@ -967,6 +969,7 @@ const IMPLEMENTED_KINDS_FIXTURE_RULE_KEYS = [
   'rule:going-mad',
   'rule:madness',
   'rule:madness-effects',
+  'rule:mounts-and-vehicles',
   'rule:objects',
   'rule:resting',
 ] as const;
@@ -1016,9 +1019,9 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     expect(result.counts.hazards).toBe(1);
     expect(result.counts.traps).toBe(2);
     expect(result.counts.actions).toBe(10);
-    // 7 prior rules + the Backgrounds-chapter "Customizing a Background" intro
-    // section (eshyra-0m9.17).
-    expect(result.counts.rules).toBe(8);
+    // 7 prior rules + the Backgrounds intro + fixture Equipment
+    // coinage/armor/mount guidance.
+    expect(result.counts.rules).toBe(11);
     // 4 prior tables + 2 trap tables + 3 madness tables + 2 object tables
     // + 4 Acolyte suggested-characteristics roll tables (eshyra-0m9.17).
     expect(result.counts.tables).toBe(15);
@@ -1030,8 +1033,8 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
 
     const pack = loadRulesPackFromDirectory(outDir);
     // 64 prior records + 1 background + 4 roll tables + 1 backgrounds-intro
-    // rule (eshyra-0m9.17).
-    expect(pack.records).toHaveLength(70);
+    // rule + 3 fixture Equipment guidance rules.
+    expect(pack.records).toHaveLength(73);
     const keys = pack.records.map((r) => r.key).sort();
     expect(keys).toContain('class:fighter');
     expect(keys).toContain('subclass:champion');
@@ -1092,12 +1095,15 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     ]);
     const ruleKeys = keys.filter((k) => k.startsWith('rule:'));
     expect(ruleKeys).toEqual([
+      'rule:armor-guidance',
+      'rule:coinage',
       'rule:cover',
       'rule:curing-madness',
       'rule:customizing-a-background',
       'rule:going-mad',
       'rule:madness',
       'rule:madness-effects',
+      'rule:mounts-and-vehicles',
       'rule:objects',
       'rule:resting',
     ]);
@@ -2333,6 +2339,26 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     EQUIPMENT_PAGE,
     CONDITIONS_PAGE,
   ];
+
+  it('fails closed when an expected generated-record source phrase is missing', async () => {
+    const workDir = makeTmpDir();
+    const pdfPath = join(workDir, 'fixture.pdf');
+    const outDir = join(workDir, 'pack');
+    await writeFixturePdf(pdfPath, FULL_FIXTURE_PAGES);
+
+    await expect(
+      runImporter({
+        pdfPath,
+        outDir,
+        expectedRecordTextSentinels: [
+          { recordKey: 'equipment:padded', phrase: 'Armor Proficiency.' },
+        ],
+      }),
+    ).rejects.toThrow(
+      /Armor Proficiency.*equipment:padded.*missing source prose/,
+    );
+    expect(existsSync(join(outDir, 'records.json'))).toBe(false);
+  });
 
   it('fails closed when an expected creature name is missing from the parse', async () => {
     const workDir = makeTmpDir();

@@ -1184,11 +1184,9 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       SPELL_LIST_LEVEL_HEADER.test(i.text) ||
       SPELL_LIST_CLASS_HEADER.test(i.text),
   ),
-  // Gamemastering group headings whose children are all emitted hazard
-  // records (the 8 sample traps, 3 diseases, 14 poisons).
-  ignoreRule('record-group-heading', (i) =>
-    ['Sample Traps', 'Sample Diseases', 'Sample Poisons'].includes(i.text),
-  ),
+  // The sample-trap group remains navigation over emitted hazard records.
+  // Diseases and poisons now own their sample guidance as rule records below.
+  ignoreRule('record-group-heading', (i) => i.text === 'Sample Traps'),
   // "Statistics for Objects" (p203) is the body of the emitted rule:objects
   // record (its AC/HP tables are separate emitted table records).
   childOfRule('rule:objects', (i) => i.text === 'Statistics for Objects'),
@@ -1231,6 +1229,73 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     (i) =>
       i.section === 'Equipment' && i.text === 'Getting Into and Out of Armor',
   ),
+  recordRule(
+    'rule:selling-treasure',
+    (i) => i.section === 'Equipment' && i.text === 'Selling Treasure',
+  ),
+  recordRule(
+    'rule:armor-guidance',
+    (i) =>
+      i.section === 'Equipment' && i.tier === 'section' && i.text === 'Armor',
+  ),
+  recordRule(
+    'rule:equipment-packs',
+    (i) => i.section === 'Equipment' && i.text === 'Equipment Packs',
+  ),
+  recordRule(
+    'rule:tools',
+    (i) =>
+      i.section === 'Equipment' && i.tier === 'section' && i.text === 'Tools',
+  ),
+  recordRule(
+    'rule:mounts-and-vehicles',
+    (i) => i.section === 'Equipment' && i.text === 'Mounts and Vehicles',
+  ),
+  recordRule(
+    'rule:trade-goods',
+    (i) =>
+      i.section === 'Equipment' &&
+      i.tier === 'section' &&
+      i.text === 'Trade Goods',
+  ),
+  recordRule(
+    'rule:expenses',
+    (i) =>
+      i.section === 'Equipment' &&
+      i.tier === 'section' &&
+      i.text === 'Expenses',
+  ),
+  recordRule(
+    'rule:expenses-lifestyle-expenses',
+    (i) =>
+      i.section === 'Equipment' &&
+      i.tier === 'subsection' &&
+      i.text === 'Lifestyle Expenses',
+  ),
+  recordRule(
+    'rule:food-drink-and-lodging',
+    (i) =>
+      i.section === 'Equipment' &&
+      i.tier === 'subsection' &&
+      i.text === 'Food, Drink, and Lodging',
+  ),
+  recordRule(
+    'rule:services',
+    (i) =>
+      i.section === 'Equipment' &&
+      i.tier === 'subsection' &&
+      i.text === 'Services',
+  ),
+  recordRule(
+    'rule:diseases',
+    (i) => i.tier === 'section' && i.text === 'Diseases',
+  ),
+  recordRule('rule:sample-diseases', (i) => i.text === 'Sample Diseases'),
+  recordRule(
+    'rule:poisons',
+    (i) => i.tier === 'section' && i.text === 'Poisons',
+  ),
+  recordRule('rule:sample-poisons', (i) => i.text === 'Sample Poisons'),
   recordRule(
     'rule:weapons',
     (i) =>

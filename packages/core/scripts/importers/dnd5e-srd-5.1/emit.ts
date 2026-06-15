@@ -141,6 +141,30 @@ function sourceLabelFor(page: number): string {
   return `SRD 5.1 p. ${page}`;
 }
 
+function equipmentSourcePages(item: EquipmentExtraction): readonly number[] {
+  return [
+    ...new Set(
+      [item.descriptionSourcePage, item.sourcePage].filter(
+        (page): page is number => page !== undefined,
+      ),
+    ),
+  ].sort((a, b) => a - b);
+}
+
+function equipmentSourceLabel(item: EquipmentExtraction): string {
+  const pages = equipmentSourcePages(item);
+  return pages.length === 1
+    ? sourceLabelFor(pages[0])
+    : `SRD 5.1 pp. ${pages.join(', ')}`;
+}
+
+function equipmentProvenance(item: EquipmentExtraction): RecordProvenance {
+  const pages = equipmentSourcePages(item);
+  return pages.length === 1
+    ? provenanceFor(pages[0])
+    : { sourceRef: SOURCE_URL, locator: `pp. ${pages.join(', ')}` };
+}
+
 export function spellExtractionsToRecords(
   spells: readonly SpellExtraction[],
   classes: ReadonlyMap<string, readonly SpellCasterClass[]>,
@@ -925,8 +949,7 @@ function buildEquipmentData(
   if (item.capacity !== undefined) {
     data.capacity = item.capacity;
   }
-  // Equipment-pack bundled contents (prose), preserved verbatim.
-  if (item.category === 'pack' && item.description !== undefined) {
+  if (item.description !== undefined) {
     data.description = item.description;
   }
   return data;
@@ -942,9 +965,9 @@ export function equipmentExtractionsToRecords(
       key: equipmentKey(item.name),
       name: item.name,
       data: buildEquipmentData(item),
-      source: sourceLabelFor(item.sourcePage),
+      source: equipmentSourceLabel(item),
       license: SRD_5_1_LICENSE,
-      provenance: provenanceFor(item.sourcePage),
+      provenance: equipmentProvenance(item),
     };
     return record;
   });

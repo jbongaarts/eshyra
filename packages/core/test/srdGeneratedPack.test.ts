@@ -218,8 +218,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // (rule:appendix-mm-a-miscellaneous-creatures), captured as its own rule
   // instead of bleeding into the preceding creature's last action.
   // 297 -> 299 (eshyra-bw95): the two substantive core-rules Variant sections.
+  // 299 -> 314 (eshyra-7qit): Equipment/Expenses guidance plus Diseases and
+  // Poisons intro/sample guidance.
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 299,
+  rule: 314,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -403,8 +405,8 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
  *   - equipment.{speed,carryingCapacity}: Mounts and Vehicles fields —
  *     `speed` on the 8 mounts + 6 waterborne vehicles (14), `carryingCapacity`
  *     on the 8 mounts only (loreweaver-4zu).
- *   - equipment.description: the 7 Equipment Pack bundles (their verbatim
- *     contents sentence); no other equipment record carries a description
+ *   - equipment.description: 108 described equipment records: 101 armor,
+ *     weapon, gear, and tool descriptions plus 7 Equipment Pack bundles
  *     (loreweaver-4zu).
  *   - equipment.weight: absent on the 44 records the SRD lists with no weight
  *     cell — the items with a "—" weight (Sling, gaming sets, and many
@@ -569,7 +571,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'equipment',
     field: 'description',
-    missingCount: 211,
+    missingCount: 110,
     totalInKind: 218,
   },
   {
@@ -629,11 +631,12 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // prose rules, none of which carry tableRefs (281 -> 295, 282 -> 296).
   // eshyra-76b7 adds the Appendix MM-A intro rule (no tableRefs): 296 -> 297.
   // eshyra-bw95 adds two variant rules without tableRefs: 297 -> 299.
+  // eshyra-7qit adds 15 prose rules without tableRefs: 299 -> 314.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 298,
-    totalInKind: 299,
+    missingCount: 313,
+    totalInKind: 314,
   },
   {
     kind: 'spell',
@@ -2390,6 +2393,57 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(description).toContain('Includes a backpack');
       expect(description).toContain('strapped to the side of it');
     });
+
+    it('attaches gameplay mechanics to the owning equipment records', () => {
+      const description = (key: string): string => {
+        const record = pack.records.find((candidate) => candidate.key === key);
+        expect(record, `expected ${key}`).toBeDefined();
+        return (record?.data as { description: string }).description;
+      };
+      expect(description('equipment:acid-vial')).toContain('2d6 acid damage');
+      expect(description('equipment:alchemists-fire-flask')).toContain(
+        'DC 10 Dexterity check to extinguish the flames',
+      );
+      expect(description('equipment:antitoxin-vial')).toContain(
+        'no benefit to undead or constructs',
+      );
+      expect(description('equipment:holy-water-flask')).toContain(
+        '2d6 radiant damage',
+      );
+      expect(description('equipment:healers-kit')).toContain(
+        'without needing to make a Wisdom (Medicine) check',
+      );
+      expect(description('equipment:hunting-trap')).toContain(
+        'DC 13 Strength check',
+      );
+      expect(description('equipment:poison-basic-vial')).toContain(
+        'retains potency for 1 minute',
+      );
+      expect(description('equipment:disguise-kit')).toContain(
+        'create a visual disguise',
+      );
+      expect(description('equipment:thieves-tools')).toContain(
+        'disarm traps or open locks',
+      );
+      expect(description('equipment:lamp')).toContain('burns for 6 hours');
+      expect(description('equipment:lantern-bullseye')).toContain(
+        '60-foot cone',
+      );
+      expect(description('equipment:tinderbox')).toContain(
+        'Lighting any other fire takes 1 minute',
+      );
+    });
+
+    it('keeps description provenance alongside the table-row page', () => {
+      expect(
+        pack.records.find((record) => record.key === 'equipment:acid-vial')
+          ?.provenance.locator,
+      ).toBe('pp. 66, 69');
+      expect(
+        pack.records.find((record) => record.key === 'equipment:thieves-tools')
+          ?.provenance.locator,
+      ).toBe('pp. 70, 71');
+    });
   });
 
   describe('spell-list membership normalization (eshyra-vzrx)', () => {
@@ -3910,6 +3964,46 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(text).toContain('doesn’t require you to spend any coin');
       expect(text).toContain('equivalent of a comfortable lifestyle');
       expect(text).not.toContain('Food, Drink, and Lodging');
+    });
+
+    it('emits the remaining Equipment and Expenses chapter guidance', () => {
+      expect(ruleText('rule:coinage')).toContain('fifty coins weigh a pound');
+      expect(ruleText('rule:selling-treasure')).toContain('half their cost');
+      expect(ruleText('rule:armor-guidance')).toContain('Armor Proficiency.');
+      expect(ruleText('rule:armor-guidance')).toContain('Shields.');
+      expect(ruleText('rule:equipment-packs')).toContain('starting equipment');
+      expect(ruleText('rule:tools')).toContain('Proficiency with a tool');
+      expect(ruleText('rule:mounts-and-vehicles')).toContain('Barding.');
+      expect(ruleText('rule:mounts-and-vehicles')).toContain(
+        'Vehicle Proficiency.',
+      );
+      expect(ruleText('rule:trade-goods')).toContain('Most wealth is not in');
+      expect(ruleText('rule:expenses-lifestyle-expenses')).toContain(
+        'Wretched.',
+      );
+      expect(ruleText('rule:food-drink-and-lodging')).toContain(
+        'total lifestyle expenses',
+      );
+      expect(ruleText('rule:services')).toContain('Skilled hirelings');
+    });
+
+    it('emits disease and poison guidance including all delivery types', () => {
+      expect(ruleText('rule:diseases')).toContain('primarily a plot device');
+      expect(ruleText('rule:sample-diseases')).toContain(
+        'alter the saving throw DCs',
+      );
+      const poisons = ruleText('rule:poisons');
+      expect(poisons).toContain('Poisons come in the following four types');
+      for (const phrase of [
+        'Contact. Contact poison',
+        'Ingested.',
+        'Inhaled.',
+        'Holding one’s breath is ineffective',
+        'Injury.',
+      ]) {
+        expect(poisons).toContain(phrase);
+      }
+      expect(ruleText('rule:sample-poisons')).toContain('debilitating effects');
     });
   });
 
