@@ -510,12 +510,58 @@ export function applyClassLists(
 } {
   const out: SpellExtraction[] = spells.map((spell) => spell);
   const classes = new Map<string, readonly SpellCasterClass[]>();
+  const classesByNormalizedName = new Map<string, Set<SpellCasterClass>>();
+  const sourceNamesByNormalizedName = new Map<string, Set<string>>();
+  for (const [sourceName, sourceClasses] of index) {
+    const normalizedName = normalizeSpellListName(sourceName);
+    let classBucket = classesByNormalizedName.get(normalizedName);
+    if (classBucket === undefined) {
+      classBucket = new Set();
+      classesByNormalizedName.set(normalizedName, classBucket);
+    }
+    for (const casterClass of sourceClasses) {
+      classBucket.add(casterClass);
+    }
+    let sourceNameBucket = sourceNamesByNormalizedName.get(normalizedName);
+    if (sourceNameBucket === undefined) {
+      sourceNameBucket = new Set();
+      sourceNamesByNormalizedName.set(normalizedName, sourceNameBucket);
+    }
+    sourceNameBucket.add(sourceName);
+  }
+
+  const emittedNormalizedNames = new Set(
+    out.map((spell) => normalizeSpellListName(spell.name)),
+  );
+  const unresolvedSourceNames = [...sourceNamesByNormalizedName.entries()]
+    .filter(([normalizedName]) => !emittedNormalizedNames.has(normalizedName))
+    .flatMap(([, sourceNames]) => [...sourceNames])
+    .sort();
+  if (unresolvedSourceNames.length > 0) {
+    throw new SpellClassListCoverageError(unresolvedSourceNames);
+  }
+
   for (const spell of out) {
-    const bucket = index.get(spell.name);
+    const bucket = classesByNormalizedName.get(
+      normalizeSpellListName(spell.name),
+    );
     const sorted: SpellCasterClass[] = bucket
       ? [...bucket].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
       : [];
     classes.set(spell.name, sorted);
   }
   return { withClasses: out, classes };
+}
+
+function normalizeSpellListName(name: string): string {
+  return name.replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+export class SpellClassListCoverageError extends Error {
+  constructor(unresolvedSourceNames: readonly string[]) {
+    super(
+      `SRD spell-list entries did not resolve to emitted spell records: ${unresolvedSourceNames.join(', ')}`,
+    );
+    this.name = 'SpellClassListCoverageError';
+  }
 }

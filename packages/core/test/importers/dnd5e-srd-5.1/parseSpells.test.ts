@@ -41,6 +41,17 @@ const ACID_SPLASH_PAGE = page(211, [
   '5th level (2d6), 11th level (3d6), and 17th level (4d6).',
 ]);
 
+const HUNTERS_MARK_PAGE = page(151, [
+  'Hunter’s Mark',
+  '1st-level divination',
+  'Casting Time: 1 bonus action',
+  'Range: 90 feet',
+  'Components: V',
+  'Duration: Concentration, up to 1 hour',
+  'You choose a creature you can see within range and mystically',
+  'mark it as your quarry.',
+]);
+
 // ---------------------------------------------------------------------------
 // 1st-level with "At Higher Levels": Magic Missile.
 // ---------------------------------------------------------------------------
@@ -449,5 +460,27 @@ describe('applyClassLists', () => {
     const spells = parseSpells([ACID_SPLASH_PAGE]);
     const { classes } = applyClassLists(spells, index);
     expect(classes.get('Acid Splash')).toEqual([]);
+  });
+
+  it('matches ASCII and curly apostrophes without changing the source-preserving spell name', () => {
+    const index = parseSpellClassLists([
+      page(109, ['Ranger Spells', '1st Level', "Hunter's Mark"]),
+    ]);
+    const spells = parseSpells([HUNTERS_MARK_PAGE]);
+    const { classes } = applyClassLists(spells, index);
+
+    expect(spells[0].name).toBe('Hunter’s Mark');
+    expect(classes.get('Hunter’s Mark')).toEqual(['Ranger']);
+  });
+
+  it('fails closed when a source spell-list entry has no emitted spell record', () => {
+    const index = parseSpellClassLists([
+      page(109, ['Ranger Spells', '1st Level', 'Missing Spell']),
+    ]);
+    const spells = parseSpells([ACID_SPLASH_PAGE]);
+
+    expect(() => applyClassLists(spells, index)).toThrow(
+      /spell-list entries did not resolve.*Missing Spell/i,
+    );
   });
 });

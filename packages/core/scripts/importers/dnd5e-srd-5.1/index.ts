@@ -70,7 +70,11 @@ import { parsePoisons } from './parsePoisons.js';
 import { parseRules, removeTableCellLines } from './parseRules.js';
 import { parseSelfSufficiency } from './parseSelfSufficiency.js';
 import { parseSpellcastingServices } from './parseSpellcastingServices.js';
-import { parseSpellClassLists, parseSpells } from './parseSpells.js';
+import {
+  applyClassLists,
+  parseSpellClassLists,
+  parseSpells,
+} from './parseSpells.js';
 import { parseStatBlocks } from './parseStatBlocks.js';
 import { parseSubclasses } from './parseSubclasses.js';
 import { parseTables } from './parseTables.js';
@@ -1836,6 +1840,12 @@ export interface RunImporterInput {
    * signal there and the gate would reject fixture body text.
    */
   readonly sourceCoverageRules?: readonly CoverageRule[];
+  /**
+   * Explicit ignore-reason codes allowed to cover inventory items classified
+   * as stat blocks. The real importer supplies none; reduced typography
+   * fixtures may name a narrow synthetic exception.
+   */
+  readonly statBlockCoverageExceptionReasons?: readonly string[];
 }
 
 /**
@@ -2308,6 +2318,7 @@ export async function runImporter(
 
   const spells = parseSpells(spellDescriptionPages);
   const classIndex = parseSpellClassLists(spellListPages);
+  const { classes: spellClasses } = applyClassLists(spells, classIndex);
   // Throws SectionNotFoundError if the monsters start OR end anchor doesn't
   // match — creature is an implemented kind, so fail closed rather than emit a
   // pack without creatures or let trailing content bleed in (the monsters
@@ -2955,6 +2966,7 @@ export async function runImporter(
   const pack = buildPack({
     spells,
     classIndex,
+    spellClasses,
     primaryAbilityIndex,
     // Monsters + Appendix MM-A + Appendix MM-B NPCs all emit under the
     // `creature` kind; `emit.ts` sorts by key, so concatenation order does not
@@ -2998,7 +3010,9 @@ export async function runImporter(
       pack.records,
       input.sourceCoverageRules,
     );
-    assertSourceCoverage(coverageEntries);
+    assertSourceCoverage(coverageEntries, {
+      statBlockExceptionReasons: input.statBlockCoverageExceptionReasons,
+    });
     sourceCoverageArtifacts = {
       inventory,
       report: buildSourceCoverageReport(coverageEntries, pack.records),

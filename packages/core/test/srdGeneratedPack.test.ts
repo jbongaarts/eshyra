@@ -2249,6 +2249,18 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  describe('spell-list membership normalization (eshyra-vzrx)', () => {
+    it('links Hunter’s Mark to the Ranger list despite source apostrophe variants', () => {
+      const huntersMark = pack.records.find(
+        (record) => record.key === 'spell:hunters-mark',
+      );
+      expect(huntersMark?.name).toBe('Hunter’s Mark');
+      expect((huntersMark?.data as { classes?: unknown }).classes).toEqual([
+        'Ranger',
+      ]);
+    });
+  });
+
   // loreweaver-7ok: the alphabetic Spell Descriptions section ends with "Zone
   // of Truth", immediately followed by the gamemastering "Traps" subsection;
   // and the SRD justifies paragraphs, so the "Wish" spell's right-aligned last

@@ -1102,6 +1102,12 @@ export interface BuildPackInput {
   readonly spells: readonly SpellExtraction[];
   readonly classIndex: SpellClassIndex;
   /**
+   * Validated spell-name -> class memberships produced by applyClassLists.
+   * The importer supplies this normalized map; classIndex remains for focused
+   * buildPack fixtures and callers that already provide exact-name keys.
+   */
+  readonly spellClasses?: ReadonlyMap<string, readonly SpellCasterClass[]>;
+  /**
    * Per-class primary abilities read from the Multiclassing prerequisites
    * listing (loreweaver-0m9.5.19). Optional: absent/empty when the Multiclassing
    * section was not found, in which case class `primaryAbilities` stay empty.
@@ -1134,14 +1140,19 @@ export interface BuildPackInput {
 }
 
 export function buildPack(input: BuildPackInput): RulesPack {
-  const classByName = new Map<string, readonly SpellCasterClass[]>();
-  for (const spell of input.spells) {
-    const bucket = input.classIndex.get(spell.name);
-    classByName.set(
-      spell.name,
-      bucket ? [...bucket].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)) : [],
+  const classByName =
+    input.spellClasses ??
+    new Map(
+      input.spells.map((spell) => {
+        const bucket = input.classIndex.get(spell.name);
+        return [
+          spell.name,
+          bucket
+            ? [...bucket].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+            : [],
+        ];
+      }),
     );
-  }
   const baseSpellRecords = spellExtractionsToRecords(input.spells, classByName);
   const creatureRecords = creatureExtractionsToRecords(input.creatures ?? []);
   const classRecords = classExtractionsToRecords(

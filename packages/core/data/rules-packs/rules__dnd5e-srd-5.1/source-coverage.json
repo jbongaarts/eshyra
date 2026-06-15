@@ -657,16 +657,6 @@
     ],
     "collapsedSourceItems": [
       {
-        "text": "Acolyte",
-        "resolvedKey": "background:acolyte",
-        "count": 2
-      },
-      {
-        "text": "Druid",
-        "resolvedKey": "class:druid",
-        "count": 2
-      },
-      {
         "text": "Ability Score Improvement",
         "resolvedKey": "feature:barbarian:ability-score-improvement",
         "count": 12
@@ -20854,7 +20844,7 @@
       "structure": "stat-block",
       "text": "Acolyte",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:background:acolyte"
+      "status": "record:creature:acolyte"
     },
     {
       "page": 395,
@@ -21025,7 +21015,7 @@
       "structure": "stat-block",
       "text": "Druid",
       "section": "Appendix MM-B: Nonplayer Characters",
-      "status": "record:class:druid"
+      "status": "record:creature:druid"
     },
     {
       "page": 399,

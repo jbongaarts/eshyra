@@ -2663,6 +2663,7 @@ describe('runImporter — source-structure coverage gate (eshyra-4a7.1)', () => 
         // Account for every fixture line the name auto-match doesn't claim.
         ignoreRule('fixture-body', () => true),
       ],
+      statBlockCoverageExceptionReasons: ['fixture-body'],
     });
 
     const inventory = JSON.parse(
