@@ -40,7 +40,7 @@
     "@types/better-sqlite3": "^7.6.11",
     "@types/pdfkit": "^0.17.6",
     "pdfjs-dist": "^5.7.284",
-    "pdfkit": "^0.19.0",
+    "pdfkit": "^0.19.1",
     "tsx": "^4.22.4"
   }
 }
