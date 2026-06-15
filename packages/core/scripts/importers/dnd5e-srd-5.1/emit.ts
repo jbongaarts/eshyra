@@ -252,8 +252,8 @@ function ancestryKey(name: string): string {
  * NPC stat blocks from Appendix MM-B carry a leading `category: 'npc'`
  * discriminator (loreweaver-bn0). Monster records (Monsters chapter / Appendix
  * MM-A) intentionally carry NO category field — its absence means "monster" —
- * so the committed monster records stay byte-identical to the pre-NPC pack and
- * the 296-creature monster baseline is untouched.
+ * so category provenance does not add an empty/default field to monster
+ * records and the 296-creature monster baseline stays independent.
  */
 function buildCreatureData(
   creature: CreatureExtraction,
@@ -261,6 +261,9 @@ function buildCreatureData(
   const data: Record<string, unknown> = {};
   if (creature.category === 'npc') {
     data.category = 'npc';
+  }
+  if (creature.familyPath !== undefined) {
+    data.familyPath = [...creature.familyPath];
   }
   data.size = creature.size;
   data.type = creature.type;

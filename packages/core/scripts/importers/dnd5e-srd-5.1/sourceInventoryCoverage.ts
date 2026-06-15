@@ -7,6 +7,7 @@
  *
  *   - `record`     — an emitted top-level record covers it (name auto-match);
  *   - `child-of`   — represented as structured child data on a record;
+ *   - `taxonomy`   — represented by creature.familyPath metadata;
  *   - `ignored`    — intentionally not a record, with a stable reason code;
  *   - `known-gap`  — SHOULD become a record/child but doesn't yet; carries the
  *                    bead id of the work that will close it. When that bead
@@ -30,11 +31,17 @@
  * order so reports diff cleanly.
  */
 
+import { CREATURE_TAXONOMY_SPECS } from './creatureTaxonomy.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 
 export type CoverageStatus =
   | { readonly kind: 'record'; readonly key: string }
   | { readonly kind: 'child-of'; readonly key: string }
+  | {
+      readonly kind: 'taxonomy';
+      readonly field: 'creature.familyPath';
+      readonly path: readonly string[];
+    }
   | { readonly kind: 'ignored'; readonly reason: string }
   | { readonly kind: 'known-gap'; readonly beadId: string }
   | { readonly kind: 'unaccounted' };
@@ -44,6 +51,7 @@ export interface CoverageRecordRef {
   readonly kind: string;
   readonly key: string;
   readonly name: string;
+  readonly data?: unknown;
 }
 
 export interface SourceCoverageEntry {
@@ -65,6 +73,11 @@ export type CoverageRule =
   | {
       readonly type: 'child-of';
       readonly key: string;
+      readonly match: (item: SourceInventoryItem) => boolean;
+    }
+  | {
+      readonly type: 'taxonomy';
+      readonly path: readonly string[];
       readonly match: (item: SourceInventoryItem) => boolean;
     }
   | {
@@ -92,6 +105,13 @@ export function childOfRule(
   match: (item: SourceInventoryItem) => boolean,
 ): CoverageRule {
   return { type: 'child-of', key, match };
+}
+
+export function taxonomyRule(
+  path: readonly string[],
+  match: (item: SourceInventoryItem) => boolean,
+): CoverageRule {
+  return { type: 'taxonomy', path, match };
 }
 
 /**
@@ -135,9 +155,34 @@ function statusForRule(rule: CoverageRule): CoverageStatus {
       return { kind: 'known-gap', beadId: rule.beadId };
     case 'child-of':
       return { kind: 'child-of', key: rule.key };
+    case 'taxonomy':
+      return {
+        kind: 'taxonomy',
+        field: 'creature.familyPath',
+        path: rule.path,
+      };
     case 'record':
       return { kind: 'record', key: rule.key };
   }
+}
+
+function recordHasTaxonomyPath(
+  record: CoverageRecordRef,
+  expectedPath: readonly string[],
+): boolean {
+  if (
+    record.kind !== 'creature' ||
+    typeof record.data !== 'object' ||
+    record.data === null ||
+    Array.isArray(record.data)
+  ) {
+    return false;
+  }
+  const familyPath = (record.data as { familyPath?: unknown }).familyPath;
+  return (
+    Array.isArray(familyPath) &&
+    expectedPath.every((segment, index) => familyPath[index] === segment)
+  );
 }
 
 /**
@@ -177,6 +222,12 @@ export function evaluateSourceCoverage(
     }
     for (const rule of rules) {
       if (rule.type !== 'record' && rule.match(item)) {
+        if (
+          rule.type === 'taxonomy' &&
+          !records.some((record) => recordHasTaxonomyPath(record, rule.path))
+        ) {
+          return { item, status: { kind: 'unaccounted' } };
+        }
         return { item, status: statusForRule(rule) };
       }
     }
@@ -222,7 +273,8 @@ export function assertSourceCoverage(
 /**
  * One-line status form used in the `source-coverage.json` artifact and the
  * sentinel regression tests: `record:<key>` | `child-of:<key>` |
- * `ignored:<reason>` | `known-gap:<beadId>` | `unaccounted`.
+ * `taxonomy:creature.familyPath:<path>` | `ignored:<reason>` |
+ * `known-gap:<beadId>` | `unaccounted`.
  */
 export function formatCoverageStatus(status: CoverageStatus): string {
   switch (status.kind) {
@@ -230,6 +282,8 @@ export function formatCoverageStatus(status: CoverageStatus): string {
       return `record:${status.key}`;
     case 'child-of':
       return `child-of:${status.key}`;
+    case 'taxonomy':
+      return `taxonomy:${status.field}:${status.path.join(' > ')}`;
     case 'ignored':
       return `ignored:${status.reason}`;
     case 'known-gap':
@@ -278,6 +332,7 @@ export interface SourceCoverageReport {
   readonly summary: {
     readonly record: number;
     readonly childOf: number;
+    readonly taxonomy: number;
     readonly ignored: Readonly<Record<string, number>>;
     readonly knownGap: Readonly<Record<string, number>>;
     readonly unaccounted: number;
@@ -316,6 +371,7 @@ export function buildSourceCoverageReport(
 ): SourceCoverageReport {
   let record = 0;
   let childOf = 0;
+  let taxonomy = 0;
   let unaccounted = 0;
   const ignored = new Map<string, number>();
   const knownGap = new Map<string, number>();
@@ -326,6 +382,9 @@ export function buildSourceCoverageReport(
         break;
       case 'child-of':
         childOf += 1;
+        break;
+      case 'taxonomy':
+        taxonomy += 1;
         break;
       case 'ignored':
         ignored.set(status.reason, (ignored.get(status.reason) ?? 0) + 1);
@@ -407,6 +466,7 @@ export function buildSourceCoverageReport(
     summary: {
       record,
       childOf,
+      taxonomy,
       ignored: sortedCounts(ignored),
       knownGap: sortedCounts(knownGap),
       unaccounted,
@@ -668,6 +728,20 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   recordRule(
     'ancestry:lightfoot-halfling',
     (i) => i.section === 'Races' && i.text === 'Lightfoot',
+  ),
+  // Monsters chapter heading-only family/group labels (eshyra-4a7.10.2).
+  // Each taxonomy rule is accepted only when at least one emitted creature
+  // carries the matching source-derived familyPath (prefix matching lets the
+  // chromatic/metallic parent headings account for their nested color paths).
+  ...CREATURE_TAXONOMY_SPECS.map((spec) =>
+    taxonomyRule(
+      spec.familyPath,
+      (i) =>
+        i.section === 'Monsters' &&
+        i.structure === 'heading' &&
+        i.tier === spec.tier &&
+        i.text === spec.heading,
+    ),
   ),
   // Races p3 trait-category guidance (eshyra-4a7.10.1). Explicit mappings are
   // required for Alignment / Size / Speed / Languages: name auto-match would
@@ -1086,20 +1160,5 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     (i) =>
       (i.section?.startsWith('Appendix PH-B') ?? false) &&
       i.text === 'Suggested Domains Symbol',
-  ),
-  // Unimported prose regions, tracked region-by-region in eshyra-4a7.10.
-  knownGapRule(
-    'eshyra-4a7.10',
-    (i) =>
-      // Monsters-chapter creature-family lore headings (Angels … Zombies,
-      // the ten per-color dragon group intros). The Half-Dragon Template
-      // subsection and its two tables are implemented above. Section-tier items
-      // there are the alphabetical
-      // "Monsters (A)" … navigation headings — left to the
-      // document-structure default.
-      i.section === 'Monsters' &&
-      i.structure === 'heading' &&
-      (i.tier === 'subsection' || i.tier === 'leaf') &&
-      i.text !== 'Half-Dragon Template',
   ),
 ];

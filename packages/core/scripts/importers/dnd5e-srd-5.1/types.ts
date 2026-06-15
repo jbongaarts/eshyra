@@ -498,6 +498,12 @@ export interface CreatureExtraction {
    * records carry no category field.
    */
   readonly category: CreatureCategory;
+  /**
+   * Source-derived Monsters chapter taxonomy, from heading-only family/group
+   * labels surrounding the stat block. Omitted for standalone monsters,
+   * Appendix MM-A creatures, and Appendix MM-B NPCs.
+   */
+  readonly familyPath?: readonly string[];
   readonly size: string;
   readonly type: string;
   readonly alignment: string;

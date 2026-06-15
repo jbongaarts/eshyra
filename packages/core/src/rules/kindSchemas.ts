@@ -105,6 +105,25 @@ function optStrArray(parent: Obj, key: string, path: string): void {
   });
 }
 
+function optNonEmptyStrArray(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new RulesPackError(
+      `${path}.${key} must be a non-empty array when present`,
+    );
+  }
+  value.forEach((item, i) => {
+    if (typeof item !== 'string' || item.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}[${i}] must be a non-empty string`,
+      );
+    }
+  });
+}
+
 // Validate an optional array of `{ name, text }` stat-block entries (creature
 // traits / actions / reactions / legendary-action options). Each requires a
 // non-empty name and text; absent is allowed.
@@ -362,6 +381,7 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
 
 function validateDnd5eCreature(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
+  optNonEmptyStrArray(data, 'familyPath', `${path}.data`);
   reqStr(data, 'size', `${path}.data`);
   reqStr(data, 'type', `${path}.data`);
   reqStr(data, 'alignment', `${path}.data`);
