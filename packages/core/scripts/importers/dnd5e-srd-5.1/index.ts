@@ -55,6 +55,7 @@ import { parseClassCallouts } from './parseClassCallouts.js';
 import { parseClasses } from './parseClasses.js';
 import { parseConditions } from './parseConditions.js';
 import { parseCreatures } from './parseCreatures.js';
+import { parseDeityTables } from './parseDeityTables.js';
 import { parseDiseases } from './parseDiseases.js';
 import { parseDocumentTables } from './parseDocumentTables.js';
 import { parseEquipment, parseMountsAndVehicles } from './parseEquipment.js';
@@ -1312,6 +1313,26 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:customizing-a-background',
   // Appendix MM-B p395 "Customizing NPCs" guidance (eshyra-4a7.10.6).
   'rule:customizing-npcs',
+  // Appendix PH-B Fantasy-Historical Pantheons prose (eshyra-4a7.10.5): the
+  // appendix intro and the four pantheon-prose sections. The four deity tables
+  // are `table` records (see EXPECTED_SRD_5_1_TABLE_NAMES), not rules.
+  'rule:fantasy-historical-pantheons',
+  'rule:the-celtic-pantheon',
+  'rule:the-greek-pantheon',
+  'rule:the-egyptian-pantheon',
+  'rule:the-norse-pantheon',
+  // Appendix PH-C The Planes of Existence prose (eshyra-4a7.10.5). The two
+  // same-named "Outer Planes" headings (h≈13.9 subsection, h≈12 sub-leaf) get
+  // parent-qualified keys.
+  'rule:the-planes-of-existence',
+  'rule:the-material-plane',
+  'rule:beyond-the-material',
+  'rule:planar-travel',
+  'rule:transitive-planes',
+  'rule:inner-planes',
+  'rule:beyond-the-material-outer-planes',
+  'rule:outer-planes-outer-planes',
+  'rule:demiplanes',
 ];
 
 export const EXPECTED_SRD_5_1_TABLE_NAMES: readonly string[] = [
@@ -1447,6 +1468,13 @@ export const EXPECTED_SRD_5_1_TABLE_NAMES: readonly string[] = [
   'Sphere of Annihilation',
   'Staff of Power',
   'Staff of the Magi',
+  // Appendix PH-B deity tables (eshyra-4a7.10.5), reconstructed by
+  // `parseDeityTables` from the page-interleaved column blocks. Columns:
+  // Deity | Alignment | Suggested Domains | Symbol.
+  'Celtic Deities',
+  'Greek Deities',
+  'Egyptian Deities',
+  'Norse Deities',
 ];
 
 /**
@@ -2317,6 +2345,20 @@ export async function runImporter(
   const npcPages = sliceSectionOrEmptyPages(pages, anchors.nonplayerCharacters);
   const npcs = parseCreatures(npcPages, 'npc');
   validateNpcCoverage(npcs, input.expectedNpcNames);
+  // Appendix PH-B: Fantasy-Historical Pantheons (eshyra-4a7.10.5). The same
+  // slice feeds two parsers: the prose rules (below, via `parseRules` with the
+  // h≈8.9 deity-table cells stripped) and the four deity tables (via
+  // `parseDeityTables`, which reconstructs them from the page-interleaved
+  // column blocks). Best-effort start so reduced fixture PDFs without the
+  // appendix degrade to no records.
+  const pantheonPages = sliceSectionOrEmptyPages(
+    pages,
+    anchors.fantasyHistoricalPantheons,
+  );
+  const deityTables = parseDeityTables(pantheonPages);
+  // Appendix PH-C: The Planes of Existence (eshyra-4a7.10.5). Pure prose; fed
+  // to `parseRules` (below). Best-effort start for reduced fixtures.
+  const planePages = sliceSectionOrEmptyPages(pages, anchors.planesOfExistence);
   const conditions = parseConditions(conditionPages);
   const actions = parseActions(combatActionPages);
   const featPages = sliceSection(pages, anchors.feats);
@@ -2695,6 +2737,9 @@ export async function runImporter(
     ]),
     ...parseDocumentTables(pages),
     ...characteristicTables,
+    // Appendix PH-B deity tables (eshyra-4a7.10.5): four cross-page
+    // interleaved-column tables reconstructed by `parseDeityTables`.
+    ...deityTables,
   ];
   validateTableCoverage(tables, input.expectedTableNames);
   // Sliced after the other sections so the existing fail-closed tests trip on
@@ -2817,6 +2862,51 @@ export async function runImporter(
       ...sentientMagicItemRules,
     ]),
   );
+
+  // Appendix PH-B pantheon prose (eshyra-4a7.10.5). The slice carries the
+  // appendix intro, four h≈12 pantheon-prose headings ("The Celtic Pantheon"
+  // …), and four h≈12 deity-table captions whose h≈8.9 rows interleave the
+  // prose. `removeTableCellLines` strips those cell-height rows so they do not
+  // bleed into the pantheon-prose rules (the deity tables own them — see
+  // `parseDeityTables`), and `parseRules` excludes the now-bodyless caption
+  // headings via `TABLE_CAPTION_LEAF_TITLES`. `chapterIntro` restores the
+  // appendix intro prose (consumed as the slice anchor) as
+  // `rule:fantasy-historical-pantheons`.
+  const pantheonRules = parseRules(
+    removeTableCellLines(pantheonPages),
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+      ...weaponGuidanceRules,
+      ...sentientMagicItemRules,
+      ...customizingNpcsRules,
+    ]),
+    {
+      name: 'Fantasy-Historical Pantheons',
+      keySlug: 'fantasy-historical-pantheons',
+    },
+  );
+
+  // Appendix PH-C planes prose (eshyra-4a7.10.5). Pure prose with the SRD's
+  // nested heading tiers; `chapterIntro` restores the appendix intro as
+  // `rule:the-planes-of-existence`. The section repeats the title "Outer
+  // Planes" at two heading tiers (an h≈13.9 subsection and an h≈12 sub-leaf),
+  // which the parser disambiguates by parent-qualified key
+  // (`beyond-the-material-outer-planes` and `outer-planes-outer-planes`).
+  const planeRules = parseRules(
+    planePages,
+    reservedRuleSlugs([
+      ...rulesBeforeUnrepresentedProse,
+      ...racialTraitRules,
+      ...armorGuidanceRules,
+      ...weaponGuidanceRules,
+      ...sentientMagicItemRules,
+      ...customizingNpcsRules,
+      ...pantheonRules,
+    ]),
+    { name: 'The Planes of Existence', keySlug: 'the-planes-of-existence' },
+  );
   const rules = [
     ...rulesBeforeUnrepresentedProse,
     ...racialTraitRules,
@@ -2825,6 +2915,8 @@ export async function runImporter(
     ...(selfSufficiencyRule === undefined ? [] : [selfSufficiencyRule]),
     ...sentientMagicItemRules,
     ...customizingNpcsRules,
+    ...pantheonRules,
+    ...planeRules,
   ];
   // Fail closed before any output is written when the real import (CLI) supplies
   // the exact expected rule-key set and any implemented rule slice drifts from

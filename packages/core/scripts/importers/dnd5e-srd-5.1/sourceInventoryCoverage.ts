@@ -1048,6 +1048,45 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     'rule:creating-sentient-magic-items-alignment',
     (i) => i.section === 'Magic Items' && i.text === 'Alignment',
   ),
+  // Appendix PH-C p364 "Outer Planes" same-name headings (eshyra-4a7.10.5).
+  // The SRD prints the title "Outer Planes" twice: an h≈13.9 subsection under
+  // "Beyond the Material" and an h≈12 sub-leaf below it. Both emit distinct
+  // rule records (parent-qualified keys), but they share the normalized name
+  // "outer planes", so the bare name auto-match would collapse BOTH source
+  // headings onto the lexicographically-first key
+  // (`rule:beyond-the-material-outer-planes`). Pin each heading to its
+  // source-correct record by tier — the same disambiguation used for the
+  // Equipment "Weapons" subsection vs. its leaf table caption, and the two
+  // "Senses" headings.
+  recordRule(
+    'rule:beyond-the-material-outer-planes',
+    (i) =>
+      (i.section?.startsWith('Appendix PH-C') ?? false) &&
+      i.structure === 'heading' &&
+      i.tier === 'subsection' &&
+      i.text === 'Outer Planes',
+  ),
+  recordRule(
+    'rule:outer-planes-outer-planes',
+    (i) =>
+      (i.section?.startsWith('Appendix PH-C') ?? false) &&
+      i.structure === 'heading' &&
+      i.tier === 'leaf' &&
+      i.text === 'Outer Planes',
+  ),
+  // Appendix PH-B deity-table column-group header (eshyra-4a7.10.5). The four
+  // pantheon-prose headings and four "<Pantheon> Deities" captions auto-match
+  // their emitted records; the deity tables themselves are reconstructed by
+  // `parseDeityTables` and own the Deity/Alignment/Suggested Domains/Symbol
+  // columns. The lone remaining inventory item is the right-side column-group
+  // header the extractor surfaces as a standalone table-shape — a table
+  // internal of those emitted tables, not its own record.
+  ignoreRule(
+    'deity-table-column-header',
+    (i) =>
+      (i.section?.startsWith('Appendix PH-B') ?? false) &&
+      i.text === 'Suggested Domains Symbol',
+  ),
   // Unimported prose regions, tracked region-by-region in eshyra-4a7.10.
   knownGapRule(
     'eshyra-4a7.10',
@@ -1058,11 +1097,9 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       // there are the alphabetical
       // "Monsters (A)" … navigation headings — left to the
       // document-structure default.
-      (i.section === 'Monsters' &&
-        i.structure === 'heading' &&
-        (i.tier === 'subsection' || i.tier === 'leaf') &&
-        i.text !== 'Half-Dragon Template') ||
-      (i.section?.startsWith('Appendix PH-B') ?? false) ||
-      (i.section?.startsWith('Appendix PH-C') ?? false),
+      i.section === 'Monsters' &&
+      i.structure === 'heading' &&
+      (i.tier === 'subsection' || i.tier === 'leaf') &&
+      i.text !== 'Half-Dragon Template',
   ),
 ];

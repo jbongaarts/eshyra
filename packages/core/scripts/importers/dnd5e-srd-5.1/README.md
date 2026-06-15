@@ -417,8 +417,14 @@ Teleport. Each owning spell links those records through optional
 `data.tableRefs`; Control Weather links all three weather tables. The original
 spell descriptions remain source-preserving and retain their flattened table
 prose. The Half-Dragon Template p320-321 is emitted as a rule plus two linked
-table records (eshyra-4a7.10.3). The Appendix PH-B deity tables stay with
-eshyra-4a7.10 because that source region remains unimported. A
+table records (eshyra-4a7.10.3). The Appendix PH-B p360-362 pantheons and
+Appendix PH-C p363-365 planes of existence are imported by eshyra-4a7.10.5: the
+appendix intros and the pantheon/plane prose sections become `rule` records
+(`parseRules` over the new `fantasyHistoricalPantheons` / `planesOfExistence`
+slices, the PH-B slice run through `removeTableCellLines` so the deity-table
+rows do not bleed into the prose), and the four deity tables
+(Celtic/Greek/Egyptian/Norse Deities) become `table` records reconstructed by
+`parseDeityTables` (see below). A
 table caption that shares its name with an emitted record is normally claimed
 by that record via the name auto-match (e.g. the exhaustion-levels caption
 resolves to `condition:exhaustion`, which carries structured `levels[]`). The
@@ -464,13 +470,29 @@ work. None of them emit a record from the vendored SRD 5.1 PDF.
 | Individual Treasure challenge tables | `table:individual-treasure-challenge-<range>` | The `treasureTables` slice is wired through `runImporter`; d100 ranges form a leading block and each currency column forms an equal-length block that can be pivoted into rows. |
 | Treasure Hoard challenge tables | `table:treasure-hoard-challenge-<range>` | The `treasureTables` slice is wired through `runImporter`; d100 ranges, coin columns, gems/art-object column, and magic-item column can be reconstructed from equal-length column blocks. Empty dash cells are stored as `null`. |
 
-Tables not covered by the current parser at all (each is explicitly accounted
-in the source-coverage gate as a `known-gap:<bead>` — see the document-wide
-table section above):
+### Appendix PH-B deity tables (cross-page interleaved columns)
 
-| Table family | Reason deferred | Follow-up |
-|--------------|-----------------|-----------|
-| Appendix PH-B deity tables (Celtic/Greek/Egyptian/Norse) | The deity tables' name and alignment/domain/symbol column blocks interleave across pages in extraction order. | `eshyra-4a7.10` |
+The four pantheon deity tables (Celtic/Greek/Egyptian/Norse Deities) are
+four-column reference tables — Deity | Alignment | Suggested Domains | Symbol —
+but pdfjs does not preserve their column geometry. Each two-column page is
+emitted as its entire LEFT text column top-to-bottom, then its RIGHT column, so
+the deity-NAME column (left) and the alignment/domain/symbol columns (right)
+arrive as separate, page-interleaved blocks, and the blocks straddle page
+boundaries (Celtic spans pp360-361, Norse spans pp361-362). `parseDeityTables`
+reconstructs the rows from one robust invariant (eshyra-4a7.10.5): both streams
+enumerate the same deities in the same pantheon order and intra-pantheon order,
+so it collects an ordered NAME stream (lines shaped `<Name>, god/goddess of …`,
+tagged with the most recent `<Pantheon> Deities` caption) and an ordered RIGHT
+stream (lines beginning with an alignment code start a row; a following line
+that does not is a wrapped Symbol cell appended to the current row), asserts
+they are equal length, and zips them positionally. Each right row splits into a
+validated alignment, one or more known cleric domains, and the remaining Symbol
+text; any mismatch throws so a corrupted extraction fails closed. A handful of
+Symbol cells extract without their apostrophe ("Mare s head", "Lion s head",
+"Woman s face", "cow s head") — a pdfjs glyph artifact local to these table
+cells, emitted verbatim. The right-side column-group header ("Suggested Domains
+Symbol") is ignored in the source-coverage gate as a table internal of these
+emitted tables (`deity-table-column-header`).
 
 ## Section-anchor table
 
@@ -528,6 +550,8 @@ logical line by the extractor's heading-merge pass before slicing.
 | `combatActions`      | `/^Actions in Combat$/`                        | `/^(Making an Attack\|Movement and Position\|Reactions?\|Bonus Actions?\|Mounted Combat\|Underwater Combat\|Contests in Combat\|Cover)$/i` | `true` | `true` |
 | `monsters`           | `/^Monsters$/`                                 | `/^(Nonplayer Characters\|NPCs\|Appendix \|Open Game License\|Legal Information)/i` | `true`     | `true`          |
 | `nonplayerCharacters`| `/^Appendix MM-B:\s*Nonplayer Characters$/`    | _(none — runs to EOF)_                                       | false (best-effort start; last section) | `true` |
+| `fantasyHistoricalPantheons` | `/^Appendix PH-B:\s*Fantasy-Historical Pantheons$/` | `/^Appendix PH-C:\|^Appendix [A-Z]{0,3}-?[A-Z]?:/` | `true` (best-effort start) | `true` |
+| `planesOfExistence`  | `/^Appendix PH-C:\s*The Planes of Existence$/`  | `/^Appendix MM-A:\|^Appendix [A-Z]{0,3}-?[A-Z]?:/`         | `true` (best-effort start) | `true` |
 | `conditions`         | `/^(Appendix [A-Z]{0,3}-?[A-Z]?:?\s*)?Conditions$\|^Appendix [A-Z]{0,3}-?[A-Z]?: Conditions$/` | `/^Appendix [A-Z]{0,3}-?[A-Z]?:\|^Open Game License\|^Legal Information/i` | false (may run to EOF) | `true` |
 | `feats`              | `/^Feats?$\|^Feat Descriptions?$/`             | `/^(Using Ability Scores\|...)$\|^Appendix\b/i`             | `true`              | `true`          |
 | `traps`              | `/^Traps$/`                                     | `/^(Diseases\|Madness\|Objects\|Poisons\|Monsters\|Magic Items\|Appendix)\b/` | `true` (best-effort start) | `true` |
