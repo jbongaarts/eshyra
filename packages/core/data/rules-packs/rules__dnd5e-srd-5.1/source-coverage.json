@@ -1,13 +1,13 @@
 {
   "summary": {
-    "record": 1430,
+    "record": 1442,
     "childOf": 456,
     "ambiguous": 188,
     "taxonomy": 33,
     "ignored": {
       "class-progression-table-internal": 9,
       "deity-table-column-header": 1,
-      "document-structure": 42,
+      "document-structure": 30,
       "equipment-category-heading": 3,
       "front-matter": 2,
       "record-group-heading": 1,
@@ -2955,7 +2955,7 @@
       "structure": "heading",
       "text": "Martial Archetypes",
       "section": "Fighter",
-      "status": "ignored:document-structure"
+      "status": "record:rule:martial-archetypes"
     },
     {
       "page": 25,
@@ -3279,7 +3279,7 @@
       "structure": "heading",
       "text": "Monastic Traditions",
       "section": "Monk",
-      "status": "ignored:document-structure"
+      "status": "record:rule:monastic-traditions"
     },
     {
       "page": 28,
@@ -3594,7 +3594,7 @@
       "structure": "heading",
       "text": "Sacred Oaths",
       "section": "Paladin",
-      "status": "ignored:document-structure"
+      "status": "record:rule:sacred-oaths"
     },
     {
       "page": 32,
@@ -3927,7 +3927,7 @@
       "structure": "heading",
       "text": "Ranger Archetypes",
       "section": "Ranger",
-      "status": "ignored:document-structure"
+      "status": "record:rule:ranger-archetypes"
     },
     {
       "page": 37,
@@ -4152,7 +4152,7 @@
       "structure": "heading",
       "text": "Roguish Archetypes",
       "section": "Rogue",
-      "status": "ignored:document-structure"
+      "status": "record:rule:roguish-archetypes"
     },
     {
       "page": 40,
@@ -4476,7 +4476,7 @@
       "structure": "heading",
       "text": "Sorcerous Origins",
       "section": "Sorcerer",
-      "status": "ignored:document-structure"
+      "status": "record:rule:sorcerous-origins"
     },
     {
       "page": 44,
@@ -5043,7 +5043,7 @@
       "structure": "heading",
       "text": "Otherworldly Patrons",
       "section": "Warlock",
-      "status": "ignored:document-structure"
+      "status": "record:rule:otherworldly-patrons"
     },
     {
       "page": 50,
@@ -5304,7 +5304,7 @@
       "structure": "heading",
       "text": "Arcane Traditions",
       "section": "Wizard",
-      "status": "ignored:document-structure"
+      "status": "record:rule:arcane-traditions"
     },
     {
       "page": 54,
@@ -6060,7 +6060,7 @@
       "structure": "heading",
       "text": "Feats",
       "section": null,
-      "status": "ignored:document-structure"
+      "status": "record:rule:feats"
     },
     {
       "page": 75,
@@ -6078,7 +6078,7 @@
       "structure": "heading",
       "text": "Using Ability Scores",
       "section": null,
-      "status": "ignored:document-structure"
+      "status": "record:rule:using-ability-scores"
     },
     {
       "page": 76,
@@ -19254,7 +19254,7 @@
       "structure": "heading",
       "text": "Appendix PH-A: Conditions",
       "section": null,
-      "status": "ignored:document-structure"
+      "status": "record:rule:conditions"
     },
     {
       "page": 358,
@@ -21288,7 +21288,7 @@
       "structure": "heading",
       "text": "Appendix MM-B: Nonplayer Characters",
       "section": null,
-      "status": "ignored:document-structure"
+      "status": "record:rule:appendix-mm-b-nonplayer-characters"
     },
     {
       "page": 395,

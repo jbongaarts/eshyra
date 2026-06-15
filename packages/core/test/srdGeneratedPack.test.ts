@@ -220,8 +220,16 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 297 -> 299 (eshyra-bw95): the two substantive core-rules Variant sections.
   // 299 -> 314 (eshyra-7qit): Equipment/Expenses guidance plus Diseases and
   // Poisons intro/sample guidance.
+  // 314 -> 326 (eshyra-g9im / eshyra-i2v4): chapter/appendix intro prose
+  // recovered from header-less slice leads — rule:using-ability-scores (p76),
+  // rule:feats (p75), rule:conditions (p358), and
+  // rule:appendix-mm-b-nonplayer-characters (p395) — plus the eight
+  // subclass-category overview paragraphs (Martial Archetypes, Monastic
+  // Traditions, Sacred Oaths, Ranger Archetypes, Roguish Archetypes, Sorcerous
+  // Origins, Otherworldly Patrons, Arcane Traditions; p25-p54), each previously
+  // dropped as `ignored:document-structure`.
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 314,
+  rule: 326,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -632,11 +640,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-76b7 adds the Appendix MM-A intro rule (no tableRefs): 296 -> 297.
   // eshyra-bw95 adds two variant rules without tableRefs: 297 -> 299.
   // eshyra-7qit adds 15 prose rules without tableRefs: 299 -> 314.
+  // eshyra-g9im / eshyra-i2v4 add 12 chapter/appendix/subclass intro rules
+  // without tableRefs: 314 -> 326.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 313,
-    totalInKind: 314,
+    missingCount: 325,
+    totalInKind: 326,
   },
   {
     kind: 'spell',
@@ -825,6 +835,109 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           expected.text,
         );
       }
+    });
+  });
+
+  describe('chapter/appendix/subclass intro prose (eshyra-g9im / eshyra-i2v4)', () => {
+    // Each chapter/appendix/subclass-category heading whose intro prose was
+    // previously dropped as `ignored:document-structure` now owns a `rule`
+    // record named after the heading. The sentinel phrase sits in the intro
+    // region BEFORE the first child heading, proving the prose was captured and
+    // not absorbed into a child record.
+    const INTRO_RULES: ReadonlyArray<{
+      readonly key: string;
+      readonly name: string;
+      readonly sentinel: string;
+    }> = [
+      {
+        key: 'rule:feats',
+        name: 'Feats',
+        sentinel: 'Using the optional feats rule',
+      },
+      {
+        key: 'rule:conditions',
+        name: 'Appendix PH-A: Conditions',
+        sentinel: 'A condition lasts either until it is countered',
+      },
+      {
+        key: 'rule:using-ability-scores',
+        name: 'Using Ability Scores',
+        sentinel: 'Six abilities provide a quick description',
+      },
+      {
+        key: 'rule:appendix-mm-b-nonplayer-characters',
+        name: 'Appendix MM-B: Nonplayer Characters',
+        sentinel:
+          'This appendix contains statistics for various humanoid nonplayer characters',
+      },
+      {
+        key: 'rule:martial-archetypes',
+        name: 'Martial Archetypes',
+        sentinel: 'Different fighters choose different approaches',
+      },
+      {
+        key: 'rule:monastic-traditions',
+        name: 'Monastic Traditions',
+        sentinel: 'Three traditions of monastic pursuit',
+      },
+      {
+        key: 'rule:sacred-oaths',
+        name: 'Sacred Oaths',
+        sentinel: 'Becoming a paladin involves taking vows',
+      },
+      {
+        key: 'rule:ranger-archetypes',
+        name: 'Ranger Archetypes',
+        sentinel: 'A classic expression of the ranger ideal is the Hunter',
+      },
+      {
+        key: 'rule:roguish-archetypes',
+        name: 'Roguish Archetypes',
+        sentinel: 'Rogues have many features in common',
+      },
+      {
+        key: 'rule:sorcerous-origins',
+        name: 'Sorcerous Origins',
+        sentinel: 'Different sorcerers claim different origins',
+      },
+      {
+        key: 'rule:otherworldly-patrons',
+        name: 'Otherworldly Patrons',
+        sentinel: 'The beings that serve as patrons for warlocks',
+      },
+      {
+        key: 'rule:arcane-traditions',
+        name: 'Arcane Traditions',
+        sentinel: 'The study of wizardry is ancient',
+      },
+    ];
+
+    it('emits every intro/overview rule with its heading name and sentinel prose', () => {
+      for (const { key, name, sentinel } of INTRO_RULES) {
+        const record = pack.records.find((r) => r.key === key);
+        expect(record, `expected ${key} in the committed pack`).toBeDefined();
+        expect(record?.kind).toBe('rule');
+        expect(record?.name).toBe(name);
+        const text = String((record?.data as { text?: unknown }).text ?? '');
+        expect(text, `${key} sentinel`).toContain(sentinel);
+      }
+    });
+
+    it('does not let the Feats/Conditions intros absorb their first child entry', () => {
+      const feats = pack.records.find((r) => r.key === 'rule:feats');
+      const featsText = String((feats?.data as { text?: unknown }).text ?? '');
+      // The Grappler feat is its own `feat:grappler` record, not part of the
+      // general feats rule.
+      expect(featsText).not.toContain('You’ve developed the skills necessary');
+
+      const conditions = pack.records.find((r) => r.key === 'rule:conditions');
+      const conditionsText = String(
+        (conditions?.data as { text?: unknown }).text ?? '',
+      );
+      // The 15 individual conditions are their own records; the general rule
+      // stops at the first condition heading.
+      expect(conditionsText).not.toContain('A blinded creature');
+      expect(conditions?.kind).toBe('rule');
     });
   });
 
