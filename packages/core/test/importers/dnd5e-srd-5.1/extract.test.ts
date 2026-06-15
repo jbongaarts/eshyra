@@ -223,6 +223,35 @@ describe('extractPdfText — heading merge', () => {
     );
   });
 
+  it('exposes per-line vertical gaps parallel to lines (lineGaps)', async () => {
+    // `lineGaps` (eshyra-76b7) carries each line's baseline gap from the
+    // previous line in the same column, so a consumer can tell an
+    // intra-paragraph wrap from a larger paragraph break. The first line of a
+    // column has no in-column predecessor and is `null`. Lines stack down the
+    // page; the third line is set off by a much larger gap (a paragraph break).
+    const pages = await extractFromOps([
+      { text: 'First body line of the column.', size: 11, x: 60, y: 100 },
+      { text: 'Second line, a tight wrap.', size: 11, x: 60, y: 118 },
+      { text: 'A new paragraph after a wide gap.', size: 11, x: 60, y: 175 },
+    ]);
+    const page = pages[0];
+    expect(page.lineGaps).toBeDefined();
+    expect(page.lineGaps?.length).toBe(page.lines.length);
+    const gapOf = (text: string): number | null | undefined => {
+      const idx = page.lines.indexOf(text);
+      return page.lineGaps?.[idx];
+    };
+    // First line of the column is a discontinuity → null.
+    expect(gapOf('First body line of the column.')).toBeNull();
+    const wrapGap = gapOf('Second line, a tight wrap.');
+    const paragraphGap = gapOf('A new paragraph after a wide gap.');
+    expect(typeof wrapGap).toBe('number');
+    expect(typeof paragraphGap).toBe('number');
+    // The paragraph break sits noticeably farther below its predecessor than the
+    // tight wrap does — the signal the creature parser keys on.
+    expect(paragraphGap as number).toBeGreaterThan(wrapGap as number);
+  });
+
   it('emits two-column body pages column-by-column, not row-interleaved', async () => {
     // Mimics the SRD spell-descriptions layout (page 114 in the real PDF):
     // two columns of stat blocks where pdfjs returns items y-interleaved

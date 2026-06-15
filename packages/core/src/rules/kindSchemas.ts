@@ -429,6 +429,11 @@ function validateDnd5eCreature(record: RulesRecord, path: string): void {
       );
     }
   }
+  // Optional source-derived flavor/description prose printed after the stat
+  // block (eshyra-76b7). A single string (paragraphs joined with "\n\n"). Kept
+  // separate from the mechanical action/reaction/legendary-action text so lore
+  // never contaminates a stat-block entry.
+  optStr(data, 'description', `${path}.data`);
   // Optional "Variant: …" sidebars that modify the creature (eshyra-70xr).
   optNamedEntryArray(data, 'variants', `${path}.data`);
 }

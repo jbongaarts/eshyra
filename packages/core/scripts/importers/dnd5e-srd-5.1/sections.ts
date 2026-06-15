@@ -186,10 +186,21 @@ function buildSlice(
         page.lineHeights === undefined
           ? undefined
           : page.lineHeights.slice(firstLine, lastLineExclusive);
+      // Carry `lineGaps` the same way (eshyra-76b7). It is positional and
+      // parallel to `lines`, so a plain window slice stays aligned. The gap at
+      // the slice's first kept line still describes that line's distance from
+      // its in-column predecessor in the original page, which is the desired
+      // paragraph-break signal; `parseCreatures` only reads gaps inside a
+      // creature body, well away from the slice edge.
+      const lineGaps =
+        page.lineGaps === undefined
+          ? undefined
+          : page.lineGaps.slice(firstLine, lastLineExclusive);
       out.push({
         pageNumber: page.pageNumber,
         lines,
         ...(lineHeights === undefined ? {} : { lineHeights }),
+        ...(lineGaps === undefined ? {} : { lineGaps }),
       });
     }
   }

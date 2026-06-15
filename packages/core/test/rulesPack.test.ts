@@ -330,6 +330,33 @@ describe('rules pack validation', () => {
     }
   });
 
+  it('accepts an optional source-derived creature description (eshyra-76b7)', () => {
+    const pack = validRulesPack({
+      records: [
+        record('creature:acolyte', {
+          data: {
+            ...creatureData(),
+            description:
+              'Acolytes are junior members of a clergy, usually answerable to a priest.',
+          },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).not.toThrow();
+  });
+
+  it('rejects a non-string creature description (eshyra-76b7)', () => {
+    const pack = validRulesPack({
+      records: [
+        record('creature:acolyte', {
+          data: { ...creatureData(), description: 42 },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+    expect(() => validateRulesPack(pack)).toThrow(/data\.description/);
+  });
+
   it('rejects dnd5e spell records missing the level field', () => {
     const pack = validRulesPack({
       records: [

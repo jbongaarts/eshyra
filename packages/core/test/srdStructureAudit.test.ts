@@ -489,6 +489,109 @@ describe('spell-embedded table linkage (eshyra-o4j7)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Creature stat-block prose bleed (eshyra-76b7)
+// ---------------------------------------------------------------------------
+
+describe('creature stat-block prose bleed (eshyra-76b7)', () => {
+  function creature(data: Record<string, unknown>): RulesRecord {
+    return record({
+      kind: 'creature',
+      key: 'creature:test-beast',
+      name: 'Test Beast',
+      data,
+    });
+  }
+
+  it('flags document/appendix prose appended to a creature action', () => {
+    // The Ogre Zombie failure class: Appendix MM-A intro prose bled into the
+    // last action's text.
+    const findings = auditSrdStructure(
+      pack([
+        creature({
+          actions: [
+            {
+              name: 'Morningstar',
+              text: 'Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 13 (2d8 + 4) bludgeoning damage. This appendix contains statistics for various animals, vermin, and other critters.',
+            },
+          ],
+        }),
+      ]),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].category).toBe('creature-stat-block-prose-bleed');
+    expect(findings[0].key).toBe('creature:test-beast');
+    expect(findings[0].detail).toContain('actions[0]');
+    expect(findings[0].detail).toContain('document-structure prose');
+  });
+
+  it('flags description flavor that is duplicated into a reaction', () => {
+    const findings = auditSrdStructure(
+      pack([
+        creature({
+          reactions: [
+            {
+              name: 'Parry',
+              text: 'The knight adds 2 to its AC. Knights are warriors who pledge service to rulers, religious orders, and noble causes.',
+            },
+          ],
+          description:
+            'Knights are warriors who pledge service to rulers, religious orders, and noble causes.',
+        }),
+      ]),
+    );
+    expect(
+      findings.some(
+        (f) =>
+          f.category === 'creature-stat-block-prose-bleed' &&
+          f.detail.includes('reactions[0]') &&
+          f.detail.includes('repeats data.description'),
+      ),
+    ).toBe(true);
+  });
+
+  it('does not flag a clean stat block with separated description', () => {
+    const findings = auditSrdStructure(
+      pack([
+        creature({
+          actions: [
+            {
+              name: 'Club',
+              text: 'Melee Weapon Attack: +2 to hit, reach 5 ft., one target. Hit: 2 (1d4) bludgeoning damage.',
+            },
+          ],
+          description:
+            'Acolytes are junior members of a clergy, usually answerable to a priest.',
+        }),
+      ]),
+    );
+    expect(
+      findings.filter((f) => f.category === 'creature-stat-block-prose-bleed'),
+    ).toEqual([]);
+  });
+
+  it('does not flag legitimate mechanical text that mentions an appendix incidentally', () => {
+    // A real Quipper line references "this appendix" but is mechanical/flavor in
+    // the description, not the action — the marker only matches the specific
+    // document-structure framing, so normal mechanical prose is untouched.
+    const findings = auditSrdStructure(
+      pack([
+        creature({
+          actions: [
+            {
+              name: 'Bite',
+              text: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 1 piercing damage.',
+            },
+          ],
+        }),
+      ]),
+    );
+    expect(
+      findings.filter((f) => f.category === 'creature-stat-block-prose-bleed'),
+    ).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Coverage
 // ---------------------------------------------------------------------------
 

@@ -48,6 +48,7 @@ export type SrdAuditCategory =
   | 'ancestry-bogus-trait'
   | 'ancestry-unlinked-table'
   | 'spell-table-link'
+  | 'creature-stat-block-prose-bleed'
   | 'missing-coverage';
 
 export interface SrdAuditFinding {
@@ -473,6 +474,113 @@ function checkSpellTableLinks(pack: RulesPack): SrdAuditFinding[] {
 // Structure audit entry point
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Creature stat-block prose bleed (eshyra-76b7)
+// ---------------------------------------------------------------------------
+
+// Document-structure prose that must never appear in a creature's mechanical
+// action / reaction / legendary-action text. These are appendix/section framing
+// sentences (the worked case: Appendix MM-A's intro bled into Ogre Zombie's
+// Morningstar). They are specific enough that no legitimate attack or trait body
+// contains them, so a single match is a real defect.
+const STAT_BLOCK_DOCUMENT_PROSE: readonly RegExp[] = [
+  /\bappendix contains statistics\b/i,
+  /\bstat blocks are organized alphabetically\b/i,
+];
+
+// A long shared substring used to detect descriptive flavor that leaked into a
+// mechanical entry: if a creature carries both a `description` and an action /
+// reaction / legendary-action entry that repeats a long run of that
+// description, the stat-block/flavor boundary failed. 30 characters is well
+// beyond any incidental overlap of mechanical phrasing.
+const FLAVOR_BLEED_MIN_SHARED = 30;
+
+interface NamedTextField {
+  readonly field: string;
+  readonly text: string;
+}
+
+/** Collect the action / reaction / legendary-action text of a creature. */
+function statBlockMechanicalTexts(
+  data: Record<string, unknown>,
+): NamedTextField[] {
+  const out: NamedTextField[] = [];
+  const pushEntries = (value: unknown, label: string): void => {
+    if (!Array.isArray(value)) return;
+    value.forEach((entry, index) => {
+      if (entry === null || typeof entry !== 'object') return;
+      const text = asString((entry as { text?: unknown }).text);
+      if (text !== null) out.push({ field: `${label}[${index}]`, text });
+    });
+  };
+  pushEntries(data.actions, 'actions');
+  pushEntries(data.reactions, 'reactions');
+  const legendary = data.legendaryActions;
+  if (legendary !== null && typeof legendary === 'object') {
+    const intro = asString(
+      (legendary as { description?: unknown }).description,
+    );
+    if (intro !== null)
+      out.push({ field: 'legendaryActions.description', text: intro });
+    pushEntries(
+      (legendary as { entries?: unknown }).entries,
+      'legendaryActions.entries',
+    );
+  }
+  return out;
+}
+
+function checkCreatureStatBlockProseBleed(
+  record: RulesRecord,
+): SrdAuditFinding[] {
+  if (record.kind !== 'creature') return [];
+  const data = dataObject(record);
+  if (data === null) return [];
+  const findings: SrdAuditFinding[] = [];
+  const mechanical = statBlockMechanicalTexts(data);
+  for (const { field, text } of mechanical) {
+    for (const marker of STAT_BLOCK_DOCUMENT_PROSE) {
+      const match = marker.exec(text);
+      if (match !== null) {
+        findings.push({
+          category: 'creature-stat-block-prose-bleed',
+          key: record.key,
+          kind: record.kind,
+          name: record.name,
+          detail: `data.${field} contains document-structure prose, not mechanical text: "${snippet(text)}"`,
+        });
+        break;
+      }
+    }
+  }
+  // Flavor that should live in `data.description` must not also appear in a
+  // mechanical entry. Compare against the description's leading sentence so a
+  // partial bleed (the start of the flavor paragraph appended to the last
+  // action) is still caught.
+  const description = asString(data.description);
+  if (description !== null) {
+    const lead = description.slice(0, 60).trim();
+    const probe =
+      lead.length >= FLAVOR_BLEED_MIN_SHARED
+        ? lead.slice(0, FLAVOR_BLEED_MIN_SHARED)
+        : lead;
+    if (probe.length >= FLAVOR_BLEED_MIN_SHARED) {
+      for (const { field, text } of mechanical) {
+        if (text.includes(probe)) {
+          findings.push({
+            category: 'creature-stat-block-prose-bleed',
+            key: record.key,
+            kind: record.kind,
+            name: record.name,
+            detail: `data.${field} repeats data.description flavor prose: "${snippet(probe)}"`,
+          });
+        }
+      }
+    }
+  }
+  return findings;
+}
+
 /**
  * Run every structure-aware check over a loaded SRD pack. Output is sorted for
  * diffable reports.
@@ -485,6 +593,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
     findings.push(...checkSwallowedFeatures(record));
     findings.push(...checkAncestryTraits(record));
     findings.push(...checkAncestryUnlinkedTable(record));
+    findings.push(...checkCreatureStatBlockProseBleed(record));
   }
   findings.push(...checkSpellTableLinks(pack));
   return sortFindings(findings);

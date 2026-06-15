@@ -358,6 +358,7 @@ export async function extractPdfText(
       readonly pageNumber: number;
       readonly lines: readonly string[];
       readonly lineHeights: readonly number[];
+      readonly lineGaps: readonly (number | null)[];
       readonly headingLineIndexes: readonly number[];
       readonly hasHeadingItem: boolean;
     }
@@ -366,12 +367,18 @@ export async function extractPdfText(
       const page = await pdf.getPage(i);
       try {
         const content = await page.getTextContent();
-        const { lines, lineHeights, headingLineIndexes, hasHeadingItem } =
-          textContentToPage(content);
+        const {
+          lines,
+          lineHeights,
+          lineGaps,
+          headingLineIndexes,
+          hasHeadingItem,
+        } = textContentToPage(content);
         raw.push({
           pageNumber: i,
           lines,
           lineHeights,
+          lineGaps,
           headingLineIndexes,
           hasHeadingItem,
         });
@@ -401,6 +408,10 @@ export async function extractPdfText(
       // anchor threshold). `parseRules` reads this to emit a rule per leaf
       // without dropping parents (loreweaver-yli). Always populated.
       lineHeights: r.lineHeights,
+      // `lineGaps` carries the per-line vertical gap from the previous line in
+      // the same column (null at a column/page start). Always populated and
+      // parallel to `lines`, like `lineHeights` (eshyra-76b7).
+      lineGaps: r.lineGaps,
       ...(documentHasHeadings
         ? { headingLineIndexes: r.headingLineIndexes }
         : {}),
@@ -431,6 +442,7 @@ interface LineRecord {
 function textContentToPage(content: PdfTextContent): {
   lines: readonly string[];
   lineHeights: readonly number[];
+  lineGaps: readonly (number | null)[];
   headingLineIndexes: readonly number[];
   hasHeadingItem: boolean;
 } {
@@ -476,6 +488,7 @@ function textContentToPage(content: PdfTextContent): {
     return {
       lines: [],
       lineHeights: [],
+      lineGaps: [],
       headingLineIndexes: [],
       hasHeadingItem: false,
     };
@@ -493,9 +506,22 @@ function textContentToPage(content: PdfTextContent): {
   // single page-wide cut.
   const itemsByColumn = partitionItemsIntoReadingOrder(items);
   const ordered: LineRecord[] = [];
+  // Baseline-to-baseline vertical gap from the PREVIOUS line WITHIN the same
+  // column, parallel to `lines`. Computed per column so an intra-column
+  // paragraph break (a larger-than-line-height gap) is visible to consumers,
+  // while the first line of every column (a reading-order discontinuity — a new
+  // column or the top of a page) is `null` rather than a meaningless
+  // cross-column delta. `parseCreatures` uses this to tell a stat block's
+  // mechanical body from the trailing flavor paragraph the SRD prints after it,
+  // which carry the same font height and so are otherwise indistinguishable
+  // (eshyra-76b7).
+  const lineGaps: (number | null)[] = [];
   for (const columnItems of itemsByColumn) {
     const records = bucketItemsIntoRecords(columnItems);
     const merged = mergeWrappedHeadings(records, columnItems);
+    for (let k = 0; k < merged.length; k++) {
+      lineGaps.push(k === 0 ? null : merged[k - 1].y - merged[k].y);
+    }
     ordered.push(...merged);
   }
   const lines = ordered.map((r) => normalizePdfHyphenCluster(r.text));
@@ -505,7 +531,7 @@ function textContentToPage(content: PdfTextContent): {
     if (ordered[idx].isHeading) headingLineIndexes.push(idx);
   }
   const hasHeadingItem = items.some((it) => it.height >= HEADING_H_THRESHOLD);
-  return { lines, lineHeights, headingLineIndexes, hasHeadingItem };
+  return { lines, lineHeights, lineGaps, headingLineIndexes, hasHeadingItem };
 }
 
 /**

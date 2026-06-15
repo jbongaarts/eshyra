@@ -328,6 +328,14 @@ function buildCreatureData(
     }));
     data.legendaryActions = legendary;
   }
+  // Source-derived flavor/description prose printed after the stat block
+  // (eshyra-76b7). Appendix MM-A creatures and Appendix MM-B NPCs carry it; it
+  // is kept out of the mechanical action/reaction text and emitted as its own
+  // optional field. Absent for creatures the SRD does not describe after the
+  // stat block, so they gain no key.
+  if (creature.description !== undefined) {
+    data.description = creature.description;
+  }
   // Boxed "Variant: …" sidebars that modify this creature (eshyra-70xr).
   if (creature.variants !== undefined) {
     data.variants = creature.variants.map((v) => ({

@@ -214,8 +214,11 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // appendix intro and four pantheon sections, 5) and the Appendix PH-C planes
   // prose (the appendix intro, two sections, and seven planar subsections
   // including the two parent-qualified "Outer Planes" tiers, 9).
+  // 296 -> 297 (eshyra-76b7): the Appendix MM-A intro prose
+  // (rule:appendix-mm-a-miscellaneous-creatures), captured as its own rule
+  // instead of bleeding into the preceding creature's last action.
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 296,
+  rule: 297,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -500,6 +503,16 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 317,
   },
   {
+    // Source-derived flavor prose the SRD prints after a stat block (eshyra-76b7).
+    // Present on the 47 Appendix MM-A creatures and MM-B NPCs that carry a
+    // trailing description; absent (missingCount 270) on the rest, including the
+    // Monsters-chapter entries the SRD describes before the stat block.
+    kind: 'creature',
+    field: 'description',
+    missingCount: 270,
+    totalInKind: 317,
+  },
+  {
     kind: 'creature',
     field: 'familyPath',
     missingCount: 201,
@@ -613,11 +626,12 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // Half-Dragon Template owns its two reconstructed reference tables; other
   // rule records have no embedded table. eshyra-4a7.10.5 adds 14 PH-B/PH-C
   // prose rules, none of which carry tableRefs (281 -> 295, 282 -> 296).
+  // eshyra-76b7 adds the Appendix MM-A intro rule (no tableRefs): 296 -> 297.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 295,
-    totalInKind: 296,
+    missingCount: 296,
+    totalInKind: 297,
   },
   {
     kind: 'spell',
@@ -778,6 +792,106 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const keys = new Set(pack.records.map((record) => record.key));
       for (const expected of EXPECTED_STABLE_KEYS) {
         expect(keys.has(expected)).toBe(true);
+      }
+    });
+  });
+
+  describe('creature/NPC lore boundary regression (eshyra-76b7)', () => {
+    const creatures = pack.records.filter((r) => r.kind === 'creature');
+    function creatureData(key: string): Record<string, unknown> {
+      const found = creatures.find((r) => r.key === key);
+      if (found === undefined) throw new Error(`missing creature ${key}`);
+      return found.data as Record<string, unknown>;
+    }
+    function mechanicalTexts(data: Record<string, unknown>): string[] {
+      const entries = (value: unknown): string[] =>
+        Array.isArray(value)
+          ? value.map((e) => String((e as { text?: unknown }).text ?? ''))
+          : [];
+      const legendary = data.legendaryActions as
+        | { entries?: unknown }
+        | undefined;
+      return [
+        ...entries(data.actions),
+        ...entries(data.reactions),
+        ...entries(legendary?.entries),
+      ];
+    }
+
+    it('acolyte Club action is mechanical-only; lore is in description', () => {
+      const data = creatureData('creature:acolyte');
+      const club = (data.actions as { name: string; text: string }[])[0];
+      expect(club.name).toBe('Club');
+      expect(club.text).not.toContain('Acolytes are');
+      expect(club.text.endsWith('bludgeoning damage.')).toBe(true);
+      expect(String(data.description)).toContain(
+        'Acolytes are junior members of a clergy',
+      );
+    });
+
+    it('knight Parry reaction is mechanical-only; lore is in description', () => {
+      const data = creatureData('creature:knight');
+      const parry = (data.reactions as { name: string; text: string }[])[0];
+      expect(parry.name).toBe('Parry');
+      expect(parry.text).not.toContain('Knights are');
+      expect(String(data.description)).toContain(
+        'Knights are warriors who pledge service',
+      );
+    });
+
+    it('ogre-zombie Morningstar does not contain the appendix intro prose', () => {
+      const data = creatureData('creature:ogre-zombie');
+      for (const text of mechanicalTexts(data)) {
+        expect(text).not.toContain('This appendix contains statistics');
+      }
+      // The appendix intro is the appendix's, not this creature's: it is not
+      // attached to ogre-zombie in any form (it lives in the MM-A rule below).
+      expect(data.description).toBeUndefined();
+    });
+
+    it('a beast lore case (mastiff) preserves source prose in description', () => {
+      const data = creatureData('creature:mastiff');
+      const bite = (data.actions as { name: string; text: string }[])[0];
+      expect(bite.text).not.toContain('Mastiffs are');
+      expect(String(data.description)).toContain(
+        'Mastiffs are impressive hounds prized by humanoids',
+      );
+    });
+
+    it('captures the Appendix MM-A intro prose as its own rule (p366)', () => {
+      const rule = pack.records.find(
+        (r) => r.key === 'rule:appendix-mm-a-miscellaneous-creatures',
+      );
+      expect(rule).toBeDefined();
+      expect(rule?.kind).toBe('rule');
+      expect(rule?.name).toBe('Appendix MM-A: Miscellaneous Creatures');
+      expect(rule?.source).toBe('SRD 5.1 p. 366');
+      const text = String((rule?.data as { text?: unknown }).text ?? '');
+      expect(text).toContain(
+        'This appendix contains statistics for various animals, vermin, and other critters.',
+      );
+      expect(text).toContain(
+        'The stat blocks are organized alphabetically by creature name.',
+      );
+    });
+
+    it('no creature action/reaction/legendary text carries lore/document prose bleed', () => {
+      // Broad invariant over the whole pack: the structure audit reports no
+      // creature stat-block prose-bleed findings, and the Appendix MM-A intro
+      // prose appears in NO creature stat-block text (it lives only in the rule).
+      const findings = auditSrdStructure(pack).filter(
+        (f) => f.category === 'creature-stat-block-prose-bleed',
+      );
+      expect(findings).toEqual([]);
+      for (const creature of creatures) {
+        for (const text of mechanicalTexts(
+          creature.data as Record<string, unknown>,
+        )) {
+          expect(text).not.toContain('This appendix contains statistics');
+          expect(text).not.toContain(
+            'stat blocks are organized alphabetically',
+          );
+        }
       }
     });
   });

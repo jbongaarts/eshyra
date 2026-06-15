@@ -23,6 +23,21 @@ export interface PageText {
    */
   readonly lineHeights?: readonly number[];
   /**
+   * Per-line vertical baseline gap (PDF user-space points) from the PREVIOUS
+   * line in the same column, parallel to `lines`. `null` marks a reading-order
+   * discontinuity — the first line of a column or page, which has no in-column
+   * predecessor. The real SRD 5.1 extraction always populates it; fixture PDFs
+   * that omit it leave it undefined.
+   *
+   * Within a paragraph the gap is roughly the line height; the SRD prints a
+   * noticeably larger gap before a new paragraph. `parseCreatures` uses this to
+   * separate a stat block's mechanical body from the trailing flavor paragraph
+   * the SRD prints after it (both at the same font height, so otherwise
+   * indistinguishable), and to refuse content that arrives across a column/page
+   * discontinuity (eshyra-76b7).
+   */
+  readonly lineGaps?: readonly (number | null)[];
+  /**
    * Indexes into `lines` of the entries the extractor identified as
    * chapter / section headings, based on rendered font height. When
    * present, section anchors with `matchHeadings: true` match only at
@@ -533,6 +548,17 @@ export interface CreatureExtraction {
   readonly actions?: readonly CreatureStatBlockEntry[];
   readonly reactions?: readonly CreatureStatBlockEntry[];
   readonly legendaryActions?: CreatureLegendaryActions;
+  /**
+   * Source-derived flavor/description prose printed immediately after the stat
+   * block (eshyra-76b7). Appendix MM-A creatures and Appendix MM-B NPCs print a
+   * short descriptive paragraph after their last action/reaction; the SRD sets
+   * it off with a larger paragraph gap (see `PageText.lineGaps`). It is moved
+   * here verbatim, with blank-line paragraph breaks preserved as "\n\n", so it
+   * never contaminates the mechanical action/reaction/legendary-action text.
+   * Omitted when the creature prints no such prose (most Monsters-chapter
+   * entries describe the creature before the stat block, not after).
+   */
+  readonly description?: string;
   // Boxed "Variant: …" sidebars that modify this creature (eshyra-70xr). Only
   // the Giant Rat and Swarm of Insects carry one in SRD 5.1; all other creatures
   // omit the field.
