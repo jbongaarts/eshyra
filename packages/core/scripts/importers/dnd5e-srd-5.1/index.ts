@@ -1245,6 +1245,7 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:charges',
   'rule:command-word',
   'rule:consumables',
+  'rule:magic-items-a-z',
   'rule:magic-items',
   'rule:multiple-items-of-the-same-kind',
   'rule:paired-items',
@@ -1263,6 +1264,7 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:detecting-and-disabling-a-trap',
   'rule:trap-effects',
   'rule:complex-traps',
+  'rule:sample-traps',
   // Monsters-chapter stat-block interpretation rules (eshyra-0m9.22,
   // pp254-260): the chapter-intro paragraph (`rule:monsters`, emitted via
   // parseRules's chapterIntro option because it precedes any heading), the
@@ -1415,6 +1417,14 @@ export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel
     { recordKey: 'rule:poisons', phrase: 'Ingested.' },
     { recordKey: 'rule:poisons', phrase: 'Inhaled.' },
     { recordKey: 'rule:poisons', phrase: 'Injury.' },
+    {
+      recordKey: 'rule:magic-items-a-z',
+      phrase: 'Magic items are presented in alphabetical order',
+    },
+    {
+      recordKey: 'rule:sample-traps',
+      phrase: 'The magical and mechanical traps presented here',
+    },
     // Chapter/appendix and subclass-category intro prose recovered from
     // header-less slice leads (eshyra-g9im / eshyra-i2v4). These phrases sit in
     // the intro region BEFORE the first child heading, so they prove the prose
@@ -2619,6 +2629,10 @@ export async function runImporter(
   // requireEndHeading bound still fails closed if the subsection starts but its
   // "Monsters" boundary is missing.
   const magicItemPages = sliceSection(pages, anchors.magicItems);
+  const magicItemsAzIntroRule = parseSectionIntro(magicItemPages, {
+    name: 'Magic Items A-Z',
+    keySlug: 'magic-items-a-z',
+  });
   const artifactPages = sliceSectionOrEmptyPages(pages, anchors.artifacts);
   const magicItems = [
     ...parseMagicItems(magicItemPages),
@@ -2792,6 +2806,14 @@ export async function runImporter(
     ),
     { name: 'Traps', keySlug: 'traps' },
   );
+  const sampleTrapPages =
+    trapPages.length === 0
+      ? []
+      : sliceSection(trapPages, { startHeading: /^Sample Traps$/ });
+  const sampleTrapsIntroRule = parseSectionIntro(sampleTrapPages, {
+    name: 'Sample Traps',
+    keySlug: 'sample-traps',
+  });
   // Monsters-chapter stat-block interpretation rules (eshyra-0m9.22): the
   // pp254-260 prose that explains how to READ a stat block (Size, Type,
   // Alignment, Armor Class, Hit Points, Speed and its movement modes, Ability
@@ -3224,6 +3246,8 @@ export async function runImporter(
     ...equipmentGuidanceRules,
     ...diseaseGuidanceRules,
     ...poisonGuidanceRules,
+    ...(magicItemsAzIntroRule === undefined ? [] : [magicItemsAzIntroRule]),
+    ...(sampleTrapsIntroRule === undefined ? [] : [sampleTrapsIntroRule]),
     ...(selfSufficiencyRule === undefined ? [] : [selfSufficiencyRule]),
     ...sentientMagicItemRules,
     ...customizingNpcsRules,

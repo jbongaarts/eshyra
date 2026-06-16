@@ -1,16 +1,15 @@
 {
   "summary": {
-    "record": 1442,
+    "record": 1444,
     "childOf": 456,
     "ambiguous": 188,
     "taxonomy": 33,
     "ignored": {
       "class-progression-table-internal": 9,
       "deity-table-column-header": 1,
-      "document-structure": 30,
+      "document-structure": 29,
       "equipment-category-heading": 3,
       "front-matter": 2,
-      "record-group-heading": 1,
       "spell-list-header": 78,
       "subclass-spell-table-heading": 2,
       "table-rows-emitted-as-records": 13
@@ -11397,7 +11396,7 @@
       "structure": "heading",
       "text": "Sample Traps",
       "section": "Spellcasting",
-      "status": "ignored:record-group-heading"
+      "status": "record:rule:sample-traps"
     },
     {
       "page": 196,
@@ -11739,7 +11738,7 @@
       "structure": "heading",
       "text": "Magic Items A-Z",
       "section": "Magic Items",
-      "status": "ignored:document-structure"
+      "status": "record:rule:magic-items-a-z"
     },
     {
       "page": 207,

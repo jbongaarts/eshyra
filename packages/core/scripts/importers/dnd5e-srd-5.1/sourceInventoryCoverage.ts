@@ -1185,9 +1185,7 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       SPELL_LIST_LEVEL_HEADER.test(i.text) ||
       SPELL_LIST_CLASS_HEADER.test(i.text),
   ),
-  // The sample-trap group remains navigation over emitted hazard records.
   // Diseases and poisons now own their sample guidance as rule records below.
-  ignoreRule('record-group-heading', (i) => i.text === 'Sample Traps'),
   // "Statistics for Objects" (p203) is the body of the emitted rule:objects
   // record (its AC/HP tables are separate emitted table records).
   childOfRule('rule:objects', (i) => i.text === 'Statistics for Objects'),
