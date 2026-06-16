@@ -149,12 +149,17 @@ async function main(): Promise<void> {
     }
 
     // Source-coverage artifacts (eshyra-4a7.1): the regenerated
-    // source-inventory.json + source-coverage.json must match the committed
-    // copies byte-for-byte — the same exact-match contract records.json has.
+    // source-inventory.json + source-coverage.json + source-region-ledger.json
+    // must match the committed copies byte-for-byte — the same exact-match
+    // contract records.json has.
     // Drift means an importer/extractor/rule change altered the source
     // accounting without a matching artifact regeneration.
     let artifactsDrifted = false;
-    for (const artifact of ['source-inventory.json', 'source-coverage.json']) {
+    for (const artifact of [
+      'source-inventory.json',
+      'source-coverage.json',
+      'source-region-ledger.json',
+    ]) {
       let committedText: string;
       try {
         committedText = readFileSync(

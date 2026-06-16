@@ -2676,7 +2676,7 @@ describe('runImporter — source-structure coverage gate (eshyra-4a7.1)', () => 
   // mechanics (auto-match, rules, fail-closed, artifact writing) are fully
   // exercised. The real-PDF rule curation is regression-tested against the
   // committed artifacts in srdSourceInventoryArtifact.test.ts.
-  it('writes source-inventory.json and source-coverage.json when rules are supplied', async () => {
+  it('writes source-inventory.json, source-coverage.json, and source-region-ledger.json when rules are supplied', async () => {
     const workDir = makeTmpDir();
     const pdfPath = join(workDir, 'fixture.pdf');
     const outDir = join(workDir, 'pack');
@@ -2717,6 +2717,18 @@ describe('runImporter — source-structure coverage gate (eshyra-4a7.1)', () => 
     expect(
       coverage.entries.some((e) => e.status === 'ignored:fixture-body'),
     ).toBe(true);
+
+    const ledger = JSON.parse(
+      readFileSync(join(outDir, 'source-region-ledger.json'), 'utf8'),
+    ) as {
+      summary: {
+        unrepresented: number;
+        broadStructuralIgnores: number;
+      };
+      entries: ReadonlyArray<{ classification: string }>;
+    };
+    expect(ledger.summary.unrepresented).toBe(0);
+    expect(ledger.summary.broadStructuralIgnores).toBe(0);
     // The pack files still load (the loader tolerates the extra artifacts).
     expect(loadRulesPackFromDirectory(outDir).records.length).toBeGreaterThan(
       0,
@@ -2736,6 +2748,7 @@ describe('runImporter — source-structure coverage gate (eshyra-4a7.1)', () => 
     ).rejects.toThrow(SourceInventoryCoverageError);
     expect(existsSync(join(outDir, 'records.json'))).toBe(false);
     expect(existsSync(join(outDir, 'source-inventory.json'))).toBe(false);
+    expect(existsSync(join(outDir, 'source-region-ledger.json'))).toBe(false);
   });
 
   it('skips the gate and writes no artifacts when rules are omitted', async () => {
@@ -2748,5 +2761,6 @@ describe('runImporter — source-structure coverage gate (eshyra-4a7.1)', () => 
     expect(existsSync(join(outDir, 'records.json'))).toBe(true);
     expect(existsSync(join(outDir, 'source-inventory.json'))).toBe(false);
     expect(existsSync(join(outDir, 'source-coverage.json'))).toBe(false);
+    expect(existsSync(join(outDir, 'source-region-ledger.json'))).toBe(false);
   });
 });

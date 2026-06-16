@@ -28,6 +28,7 @@ import { linkAncestryOptionTables } from './ancestryOptions.js';
 import { enrichClassChapterRecords } from './classProgression.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
+import type { SourceRegionLedger } from './sourceRegionLedger.js';
 import { linkSpellEmbeddedTables } from './spellTables.js';
 import type {
   ActionExtraction,
@@ -1311,6 +1312,7 @@ export function writePackToDirectory(
 /** File names of the source-coverage artifacts written next to the pack. */
 export const SOURCE_INVENTORY_FILE = 'source-inventory.json';
 export const SOURCE_COVERAGE_FILE = 'source-coverage.json';
+export const SOURCE_REGION_LEDGER_FILE = 'source-region-ledger.json';
 
 /**
  * Write the source-structure inventory and its coverage report next to the
@@ -1322,6 +1324,7 @@ export const SOURCE_COVERAGE_FILE = 'source-coverage.json';
 export function writeSourceCoverageArtifacts(
   inventory: readonly SourceInventoryItem[],
   report: SourceCoverageReport,
+  regionLedger: SourceRegionLedger | undefined,
   options: WritePackOptions,
 ): void {
   mkdirSync(options.outDir, { recursive: true });
@@ -1335,4 +1338,11 @@ export function writeSourceCoverageArtifacts(
     stringify(report),
     'utf8',
   );
+  if (regionLedger !== undefined) {
+    writeFileSync(
+      join(options.outDir, SOURCE_REGION_LEDGER_FILE),
+      stringify(regionLedger),
+      'utf8',
+    );
+  }
 }

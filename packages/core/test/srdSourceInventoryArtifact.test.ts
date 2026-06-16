@@ -84,6 +84,36 @@ interface CoverageReport {
   readonly entries: readonly CoverageEntry[];
 }
 
+interface SourceRegionLedgerEntry {
+  readonly id: string;
+  readonly pageStart: number;
+  readonly pageEnd: number;
+  readonly headingPath: readonly string[];
+  readonly sourceContext: string | null;
+  readonly regionType: string;
+  readonly firstPhrase: string;
+  readonly lastPhrase: string;
+  readonly normalizedCharCount: number;
+  readonly classification: string;
+  readonly targetKey?: string;
+  readonly ignoreReason?: string;
+}
+
+interface SourceRegionLedger {
+  readonly summary: {
+    readonly entries: number;
+    readonly proseRegions: number;
+    readonly pureStructure: number;
+    readonly record: number;
+    readonly childOf: number;
+    readonly intentionallyIgnored: Readonly<Record<string, number>>;
+    readonly pureDocumentStructure: number;
+    readonly unrepresented: number;
+    readonly broadStructuralIgnores: number;
+  };
+  readonly entries: readonly SourceRegionLedgerEntry[];
+}
+
 const inventory = JSON.parse(
   readFileSync(join(PACK_DIR, 'source-inventory.json'), 'utf8'),
 ) as readonly InventoryItem[];
@@ -91,6 +121,10 @@ const inventory = JSON.parse(
 const coverage = JSON.parse(
   readFileSync(join(PACK_DIR, 'source-coverage.json'), 'utf8'),
 ) as CoverageReport;
+
+const sourceRegionLedger = JSON.parse(
+  readFileSync(join(PACK_DIR, 'source-region-ledger.json'), 'utf8'),
+) as SourceRegionLedger;
 
 /** The unique coverage entry for a (page, text) pair; throws if ambiguous. */
 function entryFor(page: number, text: string): CoverageEntry {
@@ -216,7 +250,11 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // record 1442 -> 1444 (eshyra-45fw): the Magic Items A-Z heading moved from
     // document-structure and the Sample Traps heading moved from
     // record-group-heading to their emitted intro rule records.
-    expect(coverage.summary.record).toBe(1444);
+    // record 1444 -> 1445 (eshyra-lo1o): the Spellcasting chapter heading now
+    // maps to the emitted Spellcasting chapter-intro rule.
+    // 1445 -> 1452: armor category headings, Adventuring Gear, and subclass
+    // spell-table intro headings now map to emitted source-bounded rules.
+    expect(coverage.summary.record).toBe(1452);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -225,7 +263,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // 98 -> 99 (eshyra-citg): "Tenets of Devotion" heading now maps child-of
     // subclass:oath-of-devotion (its prose is a named section on that record).
     expect(coverage.summary.childOf).toBe(456);
-    expect(coverage.summary.ambiguous).toBe(188);
+    expect(coverage.summary.ambiguous).toBe(187);
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.unaccounted).toBe(0);
     // eshyra-4a7.6 (PR2) added two class-chapter ignore reasons: the 9 class
@@ -248,16 +286,17 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // headings that previously fell here (42 -> 30).
     // eshyra-45fw: Magic Items A-Z now maps to its emitted intro rule instead
     // of document-structure (30 -> 29), and Sample Traps now maps to its emitted
-    // intro rule instead of the lone record-group-heading ignore.
+    // intro rule instead of the lone record-group-heading ignore. The source
+    // region ledger follow-up removes equipment-category-heading and subclass-
+    // spell-table-heading by mapping those headings to emitted rules, and moves
+    // Adventuring Gear out of table-rows-emitted-as-records.
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
       'document-structure': 29,
-      'equipment-category-heading': 3,
       'front-matter': 2,
       'spell-list-header': 78,
-      'subclass-spell-table-heading': 2,
-      'table-rows-emitted-as-records': 13,
+      'table-rows-emitted-as-records': 11,
     });
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
@@ -273,6 +312,139 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // deity-table-column-header ignore), leaving only the Monsters-chapter
     // creature-family lore headings (50 -> 33).
     expect(coverage.summary.knownGap).toEqual({});
+  });
+});
+
+describe('committed SRD source-region ledger artifact — prose gate', () => {
+  function regionContaining(phrase: string): SourceRegionLedgerEntry {
+    const match = sourceRegionLedger.entries.find(
+      (entry) =>
+        entry.firstPhrase.includes(phrase) || entry.lastPhrase.includes(phrase),
+    );
+    expect(
+      match,
+      `expected source-region ledger entry for "${phrase}"`,
+    ).toBeDefined();
+    return match as SourceRegionLedgerEntry;
+  }
+
+  it('has no unrepresented prose and no broad structural ignore over prose', () => {
+    expect(sourceRegionLedger.summary.proseRegions).toBeGreaterThan(2000);
+    expect(sourceRegionLedger.summary.unrepresented).toBe(0);
+    expect(sourceRegionLedger.summary.broadStructuralIgnores).toBe(0);
+    expect(sourceRegionLedger.summary.intentionallyIgnored).toEqual({
+      'front-matter': 2,
+      'spell-list-header': 82,
+    });
+  });
+
+  it('keeps pure structural headings distinct from prose-bearing regions', () => {
+    expect(sourceRegionLedger.summary.pureStructure).toBeGreaterThan(0);
+    expect(
+      sourceRegionLedger.entries.some(
+        (entry) =>
+          entry.regionType === 'pure-structure' &&
+          entry.normalizedCharCount === 0 &&
+          entry.classification === 'pure-document-structure',
+      ),
+    ).toBe(true);
+  });
+
+  it('maps previously missed prose classes to concrete records', () => {
+    const expected: ReadonlyArray<{
+      readonly phrase: string;
+      readonly classification: string;
+      readonly regionType?: string;
+    }> = [
+      {
+        phrase: 'The rules for lifting and carrying are intentionally simple',
+        classification: 'record:rule:variant-encumbrance',
+      },
+      {
+        phrase: 'This section describes items that have special rules',
+        classification: 'record:rule:adventuring-gear',
+        regionType: 'group-intro',
+      },
+      {
+        phrase: 'Made from supple and thin materials',
+        classification: 'record:rule:light-armor',
+      },
+      {
+        phrase: 'Medium armor offers more protection',
+        classification: 'record:rule:medium-armor',
+      },
+      {
+        phrase: 'Of all the armor categories',
+        classification: 'record:rule:heavy-armor-category',
+      },
+      {
+        phrase: 'Given their insidious and deadly nature',
+        classification: 'record:rule:poisons',
+      },
+      {
+        phrase: 'A feat represents a talent',
+        classification: 'record:rule:feats',
+        regionType: 'chapter-intro',
+      },
+      {
+        phrase: 'Conditions alter a creature’s capabilities',
+        classification: 'record:rule:conditions',
+      },
+      {
+        phrase: 'Six abilities provide a quick description',
+        classification: 'record:rule:using-ability-scores',
+        regionType: 'chapter-intro',
+      },
+      {
+        phrase: 'Different fighters choose different approaches',
+        classification: 'record:rule:martial-archetypes',
+      },
+      {
+        phrase: 'This appendix contains statistics for various humanoid',
+        classification: 'record:rule:appendix-mm-b-nonplayer-characters',
+      },
+      {
+        phrase: 'Magic items are presented in alphabetical order',
+        classification: 'record:rule:magic-items-a-z',
+        regionType: 'group-intro',
+      },
+      {
+        phrase: 'The magical and mechanical traps presented here',
+        classification: 'record:rule:sample-traps',
+        regionType: 'group-intro',
+      },
+      {
+        phrase: 'Magic permeates fantasy gaming worlds',
+        classification: 'record:rule:spellcasting-chapter',
+        regionType: 'chapter-intro',
+      },
+      {
+        phrase: 'You gain oath spells at the paladin levels listed',
+        classification: 'record:rule:oath-of-devotion-oath-spells',
+      },
+      {
+        phrase: 'The Fiend lets you choose from an expanded list of spells',
+        classification: 'record:rule:the-fiend-expanded-spell-list',
+      },
+    ];
+
+    for (const { phrase, classification, regionType } of expected) {
+      const entry = regionContaining(phrase);
+      expect(entry.classification, phrase).toBe(classification);
+      if (regionType !== undefined) {
+        expect(entry.regionType, phrase).toBe(regionType);
+      }
+      expect(entry.normalizedCharCount, phrase).toBeGreaterThan(0);
+    }
+  });
+
+  it('uses explicit ignore reasons for prose that is intentionally outside records', () => {
+    const frontMatter = sourceRegionLedger.entries.find(
+      (entry) => entry.classification === 'intentionally-ignored:front-matter',
+    );
+    expect(frontMatter).toBeDefined();
+    expect(frontMatter?.normalizedCharCount).toBeGreaterThan(0);
+    expect(frontMatter?.ignoreReason).toBe('front-matter');
   });
 });
 
@@ -606,7 +778,7 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
     // stat-blocks to their creature records, removing the two false
     // background/class collapse groups (56 -> 54).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(14);
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(15);
     expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(75);
   });
 
@@ -788,6 +960,11 @@ describe('committed SRD source-coverage artifacts — intro-prose coverage guard
       page: 196,
       text: 'Sample Traps',
       status: 'record:rule:sample-traps',
+    },
+    {
+      page: 100,
+      text: 'Spellcasting',
+      status: 'record:rule:spellcasting-chapter',
     },
     {
       page: 25,

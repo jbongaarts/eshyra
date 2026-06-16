@@ -1,18 +1,16 @@
 {
   "summary": {
-    "record": 1444,
+    "record": 1452,
     "childOf": 456,
-    "ambiguous": 188,
+    "ambiguous": 187,
     "taxonomy": 33,
     "ignored": {
       "class-progression-table-internal": 9,
       "deity-table-column-header": 1,
       "document-structure": 29,
-      "equipment-category-heading": 3,
       "front-matter": 2,
       "spell-list-header": 78,
-      "subclass-spell-table-heading": 2,
-      "table-rows-emitted-as-records": 13
+      "table-rows-emitted-as-records": 11
     },
     "knownGap": {},
     "unaccounted": 0
@@ -592,7 +590,8 @@
           "feature:sorcerer:spellcasting",
           "feature:wizard:spellcasting",
           "rule:special-traits-spellcasting",
-          "rule:spellcasting"
+          "rule:spellcasting",
+          "rule:spellcasting-chapter"
         ]
       },
       {
@@ -680,6 +679,11 @@
       {
         "text": "Eldritch Invocations",
         "resolvedKey": "feature:warlock:eldritch-invocations",
+        "count": 2
+      },
+      {
+        "text": "Adventuring Gear",
+        "resolvedKey": "rule:adventuring-gear",
         "count": 2
       },
       {
@@ -1300,9 +1304,10 @@
           "feature:sorcerer:spellcasting",
           "feature:wizard:spellcasting",
           "rule:special-traits-spellcasting",
-          "rule:spellcasting"
+          "rule:spellcasting",
+          "rule:spellcasting-chapter"
         ],
-        "count": 10
+        "count": 9
       },
       {
         "text": "Spellcasting Ability",
@@ -1991,7 +1996,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Bard",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 12,
@@ -2252,7 +2257,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Cleric",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 15,
@@ -2522,7 +2527,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Druid",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 20,
@@ -3458,7 +3463,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Paladin",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 31,
@@ -3620,7 +3625,7 @@
       "structure": "heading",
       "text": "Oath Spells",
       "section": "Paladin",
-      "status": "ignored:subclass-spell-table-heading"
+      "status": "record:rule:oath-of-devotion-oath-spells"
     },
     {
       "page": 33,
@@ -3809,7 +3814,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Ranger",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 36,
@@ -4277,7 +4282,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Sorcerer",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 43,
@@ -5060,7 +5065,7 @@
       "structure": "heading",
       "text": "Expanded Spell List",
       "section": "Warlock",
-      "status": "ignored:subclass-spell-table-heading"
+      "status": "record:rule:the-fiend-expanded-spell-list"
     },
     {
       "page": 50,
@@ -5186,7 +5191,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Wizard",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 52,
@@ -5501,7 +5506,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Beyond 1st Level",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 58,
@@ -5717,7 +5722,7 @@
       "structure": "heading",
       "text": "Light Armor",
       "section": "Equipment",
-      "status": "ignored:equipment-category-heading"
+      "status": "record:rule:light-armor"
     },
     {
       "page": 63,
@@ -5726,7 +5731,7 @@
       "structure": "heading",
       "text": "Medium Armor",
       "section": "Equipment",
-      "status": "ignored:equipment-category-heading"
+      "status": "record:rule:medium-armor"
     },
     {
       "page": 63,
@@ -5744,7 +5749,7 @@
       "structure": "heading",
       "text": "Heavy Armor",
       "section": "Equipment",
-      "status": "ignored:equipment-category-heading"
+      "status": "record:rule:heavy-armor-category"
     },
     {
       "page": 63,
@@ -5861,7 +5866,7 @@
       "structure": "heading",
       "text": "Adventuring Gear",
       "section": "Equipment",
-      "status": "ignored:table-rows-emitted-as-records"
+      "status": "record:rule:adventuring-gear"
     },
     {
       "page": 66,
@@ -5879,7 +5884,7 @@
       "structure": "table-caption",
       "text": "Adventuring Gear",
       "section": "Equipment",
-      "status": "ignored:table-rows-emitted-as-records"
+      "status": "record:rule:adventuring-gear"
     },
     {
       "page": 69,
@@ -7337,7 +7342,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": null,
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "record:rule:spellcasting-chapter"
     },
     {
       "page": 100,
@@ -14636,7 +14641,7 @@
       "structure": "heading",
       "text": "Spellcasting",
       "section": "Monsters",
-      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting"
+      "status": "ambiguous:feature:bard:spellcasting|feature:cleric:spellcasting|feature:druid:spellcasting|feature:paladin:spellcasting|feature:ranger:spellcasting|feature:sorcerer:spellcasting|feature:wizard:spellcasting|rule:special-traits-spellcasting|rule:spellcasting|rule:spellcasting-chapter"
     },
     {
       "page": 259,

@@ -37,6 +37,17 @@ function proseRule(
   return { name, keySlug, text: body, sourcePage };
 }
 
+function proseRuleFromText(
+  text: string,
+  sourcePage: number | undefined,
+  name: string,
+  keySlug: string,
+): RuleExtraction | undefined {
+  const body = text.replace(/\s+/g, ' ').trim();
+  if (body.length === 0 || sourcePage === undefined) return undefined;
+  return { name, keySlug, text: body, sourcePage };
+}
+
 function between(
   lines: readonly FlatLine[],
   start: RegExp | undefined,
@@ -51,6 +62,58 @@ function between(
     .findIndex(({ line }) => end.test(line));
   const bodyEnd = endOffset < 0 ? lines.length : bodyStart + endOffset;
   return lines.slice(bodyStart, bodyEnd);
+}
+
+function firstSentenceAfterHeading(
+  lines: readonly FlatLine[],
+  heading: RegExp,
+  requiredLead: RegExp,
+  name: string,
+  keySlug: string,
+): RuleExtraction | undefined {
+  const start = lines.findIndex(({ line }) => heading.test(line));
+  if (start < 0) return undefined;
+  const parts: string[] = [];
+  let sourcePage: number | undefined;
+  for (const { line, page, height } of lines.slice(start + 1)) {
+    if (line.length === 0) continue;
+    if (height !== undefined && height < 9.3) break;
+    if (sourcePage === undefined) sourcePage = page;
+    parts.push(line);
+    if (line.endsWith('.')) break;
+  }
+  const sentence = /^(.+?\.)/.exec(
+    parts.join(' ').replace(/\s+/g, ' ').trim(),
+  )?.[1];
+  if (sentence === undefined || !requiredLead.test(sentence)) {
+    return undefined;
+  }
+  return proseRuleFromText(sentence, sourcePage, name, keySlug);
+}
+
+function headingIntroBefore(
+  lines: readonly FlatLine[],
+  heading: RegExp,
+  stop: RegExp,
+  name: string,
+  keySlug: string,
+): RuleExtraction | undefined {
+  const start = lines.findIndex(({ line }) => heading.test(line));
+  if (start < 0) return undefined;
+  const parts: string[] = [];
+  let sourcePage: number | undefined;
+  for (const { line, page, height } of lines.slice(start + 1)) {
+    if (line.length === 0) continue;
+    if (height !== undefined && height >= 10.3) break;
+    if (height !== undefined && height < 9.3) continue;
+    if (sourcePage === undefined) sourcePage = page;
+    parts.push(line);
+  }
+  const body = parts.join(' ').replace(/\s+/g, ' ').trim();
+  const stopMatch = stop.exec(body);
+  const intro =
+    stopMatch === null ? body : body.slice(0, stopMatch.index).trim();
+  return proseRuleFromText(intro, sourcePage, name, keySlug);
 }
 
 function append(
@@ -125,6 +188,46 @@ export function parseEquipmentGuidance(
       between(equipment, /^Armor$/, /^Light Armor$/),
       'Armor Guidance',
       'armor-guidance',
+    ),
+  );
+  append(
+    rules,
+    headingIntroBefore(
+      equipment,
+      /^Light Armor$/,
+      /\bPadded\.\s+/,
+      'Light Armor',
+      'light-armor',
+    ),
+  );
+  append(
+    rules,
+    headingIntroBefore(
+      equipment,
+      /^Medium Armor$/,
+      /\bHide\.\s+/,
+      'Medium Armor',
+      'medium-armor',
+    ),
+  );
+  append(
+    rules,
+    headingIntroBefore(
+      equipment,
+      /^Heavy Armor$/,
+      /\bRing Mail\.\s+/,
+      'Heavy Armor',
+      'heavy-armor-category',
+    ),
+  );
+  append(
+    rules,
+    firstSentenceAfterHeading(
+      equipment,
+      /^Adventuring Gear$/,
+      /^This section describes items that have special rules or require further explanation\./,
+      'Adventuring Gear',
+      'adventuring-gear',
     ),
   );
   append(
