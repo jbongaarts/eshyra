@@ -380,7 +380,8 @@ pins the exact contiguous source block(s) in document order
 class's own chapter) and carries the reviewed row reconstruction, with every
 block line required to match verbatim at table-cell tier or the table fails
 closed. The reconstructed rows preserve source tokens verbatim ("+2", "1d6",
-"Unlimited", "+10 ft.", and extraction artifacts like "Land s Stride") and
+"Unlimited", "+10 ft.", and possessives like "Land’s Stride" — the extractor
+reconstructs the apostrophe the SRD font drops, eshyra-g9im.1) and
 expose each class's resource columns (Rages, Sneak Attack, Ki Points, Sorcery
 Points, Pact Magic Spell Slots / Slot Level / Invocations Known, cantrips/spells
 known, and the per-level spell-slot progression). Structured per-level

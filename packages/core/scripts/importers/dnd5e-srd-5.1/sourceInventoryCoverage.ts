@@ -1174,8 +1174,9 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     (i) => i.section === 'Rogue' && i.text === 'Thieves’ Cant',
   ),
   // The 8 subclass-group section headings (Martial Archetypes, Sacred Oaths,
-  // Arcane Traditions, …) are section-tier navigation over the emitted subclass
-  // records and fall through to the document-structure default below.
+  // Arcane Traditions, …) now own their overview prose as `rule` records named
+  // after the heading (eshyra-i2v4), so each auto-matches its heading by name
+  // here instead of falling through to the document-structure default.
   // Per-class spell-list headers (p105-113): pure list structure; the lists
   // themselves are represented as `data.classes` on every spell record.
   ignoreRule(

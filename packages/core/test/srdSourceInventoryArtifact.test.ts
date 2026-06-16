@@ -207,7 +207,13 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // reviewer-visible in the ambiguous total.
     // eshyra-7qit maps ten previously ignored/ambiguous Equipment,
     // Expenses, Diseases, and Poisons headings to their new rules.
-    expect(coverage.summary.record).toBe(1430);
+    // record 1430 -> 1442 (eshyra-g9im / eshyra-i2v4): twelve chapter/appendix/
+    // subclass-category headings (Feats, Using Ability Scores, Appendix PH-A:
+    // Conditions, Appendix MM-B: Nonplayer Characters, and the eight
+    // subclass-category headings Martial Archetypes … Arcane Traditions) now
+    // name-match their emitted intro/overview rule records instead of falling to
+    // the document-structure ignore default.
+    expect(coverage.summary.record).toBe(1442);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -233,10 +239,14 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // eshyra-76b7: the "Appendix MM-A: Miscellaneous Creatures" heading now
     // maps to its emitted intro rule instead of the document-structure default
     // (48 -> 47).
+    // eshyra-g9im / eshyra-i2v4: twelve chapter/appendix/subclass-category
+    // headings now own intro/overview rule records, so each moves off the
+    // document-structure default — including the eight subclass-category
+    // headings that previously fell here (42 -> 30).
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
-      'document-structure': 42,
+      'document-structure': 30,
       'equipment-category-heading': 3,
       'front-matter': 2,
       'record-group-heading': 1,
@@ -734,5 +744,87 @@ describe('committed SRD source-coverage artifacts — covered-structure sentinel
     const entry = entryFor(64, 'Donning and Doffing Armor');
     expect(entry.structure).toBe('table-caption');
     expect(entry.status).toBe('record:table:donning-and-doffing-armor');
+  });
+});
+
+describe('committed SRD source-coverage artifacts — intro-prose coverage guard (eshyra-g9im / eshyra-i2v4)', () => {
+  // Chapter/appendix/subclass-category headings whose intro prose carries
+  // gameplay rules or source context must resolve to their emitted rule record,
+  // NOT be hidden behind `ignored:document-structure`. This locks in the fix and
+  // fails loudly if a future regeneration drops one of these intro rules and the
+  // heading silently falls back to the document-structure ignore default.
+  const PROSE_BEARING_HEADINGS: ReadonlyArray<{
+    readonly page: number;
+    readonly text: string;
+    readonly status: string;
+  }> = [
+    { page: 75, text: 'Feats', status: 'record:rule:feats' },
+    {
+      page: 76,
+      text: 'Using Ability Scores',
+      status: 'record:rule:using-ability-scores',
+    },
+    {
+      page: 358,
+      text: 'Appendix PH-A: Conditions',
+      status: 'record:rule:conditions',
+    },
+    {
+      page: 395,
+      text: 'Appendix MM-B: Nonplayer Characters',
+      status: 'record:rule:appendix-mm-b-nonplayer-characters',
+    },
+    {
+      page: 25,
+      text: 'Martial Archetypes',
+      status: 'record:rule:martial-archetypes',
+    },
+    {
+      page: 28,
+      text: 'Monastic Traditions',
+      status: 'record:rule:monastic-traditions',
+    },
+    { page: 32, text: 'Sacred Oaths', status: 'record:rule:sacred-oaths' },
+    {
+      page: 37,
+      text: 'Ranger Archetypes',
+      status: 'record:rule:ranger-archetypes',
+    },
+    {
+      page: 40,
+      text: 'Roguish Archetypes',
+      status: 'record:rule:roguish-archetypes',
+    },
+    {
+      page: 44,
+      text: 'Sorcerous Origins',
+      status: 'record:rule:sorcerous-origins',
+    },
+    {
+      page: 50,
+      text: 'Otherworldly Patrons',
+      status: 'record:rule:otherworldly-patrons',
+    },
+    {
+      page: 54,
+      text: 'Arcane Traditions',
+      status: 'record:rule:arcane-traditions',
+    },
+  ];
+
+  it('every prose-bearing chapter/appendix/subclass heading resolves to its rule record', () => {
+    for (const { page, text, status } of PROSE_BEARING_HEADINGS) {
+      const entry = entryFor(page, text);
+      expect(entry.status, `${text} (p${page})`).toBe(status);
+    }
+  });
+
+  it('none of the prose-bearing headings remain ignored as document-structure', () => {
+    for (const { page, text } of PROSE_BEARING_HEADINGS) {
+      const entry = entryFor(page, text);
+      expect(entry.status, `${text} (p${page})`).not.toBe(
+        'ignored:document-structure',
+      );
+    }
   });
 });

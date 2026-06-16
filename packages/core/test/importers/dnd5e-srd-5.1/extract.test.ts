@@ -24,7 +24,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import PDFDocument from 'pdfkit';
 import { afterEach, describe, expect, it } from 'vitest';
-import { extractPdfText } from '../../../scripts/importers/dnd5e-srd-5.1/extract.js';
+import {
+  extractPdfText,
+  joinRowText,
+  type PdfTextItem,
+} from '../../../scripts/importers/dnd5e-srd-5.1/extract.js';
 import type { PageText } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
 
 function headingTexts(page: PageText): readonly string[] {
@@ -1056,5 +1060,55 @@ describe('extractPdfText — Classes table-band reading order (eshyra-0m9.13)', 
     // into the left column's prose.
     expect(lines).toContain('Size HP AC Attack Str Dex');
     expect(lines.some((l) => l.startsWith('Tiny 20 18 +8 to hit'))).toBe(true);
+  });
+});
+
+describe('joinRowText — apostrophe reconstruction (eshyra-g9im.1)', () => {
+  // The SRD 5.1 font maps a handful of apostrophes to a zero-HEIGHT space item
+  // that the height filter drops before joining, leaving a ~2.5pt gap between
+  // the two surrounding fragments. (A synthetic PDF cannot reproduce this:
+  // pdfjs coalesces small-gap same-baseline runs into one item, so the split
+  // only occurs around the real dropped glyph.) These tests drive joinRowText
+  // directly with the post-filter item pairs the real extraction produces.
+  const item = (str: string, x: number, width: number): PdfTextItem => ({
+    str,
+    transform: [1, 0, 0, 1, x, 600],
+    height: 9.84,
+    width,
+  });
+
+  it('joins a letter + enclitic across a small gap with an apostrophe', () => {
+    // "a monster" ends at x=125.5; "s attack" starts at x=128.0 → gap 2.5.
+    expect(
+      joinRowText([
+        item('a monster', 60, 65.5),
+        item('s attack, or other effect.', 128, 120),
+      ]),
+    ).toBe('a monster’s attack, or other effect.');
+  });
+
+  it('reconstructs a contraction (can’t) the same way', () => {
+    expect(
+      joinRowText([item('it can', 60, 25), item('t be used again.', 87.5, 70)]),
+    ).toBe('it can’t be used again.');
+  });
+
+  it('leaves a real word boundary as a space (same gap, full word follows)', () => {
+    // The discriminator is the enclitic content, not the gap: "Reference" is a
+    // full word, so the gap stays a space.
+    expect(
+      joinRowText([
+        item('the System', 60, 50),
+        item('Reference Document', 112.5, 95),
+      ]),
+    ).toBe('the System Reference Document');
+  });
+
+  it('leaves a wide gap before an enclitic as a space (label/value tab)', () => {
+    // A gap at or above APOSTROPHE_GAP_MAX (5) is a tab, not a dropped
+    // apostrophe glyph, so it is not reconstructed.
+    expect(joinRowText([item('value', 60, 25), item('s field', 95, 35)])).toBe(
+      'value s field',
+    );
   });
 });

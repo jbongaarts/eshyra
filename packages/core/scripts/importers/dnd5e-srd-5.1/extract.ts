@@ -49,7 +49,7 @@ import type { PageText } from './types.js';
 // types live behind a deep path (`pdfjs-dist/types/src/display/api`) that is
 // not part of its public exports map; pinning a shallow structural type here
 // avoids that coupling without losing meaningful type checking.
-interface PdfTextItem {
+export interface PdfTextItem {
   readonly str: string;
   readonly transform: readonly number[];
   readonly height: number;
@@ -142,6 +142,28 @@ const COLUMN_X_TOLERANCE = 2;
  * a stat label and its value.
  */
 const ITEM_GAP_SPACE_THRESHOLD = 1;
+
+/**
+ * Apostrophe reconstruction (eshyra-g9im.1). The SRD 5.1 PDF font's ToUnicode
+ * CMap maps a handful of apostrophe glyphs to a zero-HEIGHT, near-zero-width
+ * U+0020 SPACE item. That item is dropped by the height filter above, leaving a
+ * ~2.2–2.5pt gap between the surrounding fragments, so the line-joining pass's
+ * gap detection inserts a plain space: "a monster s attack" / "it can t be used"
+ * instead of "a monster’s attack" / "it can’t be used".
+ *
+ * Such a gap is an apostrophe — not a word space — when the FOLLOWING fragment
+ * begins with a possessive/contraction enclitic at a word boundary
+ * (`POSSESSIVE_ENCLITIC`): `'s`, `'t`, `'d`, `'m`, `'re`, `'ve`, `'ll`. No
+ * English word is a bare enclitic, so a real word boundary (the far more
+ * numerous zero-width space at an italic style-run seam, e.g. "System" |
+ * "Reference") is always followed by a full word and is never matched. The
+ * `APOSTROPHE_GAP_MAX` bound additionally keeps wide label/value tabs out.
+ * Across the whole SRD 5.1 PDF this matches exactly seven instances (Land’s
+ * Stride p35, can’t p232, monster’s p358, the Mare’s/Lion’s/cow’s head and
+ * Woman’s face deity-symbol prose p361-362).
+ */
+const APOSTROPHE_GAP_MAX = 5;
+const POSSESSIVE_ENCLITIC = /^(?:s|t|d|m|re|ve|ll)(?=$|[\s,.;:!?'")])/;
 
 /**
  * y-coordinate (PDF user space) at or below which a text item is treated as
@@ -1133,7 +1155,7 @@ function distinctRoundedXCount(items: readonly PdfTextItem[]): number {
  * whitespace in either `str`; joining without a gap-aware space produces
  * "Armor Class17 (natural armor)" and the stat-line regexes miss.
  */
-function joinRowText(row: readonly PdfTextItem[]): string {
+export function joinRowText(row: readonly PdfTextItem[]): string {
   if (row.length === 0) return '';
   let text = row[0].str;
   for (let i = 1; i < row.length; i++) {
@@ -1150,6 +1172,18 @@ function joinRowText(row: readonly PdfTextItem[]): string {
       !prevEndsWithSpace &&
       !currStartsWithSpace
     ) {
+      // A small gap left by a dropped zero-height apostrophe glyph, between a
+      // letter and a possessive/contraction enclitic, is an apostrophe rather
+      // than a word space (eshyra-g9im.1).
+      if (
+        gap < APOSTROPHE_GAP_MAX &&
+        /[A-Za-z]$/.test(prev.str) &&
+        POSSESSIVE_ENCLITIC.test(curr.str)
+      ) {
+        text += '’';
+        text += curr.str;
+        continue;
+      }
       text += ' ';
     }
     text += curr.str;

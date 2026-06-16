@@ -70,6 +70,7 @@ import { parseMiscellaneousCreaturesIntro } from './parseMiscellaneousCreaturesI
 import { parseMulticlassing } from './parseMulticlassing.js';
 import { parsePoisons } from './parsePoisons.js';
 import { parseRules, removeTableCellLines } from './parseRules.js';
+import { parseSectionIntro } from './parseSectionIntro.js';
 import { parseSelfSufficiency } from './parseSelfSufficiency.js';
 import { parseSpellcastingServices } from './parseSpellcastingServices.js';
 import {
@@ -79,6 +80,7 @@ import {
 } from './parseSpells.js';
 import { parseStatBlocks } from './parseStatBlocks.js';
 import { parseSubclasses } from './parseSubclasses.js';
+import { parseSubclassOverviews } from './parseSubclassOverviews.js';
 import { parseTables } from './parseTables.js';
 import { parseTraps } from './parseTraps.js';
 import {
@@ -954,7 +956,11 @@ export const SRD_5_1_STAT_BLOCK_CONTAINING_ITEMS: ReadonlyMap<string, string> =
  *
  * The full baseline is 129 core-rules keys, 34 general Spellcasting keys, five
  * gamemastering Madness/Objects keys, five Classes-chapter callout keys, and six
- * gamemastering Traps keys (eshyra-0m9.20). Spellcasting is a separate slice
+ * gamemastering Traps keys (eshyra-0m9.20), plus three chapter/appendix intro
+ * keys (`rule:feats`, `rule:conditions`, `rule:using-ability-scores`) and the
+ * eight subclass-category overview keys (`rule:martial-archetypes`, …;
+ * eshyra-g9im / eshyra-i2v4) recovered from header-less slice leads, and the
+ * `rule:appendix-mm-b-nonplayer-characters` preamble. Spellcasting is a separate slice
  * (`spellcastingRules`, "Spellcasting" → "Spell Lists") parsed by the same
  * nesting-aware `parseRules`; the four titles it shares with the core-rules
  * chapters ("Attack Rolls", "Range", "Reactions", "Saving Throws")
@@ -1341,6 +1347,8 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:appendix-mm-a-miscellaneous-creatures',
   // Appendix MM-B p395 "Customizing NPCs" guidance (eshyra-4a7.10.6).
   'rule:customizing-npcs',
+  // Appendix MM-B p395 preamble prose, mirroring the MM-A intro (eshyra-g9im).
+  'rule:appendix-mm-b-nonplayer-characters',
   // Appendix PH-B Fantasy-Historical Pantheons prose (eshyra-4a7.10.5): the
   // appendix intro and the four pantheon-prose sections. The four deity tables
   // are `table` records (see EXPECTED_SRD_5_1_TABLE_NAMES), not rules.
@@ -1361,6 +1369,24 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:beyond-the-material-outer-planes',
   'rule:outer-planes-outer-planes',
   'rule:demiplanes',
+  // Chapter/appendix intro prose recovered from header-less slice leads
+  // (eshyra-g9im): the optional Feats rule (p75), the general Conditions rules
+  // (p358, Appendix PH-A), and the Using Ability Scores chapter intro (p76).
+  // Each is named after its source heading so the heading auto-matches the
+  // record in source coverage instead of staying `ignored:document-structure`.
+  'rule:feats',
+  'rule:conditions',
+  'rule:using-ability-scores',
+  // The eight subclass-category overview paragraphs (p25–p54, eshyra-i2v4),
+  // printed between each class's base features and its subclass entries.
+  'rule:martial-archetypes',
+  'rule:monastic-traditions',
+  'rule:sacred-oaths',
+  'rule:ranger-archetypes',
+  'rule:roguish-archetypes',
+  'rule:sorcerous-origins',
+  'rule:otherworldly-patrons',
+  'rule:arcane-traditions',
 ];
 
 export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel[] =
@@ -1389,6 +1415,64 @@ export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel
     { recordKey: 'rule:poisons', phrase: 'Ingested.' },
     { recordKey: 'rule:poisons', phrase: 'Inhaled.' },
     { recordKey: 'rule:poisons', phrase: 'Injury.' },
+    // Chapter/appendix and subclass-category intro prose recovered from
+    // header-less slice leads (eshyra-g9im / eshyra-i2v4). These phrases sit in
+    // the intro region BEFORE the first child heading, so they prove the prose
+    // was captured rather than dropped as `ignored:document-structure`.
+    { recordKey: 'rule:feats', phrase: 'Using the optional feats rule' },
+    {
+      recordKey: 'rule:conditions',
+      phrase: 'A condition lasts either until it is countered',
+    },
+    {
+      recordKey: 'rule:conditions',
+      phrase: 'the condition’s effects don’t get worse',
+    },
+    // Apostrophe reconstruction (eshyra-g9im.1): the SRD font drops this glyph,
+    // which the extractor restores. Pins the possessive so a regression to
+    // "a monster s attack" fails closed.
+    { recordKey: 'rule:conditions', phrase: 'a monster’s attack' },
+    {
+      recordKey: 'rule:using-ability-scores',
+      phrase: 'Six abilities provide a quick description',
+    },
+    {
+      recordKey: 'rule:appendix-mm-b-nonplayer-characters',
+      phrase:
+        'This appendix contains statistics for various humanoid nonplayer characters',
+    },
+    {
+      recordKey: 'rule:martial-archetypes',
+      phrase: 'Different fighters choose different approaches',
+    },
+    {
+      recordKey: 'rule:monastic-traditions',
+      phrase: 'Three traditions of monastic pursuit',
+    },
+    {
+      recordKey: 'rule:sacred-oaths',
+      phrase: 'Becoming a paladin involves taking vows',
+    },
+    {
+      recordKey: 'rule:ranger-archetypes',
+      phrase: 'A classic expression of the ranger ideal is the Hunter',
+    },
+    {
+      recordKey: 'rule:roguish-archetypes',
+      phrase: 'Rogues have many features in common',
+    },
+    {
+      recordKey: 'rule:sorcerous-origins',
+      phrase: 'Different sorcerers claim different origins',
+    },
+    {
+      recordKey: 'rule:otherworldly-patrons',
+      phrase: 'The beings that serve as patrons for warlocks',
+    },
+    {
+      recordKey: 'rule:arcane-traditions',
+      phrase: 'The study of wizardry is ancient',
+    },
   ];
 
 export const EXPECTED_SRD_5_1_TABLE_NAMES: readonly string[] = [
@@ -3074,7 +3158,65 @@ export async function runImporter(
     ]),
     { name: 'The Planes of Existence', keySlug: 'the-planes-of-existence' },
   );
+  // Chapter/appendix INTRO prose that the section slicer leaves header-less
+  // (the h≈25.9 title is the slice's start anchor) and the heading-hierarchy
+  // `parseRules` therefore cannot emit (eshyra-g9im). Each is captured as a
+  // single `rule` record named after its source heading, so source coverage
+  // auto-matches the heading to the record instead of dropping it as
+  // `ignored:document-structure` (the same mechanism `parseMiscellaneousCreatures
+  // Intro` uses for Appendix MM-A). `parseSectionIntro` bounds the intro at the
+  // first child heading by font height, so it never absorbs the first child
+  // entry (Grappler / Blinded / Ability Scores and Modifiers / Customizing
+  // NPCs). Reduced fixture PDFs without the section degrade to undefined.
+  //
+  //  - rule:using-ability-scores (p76): the chapter intro defining the six
+  //    abilities and the d20 check / save / attack mechanic. Parsed from the
+  //    `coreRulePages` slice's leading prose; NOT via `parseRules`' chapterIntro
+  //    because that slice spans three chapters (Using Ability Scores,
+  //    Adventuring, Combat) and a tier-0 chapter seed would wrongly parent the
+  //    Adventuring/Combat headings.
+  //  - rule:feats (p75): the optional feats rule (forgoing an Ability Score
+  //    Improvement, taking each feat once, meeting prerequisites). Kept separate
+  //    from the `feat:grappler` entry the same slice owns.
+  //  - rule:conditions (p358, Appendix PH-A): the general condition rules
+  //    (duration, stacking, a creature either has a condition or doesn't). The
+  //    15 individual condition records are unchanged.
+  //  - rule:appendix-mm-b-nonplayer-characters (p395): the appendix preamble,
+  //    mirroring the already-represented MM-A intro. Kept separate from the
+  //    `rule:customizing-npcs` sub-subsection the same slice owns.
+  const usingAbilityScoresIntroRule = parseSectionIntro(coreRulePages, {
+    name: 'Using Ability Scores',
+    keySlug: 'using-ability-scores',
+  });
+  const featIntroRule = parseSectionIntro(featPages, {
+    name: 'Feats',
+    keySlug: 'feats',
+  });
+  const conditionsIntroRule = parseSectionIntro(conditionPages, {
+    name: 'Appendix PH-A: Conditions',
+    keySlug: 'conditions',
+  });
+  const nonplayerCharactersIntroRule = parseSectionIntro(npcPages, {
+    name: 'Appendix MM-B: Nonplayer Characters',
+    keySlug: 'appendix-mm-b-nonplayer-characters',
+  });
+  // The eight subclass-category overview paragraphs (Martial Archetypes, Sacred
+  // Oaths, …) printed between a class's base features and its subclass entries
+  // (eshyra-i2v4). Each is a source-bounded `rule` named after its category
+  // heading, so the heading resolves to `record:rule:<slug>` instead of
+  // `ignored:document-structure`. The subclass entries themselves stay
+  // `subclass`/`feature` records; the overview never absorbs the first entry.
+  const subclassOverviewRules = parseSubclassOverviews(classPages);
   const rules = [
+    ...(usingAbilityScoresIntroRule === undefined
+      ? []
+      : [usingAbilityScoresIntroRule]),
+    ...(featIntroRule === undefined ? [] : [featIntroRule]),
+    ...(conditionsIntroRule === undefined ? [] : [conditionsIntroRule]),
+    ...(nonplayerCharactersIntroRule === undefined
+      ? []
+      : [nonplayerCharactersIntroRule]),
+    ...subclassOverviewRules,
     ...rulesBeforeUnrepresentedProse,
     ...racialTraitRules,
     ...armorGuidanceRules,

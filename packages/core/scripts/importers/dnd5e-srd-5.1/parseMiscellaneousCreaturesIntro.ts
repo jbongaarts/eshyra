@@ -18,26 +18,11 @@
  * the first creature. Mirrors `parseSelfSufficiency`.
  */
 
+import { reflowProse } from './parseSectionIntro.js';
 import type { PageText, RuleExtraction } from './types.js';
 
 function reflow(pages: readonly PageText[]): string {
-  const parts: string[] = [];
-  for (const page of pages) {
-    for (const raw of page.lines) {
-      const part = raw.replace(/\s+/g, ' ').trim();
-      if (part.length === 0) continue;
-      if (
-        parts.length > 0 &&
-        parts[parts.length - 1].endsWith('-') &&
-        /^[a-z]/.test(part)
-      ) {
-        parts[parts.length - 1] = parts[parts.length - 1].slice(0, -1) + part;
-      } else {
-        parts.push(part);
-      }
-    }
-  }
-  return parts.join(' ').trim();
+  return reflowProse(pages.flatMap((page) => page.lines));
 }
 
 export function parseMiscellaneousCreaturesIntro(
