@@ -230,8 +230,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // dropped as `ignored:document-structure`.
   // 326 -> 328 (eshyra-45fw): the short prose-bearing "Magic Items A-Z" and
   // "Sample Traps" group intros now emit as standalone source-bounded rules.
+  // 328 -> 329 (eshyra-lo1o): the source-region ledger exposed the
+  // Spellcasting chapter intro as previously unrepresented prose.
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 328,
+  rule: 329,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -646,11 +648,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // without tableRefs: 314 -> 326.
   // eshyra-45fw adds two prose-bearing group intro rules without tableRefs:
   // 326 -> 328.
+  // eshyra-lo1o adds the Spellcasting chapter intro without tableRefs:
+  // 328 -> 329.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 327,
-    totalInKind: 328,
+    missingCount: 328,
+    totalInKind: 329,
   },
   {
     kind: 'spell',
@@ -883,6 +887,11 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         key: 'rule:sample-traps',
         name: 'Sample Traps',
         sentinel: 'The magical and mechanical traps presented here',
+      },
+      {
+        key: 'rule:spellcasting-chapter',
+        name: 'Spellcasting',
+        sentinel: 'Magic permeates fantasy gaming worlds',
       },
       {
         key: 'rule:martial-archetypes',

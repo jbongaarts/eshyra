@@ -97,6 +97,10 @@ import {
   type CoverageRule,
   evaluateSourceCoverage,
 } from './sourceInventoryCoverage.js';
+import {
+  assertSourceRegionLedger,
+  buildSourceRegionLedger,
+} from './sourceRegionLedger.js';
 import type {
   AncestryExtraction,
   BackgroundExtraction,
@@ -1126,6 +1130,7 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:material-m',
   'rule:rituals',
   'rule:somatic-s',
+  'rule:spellcasting-chapter',
   'rule:spell-level',
   'rule:spell-slots',
   // Equipment-chapter Expenses region: the Spellcasting Services prose has no
@@ -1424,6 +1429,10 @@ export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel
     {
       recordKey: 'rule:sample-traps',
       phrase: 'The magical and mechanical traps presented here',
+    },
+    {
+      recordKey: 'rule:spellcasting-chapter',
+      phrase: 'Magic permeates fantasy gaming worlds',
     },
     // Chapter/appendix and subclass-category intro prose recovered from
     // header-less slice leads (eshyra-g9im / eshyra-i2v4). These phrases sit in
@@ -2696,6 +2705,10 @@ export async function runImporter(
     pages,
     anchors.spellcastingRules,
   );
+  const spellcastingIntroRule = parseSectionIntro(spellcastingRulePages, {
+    name: 'Spellcasting',
+    keySlug: 'spellcasting-chapter',
+  });
   const reservedRuleKeySlugs = new Set(
     coreRules
       .map((rule) => rule.keySlug)
@@ -2718,6 +2731,7 @@ export async function runImporter(
   const spellcastingServicesRule = parseSpellcastingServices(expensesPages);
   const rulesBeforeBeyondFirstLevel = [
     ...coreRules,
+    ...(spellcastingIntroRule === undefined ? [] : [spellcastingIntroRule]),
     ...spellcastingRules,
     ...gamemasteringRules,
     ...(spellcastingServicesRule === undefined
@@ -3328,6 +3342,7 @@ export async function runImporter(
     | {
         readonly inventory: ReturnType<typeof buildSourceInventory>;
         readonly report: ReturnType<typeof buildSourceCoverageReport>;
+        readonly regionLedger: ReturnType<typeof buildSourceRegionLedger>;
       }
     | undefined;
   if (input.sourceCoverageRules !== undefined) {
@@ -3340,9 +3355,16 @@ export async function runImporter(
     assertSourceCoverage(coverageEntries, {
       statBlockExceptionReasons: input.statBlockCoverageExceptionReasons,
     });
+    const regionLedger = buildSourceRegionLedger(
+      pages,
+      coverageEntries,
+      pack.records,
+    );
+    assertSourceRegionLedger(regionLedger);
     sourceCoverageArtifacts = {
       inventory,
       report: buildSourceCoverageReport(coverageEntries, pack.records),
+      regionLedger,
     };
   }
   writePackToDirectory(pack, { outDir: input.outDir });
@@ -3350,6 +3372,7 @@ export async function runImporter(
     writeSourceCoverageArtifacts(
       sourceCoverageArtifacts.inventory,
       sourceCoverageArtifacts.report,
+      sourceCoverageArtifacts.regionLedger,
       { outDir: input.outDir },
     );
   }

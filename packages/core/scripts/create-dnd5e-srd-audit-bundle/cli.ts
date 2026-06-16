@@ -395,6 +395,9 @@ function buildReadme(meta: {
     '- `source-coverage.json` — per-structure accounting status (record /',
     '  child-of / ignored / known-gap) with a roll-up summary; `unaccounted`',
     '  must be 0 or the importer refuses to write the pack (eshyra-4a7.1)',
+    '- `source-region-ledger.json` — contiguous prose-region accounting ledger',
+    '  showing where prose exists, which record/child/ignore owns it, and',
+    '  whether any prose is unrepresented or hidden by broad structural ignores',
     '- `source-hash-verification.txt` — SHA-256 and size check for the vendored PDF',
     '',
     '## How to reproduce',
@@ -611,6 +614,10 @@ async function main(): Promise<void> {
     join(COMMITTED_PACK_DIR, 'source-coverage.json'),
     join(outDir, 'reports/source-coverage.json'),
   );
+  cpSync(
+    join(COMMITTED_PACK_DIR, 'source-region-ledger.json'),
+    join(outDir, 'reports/source-region-ledger.json'),
+  );
   const sourceCoverage = JSON.parse(
     readFileSync(join(COMMITTED_PACK_DIR, 'source-coverage.json'), 'utf8'),
   ) as {
@@ -630,6 +637,18 @@ async function main(): Promise<void> {
   );
   log(
     `  ${sourceCoverage.entries.length} source structures: ${sourceCoverage.summary.unaccounted} unaccounted, ${sourceCoverage.summary.ambiguous} ambiguous, ${knownGapTotal} known-gap`,
+  );
+  const sourceRegionLedger = JSON.parse(
+    readFileSync(join(COMMITTED_PACK_DIR, 'source-region-ledger.json'), 'utf8'),
+  ) as {
+    summary: {
+      proseRegions: number;
+      unrepresented: number;
+      broadStructuralIgnores: number;
+    };
+  };
+  log(
+    `  ${sourceRegionLedger.summary.proseRegions} prose regions: ${sourceRegionLedger.summary.unrepresented} unrepresented, ${sourceRegionLedger.summary.broadStructuralIgnores} broad-structural-ignore`,
   );
 
   // 7. Record keys by kind

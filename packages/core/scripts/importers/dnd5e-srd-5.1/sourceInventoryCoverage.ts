@@ -840,6 +840,10 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   // bare name match is intentionally non-covering when multiple records share
   // the normalized title.
   recordRule(
+    'rule:spellcasting-chapter',
+    (i) => i.page === 100 && i.text === 'Spellcasting',
+  ),
+  recordRule(
     'rule:darkvision',
     (i) => i.page === 86 && i.text === 'Darkvision',
   ),
