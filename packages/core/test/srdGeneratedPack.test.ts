@@ -228,8 +228,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // Traditions, Sacred Oaths, Ranger Archetypes, Roguish Archetypes, Sorcerous
   // Origins, Otherworldly Patrons, Arcane Traditions; p25-p54), each previously
   // dropped as `ignored:document-structure`.
+  // 326 -> 328 (eshyra-45fw): the short prose-bearing "Magic Items A-Z" and
+  // "Sample Traps" group intros now emit as standalone source-bounded rules.
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 326,
+  rule: 328,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -642,11 +644,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-7qit adds 15 prose rules without tableRefs: 299 -> 314.
   // eshyra-g9im / eshyra-i2v4 add 12 chapter/appendix/subclass intro rules
   // without tableRefs: 314 -> 326.
+  // eshyra-45fw adds two prose-bearing group intro rules without tableRefs:
+  // 326 -> 328.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 325,
-    totalInKind: 326,
+    missingCount: 327,
+    totalInKind: 328,
   },
   {
     kind: 'spell',
@@ -871,6 +875,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           'This appendix contains statistics for various humanoid nonplayer characters',
       },
       {
+        key: 'rule:magic-items-a-z',
+        name: 'Magic Items A-Z',
+        sentinel: 'Magic items are presented in alphabetical order',
+      },
+      {
+        key: 'rule:sample-traps',
+        name: 'Sample Traps',
+        sentinel: 'The magical and mechanical traps presented here',
+      },
+      {
         key: 'rule:martial-archetypes',
         name: 'Martial Archetypes',
         sentinel: 'Different fighters choose different approaches',
@@ -938,6 +952,26 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // stops at the first condition heading.
       expect(conditionsText).not.toContain('A blinded creature');
       expect(conditions?.kind).toBe('rule');
+
+      const magicItemsAz = pack.records.find(
+        (r) => r.key === 'rule:magic-items-a-z',
+      );
+      const magicItemsAzText = String(
+        (magicItemsAz?.data as { text?: unknown }).text ?? '',
+      );
+      // The 240 individual magic items remain their own records; the A-Z intro
+      // stops at the first item heading.
+      expect(magicItemsAzText).not.toContain('Adamantine Armor');
+
+      const sampleTraps = pack.records.find(
+        (r) => r.key === 'rule:sample-traps',
+      );
+      const sampleTrapsText = String(
+        (sampleTraps?.data as { text?: unknown }).text ?? '',
+      );
+      // The 8 sample traps remain hazard records; the group intro stops at the
+      // first trap heading.
+      expect(sampleTrapsText).not.toContain('Collapsing Roof');
     });
   });
 
@@ -4378,15 +4412,15 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(text).not.toContain('Collapsing Roof');
     });
 
-    it('keeps sample traps as hazard records only', () => {
-      // The slice is bounded before "Sample Traps", so no sample trap name
+    it('keeps sample trap entries as hazard records only', () => {
+      // The group intro has its own rule, but no individual sample trap name
       // appears as a rule key.
       const ruleKeys = pack.records
         .filter((r) => r.kind === 'rule')
         .map((r) => r.key);
       expect(ruleKeys).not.toContain('rule:collapsing-roof');
       expect(ruleKeys).not.toContain('rule:sphere-of-annihilation');
-      expect(ruleKeys).not.toContain('rule:sample-traps');
+      expect(ruleKeys).toContain('rule:sample-traps');
       // All 8 sample traps remain as hazard records.
       expect(
         pack.records.find((r) => r.key === 'hazard:collapsing-roof'),

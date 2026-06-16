@@ -213,7 +213,10 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // subclass-category headings Martial Archetypes … Arcane Traditions) now
     // name-match their emitted intro/overview rule records instead of falling to
     // the document-structure ignore default.
-    expect(coverage.summary.record).toBe(1442);
+    // record 1442 -> 1444 (eshyra-45fw): the Magic Items A-Z heading moved from
+    // document-structure and the Sample Traps heading moved from
+    // record-group-heading to their emitted intro rule records.
+    expect(coverage.summary.record).toBe(1444);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -243,13 +246,15 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // headings now own intro/overview rule records, so each moves off the
     // document-structure default — including the eight subclass-category
     // headings that previously fell here (42 -> 30).
+    // eshyra-45fw: Magic Items A-Z now maps to its emitted intro rule instead
+    // of document-structure (30 -> 29), and Sample Traps now maps to its emitted
+    // intro rule instead of the lone record-group-heading ignore.
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
-      'document-structure': 30,
+      'document-structure': 29,
       'equipment-category-heading': 3,
       'front-matter': 2,
-      'record-group-heading': 1,
       'spell-list-header': 78,
       'subclass-spell-table-heading': 2,
       'table-rows-emitted-as-records': 13,
@@ -775,6 +780,16 @@ describe('committed SRD source-coverage artifacts — intro-prose coverage guard
       status: 'record:rule:appendix-mm-b-nonplayer-characters',
     },
     {
+      page: 207,
+      text: 'Magic Items A-Z',
+      status: 'record:rule:magic-items-a-z',
+    },
+    {
+      page: 196,
+      text: 'Sample Traps',
+      status: 'record:rule:sample-traps',
+    },
+    {
       page: 25,
       text: 'Martial Archetypes',
       status: 'record:rule:martial-archetypes',
@@ -824,6 +839,15 @@ describe('committed SRD source-coverage artifacts — intro-prose coverage guard
       const entry = entryFor(page, text);
       expect(entry.status, `${text} (p${page})`).not.toBe(
         'ignored:document-structure',
+      );
+    }
+  });
+
+  it('none of the prose-bearing headings remain ignored as record-group headings', () => {
+    for (const { page, text } of PROSE_BEARING_HEADINGS) {
+      const entry = entryFor(page, text);
+      expect(entry.status, `${text} (p${page})`).not.toBe(
+        'ignored:record-group-heading',
       );
     }
   });
