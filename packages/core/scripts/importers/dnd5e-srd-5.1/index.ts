@@ -646,8 +646,10 @@ export const MIN_EXPECTED_SRD_5_1_MAGIC_ITEMS = 240;
  * closed by name rather than only on gross truncation. This baseline was
  * generated from the vendored, hash-pinned SRD 5.1 PDF, reviewed for parser
  * artifacts from two-column interleaving/table rows, and committed as fixed
- * regression data. Embedded item-specific tables stay in the parent item's
- * `description`; they do not emit as standalone `table` records.
+ * regression data. Embedded item-specific tables emit as standalone `table`
+ * records, and `buildPack` strips their linearization out of the parent item's
+ * `description` so the structured record is the sole representation
+ * (`stripEmbeddedTableProse`, eshyra-3anh).
  */
 export const EXPECTED_SRD_5_1_MAGIC_ITEM_NAMES: readonly string[] = [
   'Adamantine Armor',

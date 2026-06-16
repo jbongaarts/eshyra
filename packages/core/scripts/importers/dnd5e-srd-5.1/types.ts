@@ -272,6 +272,18 @@ export interface TableExtraction {
    * metadata used to add navigation refs; it is not emitted on table records.
    */
   readonly ownerRecordKey?: string;
+  /**
+   * Verbatim linearization of the table's source region (caption — when the
+   * anchor is the printed caption — plus header line(s) plus the contiguous
+   * cell-tier run), normalized exactly as a prose joiner would render it
+   * (trimmed lines joined by single spaces). When an embedded table's
+   * caption/header/cells fall inside an owning record's body, the prose joiner
+   * absorbs this same span into the record's description/text. The importer
+   * strips this span from the owner's prose so the structured table:* record is
+   * the sole representation of the tabular data (eshyra-3anh). Import-only; it
+   * is not emitted on table records.
+   */
+  readonly proseSourceText?: string;
 }
 
 /**
