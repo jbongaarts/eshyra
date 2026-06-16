@@ -29,7 +29,8 @@
  * against the printed tables (cantrips/spells known, spell-slot progression,
  * class resources such as Rages, Sneak Attack, Ki Points, Sorcery Points, and
  * Pact Magic slots). Source tokens are preserved verbatim ("+2", "1d6",
- * "Unlimited", "+10 ft.", lost apostrophes like "Land s Stride"). The pinned
+ * "Unlimited", "+10 ft.", possessives like "Land’s Stride" — the extractor
+ * reconstructs the apostrophe the SRD font drops, eshyra-g9im.1). The pinned
  * `sourceBlocks` make any re-extraction drift fail the table closed.
  *
  * Blank vs. dash cells (verified against the source text layer): SRD 5.1 leaves
@@ -1934,7 +1935,7 @@ const RECONSTRUCTED_CLASS_PROGRESSION_SPECS: readonly DocumentTableSpec[] = [
           '6th +3 Favored Enemy and Natural Explorer improvements',
           '7th +3 Ranger Archetype feature',
           '8th +3',
-          'Ability Score Improvement, Land s Stride',
+          'Ability Score Improvement, Land’s Stride',
           '9th +4',
           '10th +4 Natural Explorer improvement, Hide in Plain Sight',
           '11th +4 Ranger Archetype feature',
@@ -2009,7 +2010,7 @@ const RECONSTRUCTED_CLASS_PROGRESSION_SPECS: readonly DocumentTableSpec[] = [
         [
           '8th',
           '+3',
-          'Ability Score Improvement, Land s Stride',
+          'Ability Score Improvement, Land’s Stride',
           '5',
           '4',
           '3',

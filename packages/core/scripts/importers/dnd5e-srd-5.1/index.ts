@@ -1428,6 +1428,10 @@ export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel
       recordKey: 'rule:conditions',
       phrase: 'the condition’s effects don’t get worse',
     },
+    // Apostrophe reconstruction (eshyra-g9im.1): the SRD font drops this glyph,
+    // which the extractor restores. Pins the possessive so a regression to
+    // "a monster s attack" fails closed.
+    { recordKey: 'rule:conditions', phrase: 'a monster’s attack' },
     {
       recordKey: 'rule:using-ability-scores',
       phrase: 'Six abilities provide a quick description',
