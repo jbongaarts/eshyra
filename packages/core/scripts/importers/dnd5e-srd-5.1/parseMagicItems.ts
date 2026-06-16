@@ -8,8 +8,11 @@
  *   Adamantine Armor
  *   Armor (medium or heavy, but not hide), uncommon
  *
- * The parser preserves embedded item tables inside `description` text while
- * the document-wide table parser also emits reviewed structured table records.
+ * The parser reflows the whole item body into `description` text, including any
+ * embedded item table. The document-wide table parser emits the reviewed
+ * structured `table:*` record for that table, and `buildPack` then strips the
+ * table's linearization back out of the owner's `description` so the structured
+ * record is the sole representation (see `stripEmbeddedTableProse`, eshyra-3anh).
  *
  * Bounded spans (eshyra-4a7.2): every magic-item NAME renders at the leaf
  * heading tier (h≈12.0 in the real SRD), one tier above the h≈9.8 body. An

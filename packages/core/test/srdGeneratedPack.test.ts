@@ -1728,7 +1728,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       );
     });
 
-    it('carries representative item type, rarity, attunement, and embedded table text', () => {
+    it('carries representative item type, rarity, and attunement and strips embedded tables to table records', () => {
       expect(magicItemData('magic-item:adamantine-armor')).toMatchObject({
         itemType: 'Armor (medium or heavy, but not hide)',
         rarity: 'uncommon',
@@ -1746,8 +1746,21 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         rarity: 'rare',
         requiresAttunement: true,
       });
-      expect(armorOfResistance.description).toContain('d10 Damage Type');
-      expect(armorOfResistance.description).toContain('1 Acid 6 Necrotic');
+      // The embedded resistance table is stripped from prose (eshyra-3anh): the
+      // surrounding sentence is kept and the tabular data lives only in the
+      // structured table:* record.
+      expect(armorOfResistance.description).toContain(
+        'You have resistance to one type of damage while you wear this armor.',
+      );
+      expect(armorOfResistance.description).not.toContain('d10 Damage Type');
+      expect(armorOfResistance.description).not.toContain('1 Acid 6 Necrotic');
+      const resistanceTable = pack.records.find(
+        (record) => record.key === 'table:armor-of-resistance',
+      );
+      expect(resistanceTable?.kind).toBe('table');
+      expect(resistanceTable?.data).toMatchObject({
+        columns: ['d10', 'Damage Type'],
+      });
     });
 
     it('emits Figurine of Wondrous Power with variants and Giant Fly linkage', () => {
@@ -1816,8 +1829,14 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           'rare (silver or brass), very rare (bronze), or legendary (iron)',
       });
       const valhalla = magicItemDescription('magic-item:horn-of-valhalla');
-      expect(valhalla).toContain('d100 Horn Berserkers Requirement');
-      expect(valhalla).toContain('Proficiency with all martial weapons');
+      // De-interleaving keeps this body's prose and excludes the adjacent
+      // column's item; the embedded Horn type table is stripped to its table:*
+      // record (eshyra-3anh).
+      expect(valhalla).toContain('warrior spirits');
+      expect(valhalla).toContain(
+        'Four types of horn of Valhalla are known to exist',
+      );
+      expect(valhalla).not.toContain('d100 Horn Berserkers Requirement');
       expect(valhalla).not.toContain('Immovable Rod');
 
       const zephyr = magicItemDescription('magic-item:horseshoes-of-a-zephyr');
@@ -2782,13 +2801,127 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       }
     });
 
-    it('keeps the original spell prose while adding navigation refs', () => {
+    it('keeps the original spell prose, strips the embedded table, and adds navigation refs', () => {
       const animateObjects = pack.records.find(
         (record) => record.key === 'spell:animate-objects',
       );
+      const description = (animateObjects?.data as { description?: string })
+        .description;
+      // Authored prose is preserved on both sides of where the table sat.
+      expect(description).toContain('Objects come to life at your command.');
+      expect(description).toContain(
+        'An animated object is a construct with AC, hit points, attacks, Strength, and Dexterity determined by its size.',
+      );
+      // The embedded statistics table is stripped from prose (eshyra-3anh); it
+      // remains reachable as structured data via tableRefs.
+      expect(description).not.toContain('Animated Object Statistics');
+      expect(description).not.toContain('Tiny 20 18');
       expect(
-        (animateObjects?.data as { description?: string }).description,
-      ).toContain('Animated Object Statistics');
+        (animateObjects?.data as { tableRefs?: readonly string[] }).tableRefs,
+      ).toContain('table:animated-object-statistics');
+    });
+  });
+
+  describe('embedded-table prose strip (eshyra-3anh)', () => {
+    function prose(key: string): string {
+      const record = pack.records.find((entry) => entry.key === key);
+      expect(record, key).toBeDefined();
+      const data = record?.data as { description?: string; text?: string };
+      return data.description ?? data.text ?? '';
+    }
+
+    function tableRecord(key: string) {
+      const record = pack.records.find((entry) => entry.key === key);
+      expect(record?.kind, key).toBe('table');
+      return record;
+    }
+
+    it('removes the garbled linearization from known embedded-table owners', () => {
+      expect(prose('magic-item:necklace-of-prayer-beads')).not.toContain(
+        '20 Wind Wind walk walking',
+      );
+      expect(prose('magic-item:deck-of-many-things')).not.toContain(
+        'Playing Card Card Ace of diamonds Vizier',
+      );
+      expect(prose('spell:teleport')).not.toContain(
+        'Off On Familiarity Mishap Area Target Target',
+      );
+      const armor = prose('magic-item:armor-of-resistance');
+      expect(armor).not.toContain('Lightning 10 Thunder');
+      expect(armor.trimEnd().endsWith('Lightning 10 Thunder')).toBe(false);
+    });
+
+    it('keeps the surrounding authored prose intact after the strip', () => {
+      // End-of-body table: the sentence before the table is the new tail.
+      expect(prose('magic-item:necklace-of-prayer-beads')).toMatch(
+        /can’t be used again until the next dawn\.$/,
+      );
+      // Mid-body tables: prose rejoins cleanly across the removed span.
+      expect(prose('magic-item:deck-of-many-things')).toContain(
+        'making it possible to draw the same card twice. Balance.',
+      );
+      expect(prose('spell:teleport')).toContain(
+        'The GM rolls d100 and consults the table. Familiarity.',
+      );
+    });
+
+    it('leaves the authoritative table:* records intact and complete', () => {
+      expect(tableRecord('table:necklace-of-prayer-beads')?.data).toMatchObject(
+        {
+          columns: ['d20', 'Bead of …', 'Spell'],
+        },
+      );
+      expect(
+        (
+          tableRecord('table:necklace-of-prayer-beads')?.data as {
+            rows: unknown[][];
+          }
+        ).rows,
+      ).toContainEqual(['20', 'Wind walking', 'Wind walk']);
+      expect(tableRecord('table:deck-of-many-things')?.data).toMatchObject({
+        columns: ['Playing Card', 'Card'],
+      });
+      expect(tableRecord('table:teleport-familiarity')?.data).toMatchObject({
+        columns: [
+          'Familiarity',
+          'Mishap',
+          'Similar Area',
+          'Off Target',
+          'On Target',
+        ],
+      });
+      expect(tableRecord('table:armor-of-resistance')?.data).toMatchObject({
+        columns: ['d10', 'Damage Type'],
+      });
+    });
+
+    it('leaves no detectable table linearization in any prose field', () => {
+      // Narrow signatures of a flattened table run that survived into prose:
+      // an immediately repeated capitalized word ("Card Card", "Wind Wind",
+      // "Target Target") or three dice ranges packed into a short window. Both
+      // only occur when table cells are reflowed as prose; authored SRD prose
+      // does not. (A bare "dNN Word" header token is intentionally NOT a
+      // signature: legitimate prose says "you have a d10 Hit Die".)
+      const repeatedWord = /\b([A-Z][a-z]{2,})\s+\1\b/;
+      const dieRange = /\b\d{1,3}\s*[–—]\s*\d{1,3}\b/g;
+      const offenders: string[] = [];
+      for (const record of pack.records) {
+        const data = record.data as { description?: string; text?: string };
+        const text = data.description ?? data.text;
+        if (typeof text !== 'string') continue;
+        if (repeatedWord.test(text)) {
+          offenders.push(`${record.key} (repeated word)`);
+          continue;
+        }
+        const ranges = [...text.matchAll(dieRange)].map((m) => m.index ?? 0);
+        for (let i = 0; i + 2 < ranges.length; i++) {
+          if (ranges[i + 2] - ranges[i] < 120) {
+            offenders.push(`${record.key} (dice-range run)`);
+            break;
+          }
+        }
+      }
+      expect(offenders).toEqual([]);
     });
   });
 

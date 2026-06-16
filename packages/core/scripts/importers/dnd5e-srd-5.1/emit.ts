@@ -30,6 +30,10 @@ import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
 import type { SourceRegionLedger } from './sourceRegionLedger.js';
 import { linkSpellEmbeddedTables } from './spellTables.js';
+import {
+  assertNoEmbeddedTableLinearization,
+  stripEmbeddedTableProse,
+} from './stripEmbeddedTableProse.js';
 import type {
   ActionExtraction,
   AncestryExtraction,
@@ -1250,24 +1254,38 @@ export function buildPack(input: BuildPackInput): RulesPack {
     featureRecords,
     tables: input.tables ?? [],
   });
-  const records = [
-    ...spellRecords,
-    ...creatureRecords,
-    ...enriched.classRecords,
-    ...enriched.subclassRecords,
-    ...enriched.featureRecords,
-    ...conditionRecords,
-    ...featRecords,
-    ...hazardRecords,
-    ...actionRecords,
-    ...ruleRecords,
-    ...tableRecords,
-    ...equipmentRecords,
-    ...magicItemRecords,
-    ...statBlockRecords,
-    ...ancestryRecords,
-    ...backgroundRecords,
-  ].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  // Remove embedded-table linearizations the prose joiners absorbed into owner
+  // descriptions/text, leaving the structured `table:*` records as the sole
+  // representation (eshyra-3anh). The assertion fails the build closed if any
+  // captured table span still appears in prose.
+  const stripped = stripEmbeddedTableProse({
+    records: [
+      ...spellRecords,
+      ...creatureRecords,
+      ...enriched.classRecords,
+      ...enriched.subclassRecords,
+      ...enriched.featureRecords,
+      ...conditionRecords,
+      ...featRecords,
+      ...hazardRecords,
+      ...actionRecords,
+      ...ruleRecords,
+      ...tableRecords,
+      ...equipmentRecords,
+      ...magicItemRecords,
+      ...statBlockRecords,
+      ...ancestryRecords,
+      ...backgroundRecords,
+    ],
+    tables: input.tables ?? [],
+  });
+  assertNoEmbeddedTableLinearization({
+    records: stripped,
+    tables: input.tables ?? [],
+  });
+  const records = stripped.sort((a, b) =>
+    a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
+  );
   const includedKinds = uniqueKindsOf(records);
   const pack: RulesPack = {
     meta: buildMeta(input.sourceHash, includedKinds),

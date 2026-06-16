@@ -230,6 +230,65 @@ function stageConditionSpec(
  * Grouped by source region; every entry names its source page and, when the
  * SRD prints the table caption-less, documents the synthesized name.
  */
+/**
+ * Reviewed owners for tables the SRD prints *inside* another record's body, so
+ * the prose joiner absorbs the table's linearization (caption/header/cell run)
+ * into that record's description/text. The importer strips that linearization
+ * from the owner's prose (eshyra-3anh) so the structured `table:*` record is the
+ * sole representation of the tabular data; the table record itself is unchanged.
+ *
+ * Keyed by the emitted table name. Spell-owned embedded tables declare their
+ * owner inline on the spec (cross-checked by `SRD_5_1_SPELL_TABLE_OWNERS`); this
+ * allowlist covers the magic-item and class/subclass-feature embedded tables.
+ * Each entry was confirmed by an exact source-span match against the generated
+ * owner prose, and the post-strip assertion fails closed if any table's span
+ * still appears in prose (so a missed owner cannot ship silently).
+ */
+const EMBEDDED_TABLE_PROSE_OWNERS: Readonly<Record<string, string>> = {
+  'Apparatus of the Crab Levers': 'magic-item:apparatus-of-the-crab',
+  'Armor of Resistance': 'magic-item:armor-of-resistance',
+  'Bag of Beans': 'magic-item:bag-of-beans',
+  'Belt of Giant Strength': 'magic-item:belt-of-giant-strength',
+  'Candle of Invocation': 'magic-item:candle-of-invocation',
+  'Carpet of Flying': 'magic-item:carpet-of-flying',
+  'Circle of the Land (Arctic)': 'feature:circle-of-the-land:circle-spells',
+  'Circle of the Land (Coast)': 'feature:circle-of-the-land:circle-spells',
+  'Circle of the Land (Desert)': 'feature:circle-of-the-land:circle-spells',
+  'Circle of the Land (Forest)': 'feature:circle-of-the-land:circle-spells',
+  'Circle of the Land (Grassland)': 'feature:circle-of-the-land:circle-spells',
+  'Circle of the Land (Mountain)': 'feature:circle-of-the-land:circle-spells',
+  'Circle of the Land (Swamp)': 'feature:circle-of-the-land:circle-spells',
+  'Creating Spell Slots': 'feature:sorcerer:font-of-magic',
+  'Cube of Force Charges Lost': 'magic-item:cube-of-force',
+  'Cube of Force Faces': 'magic-item:cube-of-force',
+  'Deck of Illusions': 'magic-item:deck-of-illusions',
+  'Deck of Many Things': 'magic-item:deck-of-many-things',
+  'Draconic Bloodline Draconic Ancestry':
+    'feature:draconic-bloodline:dragon-ancestor',
+  'Dragon Scale Mail': 'magic-item:dragon-scale-mail',
+  'Efreeti Bottle': 'magic-item:efreeti-bottle',
+  'Elemental Gem': 'magic-item:elemental-gem',
+  'Feather Token': 'magic-item:feather-token',
+  'Gray Bag of Tricks': 'magic-item:bag-of-tricks',
+  'Horn of Valhalla': 'magic-item:horn-of-valhalla',
+  'Iron Flask': 'magic-item:iron-flask',
+  'Manual of Golems': 'magic-item:manual-of-golems',
+  'Necklace of Prayer Beads': 'magic-item:necklace-of-prayer-beads',
+  'Potion of Giant Strength': 'magic-item:potion-of-giant-strength',
+  'Potion of Resistance': 'magic-item:potion-of-resistance',
+  'Potions of Healing': 'magic-item:potion-of-healing',
+  'Ring of Resistance': 'magic-item:ring-of-resistance',
+  'Ring of Shooting Stars': 'magic-item:ring-of-shooting-stars',
+  'Robe of Useful Items': 'magic-item:robe-of-useful-items',
+  'Rust Bag of Tricks': 'magic-item:bag-of-tricks',
+  'Spell Scroll': 'magic-item:spell-scroll',
+  'Sphere of Annihilation': 'magic-item:sphere-of-annihilation',
+  'Staff of Power': 'magic-item:staff-of-power',
+  'Staff of the Magi': 'magic-item:staff-of-the-magi',
+  'Tan Bag of Tricks': 'magic-item:bag-of-tricks',
+  'Wand of Wonder': 'magic-item:wand-of-wonder',
+};
+
 export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
   // --- Races (p5) + the Sorcerer Draconic Bloodline copy (p44) --------------
   // Same printed caption twice; the exact header line disambiguates. The p44
@@ -1390,7 +1449,8 @@ function parseSpec(
         columns: [...spec.columns],
         rows: tableRows,
         sourcePage: located.page,
-        ownerRecordKey: spec.ownerRecordKey,
+        ownerRecordKey:
+          spec.ownerRecordKey ?? EMBEDDED_TABLE_PROSE_OWNERS[spec.name],
       };
     }
     const headerIdx = findHeaderAt(rows, i, spec);
@@ -1400,12 +1460,27 @@ function parseSpec(
     // Fail closed: a located table whose rows drift in count or shape emits
     // nothing, so the table-name baseline catches it before output is written.
     if (tableRows.length !== spec.expectedRows) return undefined;
+    // Verbatim linearization of the table's source region as a prose joiner
+    // renders it (eshyra-3anh): for a printed-caption anchor the caption line
+    // is part of the absorbed span; an item-anchored table's anchor is the
+    // owning entry heading, so the span starts at the header line. The cell-tier
+    // run is, by definition, table content rather than prose, so this span never
+    // includes surrounding prose. Stripping it from the owner's description/text
+    // leaves the structured table:* record as the sole representation.
+    const spanStart = spec.anchor === 'caption' ? i : headerIdx;
+    const spanEnd = headerIdx + spec.headerLines.length + run.length;
+    const proseSourceText = rows
+      .slice(spanStart, spanEnd)
+      .map((row) => row.text)
+      .join(' ');
     return {
       name: spec.name,
       columns: [...spec.columns],
       rows: tableRows,
       sourcePage: rows[headerIdx].page,
-      ownerRecordKey: spec.ownerRecordKey,
+      ownerRecordKey:
+        spec.ownerRecordKey ?? EMBEDDED_TABLE_PROSE_OWNERS[spec.name],
+      proseSourceText,
     };
   }
   return undefined;
