@@ -232,8 +232,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // "Sample Traps" group intros now emit as standalone source-bounded rules.
   // 328 -> 329 (eshyra-lo1o): the source-region ledger exposed the
   // Spellcasting chapter intro as previously unrepresented prose.
+  // 329 -> 335: the ledger follow-up represents prose under armor category
+  // headings, subclass spell-table intro headings, and Adventuring Gear.
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 329,
+  rule: 335,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -649,12 +651,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-45fw adds two prose-bearing group intro rules without tableRefs:
   // 326 -> 328.
   // eshyra-lo1o adds the Spellcasting chapter intro without tableRefs:
-  // 328 -> 329.
+  // 328 -> 329. The source-region-ledger follow-up adds six more prose rules:
+  // 329 -> 335.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 328,
-    totalInKind: 329,
+    missingCount: 334,
+    totalInKind: 335,
   },
   {
     kind: 'spell',
@@ -1258,6 +1261,26 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         .spellTableRefs;
       expect(Array.isArray(spellTableRefs)).toBe(true);
       expect(spellTableRefs).toContain('table:oath-of-devotion-spells');
+    });
+
+    it('represents subclass spell-table intro prose without duplicating table rows', () => {
+      const text = (key: string): string => {
+        const record = pack.records.find((candidate) => candidate.key === key);
+        expect(record, `expected ${key}`).toBeDefined();
+        return (record?.data as { text: string }).text;
+      };
+      const oath = text('rule:oath-of-devotion-oath-spells');
+      expect(oath).toContain(
+        'You gain oath spells at the paladin levels listed',
+      );
+      expect(oath).not.toContain('protection from evil and good');
+
+      const fiend = text('rule:the-fiend-expanded-spell-list');
+      expect(fiend).toContain(
+        'The Fiend lets you choose from an expanded list of spells',
+      );
+      expect(fiend).toContain('added to the warlock spell list for you');
+      expect(fiend).not.toContain('burning hands');
     });
   });
 
@@ -2588,6 +2611,28 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(description('equipment:tinderbox')).toContain(
         'Lighting any other fire takes 1 minute',
       );
+      expect(description('equipment:chain-shirt')).toContain(
+        'worn between layers of clothing or leather',
+      );
+      expect(description('equipment:chain-shirt')).not.toMatch(/\bor$/);
+      expect(description('equipment:leather')).toContain(
+        'The breastplate and shoulder protectors',
+      );
+      expect(description('equipment:leather')).not.toContain(
+        'worn between layers of clothing or leather',
+      );
+    });
+
+    it('has no equipment descriptions ending in suspicious dangling connectors', () => {
+      const dangling = /\b(?:and|or|the|with|of the)$/i;
+      const offenders = equipment
+        .filter((record) => {
+          const description = (record.data as { description?: unknown })
+            .description;
+          return typeof description === 'string' && dangling.test(description);
+        })
+        .map((record) => record.key);
+      expect(offenders).toEqual([]);
     });
 
     it('keeps description provenance alongside the table-row page', () => {
@@ -4127,6 +4172,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(ruleText('rule:selling-treasure')).toContain('half their cost');
       expect(ruleText('rule:armor-guidance')).toContain('Armor Proficiency.');
       expect(ruleText('rule:armor-guidance')).toContain('Shields.');
+      expect(ruleText('rule:light-armor')).toContain(
+        'If you wear light armor, you add your Dexterity modifier',
+      );
+      expect(ruleText('rule:medium-armor')).toContain('to a maximum of +2');
+      expect(ruleText('rule:heavy-armor-category')).toContain(
+        'Heavy armor doesn’t let you add your Dexterity modifier',
+      );
+      expect(ruleText('rule:adventuring-gear')).toContain(
+        'This section describes items that have special rules or require further explanation',
+      );
       expect(ruleText('rule:equipment-packs')).toContain('starting equipment');
       expect(ruleText('rule:tools')).toContain('Proficiency with a tool');
       expect(ruleText('rule:mounts-and-vehicles')).toContain('Barding.');

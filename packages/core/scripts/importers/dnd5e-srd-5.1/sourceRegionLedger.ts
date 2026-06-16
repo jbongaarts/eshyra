@@ -86,9 +86,20 @@ interface SearchableRecord {
   readonly text: string;
 }
 
+interface RegionSegment {
+  readonly body: string;
+  readonly idSuffix: string;
+}
+
 const BROAD_STRUCTURAL_IGNORES = new Set([
   'ignored:document-structure',
   'ignored:record-group-heading',
+]);
+
+const PROSE_REQUIRES_REPRESENTATION_IGNORE_REASONS = new Set([
+  'equipment-category-heading',
+  'subclass-spell-table-heading',
+  'table-rows-emitted-as-records',
 ]);
 
 const FRONT_MATTER_MAX_PAGE = 2;
@@ -118,6 +129,7 @@ function normalizeForSearch(text: string): string {
   return normalizeText(text)
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')
+    .replace(/\s*([—–-])\s*/g, '$1')
     .toLowerCase();
 }
 
@@ -267,6 +279,14 @@ function classifyRegion(
           'Prose-bearing region is attached only to a broad structural ignore.',
       };
     }
+    if (PROSE_REQUIRES_REPRESENTATION_IGNORE_REASONS.has(reason)) {
+      return {
+        classification: 'unrepresented',
+        ignoreReason: reason,
+        guardNotes:
+          'This ignore reason is not valid for prose-bearing regions unless the prose is represented by a generated record.',
+      };
+    }
     return {
       classification: `intentionally-ignored:${reason}`,
       ignoreReason: reason,
@@ -357,6 +377,93 @@ function buildSearchableRecords(
   });
 }
 
+function equipmentDescriptionLeadIns(
+  records: readonly CoverageRecordRef[],
+): readonly string[] {
+  const leadIns = new Set<string>();
+  for (const record of records) {
+    if (record.kind !== 'equipment') continue;
+    const description =
+      typeof record.data === 'object' &&
+      record.data !== null &&
+      'description' in record.data &&
+      typeof record.data.description === 'string'
+        ? record.data.description
+        : undefined;
+    if (description === undefined) continue;
+    const leadIn = /^(.{1,80}?)\.\s+/.exec(description)?.[1]?.trim();
+    if (leadIn !== undefined && leadIn.length > 0) {
+      leadIns.add(leadIn);
+    }
+  }
+  return [...leadIns].sort((a, b) => b.length - a.length || a.localeCompare(b));
+}
+
+function splitAtLeadIns(
+  body: string,
+  leadIns: readonly string[],
+): readonly string[] {
+  const matches: Array<{ readonly index: number; readonly length: number }> =
+    [];
+  for (const leadIn of leadIns) {
+    let offset = 0;
+    const needle = `${leadIn}.`;
+    while (offset < body.length) {
+      const index = body.indexOf(needle, offset);
+      if (index < 0) break;
+      if (index === 0 || /\s/.test(body[index - 1] ?? '')) {
+        matches.push({ index, length: needle.length });
+      }
+      offset = index + needle.length;
+    }
+  }
+  const starts = new Set<number>([0]);
+  let coveredUntil = 0;
+  for (const match of matches.sort(
+    (a, b) => a.index - b.index || b.length - a.length,
+  )) {
+    if (match.index < coveredUntil) continue;
+    starts.add(match.index);
+    coveredUntil = match.index + match.length;
+  }
+  const ordered = [...starts].sort((a, b) => a - b);
+  const segments: string[] = [];
+  for (let i = 0; i < ordered.length; i++) {
+    const start = ordered[i];
+    const end = ordered[i + 1] ?? body.length;
+    const segment = body.slice(start, end).trim();
+    if (segment.length > 0) segments.push(segment);
+  }
+  return segments;
+}
+
+function splitRegionBody(
+  owner: ActiveOwner | undefined,
+  body: string,
+  leadIns: readonly string[],
+): readonly RegionSegment[] {
+  if (owner?.item.section !== 'Equipment') {
+    return [{ body, idSuffix: '' }];
+  }
+  const adventuringIntro =
+    'This section describes items that have special rules or require further explanation.';
+  const parts =
+    owner.item.text === 'Adventuring Gear' && body.startsWith(adventuringIntro)
+      ? [adventuringIntro, body.slice(adventuringIntro.length).trim()].filter(
+          (part) => part.length > 0,
+        )
+      : [body];
+  return parts.flatMap((part, partIndex) =>
+    splitAtLeadIns(part, leadIns).map((segment, segmentIndex) => ({
+      body: segment,
+      idSuffix:
+        partIndex === 0 && segmentIndex === 0
+          ? ''
+          : `-segment-${partIndex}-${segmentIndex}`,
+    })),
+  );
+}
+
 function findRepresentingRecord(
   body: string,
   owner: ActiveOwner | undefined,
@@ -380,7 +487,11 @@ function findRepresentingRecord(
         (record.key.endsWith(`:${headingSlug}`) ||
           record.key.includes(`:${headingSlug}:`))),
   );
-  return preferred?.key;
+  if (preferred !== undefined) return preferred.key;
+  if (matches.every((record) => record.key.startsWith('equipment:'))) {
+    return [...matches].sort((a, b) => a.key.localeCompare(b.key))[0]?.key;
+  }
+  return undefined;
 }
 
 function pureStructureEntry(
@@ -482,6 +593,7 @@ export function buildSourceRegionLedger(
 
   const lines = flattenPages(pages);
   const searchableRecords = buildSearchableRecords(records);
+  const equipmentLeadIns = equipmentDescriptionLeadIns(records);
   const entries: SourceRegionLedgerEntry[] = [];
   const ownersWithProse = new Set<string>();
   let headingPath: readonly string[] = [];
@@ -499,31 +611,37 @@ export function buildSourceRegionLedger(
     }
     const first = regionLines[0];
     const last = regionLines[regionLines.length - 1];
-    const classified = classifyRegion(
-      regionOwner,
-      first.page,
-      body,
-      searchableRecords,
-    );
     if (regionOwner !== undefined) {
       ownersWithProse.add(
         locationKey(regionOwner.item.page, regionOwner.item.lineIndex),
       );
     }
-    entries.push({
-      id: `p${first.page}-l${first.lineIndex}-prose`,
-      pageStart: first.page,
-      pageEnd: last.page,
-      lineStart: first.lineIndex,
-      lineEnd: last.lineIndex,
-      headingPath: regionHeadingPath,
-      sourceContext: regionOwner?.item.text ?? null,
-      regionType: regionTypeForOwner(regionOwner),
-      firstPhrase: phrase(body),
-      lastPhrase: phrase(body, true),
-      normalizedCharCount: body.length,
-      ...classified,
-    });
+    for (const segment of splitRegionBody(
+      regionOwner,
+      body,
+      equipmentLeadIns,
+    )) {
+      const classified = classifyRegion(
+        regionOwner,
+        first.page,
+        segment.body,
+        searchableRecords,
+      );
+      entries.push({
+        id: `p${first.page}-l${first.lineIndex}-prose${segment.idSuffix}`,
+        pageStart: first.page,
+        pageEnd: last.page,
+        lineStart: first.lineIndex,
+        lineEnd: last.lineIndex,
+        headingPath: regionHeadingPath,
+        sourceContext: regionOwner?.item.text ?? null,
+        regionType: regionTypeForOwner(regionOwner),
+        firstPhrase: phrase(segment.body),
+        lastPhrase: phrase(segment.body, true),
+        normalizedCharCount: segment.body.length,
+        ...classified,
+      });
+    }
     regionLines = [];
   };
 

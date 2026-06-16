@@ -28,7 +28,24 @@ describe('parseEquipmentGuidance', () => {
       ],
       ['Armor Class (AC). Armor determines your base Armor Class.', 9.84],
       ['Light Armor', 13.92],
+      [
+        'Made from supple and thin materials, light armor favors agile adventurers.',
+        9.84,
+      ],
+      ['If you wear light armor, you add your Dexterity modifier.', 9.84],
       ['Padded. Padded armor consists of quilted layers.', 9.84],
+      ['Medium Armor', 13.92],
+      ['Medium armor offers more protection than light armor.', 9.84],
+      ['You add your Dexterity modifier, to a maximum of +2.', 9.84],
+      ['Hide. This crude armor consists of thick furs.', 9.84],
+      ['Heavy Armor', 13.92],
+      ['Heavy armor doesn’t let you add your Dexterity modifier.', 9.84],
+      ['Ring Mail. This armor is leather armor with heavy rings.', 9.84],
+      ['Adventuring Gear', 18],
+      [
+        'This section describes items that have special rules or require further explanation. Acid. As an action, you can splash it.',
+        9.84,
+      ],
       ['Equipment Packs', 10.8],
       ['Starting equipment can be purchased as a pack.', 8.88],
       ['Burglar’s Pack (16 gp). Includes a backpack.', 8.88],
@@ -87,6 +104,17 @@ describe('parseEquipmentGuidance', () => {
     expect(byKey.get('selling-treasure')?.text).toContain('half its cost');
     expect(byKey.get('armor-guidance')?.text).toContain('Armor Proficiency.');
     expect(byKey.get('armor-guidance')?.text).not.toContain('Padded.');
+    expect(byKey.get('light-armor')?.text).toContain(
+      'you add your Dexterity modifier',
+    );
+    expect(byKey.get('light-armor')?.text).not.toContain('Padded.');
+    expect(byKey.get('medium-armor')?.text).toContain('maximum of +2');
+    expect(byKey.get('heavy-armor-category')?.text).toContain(
+      'doesn’t let you add your Dexterity modifier',
+    );
+    expect(byKey.get('adventuring-gear')?.text).toBe(
+      'This section describes items that have special rules or require further explanation.',
+    );
     expect(byKey.get('equipment-packs')?.text).toContain('Starting equipment');
     expect(byKey.get('tools')?.text).toContain('Proficiency with a tool');
     expect(byKey.get('mounts-and-vehicles')?.text).toContain('Barding.');

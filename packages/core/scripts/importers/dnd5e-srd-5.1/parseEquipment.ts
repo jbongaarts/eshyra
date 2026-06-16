@@ -272,6 +272,24 @@ const DESCRIPTION_LEAD_IN = /^(.{1,40}?)\.\s+(.+)$/;
 const DESCRIPTION_REGION_BOUNDARY =
   /^(?:Item|Cost Weight.*|Container Capacity|Equipment Packs|Tools|Mounts and Vehicles)$/;
 
+function startsWithLowercase(text: string): boolean {
+  return /^[a-z]/.test(text.trim());
+}
+
+function activeDescriptionIsDangling(
+  currentNames: readonly string[],
+  descriptions: ReadonlyMap<
+    string,
+    { readonly page: number; readonly parts: string[] }
+  >,
+): boolean {
+  return currentNames.some((name) => {
+    const parts = descriptions.get(name)?.parts;
+    const last = parts?.[parts.length - 1]?.trim();
+    return last !== undefined && /\b(?:and|or|the|of the|with)$/i.test(last);
+  });
+}
+
 function attachDescriptions(
   items: readonly EquipmentExtraction[],
   flat: readonly FlatLine[],
@@ -299,13 +317,21 @@ function attachDescriptions(
       continue;
     }
     if (height !== undefined && height >= 10.3) {
-      currentNames = [];
+      if (!activeDescriptionIsDangling(currentNames, descriptions)) {
+        currentNames = [];
+      }
       continue;
     }
     if (height !== undefined && height < 9.3) continue;
     const leadIn = DESCRIPTION_LEAD_IN.exec(line);
     if (leadIn !== null) {
       const names = targets.get(normalizeDescriptionName(leadIn[1]));
+      if (names !== undefined && startsWithLowercase(leadIn[1])) {
+        for (const name of currentNames) {
+          descriptions.get(name)?.parts.push(line);
+        }
+        continue;
+      }
       if (names !== undefined) {
         currentNames = names;
         for (const name of names) {

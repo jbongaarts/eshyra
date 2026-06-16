@@ -252,7 +252,9 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // record-group-heading to their emitted intro rule records.
     // record 1444 -> 1445 (eshyra-lo1o): the Spellcasting chapter heading now
     // maps to the emitted Spellcasting chapter-intro rule.
-    expect(coverage.summary.record).toBe(1445);
+    // 1445 -> 1452: armor category headings, Adventuring Gear, and subclass
+    // spell-table intro headings now map to emitted source-bounded rules.
+    expect(coverage.summary.record).toBe(1452);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
@@ -284,16 +286,17 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // headings that previously fell here (42 -> 30).
     // eshyra-45fw: Magic Items A-Z now maps to its emitted intro rule instead
     // of document-structure (30 -> 29), and Sample Traps now maps to its emitted
-    // intro rule instead of the lone record-group-heading ignore.
+    // intro rule instead of the lone record-group-heading ignore. The source
+    // region ledger follow-up removes equipment-category-heading and subclass-
+    // spell-table-heading by mapping those headings to emitted rules, and moves
+    // Adventuring Gear out of table-rows-emitted-as-records.
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
       'document-structure': 29,
-      'equipment-category-heading': 3,
       'front-matter': 2,
       'spell-list-header': 78,
-      'subclass-spell-table-heading': 2,
-      'table-rows-emitted-as-records': 13,
+      'table-rows-emitted-as-records': 11,
     });
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
@@ -329,6 +332,10 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     expect(sourceRegionLedger.summary.proseRegions).toBeGreaterThan(2000);
     expect(sourceRegionLedger.summary.unrepresented).toBe(0);
     expect(sourceRegionLedger.summary.broadStructuralIgnores).toBe(0);
+    expect(sourceRegionLedger.summary.intentionallyIgnored).toEqual({
+      'front-matter': 2,
+      'spell-list-header': 82,
+    });
   });
 
   it('keeps pure structural headings distinct from prose-bearing regions', () => {
@@ -355,7 +362,20 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
       },
       {
         phrase: 'This section describes items that have special rules',
-        classification: 'intentionally-ignored:table-rows-emitted-as-records',
+        classification: 'record:rule:adventuring-gear',
+        regionType: 'group-intro',
+      },
+      {
+        phrase: 'Made from supple and thin materials',
+        classification: 'record:rule:light-armor',
+      },
+      {
+        phrase: 'Medium armor offers more protection',
+        classification: 'record:rule:medium-armor',
+      },
+      {
+        phrase: 'Of all the armor categories',
+        classification: 'record:rule:heavy-armor-category',
       },
       {
         phrase: 'Given their insidious and deadly nature',
@@ -397,6 +417,14 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
         phrase: 'Magic permeates fantasy gaming worlds',
         classification: 'record:rule:spellcasting-chapter',
         regionType: 'chapter-intro',
+      },
+      {
+        phrase: 'You gain oath spells at the paladin levels listed',
+        classification: 'record:rule:oath-of-devotion-oath-spells',
+      },
+      {
+        phrase: 'The Fiend lets you choose from an expanded list of spells',
+        classification: 'record:rule:the-fiend-expanded-spell-list',
       },
     ];
 
@@ -750,7 +778,7 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
     // stat-blocks to their creature records, removing the two false
     // background/class collapse groups (56 -> 54).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(14);
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(15);
     expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(75);
   });
 

@@ -38,6 +38,17 @@ function page(pageNumber: number, lines: string[]): PageText {
   return { pageNumber, lines };
 }
 
+function pageWithHeights(
+  pageNumber: number,
+  rows: readonly (readonly [string, number])[],
+): PageText {
+  return {
+    pageNumber,
+    lines: rows.map(([line]) => line),
+    lineHeights: rows.map(([, height]) => height),
+  };
+}
+
 function byName(
   items: readonly EquipmentExtraction[],
   name: string,
@@ -239,6 +250,48 @@ describe('parseEquipment — armor', () => {
   // descriptive heading but is still light armor.
   it('ignores duplicate prose section headings when classifying weight class', () => {
     expect(byName(items, 'Leather')?.armorType).toBe('light');
+  });
+
+  it('keeps armor description continuations on their original item across intervening table rows', () => {
+    const armorPage = pageWithHeights(63, [
+      ['Armor', 18],
+      ['Armor Cost Armor Class (AC)', 8.88],
+      ['Leather 10 gp 11 + Dex modifier', 8.88],
+      ['Chain Shirt 50 gp 13 + Dex modifier (max 2)', 8.88],
+      ['Strength Stealth Weight', 8.88],
+      ['— — 10 lb.', 8.88],
+      ['— — 20 lb.', 8.88],
+      [
+        'Chain Shirt. Made of interlocking metal rings, a chain shirt is worn between layers of clothing or',
+        9.84,
+      ],
+      ['Armor Class', 8.88],
+      [
+        'leather. This armor offers modest protection to the wearer’s upper body and allows the sound of the',
+        9.84,
+      ],
+      [
+        'rings rubbing against one another to be muffled by outer layers.',
+        9.84,
+      ],
+      [
+        'Leather. The breastplate and shoulder protectors of this armor are made of leather that',
+        9.84,
+      ],
+      [
+        'has been stiffened by being boiled in oil. The rest of the armor is made of softer and more flexible materials.',
+        9.84,
+      ],
+    ]);
+    const parsed = parseEquipment([armorPage]);
+    const chainShirt = byName(parsed, 'Chain Shirt')?.description;
+    const leather = byName(parsed, 'Leather')?.description;
+
+    expect(chainShirt).toContain('worn between layers of clothing or leather');
+    expect(chainShirt).toContain('rings rubbing against one another');
+    expect(chainShirt).not.toMatch(/\bor$/);
+    expect(leather).toContain('The breastplate and shoulder protectors');
+    expect(leather).not.toContain('worn between layers of clothing or leather');
   });
 });
 

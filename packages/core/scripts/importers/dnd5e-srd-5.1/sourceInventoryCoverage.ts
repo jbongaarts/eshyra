@@ -1152,16 +1152,16 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     'feature:paladin:sacred-oath',
     (i) => i.section === 'Paladin' && i.text === 'Oath Spells' && i.page === 32,
   ),
-  // Subclass spell-table HEADINGS: the Oath of Devotion's own "Oath Spells"
-  // (p33) and the Fiend patron's "Expanded Spell List" (p50) head spell tables
-  // that ARE emitted as `table` records and linked from the subclass via
-  // `data.spellTableRefs` (table:oath-of-devotion-spells /
-  // table:fiend-expanded-spells), so the heading's content is represented.
-  ignoreRule(
-    'subclass-spell-table-heading',
-    (i) =>
-      (i.section === 'Paladin' && i.text === 'Oath Spells' && i.page === 33) ||
-      (i.section === 'Warlock' && i.text === 'Expanded Spell List'),
+  // Subclass spell-table intro prose: the table rows are emitted as `table`
+  // records and linked from the subclass, while the one-paragraph prose under
+  // these headings emits as source-bounded rule records.
+  recordRule(
+    'rule:oath-of-devotion-oath-spells',
+    (i) => i.section === 'Paladin' && i.text === 'Oath Spells' && i.page === 33,
+  ),
+  recordRule(
+    'rule:the-fiend-expanded-spell-list',
+    (i) => i.section === 'Warlock' && i.text === 'Expanded Spell List',
   ),
   // The Oath of Devotion's "Tenets of Devotion" heading: its prose (the five
   // tenets) is now represented as a named section on subclass:oath-of-devotion
@@ -1209,10 +1209,19 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       (i.structure === 'table-shape' &&
         i.context === 'Suggested Characteristics'),
   ),
-  // Armor-weight category headings (p63): represented as `armorType` child
-  // data on every armor equipment record.
-  ignoreRule('equipment-category-heading', (i) =>
-    ['Light Armor', 'Medium Armor', 'Heavy Armor'].includes(i.text),
+  // Armor-weight category prose (p63): represented as source-bounded rule
+  // records separate from the individual armor equipment records.
+  recordRule(
+    'rule:light-armor',
+    (i) => i.section === 'Equipment' && i.text === 'Light Armor',
+  ),
+  recordRule(
+    'rule:medium-armor',
+    (i) => i.section === 'Equipment' && i.text === 'Medium Armor',
+  ),
+  recordRule(
+    'rule:heavy-armor-category',
+    (i) => i.section === 'Equipment' && i.text === 'Heavy Armor',
   ),
   // Equipment reference tables whose rows ARE the equipment records, plus
   // the column fragments of those same physical tables that surface as
@@ -1240,6 +1249,10 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     'rule:armor-guidance',
     (i) =>
       i.section === 'Equipment' && i.tier === 'section' && i.text === 'Armor',
+  ),
+  recordRule(
+    'rule:adventuring-gear',
+    (i) => i.section === 'Equipment' && i.text === 'Adventuring Gear',
   ),
   recordRule(
     'rule:equipment-packs',

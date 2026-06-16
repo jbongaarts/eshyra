@@ -1,16 +1,13 @@
 {
   "summary": {
-    "entries": 2595,
-    "proseRegions": 2568,
+    "entries": 2655,
+    "proseRegions": 2628,
     "pureStructure": 27,
-    "record": 2029,
+    "record": 2101,
     "childOf": 443,
     "intentionallyIgnored": {
-      "equipment-category-heading": 3,
       "front-matter": 2,
-      "spell-list-header": 82,
-      "subclass-spell-table-heading": 2,
-      "table-rows-emitted-as-records": 7
+      "spell-list-header": 82
     },
     "pureDocumentStructure": 27,
     "unrepresented": 0,
@@ -4748,8 +4745,9 @@
       "firstPhrase": "You gain oath spells at the paladin levels listed.",
       "lastPhrase": "You gain oath spells at the paladin levels listed.",
       "normalizedCharCount": 50,
-      "classification": "intentionally-ignored:subclass-spell-table-heading",
-      "ignoreReason": "subclass-spell-table-heading"
+      "classification": "record:rule:oath-of-devotion-oath-spells",
+      "targetKey": "rule:oath-of-devotion-oath-spells",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p33-l39-prose",
@@ -8134,8 +8132,9 @@
       "firstPhrase": "The Fiend lets you choose from an expanded list of spells when you learn",
       "lastPhrase": "warlock spell. The following spells are added to the warlock spell list for you.",
       "normalizedCharCount": 155,
-      "classification": "intentionally-ignored:subclass-spell-table-heading",
-      "ignoreReason": "subclass-spell-table-heading"
+      "classification": "record:rule:the-fiend-expanded-spell-list",
+      "targetKey": "rule:the-fiend-expanded-spell-list",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p50-l77-prose",
@@ -9526,10 +9525,71 @@
       "sourceContext": "Light Armor",
       "regionType": "group-intro",
       "firstPhrase": "Made from supple and thin materials, light armor favors agile adventurers since it offers",
+      "lastPhrase": "modifier to the base number from your armor type to determine your Armor Class.",
+      "normalizedCharCount": 263,
+      "classification": "record:rule:light-armor",
+      "targetKey": "rule:light-armor",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l15-prose-segment-0-1",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 15,
+      "lineEnd": 29,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Light Armor"
+      ],
+      "sourceContext": "Light Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Padded. Padded armor consists of quilted layers of cloth and batting.",
+      "lastPhrase": "Padded. Padded armor consists of quilted layers of cloth and batting.",
+      "normalizedCharCount": 69,
+      "classification": "record:equipment:padded",
+      "targetKey": "equipment:padded",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l15-prose-segment-0-2",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 15,
+      "lineEnd": 29,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Light Armor"
+      ],
+      "sourceContext": "Light Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Leather. The breastplate and shoulder protectors of this armor are made of leather that",
+      "lastPhrase": "oil. The rest of the armor is made of softer and more flexible materials.",
+      "normalizedCharCount": 199,
+      "classification": "record:equipment:leather",
+      "targetKey": "equipment:leather",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l15-prose-segment-0-3",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 15,
+      "lineEnd": 29,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Light Armor"
+      ],
+      "sourceContext": "Light Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Studded Leather. Made from tough but flexible leather, studded leather is reinforced with close-set",
       "lastPhrase": "from tough but flexible leather, studded leather is reinforced with close-set rivets or spikes.",
-      "normalizedCharCount": 651,
-      "classification": "intentionally-ignored:equipment-category-heading",
-      "ignoreReason": "equipment-category-heading"
+      "normalizedCharCount": 117,
+      "classification": "record:equipment:studded-leather",
+      "targetKey": "equipment:studded-leather",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p63-l31-prose",
@@ -9545,10 +9605,51 @@
       "sourceContext": "Medium Armor",
       "regionType": "group-intro",
       "firstPhrase": "Medium armor offers more protection than light armor, but it also impairs movement more.",
+      "lastPhrase": "+2, to the base number from your armor type to determine your Armor Class.",
+      "normalizedCharCount": 238,
+      "classification": "record:rule:medium-armor",
+      "targetKey": "rule:medium-armor",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l31-prose-segment-0-1",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 31,
+      "lineEnd": 44,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Medium Armor"
+      ],
+      "sourceContext": "Medium Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Hide. This crude armor consists of thick furs and pelts. It is commonly worn",
+      "lastPhrase": "folk who lack access to the tools and materials needed to create better armor.",
+      "normalizedCharCount": 202,
+      "classification": "record:equipment:hide",
+      "targetKey": "equipment:hide",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l31-prose-segment-0-2",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 31,
+      "lineEnd": 44,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Medium Armor"
+      ],
+      "sourceContext": "Medium Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Chain Shirt. Made of interlocking metal rings, a chain shirt is worn between layers",
       "lastPhrase": "offers modest protection to the wearer’s upper body and allows the sound of the",
-      "normalizedCharCount": 640,
-      "classification": "intentionally-ignored:equipment-category-heading",
-      "ignoreReason": "equipment-category-heading"
+      "normalizedCharCount": 198,
+      "classification": "record:equipment:chain-shirt",
+      "targetKey": "equipment:chain-shirt",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p63-l49-prose",
@@ -9564,11 +9665,75 @@
       ],
       "sourceContext": "Armor",
       "regionType": "table-preface",
-      "firstPhrase": "rings rubbing against one another to be muffled by outer layers. Scale Mail. This",
+      "firstPhrase": "rings rubbing against one another to be muffled by outer layers.",
+      "lastPhrase": "rings rubbing against one another to be muffled by outer layers.",
+      "normalizedCharCount": 64,
+      "classification": "record:equipment:chain-shirt",
+      "targetKey": "equipment:chain-shirt",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l49-prose-segment-0-1",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 49,
+      "lineEnd": 64,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Medium Armor",
+        "Armor"
+      ],
+      "sourceContext": "Armor",
+      "regionType": "table-preface",
+      "firstPhrase": "Scale Mail. This armor consists of a coat and leggings (and perhaps a separate",
+      "lastPhrase": "pieces of metal, much like the scales of a fish. The suit includes gauntlets.",
+      "normalizedCharCount": 199,
+      "classification": "record:equipment:scale-mail",
+      "targetKey": "equipment:scale-mail",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l49-prose-segment-0-2",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 49,
+      "lineEnd": 64,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Medium Armor",
+        "Armor"
+      ],
+      "sourceContext": "Armor",
+      "regionType": "table-preface",
+      "firstPhrase": "Breastplate. This armor consists of a fitted metal chest piece worn with supple leather.",
+      "lastPhrase": "provides good protection for the wearer’s vital organs while leaving the wearer relatively unencumbered.",
+      "normalizedCharCount": 265,
+      "classification": "record:equipment:breastplate",
+      "targetKey": "equipment:breastplate",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l49-prose-segment-0-3",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 49,
+      "lineEnd": 64,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Medium Armor",
+        "Armor"
+      ],
+      "sourceContext": "Armor",
+      "regionType": "table-preface",
+      "firstPhrase": "Half Plate. Half plate consists of shaped metal plates that cover most of the",
       "lastPhrase": "does not include leg protection beyond simple greaves that are attached with leather straps.",
-      "normalizedCharCount": 719,
-      "classification": "intentionally-ignored:table-rows-emitted-as-records",
-      "ignoreReason": "table-rows-emitted-as-records"
+      "normalizedCharCount": 188,
+      "classification": "record:equipment:half-plate",
+      "targetKey": "equipment:half-plate",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p63-l66-prose",
@@ -9584,10 +9749,91 @@
       "sourceContext": "Heavy Armor",
       "regionType": "group-intro",
       "firstPhrase": "Of all the armor categories, heavy armor offers the best protection. These suits of",
+      "lastPhrase": "Armor Class, but it also doesn’t penalize you if your Dexterity modifier is negative.",
+      "normalizedCharCount": 370,
+      "classification": "record:rule:heavy-armor-category",
+      "targetKey": "rule:heavy-armor-category",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l66-prose-segment-0-1",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 66,
+      "lineEnd": 93,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Heavy Armor"
+      ],
+      "sourceContext": "Heavy Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Ring Mail. This armor is leather armor with heavy rings sewn into it. The",
+      "lastPhrase": "chain mail, and it's usually worn only by those who can’t afford better armor.",
+      "normalizedCharCount": 244,
+      "classification": "record:equipment:ring-mail",
+      "targetKey": "equipment:ring-mail",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l66-prose-segment-0-2",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 66,
+      "lineEnd": 93,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Heavy Armor"
+      ],
+      "sourceContext": "Heavy Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Chain Mail. Made of interlocking metal rings, chain mail includes a layer of quilted",
+      "lastPhrase": "to prevent chafing and to cushion the impact of blows. The suit includes gauntlets.",
+      "normalizedCharCount": 200,
+      "classification": "record:equipment:chain-mail",
+      "targetKey": "equipment:chain-mail",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l66-prose-segment-0-3",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 66,
+      "lineEnd": 93,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Heavy Armor"
+      ],
+      "sourceContext": "Heavy Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Splint. This armor is made of narrow vertical strips of metal riveted to a",
+      "lastPhrase": "of leather that is worn over cloth padding. Flexible chain mail protects the joints.",
+      "normalizedCharCount": 167,
+      "classification": "record:equipment:splint",
+      "targetKey": "equipment:splint",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p63-l66-prose-segment-0-4",
+      "pageStart": 63,
+      "pageEnd": 63,
+      "lineStart": 66,
+      "lineEnd": 93,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Heavy Armor"
+      ],
+      "sourceContext": "Heavy Armor",
+      "regionType": "group-intro",
+      "firstPhrase": "Plate. Plate consists of shaped, interlocking metal plates to cover the entire body. A",
       "lastPhrase": "of padding underneath the armor. Buckles and straps distribute the weight over the body.",
-      "normalizedCharCount": 1250,
-      "classification": "intentionally-ignored:equipment-category-heading",
-      "ignoreReason": "equipment-category-heading"
+      "normalizedCharCount": 265,
+      "classification": "record:equipment:plate",
+      "targetKey": "equipment:plate",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p64-l16-prose",
@@ -9785,9 +10031,51 @@
       ],
       "sourceContext": "Special Weapons",
       "regionType": "record-body",
-      "firstPhrase": "Weapons with special rules are described here. Lance. You have disadvantage when you use",
+      "firstPhrase": "Weapons with special rules are described here.",
+      "lastPhrase": "Weapons with special rules are described here.",
+      "normalizedCharCount": 46,
+      "classification": "record:rule:special-weapons",
+      "targetKey": "rule:special-weapons",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p65-l77-prose-segment-0-1",
+      "pageStart": 65,
+      "pageEnd": 65,
+      "lineStart": 77,
+      "lineEnd": 94,
+      "headingPath": [
+        "Equipment",
+        "Weapons",
+        "Weapon Properties",
+        "Special Weapons"
+      ],
+      "sourceContext": "Special Weapons",
+      "regionType": "record-body",
+      "firstPhrase": "Lance. You have disadvantage when you use a lance to attack a target within",
+      "lastPhrase": "of you. Also, a lance requires two hands to wield when you aren’t mounted.",
+      "normalizedCharCount": 157,
+      "classification": "record:rule:special-weapons",
+      "targetKey": "rule:special-weapons",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p65-l77-prose-segment-0-2",
+      "pageStart": 65,
+      "pageEnd": 65,
+      "lineStart": 77,
+      "lineEnd": 94,
+      "headingPath": [
+        "Equipment",
+        "Weapons",
+        "Weapon Properties",
+        "Special Weapons"
+      ],
+      "sourceContext": "Special Weapons",
+      "regionType": "record-body",
+      "firstPhrase": "Net. A Large or smaller creature hit by a net is restrained until it",
       "lastPhrase": "make only one attack regardless of the number of attacks you can normally make.",
-      "normalizedCharCount": 792,
+      "normalizedCharCount": 587,
       "classification": "record:rule:special-weapons",
       "targetKey": "rule:special-weapons",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
@@ -9804,11 +10092,50 @@
       ],
       "sourceContext": "Adventuring Gear",
       "regionType": "group-intro",
-      "firstPhrase": "This section describes items that have special rules or require further explanation. Acid. As",
+      "firstPhrase": "This section describes items that have special rules or require further explanation.",
+      "lastPhrase": "This section describes items that have special rules or require further explanation.",
+      "normalizedCharCount": 84,
+      "classification": "record:rule:adventuring-gear",
+      "targetKey": "rule:adventuring-gear",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p66-l41-prose-segment-1-0",
+      "pageStart": 66,
+      "pageEnd": 66,
+      "lineStart": 41,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "Adventuring Gear",
+      "regionType": "group-intro",
+      "firstPhrase": "Acid. As an action, you can splash the contents of this vial onto a",
+      "lastPhrase": "acid as an improvised weapon. On a hit, the target takes 2d6 acid damage.",
+      "normalizedCharCount": 309,
+      "classification": "record:equipment:acid-vial",
+      "targetKey": "equipment:acid-vial",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p66-l41-prose-segment-1-1",
+      "pageStart": 66,
+      "pageEnd": 66,
+      "lineStart": 41,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "Adventuring Gear",
+      "regionType": "group-intro",
+      "firstPhrase": "Alchemist’s Fire. This sticky, adhesive fluid ignites when exposed to air. As an action,",
       "lastPhrase": "can throw this flask up to 20 feet, shattering it on impact. Make a",
-      "normalizedCharCount": 555,
-      "classification": "intentionally-ignored:table-rows-emitted-as-records",
-      "ignoreReason": "table-rows-emitted-as-records"
+      "normalizedCharCount": 160,
+      "classification": "record:equipment:alchemists-fire-flask",
+      "targetKey": "equipment:alchemists-fire-flask",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p66-l89-prose",
@@ -9823,10 +10150,49 @@
       "sourceContext": "2 lb. Light",
       "regionType": "record-body",
       "firstPhrase": "ranged attack against a creature or object, treating the alchemist's fire as an improvised",
+      "lastPhrase": "using its action to make a DC 10 Dexterity check to extinguish the flames.",
+      "normalizedCharCount": 285,
+      "classification": "record:equipment:alchemists-fire-flask",
+      "targetKey": "equipment:alchemists-fire-flask",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p66-l89-prose-segment-0-1",
+      "pageStart": 66,
+      "pageEnd": 66,
+      "lineStart": 89,
+      "lineEnd": 101,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Antitoxin. A creature that drinks this vial of liquid gains advantage on saving throws",
+      "lastPhrase": "throws against poison for 1 hour. It confers no benefit to undead or constructs.",
+      "normalizedCharCount": 160,
+      "classification": "record:equipment:antitoxin-vial",
+      "targetKey": "equipment:antitoxin-vial",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p66-l89-prose-segment-0-2",
+      "pageStart": 66,
+      "pageEnd": 66,
+      "lineStart": 89,
+      "lineEnd": 101,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a",
       "lastPhrase": "wood, or some similar item— designed to channel the power of arcane spells. A",
-      "normalizedCharCount": 652,
-      "classification": "intentionally-ignored:table-rows-emitted-as-records",
-      "ignoreReason": "table-rows-emitted-as-records"
+      "normalizedCharCount": 205,
+      "classification": "record:equipment:crystal",
+      "targetKey": "equipment:crystal",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p67-l0-prose",
@@ -9840,11 +10206,221 @@
       ],
       "sourceContext": "2 lb. Light",
       "regionType": "record-body",
-      "firstPhrase": "sorcerer, warlock, or wizard can use such an item as a spellcasting focus. Ball",
+      "firstPhrase": "sorcerer, warlock, or wizard can use such an item as a spellcasting focus.",
+      "lastPhrase": "sorcerer, warlock, or wizard can use such an item as a spellcasting focus.",
+      "normalizedCharCount": 74,
+      "classification": "record:equipment:crystal",
+      "targetKey": "equipment:crystal",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-1",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Ball Bearings. As an action, you can spill these tiny metal balls from their",
+      "lastPhrase": "creature moving through the area at half speed doesn’t need to make the save.",
+      "normalizedCharCount": 323,
+      "classification": "record:equipment:ball-bearings-bag-of-1-000",
+      "targetKey": "equipment:ball-bearings-bag-of-1-000",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-10",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Component Pouch. A component pouch is a small, watertight leather belt pouch that has",
+      "lastPhrase": "for those components that have a specific cost (as indicated in a spell's description).",
+      "normalizedCharCount": 283,
+      "classification": "record:equipment:component-pouch",
+      "targetKey": "equipment:component-pouch",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-11",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Crowbar. Using a crowbar grants advantage to Strength checks where the crowbar’s leverage can",
       "lastPhrase": "a crowbar grants advantage to Strength checks where the crowbar’s leverage can be applied.",
-      "normalizedCharCount": 2452,
-      "classification": "intentionally-ignored:table-rows-emitted-as-records",
-      "ignoreReason": "table-rows-emitted-as-records"
+      "normalizedCharCount": 105,
+      "classification": "record:equipment:crowbar",
+      "targetKey": "equipment:crowbar",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-2",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Block and Tackle. A set of pulleys with a cable threaded through them and",
+      "lastPhrase": "allows you to hoist up to four times the weight you can normally lift.",
+      "normalizedCharCount": 192,
+      "classification": "record:equipment:block-and-tackle",
+      "targetKey": "equipment:block-and-tackle",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-3",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Book. A book might contain poetry, historical accounts, information pertaining to a particular field",
+      "lastPhrase": "or pictures. A book of spells is a spellbook (described later in this section).",
+      "normalizedCharCount": 296,
+      "classification": "record:equipment:book",
+      "targetKey": "equipment:book",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-4",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Caltrops. As an action, you can spread a bag of caltrops to cover a",
+      "lastPhrase": "creature moving through the area at half speed doesn’t need to make the save.",
+      "normalizedCharCount": 435,
+      "classification": "record:equipment:caltrops-bag-of-20",
+      "targetKey": "equipment:caltrops-bag-of-20",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-5",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Candle. For 1 hour, a candle sheds bright light in a 5-foot radius and",
+      "lastPhrase": "bright light in a 5-foot radius and dim light for an additional 5 feet.",
+      "normalizedCharCount": 106,
+      "classification": "record:equipment:candle",
+      "targetKey": "equipment:candle",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-6",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Case, Crossbow Bolt. This wooden case can hold up to twenty crossbow bolts.",
+      "lastPhrase": "Case, Crossbow Bolt. This wooden case can hold up to twenty crossbow bolts.",
+      "normalizedCharCount": 75,
+      "classification": "record:equipment:case-crossbow-bolt",
+      "targetKey": "equipment:case-crossbow-bolt",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-7",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Case, Map or Scroll. This cylindrical leather case can hold up to ten rolled-up",
+      "lastPhrase": "hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment.",
+      "normalizedCharCount": 134,
+      "classification": "record:equipment:case-map-or-scroll",
+      "targetKey": "equipment:case-map-or-scroll",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-8",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Chain. A chain has 10 hit points. It can be burst with a successful",
+      "lastPhrase": "10 hit points. It can be burst with a successful DC 20 Strength check.",
+      "normalizedCharCount": 89,
+      "classification": "record:equipment:chain-10-feet",
+      "targetKey": "equipment:chain-10-feet",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l0-prose-segment-0-9",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Climber’s Kit. A climber’s kit includes special pitons, boot tips, gloves, and a harness.",
+      "lastPhrase": "can’t climb more than 25 feet away from that point without undoing the anchor.",
+      "normalizedCharCount": 329,
+      "classification": "record:equipment:climbers-kit",
+      "targetKey": "equipment:climbers-kit",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p67-l53-prose",
@@ -9859,10 +10435,106 @@
       "sourceContext": "2 lb. Light",
       "regionType": "record-body",
       "firstPhrase": "Druidic Focus. A druidic focus might be a sprig of mistletoe or holly, a",
+      "lastPhrase": "from sacred animals. A druid can use such an object as a spellcasting focus.",
+      "normalizedCharCount": 308,
+      "classification": "record:equipment:sprig-of-mistletoe",
+      "targetKey": "equipment:sprig-of-mistletoe",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l53-prose-segment-0-1",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 53,
+      "lineEnd": 103,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Fishing Tackle. This kit includes a wooden rod, silken line, corkwood bobbers, steel hooks,",
+      "lastPhrase": "rod, silken line, corkwood bobbers, steel hooks, lead sinkers, velvet lures, and narrow netting.",
+      "normalizedCharCount": 139,
+      "classification": "record:equipment:fishing-tackle",
+      "targetKey": "equipment:fishing-tackle",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l53-prose-segment-0-2",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 53,
+      "lineEnd": 103,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Healer’s Kit. This kit is a leather pouch containing bandages, salves, and splints. The",
+      "lastPhrase": "creature that has 0 hit points, without needing to make a Wisdom (Medicine) check.",
+      "normalizedCharCount": 251,
+      "classification": "record:equipment:healers-kit",
+      "targetKey": "equipment:healers-kit",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l53-prose-segment-0-3",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 53,
+      "lineEnd": 103,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Holy Symbol. A holy symbol is a representation of a god or pantheon. It",
+      "lastPhrase": "must hold it in hand, wear it visibly, or bear it on a shield.",
+      "normalizedCharCount": 543,
+      "classification": "record:equipment:amulet",
+      "targetKey": "equipment:amulet",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l53-prose-segment-0-4",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 53,
+      "lineEnd": 103,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Holy Water. As an action, you can splash the contents of this flask onto",
+      "lastPhrase": "worth of powdered silver, and requires the caster to expend a 1st-level spell slot.",
+      "normalizedCharCount": 539,
+      "classification": "record:equipment:holy-water-flask",
+      "targetKey": "equipment:holy-water-flask",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p67-l53-prose-segment-0-5",
+      "pageStart": 67,
+      "pageEnd": 67,
+      "lineStart": 53,
+      "lineEnd": 103,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Hunting Trap. When you use your action to set it, this trap forms a",
       "lastPhrase": "on a success. Each failed check deals 1 piercing damage to the trapped creature.",
-      "normalizedCharCount": 2512,
-      "classification": "intentionally-ignored:table-rows-emitted-as-records",
-      "ignoreReason": "table-rows-emitted-as-records"
+      "normalizedCharCount": 727,
+      "classification": "record:equipment:hunting-trap",
+      "targetKey": "equipment:hunting-trap",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p68-l0-prose",
@@ -9877,10 +10549,144 @@
       "sourceContext": "2 lb. Light",
       "regionType": "record-body",
       "firstPhrase": "Lamp. A lamp casts bright light in a 15-foot radius and dim light for",
+      "lastPhrase": "Once lit, it burns for 6 hours on a flask (1 pint) of oil.",
+      "normalizedCharCount": 151,
+      "classification": "record:equipment:lamp",
+      "targetKey": "equipment:lamp",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l0-prose-segment-0-1",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Lantern, Bullseye. A bullseye lantern casts bright light in a 60-foot cone and dim",
+      "lastPhrase": "Once lit, it burns for 6 hours on a flask (1 pint) of oil.",
+      "normalizedCharCount": 174,
+      "classification": "record:equipment:lantern-bullseye",
+      "targetKey": "equipment:lantern-bullseye",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l0-prose-segment-0-2",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Lantern, Hooded. A hooded lantern casts bright light in a 30-foot radius and dim",
+      "lastPhrase": "can lower the hood, reducing the light to dim light in a 5-foot radius.",
+      "normalizedCharCount": 262,
+      "classification": "record:equipment:lantern-hooded",
+      "targetKey": "equipment:lantern-hooded",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l0-prose-segment-0-3",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Lock. A key is provided with the lock. Without the key, a creature proficient",
+      "lastPhrase": "Dexterity check. Your GM may decide that better locks are available for higher prices.",
+      "normalizedCharCount": 227,
+      "classification": "record:equipment:lock",
+      "targetKey": "equipment:lock",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l0-prose-segment-0-4",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Magnifying Glass. This lens allows a closer look at small objects. It is also",
+      "lastPhrase": "check made to appraise or inspect an item that is small or highly detailed.",
+      "normalizedCharCount": 417,
+      "classification": "record:equipment:magnifying-glass",
+      "targetKey": "equipment:magnifying-glass",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l0-prose-segment-0-5",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Manacles. These metal restraints can bind a Small or Medium creature. Escaping the manacles",
+      "lastPhrase": "manacles’ lock with a successful DC 15 Dexterity check. Manacles have 15 hit points.",
+      "normalizedCharCount": 392,
+      "classification": "record:equipment:manacles",
+      "targetKey": "equipment:manacles",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l0-prose-segment-0-6",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Mess Kit. This tin box contains a cup and simple cutlery. The box clamps",
+      "lastPhrase": "used as a cooking pan and the other as a plate or shallow bowl.",
+      "normalizedCharCount": 166,
+      "classification": "record:equipment:mess-kit",
+      "targetKey": "equipment:mess-kit",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l0-prose-segment-0-7",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 0,
+      "lineEnd": 52,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Oil. Oil usually comes in a clay flask that holds 1 pint. As an",
       "lastPhrase": "turn in the area. A creature can take this damage only once per turn.",
-      "normalizedCharCount": 2567,
-      "classification": "intentionally-ignored:table-rows-emitted-as-records",
-      "ignoreReason": "table-rows-emitted-as-records"
+      "normalizedCharCount": 771,
+      "classification": "record:equipment:oil-flask",
+      "targetKey": "equipment:oil-flask",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p68-l53-prose",
@@ -9895,10 +10701,239 @@
       "sourceContext": "2 lb. Light",
       "regionType": "record-body",
       "firstPhrase": "Poison, Basic. You can use the poison in this vial to coat one slashing",
+      "lastPhrase": "1d4 poison damage. Once applied, the poison retains potency for 1 minute before drying.",
+      "normalizedCharCount": 356,
+      "classification": "record:equipment:poison-basic-vial",
+      "targetKey": "equipment:poison-basic-vial",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-1",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Potion of Healing. A character who drinks the magical red fluid in this vial",
+      "lastPhrase": "regains 2d4 + 2 hit points. Drinking or administering a potion takes an action.",
+      "normalizedCharCount": 156,
+      "classification": "record:equipment:potion-of-healing",
+      "targetKey": "equipment:potion-of-healing",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-10",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Tent. A simple and portable canvas shelter, a tent sleeps two.",
+      "lastPhrase": "Tent. A simple and portable canvas shelter, a tent sleeps two.",
+      "normalizedCharCount": 62,
+      "classification": "record:equipment:tent-two-person",
+      "targetKey": "equipment:tent-two-person",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-11",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Tinderbox. This small container holds flint, fire steel, and tinder (usually dry cloth soaked",
+      "lastPhrase": "else with abundant, exposed fuel—takes an action. Lighting any other fire takes 1 minute.",
+      "normalizedCharCount": 258,
+      "classification": "record:equipment:tinderbox",
+      "targetKey": "equipment:tinderbox",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-12",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Torch. A torch burns for 1 hour, providing bright light in a 20-foot radius",
       "lastPhrase": "a melee attack with a burning torch and hit, it deals 1 fire damage.",
-      "normalizedCharCount": 2184,
-      "classification": "intentionally-ignored:table-rows-emitted-as-records",
-      "ignoreReason": "table-rows-emitted-as-records"
+      "normalizedCharCount": 197,
+      "classification": "record:equipment:torch",
+      "targetKey": "equipment:torch",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-2",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Pouch. A cloth or leather pouch can hold up to 20 sling bullets or",
+      "lastPhrase": "for holding spell components is called a component pouch (described earlier in this section).",
+      "normalizedCharCount": 226,
+      "classification": "record:equipment:pouch",
+      "targetKey": "equipment:pouch",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-3",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Quiver. A quiver can hold up to 20 arrows.",
+      "lastPhrase": "Quiver. A quiver can hold up to 20 arrows.",
+      "normalizedCharCount": 42,
+      "classification": "record:equipment:quiver",
+      "targetKey": "equipment:quiver",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-4",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Ram, Portable. You can use a portable ram to break down doors. When doing",
+      "lastPhrase": "other character can help you use the ram, giving you advantage on this check.",
+      "normalizedCharCount": 202,
+      "classification": "record:equipment:ram-portable",
+      "targetKey": "equipment:ram-portable",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-5",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Rations. Rations consist of dry foods suitable for extended travel, including jerky, dried fruit,",
+      "lastPhrase": "of dry foods suitable for extended travel, including jerky, dried fruit, hardtack, and nuts.",
+      "normalizedCharCount": 117,
+      "classification": "record:equipment:rations-1-day",
+      "targetKey": "equipment:rations-1-day",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-6",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Rope. Rope, whether made of hemp or silk, has 2 hit points and can",
+      "lastPhrase": "has 2 hit points and can be burst with a DC 17 Strength check.",
+      "normalizedCharCount": 104,
+      "classification": "record:equipment:rope-hempen-50-feet",
+      "targetKey": "equipment:rope-hempen-50-feet",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-7",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Scale, Merchant’s. A scale includes a small balance, pans, and a suitable assortment of",
+      "lastPhrase": "objects, such as raw precious metals or trade goods, to help determine their worth.",
+      "normalizedCharCount": 246,
+      "classification": "record:equipment:scale-merchants",
+      "targetKey": "equipment:scale-merchants",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-8",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Spellbook. Essential for wizards, a spellbook is a leather-bound tome with 100 blank vellum",
+      "lastPhrase": "spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells.",
+      "normalizedCharCount": 128,
+      "classification": "record:equipment:spellbook",
+      "targetKey": "equipment:spellbook",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p68-l53-prose-segment-0-9",
+      "pageStart": 68,
+      "pageEnd": 68,
+      "lineStart": 53,
+      "lineEnd": 102,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "2 lb. Light",
+      "regionType": "record-body",
+      "firstPhrase": "Spyglass. Objects viewed through a spyglass are magnified to twice their size.",
+      "lastPhrase": "Spyglass. Objects viewed through a spyglass are magnified to twice their size.",
+      "normalizedCharCount": 78,
+      "classification": "record:equipment:spyglass",
+      "targetKey": "equipment:spyglass",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p70-l43-prose",
@@ -9954,8 +10989,9 @@
       "firstPhrase": "Artisan’s Tools. These special tools include the items needed to pursue a craft or",
       "lastPhrase": "the tools in your craft. Each type of artisan’s tools requires a separate proficiency.",
       "normalizedCharCount": 399,
-      "classification": "record:rule:tools",
-      "targetKey": "rule:tools"
+      "classification": "record:equipment:alchemists-supplies",
+      "targetKey": "equipment:alchemists-supplies",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p71-l0-prose",
@@ -9971,10 +11007,151 @@
       "sourceContext": "Tools",
       "regionType": "table-preface",
       "firstPhrase": "Disguise Kit. This pouch of cosmetics, hair dye, and small props lets you create",
+      "lastPhrase": "your proficiency bonus to any ability checks you make to create a visual disguise.",
+      "normalizedCharCount": 250,
+      "classification": "record:equipment:disguise-kit",
+      "targetKey": "equipment:disguise-kit",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p71-l0-prose-segment-0-1",
+      "pageStart": 71,
+      "pageEnd": 71,
+      "lineStart": 0,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Tools",
+        "Tools"
+      ],
+      "sourceContext": "Tools",
+      "regionType": "table-preface",
+      "firstPhrase": "Forgery Kit. This small box contains a variety of papers and parchments, pens and",
+      "lastPhrase": "to any ability checks you make to create a physical forgery of a document.",
+      "normalizedCharCount": 352,
+      "classification": "record:equipment:forgery-kit",
+      "targetKey": "equipment:forgery-kit",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p71-l0-prose-segment-0-2",
+      "pageStart": 71,
+      "pageEnd": 71,
+      "lineStart": 0,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Tools",
+        "Tools"
+      ],
+      "sourceContext": "Tools",
+      "regionType": "table-preface",
+      "firstPhrase": "Gaming Set. This item encompasses a wide range of game pieces, including dice and",
+      "lastPhrase": "a game with that set. Each type of gaming set requires a separate proficiency.",
+      "normalizedCharCount": 412,
+      "classification": "record:equipment:dice-set",
+      "targetKey": "equipment:dice-set",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p71-l0-prose-segment-0-3",
+      "pageStart": 71,
+      "pageEnd": 71,
+      "lineStart": 0,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Tools",
+        "Tools"
+      ],
+      "sourceContext": "Tools",
+      "regionType": "table-preface",
+      "firstPhrase": "Herbalism Kit. This kit contains a variety of instruments such as clippers, mortar and",
+      "lastPhrase": "Also, proficiency with this kit is required to create antitoxin and potions of healing.",
+      "normalizedCharCount": 376,
+      "classification": "record:equipment:herbalism-kit",
+      "targetKey": "equipment:herbalism-kit",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p71-l0-prose-segment-0-4",
+      "pageStart": 71,
+      "pageEnd": 71,
+      "lineStart": 0,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Tools",
+        "Tools"
+      ],
+      "sourceContext": "Tools",
+      "regionType": "table-preface",
+      "firstPhrase": "Musical Instrument. Several of the most common types of musical instruments are shown on",
+      "lastPhrase": "instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency.",
+      "normalizedCharCount": 395,
+      "classification": "record:equipment:bagpipes",
+      "targetKey": "equipment:bagpipes",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p71-l0-prose-segment-0-5",
+      "pageStart": 71,
+      "pageEnd": 71,
+      "lineStart": 0,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Tools",
+        "Tools"
+      ],
+      "sourceContext": "Tools",
+      "regionType": "table-preface",
+      "firstPhrase": "Navigator’s Tools. This set of instruments is used for navigation at sea. Proficiency with",
+      "lastPhrase": "proficiency bonus to any ability check you make to avoid getting lost at sea.",
+      "normalizedCharCount": 294,
+      "classification": "record:equipment:navigators-tools",
+      "targetKey": "equipment:navigators-tools",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p71-l0-prose-segment-0-6",
+      "pageStart": 71,
+      "pageEnd": 71,
+      "lineStart": 0,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Tools",
+        "Tools"
+      ],
+      "sourceContext": "Tools",
+      "regionType": "table-preface",
+      "firstPhrase": "Poisoner’s Kit. A poisoner’s kit includes the vials, chemicals, and other equipment necessary for",
+      "lastPhrase": "your proficiency bonus to any ability checks you make to craft or use poisons.",
+      "normalizedCharCount": 240,
+      "classification": "record:equipment:poisoners-kit",
+      "targetKey": "equipment:poisoners-kit",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p71-l0-prose-segment-0-7",
+      "pageStart": 71,
+      "pageEnd": 71,
+      "lineStart": 0,
+      "lineEnd": 51,
+      "headingPath": [
+        "Equipment",
+        "Tools",
+        "Tools"
+      ],
+      "sourceContext": "Tools",
+      "regionType": "table-preface",
+      "firstPhrase": "Thieves’ Tools. This set of tools includes a small file, a set of lock",
       "lastPhrase": "of narrow-bladed scissors, and a pair of pliers. Proficiency with these tools lets you",
-      "normalizedCharCount": 2538,
-      "classification": "record:rule:tools",
-      "targetKey": "rule:tools"
+      "normalizedCharCount": 212,
+      "classification": "record:equipment:thieves-tools",
+      "targetKey": "equipment:thieves-tools",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p71-l52-prose",
@@ -41178,8 +42355,9 @@
       "firstPhrase": "Languages. The half-dragon speaks Draconic in addition to any other languages it knows. New",
       "lastPhrase": "weapon of its dragon half. The half- dragon’s size determines how this action functions.",
       "normalizedCharCount": 234,
-      "classification": "record:table:half-dragon-damage-resistance",
-      "targetKey": "table:half-dragon-damage-resistance"
+      "classification": "record:rule:half-dragon-template",
+      "targetKey": "rule:half-dragon-template",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p321-l15-prose",

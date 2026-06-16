@@ -248,4 +248,77 @@ describe('buildSourceRegionLedger', () => {
       SourceRegionLedgerError,
     );
   });
+
+  it('fails when prose is hidden behind table-row or group-heading ignore reasons that require representation', () => {
+    const gear = item({
+      text: 'Adventuring Gear',
+      lineIndex: 0,
+      section: 'Equipment',
+    });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Adventuring Gear',
+            'This section describes items that have special rules.',
+          ],
+          [18, 9.8],
+        ),
+      ],
+      [
+        coverage(gear, {
+          kind: 'ignored',
+          reason: 'table-rows-emitted-as-records',
+        }),
+      ],
+      [],
+    );
+
+    expect(ledger.summary.unrepresented).toBe(1);
+    expect(ledger.entries[0]).toMatchObject({
+      classification: 'unrepresented',
+      ignoreReason: 'table-rows-emitted-as-records',
+    });
+    expect(() => assertSourceRegionLedger(ledger)).toThrow(
+      SourceRegionLedgerError,
+    );
+  });
+
+  it('splits equipment intro prose from following item descriptions so both need concrete records', () => {
+    const gear = item({
+      text: 'Adventuring Gear',
+      lineIndex: 0,
+      section: 'Equipment',
+    });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Adventuring Gear',
+            'This section describes items that have special rules or require further explanation. Acid. As an action, you can splash it.',
+          ],
+          [18, 9.8],
+        ),
+      ],
+      [coverage(gear, { kind: 'record', key: 'rule:adventuring-gear' })],
+      [
+        record(
+          'rule:adventuring-gear',
+          'Adventuring Gear',
+          'This section describes items that have special rules or require further explanation.',
+        ),
+        {
+          kind: 'equipment',
+          key: 'equipment:acid-vial',
+          name: 'Acid (vial)',
+          data: { description: 'Acid. As an action, you can splash it.' },
+        },
+      ],
+    );
+
+    expect(ledger.entries.map((entry) => entry.classification)).toEqual([
+      'record:rule:adventuring-gear',
+      'record:equipment:acid-vial',
+    ]);
+  });
 });

@@ -70,7 +70,7 @@ import { parseMiscellaneousCreaturesIntro } from './parseMiscellaneousCreaturesI
 import { parseMulticlassing } from './parseMulticlassing.js';
 import { parsePoisons } from './parsePoisons.js';
 import { parseRules, removeTableCellLines } from './parseRules.js';
-import { parseSectionIntro } from './parseSectionIntro.js';
+import { parseSectionIntro, reflowProse } from './parseSectionIntro.js';
 import { parseSelfSufficiency } from './parseSelfSufficiency.js';
 import { parseSpellcastingServices } from './parseSpellcastingServices.js';
 import {
@@ -1138,12 +1138,16 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:spellcasting-services',
   // Equipment chapter, expenses, diseases, and poisons prose (eshyra-7qit).
   'rule:armor-guidance',
+  'rule:adventuring-gear',
   'rule:coinage',
   'rule:diseases',
   'rule:equipment-packs',
   'rule:expenses',
   'rule:expenses-lifestyle-expenses',
   'rule:food-drink-and-lodging',
+  'rule:heavy-armor-category',
+  'rule:light-armor',
+  'rule:medium-armor',
   'rule:mounts-and-vehicles',
   'rule:poisons',
   'rule:sample-diseases',
@@ -1394,6 +1398,9 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:sorcerous-origins',
   'rule:otherworldly-patrons',
   'rule:arcane-traditions',
+  // Subclass spell-table intro prose that is not part of the table rows.
+  'rule:oath-of-devotion-oath-spells',
+  'rule:the-fiend-expanded-spell-list',
 ];
 
 export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel[] =
@@ -1433,6 +1440,35 @@ export const EXPECTED_SRD_5_1_RECORD_TEXT_SENTINELS: readonly RecordTextSentinel
     {
       recordKey: 'rule:spellcasting-chapter',
       phrase: 'Magic permeates fantasy gaming worlds',
+    },
+    {
+      recordKey: 'rule:light-armor',
+      phrase: 'If you wear light armor, you add your Dexterity modifier',
+    },
+    {
+      recordKey: 'rule:medium-armor',
+      phrase: 'to a maximum of +2',
+    },
+    {
+      recordKey: 'rule:heavy-armor-category',
+      phrase: 'Heavy armor doesn’t let you add your Dexterity modifier',
+    },
+    {
+      recordKey: 'rule:adventuring-gear',
+      phrase:
+        'This section describes items that have special rules or require further explanation',
+    },
+    {
+      recordKey: 'rule:oath-of-devotion-oath-spells',
+      phrase: 'You gain oath spells at the paladin levels listed',
+    },
+    {
+      recordKey: 'rule:the-fiend-expanded-spell-list',
+      phrase: 'The Fiend lets you choose from an expanded list of spells',
+    },
+    {
+      recordKey: 'rule:the-fiend-expanded-spell-list',
+      phrase: 'added to the warlock spell list for you',
     },
     // Chapter/appendix and subclass-category intro prose recovered from
     // header-less slice leads (eshyra-g9im / eshyra-i2v4). These phrases sit in
@@ -3243,6 +3279,18 @@ export async function runImporter(
   // `ignored:document-structure`. The subclass entries themselves stay
   // `subclass`/`feature` records; the overview never absorbs the first entry.
   const subclassOverviewRules = parseSubclassOverviews(classPages);
+  const oathOfDevotionOathSpellsRule = parseBodyAfterHeading(classPages, {
+    name: 'Oath of Devotion Oath Spells',
+    keySlug: 'oath-of-devotion-oath-spells',
+    page: 33,
+    heading: /^Oath Spells$/,
+  });
+  const fiendExpandedSpellListRule = parseBodyAfterHeading(classPages, {
+    name: 'The Fiend Expanded Spell List',
+    keySlug: 'the-fiend-expanded-spell-list',
+    page: 50,
+    heading: /^Expanded Spell List$/,
+  });
   const rules = [
     ...(usingAbilityScoresIntroRule === undefined
       ? []
@@ -3253,6 +3301,12 @@ export async function runImporter(
       ? []
       : [nonplayerCharactersIntroRule]),
     ...subclassOverviewRules,
+    ...(oathOfDevotionOathSpellsRule === undefined
+      ? []
+      : [oathOfDevotionOathSpellsRule]),
+    ...(fiendExpandedSpellListRule === undefined
+      ? []
+      : [fiendExpandedSpellListRule]),
     ...rulesBeforeUnrepresentedProse,
     ...racialTraitRules,
     ...armorGuidanceRules,
@@ -3541,4 +3595,43 @@ function truncateBeforeFirst(
   }
   if (missingBoundary === 'empty') return [];
   throw new SectionNotFoundError('end', pattern);
+}
+
+function parseBodyAfterHeading(
+  pages: readonly import('./types.js').PageText[],
+  options: {
+    readonly name: string;
+    readonly keySlug: string;
+    readonly page: number;
+    readonly heading: RegExp;
+  },
+): import('./types.js').RuleExtraction | undefined {
+  const lines = pages.flatMap((page) =>
+    page.lines.map((line, lineIndex) => ({
+      line: line.trim(),
+      page: page.pageNumber,
+      height: page.lineHeights?.[lineIndex],
+    })),
+  );
+  const headingIndex = lines.findIndex(
+    ({ line, page }) => page === options.page && options.heading.test(line),
+  );
+  if (headingIndex < 0) return undefined;
+  const bodyLines: string[] = [];
+  let sourcePage: number | undefined;
+  for (const entry of lines.slice(headingIndex + 1)) {
+    if (entry.line.length === 0) continue;
+    if (entry.height !== undefined && entry.height >= 11.5) break;
+    if (entry.height !== undefined && entry.height < 9.3) break;
+    if (sourcePage === undefined) sourcePage = entry.page;
+    bodyLines.push(entry.line);
+  }
+  const text = reflowProse(bodyLines);
+  if (text.length === 0 || sourcePage === undefined) return undefined;
+  return {
+    name: options.name,
+    keySlug: options.keySlug,
+    text,
+    sourcePage,
+  };
 }
