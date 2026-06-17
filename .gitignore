@@ -14,6 +14,10 @@ dist/
 *.tsbuildinfo
 .env
 
+# GitHub Release CLI artifact output (built by scripts/release/*, never committed)
+dist-release/
+.release-stage/
+
 # Windows/Cygwin crash dumps
 *.stackdump
 
