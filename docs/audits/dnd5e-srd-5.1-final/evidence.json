@@ -1,0 +1,222 @@
+{
+  "auditName": "D&D 5e SRD 5.1 final importer audit",
+  "verdict": "FREEZE / SIGN OFF",
+  "repoCommit": "0f5b3dcce1de96630e01532d138b1286c948b668",
+  "srdContentCommit": "67648aaca3e43d4cb742f412f313c4feb7ee848e",
+  "auditDate": "2026-06-17",
+  "auditBundlePath": ".audit-bundles/dnd5e-srd-audit-bundle",
+  "auditBundleCommittedToGit": false,
+  "sourcePdf": {
+    "path": "packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf",
+    "sha256": "2504d2a0abb0a4d491a939be4f17910a2dde0312570ab8d208080225ccf0a1f0",
+    "sizeBytes": 3158713,
+    "pages": 403,
+    "license": "CC-BY-4.0",
+    "hashMatchesManifest": true
+  },
+  "artifactSha256": {
+    "records.json": "497359e59e2e49722f6469ae323c5c12f917acdbf1c3550d782b4db1e7fde8bb",
+    "manifest.json": "42a6081e35d4da711da48641e4041fe7eec3ff1c363736cc1c7c784feb5570b8",
+    "source-inventory.json": "48134b09cb7626aeff5f3c51659f5856ea7f8dbc0021702db1e866e76c3707f2",
+    "source-coverage.json": "ead5779a66054b2647d947155c50136e406af145a62499e2f47863691e4c427f",
+    "source-region-ledger.json": "7baf47c2fe3456e0e095b0bc70765ce6916574b8ef1398f38036af43d89d4540"
+  },
+  "recordCounts": {
+    "total": 1811,
+    "byKind": {
+      "action": 10,
+      "ancestry": 13,
+      "background": 1,
+      "class": 12,
+      "condition": 15,
+      "creature": 317,
+      "equipment": 218,
+      "feat": 1,
+      "feature": 183,
+      "hazard": 25,
+      "magic-item": 240,
+      "rule": 335,
+      "spell": 319,
+      "stat-block": 2,
+      "subclass": 12,
+      "table": 108
+    },
+    "derived": {
+      "creatureMonsters": 296,
+      "creatureNpcs": 21,
+      "hazardTraps": 8,
+      "hazardPoisons": 14,
+      "hazardDiseases": 3,
+      "statBlocksInline": ["Avatar of Death", "Giant Fly"],
+      "creaturesWithLegendaryActions": 30,
+      "creaturesWithVariants": 2,
+      "magicItemsRequiringAttunement": 125,
+      "tablesTotalRows": 1077
+    }
+  },
+  "sourceCoverage": {
+    "inventoryItems": 2258,
+    "record": 1452,
+    "childOf": 456,
+    "ambiguous": 187,
+    "taxonomy": 33,
+    "ignored": 130,
+    "unaccounted": 0,
+    "knownGap": 0
+  },
+  "sourceRegionLedger": {
+    "entries": 2655,
+    "proseRegions": 2628,
+    "record": 2101,
+    "childOf": 443,
+    "intentionallyIgnored": {
+      "front-matter": 2,
+      "spell-list-header": 82
+    },
+    "pureStructure": 27,
+    "unrepresented": 0,
+    "broadStructuralIgnores": 0
+  },
+  "bundleThresholds": {
+    "bundleCommitMatchesHead": true,
+    "sourceHashMatch": true,
+    "srdStructureAuditFindings": 0,
+    "suspiciousRecords": 0,
+    "unicodeScanFindings": 0,
+    "partialFieldGroups": 54,
+    "partialFieldGroupsAreBenignOptionalSchemaFields": true
+  },
+  "spellListBidirectionalCheck": {
+    "method": "independent column-aware reconstruction of class spell lists from PDF coordinate items (pp.105-113), cross-checked against pack spell.classes + spell.level",
+    "pdfReferencesChecked": 778,
+    "recordMembershipPairs": 778,
+    "distinctSpellsOnLists": 319,
+    "spellRecords": 319,
+    "perClass": {
+      "Bard": 112,
+      "Cleric": 105,
+      "Druid": 105,
+      "Paladin": 31,
+      "Ranger": 37,
+      "Sorcerer": 120,
+      "Warlock": 64,
+      "Wizard": 204
+    },
+    "missingRecord": 0,
+    "levelMismatch": 0,
+    "classNotInRecord": 0,
+    "membershipNotInPdf": 0
+  },
+  "wholePackScriptedChecks": {
+    "duplicateKeys": 0,
+    "missingRequiredTopLevelFields": 0,
+    "missingProvenanceLocator": 0,
+    "forbiddenTokens_undefined_NaN_objectObject_TODO_FIXME": 0,
+    "emptyPrimaryProse": 0,
+    "embeddedFlattenedTableSignaturesInProse": 0,
+    "danglingConnectorEndings": 0,
+    "lowercaseContinuationStarts": 0,
+    "tableStructuralIssues": 0,
+    "distinctLicenseBlocks": 1,
+    "distinctSystemId": 1
+  },
+  "validationCommands": [
+    {
+      "command": "npm ci",
+      "exitCode": 0,
+      "mode": "independent",
+      "summary": "clean install on Node 24.16.0; 1 npm-audit advisory (out of scope for the pack)"
+    },
+    {
+      "command": "npm run verify:dnd5e-srd-pack",
+      "exitCode": 0,
+      "mode": "independent",
+      "summary": "committed pack matches importer output exactly; all 4 generated artifacts byte-equal"
+    },
+    {
+      "command": "npm run audit-bundle:dnd5e-srd",
+      "exitCode": 0,
+      "mode": "independent",
+      "summary": "fresh bundle at HEAD; 1811 records, 0 suspicious, 0 structure findings, 0 unicode, coverage 0 unaccounted / 0 known-gap, ledger 0 unrepresented / 0 broad ignores"
+    },
+    {
+      "command": "npm run check",
+      "exitCode": 0,
+      "mode": "independent",
+      "summary": "Biome + hidden-unicode; 288 files; 2 infos = pre-existing biome.json recommended->preset deprecation, non-blocking"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "mode": "independent",
+      "summary": "tsc --build --force clean"
+    },
+    {
+      "command": "npm test",
+      "exitCode": 0,
+      "mode": "independent",
+      "summary": "1788 passed / 19 skipped (111 files passed / 4 skipped); skips are documented live-API + Dolt-gated suites"
+    },
+    {
+      "command": "npm run audit:rules-pack (in bundle)",
+      "exitCode": 0,
+      "mode": "captured-in-bundle",
+      "summary": "command-output/audit-rules-pack.txt"
+    },
+    {
+      "command": "npm run check (in bundle)",
+      "exitCode": 0,
+      "mode": "captured-in-bundle",
+      "summary": "command-output/check.txt"
+    },
+    {
+      "command": "npm run typecheck (in bundle)",
+      "exitCode": 0,
+      "mode": "captured-in-bundle",
+      "summary": "command-output/typecheck.txt"
+    },
+    {
+      "command": "npm test (in bundle)",
+      "exitCode": 0,
+      "mode": "captured-in-bundle",
+      "summary": "command-output/test.txt: 1788 passed | 19 skipped"
+    },
+    {
+      "command": "npm run verify:dnd5e-srd-pack (in bundle)",
+      "exitCode": 0,
+      "mode": "captured-in-bundle",
+      "summary": "command-output/verify-dnd5e-srd-pack.txt: matches importer output exactly"
+    }
+  ],
+  "knownFaithfulSourceTypos": [
+    {
+      "record": "spell:animal-friendship",
+      "field": "description",
+      "text": "the spells ends",
+      "pdfPage": 115,
+      "verified": true
+    },
+    {
+      "record": "spell:animal-friendship",
+      "field": "higherLevels",
+      "text": "one additional beast t level above 1st",
+      "pdfPage": 115,
+      "verified": true
+    },
+    {
+      "record": "spell:animal-messenger",
+      "field": "higherLevels",
+      "text": "3nd level",
+      "pdfPage": 115,
+      "verified": true
+    }
+  ],
+  "auditorFindings": {
+    "blockers": 0,
+    "nonBlockingConcerns": [
+      "Inline stat blocks (Avatar of Death in magic-item:deck-of-many-things, Giant Fly in magic-item:figurine-of-wondrous-power) are intentionally retained verbatim in the owner's description AND modeled as structured stat-block records linked via data.statBlockRefs. This is faithful to the source layout (the stat block is physically printed inside the owner entry), is explicitly required by the audit spec, and is enforced by dedicated tests (srdGeneratedPack.test.ts). The embedded ability-score line is column-linearized; a future maintainer may optionally extend the PR #230 table-strip policy to inline stat blocks for consistency. Not a defect.",
+      "npm ci reports 1 high-severity npm-audit advisory in the dependency tree; this is unrelated to the generated SRD pack artifact and is tracked separately under dependency maintenance.",
+      "npm run check emits 2 Biome 'info' deprecation notices for biome.json (recommended -> preset); config-only, non-blocking, exits 0."
+    ]
+  }
+}
