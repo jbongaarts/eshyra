@@ -3,9 +3,12 @@
 # Usage:
 #   irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
 #
-# Parameters:
+# To install a specific version, set ESHYRA_VERSION before piping:
+#   $env:ESHYRA_VERSION = 'v0.1.0'
+#   irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+#
+# Parameters (when running the script directly, not via iex):
 #   -Version <tag>      install a specific release tag, e.g. v0.1.0
-#                       defaults to the latest GitHub Release
 #                       also read from $env:ESHYRA_VERSION
 #   -BaseUrl <url>      override the base download URL (for local testing)
 #                       also read from $env:ESHYRA_BASE_URL
@@ -13,14 +16,15 @@
 #
 # What this script does:
 #   1. Detects Windows x64 (AMD64) architecture.
-#   2. Resolves the release version (GitHub API or -Version/-$env:ESHYRA_VERSION).
-#   3. Downloads the matching self-contained ZIP archive.
-#   4. Verifies the SHA-256 checksum when sha256sums.txt is available.
-#   5. Installs to $env:LOCALAPPDATA\Eshyra\app\<target>\
-#   6. Creates $env:LOCALAPPDATA\Eshyra\bin\eshyra.cmd pointing to the installed launcher.
-#   7. Adds $env:LOCALAPPDATA\Eshyra\bin to your user PATH if not already present.
-#   8. Updates the current PowerShell session PATH so eshyra is immediately usable.
-#   9. Verifies the installed command runs.
+#   2. Queries the GitHub Releases API to find the actual archive asset URL
+#      (asset discovery -- does not assume the archive name matches the tag name,
+#      since the package version embedded in the artifact may differ).
+#   3. Downloads the archive and verifies its SHA-256 checksum.
+#   4. Installs to $env:LOCALAPPDATA\Eshyra\app\<artifact-name>\
+#   5. Creates $env:LOCALAPPDATA\Eshyra\bin\eshyra.cmd pointing to the installed launcher.
+#   6. Adds $env:LOCALAPPDATA\Eshyra\bin to your user PATH if not already present.
+#   7. Updates the current PowerShell session PATH so eshyra is immediately usable.
+#   8. Verifies the installed command runs.
 #
 # This script does NOT require Node.js, npm, or any system package manager.
 # Dolt (for campaign checkpoints) is NOT installed here -- it is self-provisioning.
@@ -60,21 +64,64 @@ function Get-EshyraPlatform {
     return 'windows-x64'
 }
 
-# ---------- version resolution ------------------------------------------------
+# ---------- release asset resolution -----------------------------------------
 
-function Resolve-EshyraVersion([string]$Repo) {
-    if ($Version -and $Version -ne '') {
-        return $Version.TrimStart('v')
+function Resolve-EshyraRelease([string]$Repo, [string]$Target) {
+    if ($BaseUrl -and $BaseUrl -ne '') {
+        # Custom base URL mode (local testing or staging).
+        # Derive the archive name from Version + Target. Version defaults to
+        # 0.0.0 to match the builder's fallback when no package version is set.
+        $ver = if ($Version -and $Version -ne '') { $Version.TrimStart('v') } else { '0.0.0' }
+        $archiveName = "eshyra-$ver-$Target.zip"
+        return @{
+            ArchiveUrl   = "$BaseUrl/$archiveName"
+            ChecksumsUrl = "$BaseUrl/sha256sums.txt"
+            ArchiveName  = $archiveName
+        }
     }
-    $apiUrl = "https://api.github.com/repos/$Repo/releases/latest"
+
+    # GitHub Releases mode.
+    # Query the API to find the actual archive asset URL by target suffix.
+    # This intentionally avoids constructing the filename from the tag name,
+    # because the artifact's embedded package.json version may differ from the
+    # tag (e.g., root package.json has no version field, so the builder uses
+    # the fallback "0.0.0").
+    $apiUrl = if ($Version -and $Version -ne '') {
+        $tag = "v$($Version.TrimStart('v'))"
+        "https://api.github.com/repos/$Repo/releases/tags/$tag"
+    }
+    else {
+        "https://api.github.com/repos/$Repo/releases/latest"
+    }
+
+    Write-Log "querying: $apiUrl"
     try {
-        $response = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing -ErrorAction Stop
-        $tag = $response.tag_name
-        if (-not $tag) { throw "GitHub API response did not include tag_name" }
-        return $tag.TrimStart('v')
+        $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing -ErrorAction Stop
     }
     catch {
-        throw "Could not determine latest release version from the GitHub API: $_ `nSet -Version or ESHYRA_VERSION to install a specific tag."
+        throw "Failed to fetch release info from GitHub API ($apiUrl): $_"
+    }
+
+    # Find the Windows x64 archive asset by name suffix.
+    $asset = $release.assets | Where-Object { $_.name -like "*-$Target.zip" } | Select-Object -First 1
+    if (-not $asset) {
+        throw "No $Target archive found in release $($release.tag_name) assets. The release may not have all artifacts yet."
+    }
+
+    # Find sha256sums.txt in the assets list; fall back to a sibling URL.
+    $checksumsAsset = $release.assets | Where-Object { $_.name -eq 'sha256sums.txt' } | Select-Object -First 1
+    $checksumsUrl = if ($checksumsAsset) {
+        $checksumsAsset.browser_download_url
+    }
+    else {
+        $base = $asset.browser_download_url.Substring(0, $asset.browser_download_url.LastIndexOf('/'))
+        "$base/sha256sums.txt"
+    }
+
+    return @{
+        ArchiveUrl   = $asset.browser_download_url
+        ChecksumsUrl = $checksumsUrl
+        ArchiveName  = $asset.name
     }
 }
 
@@ -109,32 +156,22 @@ function Install-Eshyra {
     $target = Get-EshyraPlatform
     Write-Log "platform: $target"
 
-    Write-Step "Resolving version"
-    $version = Resolve-EshyraVersion $GithubRepo
-    $tag = "v$version"
-    Write-Log "version: $version (tag: $tag)"
-
-    $archiveName = "eshyra-$version-$target.zip"
-    if (-not $BaseUrl -or $BaseUrl -eq '') {
-        $BaseUrl = "https://github.com/$GithubRepo/releases/download/$tag"
-    }
-    $archiveUrl = "$BaseUrl/$archiveName"
-    $checksumsUrl = "$BaseUrl/sha256sums.txt"
-
-    Write-Step "Downloading Eshyra $version for $target"
-    Write-Log "from: $archiveUrl"
+    Write-Step "Resolving release"
+    $release = Resolve-EshyraRelease $GithubRepo $target
+    Write-Log "archive: $($release.ArchiveName)"
+    Write-Log "from:    $($release.ArchiveUrl)"
 
     $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) "eshyra-install-$([System.IO.Path]::GetRandomFileName())"
     New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 
     try {
-        $archivePath = Join-Path $tmpDir $archiveName
-        Invoke-WebRequest -Uri $archiveUrl -OutFile $archivePath -UseBasicParsing -ErrorAction Stop
+        $archivePath = Join-Path $tmpDir $release.ArchiveName
+        Invoke-WebRequest -Uri $release.ArchiveUrl -OutFile $archivePath -UseBasicParsing -ErrorAction Stop
 
         Write-Step "Verifying checksum"
         $checksumsPath = Join-Path $tmpDir 'sha256sums.txt'
         try {
-            Invoke-WebRequest -Uri $checksumsUrl -OutFile $checksumsPath -UseBasicParsing -ErrorAction Stop
+            Invoke-WebRequest -Uri $release.ChecksumsUrl -OutFile $checksumsPath -UseBasicParsing -ErrorAction Stop
             Confirm-EshyraChecksum $archivePath $checksumsPath
         }
         catch {
@@ -144,7 +181,9 @@ function Install-Eshyra {
 
         Write-Step "Installing"
         $installBase = Join-Path $env:LOCALAPPDATA 'Eshyra\app'
-        $installDir = Join-Path $installBase "eshyra-$version-$target"
+        # The artifact name (minus .zip) is the top-level directory inside the archive.
+        $artifactDir = [System.IO.Path]::GetFileNameWithoutExtension($release.ArchiveName)
+        $installDir = Join-Path $installBase $artifactDir
 
         if (Test-Path $installDir) {
             Remove-Item -Path $installDir -Recurse -Force
@@ -160,7 +199,7 @@ function Install-Eshyra {
         # Write a .cmd wrapper that delegates to the versioned launcher using
         # %LOCALAPPDATA% so the wrapper survives a user profile path change.
         $wrapperPath = Join-Path $binDir 'eshyra.cmd'
-        $launcherRel = "eshyra-$version-$target\bin\eshyra.cmd"
+        $launcherRel = "$artifactDir\bin\eshyra.cmd"
         $wrapperContent = "@echo off`r`nCALL `"%LOCALAPPDATA%\Eshyra\app\$launcherRel`" %*`r`n"
         [System.IO.File]::WriteAllText($wrapperPath, $wrapperContent, [System.Text.Encoding]::ASCII)
         Write-Log "wrapper: $wrapperPath"
@@ -187,17 +226,16 @@ function Install-Eshyra {
             $out = & $wrapperPath 2>&1 | Out-String
         }
         catch {
-            # Native command failure is expected (exit code 1); capture any output.
             $out = $_.Exception.Message
         }
         if ($out -match 'ANTHROPIC_API_KEY') {
-            Write-Log "Eshyra $version is ready"
+            Write-Log "Eshyra is ready"
         }
         else {
             Write-Warning "Verification did not match expected output; try: eshyra"
         }
 
-        Write-Host "`nEshyra $version installed. Open a new terminal and run:`n" -ForegroundColor Green
+        Write-Host "`nEshyra installed ($artifactDir). Open a new terminal and run:`n" -ForegroundColor Green
         Write-Host "  eshyra"
         Write-Host "`nSet a provider key to start playing:`n"
         Write-Host '  $env:ANTHROPIC_API_KEY = "sk-ant-..."'

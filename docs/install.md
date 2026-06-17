@@ -44,9 +44,9 @@ curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install
 
 The installer:
 1. Detects your OS and CPU architecture.
-2. Downloads the matching self-contained archive from GitHub Releases.
-3. Verifies the SHA-256 checksum.
-4. Installs to `${XDG_DATA_HOME:-$HOME/.local/share}/eshyra/app/<version>/`.
+2. Queries the GitHub Releases API to find the actual archive URL for your platform.
+3. Downloads the archive and verifies its SHA-256 checksum.
+4. Installs to `${XDG_DATA_HOME:-$HOME/.local/share}/eshyra/app/eshyra-<version>-<target>/`.
 5. Creates (or repoints) a symlink at `$HOME/.local/bin/eshyra`.
 6. Prints `export PATH` guidance if `$HOME/.local/bin` is not yet on your PATH.
 7. Runs the CLI in no-config mode to confirm the install worked.
@@ -54,9 +54,9 @@ The installer:
 It does **not** install Node.js, npm, or any system packages. It does **not**
 touch your campaign data.
 
-**To install a specific version:**
+**To install a specific version**, pass `ESHYRA_VERSION` to `sh` (not to `curl`):
 ```bash
-ESHYRA_VERSION=v0.1.0 curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | ESHYRA_VERSION=v0.1.0 sh
 ```
 
 ### Windows (PowerShell)
@@ -67,9 +67,9 @@ irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | 
 
 The installer:
 1. Detects Windows x64 (AMD64) architecture.
-2. Downloads `eshyra-<version>-windows-x64.zip`.
-3. Verifies the SHA-256 checksum.
-4. Installs to `$env:LOCALAPPDATA\Eshyra\app\<version>\`.
+2. Queries the GitHub Releases API to find the actual archive URL for Windows x64.
+3. Downloads the archive and verifies its SHA-256 checksum.
+4. Installs to `$env:LOCALAPPDATA\Eshyra\app\eshyra-<version>-windows-x64\`.
 5. Creates `$env:LOCALAPPDATA\Eshyra\bin\eshyra.cmd` pointing to the installed launcher.
 6. Adds `$env:LOCALAPPDATA\Eshyra\bin` to your user PATH if not already present.
 7. Updates the current PowerShell session PATH so `eshyra` is immediately usable.
@@ -78,12 +78,8 @@ The installer:
 It does **not** install Node.js, npm, or any system packages. It does **not**
 touch your campaign data.
 
-**To install a specific version:**
-```powershell
-irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex -Version v0.1.0
-```
-
-Or set the environment variable before running:
+**To install a specific version**, set `$env:ESHYRA_VERSION` before piping
+(`-Version` cannot be passed to `iex`):
 ```powershell
 $env:ESHYRA_VERSION = 'v0.1.0'
 irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex

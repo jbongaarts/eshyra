@@ -46,6 +46,37 @@ describe('Release installer policy', () => {
     expect(sh).not.toContain('win32-x64');
   });
 
+  it('POSIX installer uses GitHub API asset discovery, not tag-derived filename', () => {
+    const sh = readText('scripts/release/install.sh');
+
+    // Must query the GitHub Releases API.
+    expect(sh).toContain('api.github.com');
+    expect(sh).toMatch(/releases\/latest|releases\/tags/);
+
+    // Must find the archive URL from the API response by suffix match.
+    expect(sh).toContain('browser_download_url');
+
+    // The GitHub-mode path must NOT construct the archive name by stripping 'v'
+    // from the resolved tag and appending the target. That pattern breaks when
+    // root package.json has no version (builder falls back to "0.0.0") while the
+    // tag is "v0.1.0". The name must come from the actual asset URL.
+    // Verify: archive_name must be set from basename of the discovered URL, not
+    // from a template like "eshyra-${version}-${target}.tar.gz".
+    expect(sh).toMatch(/ARCHIVE_NAME=\$\(basename/);
+  });
+
+  it('PowerShell installer uses GitHub API asset discovery, not tag-derived filename', () => {
+    const ps1 = readText('scripts/release/install.ps1');
+
+    // Must query the GitHub Releases API.
+    expect(ps1).toContain('api.github.com');
+
+    // Must find the archive by filtering the assets list, not by constructing
+    // a filename from the resolved tag version.
+    expect(ps1).toMatch(/\.assets\s*\|/);
+    expect(ps1).toMatch(/browser_download_url/);
+  });
+
   it('installer scripts support version override', () => {
     const sh = readText('scripts/release/install.sh');
     const ps1 = readText('scripts/release/install.ps1');
@@ -111,6 +142,25 @@ describe('Release installer policy', () => {
     expect(ps1).toContain('Eshyra\\bin');
   });
 
+  it('POSIX installer install_dir is derived from the artifact name, not template', () => {
+    const sh = readText('scripts/release/install.sh');
+    // The actual top-level directory inside the archive is named by the builder,
+    // and may not match the tag version. The install path must come from the
+    // archive filename (artifact_dir = ARCHIVE_NAME minus .tar.gz) rather than
+    // a template constructed from tag + target.
+    expect(sh).toMatch(/artifact_dir.*ARCHIVE_NAME|ARCHIVE_NAME.*artifact_dir/);
+    expect(sh).toMatch(/install_dir.*artifact_dir/);
+  });
+
+  it('PowerShell installer install_dir is derived from the artifact name, not template', () => {
+    const ps1 = readText('scripts/release/install.ps1');
+    // Must use the actual asset name from the API response, not reconstruct it
+    // from the tag version.
+    expect(ps1).toMatch(/GetFileNameWithoutExtension|\.name\s*-like/);
+    expect(ps1).toMatch(/artifactDir|artifact_dir/i);
+    expect(ps1).toMatch(/installDir.*artifactDir|artifactDir.*install/i);
+  });
+
   it('installer scripts verify the installed command', () => {
     const sh = readText('scripts/release/install.sh');
     const ps1 = readText('scripts/release/install.ps1');
@@ -169,6 +219,43 @@ describe('Release installer policy', () => {
   it('docs/install.md uses windows-x64, not win32-x64', () => {
     const install = readText('docs/install.md');
     expect(install).not.toContain('win32-x64');
+  });
+
+  it('docs install path matches actual script path (eshyra-<version>-<target>)', () => {
+    const install = readText('docs/install.md');
+    const sh = readText('scripts/release/install.sh');
+
+    // Docs must describe the full artifact subdirectory name, not just <version>.
+    expect(install).toMatch(
+      /eshyra-<version>-<target>|eshyra-<version>-linux-x64|eshyra-<version>-windows-x64/,
+    );
+
+    // The script itself must derive install_dir from the artifact name (not template).
+    expect(sh).toMatch(/artifact_dir/);
+    expect(sh).toMatch(/install_dir.*artifact_dir/);
+  });
+
+  it('docs POSIX version-pinned example passes ESHYRA_VERSION to sh, not curl', () => {
+    const install = readText('docs/install.md');
+
+    // Correct: ESHYRA_VERSION appears after the pipe, before sh.
+    // e.g. "curl ... | ESHYRA_VERSION=... sh"
+    expect(install).toMatch(/curl.*\|\s*ESHYRA_VERSION=/);
+
+    // Wrong: ESHYRA_VERSION before curl causes the env var to be passed to
+    // curl, not to the piped sh process.
+    expect(install).not.toMatch(/ESHYRA_VERSION=.*curl/);
+  });
+
+  it('docs PowerShell version-pinned example does not pass -Version to iex', () => {
+    const install = readText('docs/install.md');
+
+    // Wrong: "iex -Version ..." passes -Version to Invoke-Expression, not to
+    // the downloaded script.
+    expect(install).not.toMatch(/iex\s+-Version\b/);
+
+    // Correct: use $env:ESHYRA_VERSION before the iex pipe.
+    expect(install).toContain('$env:ESHYRA_VERSION');
   });
 
   it('docs/install.md preserves license wording', () => {

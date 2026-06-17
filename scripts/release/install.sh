@@ -6,20 +6,23 @@
 #
 # Environment variables (all optional):
 #   ESHYRA_VERSION   -- install a specific release tag, e.g. v0.1.0
+#                       pass to sh, not curl:
+#                         curl -fsSL ...install.sh | ESHYRA_VERSION=v0.1.0 sh
 #                       defaults to the latest GitHub Release
 #   ESHYRA_BASE_URL  -- override the base download URL (for local testing)
+#                       also set ESHYRA_VERSION when using a custom base URL
 #                       e.g. file:///path/to/dist-release or http://localhost:8080
-#                       defaults to https://github.com/<repo>/releases/download/<version>
 #   GITHUB_REPO      -- override the GitHub repository (default: jbongaarts/eshyra)
 #
 # What this script does:
 #   1. Detects your OS and CPU architecture.
-#   2. Resolves the release version (GitHub API or ESHYRA_VERSION).
-#   3. Downloads the matching self-contained archive.
-#   4. Verifies the SHA-256 checksum when sha256sums.txt is available.
-#   5. Installs to ${XDG_DATA_HOME:-$HOME/.local/share}/eshyra/app/<target>/
-#   6. Creates (or repoints) a symlink at $HOME/.local/bin/eshyra.
-#   7. Verifies the installed command runs.
+#   2. Queries the GitHub Releases API to find the actual archive URL for your
+#      platform (asset discovery -- does not assume the archive name matches the
+#      tag name, since the package version embedded in the artifact may differ).
+#   3. Downloads the archive and verifies its SHA-256 checksum.
+#   4. Installs to ${XDG_DATA_HOME:-$HOME/.local/share}/eshyra/app/<artifact-name>/
+#   5. Creates (or repoints) a symlink at $HOME/.local/bin/eshyra.
+#   6. Verifies the installed command runs.
 #
 # Supported targets:
 #   linux-x64    (including WSL on x64 Windows)
@@ -71,27 +74,77 @@ detect_platform() {
     printf '%s-%s' "$os" "$arch"
 }
 
-# ---------- version resolution ------------------------------------------------
+# ---------- archive URL resolution --------------------------------------------
+# Sets three globals: ARCHIVE_URL, ARCHIVE_NAME, CHECKSUMS_URL.
+# Using globals avoids subshell/pipe issues with command substitution in sh.
 
-resolve_version() {
-    if [ -n "${ESHYRA_VERSION:-}" ]; then
-        # Accept either 'v0.1.0' or '0.1.0'; artifact names use the bare version.
-        v="${ESHYRA_VERSION#v}"
-        if [ -z "$v" ]; then
-            die "ESHYRA_VERSION is set but empty"
-        fi
-        printf '%s' "$v"
+ARCHIVE_URL=""
+ARCHIVE_NAME=""
+CHECKSUMS_URL=""
+
+resolve_urls() {
+    _target="$1"
+
+    if [ -n "${ESHYRA_BASE_URL:-}" ]; then
+        # Custom base URL mode (local testing or staging).
+        # Derive the archive name from ESHYRA_VERSION + target; the version
+        # defaults to 0.0.0 to match the builder's fallback when no package
+        # version is set.
+        _ver="${ESHYRA_VERSION:-0.0.0}"
+        _ver="${_ver#v}"
+        ARCHIVE_NAME="eshyra-${_ver}-${_target}.tar.gz"
+        ARCHIVE_URL="${ESHYRA_BASE_URL}/${ARCHIVE_NAME}"
+        CHECKSUMS_URL="${ESHYRA_BASE_URL}/sha256sums.txt"
         return
     fi
+
+    # GitHub Releases mode.
+    # Query the API to find the actual archive asset URL by target suffix.
+    # This intentionally avoids constructing the filename from the tag name,
+    # because the artifact's embedded package.json version may differ from the
+    # tag (e.g., root package.json has no version field, so the builder uses
+    # the fallback "0.0.0").
     need_cmd curl
-    tag=$(curl -fsSL "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" \
-        | grep '"tag_name"' \
-        | head -1 \
-        | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
-    if [ -z "$tag" ]; then
-        die "could not determine latest release version from the GitHub API -- set ESHYRA_VERSION to install a specific tag"
+
+    if [ -n "${ESHYRA_VERSION:-}" ]; then
+        _tag="v${ESHYRA_VERSION#v}"
+        _api_url="https://api.github.com/repos/${GITHUB_REPO}/releases/tags/${_tag}"
+    else
+        _api_url="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
     fi
-    printf '%s' "${tag#v}"
+
+    log "querying: ${_api_url}"
+    _release_json=$(curl -fsSL "$_api_url") \
+        || die "failed to fetch release info from GitHub API: ${_api_url}"
+
+    # The API response has lines like:
+    #   "browser_download_url": "https://.../eshyra-0.0.0-linux-x64.tar.gz"
+    # We select by the target-specific suffix, not by constructing the name.
+    ARCHIVE_URL=$(printf '%s' "$_release_json" \
+        | grep '"browser_download_url"' \
+        | grep -- "-${_target}\\.tar\\.gz\"" \
+        | head -1 \
+        | sed 's/.*"browser_download_url" *: *"\([^"]*\)".*/\1/')
+
+    if [ -z "$ARCHIVE_URL" ]; then
+        _tag_found=$(printf '%s' "$_release_json" \
+            | grep '"tag_name"' | head -1 \
+            | sed 's/.*"tag_name" *: *"\([^"]*\)".*/\1/' || printf 'unknown')
+        die "no ${_target} archive found in release ${_tag_found} assets.\nThe release may not have all artifacts yet, or the target is not supported."
+    fi
+
+    ARCHIVE_NAME=$(basename "$ARCHIVE_URL")
+
+    # Find the sha256sums.txt URL in the assets list; fall back to sibling URL.
+    CHECKSUMS_URL=$(printf '%s' "$_release_json" \
+        | grep '"browser_download_url"' \
+        | grep 'sha256sums\.txt' \
+        | head -1 \
+        | sed 's/.*"browser_download_url" *: *"\([^"]*\)".*/\1/')
+
+    if [ -z "$CHECKSUMS_URL" ]; then
+        CHECKSUMS_URL="${ARCHIVE_URL%/*}/sha256sums.txt"
+    fi
 }
 
 # ---------- checksum verification ---------------------------------------------
@@ -141,35 +194,23 @@ main() {
     target=$(detect_platform)
     log "platform: ${target}"
 
-    log_step "Resolving version"
-    version=$(resolve_version)
-    tag="v${version}"
-    log "version: ${version} (tag: ${tag})"
-
-    archive_name="eshyra-${version}-${target}.tar.gz"
-
-    if [ -n "${ESHYRA_BASE_URL:-}" ]; then
-        base_url="$ESHYRA_BASE_URL"
-    else
-        base_url="https://github.com/${GITHUB_REPO}/releases/download/${tag}"
-    fi
-    archive_url="${base_url}/${archive_name}"
-    checksums_url="${base_url}/sha256sums.txt"
-
-    log_step "Downloading Eshyra ${version} for ${target}"
-    log "from: ${archive_url}"
+    log_step "Resolving release"
+    resolve_urls "$target"
+    log "archive: ${ARCHIVE_NAME}"
+    log "from:    ${ARCHIVE_URL}"
 
     tmp_dir=$(mktemp -d)
     # Double-quote to silence shellcheck SC2064; variable is set before trap.
     trap 'rm -rf -- "$tmp_dir"' EXIT
 
-    archive="${tmp_dir}/${archive_name}"
-    curl -fsSL --retry 3 -o "${archive}" "${archive_url}" \
-        || die "download failed: ${archive_url}"
+    log_step "Downloading"
+    archive="${tmp_dir}/${ARCHIVE_NAME}"
+    curl -fsSL --retry 3 -o "${archive}" "${ARCHIVE_URL}" \
+        || die "download failed: ${ARCHIVE_URL}"
 
     log_step "Verifying checksum"
     checksums="${tmp_dir}/sha256sums.txt"
-    if curl -fsSL --retry 3 -o "${checksums}" "${checksums_url}" 2>/dev/null; then
+    if curl -fsSL --retry 3 -o "${checksums}" "${CHECKSUMS_URL}" 2>/dev/null; then
         verify_checksum "${archive}" "${checksums}"
     else
         log_warn "sha256sums.txt not available for this release; skipping checksum verification"
@@ -178,7 +219,9 @@ main() {
     log_step "Installing"
     data_home="${XDG_DATA_HOME:-${HOME}/.local/share}"
     app_parent="${data_home}/eshyra/app"
-    install_dir="${app_parent}/eshyra-${version}-${target}"
+    # The artifact name (minus .tar.gz) is the top-level directory inside the archive.
+    artifact_dir="${ARCHIVE_NAME%.tar.gz}"
+    install_dir="${app_parent}/${artifact_dir}"
 
     mkdir -p "${app_parent}"
 
@@ -209,15 +252,15 @@ main() {
     esac
 
     log_step "Verifying install"
-    # No-config run: should exit 1 and print setup guidance.
+    # No-config run: should exit 1 and print setup guidance including ANTHROPIC_API_KEY.
     _out=$("${symlink}" 2>&1 || true)
     if printf '%s' "$_out" | grep -q 'ANTHROPIC_API_KEY'; then
-        log "Eshyra ${version} is ready"
+        log "Eshyra is ready"
     else
         log_warn "verification did not match expected output; try running: ${symlink}"
     fi
 
-    printf '\nEshyra %s installed. Run:\n\n  eshyra\n\nSet a provider key to start playing:\n\n  export ANTHROPIC_API_KEY="sk-ant-..."\n  eshyra new "My Campaign"\n  eshyra play\n\n' "${version}"
+    printf '\nEshyra installed (%s). Run:\n\n  eshyra\n\nSet a provider key to start playing:\n\n  export ANTHROPIC_API_KEY="sk-ant-..."\n  eshyra new "My Campaign"\n  eshyra play\n\n' "${artifact_dir}"
 }
 
 main "$@"
