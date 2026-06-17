@@ -33,7 +33,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -83,19 +83,23 @@ function run(cmd, args, extraEnv = {}) {
   return result.stdout ?? '';
 }
 
-/** Invoke npm portably (Windows resolves `npm` via cmd.exe). */
+/**
+ * Invoke npm without constructing a shell command string. We run the npm CLI
+ * JS directly with `node <npm_execpath> <args...>`, which is cross-platform and
+ * avoids a `cmd.exe /c "<joined string>"` invocation (CodeQL command-injection
+ * surface). These scripts are meant to run via `npm run release:*`, where
+ * `npm_execpath` is always set; fail clearly otherwise instead of falling back
+ * to a stringified shell command.
+ */
 function npm(args, extraEnv = {}) {
-  if (process.env.npm_execpath) {
-    return run(process.execPath, [process.env.npm_execpath, ...args], extraEnv);
-  }
-  if (process.platform === 'win32') {
-    return run(
-      'cmd.exe',
-      ['/d', '/s', '/c', ['npm', ...args].join(' ')],
-      extraEnv,
+  const npmCli = process.env.npm_execpath;
+  if (!npmCli) {
+    throw new Error(
+      'npm_execpath is not set — run this via `npm run release:build` / ' +
+        '`npm run release:validate` so the bundled npm CLI is used.',
     );
   }
-  return run('npm', args, extraEnv);
+  return run(process.execPath, [npmCli, ...args], extraEnv);
 }
 
 /** Recursively find the first file whose path ends with `suffix`. */
@@ -114,6 +118,31 @@ function findFile(dir, suffix) {
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
+}
+
+/**
+ * Locate the bundled Node runtime's LICENSE text. Official Node builds ship a
+ * LICENSE file next to (Windows) or one level above (POSIX) the `node` binary.
+ * Returns its contents, or throws — the artifact bundles the Node binary, so we
+ * must redistribute its license text and never rely on a URL alone.
+ */
+function readNodeLicense() {
+  const binDir = dirname(process.execPath);
+  const candidates = [
+    join(binDir, '..', 'LICENSE'),
+    join(binDir, 'LICENSE'),
+    join(binDir, '..', 'share', 'doc', 'node', 'LICENSE'),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      const text = readFileSync(candidate, 'utf8');
+      if (text.includes('Node.js is licensed')) return text;
+    }
+  }
+  throw new Error(
+    `could not find the Node runtime LICENSE near ${process.execPath}; ` +
+      'refusing to ship the bundled Node binary without its license text.',
+  );
 }
 
 /**
@@ -145,9 +174,10 @@ function buildNotice() {
     '',
     '== Bundled runtime components ==',
     '',
-    '- Node.js runtime (runtime/): see https://github.com/nodejs/node/blob/main/LICENSE',
-    '- better-sqlite3 (native SQLite binding): MIT License',
-    '- @anthropic-ai/claude-agent-sdk: see its bundled LICENSE under app/',
+    '- Node.js runtime (runtime/): full license text bundled at',
+    '  THIRD-PARTY/node-LICENSE.txt.',
+    '- better-sqlite3 (native SQLite binding): MIT License.',
+    '- @anthropic-ai/claude-agent-sdk: see its bundled LICENSE under app/.',
     '',
     'Full dependency license texts ship alongside each package under app/.',
   ].join('\n')}\n`;
@@ -304,6 +334,13 @@ function main() {
     );
     writeFileSync(join(stageDir, 'NOTICE'), buildNotice());
     writeFileSync(join(stageDir, 'README.txt'), buildReadme(version, target));
+
+    // THIRD-PARTY/: redistribute the bundled Node runtime's own license text
+    // (the binary under runtime/ is not an npm package, so its license does not
+    // otherwise travel with the artifact).
+    const thirdPartyDir = join(stageDir, 'THIRD-PARTY');
+    mkdirSync(thirdPartyDir, { recursive: true });
+    writeFileSync(join(thirdPartyDir, 'node-LICENSE.txt'), readNodeLicense());
 
     console.log('• archiving…');
     mkdirSync(opts.out, { recursive: true });

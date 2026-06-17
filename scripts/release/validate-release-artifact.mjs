@@ -33,10 +33,13 @@ const REQUIRED_FILES = [
   'COMMERCIAL-LICENSE.md',
   'NOTICE',
   'README.txt',
+  // Redistributed license text for the bundled Node runtime binary.
+  'THIRD-PARTY/node-LICENSE.txt',
 ];
 const EXPECTED_OUTPUT = ['Eshyra', 'ANTHROPIC_API_KEY', 'eshyra play'];
-// Required CC BY 4.0 attribution marker that must survive into the NOTICE.
-const NOTICE_MARKER = 'System Reference Document 5.1';
+// Strong marker proving the bundled Node runtime's own license text shipped
+// (not just a URL reference in NOTICE).
+const NODE_LICENSE_MARKER = 'Node.js is licensed';
 
 // A path lives inside a third-party dependency (i.e. it is the published
 // content of a pinned npm package, not something Eshyra's build produced).
@@ -96,6 +99,11 @@ const FORBIDDEN_OURS = [
 
 function fail(msg) {
   throw new Error(msg);
+}
+
+/** Normalize whitespace so attribution-text matching survives reflow. */
+function collapse(text) {
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 function walk(dir, base = dir, acc = []) {
@@ -163,6 +171,15 @@ function validate(archive) {
     // 2. Bundled runtime + native binding + launchers.
     const node = nodeBinary(appRoot, isWindows);
     if (!existsSync(node)) fail('bundled Node runtime missing under runtime/');
+    const nodeLicense = readFileSync(
+      join(appRoot, 'THIRD-PARTY', 'node-LICENSE.txt'),
+      'utf8',
+    );
+    if (!nodeLicense.includes(NODE_LICENSE_MARKER)) {
+      fail(
+        `bundled Node LICENSE text is missing/empty (expected "${NODE_LICENSE_MARKER}")`,
+      );
+    }
     if (!relPaths.some((p) => basename(p) === 'better_sqlite3.node')) {
       fail('bundled better-sqlite3 native binding missing');
     }
@@ -170,14 +187,30 @@ function validate(archive) {
     if (!existsSync(join(appRoot, launcher)))
       fail(`launcher missing: ${launcher}`);
 
-    // 3. Bundled rules content + its attribution.
-    if (!relPaths.some((p) => /rules-packs\/.+\/manifest\.json$/.test(p))) {
-      fail('bundled rules-pack data missing under app/');
+    // 3. Bundled rules content + its attribution. Load the bundled rules-pack
+    //    manifest itself, require a non-empty license.attributionText, and
+    //    assert the generated NOTICE carries that actual attribution text —
+    //    not merely a heading substring that happens to share words.
+    const manifestRel = relPaths.find((p) =>
+      /rules-packs\/.+\/manifest\.json$/.test(p),
+    );
+    if (!manifestRel) fail('bundled rules-pack data missing under app/');
+    const manifest = JSON.parse(
+      readFileSync(join(appRoot, manifestRel), 'utf8'),
+    );
+    const attribution = manifest.license?.attributionText?.trim();
+    if (!attribution) {
+      fail(
+        `bundled rules-pack manifest has empty license.attributionText (${manifestRel})`,
+      );
     }
     const notice = readFileSync(join(appRoot, 'NOTICE'), 'utf8');
-    if (!notice.includes(NOTICE_MARKER)) {
+    // Require the full attribution text (collapsing whitespace so a reflow in
+    // either source can't cause a false miss).
+    if (collapse(notice).includes(collapse(attribution)) === false) {
       fail(
-        `NOTICE is missing the required SRD attribution ("${NOTICE_MARKER}")`,
+        'NOTICE is missing the actual SRD attribution text from the bundled ' +
+          'rules-pack manifest (license.attributionText)',
       );
     }
 
