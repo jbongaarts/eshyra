@@ -130,7 +130,7 @@ export const PREMIUM_DM_CAPABILITY_FLOOR =
  * Default, provider-neutral profile registry.
  *
  * Only `premium_dm` ships with a configured default (the Claude Agent SDK
- * adapter + claude-opus-4-7) because it is the only profile with a live
+ * adapter + claude-opus-4-8) because it is the only profile with a live
  * adapter and production callers today. All other profiles are declared
  * (`configured: false`) — they carry capability metadata but have no
  * provider/model assignment. Accessing an unconfigured profile via
@@ -142,7 +142,7 @@ export const DEFAULT_PROFILE_REGISTRY: ProfileRegistry = {
   premium_dm: {
     configured: true,
     provider: 'anthropic',
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     tier: 'premium',
     canonChanging: true,
     capabilityFloor: PREMIUM_DM_CAPABILITY_FLOOR,

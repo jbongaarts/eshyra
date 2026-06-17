@@ -75,7 +75,7 @@ describe('model profiles', () => {
     const entry = getProfile(DEFAULT_PROFILE_REGISTRY, 'premium_dm');
     expect(entry.configured).toBe(true);
     expect(entry.provider).toBe('anthropic');
-    expect(entry.model).toBe('claude-opus-4-7');
+    expect(entry.model).toBe('claude-opus-4-8');
   });
 
   it('getProfile throws ProfileConfigError for unconfigured profiles', () => {
