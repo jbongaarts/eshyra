@@ -1,16 +1,13 @@
 # Installing and Updating the Eshyra CLI
 
 This guide is for early non-commercial players who want to run Eshyra locally.
-It covers downloading, installing, running, and updating the CLI from
-**GitHub Releases**, which is the distribution channel for the pre-1.0 CLI.
+It covers installing, running, and updating the CLI from **GitHub Releases**,
+which is the distribution channel for the pre-1.0 CLI.
 
-Each GitHub Release ships a **self-contained, per-platform archive**. The
-archive bundles everything the CLI needs to run, including a pinned Node.js
-runtime, so **you do not need to install Node.js or any package manager**. There
-is nothing to `npm install`; you download one archive, unpack it, and run the
-launcher. The artifact format is recorded in
-[ADR-equivalent design on `eshyra-upef`](cli-distribution.md) and the build
-lives in `scripts/release/`.
+Each GitHub Release ships a **self-contained, per-platform archive** that
+bundles everything the CLI needs -- including a pinned Node.js runtime -- so
+**you do not need to install Node.js or any package manager**. The one-line
+installer handles download, verification, and PATH setup automatically.
 
 > Eshyra is **source-available and free for non-commercial use** under the
 > PolyForm Noncommercial License 1.0.0. It is **not** open source, and
@@ -19,94 +16,83 @@ lives in `scripts/release/`.
 
 ## Supported platforms
 
-GitHub Releases publish one archive per supported platform. Pick the archive
-that matches your operating system and CPU architecture:
-
-| Platform                         | Archive name                              | Format    |
-| -------------------------------- | ----------------------------------------- | --------- |
-| Linux x64 (including WSL)        | `eshyra-<version>-linux-x64.tar.gz`       | `.tar.gz` |
-| Linux arm64                      | `eshyra-<version>-linux-arm64.tar.gz`     | `.tar.gz` |
-| macOS (Apple Silicon / arm64)    | `eshyra-<version>-darwin-arm64.tar.gz`    | `.tar.gz` |
-| Windows x64                      | `eshyra-<version>-win32-x64.zip`          | `.zip`    |
+| Platform                         | Archive name                           | Format    |
+| -------------------------------- | -------------------------------------- | --------- |
+| Linux x64 (including WSL)        | `eshyra-<version>-linux-x64.tar.gz`   | `.tar.gz` |
+| Linux arm64                      | `eshyra-<version>-linux-arm64.tar.gz` | `.tar.gz` |
+| macOS (Apple Silicon / arm64)    | `eshyra-<version>-darwin-arm64.tar.gz`| `.tar.gz` |
+| Windows x64                      | `eshyra-<version>-windows-x64.zip`    | `.zip`    |
 
 Notes:
 
-- **WSL** (Windows Subsystem for Linux) uses the **Linux x64** archive, run from
-  inside your WSL distribution — not the Windows `.zip`.
+- **WSL** (Windows Subsystem for Linux) uses the **Linux x64** archive, run
+  from inside your WSL distribution -- not the Windows `.zip`.
 - **macOS is Apple Silicon (arm64) only.** There is no Intel (`darwin-x64`)
   build. On an Intel Mac, Rosetta is not sufficient because the bundled native
   binary targets arm64.
-- Each archive ships with a small `<archive>.json` metadata sidecar on the
-  Release (version, OS, arch, bundled Node version, unpacked size) you can use to
-  confirm you grabbed the right build.
+- Each archive ships with a `<archive>.json` metadata sidecar and a
+  `sha256sums.txt` checksum file on the Release. The one-line installer
+  verifies checksums automatically.
 
-If you are not sure of your architecture: run `uname -m` on Linux/macOS
-(`x86_64` → x64, `aarch64`/`arm64` → arm64), or check **Settings → System →
-About → System type** on Windows.
-
-## Install
+## Install (one line)
 
 ### Linux, macOS, and WSL
 
-1. Open the [latest GitHub Release](https://github.com/jbongaarts/eshyra/releases/latest)
-   and download the archive for your platform from the table above.
-2. Unpack it into a directory you control, for example `~/.eshyra/app`:
+```bash
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
+```
 
-   ```bash
-   mkdir -p ~/.eshyra/app
-   tar -xzf eshyra-<version>-linux-x64.tar.gz -C ~/.eshyra/app
-   ```
+The installer:
+1. Detects your OS and CPU architecture.
+2. Downloads the matching self-contained archive from GitHub Releases.
+3. Verifies the SHA-256 checksum.
+4. Installs to `${XDG_DATA_HOME:-$HOME/.local/share}/eshyra/app/<version>/`.
+5. Creates (or repoints) a symlink at `$HOME/.local/bin/eshyra`.
+6. Prints `export PATH` guidance if `$HOME/.local/bin` is not yet on your PATH.
+7. Runs the CLI in no-config mode to confirm the install worked.
 
-   The archive unpacks into a single top-level directory named after the build
-   (for example `eshyra-<version>-linux-x64/`).
+It does **not** install Node.js, npm, or any system packages. It does **not**
+touch your campaign data.
 
-3. (Optional) Put the launcher on your `PATH` so you can run `eshyra` from
-   anywhere. Symlink it rather than copying, so updates are easy:
-
-   ```bash
-   ln -sf ~/.eshyra/app/eshyra-<version>-linux-x64/bin/eshyra ~/.local/bin/eshyra
-   ```
-
-   Make sure `~/.local/bin` is on your `PATH` (most shells already include it).
-
-4. Verify the install:
-
-   ```bash
-   eshyra            # if you linked it onto PATH
-   # or, without linking:
-   ~/.eshyra/app/eshyra-<version>-linux-x64/bin/eshyra
-   ```
-
-   The launcher invokes the **bundled** Node runtime — your system Node (if any)
-   is never used.
+**To install a specific version:**
+```bash
+ESHYRA_VERSION=v0.1.0 curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
+```
 
 ### Windows (PowerShell)
 
-1. Download `eshyra-<version>-win32-x64.zip` from the
-   [latest GitHub Release](https://github.com/jbongaarts/eshyra/releases/latest).
-2. Unpack it into a directory you control, for example `%LOCALAPPDATA%\Eshyra\app`:
+```powershell
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+```
 
-   ```powershell
-   $dest = "$env:LOCALAPPDATA\Eshyra\app"
-   New-Item -ItemType Directory -Force -Path $dest | Out-Null
-   Expand-Archive -Path .\eshyra-<version>-win32-x64.zip -DestinationPath $dest -Force
-   ```
+The installer:
+1. Detects Windows x64 (AMD64) architecture.
+2. Downloads `eshyra-<version>-windows-x64.zip`.
+3. Verifies the SHA-256 checksum.
+4. Installs to `$env:LOCALAPPDATA\Eshyra\app\<version>\`.
+5. Creates `$env:LOCALAPPDATA\Eshyra\bin\eshyra.cmd` pointing to the installed launcher.
+6. Adds `$env:LOCALAPPDATA\Eshyra\bin` to your user PATH if not already present.
+7. Updates the current PowerShell session PATH so `eshyra` is immediately usable.
+8. Runs the CLI in no-config mode to confirm the install worked.
 
-3. Run the bundled launcher (`bin\eshyra.cmd`):
+It does **not** install Node.js, npm, or any system packages. It does **not**
+touch your campaign data.
 
-   ```powershell
-   & "$env:LOCALAPPDATA\Eshyra\app\eshyra-<version>-win32-x64\bin\eshyra.cmd"
-   ```
+**To install a specific version:**
+```powershell
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex -Version v0.1.0
+```
 
-   To run `eshyra` from anywhere, add the build's `bin` directory to your user
-   `PATH` (**Settings → Edit environment variables for your account → Path**),
-   then open a new terminal.
+Or set the environment variable before running:
+```powershell
+$env:ESHYRA_VERSION = 'v0.1.0'
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+```
 
 ## First run
 
-On first run with no provider credential set, the CLI prints setup guidance and
-exits — it does not require a repository checkout. Set exactly one provider
-credential, then start a campaign:
+On first run with no provider credential set, the CLI prints setup guidance
+and exits cleanly. Set exactly one provider credential, then start a campaign:
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."   # or: export CLAUDE_CODE_OAUTH_TOKEN="..."
@@ -132,7 +118,8 @@ Dolt is **not** bundled in the archive and is **not** required to play. It is
 used only for local campaign checkpoints/history on graceful session close, off
 the per-turn path. The first time you use a checkpoint feature, the CLI offers
 to download a pinned, checksum-verified Dolt binary into your data root
-(`~/.eshyra` by default; `%LOCALAPPDATA%\Eshyra` on Windows). You can also run:
+(`~/.local/share/eshyra` by default; `%LOCALAPPDATA%\Eshyra` on Windows). You
+can also run:
 
 ```bash
 eshyra dolt install
@@ -145,39 +132,64 @@ made. See [CLI Distribution](cli-distribution.md) and
 
 ## Updating
 
-The CLI does not auto-update. To move to a newer release:
+Re-run the one-line installer. It detects the latest release, downloads and
+verifies the new archive, installs it alongside any prior version (the
+directory name includes the version, so they do not collide), and repoints
+the `eshyra` command. Your campaigns, registry, config, and downloaded Dolt
+binary live in the data root (`~/.local/share/eshyra` / `%LOCALAPPDATA%\Eshyra`),
+**not** inside the versioned app directory, so they are always preserved.
 
-1. Download the new archive for your platform from the
-   [latest GitHub Release](https://github.com/jbongaarts/eshyra/releases/latest).
-2. Unpack it alongside the old one (the top-level directory name includes the
-   version, so installs don't collide):
+```bash
+# Same command as install -- idempotent
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
+```
 
-   ```bash
-   tar -xzf eshyra-<new-version>-linux-x64.tar.gz -C ~/.eshyra/app
-   ```
+PowerShell:
+```powershell
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+```
 
-3. Re-point your launcher symlink (or `PATH` entry) at the new build:
-
-   ```bash
-   ln -sf ~/.eshyra/app/eshyra-<new-version>-linux-x64/bin/eshyra ~/.local/bin/eshyra
-   ```
-
-   On Windows, update the `Path` entry to the new build's `bin` directory.
-
-4. Confirm the new version runs, then delete the old build directory.
-
-Your campaigns, registry, config, and downloaded Dolt binary live in the data
-root (`~/.eshyra` / `%LOCALAPPDATA%\Eshyra`), **not** inside the unpacked
-archive, so they are preserved across updates. Replacing the app directory does
-not touch your saved campaigns.
+After confirming the new version works, you can remove old versioned
+directories from `~/.local/share/eshyra/app/` (Linux/macOS) or
+`%LOCALAPPDATA%\Eshyra\app\` (Windows).
 
 ## Uninstall
 
-1. Remove the launcher symlink or `PATH` entry.
-2. Delete the unpacked archive directory (for example `~/.eshyra/app`).
-3. To remove all local data — campaigns, config, and the downloaded Dolt binary
-   — delete the data root (`~/.eshyra`, or `%LOCALAPPDATA%\Eshyra` on Windows).
+1. Remove the launcher symlink or wrapper:
+   - POSIX: `rm ~/.local/bin/eshyra`
+   - Windows: delete `%LOCALAPPDATA%\Eshyra\bin\eshyra.cmd`
+2. Delete the app directory: `~/.local/share/eshyra/app/` (POSIX) or `%LOCALAPPDATA%\Eshyra\app\` (Windows).
+3. Remove `%LOCALAPPDATA%\Eshyra\bin` from your user PATH (Windows).
+4. To remove all local data -- campaigns, config, and the downloaded Dolt binary
+   -- delete the full data root (`~/.local/share/eshyra` or `%LOCALAPPDATA%\Eshyra`).
    This is irreversible; back up any campaigns you want to keep first.
+
+## Advanced: manual archive install
+
+For offline or air-gapped environments where the one-line installer cannot
+reach GitHub:
+
+1. Download the archive for your platform from the
+   [latest GitHub Release](https://github.com/jbongaarts/eshyra/releases/latest).
+2. Optionally verify the SHA-256 checksum against `sha256sums.txt` on the Release:
+   ```bash
+   sha256sum -c --ignore-missing sha256sums.txt
+   ```
+3. Unpack and run:
+   ```bash
+   tar -xzf eshyra-<version>-linux-x64.tar.gz -C ~/.local/share/eshyra/app
+   ~/.local/share/eshyra/app/eshyra-<version>-linux-x64/bin/eshyra
+   ```
+4. Optionally create the symlink yourself:
+   ```bash
+   ln -sf ~/.local/share/eshyra/app/eshyra-<version>-linux-x64/bin/eshyra ~/.local/bin/eshyra
+   ```
+
+Windows (PowerShell):
+```powershell
+Expand-Archive -Path eshyra-<version>-windows-x64.zip -DestinationPath "$env:LOCALAPPDATA\Eshyra\app" -Force
+& "$env:LOCALAPPDATA\Eshyra\app\eshyra-<version>-windows-x64\bin\eshyra.cmd"
+```
 
 ## Licensing and attribution
 

@@ -93,24 +93,28 @@ Monorepo using npm workspaces:
 ### Install The CLI
 
 The CLI is distributed through **GitHub Releases** as a self-contained,
-per-platform archive that **bundles its own Node.js runtime** — there is nothing
-to `npm install` and no system Node.js to set up. Download the archive for your
-platform, unpack it, and run the bundled launcher:
+per-platform archive that **bundles its own Node.js runtime** -- there is
+nothing to `npm install` and no system Node.js to set up.
+
+**Linux, macOS, and WSL:**
 
 ```bash
-# Linux / macOS / WSL — pick the archive matching your platform
-tar -xzf eshyra-<version>-linux-x64.tar.gz -C ~/.eshyra/app
-~/.eshyra/app/eshyra-<version>-linux-x64/bin/eshyra
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
 ```
 
-Running the launcher prints the core version and resolved config. If required
-configuration is missing, it prints the missing setting instead of requiring a
-repository checkout or a direct `node packages/cli/dist/index.js` invocation.
+**Windows (PowerShell):**
 
-See **[docs/install.md](docs/install.md)** for the full install and update
-guide: supported platforms (Linux x64/arm64 incl. WSL, macOS Apple Silicon,
-Windows x64), putting `eshyra` on your `PATH`, Windows/PowerShell steps,
-updating to a new release, and uninstalling.
+```powershell
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+```
+
+The installer detects your platform, downloads the matching archive, verifies
+its SHA-256 checksum, installs to your local app directory, and puts `eshyra`
+on your PATH. Running the CLI with no provider key set prints setup guidance.
+
+See **[docs/install.md](docs/install.md)** for the full guide: supported
+platforms (Linux x64/arm64 incl. WSL, macOS Apple Silicon, Windows x64),
+version-pinned installs, updating, and uninstalling.
 
 ### Build From Source
 
