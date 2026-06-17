@@ -24,6 +24,8 @@
     "smoke:cli-install": "node scripts/smoke-cli-install.mjs",
     "release:build": "node scripts/release/build-release-artifact.mjs",
     "release:validate": "node scripts/release/validate-release-artifact.mjs",
+    "release:checksums": "node scripts/release/generate-checksums.mjs",
+    "release:smoke-installer": "node scripts/release/smoke-installer.mjs",
     "import:dnd5e-srd": "tsx packages/core/scripts/importers/dnd5e-srd-5.1/cli.ts",
     "verify:dnd5e-srd-pack": "tsx packages/core/scripts/verify-dnd5e-srd-pack/cli.ts",
     "verify:dnd5e-srd-freeze": "tsx packages/core/scripts/verify-dnd5e-srd-freeze/cli.ts",

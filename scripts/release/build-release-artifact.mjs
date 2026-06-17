@@ -216,7 +216,20 @@ function writeLaunchers(stageDir, entryRel) {
   // also resolves to the bundled runtime rather than any system Node.
   const sh = `#!/bin/sh
 set -e
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# Resolve symlinks before computing our own location: the installer puts a
+# symlink on PATH (e.g. ~/.local/bin/eshyra -> .../app/<artifact>/bin/eshyra),
+# and "$0" is then the symlink path. Walk the symlink chain so runtime/ and the
+# app entry resolve relative to the REAL launcher, not the symlink's directory.
+src=$0
+while [ -L "$src" ]; do
+    dir=$(CDPATH= cd -- "$(dirname -- "$src")" && pwd)
+    src=$(readlink -- "$src")
+    case $src in
+        /*) ;;
+        *) src=$dir/$src ;;
+    esac
+done
+here=$(CDPATH= cd -- "$(dirname -- "$src")" && pwd)
 root=$(CDPATH= cd -- "$here/.." && pwd)
 PATH="$root/runtime:$PATH"
 export PATH

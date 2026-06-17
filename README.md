@@ -28,8 +28,9 @@ living world, not a video game missing its graphics.
 > graceful session close, and optional Dolt checkpoints. The CLI can create or
 > resume a local campaign and run interactive model-backed turns, and manages
 > campaigns through a per-user data root and registry (`ESHYRA_DB_PATH`
-> still works as an explicit-path override). The project is still
-> pre-distribution: packaging and release workflow are being planned.
+> still works as an explicit-path override). The CLI is distributed as
+> self-contained, per-platform GitHub Release archives that bundle their own
+> Node.js runtime — see [docs/install.md](docs/install.md).
 
 ## Why It's Built This Way
 
@@ -91,16 +92,29 @@ Monorepo using npm workspaces:
 
 ### Install The CLI
 
-After the CLI packages are published, install the command with npm:
+The CLI is distributed through **GitHub Releases** as a self-contained,
+per-platform archive that **bundles its own Node.js runtime** -- there is
+nothing to `npm install` and no system Node.js to set up.
+
+**Linux, macOS, and WSL:**
 
 ```bash
-npm install -g @eshyra/cli
-eshyra
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
 ```
 
-That command prints the core version and resolved config. If required
-configuration is missing, it prints the missing setting instead of requiring a
-repository checkout or a direct `node packages/cli/dist/index.js` invocation.
+**Windows (PowerShell):**
+
+```powershell
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+```
+
+The installer detects your platform, downloads the matching archive, verifies
+its SHA-256 checksum, installs to your local app directory, and puts `eshyra`
+on your PATH. Running the CLI with no provider key set prints setup guidance.
+
+See **[docs/install.md](docs/install.md)** for the full guide: supported
+platforms (Linux x64/arm64 incl. WSL, macOS Apple Silicon, Windows x64),
+version-pinned installs, updating, and uninstalling.
 
 ### Build From Source
 
