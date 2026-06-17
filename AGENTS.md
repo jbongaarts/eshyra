@@ -21,11 +21,17 @@ npm run test       # vitest run
 
 Expected: **all non-skipped tests pass.** The suite skips by default the
 live-API integration tests (`model.integration.test.ts` and
-`campaignBibleFaithfulness.integration.test.ts`, both gated off unless a real
-provider key is supplied) and any Dolt-gated checkpoint tests when the `dolt`
-binary is absent. Treat exact pass/skip counts as approximate — they grow with
-the suite; the gate is that nothing outside those documented skips fails. (As a
-rough current baseline the suite is ~239 tests across 37 files.)
+`campaignBibleFaithfulness.integration.test.ts`) and any Dolt-gated checkpoint
+tests when the `dolt` binary is absent. The live-API tests run only when a
+provider credential is present: either `ANTHROPIC_API_KEY` **or**
+`CLAUDE_CODE_OAUTH_TOKEN` (the API key takes precedence if both are set,
+mirroring `docs/agent-sdk-auth.md`). They default to the Opus 4.8 model
+(`claude-opus-4-8`), and `ESHYRA_MODEL` overrides that default. Both gate
+through the shared `packages/core/test/support/liveModelAuth.ts` helper, which
+never logs or exposes token values. Treat exact pass/skip counts as
+approximate — they grow with the suite; the gate is that nothing outside those
+documented skips fails. (As a rough current baseline the suite is ~239 tests
+across 37 files.)
 
 **Deterministic builds / core-alone boundary proof:** `tsc --build` is
 incremental and keys off `packages/*/tsconfig.tsbuildinfo`. Deleting only

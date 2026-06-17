@@ -5,6 +5,7 @@ import {
   extractCampaignBible,
   type SessionRecapRecord,
 } from '../src/index.js';
+import { resolveLiveModelAuth } from './support/liveModelAuth.js';
 
 /**
  * Live-API faithfulness proof for the campaign bible (loreweaver-q0d).
@@ -21,12 +22,14 @@ import {
  * arc-rollover (loreweaver-1jv). The faithfulness contract says Mira must
  * still appear in `majorNpcs` after iteration 10.
  *
- * Like `model.integration.test.ts`, this test is gated on
- * `ANTHROPIC_API_KEY` and is part of the documented set of always-skipped
- * tests when no provider key is supplied (see `AGENTS.md`).
+ * Like `model.integration.test.ts`, this test is gated on either
+ * `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` (API key wins when both are
+ * set) and is part of the documented set of always-skipped tests when no
+ * provider credential is supplied (see `AGENTS.md`). The default model is
+ * Opus 4.8; `ESHYRA_MODEL` overrides it.
  */
 
-const hasKey = !!process.env.ANTHROPIC_API_KEY;
+const liveAuth = resolveLiveModelAuth();
 
 const CAMPAIGN_ID = 'faithfulness-camp';
 
@@ -99,13 +102,12 @@ const RECAPS: SessionRecapRecord[] = [
   ),
 ];
 
-describe.skipIf(!hasKey)(
+describe.skipIf(!liveAuth.available)(
   'campaign bible faithfulness over 10 iterations',
   () => {
     it('keeps the session-1 NPC in majorNpcs even after 9 off-screen recaps', async () => {
-      const client = new AgentSdkModelClient(
-        process.env.ESHYRA_MODEL ?? 'claude-opus-4-7',
-      );
+      if (!liveAuth.available) return; // narrows the union; describe already skips
+      const client = new AgentSdkModelClient(liveAuth.model, liveAuth.auth);
 
       let priorBible: CampaignBibleInput | undefined;
       for (let n = 1; n <= RECAPS.length; n++) {
