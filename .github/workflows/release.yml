@@ -1,0 +1,127 @@
+# Release: build + validate the self-contained, per-platform GitHub Release CLI
+# artifacts (decision: eshyra-upef / eshyra-0p8u).
+#
+# Each artifact bundles a pinned Node 24 runtime + the ABI-matched
+# better-sqlite3 prebuild + the production app tree + bundled SRD data +
+# license/notice files. Because the runtime and native binding must match the
+# host ABI, every artifact is built ON its target platform — the same
+# host-targeted model the install-smoke job uses. dolt is NOT bundled (it stays
+# lazy/self-provisioned).
+#
+# This workflow NEVER publishes to npm and never touches package `private`
+# guards. On a version tag it creates (if needed) the GitHub Release and uploads
+# the validated artifacts to it; otherwise it just builds, validates, and
+# uploads CI artifacts.
+#
+# A scoped pull_request trigger runs the build+validate matrix whenever the
+# release packaging inputs change, so release-path regressions are caught before
+# merge. The release-attach job is tag-gated and never runs on pull_request.
+
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+      - "scripts/release/**"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/cli/package.json"
+      - "packages/core/package.json"
+      - "packages/core/data/rules-packs/**/manifest.json"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build artifact (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # GitHub-hosted runners covering the target matrix:
+        #   ubuntu-latest      -> linux-x64 (also the WSL target)
+        #   ubuntu-24.04-arm   -> linux-arm64
+        #   macos-14           -> darwin-arm64 (macOS latest, Apple Silicon)
+        #   windows-latest     -> windows-x64
+        # macOS is supported on Apple Silicon (arm64) only; we do not ship a
+        # darwin-x64 build.
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-14, windows-latest]
+    env:
+      # Keep prebuild-install on the prebuilt-first path (ADR 0008): the bundled
+      # better-sqlite3 binding must be a downloaded prebuild, not a source build.
+      npm_config_build_from_source: "false"
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node 24 LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build release artifact
+        run: npm run release:build
+
+      - name: Validate release artifact
+        run: npm run release:validate
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: eshyra-cli-${{ matrix.os }}
+          path: |
+            dist-release/*.tar.gz
+            dist-release/*.zip
+            dist-release/*.json
+          if-no-files-found: error
+
+  release:
+    name: Attach to GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      # Required to upload assets to the Release; still no npm publish anywhere.
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release if needed, then upload artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          mapfile -t assets < <(find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name '*.json' \))
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "no release assets found" >&2
+            exit 1
+          fi
+          # Create the Release if it does not already exist (idempotent on
+          # re-run). --verify-tag refuses to invent a release for a tag that was
+          # never pushed; --generate-notes fills the body from commit history.
+          # No npm publish anywhere.
+          if ! gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Creating release ${tag}"
+            gh release create "${tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${tag}" \
+              --verify-tag \
+              --generate-notes
+          else
+            echo "Release ${tag} already exists; uploading assets"
+          fi
+          echo "Uploading ${#assets[@]} asset(s) to release ${tag}"
+          gh release upload "${tag}" "${assets[@]}" --clobber --repo "${GITHUB_REPOSITORY}"
