@@ -132,9 +132,38 @@ jobs:
           done
           echo "Release workflow references all expected installer assets"
 
+  installer-smoke:
+    # Functional end-to-end check of the one-line POSIX installer against a
+    # locally built artifact: build -> checksums -> install.sh (file:// base URL,
+    # throwaway install root) -> assert checksum verified + no-config run works.
+    # This covers the real install.sh path, which the build/validate matrix does
+    # not (validate runs the artifact directly, not through the installer).
+    name: Installer smoke (POSIX)
+    runs-on: ubuntu-latest
+    env:
+      npm_config_build_from_source: "false"
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node 24 LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run installer smoke
+        run: npm run release:smoke-installer
+
   release:
     name: Attach to GitHub Release
-    needs: build
+    # Gate publication on the per-platform build/validate matrix, the installer
+    # script validation, AND the functional installer smoke, so a broken
+    # installer can never ship attached to a tag release. Still tag-gated and
+    # still never publishes to npm.
+    needs: [build, validate-installer-scripts, installer-smoke]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

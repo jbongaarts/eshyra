@@ -33,7 +33,16 @@
 param(
     [string]$Version = $env:ESHYRA_VERSION,
     [string]$BaseUrl = $env:ESHYRA_BASE_URL,
-    [string]$GithubRepo = 'jbongaarts/eshyra'
+    [string]$GithubRepo = 'jbongaarts/eshyra',
+    # Test/development support only (NOT a normal user install path):
+    #   -InstallRoot  / $env:ESHYRA_INSTALL_ROOT -- base dir for the app tree
+    #   -BinDir       / $env:ESHYRA_BIN_DIR      -- dir for the eshyra.cmd wrapper
+    #   -SkipChecksum / $env:ESHYRA_SKIP_CHECKSUM=1 -- skip verification (dev loops)
+    # When -InstallRoot or -BinDir is set the installer runs in test mode and
+    # does NOT modify the persistent user PATH.
+    [string]$InstallRoot = $env:ESHYRA_INSTALL_ROOT,
+    [string]$BinDir = $env:ESHYRA_BIN_DIR,
+    [switch]$SkipChecksum = ($env:ESHYRA_SKIP_CHECKSUM -eq '1')
 )
 
 Set-StrictMode -Version Latest
@@ -139,8 +148,9 @@ function Confirm-EshyraChecksum([string]$ArchivePath, [string]$ChecksumsPath) {
         }
     }
     if (-not $expected) {
-        Write-Warning "No checksum entry for $archiveName in sha256sums.txt; skipping verification"
-        return
+        # Fail closed: the release publishes a checksum file but it has no entry
+        # for the archive we are about to install, so we cannot verify it.
+        throw "No checksum entry for $archiveName in sha256sums.txt. The release publishes checksums but none matches the archive being installed; refusing to install an unverifiable download (it may be corrupt or tampered)."
     }
     $actual = (Get-FileHash -Path $ArchivePath -Algorithm SHA256).Hash.ToLower()
     if ($actual -ne $expected) {
@@ -169,18 +179,34 @@ function Install-Eshyra {
         Invoke-WebRequest -Uri $release.ArchiveUrl -OutFile $archivePath -UseBasicParsing -ErrorAction Stop
 
         Write-Step "Verifying checksum"
-        $checksumsPath = Join-Path $tmpDir 'sha256sums.txt'
-        try {
-            Invoke-WebRequest -Uri $release.ChecksumsUrl -OutFile $checksumsPath -UseBasicParsing -ErrorAction Stop
-            Confirm-EshyraChecksum $archivePath $checksumsPath
+        if ($SkipChecksum) {
+            Write-Warning "ESHYRA_SKIP_CHECKSUM=1 set; skipping checksum verification (test/dev only)"
         }
-        catch {
-            if ($_.Exception.Message -match 'mismatch') { throw }
-            Write-Warning "sha256sums.txt not available for this release; skipping checksum verification"
+        else {
+            $checksumsPath = Join-Path $tmpDir 'sha256sums.txt'
+            $checksumsDownloaded = $false
+            try {
+                Invoke-WebRequest -Uri $release.ChecksumsUrl -OutFile $checksumsPath -UseBasicParsing -ErrorAction Stop
+                $checksumsDownloaded = $true
+            }
+            catch {
+                # No checksum file at all: this release predates published
+                # checksums. We cannot verify, so warn loudly but proceed.
+                Write-Warning "sha256sums.txt could not be downloaded; this release predates published checksums, so the download cannot be verified. Continuing without verification."
+            }
+            if ($checksumsDownloaded) {
+                # Checksums published -> verification is mandatory. A missing
+                # entry or a hash mismatch throws and aborts the install.
+                Confirm-EshyraChecksum $archivePath $checksumsPath
+            }
         }
 
         Write-Step "Installing"
-        $installBase = Join-Path $env:LOCALAPPDATA 'Eshyra\app'
+        # Test mode (InstallRoot/BinDir overrides) keeps the install out of the
+        # real %LOCALAPPDATA% and off the persistent user PATH.
+        $testMode = [bool]$InstallRoot -or [bool]$BinDir
+        $eshyraRoot = if ($InstallRoot) { $InstallRoot } else { $env:LOCALAPPDATA }
+        $installBase = Join-Path $eshyraRoot 'Eshyra\app'
         # The artifact name (minus .zip) is the top-level directory inside the archive.
         $artifactDir = [System.IO.Path]::GetFileNameWithoutExtension($release.ArchiveName)
         $installDir = Join-Path $installBase $artifactDir
@@ -193,25 +219,35 @@ function Install-Eshyra {
         Write-Log "installed: $installDir"
 
         Write-Step "Creating command"
-        $binDir = Join-Path $env:LOCALAPPDATA 'Eshyra\bin'
+        $binDir = if ($BinDir) { $BinDir } else { Join-Path $env:LOCALAPPDATA 'Eshyra\bin' }
         New-Item -ItemType Directory -Path $binDir -Force | Out-Null
 
-        # Write a .cmd wrapper that delegates to the versioned launcher using
-        # %LOCALAPPDATA% so the wrapper survives a user profile path change.
+        # Write a .cmd wrapper that delegates to the versioned launcher. For a
+        # normal install we reference %LOCALAPPDATA% so the wrapper survives a
+        # user profile path change; in test mode the install root is arbitrary,
+        # so we point at the resolved absolute launcher path instead.
         $wrapperPath = Join-Path $binDir 'eshyra.cmd'
-        $launcherRel = "$artifactDir\bin\eshyra.cmd"
-        $wrapperContent = "@echo off`r`nCALL `"%LOCALAPPDATA%\Eshyra\app\$launcherRel`" %*`r`n"
+        $launcherTarget = if ($testMode) {
+            Join-Path $installDir 'bin\eshyra.cmd'
+        }
+        else {
+            "%LOCALAPPDATA%\Eshyra\app\$artifactDir\bin\eshyra.cmd"
+        }
+        $wrapperContent = "@echo off`r`nCALL `"$launcherTarget`" %*`r`n"
         [System.IO.File]::WriteAllText($wrapperPath, $wrapperContent, [System.Text.Encoding]::ASCII)
         Write-Log "wrapper: $wrapperPath"
 
-        # Add $binDir to the user PATH if not already present.
-        $userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-        if ($null -eq $userPath) { $userPath = '' }
-        $pathDirs = $userPath -split ';' | Where-Object { $_ -ne '' }
-        if ($pathDirs -notcontains $binDir) {
-            $newPath = (($pathDirs + @($binDir)) -join ';').TrimStart(';')
-            [System.Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
-            Write-Log "added to user PATH: $binDir"
+        # Add $binDir to the user PATH if not already present. Skipped in test
+        # mode so smoke tests never touch the developer's persistent PATH.
+        if (-not $testMode) {
+            $userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+            if ($null -eq $userPath) { $userPath = '' }
+            $pathDirs = $userPath -split ';' | Where-Object { $_ -ne '' }
+            if ($pathDirs -notcontains $binDir) {
+                $newPath = (($pathDirs + @($binDir)) -join ';').TrimStart(';')
+                [System.Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
+                Write-Log "added to user PATH: $binDir"
+            }
         }
 
         # Update the current session PATH so eshyra is immediately usable.

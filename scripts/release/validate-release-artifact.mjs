@@ -21,6 +21,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, delimiter, join, resolve } from 'node:path';
@@ -250,6 +251,42 @@ function validate(archive) {
     for (const expected of EXPECTED_OUTPUT) {
       if (!output.includes(expected)) {
         fail(`missing expected output ${JSON.stringify(expected)}:\n${output}`);
+      }
+    }
+
+    // 5b. Run the bundled launcher THROUGH A SYMLINK (POSIX). The installer and
+    //     the documented manual `ln -sf` both put a symlink on PATH, so "$0" is
+    //     the symlink path; the launcher must resolve it to find runtime/ and
+    //     the app entry. Invoking node directly (above) does not exercise that
+    //     path, so without this a launcher that breaks under symlinked
+    //     invocation would still pass validation.
+    if (!isWindows) {
+      const linkDir = mkdtempSync(join(tmpdir(), 'eshyra-launcher-'));
+      try {
+        const link = join(linkDir, 'eshyra');
+        symlinkSync(join(appRoot, 'bin', 'eshyra'), link);
+        const launcherRun = spawnSync(link, [], {
+          cwd: linkDir,
+          encoding: 'utf8',
+          // Only system bin dirs on PATH (for dirname/readlink); the launcher
+          // adds runtime/ itself. No system node is reachable.
+          env: { PATH: systemBinDirs() },
+        });
+        const launcherOut = `${launcherRun.stdout ?? ''}${launcherRun.stderr ?? ''}`;
+        if (launcherRun.status !== 1) {
+          fail(
+            `launcher via symlink expected exit 1, got ${launcherRun.status}\n${launcherOut}`,
+          );
+        }
+        for (const expected of EXPECTED_OUTPUT) {
+          if (!launcherOut.includes(expected)) {
+            fail(
+              `launcher via symlink missing expected output ${JSON.stringify(expected)}:\n${launcherOut}`,
+            );
+          }
+        }
+      } finally {
+        rmSync(linkDir, { recursive: true, force: true });
       }
     }
 

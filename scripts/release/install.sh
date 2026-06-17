@@ -14,6 +14,16 @@
 #                       e.g. file:///path/to/dist-release or http://localhost:8080
 #   GITHUB_REPO      -- override the GitHub repository (default: jbongaarts/eshyra)
 #
+# Test/development support only (NOT a normal user install path):
+#   ESHYRA_INSTALL_ROOT -- override the data-home base the app tree installs into
+#                          (defaults to XDG_DATA_HOME or $HOME/.local/share)
+#   ESHYRA_BIN_DIR      -- override the directory the `eshyra` symlink is created
+#                          in (defaults to $HOME/.local/bin)
+#   ESHYRA_SKIP_CHECKSUM=1 -- skip SHA-256 verification entirely. For local
+#                          build/test loops only; never use this for a real
+#                          install. Checksum verification is mandatory whenever
+#                          the release publishes sha256sums.txt.
+#
 # What this script does:
 #   1. Detects your OS and CPU architecture.
 #   2. Queries the GitHub Releases API to find the actual archive URL for your
@@ -168,18 +178,28 @@ verify_checksum() {
     # sha256sums.txt format: "<hash>  <filename>" (two spaces, standard sha256sum output)
     _expected=$(grep "  ${_name}$" "$_sums" 2>/dev/null | cut -d' ' -f1 || printf '')
     if [ -z "$_expected" ]; then
-        log_warn "no checksum entry for ${_name} in sha256sums.txt; skipping"
-        return 0
+        # Fail closed: the release publishes a checksum file but it has no entry
+        # for the archive we are about to install, so we cannot verify it.
+        die "no checksum entry for ${_name} in sha256sums.txt.
+The release publishes checksums but none matches the archive being installed.
+Refusing to install an unverifiable download (it may be corrupt or tampered)."
     fi
 
     _actual=$(sha256_of "$_archive")
     if [ -z "$_actual" ]; then
-        log_warn "no SHA-256 tool available (need sha256sum or shasum); skipping verification"
-        return 0
+        # Fail closed: we have an expected hash but no way to compute the actual
+        # one. Silently installing would defeat the point of publishing checksums.
+        die "checksums are published for this release but no SHA-256 tool is available.
+Install 'sha256sum' (GNU coreutils) or 'shasum' (perl) and retry so the
+download can be verified before installation."
     fi
 
     if [ "$_actual" != "$_expected" ]; then
-        die "SHA-256 mismatch for ${_name}:\n  expected: ${_expected}\n  got:      ${_actual}\n\nThe download may be corrupt or tampered. Please retry."
+        die "SHA-256 mismatch for ${_name}:
+  expected: ${_expected}
+  got:      ${_actual}
+
+The download may be corrupt or tampered. Please retry."
     fi
     log "SHA-256 verified"
 }
@@ -209,15 +229,24 @@ main() {
         || die "download failed: ${ARCHIVE_URL}"
 
     log_step "Verifying checksum"
-    checksums="${tmp_dir}/sha256sums.txt"
-    if curl -fsSL --retry 3 -o "${checksums}" "${CHECKSUMS_URL}" 2>/dev/null; then
-        verify_checksum "${archive}" "${checksums}"
+    if [ "${ESHYRA_SKIP_CHECKSUM:-}" = "1" ]; then
+        log_warn "ESHYRA_SKIP_CHECKSUM=1 set; skipping checksum verification (test/dev only)"
     else
-        log_warn "sha256sums.txt not available for this release; skipping checksum verification"
+        checksums="${tmp_dir}/sha256sums.txt"
+        if curl -fsSL --retry 3 -o "${checksums}" "${CHECKSUMS_URL}" 2>/dev/null; then
+            # Checksums published -> verification is mandatory and fails closed.
+            verify_checksum "${archive}" "${checksums}"
+        else
+            # No checksum file at all: this release predates published checksums.
+            # We cannot verify, so warn loudly but allow the install to proceed.
+            log_warn "sha256sums.txt could not be downloaded; this release predates published checksums, so the download cannot be verified. Continuing without verification."
+        fi
     fi
 
     log_step "Installing"
-    data_home="${XDG_DATA_HOME:-${HOME}/.local/share}"
+    # ESHYRA_INSTALL_ROOT is a test/dev knob so smoke tests can install into a
+    # throwaway directory instead of the user's real data home.
+    data_home="${ESHYRA_INSTALL_ROOT:-${XDG_DATA_HOME:-${HOME}/.local/share}}"
     app_parent="${data_home}/eshyra/app"
     # The artifact name (minus .tar.gz) is the top-level directory inside the archive.
     artifact_dir="${ARCHIVE_NAME%.tar.gz}"
@@ -233,7 +262,9 @@ main() {
     log "installed: ${install_dir}"
 
     log_step "Creating command"
-    bin_dir="${HOME}/.local/bin"
+    # ESHYRA_BIN_DIR is a test/dev knob so smoke tests do not touch the user's
+    # real ~/.local/bin (and therefore their PATH).
+    bin_dir="${ESHYRA_BIN_DIR:-${HOME}/.local/bin}"
     mkdir -p "${bin_dir}"
     symlink="${bin_dir}/eshyra"
     ln -sf "${install_dir}/bin/eshyra" "${symlink}"

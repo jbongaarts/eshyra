@@ -107,6 +107,60 @@ describe('Release installer policy', () => {
     expect(ps1).toMatch(/SHA256/);
   });
 
+  it('POSIX installer fails closed when a published checksum cannot be verified', () => {
+    const sh = readText('scripts/release/install.sh');
+
+    // The verify_checksum function must hard-fail (die), not warn-and-continue,
+    // when the archive has no entry in sha256sums.txt or no hashing tool exists.
+    const verifyBody = sh.slice(
+      sh.indexOf('verify_checksum() {'),
+      sh.indexOf('# ---------- main'),
+    );
+    expect(verifyBody).toMatch(/die "no checksum entry/);
+    expect(verifyBody).toMatch(
+      /die "checksums are published .* no SHA-256 tool/s,
+    );
+    expect(verifyBody).toMatch(/die "SHA-256 mismatch/);
+    // It must NOT silently skip on those conditions.
+    expect(verifyBody).not.toMatch(/skipping['"]?\s*$/m);
+    expect(verifyBody).not.toContain('return 0');
+  });
+
+  it('PowerShell installer fails closed when a published checksum cannot be verified', () => {
+    const ps1 = readText('scripts/release/install.ps1');
+
+    const verifyBody = ps1.slice(
+      ps1.indexOf('function Confirm-EshyraChecksum'),
+      ps1.indexOf('function Install-Eshyra'),
+    );
+    // Missing entry must throw, not warn-and-return.
+    expect(verifyBody).toMatch(/throw "No checksum entry/);
+    // Mismatch must throw.
+    expect(verifyBody).toMatch(/throw "SHA-256 checksum mismatch/);
+    expect(verifyBody).not.toMatch(/Write-Warning.*skipping verification/);
+  });
+
+  it('PowerShell installer only skips verification when checksums cannot be downloaded', () => {
+    const ps1 = readText('scripts/release/install.ps1');
+
+    // The "predates checksums / continue" warning must be tied to a failed
+    // download, and verification (Confirm-EshyraChecksum) must run whenever the
+    // file WAS downloaded — never swallowed in the download catch block.
+    expect(ps1).toMatch(/predates published checksums/);
+    expect(ps1).toMatch(/if \(\$checksumsDownloaded\)/);
+  });
+
+  it('installer scripts expose only a clearly test/dev checksum opt-out', () => {
+    const sh = readText('scripts/release/install.sh');
+    const ps1 = readText('scripts/release/install.ps1');
+
+    // An explicit, clearly-named opt-out may exist for dev loops, but it must be
+    // labeled test/dev only — never presented as a normal install path.
+    expect(sh).toContain('ESHYRA_SKIP_CHECKSUM');
+    expect(ps1).toContain('ESHYRA_SKIP_CHECKSUM');
+    expect(sh).toMatch(/test\/dev only|test\/development/i);
+  });
+
   it('installer scripts install without requiring system Node', () => {
     const sh = readText('scripts/release/install.sh');
     const ps1 = readText('scripts/release/install.ps1');
