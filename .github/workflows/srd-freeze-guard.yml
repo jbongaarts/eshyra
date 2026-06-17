@@ -1,0 +1,86 @@
+# SRD frozen artifact guard (eshyra-ixcd).
+#
+# Runs `npm run verify:dnd5e-srd-freeze` on pull requests that touch any
+# frozen SRD 5.1 path, and on every push to main.
+#
+# Two checks are enforced:
+#
+#   1. Hash check (always) — SHA-256 of each file listed in
+#      docs/audits/dnd5e-srd-5.1-final/freeze-manifest.json must match. Fails
+#      if any frozen file is missing or has been modified without updating the
+#      manifest.
+#
+#   2. Thaw-note check (PR only) — if any protected frozen path changed, an
+#      active thaw note must be present in the same diff under
+#      docs/audits/dnd5e-srd-5.1-final/thaw-notes/<date>-<reason>.md. The
+#      freeze guard reads GITHUB_BASE_REF and runs `git diff --name-only
+#      origin/${GITHUB_BASE_REF}...HEAD` to enumerate changed paths.
+#
+# When a change to a frozen path is intended:
+#   1. Add a thaw note (copy TEMPLATE.md, name it <date>-<reason>.md).
+#   2. Make the change and regenerate affected artifacts.
+#   3. Update freeze-manifest.json with the new hashes.
+#   4. Update audit/provenance evidence consistently.
+#   5. The PR must pass both the hash check and this workflow.
+#
+# This workflow complements srd-importer-reproducibility.yml (which reruns the
+# importer to prove pack reproducibility). The freeze guard focuses on the
+# orthogonal question: "do the committed bytes still match the audited hashes?"
+
+name: SRD frozen artifact guard
+
+on:
+  pull_request:
+    paths:
+      - "packages/core/sources/dnd5e-srd-5.1/**"
+      - "packages/core/scripts/importers/dnd5e-srd-5.1/**"
+      - "packages/core/scripts/verify-dnd5e-srd-pack/**"
+      - "packages/core/scripts/create-dnd5e-srd-audit-bundle/**"
+      - "packages/core/scripts/verify-dnd5e-srd-freeze/**"
+      - "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/**"
+      - "docs/audits/dnd5e-srd-5.1-final/**"
+      - ".github/workflows/srd-freeze-guard.yml"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches: [main]
+    paths:
+      - "packages/core/sources/dnd5e-srd-5.1/**"
+      - "packages/core/scripts/importers/dnd5e-srd-5.1/**"
+      - "packages/core/scripts/verify-dnd5e-srd-pack/**"
+      - "packages/core/scripts/create-dnd5e-srd-audit-bundle/**"
+      - "packages/core/scripts/verify-dnd5e-srd-freeze/**"
+      - "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/**"
+      - "docs/audits/dnd5e-srd-5.1-final/**"
+      - ".github/workflows/srd-freeze-guard.yml"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-srd-freeze:
+    runs-on: ubuntu-latest
+    env:
+      npm_config_build_from_source: "false"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Fetch full history so git diff --name-only origin/<base>...HEAD works
+          # for the thaw-note changed-path check on pull requests.
+          fetch-depth: 0
+
+      - name: Set up Node 24 LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Hash check always runs. On pull_request, the GITHUB_BASE_REF env var
+      # is set automatically so the thaw-note changed-path check also runs.
+      - name: Verify SRD 5.1 frozen artifact
+        run: npm run verify:dnd5e-srd-freeze
