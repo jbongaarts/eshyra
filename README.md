@@ -242,10 +242,9 @@ content lives in the npm package build output.
 
 ## Contributing
 
-- **External code contributions are not accepted yet.** The source-code license
-  is deferred, so there is no inbound license under which outside contributions
-  could be received. See [CONTRIBUTING.md](CONTRIBUTING.md) and
-  [docs/licensing.md](docs/licensing.md).
+- **External code contributions are not accepted yet.** There is no contributor
+  agreement in place under which outside contributions could be received. See
+  [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/licensing.md](docs/licensing.md).
 - Issue tracking uses **bd (beads)**, not GitHub issues or markdown TODO lists.
   Run `bd ready` to find available work and `bd prime` for the full workflow.
 - Operational guidance for both humans and AI agents lives in
@@ -258,20 +257,13 @@ content lives in the npm package build output.
 
 ## License
 
-**No source-code license has been granted yet.** The decision is intentionally
-deferred pending the open commercialization and distribution decisions. Until it
-is made, the root workspace and both npm workspaces are marked `private` with
-`license` metadata `UNLICENSED`, are not intended for npm publication, and convey
-no rights to use, copy, modify, or redistribute the source code. The full
-posture — including why the decision is deferred and how it will be resolved — is
-in [docs/licensing.md](docs/licensing.md).
+Eshyra is source-available and free for non-commercial use under the
+**PolyForm Noncommercial License 1.0.0**. Commercial use requires separate
+written permission or a separate commercial license. See [LICENSE](LICENSE) and
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for details.
 
-That source-code decision is separate from bundled content licensing. Any
-bundled or publicly shared rules/campaign content must be open-licensed, public
-domain, original, or publisher-licensed, with license and provenance recorded in
-pack metadata.
-
-Third-party adventure or module source legality is also separate from the
-repository license. That review remains tracked by bead `eshyra-9s6`; this
-repository must not bundle or publish third-party adventure text until that
-source is confirmed open, public domain, original, or publisher-licensed.
+Bundled rules/campaign content (e.g. the D&D 5e SRD, Pathfinder 2e Remaster
+fixtures) is governed by its own upstream licenses and attribution requirements,
+separate from the Eshyra source-code license. Third-party adventure or module
+text must be confirmed open, public domain, original, or publisher-licensed
+before bundling. See [docs/licensing.md](docs/licensing.md).
