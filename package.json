@@ -24,6 +24,7 @@
     "smoke:cli-install": "node scripts/smoke-cli-install.mjs",
     "import:dnd5e-srd": "tsx packages/core/scripts/importers/dnd5e-srd-5.1/cli.ts",
     "verify:dnd5e-srd-pack": "tsx packages/core/scripts/verify-dnd5e-srd-pack/cli.ts",
+    "verify:dnd5e-srd-freeze": "tsx packages/core/scripts/verify-dnd5e-srd-freeze/cli.ts",
     "generate:dnd5e-srd-creature-names": "tsx packages/core/scripts/generate-creature-name-baseline/cli.ts",
     "audit:rules-pack": "tsx packages/core/scripts/rules-pack-audit/cli.ts audit",
     "diff:rules-pack": "tsx packages/core/scripts/rules-pack-audit/cli.ts diff",

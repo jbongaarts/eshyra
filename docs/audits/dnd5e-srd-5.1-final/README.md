@@ -7,6 +7,35 @@
 
 ---
 
+## Freeze protection
+
+The `rules:dnd5e-srd-5.1` pack is frozen. The freeze guard enforces two policies:
+
+- **Hash policy** — SHA-256 hashes of frozen files are pinned in
+  [`freeze-manifest.json`](./freeze-manifest.json). Any change to those bytes
+  fails CI immediately.
+- **Thaw-note policy** — a PR that touches any frozen path must also commit an
+  active thaw note under [`thaw-notes/`](./thaw-notes/). Thaw notes are not a
+  bypass; the hash check still runs and the freeze manifest must be updated
+  consistently.
+
+**To check locally:**
+
+```bash
+npm run verify:dnd5e-srd-freeze
+```
+
+**To make an intentional change:**
+
+1. Copy [`thaw-notes/TEMPLATE.md`](./thaw-notes/TEMPLATE.md) to
+   `thaw-notes/<date>-<short-reason>.md` and fill it in.
+2. Make the change and regenerate affected artifacts.
+3. Update `freeze-manifest.json` with the new hashes
+   (run `npm run verify:dnd5e-srd-freeze` to see the mismatch, then update).
+4. Update audit/provenance evidence consistently.
+
+---
+
 ## 1. Final sign-off verdict
 
 > ## ✅ FREEZE / SIGN OFF — no blockers found.

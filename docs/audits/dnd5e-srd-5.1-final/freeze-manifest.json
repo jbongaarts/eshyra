@@ -1,0 +1,61 @@
+{
+  "artifactName": "D&D 5e SRD 5.1 frozen audited artifact",
+  "status": "frozen",
+  "auditedCommit": "0f5b3dcce1de96630e01532d138b1286c948b668",
+  "createdBy": "eshyra-ixcd",
+  "hashAlgorithm": "sha256",
+  "files": [
+    {
+      "path": "packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf",
+      "sha256": "2504d2a0abb0a4d491a939be4f17910a2dde0312570ab8d208080225ccf0a1f0"
+    },
+    {
+      "path": "packages/core/sources/dnd5e-srd-5.1/manifest.json",
+      "sha256": "332e52d787b695a411660b2dcd57a8190824ca4e73b2b967b04e8deade524f9b"
+    },
+    {
+      "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json",
+      "sha256": "497359e59e2e49722f6469ae323c5c12f917acdbf1c3550d782b4db1e7fde8bb"
+    },
+    {
+      "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json",
+      "sha256": "42a6081e35d4da711da48641e4041fe7eec3ff1c363736cc1c7c784feb5570b8"
+    },
+    {
+      "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-inventory.json",
+      "sha256": "48134b09cb7626aeff5f3c51659f5856ea7f8dbc0021702db1e866e76c3707f2"
+    },
+    {
+      "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-coverage.json",
+      "sha256": "ead5779a66054b2647d947155c50136e406af145a62499e2f47863691e4c427f"
+    },
+    {
+      "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-region-ledger.json",
+      "sha256": "7baf47c2fe3456e0e095b0bc70765ce6916574b8ef1398f38036af43d89d4540"
+    },
+    {
+      "path": "docs/audits/dnd5e-srd-5.1-final/README.md",
+      "sha256": "dca46e24f8c5e405abf4088c20aa015350afda674abce5b6b82780a503e4dc75"
+    },
+    {
+      "path": "docs/audits/dnd5e-srd-5.1-final/provenance.md",
+      "sha256": "a2a7ae55c06e7f413e01b88db3f8ced87135661f79674b8c8e75f073467eeb64"
+    },
+    {
+      "path": "docs/audits/dnd5e-srd-5.1-final/evidence.json",
+      "sha256": "c219931187996867b02d78f76b04a7e7c054660b81e71b33d60e1963cc84a1c8"
+    },
+    {
+      "path": "docs/audits/dnd5e-srd-5.1-final/record-counts.md",
+      "sha256": "c4af62f4062a238ef557cc72aa99df75b08a8a3ac1d938037826a6557a10c76d"
+    },
+    {
+      "path": "docs/audits/dnd5e-srd-5.1-final/audit-methodology.md",
+      "sha256": "5218cfdeddf342520d354d051314eb32598e98c1ef32968602b6f876be88f791"
+    },
+    {
+      "path": "docs/audits/dnd5e-srd-5.1-final/known-source-typos.md",
+      "sha256": "fb160b23ac57a1ec6be467fc5186f1ad86d31d8decbb068fcdf75ed4e8dd3520"
+    }
+  ]
+}
