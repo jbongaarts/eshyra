@@ -47,10 +47,11 @@ jobs:
         # GitHub-hosted runners covering the target matrix:
         #   ubuntu-latest      -> linux-x64 (also the WSL target)
         #   ubuntu-24.04-arm   -> linux-arm64
-        #   macos-13           -> darwin-x64
-        #   macos-14           -> darwin-arm64
+        #   macos-14           -> darwin-arm64 (macOS latest, Apple Silicon)
         #   windows-latest     -> windows-x64
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14, windows-latest]
+        # macOS is supported on Apple Silicon (arm64) only; we do not ship a
+        # darwin-x64 build.
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-14, windows-latest]
     env:
       # Keep prebuild-install on the prebuilt-first path (ADR 0008): the bundled
       # better-sqlite3 binding must be a downloaded prebuild, not a source build.
