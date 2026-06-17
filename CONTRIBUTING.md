@@ -2,16 +2,16 @@
 
 ## External code contributions are not accepted yet
 
-Eshyra's source-code license is intentionally deferred — **no source-code
-license has been granted** and the packages are marked `private` / `UNLICENSED`.
-See [docs/licensing.md](docs/licensing.md) for the full posture.
+Eshyra is source-available under the PolyForm Noncommercial License 1.0.0
+(see [LICENSE](LICENSE)). Commercial rights are reserved; see
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) and
+[docs/licensing.md](docs/licensing.md).
 
-Because there is no inbound source-code license or contributor agreement in
-place, **the project cannot accept external code contributions at this time.**
-Pull requests that add or modify source code from outside contributors will not
-be merged until a contribution licensing arrangement is defined. This hold is
-tied to the open commercialization decision (`eshyra-14h`) and distribution
-decision (`eshyra-bo2`); it will be revised once those are resolved.
+There is no contributor agreement or inbound license arrangement in place, so
+**the project cannot accept external code contributions at this time.** Pull
+requests that add or modify source code from outside contributors will not be
+merged until a contribution licensing arrangement is defined. This will be
+revisited alongside the distribution channel decision (`eshyra-bo2`).
 
 You are welcome to read the code, open issues to report bugs, and discuss ideas.
 Non-code feedback does not require a contribution license.

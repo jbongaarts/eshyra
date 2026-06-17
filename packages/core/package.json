@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "UI-agnostic Eshyra campaign engine, persistence, rules, and model orchestration.",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "files": [
     "dist",
