@@ -57,7 +57,8 @@ export type {
 export {
   approxTokens,
   buildModelCallEvent,
-  splitMarkdownSections,
+  sanitizePromptSectionName,
+  splitPromptSections,
 } from './debug/sessionDebug.js';
 export * from './index.js';
 export type {

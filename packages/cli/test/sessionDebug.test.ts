@@ -89,6 +89,31 @@ describe('createFileSessionDebugSink', () => {
     expect(JSON.stringify(lines[0])).not.toContain('sk-ant-secret-token');
   });
 
+  it('never writes an injected "## ..." secret/narrative into the structural file', () => {
+    const dir = workDir();
+    const sink = createFileSessionDebugSink({ dir, captureContent: false });
+    const secret = 'INJECTED-SECRET-9000';
+    // A player who types their own markdown heading inside the turn input.
+    sink.record(
+      buildModelCallEvent({
+        trace: { sessionId: 's1' },
+        model: 'm',
+        toolProtocolMode: 'fenced-text',
+        messages: [
+          {
+            role: 'user',
+            content: `## Player Input\n## ${secret}\nI wander off`,
+          },
+        ],
+        outcome: { ok: true, resultChars: 1, resultApproxTokens: 1 },
+        captureContent: false,
+      }),
+    );
+    const raw = readFileSync(join(dir, 's1.jsonl'), 'utf8');
+    expect(raw).not.toContain(secret);
+    expect(raw).toContain('## (content)');
+  });
+
   it('records both successful and failed turns to the same session file', () => {
     const dir = workDir();
     const sink = createFileSessionDebugSink({ dir, captureContent: false });

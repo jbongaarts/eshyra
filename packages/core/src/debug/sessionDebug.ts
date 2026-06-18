@@ -35,20 +35,80 @@ export function approxTokens(chars: number): number {
 
 /** Name + approximate size of one markdown `## section` of a prompt. */
 export interface MarkdownSectionSize {
-  /** The `## Header` text, or `(preamble)` for content before the first header. */
+  /**
+   * A *sanitized* section label: either a known Eshyra template heading (e.g.
+   * `## Game State`), `(preamble)` for content before the first header, or the
+   * generic `## (content)` placeholder for any heading that is not a recognized
+   * template label. Arbitrary prompt-derived heading text (player input,
+   * persisted narrative, a forged `## secret` line) is NEVER reflected here —
+   * only the size is. See {@link sanitizePromptSectionName}.
+   */
   readonly name: string;
   readonly chars: number;
   readonly approxTokens: number;
 }
 
+/** Placeholder for any heading that is not a recognized template label. */
+const UNRECOGNIZED_SECTION = '## (content)';
+
 /**
- * Split a prompt into its `## Header` sections and report each one's size. The
- * Eshyra context assembler and DM system prompt both delimit sections with
- * `## ` headers, so this recovers the section breakdown structurally without the
- * assembler having to emit it. Content before the first header (e.g. the DM
- * persona) is reported as `(preamble)`.
+ * The fixed set of `## ` headings emitted by the DM system prompt
+ * (`buildSystemPrompt`) and the assembled-context renderer
+ * (`renderContextMessage`). These are code-owned constant strings, so echoing
+ * them back in a structural log reveals nothing about campaign content. Any
+ * heading outside this set is treated as untrusted prompt-derived text.
  */
-export function splitMarkdownSections(text: string): MarkdownSectionSize[] {
+const KNOWN_PROMPT_SECTION_LABELS: ReadonlySet<string> = new Set([
+  // System prompt:
+  '## The Hybrid Contract',
+  '## Available Tools',
+  '## Tool-Call Protocol',
+  // Assembled context:
+  '## Campaign Bible',
+  '## Arc Summaries',
+  '## Recent Sessions',
+  '## Party',
+  '## Game State',
+  '## Current Scene',
+  '## Player Input',
+]);
+
+/**
+ * Map a raw `## ` heading to a label that is safe to persist in a structural
+ * debug log. Recognized template headings pass through unchanged; the dynamic
+ * `## Current Scene: <title>` heading is collapsed to `## Current Scene` so the
+ * (campaign-authored) scene title never leaks; everything else — including a
+ * player- or narrative-supplied `## ...` line — becomes the generic
+ * {@link UNRECOGNIZED_SECTION} placeholder. The section's size is reported
+ * regardless; only the *name* is sanitized.
+ */
+export function sanitizePromptSectionName(rawName: string): string {
+  if (rawName === '(preamble)') {
+    return rawName;
+  }
+  // `## Current Scene: <title>` → `## Current Scene` (drop the title).
+  if (rawName.startsWith('## Current Scene:')) {
+    return '## Current Scene';
+  }
+  return KNOWN_PROMPT_SECTION_LABELS.has(rawName)
+    ? rawName
+    : UNRECOGNIZED_SECTION;
+}
+
+/**
+ * Split a prompt into its `## ` sections and report each one's *sanitized* label
+ * and size. The Eshyra context assembler and DM system prompt both delimit
+ * sections with `## ` headers, so this recovers the section breakdown
+ * structurally without the assembler having to emit it. Content before the first
+ * header (e.g. the DM persona) is reported as `(preamble)`.
+ *
+ * Crucially, the emitted label is always run through
+ * {@link sanitizePromptSectionName}: a heading that is not a recognized template
+ * label — which is the only way untrusted player/narrative text could reach a
+ * heading — is replaced by a generic placeholder, so a structural log never
+ * contains arbitrary prompt-derived heading text. Sizes are still attributed.
+ */
+export function splitPromptSections(text: string): MarkdownSectionSize[] {
   const sections: MarkdownSectionSize[] = [];
   const lines = text.split('\n');
   let name = '(preamble)';
@@ -62,13 +122,20 @@ export function splitMarkdownSections(text: string): MarkdownSectionSize[] {
     if (name === '(preamble)' && chars === 0 && sections.length === 0) {
       return;
     }
-    sections.push({ name, chars, approxTokens: approxTokens(chars) });
+    sections.push({
+      name: sanitizePromptSectionName(name),
+      chars,
+      approxTokens: approxTokens(chars),
+    });
   };
   for (const line of lines) {
-    const header = /^##\s+(.*)$/.exec(line);
-    if (header) {
+    // Detect a heading with a literal `## ` prefix check — no quantifier-based
+    // regex — so a line of all-whitespace can't trigger polynomial backtracking
+    // (CodeQL js/polynomial-redos). The heading text is only used to match
+    // against the known-label allowlist; it is never persisted verbatim.
+    if (line.startsWith('## ')) {
       flush();
-      name = `## ${header[1].trim()}`;
+      name = `## ${line.slice(3).trim()}`;
       buf = [];
     } else {
       buf.push(line);
@@ -126,15 +193,24 @@ export type ModelCallOutcome =
 
 /**
  * Sensitive, fully-captured call content. Present only when a sink opted into
- * content capture. Every string here has already been passed through
- * {@link redactSecrets}.
+ * content capture (full mode).
+ *
+ * The prompt-derived strings ({@link system} and each {@link messages} entry)
+ * have been passed through {@link redactSecrets}. {@link providedTools} is the
+ * verbatim set of code-owned tool definitions handed to the client — static,
+ * developer-authored schema (names, descriptions, JSON Schema), not user input
+ * or credentials — so it is intentionally NOT redacted and is included as-is for
+ * diagnostic fidelity.
  */
 export interface ModelCallContent {
+  /** Full system prompt, redacted. */
   readonly system?: string;
+  /** Full conversation, each message's content redacted. */
   readonly messages: ReadonlyArray<{
     readonly role: ModelMessage['role'];
     readonly content: string;
   }>;
+  /** Code-owned tool definitions, verbatim (static schema, not redacted). */
   readonly providedTools: readonly ModelToolDefinition[];
 }
 
@@ -232,11 +308,11 @@ export function buildModelCallEvent(
         : {
             chars: systemChars,
             approxTokens: approxTokens(systemChars),
-            sections: splitMarkdownSections(input.system),
+            sections: splitPromptSections(input.system),
           },
     messages,
     contextSections:
-      firstUser === undefined ? [] : splitMarkdownSections(firstUser.content),
+      firstUser === undefined ? [] : splitPromptSections(firstUser.content),
     totalChars,
     totalApproxTokens: approxTokens(totalChars),
     outcome: input.outcome,

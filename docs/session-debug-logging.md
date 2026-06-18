@@ -50,17 +50,24 @@ Each structural line records, per model call:
   (currently empty — the SDK drives tools through its own harness and the
   fenced-text protocol in the system prompt; the gap between provided and
   forwarded is itself a key diagnostic);
-- the system-prompt size and its `## section` breakdown;
-- the assembled context's `## section` breakdown (so context growth and
-  recap/scene sizing are visible at a glance);
+- the system-prompt size and its section breakdown;
+- the assembled context's section breakdown (so context growth and
+  recap/scene sizing are visible at a glance). Section **labels** are sanitized:
+  only known template headings (`## Game State`, `## Player Input`, …) or a
+  generic `## (content)` placeholder are recorded — never arbitrary
+  prompt-derived heading text. A player- or narrative-supplied `## ...` line, or
+  the campaign-authored scene title in `## Current Scene: <title>`, is collapsed
+  to a placeholder/label so only its *size* is reported;
 - per-message role/size/structure, total size, and an approximate token count;
 - the call outcome (success size + stop reason, or a redacted error).
 
 ## Redaction
 
-The structural log contains only sizes, names, counts, ids, and labels — there
-is no free text for a secret to hide in. The `full`-mode content file is still
-run through the shared secret redactor
+The structural log contains only sizes, counts, ids, and **sanitized** labels —
+section names are restricted to known template headings or a generic
+placeholder, so no arbitrary prompt-derived text (player input, persisted
+narrative, scene titles) reaches it. There is no free text for a secret to hide
+in. The `full`-mode content file is still run through the shared secret redactor
 (`redactSecrets`, `packages/core/src/memory/turnFailureDiagnostic.ts`), which
 strips bearer tokens, `api_key=`/`token:` assignments, `sk-...` keys, and
 JWT-shaped triples before anything is written.
