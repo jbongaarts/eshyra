@@ -84,10 +84,35 @@ export function renderToolResults(
 }
 
 /**
- * Build the DM system prompt: persona plus the refined-Hybrid rules contract,
- * with the live tool roster and the tool-call protocol spec appended.
+ * Which tool transport the system prompt should describe:
+ *  - `native`: tools reach the model through the provider's native tool channel
+ *    (the adapter forwards the Eshyra tool definitions). The prompt MUST NOT
+ *    instruct the model to emit fenced ```tool_call blocks — that confused
+ *    native-tool models into reporting the described tools were "not present"
+ *    (eshyra-eznk). The model calls tools through the provider mechanism.
+ *  - `fenced`: legacy/test-only transport where the model emits fenced
+ *    ```tool_call blocks parsed out of its text. Retained for adapters with no
+ *    native tool channel and for deterministic offline tests.
  */
-export function buildSystemPrompt(registry: ToolRegistry): string {
+export type ToolProtocol = 'native' | 'fenced';
+
+export interface BuildSystemPromptOptions {
+  /** Tool transport the prompt should describe. Defaults to `fenced` (legacy). */
+  readonly toolProtocol?: ToolProtocol;
+}
+
+/**
+ * Build the DM system prompt: persona plus the refined-Hybrid rules contract,
+ * with the live tool roster and a transport-appropriate tool-call protocol
+ * section. With `toolProtocol: 'native'` the fenced-block instructions are
+ * replaced by guidance to use the provider-native tool interface; with the
+ * default `fenced` the legacy fenced protocol spec is appended.
+ */
+export function buildSystemPrompt(
+  registry: ToolRegistry,
+  options?: BuildSystemPromptOptions,
+): string {
+  const toolProtocol = options?.toolProtocol ?? 'fenced';
   const toolLines = registry
     .list()
     .sort()
@@ -95,6 +120,37 @@ export function buildSystemPrompt(registry: ToolRegistry): string {
       const tool = registry.get(name);
       return `- ${name}: ${tool?.description ?? ''}`;
     });
+
+  const protocolSection =
+    toolProtocol === 'native'
+      ? [
+          '## Tool-Call Protocol',
+          '',
+          'The tools listed above are available to you directly through your',
+          'native tool interface — call them the normal way. Do NOT describe a',
+          'tool call in prose and do NOT emit fenced `tool_call` blocks; issue',
+          'a real tool call. You may make several tool calls in one turn; you',
+          'will receive their results back as tool results. Inspect the results,',
+          'call more tools if needed, and when the turn is mechanically',
+          'resolved, reply with ONLY the final narration prose and no further',
+          'tool calls. That tool-call-free reply is the turn the player sees.',
+        ]
+      : [
+          '## Tool-Call Protocol',
+          '',
+          'To call a tool, emit a fenced block tagged `tool_call` containing a JSON',
+          'object `{"tool": "<name>", "args": {...}}`. You may emit several in one',
+          'reply; they run in order. Example:',
+          '',
+          '```tool_call',
+          '{"tool": "roll", "args": {"dice": "1d20+5", "reason": "attack roll"}}',
+          '```',
+          '',
+          'After your tool calls you will receive `tool_result` blocks. Inspect them,',
+          'call more tools if needed, and when the turn is mechanically resolved,',
+          'reply with ONLY the final narration prose — no tool_call block. That',
+          'tool-call-free reply is the turn the player sees.',
+        ];
 
   return [
     'You are the Dungeon Master for a long-running solo fantasy campaign.',
@@ -124,19 +180,6 @@ export function buildSystemPrompt(registry: ToolRegistry): string {
     '',
     ...toolLines,
     '',
-    '## Tool-Call Protocol',
-    '',
-    'To call a tool, emit a fenced block tagged `tool_call` containing a JSON',
-    'object `{"tool": "<name>", "args": {...}}`. You may emit several in one',
-    'reply; they run in order. Example:',
-    '',
-    '```tool_call',
-    '{"tool": "roll", "args": {"dice": "1d20+5", "reason": "attack roll"}}',
-    '```',
-    '',
-    'After your tool calls you will receive `tool_result` blocks. Inspect them,',
-    'call more tools if needed, and when the turn is mechanically resolved,',
-    'reply with ONLY the final narration prose — no tool_call block. That',
-    'tool-call-free reply is the turn the player sees.',
+    ...protocolSection,
   ].join('\n');
 }

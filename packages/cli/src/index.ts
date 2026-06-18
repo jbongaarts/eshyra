@@ -4,7 +4,8 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { pathToFileURL } from 'node:url';
 import {
-  AgentSdkModelClient,
+  type AnthropicNativeDebugOptions,
+  AnthropicNativeModelClient,
   CORE_VERSION,
   ConfigError,
   createDefaultToolRegistry,
@@ -18,10 +19,7 @@ import {
   openDatabase,
   runTurn,
 } from '@eshyra/core';
-import {
-  type AgentSdkDebugOptions,
-  DEFAULT_MEMORY_CONFIG,
-} from '@eshyra/core/internal';
+import { DEFAULT_MEMORY_CONFIG } from '@eshyra/core/internal';
 import {
   type CampaignDeps,
   resolvePlayCampaign,
@@ -135,7 +133,7 @@ function buildModelDebug(
   cfg: EshyraConfig,
   dataRoot: string,
   io: PlayDeps['io'],
-): AgentSdkDebugOptions | undefined {
+): AnthropicNativeDebugOptions | undefined {
   const resolved = resolveSessionDebug(dataRoot);
   if (resolved.sink === undefined) {
     return undefined;
@@ -157,14 +155,20 @@ function buildModelDebug(
 function buildPlayDeps(
   cfg: EshyraConfig,
   io: PlayDeps['io'],
-  debug?: AgentSdkDebugOptions,
+  debug?: AnthropicNativeDebugOptions,
 ): PlayDeps {
   return {
     io,
     openDb: (path) => openDatabase(path),
-    // Inject the resolved provider credential through the explicit auth seam
-    // rather than letting the Agent SDK read ambient process.env.
-    model: new AgentSdkModelClient(cfg.model, { env: cfg.auth.env }, debug),
+    // Released gameplay runs on the native Anthropic Messages adapter so the
+    // Eshyra tools are actually forwarded to the provider's native tool channel
+    // (eshyra-eznk). The resolved provider credential is injected through the
+    // explicit auth seam rather than read from ambient process.env.
+    model: new AnthropicNativeModelClient(
+      cfg.model,
+      { env: cfg.auth.env },
+      debug,
+    ),
     registry: createDefaultToolRegistry(),
     runTurn,
     pack: EMBERFALL_HOLLOW,

@@ -806,4 +806,92 @@ describe('orchestrator turn loop', () => {
     expect(trace?.actingCharacterId).toBe('pc-2');
     db.close();
   });
+
+  it('executes a native roll tool call and feeds the result back before final narration (eshyra-eznk)', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new StructuredScriptedModel([
+      {
+        text: 'You swing at the goblin.',
+        toolCalls: [
+          {
+            id: 'toolu_roll',
+            name: 'roll',
+            args: { dice: '1d20+5', reason: 'attack roll' },
+          },
+        ],
+        stopReason: 'tool_use',
+      },
+      { text: 'Your blade bites deep.', stopReason: 'end_turn' },
+    ]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.narration).toBe('Your blade bites deep.');
+    // The deterministic dice tool ran and produced a numeric total.
+    expect(result.toolCalls).toMatchObject([
+      {
+        tool: 'roll',
+        source: 'native',
+        callId: 'toolu_roll',
+        result: { ok: true },
+      },
+    ]);
+    const rollData = result.toolCalls[0].result as {
+      ok: true;
+      data: { total: number };
+    };
+    expect(typeof rollData.data.total).toBe('number');
+
+    // The second model call received the executed roll as a native tool result.
+    const secondCall = model.seen[1];
+    expect(secondCall.messages.at(-1)).toMatchObject({
+      role: 'user',
+      toolResults: [
+        { callId: 'toolu_roll', name: 'roll', result: { ok: true } },
+      ],
+    });
+    db.close();
+  });
+
+  it('drives released gameplay with native tool prompting, not fenced-text, when tools are provided (eshyra-eznk)', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel(['You survey the room.']);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      // No explicit toolProtocol: the released default must be native.
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    const firstCall = model.seen[0];
+    // The core handed the model the provider-neutral tool definitions...
+    expect((firstCall.tools ?? []).map((t) => t.name)).toContain('roll');
+    // ...and the system prompt uses the native tool interface, not the legacy
+    // fenced ```tool_call protocol.
+    expect(firstCall.system).toBeDefined();
+    expect(firstCall.system).not.toContain('```tool_call');
+    expect(firstCall.system).toContain('native tool interface');
+    db.close();
+  });
+
+  it('still honors the fenced legacy prompt path when explicitly requested', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel(['You survey the room.']);
+
+    await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput({ toolProtocol: 'fenced' }),
+    );
+
+    expect(model.seen[0].system).toContain('```tool_call');
+    db.close();
+  });
 });

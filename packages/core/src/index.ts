@@ -108,6 +108,18 @@ export type {
 } from './model/agentSdkClient.js';
 export { AgentSdkModelClient } from './model/agentSdkClient.js';
 export type {
+  AnthropicAuth,
+  AnthropicAuthSource,
+  AnthropicNativeDebugOptions,
+} from './model/anthropicNativeClient.js';
+// Native Anthropic Messages adapter — the released gameplay tool transport
+// (eshyra-eznk). Exposes the provider-native tool channel the Agent SDK wrapper
+// could not.
+export {
+  ANTHROPIC_NATIVE_TOOL_PROTOCOL,
+  AnthropicNativeModelClient,
+} from './model/anthropicNativeClient.js';
+export type {
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,

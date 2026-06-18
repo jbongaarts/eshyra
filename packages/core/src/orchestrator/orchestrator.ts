@@ -11,7 +11,7 @@ import type { ModelClient } from '../model/client.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
-import { buildSystemPrompt } from './protocol.js';
+import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
 import type { ToolContext, ToolRegistry } from './tools.js';
 import {
@@ -75,6 +75,15 @@ export interface RunTurnInput {
   promptProfile?: string;
   recentSessionLimit?: number;
   maxToolRounds?: number;
+  /**
+   * Tool transport the DM system prompt should describe (eshyra-eznk). Defaults
+   * to `native` — released gameplay runs on a ModelClient with a native tool
+   * channel (the Anthropic adapter), so the prompt must not instruct the model
+   * to emit fenced ```tool_call blocks. Set `fenced` only for a legacy/test
+   * model client that has no native tool channel. This is transport-neutral
+   * prompt shaping — the turn loop still parses both transports regardless.
+   */
+  toolProtocol?: ToolProtocol;
 }
 
 export interface RunTurnResult {
@@ -134,7 +143,9 @@ export async function runTurn(
       model,
       registry,
       toolCtx,
-      system: buildSystemPrompt(registry),
+      system: buildSystemPrompt(registry, {
+        toolProtocol: input.toolProtocol ?? 'native',
+      }),
       initialUserMessage: renderContextMessage(assembled),
       maxToolRounds,
       onRoundStart: () => {
