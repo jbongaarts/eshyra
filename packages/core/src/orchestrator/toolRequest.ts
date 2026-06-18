@@ -7,13 +7,19 @@ import type { ModelToolCall } from '../model/client.js';
  * The orchestrator drives tools through a single internal representation of "the
  * model asked to run a tool", independent of how that request reached us. The
  * fenced-text protocol parser tags requests `source: 'fenced'`; native provider
- * calls are normalized here with `source: 'native'`. The loop consumes
- * {@link ToolRequest}, not either transport's original shape.
+ * calls returned for the outer loop are normalized here with `source: 'native'`.
+ * The loop consumes {@link ToolRequest}, not either transport's original shape.
+ *
+ * A third provenance, `native-mcp`, tags calls a provider executed inside its
+ * OWN agentic loop (the Agent SDK in-process MCP path, eshyra-eznk). Those never
+ * become a {@link ToolRequest} — the provider already ran them — but the
+ * executed-call record reuses this source vocabulary so the trace can attribute
+ * transport for every tool call uniformly.
  *
  * Keeping this abstraction free of any dependency on the turn loop (it does not
  * import `OrchestratorError`) lets both transports produce it without a cycle.
  */
-export type ToolRequestSource = 'fenced' | 'native';
+export type ToolRequestSource = 'fenced' | 'native' | 'native-mcp';
 
 /**
  * A single tool action the model requested, in document/response order.

@@ -42,6 +42,13 @@ import type { ModelToolDefinition } from './toolSchema.js';
  *
  * The ModelClient contract is unchanged, so the core gameplay layer stays
  * provider-neutral; only this file imports the Anthropic SDK.
+ *
+ * Role after eznk rework: this is the API-KEY-native alternative, NOT the
+ * released default. Released local `eshyra play` uses
+ * {@link import('./agentSdkMcpClient.js').AgentSdkMcpModelClient}, the SUPPORTED
+ * Agent SDK in-process MCP path, so the subscription-backed flow needs no Console
+ * API key. This Messages adapter is retained for callers that authenticate with
+ * an `ANTHROPIC_API_KEY` and want native tool calls returned to the outer loop.
  */
 
 /** Debug label reported for the native provider tool channel (eshyra-eznk). */

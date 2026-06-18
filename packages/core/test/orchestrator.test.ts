@@ -858,6 +858,51 @@ describe('orchestrator turn loop', () => {
     db.close();
   });
 
+  it('records provider-executed (Agent SDK MCP) tool calls without re-running them (eshyra-eznk)', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    // Simulate the Agent SDK MCP adapter: it ran `roll` in-process via the
+    // executeTool bridge and reports the executed call + final narration in one
+    // complete() result. The sentinel total (99) is not a value the real dice
+    // tool could have produced for this seed, so seeing it back proves the
+    // orchestrator recorded the provider's result rather than re-executing.
+    const model = new StructuredScriptedModel([
+      {
+        text: 'The blow lands hard.',
+        executedToolCalls: [
+          {
+            name: 'roll',
+            args: { dice: '1d20+5', reason: 'attack roll' },
+            result: { ok: true, data: { total: 99 } },
+          },
+        ],
+        stopReason: 'end_turn',
+      },
+    ]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.narration).toBe('The blow lands hard.');
+    // Exactly one model round: the provider drove its own tool loop internally.
+    expect(model.seen).toHaveLength(1);
+    // The provider also received the executeTool bridge to delegate through.
+    expect(model.seen[0].executeTool).toBeTypeOf('function');
+    expect(result.toolCalls).toEqual([
+      {
+        tool: 'roll',
+        args: { dice: '1d20+5', reason: 'attack roll' },
+        result: { ok: true, data: { total: 99 } },
+        source: 'native-mcp',
+        stopReason: 'end_turn',
+      },
+    ]);
+    db.close();
+  });
+
   it('drives released gameplay with native tool prompting, not fenced-text, when tools are provided (eshyra-eznk)', async () => {
     const db = freshDbWithSession();
     withOpenScene(db);

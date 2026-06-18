@@ -170,6 +170,17 @@ function messageShape(message: ModelMessage, index: number): MessageShape {
   };
 }
 
+/**
+ * Connection status of one MCP server the adapter handed the provider
+ * (eshyra-eznk). Mirrors the Agent SDK init message's `mcp_servers` entries so a
+ * structural log shows whether the Eshyra tool server actually connected. Both
+ * fields are code-owned labels (server name + status string), never content.
+ */
+export interface McpServerStatus {
+  readonly name: string;
+  readonly status: string;
+}
+
 /** Trace identity for a model call, mirrored from `ModelTraceMetadata`. */
 export interface ModelCallTrace {
   readonly campaignId?: string;
@@ -227,18 +238,30 @@ export interface ModelCallDebugEvent {
   /** Auth mode label (`api-key` / `oauth-token`) — never the credential itself. */
   readonly authMode?: string;
   /**
-   * Tool protocol in force, e.g. `fenced-text` (the model is instructed to emit
-   * fenced `tool_call` blocks) versus a native provider tool channel.
+   * Tool protocol in force: `fenced-text` (the model is instructed to emit
+   * fenced `tool_call` blocks), `anthropic-native` (the Messages adapter's native
+   * tool channel), or `agent-sdk-mcp` (the Agent SDK in-process MCP server).
    */
   readonly toolProtocolMode: string;
+  /**
+   * Transport/client label, when the adapter reports one (e.g. `claude-agent-sdk`
+   * for the MCP path). A plain identifier, never a secret.
+   */
+  readonly clientName?: string;
+  /**
+   * MCP server connection status the adapter observed (Agent SDK MCP path).
+   * Empty for adapters that use no MCP server.
+   */
+  readonly mcpServers?: readonly McpServerStatus[];
   /** Tool names the core handed the model client via `ModelCompleteInput.tools`. */
   readonly providedToolNames: readonly string[];
   /**
-   * Tool names the adapter actually forwarded to the provider's native tool
-   * channel. For the Agent SDK adapter this is empty: it drives tools through
-   * its own internal harness and relies on the fenced-text protocol described in
-   * the system prompt, so the provider receives no Eshyra tool definitions. The
-   * gap between this and {@link providedToolNames} is itself a key diagnostic.
+   * Tool names the adapter actually forwarded to the provider's tool channel.
+   * For the text-only Agent SDK adapter this is empty (it relies on the
+   * fenced-text protocol in the system prompt); for the native Messages adapter
+   * it is the Eshyra tool names; for the Agent SDK MCP adapter it is the generated
+   * `mcp__eshyra__*` names. The gap between this and {@link providedToolNames} is
+   * itself a key diagnostic.
    */
   readonly forwardedToolNames: readonly string[];
   /** System prompt size + section breakdown, or null when no system prompt. */
@@ -269,6 +292,8 @@ export interface BuildModelCallEventInput {
   readonly tier?: string;
   readonly authMode?: string;
   readonly toolProtocolMode: string;
+  readonly clientName?: string;
+  readonly mcpServers?: readonly McpServerStatus[];
   readonly system?: string;
   readonly messages: readonly ModelMessage[];
   readonly providedTools?: readonly ModelToolDefinition[];
@@ -300,6 +325,8 @@ export function buildModelCallEvent(
     ...(input.tier ? { tier: input.tier } : {}),
     ...(input.authMode ? { authMode: input.authMode } : {}),
     toolProtocolMode: input.toolProtocolMode,
+    ...(input.clientName ? { clientName: input.clientName } : {}),
+    ...(input.mcpServers ? { mcpServers: input.mcpServers } : {}),
     providedToolNames: providedTools.map((t) => t.name),
     forwardedToolNames: input.forwardedToolNames ?? [],
     system:

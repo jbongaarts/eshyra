@@ -4,8 +4,8 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { pathToFileURL } from 'node:url';
 import {
-  type AnthropicNativeDebugOptions,
-  AnthropicNativeModelClient,
+  type AgentSdkMcpDebugOptions,
+  AgentSdkMcpModelClient,
   CORE_VERSION,
   ConfigError,
   createDefaultToolRegistry,
@@ -133,7 +133,7 @@ function buildModelDebug(
   cfg: EshyraConfig,
   dataRoot: string,
   io: PlayDeps['io'],
-): AnthropicNativeDebugOptions | undefined {
+): AgentSdkMcpDebugOptions | undefined {
   const resolved = resolveSessionDebug(dataRoot);
   if (resolved.sink === undefined) {
     return undefined;
@@ -155,20 +155,18 @@ function buildModelDebug(
 function buildPlayDeps(
   cfg: EshyraConfig,
   io: PlayDeps['io'],
-  debug?: AnthropicNativeDebugOptions,
+  debug?: AgentSdkMcpDebugOptions,
 ): PlayDeps {
   return {
     io,
     openDb: (path) => openDatabase(path),
-    // Released gameplay runs on the native Anthropic Messages adapter so the
-    // Eshyra tools are actually forwarded to the provider's native tool channel
-    // (eshyra-eznk). The resolved provider credential is injected through the
-    // explicit auth seam rather than read from ambient process.env.
-    model: new AnthropicNativeModelClient(
-      cfg.model,
-      { env: cfg.auth.env },
-      debug,
-    ),
+    // Released gameplay runs on the Agent SDK in-process MCP adapter so the
+    // Eshyra tools reach the model through the SDK's supported custom-tool path
+    // (eshyra-eznk). The SDK authenticates from the subscription token just as
+    // well as an API key, so this path needs no Console API key. The resolved
+    // provider credential is injected through the explicit auth seam rather than
+    // read from ambient process.env.
+    model: new AgentSdkMcpModelClient(cfg.model, { env: cfg.auth.env }, debug),
     registry: createDefaultToolRegistry(),
     runTurn,
     pack: EMBERFALL_HOLLOW,

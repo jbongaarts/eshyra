@@ -3,6 +3,7 @@ import type {
   ModelCompleteResult,
   ModelMessage,
   ModelStopReason,
+  ModelToolExecutor,
   ModelToolResult,
 } from '../model/client.js';
 import { parseToolCalls, renderToolResults } from './protocol.js';
@@ -150,6 +151,13 @@ export async function runModelLoop(
   ];
   const toolCalls: ExecutedToolCall[] = [];
   const tools = registry.definitions();
+  // Bridge for adapters that own their own agentic loop (the Agent SDK MCP path,
+  // eshyra-eznk): the provider's in-process tool handlers call this so the call
+  // runs through the SAME deterministic executor the outer loop uses below. The
+  // adapter is handed the Eshyra tool name (provider/MCP naming is mapped away
+  // inside it), so this is exactly `registry.invoke`.
+  const executeTool: ModelToolExecutor = (call) =>
+    registry.invoke(call.name, call.args, toolCtx);
   let rounds = 0;
   let narration: string | undefined;
 
@@ -163,6 +171,9 @@ export async function runModelLoop(
       // a native tool channel may use them; the fenced-text protocol below
       // does not consult them and is unchanged.
       tools,
+      // Execution bridge for a provider that drives its own tool loop; ignored
+      // by adapters that return tool calls for the outer loop to run.
+      executeTool,
       // Forward trace ids plus this round's ordinal and the loop's purpose so
       // adapter-side debug logs can label and order each model call.
       ...(trace
@@ -179,6 +190,28 @@ export async function runModelLoop(
           }
         : {}),
     });
+    // Provider-owned-loop path (Agent SDK MCP, eshyra-eznk): the adapter already
+    // ran the tools in-process through the executeTool bridge and resolved its
+    // own loop, so this reply IS the final narration. Record the executed calls
+    // (under their Eshyra names) for the trace and finish — do NOT re-execute.
+    const providerExecuted = completion.executedToolCalls ?? [];
+    if (providerExecuted.length > 0) {
+      for (const call of providerExecuted) {
+        toolCalls.push({
+          tool: call.name,
+          args: call.args,
+          result: call.result,
+          source: 'native-mcp',
+          ...(call.callId ? { callId: call.callId } : {}),
+          ...(completion.stopReason
+            ? { stopReason: completion.stopReason }
+            : {}),
+        });
+      }
+      narration = completion.text.trim();
+      break;
+    }
+
     // Normalize every transport into ToolRequest before validation/execution.
     const requests = collectToolRequests(completion);
     const modelText = completion.text;

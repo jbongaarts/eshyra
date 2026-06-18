@@ -47,6 +47,7 @@ export {
 export type {
   BuildModelCallEventInput,
   MarkdownSectionSize,
+  McpServerStatus,
   MessageShape,
   ModelCallContent,
   ModelCallDebugEvent,

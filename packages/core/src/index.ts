@@ -107,14 +107,28 @@ export type {
   AgentSdkAuthSource,
 } from './model/agentSdkClient.js';
 export { AgentSdkModelClient } from './model/agentSdkClient.js';
+export type { AgentSdkMcpDebugOptions } from './model/agentSdkMcpClient.js';
+// Agent SDK in-process MCP adapter — the released gameplay tool transport
+// (eshyra-eznk). Exposes Eshyra tools to the model through the SDK's SUPPORTED
+// custom-tool path (`tool()` + `createSdkMcpServer`), so the subscription-backed
+// `eshyra play` path needs no Anthropic API key.
+export {
+  AGENT_SDK_MCP_CLIENT_NAME,
+  AGENT_SDK_MCP_TOOL_PROTOCOL,
+  AgentSdkMcpModelClient,
+  ESHYRA_MCP_SERVER_NAME,
+  fromMcpToolName,
+  toMcpToolName,
+} from './model/agentSdkMcpClient.js';
 export type {
   AnthropicAuth,
   AnthropicAuthSource,
   AnthropicNativeDebugOptions,
 } from './model/anthropicNativeClient.js';
-// Native Anthropic Messages adapter — the released gameplay tool transport
-// (eshyra-eznk). Exposes the provider-native tool channel the Agent SDK wrapper
-// could not.
+// Lower-level Anthropic Messages adapter (eshyra-eznk). Returns native
+// `ModelToolCall[]` for the outer turn loop; retained as the API-key-native
+// alternative, but the released subscription path uses the Agent SDK MCP adapter
+// above so no Console API key is required.
 export {
   ANTHROPIC_NATIVE_TOOL_PROTOCOL,
   AnthropicNativeModelClient,
@@ -128,8 +142,11 @@ export type {
   ModelResponseFormat,
   ModelStopReason,
   ModelToolCall,
+  ModelToolExecutionResult,
+  ModelToolExecutor,
   ModelToolResult,
   ModelTraceMetadata,
+  ProviderExecutedToolCall,
 } from './model/client.js';
 
 // Model client contract + Agent SDK adapter.
