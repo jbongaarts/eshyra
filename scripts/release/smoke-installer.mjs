@@ -71,6 +71,21 @@ function findArchive() {
   return readdirSync(distRelease).find((f) => f.endsWith(want));
 }
 
+function releaseVersionFromArchive(archive) {
+  const prefix = 'eshyra-';
+  const suffix = `-${target()}.tar.gz`;
+  if (!archive.startsWith(prefix) || !archive.endsWith(suffix)) {
+    fail(`unexpected archive name for ${target()}: ${archive}`);
+  }
+
+  const version = archive.slice(prefix.length, -suffix.length);
+  if (!version) {
+    fail(`could not derive release version from archive name: ${archive}`);
+  }
+
+  return version;
+}
+
 const scratch = mkdtempSync(join(tmpdir(), 'eshyra-installer-smoke-'));
 const installRoot = join(scratch, 'data');
 const binDir = join(scratch, 'bin');
@@ -89,6 +104,8 @@ try {
     fail(`no ${target()} archive found under dist-release/ after build`);
   }
   console.log(`• using artifact: ${archive}`);
+  const releaseVersion = releaseVersionFromArchive(archive);
+  console.log(`• using release version: ${releaseVersion}`);
 
   // 2. Generate checksums so the installer's verification path is exercised.
   npm(['run', 'release:checksums']);
@@ -97,7 +114,9 @@ try {
   }
 
   // 3. Run install.sh against the local dist-release via a file:// base URL,
-  //    into throwaway install/bin/home locations.
+  //    with ESHYRA_VERSION pinned to the artifact just built. Local-base mode has
+  //    no GitHub release API asset list, so the smoke must provide the version.
+  //    Install into throwaway install/bin/home locations.
   console.log('• running install.sh (file:// base URL, temp install root)…');
   const install = spawnSync('sh', [installScript], {
     encoding: 'utf8',
@@ -105,6 +124,7 @@ try {
       PATH: process.env.PATH,
       HOME: fakeHome,
       ESHYRA_BASE_URL: `file://${distRelease}`,
+      ESHYRA_VERSION: releaseVersion,
       ESHYRA_INSTALL_ROOT: installRoot,
       ESHYRA_BIN_DIR: binDir,
     },
