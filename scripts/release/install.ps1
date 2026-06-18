@@ -79,8 +79,9 @@ function Resolve-EshyraRelease([string]$Repo, [string]$Target) {
     if ($BaseUrl -and $BaseUrl -ne '') {
         # Custom base URL mode (local testing or staging).
         # Derive the archive name from Version + Target. Version defaults to
-        # 0.0.0 to match the builder's fallback when no package version is set.
-        $ver = if ($Version -and $Version -ne '') { $Version.TrimStart('v') } else { '0.0.0' }
+        # 0.0.0-dev to match the builder's sentinel fallback when no release
+        # version is injected (untagged dev/local builds).
+        $ver = if ($Version -and $Version -ne '') { $Version.TrimStart('v') } else { '0.0.0-dev' }
         $archiveName = "eshyra-$ver-$Target.zip"
         return @{
             ArchiveUrl   = "$BaseUrl/$archiveName"
@@ -91,10 +92,10 @@ function Resolve-EshyraRelease([string]$Repo, [string]$Target) {
 
     # GitHub Releases mode.
     # Query the API to find the actual archive asset URL by target suffix.
-    # This intentionally avoids constructing the filename from the tag name,
-    # because the artifact's embedded package.json version may differ from the
-    # tag (e.g., root package.json has no version field, so the builder uses
-    # the fallback "0.0.0").
+    # This intentionally avoids constructing the filename from the tag name:
+    # the released artifact is named by the builder's resolved version, which is
+    # the tag with its leading "v" stripped (e.g. tag v0.1.0 -> eshyra-0.1.0-…).
+    # Selecting the asset by target suffix is robust to that normalization.
     $apiUrl = if ($Version -and $Version -ne '') {
         $tag = "v$($Version.TrimStart('v'))"
         "https://api.github.com/repos/$Repo/releases/tags/$tag"
