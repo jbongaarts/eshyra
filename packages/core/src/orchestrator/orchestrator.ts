@@ -144,6 +144,7 @@ export async function runTurn(
         campaignId: input.campaignId,
         sessionId: input.sessionId,
         turnId: input.turnId,
+        purpose: 'turn_model_loop',
       },
     });
 

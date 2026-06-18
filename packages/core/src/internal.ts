@@ -42,6 +42,24 @@ export {
   PathfinderCharacterCreationError,
   validatePathfinderCharacterDraft,
 } from './character/pathfinder2e.js';
+// Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
+// plus the sink contract the CLI implements over the data root.
+export type {
+  BuildModelCallEventInput,
+  MarkdownSectionSize,
+  MessageShape,
+  ModelCallContent,
+  ModelCallDebugEvent,
+  ModelCallOutcome,
+  ModelCallTrace,
+  SessionDebugSink,
+} from './debug/sessionDebug.js';
+export {
+  approxTokens,
+  buildModelCallEvent,
+  sanitizePromptSectionName,
+  splitPromptSections,
+} from './debug/sessionDebug.js';
 export * from './index.js';
 export type {
   CampaignArcRecord,
@@ -50,7 +68,6 @@ export type {
   CloseOpenArcAndOpenNextResult,
   OpenArcIfMissingInput,
 } from './memory/campaignArc.js';
-
 // Campaign arc lifecycle (read-side + idempotent open + atomic rollover).
 export {
   closeOpenArcAndOpenNext,
@@ -96,6 +113,7 @@ export {
   getTurnFailureDiagnostic,
   listTurnFailureDiagnostics,
   recordTurnFailureDiagnostic,
+  redactSecrets,
   sanitizeDiagnosticMessage,
   TurnFailureDiagnosticError,
 } from './memory/turnFailureDiagnostic.js';
@@ -112,6 +130,7 @@ export {
   recordTurnTrace,
   TurnTraceError,
 } from './memory/turnTrace.js';
+export type { AgentSdkDebugOptions } from './model/agentSdkClient.js';
 export type {
   EvaluateModelProfileInput,
   EvaluationCostInput,

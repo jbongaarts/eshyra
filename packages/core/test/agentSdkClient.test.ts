@@ -16,8 +16,34 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: queryMock,
 }));
 
+import type { ModelCallDebugEvent } from '../src/debug/sessionDebug.js';
 import { AgentSdkModelClient } from '../src/model/agentSdkClient.js';
 import { ModelClientError } from '../src/model/client.js';
+
+/** A collecting {@link SessionDebugSink} for adapter tests. */
+function collectingSink(captureContent = false): {
+  captureContent: boolean;
+  record: (e: ModelCallDebugEvent) => void;
+  events: ModelCallDebugEvent[];
+} {
+  const events: ModelCallDebugEvent[] = [];
+  return {
+    captureContent,
+    record: (e) => events.push(e),
+    events,
+  };
+}
+
+const rollTool = {
+  name: 'roll',
+  description: 'roll dice',
+  inputSchema: {
+    type: 'object' as const,
+    properties: { dice: { type: 'string' as const } },
+    required: ['dice'],
+    additionalProperties: false,
+  },
+};
 
 /** An async generator yielding the given SDK stream messages, in order. */
 function sdkStream(...messages: unknown[]): AsyncGenerator<unknown> {
@@ -235,6 +261,123 @@ describe('AgentSdkModelClient', () => {
       // so a client accidentally captured into a trace or log cannot leak it.
       expect(Object.keys(client)).toEqual([]);
       expect(JSON.stringify(client)).not.toContain(secret);
+    });
+  });
+
+  describe('opt-in session debug logging (eshyra-iu18)', () => {
+    it('emits no debug record when no sink is wired (silent by default)', async () => {
+      queryMock.mockReturnValue(sdkStream(ok('narration')));
+      // Constructing without a debug option must not throw and not log.
+      const out = await new AgentSdkModelClient('m', undefined).complete({
+        messages: [{ role: 'user', content: 'hi' }],
+      });
+      expect(out.text).toBe('narration');
+    });
+
+    it('records one structural event on success with labels and the forwarded-tool gap', async () => {
+      queryMock.mockReturnValue(sdkStream(ok('You stride forward.')));
+      const sink = collectingSink();
+
+      await new AgentSdkModelClient('claude-test', undefined, {
+        debug: sink,
+        profile: 'premium_dm',
+        tier: 'premium',
+        authMode: 'oauth-token',
+      }).complete({
+        system: '## Persona\nbe a DM',
+        messages: [{ role: 'user', content: '## Player Input\ngo' }],
+        tools: [rollTool],
+        trace: {
+          campaignId: 'c1',
+          sessionId: 's1',
+          turnId: 't1',
+          extra: { purpose: 'turn_model_loop', round: '1' },
+        },
+      });
+
+      expect(sink.events).toHaveLength(1);
+      const ev = sink.events[0];
+      expect(ev.model).toBe('claude-test');
+      expect(ev.profile).toBe('premium_dm');
+      expect(ev.tier).toBe('premium');
+      expect(ev.authMode).toBe('oauth-token');
+      expect(ev.toolProtocolMode).toBe('fenced-text');
+      expect(ev.trace).toMatchObject({
+        campaignId: 'c1',
+        sessionId: 's1',
+        turnId: 't1',
+        purpose: 'turn_model_loop',
+        round: '1',
+      });
+      // The core handed `roll` to the client; the Agent SDK got no native tools.
+      expect(ev.providedToolNames).toEqual(['roll']);
+      expect(ev.forwardedToolNames).toEqual([]);
+      expect(ev.outcome).toMatchObject({ ok: true, resultChars: 19 });
+      // Structural by default: no captured content.
+      expect(ev.content).toBeUndefined();
+    });
+
+    it('records a sanitized failure event for an SDK error result and still throws', async () => {
+      queryMock.mockReturnValue(
+        sdkStream({ type: 'result', subtype: 'error_during_execution' }),
+      );
+      const sink = collectingSink();
+
+      await expect(
+        new AgentSdkModelClient('m', undefined, { debug: sink }).complete({
+          messages: [{ role: 'user', content: 'x' }],
+          trace: { sessionId: 's1' },
+        }),
+      ).rejects.toThrowError(ModelClientError);
+
+      expect(sink.events).toHaveLength(1);
+      expect(sink.events[0].outcome).toMatchObject({ ok: false });
+    });
+
+    it('records a redacted failure event when the SDK call itself throws', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error('connect failed using Bearer sk-ant-leak-me-please');
+      });
+      const sink = collectingSink();
+
+      await expect(
+        new AgentSdkModelClient('m', undefined, { debug: sink }).complete({
+          messages: [{ role: 'user', content: 'x' }],
+        }),
+      ).rejects.toThrowError(/connect failed/);
+
+      const outcome = sink.events[0].outcome as { ok: false; error: string };
+      expect(outcome.ok).toBe(false);
+      expect(outcome.error).not.toContain('sk-ant-leak-me-please');
+      expect(outcome.error).toContain('[redacted]');
+    });
+
+    it('attaches sanitized content only when the sink opts into capture', async () => {
+      queryMock.mockReturnValue(sdkStream(ok('ok')));
+      const sink = collectingSink(true);
+
+      await new AgentSdkModelClient('m', undefined, { debug: sink }).complete({
+        system: 'authorization: Bearer sk-ant-shh',
+        messages: [{ role: 'user', content: 'hello' }],
+      });
+
+      const ev = sink.events[0];
+      expect(ev.content).toBeDefined();
+      expect(ev.content?.system).not.toContain('sk-ant-shh');
+      expect(ev.content?.messages[0].content).toBe('hello');
+    });
+
+    it('never lets a throwing sink break the turn', async () => {
+      queryMock.mockReturnValue(sdkStream(ok('narration')));
+      const out = await new AgentSdkModelClient('m', undefined, {
+        debug: {
+          captureContent: false,
+          record: () => {
+            throw new Error('sink exploded');
+          },
+        },
+      }).complete({ messages: [{ role: 'user', content: 'hi' }] });
+      expect(out.text).toBe('narration');
     });
   });
 });

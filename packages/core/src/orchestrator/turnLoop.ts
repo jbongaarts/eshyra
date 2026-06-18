@@ -17,6 +17,12 @@ export interface RunModelLoopTrace {
   readonly campaignId?: string;
   readonly sessionId?: string;
   readonly turnId?: string;
+  /**
+   * Why these model calls happen, surfaced to adapter-side debug logs via
+   * `ModelTraceMetadata.extra.purpose` (eshyra-iu18). The loop adds the 1-based
+   * round as `extra.round` so multi-round turns are ordered in the logs.
+   */
+  readonly purpose?: string;
 }
 
 /**
@@ -157,7 +163,21 @@ export async function runModelLoop(
       // a native tool channel may use them; the fenced-text protocol below
       // does not consult them and is unchanged.
       tools,
-      ...(trace ? { trace } : {}),
+      // Forward trace ids plus this round's ordinal and the loop's purpose so
+      // adapter-side debug logs can label and order each model call.
+      ...(trace
+        ? {
+            trace: {
+              ...(trace.campaignId ? { campaignId: trace.campaignId } : {}),
+              ...(trace.sessionId ? { sessionId: trace.sessionId } : {}),
+              ...(trace.turnId ? { turnId: trace.turnId } : {}),
+              extra: {
+                ...(trace.purpose ? { purpose: trace.purpose } : {}),
+                round: String(rounds),
+              },
+            },
+          }
+        : {}),
     });
     // Normalize every transport into ToolRequest before validation/execution.
     const requests = collectToolRequests(completion);

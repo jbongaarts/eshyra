@@ -68,6 +68,11 @@ export function doltCacheDir(root: string): string {
   return join(root, 'dolt');
 }
 
+/** `<root>/debug` — opt-in per-session debug artifacts (eshyra-iu18). */
+export function debugDir(root: string): string {
+  return join(root, 'debug');
+}
+
 /**
  * Create the data root and its managed subdirectories if they are absent.
  * Idempotent (recursive `mkdir`), and called lazily — only on a command that

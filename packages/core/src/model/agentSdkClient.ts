@@ -1,5 +1,12 @@
 import type { SDKResultSuccess } from '@anthropic-ai/claude-agent-sdk';
 import { query } from '@anthropic-ai/claude-agent-sdk';
+import {
+  buildModelCallEvent,
+  type ModelCallOutcome,
+  type ModelCallTrace,
+  type SessionDebugSink,
+} from '../debug/sessionDebug.js';
+import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type {
   ModelClient,
   ModelCompleteInput,
@@ -39,6 +46,24 @@ export interface AgentSdkAuth {
 export type AgentSdkAuthSource = AgentSdkAuth | (() => AgentSdkAuth);
 
 /**
+ * Optional opt-in session debug wiring for the adapter (eshyra-iu18). When a
+ * {@link SessionDebugSink} is supplied, every `complete()` call emits one
+ * structural debug record — on both the success and failure paths — describing
+ * the prompt structure, tool protocol, and the model/profile/auth labels passed
+ * here. The labels are plain identifiers (never the credential); the adapter
+ * keeps the secret in its `#auth` field and never routes it through the sink.
+ */
+export interface AgentSdkDebugOptions {
+  readonly debug?: SessionDebugSink;
+  /** Resolved profile name (e.g. `premium_dm`), recorded as a label. */
+  readonly profile?: string;
+  /** Quality tier label (e.g. `premium`). */
+  readonly tier?: string;
+  /** Auth mode label (`api-key` / `oauth-token`) — never the credential. */
+  readonly authMode?: string;
+}
+
+/**
  * The ONLY file permitted to import the Claude Agent SDK. If the installed SDK's
  * surface differs from the assumptions below, adapt ONLY this file — the
  * ModelClient contract and all unit tests stay unchanged.
@@ -61,15 +86,23 @@ export class AgentSdkModelClient implements ModelClient {
   // TypeScript's `private` keyword would still leave an enumerable own property.
   readonly #model: string;
   readonly #auth: AgentSdkAuthSource | undefined;
+  readonly #debug: AgentSdkDebugOptions | undefined;
 
   /**
    * @param model Provider-specific model id.
    * @param auth  Optional explicit provider-auth source. When omitted, the SDK
    *              falls back to ambient `process.env` auth (the local-dev path).
+   * @param debug Optional opt-in session debug wiring (eshyra-iu18). Off by
+   *              default, so the adapter emits no diagnostics unless asked.
    */
-  constructor(model: string, auth?: AgentSdkAuthSource) {
+  constructor(
+    model: string,
+    auth?: AgentSdkAuthSource,
+    debug?: AgentSdkDebugOptions,
+  ) {
     this.#model = model;
     this.#auth = auth;
+    this.#debug = debug;
   }
 
   async complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
@@ -86,39 +119,104 @@ export class AgentSdkModelClient implements ModelClient {
     const auth = this.#resolveAuth();
     let text: string | undefined;
     let errorSubtype: string | undefined;
-    for await (const message of query({
-      prompt,
-      options: {
-        model: this.#model,
-        ...(input.system ? { systemPrompt: input.system } : {}),
-        // Auth env is merged OVER process.env so the SDK subprocess keeps its
-        // inherited environment (PATH, ...) while the explicit secret wins.
-        // Omitted entirely when no auth source is set, so the SDK keeps its
-        // default ambient-`process.env` behaviour.
-        ...(auth ? { env: { ...process.env, ...auth.env } } : {}),
-      },
-    })) {
-      if (message.type === 'result') {
-        if (message.subtype === 'success') {
-          text = (message as SDKResultSuccess).result;
-        } else {
-          // SDKResultError: type 'result' with a non-'success' subtype.
-          errorSubtype = message.subtype;
+    try {
+      for await (const message of query({
+        prompt,
+        options: {
+          model: this.#model,
+          ...(input.system ? { systemPrompt: input.system } : {}),
+          // Auth env is merged OVER process.env so the SDK subprocess keeps its
+          // inherited environment (PATH, ...) while the explicit secret wins.
+          // Omitted entirely when no auth source is set, so the SDK keeps its
+          // default ambient-`process.env` behaviour.
+          ...(auth ? { env: { ...process.env, ...auth.env } } : {}),
+        },
+      })) {
+        if (message.type === 'result') {
+          if (message.subtype === 'success') {
+            text = (message as SDKResultSuccess).result;
+          } else {
+            // SDKResultError: type 'result' with a non-'success' subtype.
+            errorSubtype = message.subtype;
+          }
         }
       }
+    } catch (err) {
+      this.#recordDebug(input, {
+        ok: false,
+        error: redactSecrets(err instanceof Error ? err.message : String(err)),
+      });
+      throw err;
     }
     if (text === undefined) {
-      throw new ModelClientError(
+      const message =
         errorSubtype !== undefined
           ? `Agent SDK returned an error result (subtype: ${errorSubtype})`
-          : 'Agent SDK response ended without a result message',
-      );
+          : 'Agent SDK response ended without a result message';
+      this.#recordDebug(input, { ok: false, error: message });
+      throw new ModelClientError(message);
     }
+    this.#recordDebug(input, {
+      ok: true,
+      resultChars: text.length,
+      resultApproxTokens: Math.ceil(text.length / 4),
+      stopReason: 'end_turn',
+    });
     // The Agent SDK already drives any tool use internally and surfaces only
     // the final assistant text, so the structured `toolCalls` channel stays
     // unpopulated. `stopReason` is `end_turn` whenever we got a successful
     // result message.
     return { text, stopReason: 'end_turn' };
+  }
+
+  /**
+   * Emit one structural debug record for a `complete()` call, if a sink is
+   * wired. Faithful about the adapter's behaviour: `forwardedToolNames` is empty
+   * because the Agent SDK receives none of the provider-neutral tool
+   * definitions — it drives tools through its own harness and the fenced-text
+   * protocol in the system prompt. Best-effort: a sink failure must never break
+   * a turn, so any throw here is swallowed.
+   */
+  #recordDebug(input: ModelCompleteInput, outcome: ModelCallOutcome): void {
+    const sink = this.#debug?.debug;
+    if (sink === undefined) {
+      return;
+    }
+    try {
+      const trace: ModelCallTrace = {
+        ...(input.trace?.campaignId
+          ? { campaignId: input.trace.campaignId }
+          : {}),
+        ...(input.trace?.sessionId ? { sessionId: input.trace.sessionId } : {}),
+        ...(input.trace?.turnId ? { turnId: input.trace.turnId } : {}),
+        ...(input.trace?.extra?.purpose
+          ? { purpose: input.trace.extra.purpose }
+          : {}),
+        ...(input.trace?.extra?.round
+          ? { round: input.trace.extra.round }
+          : {}),
+      };
+      sink.record(
+        buildModelCallEvent({
+          trace,
+          model: this.#model,
+          ...(this.#debug?.profile ? { profile: this.#debug.profile } : {}),
+          ...(this.#debug?.tier ? { tier: this.#debug.tier } : {}),
+          ...(this.#debug?.authMode ? { authMode: this.#debug.authMode } : {}),
+          // The adapter relies on the fenced-text protocol carried in the system
+          // prompt; it forwards no native tool channel to the SDK.
+          toolProtocolMode: 'fenced-text',
+          ...(input.system !== undefined ? { system: input.system } : {}),
+          messages: input.messages,
+          ...(input.tools ? { providedTools: input.tools } : {}),
+          forwardedToolNames: [],
+          outcome,
+          captureContent: sink.captureContent,
+        }),
+      );
+    } catch {
+      // Diagnostics must never destabilize a turn.
+    }
   }
 
   /**
