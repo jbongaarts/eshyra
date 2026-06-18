@@ -23,8 +23,11 @@
  * Dolt-backed checkpoint store plus managed-binary install seam.
  */
 
-// Core version (used by the CLI banner).
-export const CORE_VERSION = '0.0.0';
+// Core version (used by the CLI banner). The literal here is a build-time
+// placeholder: the release build (scripts/release/build-release-artifact.mjs)
+// stamps the real, tag-derived version into the compiled dist before packing.
+// Non-release builds (local dev, CI, tests) keep the `-dev` sentinel.
+export const CORE_VERSION = '0.0.0-dev';
 
 export type { CampaignInfo, CreateCampaignInput } from './campaign/campaign.js';
 // Campaign lifecycle.

@@ -98,9 +98,9 @@ resolve_urls() {
     if [ -n "${ESHYRA_BASE_URL:-}" ]; then
         # Custom base URL mode (local testing or staging).
         # Derive the archive name from ESHYRA_VERSION + target; the version
-        # defaults to 0.0.0 to match the builder's fallback when no package
-        # version is set.
-        _ver="${ESHYRA_VERSION:-0.0.0}"
+        # defaults to 0.0.0-dev to match the builder's sentinel fallback when no
+        # release version is injected (untagged dev/local builds).
+        _ver="${ESHYRA_VERSION:-0.0.0-dev}"
         _ver="${_ver#v}"
         ARCHIVE_NAME="eshyra-${_ver}-${_target}.tar.gz"
         ARCHIVE_URL="${ESHYRA_BASE_URL}/${ARCHIVE_NAME}"
@@ -110,10 +110,10 @@ resolve_urls() {
 
     # GitHub Releases mode.
     # Query the API to find the actual archive asset URL by target suffix.
-    # This intentionally avoids constructing the filename from the tag name,
-    # because the artifact's embedded package.json version may differ from the
-    # tag (e.g., root package.json has no version field, so the builder uses
-    # the fallback "0.0.0").
+    # This intentionally avoids constructing the filename from the tag name:
+    # the released artifact is named by the builder's resolved version, which is
+    # the tag with its leading "v" stripped (e.g. tag v0.1.0 -> eshyra-0.1.0-…).
+    # Selecting the asset by target suffix is robust to that normalization.
     need_cmd curl
 
     if [ -n "${ESHYRA_VERSION:-}" ]; then
@@ -128,7 +128,7 @@ resolve_urls() {
         || die "failed to fetch release info from GitHub API: ${_api_url}"
 
     # The API response has lines like:
-    #   "browser_download_url": "https://.../eshyra-0.0.0-linux-x64.tar.gz"
+    #   "browser_download_url": "https://.../eshyra-0.1.0-linux-x64.tar.gz"
     # We select by the target-specific suffix, not by constructing the name.
     ARCHIVE_URL=$(printf '%s' "$_release_json" \
         | grep '"browser_download_url"' \

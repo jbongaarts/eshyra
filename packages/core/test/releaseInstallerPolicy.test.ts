@@ -1,6 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  VERSION_SENTINEL,
+  // @ts-expect-error - .mjs tooling script without type declarations
+} from '../../../scripts/release/build-release-artifact.mjs';
 
 function readText(path: string): string {
   return readFileSync(join(process.cwd(), path), 'utf8');
@@ -86,6 +90,29 @@ describe('Release installer policy', () => {
     // PowerShell: parameter + env var.
     expect(ps1).toContain('ESHYRA_VERSION');
     expect(ps1).toContain('-Version');
+  });
+
+  it('installer custom-base fallback matches the builder version sentinel', () => {
+    // The installer smoke test builds a fresh artifact with NO release version
+    // injected, so the builder names it eshyra-${VERSION_SENTINEL}-…, and runs
+    // install.sh in ESHYRA_BASE_URL mode without ESHYRA_VERSION. The installer's
+    // custom-base fallback must therefore equal the builder sentinel, or it
+    // looks for the wrong filename and the Release workflow's installer-smoke
+    // job fails. Tie both to the real builder constant so they can't drift.
+    expect(VERSION_SENTINEL).toBe('0.0.0-dev');
+
+    const sh = readText('scripts/release/install.sh');
+    const ps1 = readText('scripts/release/install.ps1');
+
+    // POSIX custom-base mode: _ver defaults to the sentinel when ESHYRA_VERSION
+    // is unset (parameter-expansion default).
+    expect(sh).toContain(`\${ESHYRA_VERSION:-${VERSION_SENTINEL}}`);
+    // PowerShell custom-base mode: $ver falls back to the sentinel literal.
+    expect(ps1).toContain(`'${VERSION_SENTINEL}'`);
+
+    // Neither installer's custom-base fallback may use the old bare "0.0.0".
+    expect(sh).not.toContain('${ESHYRA_VERSION:-0.0.0}');
+    expect(ps1).not.toMatch(/else\s*\{\s*'0\.0\.0'\s*\}/);
   });
 
   it('installer scripts support base URL override for local testing', () => {

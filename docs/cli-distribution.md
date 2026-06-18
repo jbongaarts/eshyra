@@ -74,12 +74,33 @@ Release builds run in CI via `.github/workflows/release.yml`:
    `sha256sums.txt`, and uploads archives + checksums + installer scripts to
    the GitHub Release.
 
+### Version resolution
+
+The release version is **derived from the pushed git tag** — there is no
+`version` field to hand-edit. `release:build` resolves it in precedence order:
+
+1. an explicit `--version <v>` argument,
+2. the `ESHYRA_RELEASE_VERSION` environment variable,
+3. the pushed tag (`GITHUB_REF_NAME` when `GITHUB_REF_TYPE=tag`, leading `v`
+   stripped) — this is the CI path, set automatically by GitHub Actions,
+4. the `0.0.0-dev` sentinel fallback (local/PR/dev builds).
+
+The resolved version names the artifact (`eshyra-<version>-<os>-<arch>`), the
+`README.txt`, and the `.json` sidecar, and is **stamped into the compiled core
+`dist`** (replacing the `CORE_VERSION` `0.0.0-dev` placeholder) before packing,
+so the installed CLI's banner reports the true release version. To cut a
+release, push a semver tag (e.g. `git tag v0.1.0 && git push origin v0.1.0`);
+no source edit is required.
+
 Local development workflow:
 
 ```bash
-npm run release:build     # build the artifact for the current platform
+npm run release:build     # build the artifact (version: 0.0.0-dev sentinel)
 npm run release:validate  # validate the built artifact
 npm run release:checksums # generate sha256sums.txt for dist-release/
+
+# Simulate a tagged release build locally:
+npm run release:build -- --version 0.1.0
 ```
 
 ## Runtime policy
