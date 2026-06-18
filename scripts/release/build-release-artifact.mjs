@@ -45,6 +45,9 @@ function parseArgs(argv) {
     if (arg === '--out') {
       i += 1;
       opts.out = resolve(argv[i]);
+    } else if (arg === '--version') {
+      i += 1;
+      opts.version = argv[i];
     } else if (arg === '--keep-stage') {
       opts.keepStage = true;
     } else {
@@ -52,6 +55,64 @@ function parseArgs(argv) {
     }
   }
   return opts;
+}
+
+// The placeholder literal compiled into packages/core/dist/index.js (and used
+// as the artifact-label fallback). The release build replaces it with the real
+// tag-derived version; non-release builds keep it.
+const VERSION_SENTINEL = '0.0.0-dev';
+
+/** Strip a leading `v` and reject anything that is not a semver-like version. */
+function normalizeVersion(raw) {
+  const stripped = String(raw).trim().replace(/^v/, '');
+  if (
+    !/^\d+\.\d+(\.\d+)?(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/.test(stripped)
+  ) {
+    throw new Error(
+      `invalid release version: "${raw}" (expected a semver-like version, e.g. 1.2.3)`,
+    );
+  }
+  return stripped;
+}
+
+/**
+ * Resolve the release version, in precedence order:
+ *   1. explicit `--version` argument
+ *   2. ESHYRA_RELEASE_VERSION env var
+ *   3. the pushed git tag (GITHUB_REF_NAME when GITHUB_REF_TYPE=tag)
+ *   4. the VERSION_SENTINEL fallback (local/PR/dev builds)
+ * The first three are normalized (and validated); the sentinel is returned
+ * verbatim so dev builds are clearly marked and never get stamped.
+ */
+function resolveVersion(explicit, env = process.env) {
+  const tag = env.GITHUB_REF_TYPE === 'tag' ? env.GITHUB_REF_NAME : undefined;
+  const candidate = explicit ?? env.ESHYRA_RELEASE_VERSION ?? tag;
+  if (candidate && String(candidate).trim()) {
+    return normalizeVersion(candidate);
+  }
+  return VERSION_SENTINEL;
+}
+
+/**
+ * Stamp the resolved version into the compiled core dist so the running CLI's
+ * banner reports the true release version. Replaces the single VERSION_SENTINEL
+ * occurrence in packages/core/dist/index.js, asserting exactly one match so a
+ * refactor that drops or duplicates the constant fails the release loudly.
+ * No-op for sentinel (dev/PR) builds, which intentionally keep the `-dev` mark.
+ */
+function stampCoreVersion(version) {
+  if (version === VERSION_SENTINEL) return;
+  const distIndex = join(root, 'packages/core/dist/index.js');
+  const before = readFileSync(distIndex, 'utf8');
+  const occurrences = before.split(VERSION_SENTINEL).length - 1;
+  if (occurrences !== 1) {
+    throw new Error(
+      `expected exactly one "${VERSION_SENTINEL}" in ${relative(root, distIndex)} ` +
+        `to stamp CORE_VERSION, found ${occurrences}`,
+    );
+  }
+  writeFileSync(distIndex, before.replace(VERSION_SENTINEL, version));
+  console.log(`• stamped CORE_VERSION ${version} into core dist`);
 }
 
 /** Map Node's platform/arch onto the artifact's published target names. */
@@ -260,8 +321,7 @@ function dirSize(dir) {
 function main() {
   const opts = parseArgs(process.argv.slice(2));
   const target = targetName();
-  const pkg = readJson(join(root, 'package.json'));
-  const version = pkg.version ?? '0.0.0';
+  const version = resolveVersion(opts.version);
   const baseName = `eshyra-${version}-${target.os}-${target.arch}`;
 
   const scratch = mkdtempSync(join(tmpdir(), 'eshyra-release-'));
@@ -276,6 +336,10 @@ function main() {
   try {
     console.log('• building workspace (tsc --build)…');
     npm(['run', 'build']);
+
+    // Stamp the resolved version into the built core dist BEFORE packing, so the
+    // packed @eshyra/core tarball (and thus the bundled CLI banner) carries it.
+    stampCoreVersion(version);
 
     console.log('• packing @eshyra/core and @eshyra/cli…');
     const coreTar = packWorkspace('@eshyra/core', packDir, cache);
@@ -415,4 +479,13 @@ function packWorkspace(workspace, packDir, cache) {
   }
   return tarball;
 }
-main();
+
+export { normalizeVersion, resolveVersion, VERSION_SENTINEL };
+
+// Run only when invoked directly (not when imported by a test).
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  main();
+}
