@@ -108,8 +108,16 @@ export function listTurnFailureDiagnostics(
   return rows.map(diagnosticFromRow);
 }
 
-export function sanitizeDiagnosticMessage(message: string): string {
-  const sanitized = message
+/**
+ * Strip the secret shapes Eshyra never wants in a persisted log: bearer tokens,
+ * `api_key=`/`token:` style assignments, `sk-...` provider keys, and JWT-shaped
+ * triples. Pure pattern replacement — no trimming, fallback, or truncation — so
+ * it can also redact long captured prompt/message content without mangling it.
+ * Shared by {@link sanitizeDiagnosticMessage} and the session debug logger so
+ * there is one redaction source of truth.
+ */
+export function redactSecrets(text: string): string {
+  return text
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, `Bearer ${REDACTED}`)
     .replace(
       /\b(api[_-]?key|access[_-]?token|authorization|auth|secret|password|token)\s*[:=]\s*["']?[^"',;\s]+/gi,
@@ -119,8 +127,11 @@ export function sanitizeDiagnosticMessage(message: string): string {
     .replace(
       /\b[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/g,
       REDACTED,
-    )
-    .trim();
+    );
+}
+
+export function sanitizeDiagnosticMessage(message: string): string {
+  const sanitized = redactSecrets(message).trim();
   return (sanitized.length > 0 ? sanitized : 'unknown error').slice(
     0,
     MAX_ERROR_MESSAGE_LENGTH,

@@ -18,7 +18,10 @@ import {
   openDatabase,
   runTurn,
 } from '@eshyra/core';
-import { DEFAULT_MEMORY_CONFIG } from '@eshyra/core/internal';
+import {
+  type AgentSdkDebugOptions,
+  DEFAULT_MEMORY_CONFIG,
+} from '@eshyra/core/internal';
 import {
   type CampaignDeps,
   resolvePlayCampaign,
@@ -41,6 +44,7 @@ import {
   runDemo,
   runPlay,
 } from './play.js';
+import { resolveSessionDebug } from './sessionDebug.js';
 
 export function buildBanner(version: string): string {
   return `Eshyra — core v${version}`;
@@ -122,15 +126,45 @@ export async function runDoltInstall(
 }
 
 /**
+ * Resolve opt-in session debug wiring for the model client (eshyra-iu18).
+ * Returns `undefined` when `ESHYRA_DEBUG_SESSION` is unset/off, so the adapter
+ * stays silent by default. When enabled, builds the file-backed sink, prints a
+ * one-line notice, and attaches the model/profile/auth labels — never secrets.
+ */
+function buildModelDebug(
+  cfg: EshyraConfig,
+  dataRoot: string,
+  io: PlayDeps['io'],
+): AgentSdkDebugOptions | undefined {
+  const resolved = resolveSessionDebug(dataRoot);
+  if (resolved.sink === undefined) {
+    return undefined;
+  }
+  if (resolved.notice !== undefined) {
+    io.write(resolved.notice);
+  }
+  return {
+    debug: resolved.sink,
+    profile: 'premium_dm',
+    tier: cfg.dmProfile.tier,
+    authMode: cfg.auth.mode,
+  };
+}
+
+/**
  * Build the real, terminal-and-model-backed dependencies for `eshyra play`.
  */
-function buildPlayDeps(cfg: EshyraConfig, io: PlayDeps['io']): PlayDeps {
+function buildPlayDeps(
+  cfg: EshyraConfig,
+  io: PlayDeps['io'],
+  debug?: AgentSdkDebugOptions,
+): PlayDeps {
   return {
     io,
     openDb: (path) => openDatabase(path),
     // Inject the resolved provider credential through the explicit auth seam
     // rather than letting the Agent SDK read ambient process.env.
-    model: new AgentSdkModelClient(cfg.model, { env: cfg.auth.env }),
+    model: new AgentSdkModelClient(cfg.model, { env: cfg.auth.env }, debug),
     registry: createDefaultToolRegistry(),
     runTurn,
     pack: EMBERFALL_HOLLOW,
@@ -238,7 +272,14 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
       );
       dbPath = target.entry.dbPath;
     }
-    return await runPlay(buildPlayDeps(config.cfg, io), { dbPath });
+    return await runPlay(
+      buildPlayDeps(
+        config.cfg,
+        io,
+        buildModelDebug(config.cfg, cli.dataRoot, io),
+      ),
+      { dbPath },
+    );
   } finally {
     io.close();
   }
@@ -265,10 +306,17 @@ export async function runDemoSubcommand(): Promise<number> {
   }
   const io = nodeIO();
   try {
-    return await runDemo(buildPlayDeps(config.cfg, io), {
-      dbPath: demoDbPath(cli, config.cfg),
-      turnCap: DEMO_TURN_CAP,
-    });
+    return await runDemo(
+      buildPlayDeps(
+        config.cfg,
+        io,
+        buildModelDebug(config.cfg, cli.dataRoot, io),
+      ),
+      {
+        dbPath: demoDbPath(cli, config.cfg),
+        turnCap: DEMO_TURN_CAP,
+      },
+    );
   } finally {
     io.close();
   }
