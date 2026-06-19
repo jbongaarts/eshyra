@@ -7,10 +7,13 @@ import type {
   ModelCompleteResult,
   ProviderExecutedToolCall,
   SessionDebugSink,
+  ToolUsageRecord,
   TurnAuditDebugEvent,
   TurnAuditInput,
   TurnAuditor,
   TurnCandidateDispositionEvent,
+  TurnDiagnosticsSink,
+  TurnOutcomeRecord,
 } from '../src/internal.js';
 import {
   createDefaultToolRegistry,
@@ -18,6 +21,7 @@ import {
   getTurnFailureDiagnostic,
   getTurnTrace,
   listSceneLog,
+  ModelRateLimitError,
   mutateState,
   openScene,
   runTurn,
@@ -1420,6 +1424,196 @@ describe('orchestrator MCP staged-mutation transactionality (eshyra-dwkm)', () =
     expect(
       sink.dispositions.every((d) => d.disposition === 'rolled_back'),
     ).toBe(true);
+    db.close();
+  });
+});
+
+/** Collecting turn-diagnostics sink for tool spans + outcomes (eshyra-17ng). */
+function collectingDiagnosticsSink(): TurnDiagnosticsSink & {
+  tools: ToolUsageRecord[];
+  outcomes: TurnOutcomeRecord[];
+} {
+  const tools: ToolUsageRecord[] = [];
+  const outcomes: TurnOutcomeRecord[] = [];
+  return {
+    tools,
+    outcomes,
+    recordTool: (e) => tools.push(e),
+    recordOutcome: (e) => outcomes.push(e),
+  };
+}
+
+/** A ModelClient that rejects every call with a provider rate-limit error. */
+class RateLimitModel implements ModelClient {
+  complete(): Promise<ModelCompleteResult> {
+    return Promise.reject(new ModelRateLimitError('429 rate limited', 30));
+  }
+}
+
+describe('orchestrator per-turn timing diagnostics (eshyra-17ng)', () => {
+  it('records per-tool spans and an accepted outcome for a successful audited turn', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    // Two MCP tool calls in one round: a read-only roll and a mutating give_item.
+    const model = new BridgeMcpModel([
+      {
+        calls: [
+          { name: 'roll', args: { dice: '1d20', reason: 'perception' } },
+          { name: 'give_item', args: { id: 'torch', name: 'Torch' } },
+        ],
+        text: 'You light a torch and scan the room.',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([accept]);
+    const diagnostics = collectingDiagnosticsSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        diagnostics,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    // Each MCP tool call is timed individually with its Eshyra name + transport.
+    expect(diagnostics.tools.map((t) => t.tool)).toEqual(['roll', 'give_item']);
+    expect(diagnostics.tools.map((t) => t.source)).toEqual([
+      'native-mcp',
+      'native-mcp',
+    ]);
+    // read-only vs mutating is captured from the registry classification.
+    expect(diagnostics.tools.map((t) => t.mutates)).toEqual([false, true]);
+    expect(
+      diagnostics.tools.every(
+        (t) =>
+          t.attempt === 1 &&
+          t.round === 1 &&
+          t.ok === true &&
+          typeof t.elapsedMs === 'number',
+      ),
+    ).toBe(true);
+    expect(diagnostics.outcomes).toHaveLength(1);
+    expect(diagnostics.outcomes[0]).toMatchObject({
+      outcome: 'accepted',
+      attempts: 1,
+      modelRounds: 1,
+      reason: null,
+    });
+    db.close();
+  });
+
+  it('records distinct attempt spans for a rejected-then-retried turn', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new BridgeMcpModel([
+      {
+        calls: [{ name: 'give_item', args: { id: 'sword', name: 'Sword' } }],
+        text: 'A sword appears.',
+      },
+      {
+        calls: [{ name: 'give_item', args: { id: 'shield', name: 'Shield' } }],
+        text: 'You ready your shield.',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([rejectGiveItem, accept]);
+    const diagnostics = collectingDiagnosticsSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        diagnostics,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    // The rejected attempt's tool and the accepted retry's tool are separate
+    // spans, distinguishable by attempt number.
+    expect(diagnostics.tools.map((t) => `${t.attempt}:${t.tool}`)).toEqual([
+      '1:give_item',
+      '2:give_item',
+    ]);
+    expect(diagnostics.outcomes[0]).toMatchObject({
+      outcome: 'accepted',
+      attempts: 2,
+    });
+    db.close();
+  });
+
+  it('records a provider_limit outcome with the failed attempt and elapsed time', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const diagnostics = collectingDiagnosticsSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model: new RateLimitModel(),
+        registry: createDefaultToolRegistry(),
+        diagnostics,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.isRateLimit).toBe(true);
+    expect(diagnostics.outcomes).toHaveLength(1);
+    expect(diagnostics.outcomes[0]).toMatchObject({
+      outcome: 'provider_limit',
+      attempts: 1,
+    });
+    // The failed attempt's elapsed time and a (redacted) reason are recorded.
+    expect(diagnostics.outcomes[0].reason).not.toBeNull();
+    expect(diagnostics.outcomes[0].elapsedMs).toBeGreaterThanOrEqual(0);
+    db.close();
+  });
+
+  it('records a failed_after_reject outcome when both candidates fail audit', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel([
+      'You rolled an 11 on 2d8.',
+      'You still rolled an 11.',
+    ]);
+    const auditor = new ScriptedAuditor([rejectRoll, rejectRoll]);
+    const diagnostics = collectingDiagnosticsSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        diagnostics,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(diagnostics.outcomes[0]).toMatchObject({
+      outcome: 'failed_after_reject',
+      attempts: 2,
+    });
+    db.close();
+  });
+
+  it('does not record any diagnostics when no sink is wired', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel(['The tavern is quiet.']);
+    // No diagnostics in deps — must run exactly as before.
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput(),
+    );
+    expect(result.ok).toBe(true);
     db.close();
   });
 });

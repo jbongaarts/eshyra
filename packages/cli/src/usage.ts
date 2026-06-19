@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { diagnosticsDir } from './dataRoot.js';
 import {
   ModelUsageStore,
+  type TimelineTurn,
   type UsageQueryFilters,
   type UsageSummary,
   type UsageSummaryByDimension,
@@ -25,13 +26,14 @@ export interface UsageDeps {
  *   --since <date>     restrict to records on or after YYYY-MM-DD
  */
 export function runUsageCommand(argv: string[], deps: UsageDeps): number {
-  const filters = parseFilters(argv);
-  if (filters === null) {
+  const parsed = parseArgs(argv);
+  if (parsed === null) {
     deps.log(
-      'Usage: eshyra usage [--campaign <id>] [--session <id>] [--since YYYY-MM-DD]',
+      'Usage: eshyra usage [--campaign <id>] [--session <id>] [--since YYYY-MM-DD] [--timeline]',
     );
     return 1;
   }
+  const { filters, timeline } = parsed;
 
   const dbPath = join(diagnosticsDir(deps.dataRoot), USAGE_DB);
   if (!existsSync(dbPath)) {
@@ -41,6 +43,10 @@ export function runUsageCommand(argv: string[], deps: UsageDeps): number {
 
   const store = new ModelUsageStore(dbPath);
   try {
+    if (timeline) {
+      deps.log(formatTimeline(store.timeline(filters), dbPath, filters));
+      return 0;
+    }
     const summary = store.query(filters);
     deps.log(formatSummary(summary, dbPath, filters));
     return 0;
@@ -49,11 +55,19 @@ export function runUsageCommand(argv: string[], deps: UsageDeps): number {
   }
 }
 
-function parseFilters(argv: string[]): UsageQueryFilters | null {
+interface ParsedArgs {
+  readonly filters: UsageQueryFilters;
+  readonly timeline: boolean;
+}
+
+function parseArgs(argv: string[]): ParsedArgs | null {
   const filters: Record<string, string> = {};
+  let timeline = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (
+    if (arg === '--timeline' || arg === '--details') {
+      timeline = true;
+    } else if (
       (arg === '--campaign' || arg === '--session' || arg === '--since') &&
       argv[i + 1]
     ) {
@@ -64,9 +78,14 @@ function parseFilters(argv: string[]): UsageQueryFilters | null {
     }
   }
   return {
-    ...(filters.campaign !== undefined ? { campaignId: filters.campaign } : {}),
-    ...(filters.session !== undefined ? { sessionId: filters.session } : {}),
-    ...(filters.since !== undefined ? { since: filters.since } : {}),
+    filters: {
+      ...(filters.campaign !== undefined
+        ? { campaignId: filters.campaign }
+        : {}),
+      ...(filters.session !== undefined ? { sessionId: filters.session } : {}),
+      ...(filters.since !== undefined ? { since: filters.since } : {}),
+    },
+    timeline,
   };
 }
 
@@ -148,6 +167,80 @@ function fmtDimension(row: UsageSummaryByDimension): string {
     parts.push(`(${row.failures} failed)`);
   }
   return parts.join('  ');
+}
+
+/**
+ * Render the detailed per-turn timeline (eshyra-17ng). For each turn, model
+ * calls are grouped by attempt and tool calls nested under the attempt they ran
+ * in, so a slow turn is decomposable into model / audit / retry / tool time.
+ */
+function formatTimeline(
+  turns: readonly TimelineTurn[],
+  dbPath: string,
+  filters: UsageQueryFilters,
+): string {
+  const lines: string[] = [];
+  lines.push('Eshyra turn timeline');
+  lines.push(`  data: ${dbPath}`);
+  if (filters.campaignId !== undefined) {
+    lines.push(`  filter: campaign=${filters.campaignId}`);
+  }
+  if (filters.sessionId !== undefined) {
+    lines.push(`  filter: session=${filters.sessionId}`);
+  }
+  if (filters.since !== undefined) {
+    lines.push(`  filter: since=${filters.since}`);
+  }
+
+  if (turns.length === 0) {
+    lines.push('');
+    lines.push('  No per-turn timing recorded for the given filters.');
+    return lines.join('\n');
+  }
+
+  for (const turn of turns) {
+    lines.push('');
+    const head = [`turn ${turn.turnId}`];
+    if (turn.sessionId !== null) {
+      head.push(`session ${turn.sessionId}`);
+    }
+    if (turn.outcome !== null) {
+      head.push(`outcome=${turn.outcome}`);
+    }
+    if (turn.attempts !== null) {
+      head.push(`attempts=${turn.attempts}`);
+    }
+    if (turn.totalElapsedMs !== null) {
+      head.push(`total=${fmtMs(turn.totalElapsedMs)}`);
+    }
+    lines.push(head.join('  '));
+
+    // One line per model call, with the tools that ran in that exact
+    // (attempt, round) nested beneath it. Gameplay rounds carry a round number;
+    // the audit call carries none and so nests no tools.
+    for (const call of turn.modelCalls) {
+      const status = call.success
+        ? 'ok'
+        : `failed${call.failureKind !== null ? ` ${call.failureKind}` : ''}`;
+      const attemptLabel =
+        call.attempt !== null ? `attempt ${call.attempt} ` : '';
+      lines.push(
+        `  ${attemptLabel}${call.purpose} ${call.model}: ${fmtMs(call.elapsedMs)} ${status}`,
+      );
+      const tools = turn.toolCalls.filter(
+        (t) => t.attempt === call.attempt && t.round === call.round,
+      );
+      for (const tool of tools) {
+        const mut = tool.mutates ? 'mutating' : 'read-only';
+        const ok = tool.ok ? 'ok' : 'failed';
+        lines.push(
+          `    tool ${tool.tool}: ${fmtMs(tool.elapsedMs)} ${mut} ${ok}`,
+        );
+      }
+    }
+  }
+
+  return lines.join('\n');
 }
 
 function fmt(n: number): string {

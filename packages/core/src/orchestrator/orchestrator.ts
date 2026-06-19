@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type {
   CandidateDisposition,
   ModelCallTrace,
@@ -15,18 +16,28 @@ import type {
 } from '../memory/turnTrace.js';
 import { recordTurnTrace } from '../memory/turnTrace.js';
 import type { ModelClient } from '../model/client.js';
-import { ModelRateLimitError } from '../model/client.js';
+import { ModelClientError, ModelRateLimitError } from '../model/client.js';
+import type {
+  ToolUsageRecord,
+  TurnDiagnosticsSink,
+  TurnOutcome,
+} from '../model/usage.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
 import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
 import type { ToolContext, ToolRegistry } from './tools.js';
-import type { AuditVerdict, TurnAuditor } from './turnAuditor.js';
+import {
+  AuditError,
+  type AuditVerdict,
+  type TurnAuditor,
+} from './turnAuditor.js';
 import {
   type ExecutedToolCall,
   OrchestratorError,
   runModelLoop,
+  type ToolSpan,
 } from './turnLoop.js';
 import { summarizeClosedScenes } from './turnSceneSummary.js';
 import {
@@ -78,6 +89,14 @@ export interface RunTurnDeps {
    * the model client adapters; this records the orchestrator-level decision.
    */
   debug?: SessionDebugSink;
+  /**
+   * Optional per-turn timing diagnostics sink (eshyra-17ng). Receives a tool
+   * span for every executed tool and one outcome record per turn, so a slow turn
+   * can be decomposed into model / audit / retry / tool time. Best-effort:
+   * sink failures are swallowed and never destabilize a turn. Model-call timing
+   * is recorded separately by the {@link ModelUsageTracker} wrapping `model`.
+   */
+  diagnostics?: TurnDiagnosticsSink;
 }
 
 export interface RunTurnInput {
@@ -238,6 +257,83 @@ function recordDispositionDebug(
   }
 }
 
+/**
+ * Classify a thrown turn failure into a structural {@link TurnOutcome}
+ * (eshyra-17ng). A provider rate/session limit wins regardless of which model
+ * call raised it; the audit phase distinguishes an auditor model/parse failure
+ * (`audit_error`) from exhausted-retry rejection (`failed_after_reject`); other
+ * provider failures are `provider_error`; everything else (rounds exhausted,
+ * empty narration, tool/phase exception) is `failed_before_apply`.
+ */
+function classifyFailureOutcome(error: unknown, phase: string): TurnOutcome {
+  if (error instanceof ModelRateLimitError) {
+    return 'provider_limit';
+  }
+  if (error instanceof AuditError) {
+    return 'audit_error';
+  }
+  if (phase === 'mechanics_audit') {
+    if (error instanceof OrchestratorError) {
+      return 'failed_after_reject';
+    }
+    if (error instanceof ModelClientError) {
+      return 'provider_error';
+    }
+    return 'audit_error';
+  }
+  if (error instanceof ModelClientError) {
+    return 'provider_error';
+  }
+  return 'failed_before_apply';
+}
+
+/** Best-effort tool-span recording; a sink failure must never break a turn. */
+function recordToolUsage(
+  sink: TurnDiagnosticsSink | undefined,
+  entry: ToolUsageRecord,
+): void {
+  if (sink === undefined) {
+    return;
+  }
+  try {
+    sink.recordTool(entry);
+  } catch {
+    // Diagnostics must never destabilize a turn.
+  }
+}
+
+/** Best-effort turn-outcome recording; a sink failure must never break a turn. */
+function recordTurnOutcome(
+  sink: TurnDiagnosticsSink | undefined,
+  input: RunTurnInput,
+  at: string,
+  outcome: TurnOutcome,
+  attempts: number,
+  modelRounds: number,
+  elapsedMs: number,
+  reason: string | null,
+): void {
+  if (sink === undefined) {
+    return;
+  }
+  try {
+    sink.recordOutcome({
+      id: randomUUID(),
+      at,
+      campaignId: input.campaignId,
+      sessionId: input.sessionId,
+      turnId: input.turnId,
+      outcome,
+      attempts,
+      modelRounds,
+      elapsedMs,
+      reason,
+    });
+  } catch {
+    // Diagnostics must never destabilize a turn.
+  }
+}
+
 export async function runTurn(
   deps: RunTurnDeps,
   input: RunTurnInput,
@@ -256,6 +352,8 @@ export async function runTurn(
   // Tracked here (not inside runModelLoop) so the failure path can still
   // report the round count the turn reached before it threw.
   let rounds = 0;
+  // Wall-clock start for the per-turn outcome timing (eshyra-17ng).
+  const turnStartMs = Date.now();
   let phase = 'resolve_acting_character';
   // Last candidate attempt reached, so the catch path can label the turn-error
   // rollback disposition with the attempt it aborted on (eshyra-dwkm).
@@ -324,7 +422,28 @@ export async function runTurn(
         trace: {
           ...auditTrace,
           purpose: 'turn_model_loop',
+          attempt,
         },
+        ...(deps.diagnostics
+          ? {
+              onToolSpan: (span: ToolSpan) =>
+                recordToolUsage(deps.diagnostics, {
+                  id: randomUUID(),
+                  at: input.at,
+                  campaignId: input.campaignId,
+                  sessionId: input.sessionId,
+                  turnId: input.turnId,
+                  attempt,
+                  round: span.round,
+                  tool: span.tool,
+                  source: span.source,
+                  mutates: span.mutates,
+                  ok: span.ok,
+                  errorCode: span.errorCode,
+                  elapsedMs: span.elapsedMs,
+                }),
+            }
+          : {}),
       });
 
       if (deps.auditor === undefined) {
@@ -349,7 +468,10 @@ export async function runTurn(
         providedToolNames: registry.list(),
         executedToolCalls: candidate.toolCalls,
         requiresExplicitActionTools: registry.listRequiresExplicitAction(),
-        trace: { ...auditTrace, extra: { purpose: 'turn_audit' } },
+        trace: {
+          ...auditTrace,
+          extra: { purpose: 'turn_audit', attempt: String(attempt) },
+        },
       });
       const accepted = verdict.verdict === 'accept';
       const action: 'accept' | 'retry' | 'fail' = accepted
@@ -454,6 +576,16 @@ export async function runTurn(
     });
 
     db.exec(`RELEASE ${TURN_SAVEPOINT}`);
+    recordTurnOutcome(
+      deps.diagnostics,
+      input,
+      input.at,
+      'accepted',
+      dispositionAttempt,
+      rounds,
+      Date.now() - turnStartMs,
+      null,
+    );
     return {
       ok: true,
       turnId: input.turnId,
@@ -506,6 +638,16 @@ export async function runTurn(
     } catch {
       // Keep the original failed-turn result contract even if diagnostics fail.
     }
+    recordTurnOutcome(
+      deps.diagnostics,
+      input,
+      input.at,
+      classifyFailureOutcome(e, phase),
+      dispositionAttempt,
+      rounds,
+      Date.now() - turnStartMs,
+      error,
+    );
     return {
       ok: false,
       turnId: input.turnId,

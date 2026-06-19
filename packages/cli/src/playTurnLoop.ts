@@ -81,6 +81,7 @@ export async function turnLoop(
         registry: deps.registry,
         ...(deps.auditor ? { auditor: deps.auditor } : {}),
         ...(deps.debug ? { debug: deps.debug } : {}),
+        ...(deps.diagnostics ? { diagnostics: deps.diagnostics } : {}),
       },
       {
         campaignId,

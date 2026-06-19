@@ -4,7 +4,7 @@ import type {
   ModelCompleteInput,
   ModelCompleteResult,
 } from '../src/model/client.js';
-import { ModelClientError } from '../src/model/client.js';
+import { ModelClientError, ModelRateLimitError } from '../src/model/client.js';
 import type { ModelUsageRecord, ModelUsageSink } from '../src/model/usage.js';
 import { ModelUsageTracker } from '../src/model/usage.js';
 
@@ -288,6 +288,53 @@ describe('ModelUsageTracker', () => {
       await expect(
         client.complete({ messages: [{ role: 'user', content: 'x' }] }),
       ).resolves.toMatchObject({ text: 'ok' });
+    });
+  });
+
+  describe('attempt / round / failureKind (eshyra-17ng)', () => {
+    it('forwards attempt and round from trace.extra as numbers', async () => {
+      const sink = new CaptureSink();
+      const client = tracker(new FakeModel({ text: 'ok' }), sink);
+      await client.complete({
+        messages: [{ role: 'user', content: 'x' }],
+        trace: {
+          extra: { purpose: 'turn_model_loop', attempt: '2', round: '3' },
+        },
+      });
+      expect(sink.records[0].attempt).toBe(2);
+      expect(sink.records[0].round).toBe(3);
+    });
+
+    it('leaves attempt/round null when the trace omits them', async () => {
+      const sink = new CaptureSink();
+      const client = tracker(new FakeModel({ text: 'ok' }), sink);
+      await client.complete({ messages: [{ role: 'user', content: 'x' }] });
+      expect(sink.records[0].attempt).toBeNull();
+      expect(sink.records[0].round).toBeNull();
+      expect(sink.records[0].failureKind).toBeNull();
+    });
+
+    it('classifies a rate-limit failure as provider_limit', async () => {
+      const sink = new CaptureSink();
+      const inner: ModelClient = {
+        complete: () =>
+          Promise.reject(new ModelRateLimitError('429 slow down', 30)),
+      };
+      const client = tracker(inner, sink);
+      await client
+        .complete({ messages: [{ role: 'user', content: 'x' }] })
+        .catch(() => {});
+      expect(sink.records[0].success).toBe(false);
+      expect(sink.records[0].failureKind).toBe('provider_limit');
+    });
+
+    it('classifies any other provider failure as provider_error', async () => {
+      const sink = new CaptureSink();
+      const client = tracker(new FakeModel('error'), sink);
+      await client
+        .complete({ messages: [{ role: 'user', content: 'x' }] })
+        .catch(() => {});
+      expect(sink.records[0].failureKind).toBe('provider_error');
     });
   });
 
