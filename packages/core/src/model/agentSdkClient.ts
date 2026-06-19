@@ -14,7 +14,7 @@ import type {
   ModelCompleteInput,
   ModelCompleteResult,
 } from './client.js';
-import { ModelClientError } from './client.js';
+import { ModelClientError, ModelRateLimitError } from './client.js';
 
 /**
  * Explicit provider-auth seam for the Agent SDK adapter (loreweaver-lus).
@@ -63,6 +63,16 @@ export interface AgentSdkDebugOptions {
   readonly tier?: string;
   /** Auth mode label (`api-key` / `oauth-token`) — never the credential. */
   readonly authMode?: string;
+}
+
+/** True when a provider error message indicates a rate-limit condition. */
+function isRateLimitMessage(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('rate limit') ||
+    lower.includes('rate_limit') ||
+    lower.includes('too many requests')
+  );
 }
 
 /**
@@ -173,10 +183,13 @@ export class AgentSdkModelClient implements ModelClient {
         }
       }
     } catch (err) {
-      this.#recordDebug(input, {
-        ok: false,
-        error: redactSecrets(err instanceof Error ? err.message : String(err)),
-      });
+      const messageText = redactSecrets(
+        err instanceof Error ? err.message : String(err),
+      );
+      this.#recordDebug(input, { ok: false, error: messageText });
+      if (isRateLimitMessage(messageText)) {
+        throw new ModelRateLimitError(`Agent SDK rate limit: ${messageText}`);
+      }
       throw err;
     }
     if (text === undefined) {

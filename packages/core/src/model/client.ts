@@ -309,6 +309,27 @@ export class ModelClientError extends Error {
   }
 }
 
+/**
+ * Subclass of {@link ModelClientError} thrown when a provider adapter
+ * classifies the failure as a rate-limit response (HTTP 429 or equivalent).
+ *
+ * Callers that want only a general failure check can catch `ModelClientError`.
+ * Callers that want to distinguish rate limits (e.g. to surface a clearer
+ * user-facing message) can narrow with `instanceof ModelRateLimitError`.
+ *
+ * `retryAfterSeconds` is populated when the provider included a `Retry-After`
+ * header or equivalent structured metadata. It is `undefined` when no such
+ * hint was available.
+ */
+export class ModelRateLimitError extends ModelClientError {
+  readonly retryAfterSeconds: number | undefined;
+  constructor(message: string, retryAfterSeconds?: number) {
+    super(message);
+    this.name = 'ModelRateLimitError';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
 export interface ModelClient {
   /**
    * Resolve with a structured completion result for the given input.

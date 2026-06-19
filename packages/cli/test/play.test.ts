@@ -186,6 +186,7 @@ async function fakeRunTurn(
     sceneId: scene.sceneId,
     modelRounds: 1,
     error: undefined,
+    isRateLimit: false,
   };
 }
 
@@ -1148,6 +1149,7 @@ describe('runPlay', () => {
         sceneId: undefined,
         modelRounds: 0,
         error: 'model boom',
+        isRateLimit: false,
       }),
     );
 

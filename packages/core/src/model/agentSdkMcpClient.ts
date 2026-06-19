@@ -1,4 +1,5 @@
 import type {
+  SDKResultError,
   SDKResultSuccess,
   SDKSystemMessage,
 } from '@anthropic-ai/claude-agent-sdk';
@@ -27,7 +28,7 @@ import type {
   ModelToolExecutor,
   ProviderExecutedToolCall,
 } from './client.js';
-import { ModelClientError } from './client.js';
+import { ModelClientError, ModelRateLimitError } from './client.js';
 import { toolInputSchemaToZodShape } from './jsonSchemaToZod.js';
 import type { ModelToolDefinition } from './toolSchema.js';
 
@@ -84,6 +85,16 @@ export const AGENT_SDK_MCP_ADAPTER_CAPABILITIES: ModelAdapterCapabilities = {
 
 /** App identifier folded into the SDK User-Agent (diagnostic, not a secret). */
 const CLIENT_APP = 'eshyra-cli';
+
+/** True when a provider error message indicates a rate-limit condition. */
+function isRateLimitMessage(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('rate limit') ||
+    lower.includes('rate_limit') ||
+    lower.includes('too many requests')
+  );
+}
 
 /**
  * Map an Eshyra tool name to the MCP name the Agent SDK generates and the model
@@ -264,6 +275,7 @@ export class AgentSdkMcpModelClient implements ModelClient {
     let resultText: string | undefined;
     let stopReasonRaw: string | null | undefined;
     let errorSubtype: string | undefined;
+    let errorStopReason: string | null | undefined;
     let mcpServers: readonly McpServerStatus[] = [];
 
     try {
@@ -291,6 +303,7 @@ export class AgentSdkMcpModelClient implements ModelClient {
             stopReasonRaw = success.stop_reason;
           } else {
             errorSubtype = message.subtype;
+            errorStopReason = (message as SDKResultError).stop_reason;
           }
         }
       }
@@ -302,10 +315,18 @@ export class AgentSdkMcpModelClient implements ModelClient {
         ok: false,
         error: messageText,
       });
+      if (isRateLimitMessage(messageText)) {
+        throw new ModelRateLimitError(
+          `Agent SDK MCP rate limit: ${messageText}`,
+        );
+      }
       throw new ModelClientError(`Agent SDK MCP call failed: ${messageText}`);
     }
 
     if (resultText === undefined) {
+      const isRateLimit =
+        errorStopReason === 'rate_limit' ||
+        (errorSubtype !== undefined && isRateLimitMessage(errorSubtype));
       const messageText =
         errorSubtype !== undefined
           ? `Agent SDK returned an error result (subtype: ${errorSubtype})`
@@ -314,6 +335,11 @@ export class AgentSdkMcpModelClient implements ModelClient {
         ok: false,
         error: messageText,
       });
+      if (isRateLimit) {
+        throw new ModelRateLimitError(
+          `Agent SDK MCP rate limit: ${messageText}`,
+        );
+      }
       throw new ModelClientError(messageText);
     }
 

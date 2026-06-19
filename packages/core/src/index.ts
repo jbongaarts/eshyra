@@ -159,7 +159,7 @@ export type {
 } from './model/client.js';
 
 // Model client contract + adapter capability types (ADR 0010).
-export { ModelClientError } from './model/client.js';
+export { ModelClientError, ModelRateLimitError } from './model/client.js';
 export type { ConfiguredProfileEntry } from './model/profiles.js';
 export type {
   JsonSchema,

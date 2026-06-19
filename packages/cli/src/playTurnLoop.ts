@@ -97,6 +97,14 @@ export async function turnLoop(
       // and `runTurn` resolves once the turn is finished, so narration is
       // written in one shot rather than streamed token-by-token (see ADR 0002).
       deps.io.write(result.narration);
+    } else if (result.isRateLimit) {
+      const retryHint =
+        result.retryAfterSeconds !== undefined
+          ? ` Try again in ${result.retryAfterSeconds}s.`
+          : ' Try again later.';
+      deps.io.write(
+        `Model provider rate limit reached.${retryHint} Your last input was not applied.`,
+      );
     } else {
       deps.io.write(
         `(the turn could not be completed: ${result.error ?? 'unknown error'} — your last input was not applied)`,
