@@ -30,6 +30,30 @@ describe('DM system prompt', () => {
     }
     expect(prompt).toContain('tool_call');
   });
+
+  it('describes the fenced protocol on the legacy/test path (default)', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry(), {
+      toolProtocol: 'fenced',
+    });
+    expect(prompt).toContain('```tool_call');
+  });
+
+  it('does not instruct fenced tool_call blocks in native mode (eshyra-eznk)', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry(), {
+      toolProtocol: 'native',
+    });
+    // The native tool channel carries the tools; the prompt must NOT tell the
+    // model to emit fenced ```tool_call blocks — that confused native-tool
+    // models into reporting the described tools were not present.
+    expect(prompt).not.toContain('```tool_call');
+    expect(prompt).toContain('native tool interface');
+    // The tool roster and Hybrid contract still appear so the model knows what
+    // is available and what must go through tools.
+    for (const name of ['roll', 'mark_scene', 'lookup_rules']) {
+      expect(prompt).toContain(name);
+    }
+    expect(prompt).toContain('## Available Tools');
+  });
 });
 
 describe('parseToolCalls', () => {

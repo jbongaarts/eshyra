@@ -51,9 +51,58 @@ export interface ModelCompleteInput {
    * seam for adapters that target native provider tool channels.
    */
   tools?: readonly ModelToolDefinition[];
+  /**
+   * Adapter-side execution bridge for providers that own their OWN agentic loop
+   * (eshyra-eznk). The Claude Agent SDK drives the tool loop internally and calls
+   * tool handlers in-process; it does not hand tool calls back to the outer turn
+   * loop. Such an adapter invokes this delegate from each tool handler so the
+   * call runs through the SAME deterministic Eshyra executor the outer loop uses
+   * — the adapter never reimplements gameplay semantics. The delegate is passed
+   * the Eshyra tool name (provider/MCP names are mapped back inside the adapter),
+   * so core gameplay records never see provider naming. Adapters that return
+   * {@link ModelToolCall}s for the outer loop ignore this field.
+   */
+  executeTool?: ModelToolExecutor;
   responseFormat?: ModelResponseFormat;
   profile?: ModelProfileMetadata;
   trace?: ModelTraceMetadata;
+}
+
+/**
+ * Deterministic outcome of executing one Eshyra tool. Structurally identical to
+ * the orchestrator's `ToolResult`; redeclared here so the model layer stays free
+ * of an orchestrator import.
+ */
+export type ModelToolExecutionResult = ModelToolResult['result'];
+
+/**
+ * Bridge a provider that runs its own tool loop (the Agent SDK MCP path) uses to
+ * execute an Eshyra tool through the deterministic core executor. Receives the
+ * Eshyra tool name and parsed args; resolves with the deterministic result. Must
+ * not throw across the seam — tool failures come back as `{ ok: false, ... }` so
+ * the provider can surface them as a tool result rather than crashing its loop.
+ */
+export type ModelToolExecutor = (call: {
+  readonly name: string;
+  readonly args: unknown;
+}) => ModelToolExecutionResult | Promise<ModelToolExecutionResult>;
+
+/**
+ * A tool call a provider EXECUTED itself, inside its own agentic loop, via the
+ * {@link ModelCompleteInput.executeTool} bridge (eshyra-eznk). Unlike
+ * {@link ModelToolCall} — which the outer turn loop must still execute — these
+ * have already run; the loop only records them for the transcript/trace. `name`
+ * is always the Eshyra gameplay name (e.g. `roll`), never a provider/MCP name.
+ */
+export interface ProviderExecutedToolCall {
+  /** Eshyra gameplay tool name (provider/MCP naming already mapped away). */
+  readonly name: string;
+  /** Parsed arguments the provider passed to the tool. */
+  readonly args: unknown;
+  /** Deterministic result the core executor returned. */
+  readonly result: ModelToolExecutionResult;
+  /** Provider/MCP-assigned call id, when the transport supplies one. */
+  readonly callId?: string;
 }
 
 /**
@@ -131,6 +180,15 @@ export interface ModelCompleteResult {
   readonly text: string;
   /** Native structured tool calls, when the provider returns them. */
   readonly toolCalls?: readonly ModelToolCall[];
+  /**
+   * Tool calls the provider already EXECUTED inside its own agentic loop via the
+   * {@link ModelCompleteInput.executeTool} bridge (the Agent SDK MCP path,
+   * eshyra-eznk). The outer turn loop records these for the trace rather than
+   * executing them again. Mutually exclusive in practice with {@link toolCalls}:
+   * an adapter either returns calls for the outer loop to run, or runs them
+   * itself and reports them here.
+   */
+  readonly executedToolCalls?: readonly ProviderExecutedToolCall[];
   /** Best-effort normalized stop reason. */
   readonly stopReason?: ModelStopReason;
 }

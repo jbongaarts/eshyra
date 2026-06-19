@@ -4,7 +4,8 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { pathToFileURL } from 'node:url';
 import {
-  AgentSdkModelClient,
+  type AgentSdkMcpDebugOptions,
+  AgentSdkMcpModelClient,
   CORE_VERSION,
   ConfigError,
   createDefaultToolRegistry,
@@ -15,12 +16,13 @@ import {
   type EshyraConfig,
   ensureDoltAvailable,
   loadConfig,
+  ModelTurnAuditor,
   openDatabase,
   runTurn,
 } from '@eshyra/core';
 import {
-  type AgentSdkDebugOptions,
   DEFAULT_MEMORY_CONFIG,
+  type SessionDebugSink,
 } from '@eshyra/core/internal';
 import {
   type CampaignDeps,
@@ -55,8 +57,9 @@ export function formatConfigError(err: ConfigError): string {
   return [
     `config error: ${err.message}`,
     'For the Claude Agent SDK adapter, set ANTHROPIC_API_KEY (a Console API',
-    'key) or CLAUDE_CODE_OAUTH_TOKEN (a Claude Pro/Max subscription token).',
-    'Then run: eshyra play',
+    'key) or CLAUDE_CODE_OAUTH_TOKEN (a Claude Pro/Max subscription token). If',
+    'both are set, choose one with ESHYRA_AUTH_MODE=oauth-token or =api-key so',
+    'subscription play is never silently API-billed. Then run: eshyra play',
   ].join('\n');
 }
 
@@ -125,47 +128,83 @@ export async function runDoltInstall(
   }
 }
 
+/** Resolved debug wiring for `eshyra play`: the shared sink plus per-call labels. */
+interface PlayDebug {
+  /** The shared file-backed sink, or `undefined` when debug is off. */
+  readonly sink?: SessionDebugSink;
+  /** Debug labels for the primary DM (gameplay) model call. */
+  readonly modelDebug?: AgentSdkMcpDebugOptions;
+  /** Debug labels for the mechanics-audit model call. */
+  readonly auditDebug?: AgentSdkMcpDebugOptions;
+}
+
 /**
- * Resolve opt-in session debug wiring for the model client (eshyra-iu18).
- * Returns `undefined` when `ESHYRA_DEBUG_SESSION` is unset/off, so the adapter
- * stays silent by default. When enabled, builds the file-backed sink, prints a
- * one-line notice, and attaches the model/profile/auth labels — never secrets.
+ * Resolve opt-in session debug wiring (eshyra-iu18 / eshyra-oobh). Returns an
+ * empty bundle when `ESHYRA_DEBUG_SESSION` is unset/off, so both adapters and the
+ * audit gate stay silent by default. When enabled, builds the file-backed sink,
+ * prints a one-line notice, and attaches model/profile/auth labels — never
+ * secrets. The primary and auditor calls share the sink but carry distinct
+ * profile labels so the two model calls are separable in the log.
  */
-function buildModelDebug(
+function buildDebug(
   cfg: EshyraConfig,
   dataRoot: string,
   io: PlayDeps['io'],
-): AgentSdkDebugOptions | undefined {
+): PlayDebug {
   const resolved = resolveSessionDebug(dataRoot);
   if (resolved.sink === undefined) {
-    return undefined;
+    return {};
   }
   if (resolved.notice !== undefined) {
     io.write(resolved.notice);
   }
   return {
-    debug: resolved.sink,
-    profile: 'premium_dm',
-    tier: cfg.dmProfile.tier,
-    authMode: cfg.auth.mode,
+    sink: resolved.sink,
+    modelDebug: {
+      debug: resolved.sink,
+      profile: 'premium_dm',
+      tier: cfg.dmProfile.tier,
+      authMode: cfg.auth.mode,
+    },
+    auditDebug: {
+      debug: resolved.sink,
+      profile: 'mechanics_auditor',
+      tier: 'auditor',
+      authMode: cfg.auth.mode,
+    },
   };
 }
 
 /**
  * Build the real, terminal-and-model-backed dependencies for `eshyra play`.
+ *
+ * Both the primary DM and the mechanics auditor run on the Agent SDK in-process
+ * MCP adapter (eshyra-eznk) under the SAME resolved provider credential — never
+ * an independently API-billed call (eshyra-oobh). The auditor targets the
+ * (typically smaller/faster) `cfg.auditModel`.
  */
 function buildPlayDeps(
   cfg: EshyraConfig,
   io: PlayDeps['io'],
-  debug?: AgentSdkDebugOptions,
+  debug?: PlayDebug,
 ): PlayDeps {
+  const auth = { env: cfg.auth.env };
   return {
     io,
     openDb: (path) => openDatabase(path),
-    // Inject the resolved provider credential through the explicit auth seam
-    // rather than letting the Agent SDK read ambient process.env.
-    model: new AgentSdkModelClient(cfg.model, { env: cfg.auth.env }, debug),
+    // The SDK authenticates from the subscription token just as well as an API
+    // key, so this path needs no Console API key. The resolved provider
+    // credential is injected through the explicit auth seam rather than read from
+    // ambient process.env.
+    model: new AgentSdkMcpModelClient(cfg.model, auth, debug?.modelDebug),
     registry: createDefaultToolRegistry(),
+    // Mechanics-audit gate: a second, lightweight subscription-backed call that
+    // rejects a candidate response asserting an un-tooled mechanical outcome.
+    auditor: new ModelTurnAuditor(
+      new AgentSdkMcpModelClient(cfg.auditModel, auth, debug?.auditDebug),
+      cfg.auditModel,
+    ),
+    ...(debug?.sink ? { debug: debug.sink } : {}),
     runTurn,
     pack: EMBERFALL_HOLLOW,
     now: nowIso,
@@ -273,11 +312,7 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
       dbPath = target.entry.dbPath;
     }
     return await runPlay(
-      buildPlayDeps(
-        config.cfg,
-        io,
-        buildModelDebug(config.cfg, cli.dataRoot, io),
-      ),
+      buildPlayDeps(config.cfg, io, buildDebug(config.cfg, cli.dataRoot, io)),
       { dbPath },
     );
   } finally {
@@ -307,11 +342,7 @@ export async function runDemoSubcommand(): Promise<number> {
   const io = nodeIO();
   try {
     return await runDemo(
-      buildPlayDeps(
-        config.cfg,
-        io,
-        buildModelDebug(config.cfg, cli.dataRoot, io),
-      ),
+      buildPlayDeps(config.cfg, io, buildDebug(config.cfg, cli.dataRoot, io)),
       {
         dbPath: demoDbPath(cli, config.cfg),
         turnCap: DEMO_TURN_CAP,

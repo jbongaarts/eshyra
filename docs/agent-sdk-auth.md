@@ -27,12 +27,29 @@ first):
 5. `CLAUDE_CODE_OAUTH_TOKEN` (long-lived subscription OAuth token)
 6. Subscription OAuth credentials from interactive `claude` `/login`
 
-The critical consequence: **`ANTHROPIC_API_KEY` outranks the subscription
-token.** If an API key is exported anywhere in the environment, it silently
-wins — you bill API credits while believing you are on your subscription.
-Eshyra mirrors this precedence: when both `ANTHROPIC_API_KEY` and
-`CLAUDE_CODE_OAUTH_TOKEN` are set, `loadConfig` selects the API key. To run on
-the subscription, leave `ANTHROPIC_API_KEY` **unset**.
+The critical consequence: inside Claude Code, **`ANTHROPIC_API_KEY` outranks the
+subscription token.** If an API key reaches the SDK process, it silently wins —
+you bill API credits while believing you are on your subscription.
+
+**Eshyra does not mirror that precedence for gameplay (eshyra-oobh).** Released
+gameplay must never silently fall back to API billing, so `loadConfig` selects a
+credential *explicitly*:
+
+- Only `CLAUDE_CODE_OAUTH_TOKEN` set → `oauth-token`.
+- Only `ANTHROPIC_API_KEY` set → `api-key`.
+- **Both set, no `ESHYRA_AUTH_MODE`** → **fail fast** with a `ConfigError` asking
+  you to choose. Eshyra will not guess which credential to bill.
+- `ESHYRA_AUTH_MODE=oauth-token` / `=api-key` forces that mode (and errors if its
+  credential is missing); `ESHYRA_AUTH_MODE=auto` is the default behaviour above.
+
+Whichever mode is selected, the CLI injects only that one credential, and the
+child SDK environment then **strips every other inherited provider credential**
+(`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`) before
+the SDK runs — so a stray API key in the shell cannot override the choice. The
+primary DM and the mechanics auditor share the one resolved selection.
+
+To run on the subscription with an API key also present, set
+`ESHYRA_AUTH_MODE=oauth-token` (or simply leave `ANTHROPIC_API_KEY` unset).
 
 ## Subscription setup
 
@@ -91,10 +108,12 @@ environment, and does not read the cached `~/.claude/.credentials.json` that
 | Interactive `/login` subscription creds | yes | no — `loadConfig` needs an explicit env var |
 | Cloud providers (Bedrock/Vertex/Foundry) | yes | no — no adapter wired |
 
-`loadConfig` resolves a `ProviderAuth` (`mode: 'api-key' | 'oauth-token'`) and
-the CLI injects exactly that credential through the `AgentSdkModelClient` auth
-seam, so an API key in the environment never shadows a chosen subscription
-token.
+`loadConfig` resolves a `ProviderAuth` (`mode: 'api-key' | 'oauth-token'`) via
+explicit selection — one present credential is used, both-present fails fast
+unless `ESHYRA_AUTH_MODE` chooses — and the CLI injects exactly that credential
+through the Agent SDK auth seam. The child SDK env then strips every other
+inherited credential, so an API key in the environment never shadows a chosen
+subscription token.
 
 ## Sources
 

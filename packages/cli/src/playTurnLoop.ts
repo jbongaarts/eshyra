@@ -75,7 +75,13 @@ export async function turnLoop(
     }
 
     const result = await deps.runTurn(
-      { db, model: deps.model, registry: deps.registry },
+      {
+        db,
+        model: deps.model,
+        registry: deps.registry,
+        ...(deps.auditor ? { auditor: deps.auditor } : {}),
+        ...(deps.debug ? { debug: deps.debug } : {}),
+      },
       {
         campaignId,
         sessionId,

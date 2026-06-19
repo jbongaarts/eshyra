@@ -1,3 +1,4 @@
+import type { SessionDebugSink } from '../debug/sessionDebug.js';
 import {
   recordTurnFailureDiagnostic,
   sanitizeDiagnosticMessage,
@@ -11,9 +12,10 @@ import type { ModelClient } from '../model/client.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
-import { buildSystemPrompt } from './protocol.js';
+import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
 import type { ToolContext, ToolRegistry } from './tools.js';
+import type { AuditVerdict, TurnAuditor } from './turnAuditor.js';
 import {
   type ExecutedToolCall,
   OrchestratorError,
@@ -48,12 +50,27 @@ export type { ExecutedToolCall };
 export { OrchestratorError };
 
 const TURN_SAVEPOINT = 'eshyra_turn';
+const ATTEMPT_SAVEPOINT = 'eshyra_turn_attempt';
 const DEFAULT_MAX_TOOL_ROUNDS = 8;
 
 export interface RunTurnDeps {
   db: Db;
   model: ModelClient;
   registry: ToolRegistry;
+  /**
+   * Optional mechanics-audit gate (eshyra-oobh). When provided, every candidate
+   * DM response is audited before it is shown or persisted: a candidate that
+   * asserts a mechanical outcome without the executed tool is rejected, retried
+   * once with a corrective instruction, then fails the turn. When omitted,
+   * auditing is skipped (the legacy/test path).
+   */
+  auditor?: TurnAuditor;
+  /**
+   * Optional debug sink (eshyra-oobh) used to log audit verdicts and the action
+   * the orchestrator took. The model-call debug events themselves are emitted by
+   * the model client adapters; this records the orchestrator-level decision.
+   */
+  debug?: SessionDebugSink;
 }
 
 export interface RunTurnInput {
@@ -75,6 +92,15 @@ export interface RunTurnInput {
   promptProfile?: string;
   recentSessionLimit?: number;
   maxToolRounds?: number;
+  /**
+   * Tool transport the DM system prompt should describe (eshyra-eznk). Defaults
+   * to `native` — released gameplay runs on a ModelClient with a native tool
+   * channel (the Anthropic adapter), so the prompt must not instruct the model
+   * to emit fenced ```tool_call blocks. Set `fenced` only for a legacy/test
+   * model client that has no native tool channel. This is transport-neutral
+   * prompt shaping — the turn loop still parses both transports regardless.
+   */
+  toolProtocol?: ToolProtocol;
 }
 
 export interface RunTurnResult {
@@ -86,6 +112,50 @@ export interface RunTurnResult {
   sceneId: string | undefined;
   modelRounds: number;
   error: string | undefined;
+}
+
+/** Developer-facing message for a turn that failed the mechanics audit twice. */
+function formatAuditFailure(verdict: AuditVerdict): string {
+  const tools =
+    verdict.missingRequiredTools.length > 0
+      ? verdict.missingRequiredTools.join(', ')
+      : '(unspecified)';
+  return `turn rejected by mechanics audit after retry: missing required tool(s) [${tools}] — ${verdict.reason || 'no reason given'}`;
+}
+
+/** Corrective note appended to the context for a single audited retry. */
+function formatCorrectiveNote(
+  verdict: AuditVerdict,
+  toolNames: readonly string[],
+): string {
+  const tools =
+    verdict.missingRequiredTools.length > 0
+      ? verdict.missingRequiredTools.join(', ')
+      : toolNames.join(', ');
+  return [
+    '## Correction Required',
+    'Your previous response asserted a mechanical outcome without calling the',
+    'tool that owns it, so it was rejected and NOT shown to the player.',
+    verdict.repairInstruction ||
+      `Call the required tool(s) before narrating: ${tools}.`,
+    `Use your native tool interface to call: ${tools}. Do not state any dice`,
+    'result, state change, or rules fact unless a tool produced it this turn.',
+  ].join('\n');
+}
+
+/** Best-effort audit-verdict debug; a sink failure must never break a turn. */
+function recordAuditDebug(
+  sink: SessionDebugSink | undefined,
+  event: Parameters<NonNullable<SessionDebugSink['recordAudit']>>[0],
+): void {
+  if (sink?.recordAudit === undefined) {
+    return;
+  }
+  try {
+    sink.recordAudit(event);
+  } catch {
+    // Diagnostics must never destabilize a turn.
+  }
 }
 
 export async function runTurn(
@@ -130,23 +200,94 @@ export async function runTurn(
     });
 
     phase = 'model_loop';
-    const { narration, toolCalls } = await runModelLoop({
-      model,
-      registry,
-      toolCtx,
-      system: buildSystemPrompt(registry),
-      initialUserMessage: renderContextMessage(assembled),
-      maxToolRounds,
-      onRoundStart: () => {
-        rounds += 1;
-      },
-      trace: {
-        campaignId: input.campaignId,
-        sessionId: input.sessionId,
-        turnId: input.turnId,
-        purpose: 'turn_model_loop',
-      },
+    const system = buildSystemPrompt(registry, {
+      toolProtocol: input.toolProtocol ?? 'native',
     });
+    const baseUserMessage = renderContextMessage(assembled);
+    const auditTrace = {
+      campaignId: input.campaignId,
+      sessionId: input.sessionId,
+      turnId: input.turnId,
+    };
+    // Each candidate runs inside its OWN savepoint so a rejected attempt's tool
+    // mutations are rolled back before a retry — only the accepted candidate's
+    // writes survive. The auditor gate (eshyra-oobh) sits between producing a
+    // candidate and accepting it; with no auditor wired the first candidate is
+    // accepted unconditionally (the legacy/test path).
+    const maxAttempts = deps.auditor ? 2 : 1;
+    let narration = '';
+    let toolCalls: ExecutedToolCall[] = [];
+    let correctiveNote: string | undefined;
+    for (let attempt = 1; ; attempt += 1) {
+      db.exec(`SAVEPOINT ${ATTEMPT_SAVEPOINT}`);
+      const candidate = await runModelLoop({
+        model,
+        registry,
+        toolCtx,
+        system,
+        initialUserMessage:
+          correctiveNote === undefined
+            ? baseUserMessage
+            : `${baseUserMessage}\n\n${correctiveNote}`,
+        maxToolRounds,
+        onRoundStart: () => {
+          rounds += 1;
+        },
+        trace: {
+          ...auditTrace,
+          purpose: 'turn_model_loop',
+        },
+      });
+
+      if (deps.auditor === undefined) {
+        db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
+        narration = candidate.narration;
+        toolCalls = candidate.toolCalls;
+        break;
+      }
+
+      phase = 'mechanics_audit';
+      const verdict = await deps.auditor.audit({
+        playerInput: input.playerInput,
+        candidateResponse: candidate.narration,
+        providedToolNames: registry.list(),
+        executedToolCalls: candidate.toolCalls,
+        trace: { ...auditTrace, extra: { purpose: 'turn_audit' } },
+      });
+      const accepted = verdict.verdict === 'accept';
+      const action: 'accept' | 'retry' | 'fail' = accepted
+        ? 'accept'
+        : attempt < maxAttempts
+          ? 'retry'
+          : 'fail';
+      recordAuditDebug(deps.debug, {
+        kind: 'turn_audit',
+        trace: { ...auditTrace, purpose: 'turn_audit' },
+        attempt,
+        verdict: verdict.verdict,
+        missingRequiredTools: verdict.missingRequiredTools,
+        executedToolNames: candidate.toolCalls.map((c) => c.tool),
+        action,
+        auditorModel: deps.auditor.modelId ?? 'unknown',
+      });
+
+      if (accepted) {
+        db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
+        narration = candidate.narration;
+        toolCalls = candidate.toolCalls;
+        break;
+      }
+
+      // Rejected: discard this candidate's tool mutations so nothing it wrote can
+      // survive, then either retry with a corrective note or fail the turn.
+      db.exec(`ROLLBACK TO ${ATTEMPT_SAVEPOINT}`);
+      db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
+      if (action === 'fail') {
+        throw new OrchestratorError(formatAuditFailure(verdict));
+      }
+      phase = 'model_loop';
+      correctiveNote = formatCorrectiveNote(verdict, registry.list());
+    }
 
     phase = 'scene_summary';
     const closedSceneIds = extractClosedSceneIds(toolCalls);

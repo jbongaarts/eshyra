@@ -13,16 +13,34 @@ import {
  */
 export type ProviderAuthMode = 'api-key' | 'oauth-token';
 
+/**
+ * Explicit auth-mode selection from `ESHYRA_AUTH_MODE` (eshyra-oobh):
+ * - `oauth-token` / `api-key` — force that credential; fail if it is missing.
+ * - `auto` (or unset) — use whichever single credential is present; if BOTH are
+ *   present, fail fast rather than guess which one to bill.
+ */
+export type ProviderAuthSelection = ProviderAuthMode | 'auto';
+
+/**
+ * Default mechanics-audit model (eshyra-oobh): the cheapest/fastest current
+ * Claude tier, appropriate for the bounded tool-use judgement the auditor makes.
+ * Overridable via `ESHYRA_AUDIT_MODEL`. The auditor always uses the same provider
+ * auth as the primary DM, so this must be entitled on that subscription/key.
+ */
+export const DEFAULT_AUDIT_MODEL = 'claude-haiku-4-5-20251001';
+
 /** Resolved provider authentication for the Agent SDK adapter. */
 export interface ProviderAuth {
   mode: ProviderAuthMode;
   /**
    * Environment variables to inject into the Agent SDK process — exactly the
-   * one credential variable in use (`ANTHROPIC_API_KEY` for `api-key`,
-   * `CLAUDE_CODE_OAUTH_TOKEN` for `oauth-token`), never both. Injecting only
-   * one matters: in Claude Code's credential precedence `ANTHROPIC_API_KEY`
-   * outranks `CLAUDE_CODE_OAUTH_TOKEN`, so a stray API key would otherwise
-   * silently shadow a subscription token.
+   * one selected credential variable (`ANTHROPIC_API_KEY` for `api-key`,
+   * `CLAUDE_CODE_OAUTH_TOKEN` for `oauth-token`), never both. Injecting only one
+   * matters: in Claude Code's credential precedence `ANTHROPIC_API_KEY` outranks
+   * `CLAUDE_CODE_OAUTH_TOKEN`, so a stray API key would otherwise silently shadow
+   * a subscription token. The selection is explicit (see
+   * {@link ProviderAuthSelection}); the child SDK env then strips every other
+   * inherited credential so the choice cannot be overridden downstream.
    */
   env: Record<string, string>;
 }
@@ -41,6 +59,16 @@ export interface EshyraConfig {
    * wins, for backward compatibility with the pre-registry flat config path.
    */
   model: string;
+  /**
+   * Model id for the mechanics-audit / turn-referee call (eshyra-oobh). A small,
+   * fast model is appropriate — the audit is a bounded tool-use judgement, not
+   * narration. Resolved from `ESHYRA_AUDIT_MODEL`, defaulting to
+   * {@link DEFAULT_AUDIT_MODEL}. It runs under the SAME provider auth as the
+   * primary DM (never independently API-billed), so it must be a model the
+   * resolved subscription/credential is entitled to. Set `ESHYRA_AUDIT_MODEL` to
+   * the primary model if a smaller model is not available on the subscription.
+   */
+  auditModel: string;
   /**
    * Resolved `premium_dm` profile entry (provider + model + tier) from the
    * profile registry, including any `ESHYRA_PROFILE_PREMIUM_DM_*` overrides.
@@ -61,20 +89,68 @@ export class ConfigError extends Error {
   }
 }
 
+/** Parse and validate the explicit `ESHYRA_AUTH_MODE` selection. */
+function parseAuthSelection(raw: string | undefined): ProviderAuthSelection {
+  const value = raw?.trim().toLowerCase();
+  if (!value || value === 'auto') {
+    return 'auto';
+  }
+  if (value === 'api-key' || value === 'oauth-token') {
+    return value;
+  }
+  throw new ConfigError(
+    `ESHYRA_AUTH_MODE must be "oauth-token", "api-key", or "auto" (got "${raw}")`,
+  );
+}
+
 /**
- * Resolve provider auth from the environment. Accepts either an Anthropic
- * Console API key or a Claude Pro/Max subscription OAuth token. When both are
- * set the API key is authoritative, mirroring Claude Code's own credential
- * precedence (`ANTHROPIC_API_KEY` outranks `CLAUDE_CODE_OAUTH_TOKEN`).
+ * Resolve provider auth from the environment with EXPLICIT selection
+ * (eshyra-oobh). Accepts an Anthropic Console API key or a Claude Pro/Max
+ * subscription OAuth token. Released gameplay must never silently fall back to
+ * API billing, so there is no "API key wins" precedence: `ESHYRA_AUTH_MODE`
+ * forces a mode (failing if its credential is missing), and in the default
+ * `auto` mode a single present credential is used while having BOTH present is a
+ * fail-fast error rather than a silent choice.
  */
 function resolveProviderAuth(
   env: Record<string, string | undefined>,
 ): ProviderAuth {
-  const apiKey = env.ANTHROPIC_API_KEY?.trim();
+  const apiKey = env.ANTHROPIC_API_KEY?.trim() || undefined;
+  const oauthToken = env.CLAUDE_CODE_OAUTH_TOKEN?.trim() || undefined;
+  const selection = parseAuthSelection(env.ESHYRA_AUTH_MODE);
+
+  if (selection === 'api-key') {
+    if (!apiKey) {
+      throw new ConfigError(
+        'ESHYRA_AUTH_MODE=api-key, but ANTHROPIC_API_KEY is not set',
+      );
+    }
+    return { mode: 'api-key', env: { ANTHROPIC_API_KEY: apiKey } };
+  }
+  if (selection === 'oauth-token') {
+    if (!oauthToken) {
+      throw new ConfigError(
+        'ESHYRA_AUTH_MODE=oauth-token, but CLAUDE_CODE_OAUTH_TOKEN is not set',
+      );
+    }
+    return {
+      mode: 'oauth-token',
+      env: { CLAUDE_CODE_OAUTH_TOKEN: oauthToken },
+    };
+  }
+
+  // `auto` / unset: use the single present credential; refuse to guess between
+  // two so subscription gameplay can never silently become API-billed.
+  if (apiKey && oauthToken) {
+    throw new ConfigError(
+      'both ANTHROPIC_API_KEY and CLAUDE_CODE_OAUTH_TOKEN are set — Eshyra will ' +
+        'not guess which to bill. Set ESHYRA_AUTH_MODE=oauth-token (subscription) ' +
+        'or ESHYRA_AUTH_MODE=api-key, or clear the credential you are not using.',
+    );
+  }
   if (apiKey) {
     return { mode: 'api-key', env: { ANTHROPIC_API_KEY: apiKey } };
   }
-  const oauthToken = env.CLAUDE_CODE_OAUTH_TOKEN?.trim();
   if (oauthToken) {
     return {
       mode: 'oauth-token',
@@ -124,6 +200,10 @@ export function loadConfig(
   // (its own ESHYRA_PROFILE_PREMIUM_DM_MODEL override, or the default).
   const model = env.ESHYRA_MODEL?.trim() || dmProfile.model;
 
+  // The mechanics-audit model defaults to a fast tier and runs under the same
+  // provider auth as the primary DM (eshyra-oobh).
+  const auditModel = env.ESHYRA_AUDIT_MODEL?.trim() || DEFAULT_AUDIT_MODEL;
+
   // The CLI ships only the Claude Agent SDK adapter, so the resolved DM
   // profile must select the `anthropic` provider. A non-anthropic override
   // would otherwise be silently ignored.
@@ -133,5 +213,5 @@ export function loadConfig(
     );
   }
 
-  return { campaignDbPath, model, dmProfile, auth };
+  return { campaignDbPath, model, auditModel, dmProfile, auth };
 }

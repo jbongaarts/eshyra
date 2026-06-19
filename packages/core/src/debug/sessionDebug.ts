@@ -170,6 +170,17 @@ function messageShape(message: ModelMessage, index: number): MessageShape {
   };
 }
 
+/**
+ * Connection status of one MCP server the adapter handed the provider
+ * (eshyra-eznk). Mirrors the Agent SDK init message's `mcp_servers` entries so a
+ * structural log shows whether the Eshyra tool server actually connected. Both
+ * fields are code-owned labels (server name + status string), never content.
+ */
+export interface McpServerStatus {
+  readonly name: string;
+  readonly status: string;
+}
+
 /** Trace identity for a model call, mirrored from `ModelTraceMetadata`. */
 export interface ModelCallTrace {
   readonly campaignId?: string;
@@ -227,18 +238,30 @@ export interface ModelCallDebugEvent {
   /** Auth mode label (`api-key` / `oauth-token`) — never the credential itself. */
   readonly authMode?: string;
   /**
-   * Tool protocol in force, e.g. `fenced-text` (the model is instructed to emit
-   * fenced `tool_call` blocks) versus a native provider tool channel.
+   * Tool protocol in force: `fenced-text` (the model is instructed to emit
+   * fenced `tool_call` blocks), `anthropic-native` (the Messages adapter's native
+   * tool channel), or `agent-sdk-mcp` (the Agent SDK in-process MCP server).
    */
   readonly toolProtocolMode: string;
+  /**
+   * Transport/client label, when the adapter reports one (e.g. `claude-agent-sdk`
+   * for the MCP path). A plain identifier, never a secret.
+   */
+  readonly clientName?: string;
+  /**
+   * MCP server connection status the adapter observed (Agent SDK MCP path).
+   * Empty for adapters that use no MCP server.
+   */
+  readonly mcpServers?: readonly McpServerStatus[];
   /** Tool names the core handed the model client via `ModelCompleteInput.tools`. */
   readonly providedToolNames: readonly string[];
   /**
-   * Tool names the adapter actually forwarded to the provider's native tool
-   * channel. For the Agent SDK adapter this is empty: it drives tools through
-   * its own internal harness and relies on the fenced-text protocol described in
-   * the system prompt, so the provider receives no Eshyra tool definitions. The
-   * gap between this and {@link providedToolNames} is itself a key diagnostic.
+   * Tool names the adapter actually forwarded to the provider's tool channel.
+   * For the text-only Agent SDK adapter this is empty (it relies on the
+   * fenced-text protocol in the system prompt); for the native Messages adapter
+   * it is the Eshyra tool names; for the Agent SDK MCP adapter it is the generated
+   * `mcp__eshyra__*` names. The gap between this and {@link providedToolNames} is
+   * itself a key diagnostic.
    */
   readonly forwardedToolNames: readonly string[];
   /** System prompt size + section breakdown, or null when no system prompt. */
@@ -269,6 +292,8 @@ export interface BuildModelCallEventInput {
   readonly tier?: string;
   readonly authMode?: string;
   readonly toolProtocolMode: string;
+  readonly clientName?: string;
+  readonly mcpServers?: readonly McpServerStatus[];
   readonly system?: string;
   readonly messages: readonly ModelMessage[];
   readonly providedTools?: readonly ModelToolDefinition[];
@@ -300,6 +325,8 @@ export function buildModelCallEvent(
     ...(input.tier ? { tier: input.tier } : {}),
     ...(input.authMode ? { authMode: input.authMode } : {}),
     toolProtocolMode: input.toolProtocolMode,
+    ...(input.clientName ? { clientName: input.clientName } : {}),
+    ...(input.mcpServers ? { mcpServers: input.mcpServers } : {}),
     providedToolNames: providedTools.map((t) => t.name),
     forwardedToolNames: input.forwardedToolNames ?? [],
     system:
@@ -334,6 +361,33 @@ export function buildModelCallEvent(
 }
 
 /**
+ * One mechanics-audit decision's debug record (eshyra-oobh). The auditor's own
+ * MODEL call is logged as a normal {@link ModelCallDebugEvent} (distinguished by
+ * `trace.purpose === 'turn_audit'` and the auditor model id); this event captures
+ * the orchestrator-level VERDICT and the action it drove, so a turn's tool-use
+ * enforcement is reconstructable. Carries only labels, names, and counts — no
+ * prompt or narration content, so it cannot leak campaign text or secrets.
+ */
+export interface TurnAuditDebugEvent {
+  readonly kind: 'turn_audit';
+  readonly trace: ModelCallTrace;
+  /** 1-based candidate attempt this verdict judged. */
+  readonly attempt: number;
+  /** The auditor's verdict on the candidate response. */
+  readonly verdict: 'accept' | 'reject';
+  /** Tool names the auditor judged were required but missing. */
+  readonly missingRequiredTools: readonly string[];
+  /** Eshyra tool names the candidate turn actually executed. */
+  readonly executedToolNames: readonly string[];
+  /** Action the orchestrator took from this verdict. */
+  readonly action: 'accept' | 'retry' | 'fail';
+  /** Provider model id the auditor call targeted. */
+  readonly auditorModel: string;
+  /** Auth mode label (`api-key` / `oauth-token`) — never the credential. */
+  readonly authMode?: string;
+}
+
+/**
  * Destination for session debug events. The core emits events; an implementation
  * (the CLI's file-backed sink) stamps a timestamp and persists them under the
  * data root. A sink that wants full prompt/message capture sets
@@ -348,6 +402,12 @@ export interface SessionDebugSink {
    * {@link buildModelCallEvent}.
    */
   readonly captureContent: boolean;
-  /** Persist one debug event. Implementations must never throw into the turn. */
+  /** Persist one model-call debug event. Must never throw into the turn. */
   record(event: ModelCallDebugEvent): void;
+  /**
+   * Persist one mechanics-audit verdict event (eshyra-oobh). Optional so older
+   * sinks keep compiling; the orchestrator calls it best-effort. Must never throw
+   * into the turn.
+   */
+  recordAudit?(event: TurnAuditDebugEvent): void;
 }

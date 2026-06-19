@@ -47,12 +47,14 @@ export {
 export type {
   BuildModelCallEventInput,
   MarkdownSectionSize,
+  McpServerStatus,
   MessageShape,
   ModelCallContent,
   ModelCallDebugEvent,
   ModelCallOutcome,
   ModelCallTrace,
   SessionDebugSink,
+  TurnAuditDebugEvent,
 } from './debug/sessionDebug.js';
 export {
   approxTokens,
