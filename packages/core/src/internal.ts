@@ -180,13 +180,26 @@ export {
   validateToolInput,
 } from './model/toolSchemaValidation.js';
 // Model usage tracking: purpose enum, per-call record, sink contract, decorator.
+// Plus per-turn timing diagnostics: tool spans + turn outcomes (eshyra-17ng).
 export type {
+  ModelFailureKind,
   ModelUsagePurpose,
   ModelUsageRecord,
   ModelUsageSink,
   ModelUsageTrackerOptions,
+  ToolUsageRecord,
+  ToolUsageSink,
+  ToolUsageSource,
+  TurnDiagnosticsSink,
+  TurnOutcome,
+  TurnOutcomeRecord,
+  TurnOutcomeSink,
 } from './model/usage.js';
-export { ModelUsageTracker, NoopModelUsageSink } from './model/usage.js';
+export {
+  ModelUsageTracker,
+  NoopModelUsageSink,
+  NoopTurnDiagnosticsSink,
+} from './model/usage.js';
 export type {
   AssembledContext,
   AssembledSceneRef,

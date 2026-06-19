@@ -22,7 +22,6 @@ import {
 } from '@eshyra/core';
 import {
   DEFAULT_MEMORY_CONFIG,
-  type ModelUsageSink,
   ModelUsageTracker,
   type SessionDebugSink,
 } from '@eshyra/core/internal';
@@ -40,7 +39,10 @@ import {
   loadConfigFile,
 } from './configFile.js';
 import { campaignsDir, ensureDataRoot, resolveDataRoot } from './dataRoot.js';
-import { createUsageSink } from './modelUsageStore.js';
+import {
+  type CloseableModelUsageSink,
+  createUsageSink,
+} from './modelUsageStore.js';
 import {
   type CliIO,
   doltCheckpointRunner,
@@ -192,7 +194,7 @@ function buildDebug(
 function buildPlayDeps(
   cfg: EshyraConfig,
   io: PlayDeps['io'],
-  usageStore: ModelUsageSink,
+  usageStore: CloseableModelUsageSink,
   debug?: PlayDebug,
 ): PlayDeps {
   const auth = { env: cfg.auth.env };
@@ -232,6 +234,9 @@ function buildPlayDeps(
     // rejects a candidate response asserting an un-tooled mechanical outcome.
     auditor: new ModelTurnAuditor(auditModel, cfg.auditModel),
     ...(debug?.sink ? { debug: debug.sink } : {}),
+    // Same store as the model trackers, so model, tool, and outcome records for
+    // one session are co-located in usage.db (eshyra-17ng).
+    diagnostics: usageStore,
     runTurn,
     pack: EMBERFALL_HOLLOW,
     now: nowIso,

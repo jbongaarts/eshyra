@@ -5,6 +5,10 @@ import type {
   Db,
   ModelUsageRecord,
   ModelUsageSink,
+  ToolUsageRecord,
+  TurnDiagnosticsSink,
+  TurnOutcome,
+  TurnOutcomeRecord,
 } from '@eshyra/core/internal';
 import { diagnosticsDir } from './dataRoot.js';
 
@@ -27,7 +31,46 @@ const CREATE_TABLE = `
     elapsed_ms     INTEGER NOT NULL,
     success        INTEGER NOT NULL,
     error          TEXT,
-    request_id     TEXT
+    request_id     TEXT,
+    attempt        INTEGER,
+    round          INTEGER,
+    failure_kind   TEXT
+  )
+`;
+
+// Per-tool timing spans and per-turn outcomes (eshyra-17ng). Separate tables so
+// a turn's model calls, tool calls, and outcome can be reassembled into a
+// timeline keyed by turn_id without widening the model_usage row.
+const CREATE_TOOL_TABLE = `
+  CREATE TABLE IF NOT EXISTS tool_usage (
+    id          TEXT    PRIMARY KEY,
+    at          TEXT    NOT NULL,
+    campaign_id TEXT,
+    session_id  TEXT,
+    turn_id     TEXT,
+    attempt     INTEGER,
+    round       INTEGER,
+    tool        TEXT    NOT NULL,
+    source      TEXT    NOT NULL,
+    mutates     INTEGER NOT NULL,
+    ok          INTEGER NOT NULL,
+    error_code  TEXT,
+    elapsed_ms  INTEGER NOT NULL
+  )
+`;
+
+const CREATE_OUTCOME_TABLE = `
+  CREATE TABLE IF NOT EXISTS turn_outcome (
+    id          TEXT    PRIMARY KEY,
+    at          TEXT    NOT NULL,
+    campaign_id TEXT,
+    session_id  TEXT,
+    turn_id     TEXT,
+    outcome     TEXT    NOT NULL,
+    attempts    INTEGER NOT NULL,
+    model_rounds INTEGER NOT NULL,
+    elapsed_ms  INTEGER NOT NULL,
+    reason      TEXT
   )
 `;
 
@@ -36,13 +79,27 @@ const INSERT_SQL = `
     id, at, campaign_id, session_id, turn_id,
     purpose, model, profile, auth_mode, adapter_family,
     input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
-    elapsed_ms, success, error, request_id
+    elapsed_ms, success, error, request_id, attempt, round, failure_kind
   ) VALUES (
     ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
-    ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?
   )
+`;
+
+const INSERT_TOOL_SQL = `
+  INSERT OR IGNORE INTO tool_usage (
+    id, at, campaign_id, session_id, turn_id,
+    attempt, round, tool, source, mutates, ok, error_code, elapsed_ms
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
+
+const INSERT_OUTCOME_SQL = `
+  INSERT OR IGNORE INTO turn_outcome (
+    id, at, campaign_id, session_id, turn_id,
+    outcome, attempts, model_rounds, elapsed_ms, reason
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 export interface UsageSummaryByDimension {
@@ -74,6 +131,41 @@ export interface UsageQueryFilters {
   readonly since?: string;
 }
 
+/** One model call within a turn timeline (eshyra-17ng). */
+export interface TimelineModelCall {
+  readonly purpose: string;
+  readonly model: string;
+  readonly attempt: number | null;
+  readonly round: number | null;
+  readonly elapsedMs: number;
+  readonly success: boolean;
+  readonly failureKind: string | null;
+}
+
+/** One tool call within a turn timeline (eshyra-17ng). */
+export interface TimelineToolCall {
+  readonly tool: string;
+  readonly source: string;
+  readonly mutates: boolean;
+  readonly ok: boolean;
+  readonly attempt: number | null;
+  readonly round: number | null;
+  readonly elapsedMs: number;
+}
+
+/** Structural timeline for a single player turn (eshyra-17ng). */
+export interface TimelineTurn {
+  readonly turnId: string;
+  readonly sessionId: string | null;
+  readonly campaignId: string | null;
+  readonly outcome: TurnOutcome | null;
+  readonly attempts: number | null;
+  readonly modelRounds: number | null;
+  readonly totalElapsedMs: number | null;
+  readonly modelCalls: readonly TimelineModelCall[];
+  readonly toolCalls: readonly TimelineToolCall[];
+}
+
 type TotalsRow = {
   total_calls: number;
   failures: number;
@@ -95,6 +187,50 @@ type GroupRow = {
   fails: number;
 };
 
+type TimelineModelRow = {
+  turn_id: string | null;
+  session_id: string | null;
+  campaign_id: string | null;
+  purpose: string;
+  model: string;
+  attempt: number | null;
+  round: number | null;
+  elapsed_ms: number;
+  success: number;
+  failure_kind: string | null;
+};
+
+type TimelineToolRow = {
+  turn_id: string | null;
+  attempt: number | null;
+  round: number | null;
+  tool: string;
+  source: string;
+  mutates: number;
+  ok: number;
+  elapsed_ms: number;
+};
+
+type TimelineOutcomeRow = {
+  turn_id: string | null;
+  outcome: TurnOutcome;
+  attempts: number;
+  model_rounds: number;
+  elapsed_ms: number;
+};
+
+type MutableTimelineTurn = {
+  turnId: string;
+  sessionId: string | null;
+  campaignId: string | null;
+  outcome: TurnOutcome | null;
+  attempts: number | null;
+  modelRounds: number | null;
+  totalElapsedMs: number | null;
+  modelCalls: TimelineModelCall[];
+  toolCalls: TimelineToolCall[];
+};
+
 /**
  * SQLite-backed store for model usage records (eshyra-cuxm). Each call to
  * {@link record} writes one row synchronously. {@link query} returns aggregate
@@ -105,13 +241,31 @@ type GroupRow = {
  * failures are caught by the {@link ModelUsageTracker} and never surface to
  * the caller.
  */
-export class ModelUsageStore implements ModelUsageSink {
+export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
   readonly #db: Db;
 
   constructor(dbPath: string) {
     mkdirSync(dirname(dbPath), { recursive: true });
     this.#db = openDatabase(dbPath);
     this.#db.exec(CREATE_TABLE);
+    this.#db.exec(CREATE_TOOL_TABLE);
+    this.#db.exec(CREATE_OUTCOME_TABLE);
+    // Migrate diagnostics DBs created before eshyra-17ng so older usage.db files
+    // gain the new model_usage columns rather than failing every insert.
+    this.#addColumnIfMissing('model_usage', 'attempt', 'INTEGER');
+    this.#addColumnIfMissing('model_usage', 'round', 'INTEGER');
+    this.#addColumnIfMissing('model_usage', 'failure_kind', 'TEXT');
+  }
+
+  #addColumnIfMissing(table: string, column: string, decl: string): void {
+    const cols = this.#db
+      .prepare(`PRAGMA table_info(${table})`)
+      .all() as Array<{
+      name: string;
+    }>;
+    if (!cols.some((c) => c.name === column)) {
+      this.#db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+    }
   }
 
   record(entry: ModelUsageRecord): void {
@@ -136,6 +290,46 @@ export class ModelUsageStore implements ModelUsageSink {
         entry.success ? 1 : 0,
         entry.error,
         entry.requestId,
+        entry.attempt,
+        entry.round,
+        entry.failureKind,
+      );
+  }
+
+  recordTool(entry: ToolUsageRecord): void {
+    this.#db
+      .prepare(INSERT_TOOL_SQL)
+      .run(
+        entry.id,
+        entry.at,
+        entry.campaignId,
+        entry.sessionId,
+        entry.turnId,
+        entry.attempt,
+        entry.round,
+        entry.tool,
+        entry.source,
+        entry.mutates ? 1 : 0,
+        entry.ok ? 1 : 0,
+        entry.errorCode,
+        entry.elapsedMs,
+      );
+  }
+
+  recordOutcome(entry: TurnOutcomeRecord): void {
+    this.#db
+      .prepare(INSERT_OUTCOME_SQL)
+      .run(
+        entry.id,
+        entry.at,
+        entry.campaignId,
+        entry.sessionId,
+        entry.turnId,
+        entry.outcome,
+        entry.attempts,
+        entry.modelRounds,
+        entry.elapsedMs,
+        entry.reason,
       );
   }
 
@@ -221,6 +415,117 @@ export class ModelUsageStore implements ModelUsageSink {
     };
   }
 
+  /**
+   * Reassemble per-turn timelines (eshyra-17ng) from the model-call, tool-call,
+   * and outcome tables, keyed by turn id. Only rows that carry a `turn_id` are
+   * included (maintenance/recap calls without a turn are omitted). Turns are
+   * ordered by the earliest model call; within a turn, model and tool calls keep
+   * their insertion order (`rowid`).
+   */
+  timeline(filters: UsageQueryFilters = {}): TimelineTurn[] {
+    const { where, params } = buildWhere(filters);
+    const turnFilter =
+      where === ''
+        ? ' WHERE turn_id IS NOT NULL'
+        : `${where} AND turn_id IS NOT NULL`;
+
+    const modelRows = this.#db
+      .prepare(
+        `SELECT turn_id, session_id, campaign_id, purpose, model, attempt, round,
+                elapsed_ms, success, failure_kind
+         FROM model_usage${turnFilter}
+         ORDER BY rowid`,
+      )
+      .all(...params) as TimelineModelRow[];
+
+    const toolRows = this.#db
+      .prepare(
+        `SELECT turn_id, attempt, round, tool, source, mutates, ok, elapsed_ms
+         FROM tool_usage${turnFilter}
+         ORDER BY rowid`,
+      )
+      .all(...params) as TimelineToolRow[];
+
+    const outcomeRows = this.#db
+      .prepare(
+        `SELECT turn_id, outcome, attempts, model_rounds, elapsed_ms
+         FROM turn_outcome${turnFilter}
+         ORDER BY rowid`,
+      )
+      .all(...params) as TimelineOutcomeRow[];
+
+    const turns = new Map<string, MutableTimelineTurn>();
+    const ensure = (
+      turnId: string,
+      sessionId: string | null,
+      campaignId: string | null,
+    ): MutableTimelineTurn => {
+      let t = turns.get(turnId);
+      if (t === undefined) {
+        t = {
+          turnId,
+          sessionId,
+          campaignId,
+          outcome: null,
+          attempts: null,
+          modelRounds: null,
+          totalElapsedMs: null,
+          modelCalls: [],
+          toolCalls: [],
+        };
+        turns.set(turnId, t);
+      }
+      return t;
+    };
+
+    for (const r of modelRows) {
+      if (r.turn_id === null) {
+        continue;
+      }
+      ensure(r.turn_id, r.session_id, r.campaign_id).modelCalls.push({
+        purpose: r.purpose,
+        model: r.model,
+        attempt: r.attempt,
+        round: r.round,
+        elapsedMs: r.elapsed_ms,
+        success: r.success === 1,
+        failureKind: r.failure_kind,
+      });
+    }
+    for (const r of toolRows) {
+      if (r.turn_id === null) {
+        continue;
+      }
+      const t = turns.get(r.turn_id);
+      if (t === undefined) {
+        continue;
+      }
+      t.toolCalls.push({
+        tool: r.tool,
+        source: r.source,
+        mutates: r.mutates === 1,
+        ok: r.ok === 1,
+        attempt: r.attempt,
+        round: r.round,
+        elapsedMs: r.elapsed_ms,
+      });
+    }
+    for (const r of outcomeRows) {
+      if (r.turn_id === null) {
+        continue;
+      }
+      const t = turns.get(r.turn_id);
+      if (t === undefined) {
+        continue;
+      }
+      t.outcome = r.outcome;
+      t.attempts = r.attempts;
+      t.modelRounds = r.model_rounds;
+      t.totalElapsedMs = r.elapsed_ms;
+    }
+    return [...turns.values()];
+  }
+
   close(): void {
     this.#db.close();
   }
@@ -266,8 +571,11 @@ function toSummaryRow(row: GroupRow): UsageSummaryByDimension {
 /**
  * A usage sink with a lifecycle `close()` method so callers can manage the
  * underlying resource without depending on the concrete {@link ModelUsageStore}.
+ * Implements both the model-call sink and the per-turn diagnostics sink
+ * (eshyra-17ng) so one store handles model, tool, and outcome records.
  */
-export type CloseableModelUsageSink = ModelUsageSink & { close(): void };
+export type CloseableModelUsageSink = ModelUsageSink &
+  TurnDiagnosticsSink & { close(): void };
 
 /**
  * Best-effort factory for the diagnostics usage sink (eshyra-cuxm). Opens
@@ -288,6 +596,11 @@ export function createUsageSink(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     warn?.(`Usage tracking disabled: ${msg}`);
-    return { record: () => {}, close: () => {} };
+    return {
+      record: () => {},
+      recordTool: () => {},
+      recordOutcome: () => {},
+      close: () => {},
+    };
   }
 }

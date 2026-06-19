@@ -24,6 +24,30 @@ export interface RunModelLoopTrace {
    * round as `extra.round` so multi-round turns are ordered in the logs.
    */
   readonly purpose?: string;
+  /**
+   * 1-based candidate attempt these calls belong to (eshyra-17ng). Forwarded to
+   * the model adapter as `extra.attempt` so model-usage timing can distinguish
+   * an initial gameplay turn from a post-audit retry.
+   */
+  readonly attempt?: number;
+}
+
+/**
+ * One executed tool call's timing span (eshyra-17ng), emitted via
+ * {@link RunModelLoopInput.onToolSpan}. Carries only structural metadata — never
+ * arguments or result payloads. The caller enriches it with turn/session ids and
+ * the attempt before persisting.
+ */
+export interface ToolSpan {
+  readonly tool: string;
+  readonly source: ToolRequestSource;
+  readonly mutates: boolean;
+  readonly ok: boolean;
+  /** Deterministic failure code when the tool failed; `null` on success. */
+  readonly errorCode: string | null;
+  /** 1-based model round the tool ran inside. */
+  readonly round: number;
+  readonly elapsedMs: number;
 }
 
 /**
@@ -134,6 +158,14 @@ export interface RunModelLoopInput {
    * logs will use it; others ignore it.
    */
   trace?: RunModelLoopTrace;
+  /**
+   * Best-effort per-tool timing callback (eshyra-17ng). Invoked once for every
+   * tool the loop executes — both the outer api-native/fenced path and the
+   * provider-driven MCP path (via the `executeTool` bridge) — with the measured
+   * duration and structural metadata. Must never throw; the loop does not guard
+   * it, so the caller is responsible for swallowing sink failures.
+   */
+  onToolSpan?: (span: ToolSpan) => void;
 }
 
 export interface RunModelLoopResult {
@@ -154,6 +186,7 @@ export async function runModelLoop(
     maxToolRounds,
     onRoundStart,
     trace,
+    onToolSpan,
   } = input;
 
   const messages: ModelMessage[] = [
@@ -161,15 +194,41 @@ export async function runModelLoop(
   ];
   const toolCalls: ExecutedToolCall[] = [];
   const tools = registry.definitions();
+  let rounds = 0;
+  let narration: string | undefined;
+  // Time one deterministic tool invocation and emit a structural span. Shared by
+  // the outer api-native/fenced path and the provider-driven MCP bridge below so
+  // every executed tool is measured the same way (eshyra-17ng).
+  const invokeTimed = (
+    tool: string,
+    args: unknown,
+    source: ToolRequestSource,
+  ): ToolResult => {
+    const startMs = Date.now();
+    let result: ToolResult | undefined;
+    try {
+      result = registry.invoke(tool, args, toolCtx);
+      return result;
+    } finally {
+      onToolSpan?.({
+        tool,
+        source,
+        mutates: registry.isMutating(tool),
+        ok: result?.ok ?? false,
+        errorCode: result && !result.ok ? result.code : null,
+        round: rounds,
+        elapsedMs: Date.now() - startMs,
+      });
+    }
+  };
   // Bridge for adapters that own their own agentic loop (the Agent SDK MCP path,
   // eshyra-eznk): the provider's in-process tool handlers call this so the call
   // runs through the SAME deterministic executor the outer loop uses below. The
   // adapter is handed the Eshyra tool name (provider/MCP naming is mapped away
-  // inside it), so this is exactly `registry.invoke`.
+  // inside it). Timing is captured here so MCP tool calls executed inside the
+  // provider loop get per-tool spans too (eshyra-17ng).
   const executeTool: ModelToolExecutor = (call) =>
-    registry.invoke(call.name, call.args, toolCtx);
-  let rounds = 0;
-  let narration: string | undefined;
+    invokeTimed(call.name, call.args, 'native-mcp');
 
   while (rounds < maxToolRounds) {
     rounds += 1;
@@ -194,6 +253,9 @@ export async function runModelLoop(
               ...(trace.turnId ? { turnId: trace.turnId } : {}),
               extra: {
                 ...(trace.purpose ? { purpose: trace.purpose } : {}),
+                ...(trace.attempt !== undefined
+                  ? { attempt: String(trace.attempt) }
+                  : {}),
                 round: String(rounds),
               },
             },
@@ -238,7 +300,7 @@ export async function runModelLoop(
     }> = [];
     for (const req of requests) {
       if (req.ok) {
-        const result = registry.invoke(req.tool, req.args, toolCtx);
+        const result = invokeTimed(req.tool, req.args, req.source);
         toolCalls.push({
           tool: req.tool,
           args: req.args,

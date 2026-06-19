@@ -9,7 +9,11 @@ import type {
   ToolRegistry,
   TurnAuditor,
 } from '@eshyra/core';
-import type { MemoryConfig, SessionDebugSink } from '@eshyra/core/internal';
+import type {
+  MemoryConfig,
+  SessionDebugSink,
+  TurnDiagnosticsSink,
+} from '@eshyra/core/internal';
 
 /** Player-facing input/output seam. A terminal impl is {@link nodeIO}. */
 export interface CliIO {
@@ -46,6 +50,13 @@ export interface PlayDeps {
    * audit verdicts are logged alongside the model-call diagnostics.
    */
   debug?: SessionDebugSink;
+  /**
+   * Per-turn timing diagnostics sink (eshyra-17ng) passed straight to `runTurn`.
+   * Records tool spans and turn outcomes into the shared diagnostics store so a
+   * slow turn can be decomposed via `eshyra usage --timeline`. Omitted in tests
+   * that do not assert on timing.
+   */
+  diagnostics?: TurnDiagnosticsSink;
   /**
    * Run one orchestrated turn. Injected (rather than imported) so the loop is
    * exercisable in tests without a live model — defaults to the core `runTurn`.
