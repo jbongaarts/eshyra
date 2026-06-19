@@ -141,6 +141,7 @@ describe('createFileSessionDebugSink', () => {
       attempt: 1,
       verdict: 'reject',
       missingRequiredTools: ['roll'],
+      disallowedToolCalls: [],
       executedToolNames: [],
       action: 'retry',
       auditorModel: 'claude-haiku-test',

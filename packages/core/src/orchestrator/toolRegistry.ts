@@ -50,6 +50,15 @@ export interface Tool {
    */
   readonly mutates: boolean;
   /**
+   * Whether this tool requires explicit player action intent to call (eshyra-4ia4).
+   * When `true`, the model must only call this tool when the player is explicitly
+   * doing something — receiving, granting, or removing items, etc. — NOT merely
+   * in response to a question about current state. The system prompt uses this
+   * classification to draw a bright line around these tools; future auditor or
+   * gating logic can also consult it without requiring tool-definition changes.
+   */
+  readonly requiresExplicitAction?: boolean;
+  /**
    * Provider-neutral input schema (eshyra-0jq.10). Lifted straight into
    * {@link ToolRegistry.definitions} so adapters can render native tool calls;
    * {@link ToolRegistry.invoke} enforces it before `run`. Tool authors remain
@@ -128,6 +137,17 @@ export class ToolRegistry {
 
   list(): string[] {
     return [...this.tools.keys()];
+  }
+
+  /**
+   * Names of tools that require explicit player action intent (eshyra-4ia4).
+   * These tools must only be called when the player is explicitly doing something,
+   * not merely in response to a question about current state.
+   */
+  listRequiresExplicitAction(): string[] {
+    return [...this.tools.values()]
+      .filter((t) => t.requiresExplicitAction)
+      .map((t) => t.name);
   }
 
   /**

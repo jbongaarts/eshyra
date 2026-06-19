@@ -377,6 +377,11 @@ export interface TurnAuditDebugEvent {
   readonly verdict: 'accept' | 'reject';
   /** Tool names the auditor judged were required but missing. */
   readonly missingRequiredTools: readonly string[];
+  /**
+   * Explicit-action-only tool names the candidate called without explicit player
+   * action intent (eshyra-4ia4). Empty unless that gate fired.
+   */
+  readonly disallowedToolCalls: readonly string[];
   /** Eshyra tool names the candidate turn actually executed. */
   readonly executedToolNames: readonly string[];
   /** Action the orchestrator took from this verdict. */

@@ -127,11 +127,15 @@ export interface RunTurnResult {
 
 /** Developer-facing message for a turn that failed the mechanics audit twice. */
 function formatAuditFailure(verdict: AuditVerdict): string {
-  const tools =
+  const missing =
     verdict.missingRequiredTools.length > 0
       ? verdict.missingRequiredTools.join(', ')
-      : '(unspecified)';
-  return `turn rejected by mechanics audit after retry: missing required tool(s) [${tools}] — ${verdict.reason || 'no reason given'}`;
+      : '(none)';
+  const disallowed =
+    verdict.disallowedToolCalls.length > 0
+      ? verdict.disallowedToolCalls.join(', ')
+      : '(none)';
+  return `turn rejected by mechanics audit after retry: missing required tool(s) [${missing}], disallowed tool call(s) [${disallowed}] — ${verdict.reason || 'no reason given'}`;
 }
 
 /** Corrective note appended to the context for a single audited retry. */
@@ -139,19 +143,40 @@ function formatCorrectiveNote(
   verdict: AuditVerdict,
   toolNames: readonly string[],
 ): string {
-  const tools =
-    verdict.missingRequiredTools.length > 0
-      ? verdict.missingRequiredTools.join(', ')
-      : toolNames.join(', ');
-  return [
-    '## Correction Required',
-    'Your previous response asserted a mechanical outcome without calling the',
-    'tool that owns it, so it was rejected and NOT shown to the player.',
-    verdict.repairInstruction ||
-      `Call the required tool(s) before narrating: ${tools}.`,
-    `Use your native tool interface to call: ${tools}. Do not state any dice`,
-    'result, state change, or rules fact unless a tool produced it this turn.',
-  ].join('\n');
+  // A candidate may be rejected for asserting a mechanical outcome without the
+  // owning tool (missingRequiredTools) and/or for calling an explicit-action-only
+  // tool with no explicit player action (disallowedToolCalls). The corrective
+  // note addresses whichever applies so the retry knows what to change.
+  const lines: string[] = ['## Correction Required'];
+  if (verdict.disallowedToolCalls.length > 0) {
+    const disallowed = verdict.disallowedToolCalls.join(', ');
+    lines.push(
+      'Your previous response called a tool that requires explicit player action',
+      'without the player taking that action, so it was rejected and NOT shown to',
+      `the player. Do NOT call these tools to answer a state query: ${disallowed}.`,
+      'Report the current state as recorded and offer the player a choice instead',
+      'of mutating state to answer their question.',
+    );
+  }
+  if (
+    verdict.missingRequiredTools.length > 0 ||
+    verdict.disallowedToolCalls.length === 0
+  ) {
+    const tools =
+      verdict.missingRequiredTools.length > 0
+        ? verdict.missingRequiredTools.join(', ')
+        : toolNames.join(', ');
+    lines.push(
+      'Your previous response asserted a mechanical outcome without calling the',
+      'tool that owns it, so it was rejected and NOT shown to the player.',
+      `Use your native tool interface to call: ${tools}. Do not state any dice`,
+      'result, state change, or rules fact unless a tool produced it this turn.',
+    );
+  }
+  if (verdict.repairInstruction) {
+    lines.push(verdict.repairInstruction);
+  }
+  return lines.join('\n');
 }
 
 /** Best-effort audit-verdict debug; a sink failure must never break a turn. */
@@ -323,6 +348,7 @@ export async function runTurn(
         candidateResponse: candidate.narration,
         providedToolNames: registry.list(),
         executedToolCalls: candidate.toolCalls,
+        requiresExplicitActionTools: registry.listRequiresExplicitAction(),
         trace: { ...auditTrace, extra: { purpose: 'turn_audit' } },
       });
       const accepted = verdict.verdict === 'accept';
@@ -337,6 +363,7 @@ export async function runTurn(
         attempt,
         verdict: verdict.verdict,
         missingRequiredTools: verdict.missingRequiredTools,
+        disallowedToolCalls: verdict.disallowedToolCalls,
         executedToolNames: candidate.toolCalls.map((c) => c.tool),
         action,
         auditorModel: deps.auditor.modelId ?? 'unknown',

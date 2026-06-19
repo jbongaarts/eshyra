@@ -961,6 +961,7 @@ class ScriptedAuditor implements TurnAuditor {
     const verdict = this.verdicts[this.index] ?? {
       verdict: 'accept',
       missingRequiredTools: [],
+      disallowedToolCalls: [],
       reason: '',
       repairInstruction: '',
     };
@@ -972,12 +973,14 @@ class ScriptedAuditor implements TurnAuditor {
 const accept: AuditVerdict = {
   verdict: 'accept',
   missingRequiredTools: [],
+  disallowedToolCalls: [],
   reason: 'ok',
   repairInstruction: '',
 };
 const rejectRoll: AuditVerdict = {
   verdict: 'reject',
   missingRequiredTools: ['roll'],
+  disallowedToolCalls: [],
   reason: 'dice asserted without roll',
   repairInstruction: 'Call the roll tool before narrating the result.',
 };
@@ -1232,7 +1235,8 @@ function collectingDispositionSink(): SessionDebugSink & {
 
 const rejectGiveItem: AuditVerdict = {
   verdict: 'reject',
-  missingRequiredTools: ['give_item'],
+  missingRequiredTools: [],
+  disallowedToolCalls: ['give_item'],
   reason: 'mutated state for a read-style question',
   repairInstruction: 'Answer without mutating inventory.',
 };

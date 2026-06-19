@@ -121,6 +121,8 @@ export function buildSystemPrompt(
       return `- ${name}: ${tool?.description ?? ''}`;
     });
 
+  const explicitActionTools = registry.listRequiresExplicitAction().sort();
+
   const protocolSection =
     toolProtocol === 'native'
       ? [
@@ -152,6 +154,26 @@ export function buildSystemPrompt(
           'tool-call-free reply is the turn the player sees.',
         ];
 
+  const inventoryGuardSection =
+    explicitActionTools.length > 0
+      ? [
+          '## Inventory and Equipment Guard',
+          '',
+          `The following tools require explicit player action intent: ${explicitActionTools.join(', ')}.`,
+          'Call them ONLY when the player is explicitly doing something — receiving,',
+          'purchasing, dropping, using, or losing an item. Do NOT call them merely',
+          'because the player asked what they are carrying or equipped with.',
+          '',
+          'When a player asks about their inventory or equipment:',
+          '- Read the current state from the context snapshot provided — it is already there.',
+          '- If the inventory is empty, say so clearly (e.g. "You have nothing recorded',
+          '  in your inventory.") and offer to begin starting-equipment selection if',
+          '  character setup appears incomplete. Do NOT silently populate default gear.',
+          '- If inventory is partially set up, surface that as character-setup debt and',
+          '  offer to continue equipment selection — do not invent missing items.',
+        ]
+      : [];
+
   return [
     'You are the Dungeon Master for a long-running solo fantasy campaign.',
     'You narrate vividly and in the second person, keep continuity with',
@@ -180,6 +202,7 @@ export function buildSystemPrompt(
     '',
     ...toolLines,
     '',
+    ...(inventoryGuardSection.length > 0 ? [...inventoryGuardSection, ''] : []),
     ...protocolSection,
   ].join('\n');
 }
