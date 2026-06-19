@@ -4,6 +4,7 @@ import type {
   ModelCallDebugEvent,
   SessionDebugSink,
   TurnAuditDebugEvent,
+  TurnCandidateDispositionEvent,
 } from '@eshyra/core/internal';
 import { debugDir } from './dataRoot.js';
 
@@ -124,6 +125,21 @@ export function createFileSessionDebugSink(
     // Mechanics-audit verdicts (eshyra-oobh) are structural by construction —
     // names, counts, and labels only — so they go straight into the default log.
     recordAudit(event: TurnAuditDebugEvent): void {
+      try {
+        appendStructural(event.trace.sessionId, event);
+      } catch (err) {
+        warn(
+          `session debug logging failed (continuing without it): ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
+    },
+    // Candidate tool-effect dispositions (eshyra-dwkm) are structural too — tool
+    // names, the mutates classification, and a committed/rolled-back label — so
+    // they join the default log alongside the audit verdicts. Reading the two
+    // together shows a rejected candidate's mutating calls were discarded.
+    recordCandidateDisposition(event: TurnCandidateDispositionEvent): void {
       try {
         appendStructural(event.trace.sessionId, event);
       } catch (err) {

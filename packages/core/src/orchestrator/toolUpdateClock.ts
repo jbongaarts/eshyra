@@ -5,6 +5,8 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const updateClockTool: Tool = {
   name: 'update_clock',
+  // Writes the session clock — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     "Update the in-game clock and/or the character's current location.",
   inputSchema: {

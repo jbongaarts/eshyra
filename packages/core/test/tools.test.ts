@@ -138,10 +138,44 @@ describe('ToolRegistry', () => {
     );
   });
 
+  it('classifies every default tool as read-only or mutating (eshyra-dwkm)', () => {
+    const registry = createDefaultToolRegistry();
+    // Read-only tools: dice + pure queries write no canon.
+    for (const name of [
+      'roll',
+      'lookup_rules',
+      'world_query',
+      'memory_drilldown',
+    ]) {
+      expect(registry.isMutating(name), `${name} should be read-only`).toBe(
+        false,
+      );
+    }
+    // Every other default tool writes canon and must be classified mutating.
+    const readOnly = new Set([
+      'roll',
+      'lookup_rules',
+      'world_query',
+      'memory_drilldown',
+    ]);
+    for (const name of registry.list()) {
+      if (!readOnly.has(name)) {
+        expect(registry.isMutating(name), `${name} should be mutating`).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  it('treats an unknown tool as mutating (fail-safe staging)', () => {
+    expect(new ToolRegistry().isMutating('does_not_exist')).toBe(true);
+  });
+
   it('rejects schema-invalid arguments before invoking a tool', () => {
     let invoked = false;
     const registry = new ToolRegistry().register({
       name: 'strict_tool',
+      mutates: false,
       description: 'Test schema enforcement.',
       inputSchema: {
         type: 'object',

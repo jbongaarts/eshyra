@@ -5,6 +5,8 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const memoryDrilldownTool: Tool = {
   name: 'memory_drilldown',
+  // Read-only retrieval into omitted memory windows; no canon write (eshyra-dwkm).
+  mutates: false,
   description:
     'Drill into an omitted scene_log window or older scene/session/arc ' +
     'summary excluded from the bounded prompt. args: a MemoryDrilldownSelector.',

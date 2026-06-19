@@ -8,6 +8,8 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const mutateStateTool: Tool = {
   name: 'mutate_state',
+  // The general canon-write tool — mutating by definition (eshyra-dwkm).
+  mutates: true,
   description:
     'Write canonical game state. args: { target, id?, field, op: "set", value }.',
   inputSchema: {

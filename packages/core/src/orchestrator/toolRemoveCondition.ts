@@ -11,6 +11,8 @@ import {
 
 export const removeConditionTool: Tool = {
   name: 'remove_condition',
+  // Writes character conditions — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     'Remove a condition from a character by id. No-op if the condition is not present.',
   inputSchema: {

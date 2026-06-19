@@ -6,6 +6,8 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const setPlotFlagTool: Tool = {
   name: 'set_plot_flag',
+  // Writes plot flags — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     'Set a narrative plot flag. Use for story progression, quest state, NPC attitudes, ' +
     'and any named boolean/string/object facts about the campaign.',

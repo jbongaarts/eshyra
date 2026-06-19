@@ -11,6 +11,8 @@ import {
 
 export const adjustHpTool: Tool = {
   name: 'adjust_hp',
+  // Writes character HP — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     "Adjust a character's current hit points by a signed amount. " +
     'Positive heals, negative damages. Clamped to [0, hp_max].',

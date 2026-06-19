@@ -46,6 +46,7 @@ export {
 // plus the sink contract the CLI implements over the data root.
 export type {
   BuildModelCallEventInput,
+  CandidateDisposition,
   MarkdownSectionSize,
   McpServerStatus,
   MessageShape,
@@ -54,7 +55,9 @@ export type {
   ModelCallOutcome,
   ModelCallTrace,
   SessionDebugSink,
+  ToolCallDisposition,
   TurnAuditDebugEvent,
+  TurnCandidateDispositionEvent,
 } from './debug/sessionDebug.js';
 export {
   approxTokens,

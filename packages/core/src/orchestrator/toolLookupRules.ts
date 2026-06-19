@@ -35,6 +35,8 @@ function resolveBindingBasePack(ctx: ToolContext): RulesPack | undefined {
 
 export const lookupRulesTool: Tool = {
   name: 'lookup_rules',
+  // Read-only rules lookup through the campaign binding; no canon write (eshyra-dwkm).
+  mutates: false,
   description:
     'Look up a rules record (creature, spell, class, ancestry, feat, ' +
     'equipment, etc.) by exact name or ref through the campaign rules ' +

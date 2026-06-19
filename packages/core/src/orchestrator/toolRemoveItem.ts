@@ -11,6 +11,8 @@ import {
 
 export const removeItemTool: Tool = {
   name: 'remove_item',
+  // Writes inventory rows — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     'Remove an item or reduce its quantity. Omit quantity to remove the item entirely. ' +
     'If quantity would drop to zero or below, the item is deleted.',

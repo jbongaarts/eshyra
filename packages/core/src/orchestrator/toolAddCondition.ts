@@ -11,6 +11,8 @@ import {
 
 export const addConditionTool: Tool = {
   name: 'add_condition',
+  // Writes character conditions — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     'Add a condition to a character. No-op if a condition with the same id already exists. ' +
     'Extra fields (duration, severity, etc.) are preserved.',
