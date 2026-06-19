@@ -29,6 +29,7 @@ function model(overrides: Partial<ModelUsageRecord> = {}): ModelUsageRecord {
     campaignId: 'camp-1',
     sessionId: 'sess-1',
     turnId: 'turn-1',
+    arcId: null,
     purpose: 'gameplay_turn',
     model: 'claude-opus-4-8',
     profile: null,
@@ -107,6 +108,39 @@ describe('runUsageCommand', () => {
     });
     expect(code).toBe(1);
     expect(lines.join('\n')).toContain('--timeline');
+  });
+
+  it('--arc filters the summary to one campaign arc (eshyra-f0hj)', () => {
+    const dataRoot = workDir();
+    const sink = createUsageSink(dataRoot);
+    sink.record(
+      model({
+        purpose: 'arc_rollup',
+        sessionId: null,
+        turnId: null,
+        arcId: 'arc-1',
+      }),
+    );
+    sink.record(
+      model({
+        purpose: 'arc_rollup',
+        sessionId: null,
+        turnId: null,
+        arcId: 'arc-2',
+      }),
+    );
+    sink.close();
+
+    const lines: string[] = [];
+    const code = runUsageCommand(['--arc', 'arc-1'], {
+      dataRoot,
+      log: (m) => lines.push(m),
+    });
+    const out = lines.join('\n');
+    expect(code).toBe(0);
+    expect(out).toContain('filter: arc=arc-1');
+    expect(out).toContain('Total calls:   1');
+    expect(out).toContain('arc_rollup');
   });
 
   it('--timeline renders a per-turn breakdown of model, audit, and tool time', () => {

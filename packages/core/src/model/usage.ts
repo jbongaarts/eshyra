@@ -33,6 +33,12 @@ export interface ModelUsageRecord {
   readonly campaignId: string | null;
   readonly sessionId: string | null;
   readonly turnId: string | null;
+  /**
+   * Campaign arc this call belongs to (eshyra-f0hj), from `trace.arcId`.
+   * Populated by cross-session maintenance calls such as arc rollup; `null`
+   * for per-turn calls and any call without arc context.
+   */
+  readonly arcId: string | null;
   readonly purpose: ModelUsagePurpose;
   readonly model: string;
   readonly profile: string | null;
@@ -267,6 +273,7 @@ export class ModelUsageTracker implements ModelClient {
         campaignId: input.trace?.campaignId ?? null,
         sessionId: input.trace?.sessionId ?? null,
         turnId: input.trace?.turnId ?? null,
+        arcId: input.trace?.arcId ?? null,
         purpose,
         model: this.#model,
         profile: input.profile?.profile ?? null,

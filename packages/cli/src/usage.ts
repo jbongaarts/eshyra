@@ -23,13 +23,14 @@ export interface UsageDeps {
  * Filters:
  *   --campaign <id>    restrict to one campaign
  *   --session <id>     restrict to one session
+ *   --arc <id>         restrict to one campaign arc
  *   --since <date>     restrict to records on or after YYYY-MM-DD
  */
 export function runUsageCommand(argv: string[], deps: UsageDeps): number {
   const parsed = parseArgs(argv);
   if (parsed === null) {
     deps.log(
-      'Usage: eshyra usage [--campaign <id>] [--session <id>] [--since YYYY-MM-DD] [--timeline]',
+      'Usage: eshyra usage [--campaign <id>] [--session <id>] [--arc <id>] [--since YYYY-MM-DD] [--timeline]',
     );
     return 1;
   }
@@ -68,7 +69,10 @@ function parseArgs(argv: string[]): ParsedArgs | null {
     if (arg === '--timeline' || arg === '--details') {
       timeline = true;
     } else if (
-      (arg === '--campaign' || arg === '--session' || arg === '--since') &&
+      (arg === '--campaign' ||
+        arg === '--session' ||
+        arg === '--arc' ||
+        arg === '--since') &&
       argv[i + 1]
     ) {
       filters[arg.slice(2)] = argv[i + 1];
@@ -83,6 +87,7 @@ function parseArgs(argv: string[]): ParsedArgs | null {
         ? { campaignId: filters.campaign }
         : {}),
       ...(filters.session !== undefined ? { sessionId: filters.session } : {}),
+      ...(filters.arc !== undefined ? { arcId: filters.arc } : {}),
       ...(filters.since !== undefined ? { since: filters.since } : {}),
     },
     timeline,
@@ -103,6 +108,9 @@ function formatSummary(
   }
   if (filters.sessionId !== undefined) {
     lines.push(`  filter: session=${filters.sessionId}`);
+  }
+  if (filters.arcId !== undefined) {
+    lines.push(`  filter: arc=${filters.arcId}`);
   }
   if (filters.since !== undefined) {
     lines.push(`  filter: since=${filters.since}`);
@@ -187,6 +195,9 @@ function formatTimeline(
   }
   if (filters.sessionId !== undefined) {
     lines.push(`  filter: session=${filters.sessionId}`);
+  }
+  if (filters.arcId !== undefined) {
+    lines.push(`  filter: arc=${filters.arcId}`);
   }
   if (filters.since !== undefined) {
     lines.push(`  filter: since=${filters.since}`);

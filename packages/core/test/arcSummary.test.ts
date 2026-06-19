@@ -130,6 +130,23 @@ describe('composeArcSummary', () => {
     expect(userContent).toContain('The chalk sigil is unsolved');
   });
 
+  it('stamps arc_rollup usage trace with campaign and arc ids (eshyra-f0hj)', async () => {
+    let captured: ModelCompleteInput | undefined;
+    const model = fakeModel((input) => {
+      captured = input;
+      return 'OK';
+    });
+    await composeArcSummary(model, {
+      campaignId: 'camp-1',
+      arcId: 'arc-1',
+      recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],
+      bible: EMPTY_BIBLE,
+    });
+    expect(captured?.trace?.campaignId).toBe('camp-1');
+    expect(captured?.trace?.arcId).toBe('arc-1');
+    expect(captured?.trace?.extra?.purpose).toBe('arc_rollup');
+  });
+
   it('propagates ModelClientError from the provider', async () => {
     const model: ModelClient = {
       complete: async () => {

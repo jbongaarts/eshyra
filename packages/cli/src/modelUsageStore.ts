@@ -19,6 +19,7 @@ const CREATE_TABLE = `
     campaign_id    TEXT,
     session_id     TEXT,
     turn_id        TEXT,
+    arc_id         TEXT,
     purpose        TEXT    NOT NULL,
     model          TEXT    NOT NULL,
     profile        TEXT,
@@ -76,12 +77,12 @@ const CREATE_OUTCOME_TABLE = `
 
 const INSERT_SQL = `
   INSERT OR IGNORE INTO model_usage (
-    id, at, campaign_id, session_id, turn_id,
+    id, at, campaign_id, session_id, turn_id, arc_id,
     purpose, model, profile, auth_mode, adapter_family,
     input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
     elapsed_ms, success, error, request_id, attempt, round, failure_kind
   ) VALUES (
-    ?, ?, ?, ?, ?,
+    ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?
@@ -128,6 +129,8 @@ export interface UsageSummary {
 export interface UsageQueryFilters {
   readonly campaignId?: string;
   readonly sessionId?: string;
+  /** Restrict to model calls stamped with this campaign arc (eshyra-f0hj). */
+  readonly arcId?: string;
   readonly since?: string;
 }
 
@@ -255,6 +258,8 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
     this.#addColumnIfMissing('model_usage', 'attempt', 'INTEGER');
     this.#addColumnIfMissing('model_usage', 'round', 'INTEGER');
     this.#addColumnIfMissing('model_usage', 'failure_kind', 'TEXT');
+    // eshyra-f0hj: arc attribution for cross-session maintenance calls.
+    this.#addColumnIfMissing('model_usage', 'arc_id', 'TEXT');
   }
 
   #addColumnIfMissing(table: string, column: string, decl: string): void {
@@ -277,6 +282,7 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
         entry.campaignId,
         entry.sessionId,
         entry.turnId,
+        entry.arcId,
         entry.purpose,
         entry.model,
         entry.profile,
@@ -544,6 +550,10 @@ function buildWhere(filters: UsageQueryFilters): {
   if (filters.sessionId !== undefined) {
     clauses.push('session_id = ?');
     params.push(filters.sessionId);
+  }
+  if (filters.arcId !== undefined) {
+    clauses.push('arc_id = ?');
+    params.push(filters.arcId);
   }
   if (filters.since !== undefined) {
     clauses.push('at >= ?');

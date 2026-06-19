@@ -219,6 +219,26 @@ describe('ModelUsageTracker', () => {
       expect(rec.campaignId).toBeNull();
       expect(rec.sessionId).toBeNull();
       expect(rec.turnId).toBeNull();
+      expect(rec.arcId).toBeNull();
+    });
+
+    it('records arcId from the trace for maintenance calls (eshyra-f0hj)', async () => {
+      const sink = new CaptureSink();
+      const client = tracker(new FakeModel({ text: '' }), sink);
+      await client.complete({
+        messages: [{ role: 'user', content: 'x' }],
+        trace: {
+          campaignId: 'camp-1',
+          arcId: 'arc-7',
+          extra: { purpose: 'arc_rollup' },
+        },
+      });
+      const rec = sink.records[0];
+      expect(rec.campaignId).toBe('camp-1');
+      // Cross-session maintenance calls carry no single sessionId.
+      expect(rec.sessionId).toBeNull();
+      expect(rec.arcId).toBe('arc-7');
+      expect(rec.purpose).toBe('arc_rollup');
     });
 
     it('records the profile from the profile metadata', async () => {

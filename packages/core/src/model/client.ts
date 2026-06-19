@@ -94,6 +94,12 @@ export interface ModelTraceMetadata {
   readonly campaignId?: string;
   readonly sessionId?: string;
   readonly turnId?: string;
+  /**
+   * Campaign arc this call belongs to, when known. Set by cross-session
+   * maintenance calls (e.g. arc rollup) that span many sessions and so carry
+   * no single `sessionId` (eshyra-f0hj).
+   */
+  readonly arcId?: string;
   /** Free-form extra fields (e.g. experiment id, ramp bucket). */
   readonly extra?: Readonly<Record<string, string>>;
 }
