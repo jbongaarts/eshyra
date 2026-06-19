@@ -57,6 +57,7 @@ import type {
 } from '../src/model/client.js';
 import { ModelClientError } from '../src/model/client.js';
 import type { ModelToolDefinition } from '../src/model/toolSchema.js';
+import { ModelTurnAuditor } from '../src/orchestrator/turnAuditor.js';
 
 interface CapturedTool {
   name: string;
@@ -389,6 +390,45 @@ describe('AgentSdkMcpModelClient', () => {
       });
       expect(Object.keys(client)).toEqual([]);
       expect(JSON.stringify(client)).not.toContain(secret);
+    });
+
+    it('drives the primary DM and the auditor through the SAME selected auth (eshyra-oobh)', async () => {
+      // Mirrors how the CLI wires both clients from one resolved cfg.auth: the
+      // primary DM and the mechanics auditor must authenticate identically — the
+      // auditor can never silently use a different (API-billed) credential.
+      const auth = { env: { CLAUDE_CODE_OAUTH_TOKEN: 'oauth-shared' } };
+      const primary = new AgentSdkMcpModelClient('claude-primary', auth);
+      const auditor = new ModelTurnAuditor(
+        new AgentSdkMcpModelClient('claude-audit', auth),
+        'claude-audit',
+      );
+
+      queryMock.mockImplementation((arg: QueryArg) =>
+        driveSdk({
+          arg,
+          result: '{"verdict":"accept","missingRequiredTools":[]}',
+        }),
+      );
+
+      await primary.complete({
+        messages: [{ role: 'user', content: 'go' }],
+        tools: [rollDef],
+        executeTool: executorReturning({ ok: true, data: {} }),
+      });
+      await auditor.audit({
+        playerInput: 'go',
+        candidateResponse: 'You go.',
+        providedToolNames: ['roll'],
+        executedToolCalls: [],
+      });
+
+      const primaryEnv = (queryMock.mock.calls[0][0] as QueryArg).options.env;
+      const auditEnv = (queryMock.mock.calls[1][0] as QueryArg).options.env;
+      // Both injected the same subscription token; neither carries an API key.
+      expect(primaryEnv.CLAUDE_CODE_OAUTH_TOKEN).toBe('oauth-shared');
+      expect(auditEnv.CLAUDE_CODE_OAUTH_TOKEN).toBe('oauth-shared');
+      expect('ANTHROPIC_API_KEY' in primaryEnv).toBe(false);
+      expect('ANTHROPIC_API_KEY' in auditEnv).toBe(false);
     });
   });
 

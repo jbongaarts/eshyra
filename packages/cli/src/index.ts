@@ -57,8 +57,9 @@ export function formatConfigError(err: ConfigError): string {
   return [
     `config error: ${err.message}`,
     'For the Claude Agent SDK adapter, set ANTHROPIC_API_KEY (a Console API',
-    'key) or CLAUDE_CODE_OAUTH_TOKEN (a Claude Pro/Max subscription token).',
-    'Then run: eshyra play',
+    'key) or CLAUDE_CODE_OAUTH_TOKEN (a Claude Pro/Max subscription token). If',
+    'both are set, choose one with ESHYRA_AUTH_MODE=oauth-token or =api-key so',
+    'subscription play is never silently API-billed. Then run: eshyra play',
   ].join('\n');
 }
 

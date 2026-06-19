@@ -118,18 +118,86 @@ describe('loadConfig', () => {
       });
     });
 
-    it('prefers ANTHROPIC_API_KEY when both credentials are set', () => {
-      // Mirrors Claude Code precedence: an API key outranks the OAuth token,
-      // so loadConfig picks api-key auth and injects only that one credential.
+    it('fails fast when both credentials are set and no explicit mode is given', () => {
+      // Released gameplay must never silently fall back to API billing: when
+      // both are present, loadConfig refuses to guess (eshyra-oobh).
+      expect(() =>
+        loadConfig({
+          ESHYRA_DB_PATH: './x.db',
+          ANTHROPIC_API_KEY: 'sk-test',
+          CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
+        }),
+      ).toThrow(ConfigError);
+    });
+
+    it('selects oauth-token when both are set and ESHYRA_AUTH_MODE=oauth-token', () => {
       const cfg = loadConfig({
         ESHYRA_DB_PATH: './x.db',
         ANTHROPIC_API_KEY: 'sk-test',
         CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
+        ESHYRA_AUTH_MODE: 'oauth-token',
+      });
+      // Only the subscription token is injected — never the API key.
+      expect(cfg.auth).toEqual({
+        mode: 'oauth-token',
+        env: { CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test' },
+      });
+    });
+
+    it('selects api-key when both are set and ESHYRA_AUTH_MODE=api-key', () => {
+      const cfg = loadConfig({
+        ESHYRA_DB_PATH: './x.db',
+        ANTHROPIC_API_KEY: 'sk-test',
+        CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
+        ESHYRA_AUTH_MODE: 'api-key',
       });
       expect(cfg.auth).toEqual({
         mode: 'api-key',
         env: { ANTHROPIC_API_KEY: 'sk-test' },
       });
+    });
+
+    it('throws ConfigError when ESHYRA_AUTH_MODE=oauth-token but the token is missing', () => {
+      expect(() =>
+        loadConfig({
+          ESHYRA_DB_PATH: './x.db',
+          ANTHROPIC_API_KEY: 'sk-test',
+          ESHYRA_AUTH_MODE: 'oauth-token',
+        }),
+      ).toThrow(ConfigError);
+    });
+
+    it('throws ConfigError when ESHYRA_AUTH_MODE=api-key but the key is missing', () => {
+      expect(() =>
+        loadConfig({
+          ESHYRA_DB_PATH: './x.db',
+          CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
+          ESHYRA_AUTH_MODE: 'api-key',
+        }),
+      ).toThrow(ConfigError);
+    });
+
+    it('throws ConfigError for an unrecognized ESHYRA_AUTH_MODE', () => {
+      expect(() =>
+        loadConfig({
+          ESHYRA_DB_PATH: './x.db',
+          ANTHROPIC_API_KEY: 'sk-test',
+          ESHYRA_AUTH_MODE: 'bogus',
+        }),
+      ).toThrow(ConfigError);
+    });
+
+    it('uses the single present credential under explicit auto mode', () => {
+      const apiOnly = loadConfig({
+        ANTHROPIC_API_KEY: 'sk-test',
+        ESHYRA_AUTH_MODE: 'auto',
+      });
+      expect(apiOnly.auth.mode).toBe('api-key');
+      const oauthOnly = loadConfig({
+        CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
+        ESHYRA_AUTH_MODE: 'auto',
+      });
+      expect(oauthOnly.auth.mode).toBe('oauth-token');
     });
 
     it('throws ConfigError when neither credential is set', () => {

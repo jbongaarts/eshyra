@@ -24,8 +24,10 @@ live-API integration tests (`model.integration.test.ts` and
 `campaignBibleFaithfulness.integration.test.ts`) and any Dolt-gated checkpoint
 tests when the `dolt` binary is absent. The live-API tests run only when a
 provider credential is present: either `ANTHROPIC_API_KEY` **or**
-`CLAUDE_CODE_OAUTH_TOKEN` (the API key takes precedence if both are set,
-mirroring `docs/agent-sdk-auth.md`). They default to the Opus 4.8 model
+`CLAUDE_CODE_OAUTH_TOKEN` (this live-test gate alone keeps an API-key-first
+precedence when both are set; released *gameplay* auth is explicit and fails
+fast on ambiguity — see `docs/agent-sdk-auth.md` and `ESHYRA_AUTH_MODE`). They
+default to the Opus 4.8 model
 (`claude-opus-4-8`), and `ESHYRA_MODEL` overrides that default. Both gate
 through the shared `packages/core/test/support/liveModelAuth.ts` helper, which
 never logs or exposes token values. Treat exact pass/skip counts as
