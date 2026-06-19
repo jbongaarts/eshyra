@@ -387,6 +387,53 @@ export interface TurnAuditDebugEvent {
   readonly authMode?: string;
 }
 
+/** Disposition of one candidate response's staged tool effects (eshyra-dwkm). */
+export type CandidateDisposition = 'committed' | 'rolled_back';
+
+/** One executed tool call's name + canon-write classification (eshyra-dwkm). */
+export interface ToolCallDisposition {
+  /** Eshyra tool name (`give_item`), never the provider/MCP name. */
+  readonly tool: string;
+  /** Whether this tool writes canon, from the registry's explicit classification. */
+  readonly mutates: boolean;
+  /** Whether the executed tool reported success (`ok`). */
+  readonly ok: boolean;
+}
+
+/**
+ * One candidate response's tool-effect disposition (eshyra-dwkm).
+ *
+ * A candidate turn runs inside a per-attempt SAVEPOINT: its tool writes are
+ * staged, then either COMMITTED (the auditor accepted it, or no auditor is
+ * wired) or ROLLED_BACK (the auditor rejected it, a retry/the turn failed, or
+ * any error aborted the turn). This event makes that staged → committed/rolled
+ * -back transition explicit, so an operator who sees a mutating tool return
+ * `applied: true` on a rejected turn can confirm from the log that the effect
+ * was discarded — closing the integrity-observability gap behind eshyra-dwkm.
+ *
+ * Structural only: tool names are code-owned identifiers, plus booleans and a
+ * disposition label — no args, results, or narration, so it cannot leak content.
+ */
+export interface TurnCandidateDispositionEvent {
+  readonly kind: 'turn_candidate_disposition';
+  readonly trace: ModelCallTrace;
+  /** 1-based candidate attempt this disposition applies to. */
+  readonly attempt: number;
+  /** Whether this candidate's staged tool effects were committed or rolled back. */
+  readonly disposition: CandidateDisposition;
+  /**
+   * Why the disposition was reached: `accepted` (audit accept / no auditor),
+   * `audit_rejected` (auditor rejected the candidate), or `turn_error` (a
+   * thrown failure — model/provider error, exhausted rounds, retry budget —
+   * rolled the whole turn back).
+   */
+  readonly reason: 'accepted' | 'audit_rejected' | 'turn_error';
+  /** Every tool call recorded for this candidate, with its mutates classification. */
+  readonly toolCalls: readonly ToolCallDisposition[];
+  /** Count of mutating tool calls whose effects this disposition covers. */
+  readonly mutatingToolCount: number;
+}
+
 /**
  * Destination for session debug events. The core emits events; an implementation
  * (the CLI's file-backed sink) stamps a timestamp and persists them under the
@@ -410,4 +457,10 @@ export interface SessionDebugSink {
    * into the turn.
    */
   recordAudit?(event: TurnAuditDebugEvent): void;
+  /**
+   * Persist one candidate tool-effect disposition event (eshyra-dwkm). Optional
+   * so older sinks keep compiling; the orchestrator calls it best-effort at every
+   * commit/rollback point. Must never throw into the turn.
+   */
+  recordCandidateDisposition?(event: TurnCandidateDispositionEvent): void;
 }

@@ -5,10 +5,12 @@ import type {
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,
+  ProviderExecutedToolCall,
   SessionDebugSink,
   TurnAuditDebugEvent,
   TurnAuditInput,
   TurnAuditor,
+  TurnCandidateDispositionEvent,
 } from '../src/internal.js';
 import {
   createDefaultToolRegistry,
@@ -901,6 +903,8 @@ describe('orchestrator turn loop', () => {
         tool: 'roll',
         args: { dice: '1d20+5', reason: 'attack roll' },
         result: { ok: true, data: { total: 99 } },
+        // roll writes no canon — classified non-mutating (eshyra-dwkm).
+        mutates: false,
         source: 'native-mcp',
         stopReason: 'end_turn',
       },
@@ -1158,6 +1162,260 @@ describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
     // Without an auditor the candidate is accepted unconditionally.
     expect(result.ok).toBe(true);
     expect(result.narration).toBe('You rolled an 11 with no tool.');
+    db.close();
+  });
+});
+
+/**
+ * One scripted round of the Agent SDK MCP path: the tools to run in-process
+ * through the executeTool bridge, the final narration, and whether the
+ * provider call throws AFTER running them (a provider session/rate limit).
+ */
+interface McpRound {
+  readonly calls: ReadonlyArray<{ name: string; args: unknown }>;
+  readonly text: string;
+  readonly throwAfter?: boolean;
+}
+
+/**
+ * Faithful stand-in for {@link AgentSdkMcpModelClient}: each `complete()`
+ * ACTUALLY drives the deterministic tools through the `executeTool` bridge —
+ * mutating canon inside the per-attempt SAVEPOINT exactly as the real adapter
+ * does — then reports them as `executedToolCalls`. The pre-existing MCP test
+ * fabricates results without touching the bridge, so it never exercises the
+ * staged-mutation rollback this models (eshyra-dwkm).
+ */
+class BridgeMcpModel implements ModelClient {
+  private index = 0;
+  readonly seen: ModelCompleteInput[] = [];
+  constructor(private readonly rounds: readonly McpRound[]) {}
+  async complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
+    this.seen.push(input);
+    const round = this.rounds[this.index] ?? { calls: [], text: '' };
+    this.index += 1;
+    const executed: ProviderExecutedToolCall[] = [];
+    for (const c of round.calls) {
+      // Same bridge the real adapter's in-process MCP handlers call.
+      const result = await input.executeTool!({ name: c.name, args: c.args });
+      executed.push({ name: c.name, args: c.args, result });
+    }
+    if (round.throwAfter) {
+      throw new Error('Agent SDK MCP call failed: provider session limit');
+    }
+    return {
+      text: round.text,
+      ...(executed.length > 0 ? { executedToolCalls: executed } : {}),
+      stopReason: 'end_turn',
+    };
+  }
+}
+
+function inventoryIds(db: Db): string[] {
+  return (
+    db.prepare('SELECT id FROM inventory ORDER BY id').all() as Array<{
+      id: string;
+    }>
+  ).map((r) => r.id);
+}
+
+function collectingDispositionSink(): SessionDebugSink & {
+  dispositions: TurnCandidateDispositionEvent[];
+} {
+  const dispositions: TurnCandidateDispositionEvent[] = [];
+  return {
+    captureContent: false,
+    record: () => {},
+    recordCandidateDisposition: (e) => dispositions.push(e),
+    dispositions,
+  };
+}
+
+const rejectGiveItem: AuditVerdict = {
+  verdict: 'reject',
+  missingRequiredTools: ['give_item'],
+  reason: 'mutated state for a read-style question',
+  repairInstruction: 'Answer without mutating inventory.',
+};
+
+describe('orchestrator MCP staged-mutation transactionality (eshyra-dwkm)', () => {
+  it('mutating MCP tool executes, auditor rejects, retry succeeds: only the accepted retry mutation persists', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    // Candidate 1 wrongly grabs a sword (rejected); the repaired retry equips a
+    // shield (accepted). Only the shield must survive.
+    const model = new BridgeMcpModel([
+      {
+        calls: [{ name: 'give_item', args: { id: 'sword', name: 'Sword' } }],
+        text: 'A sword appears.',
+      },
+      {
+        calls: [{ name: 'give_item', args: { id: 'shield', name: 'Shield' } }],
+        text: 'You ready your shield.',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([rejectGiveItem, accept]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.narration).toBe('You ready your shield.');
+    // The rejected candidate's give_item('sword') was rolled back; only the
+    // accepted retry's give_item('shield') persists.
+    expect(inventoryIds(db)).toEqual(['shield']);
+    db.close();
+  });
+
+  it('mutating MCP tool executes, auditor rejects, retry fails (provider limit): no candidate mutation persists', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    // Reproduces session-mqkis411-rlsh20: a read-style question triggers an
+    // inventory mutation, the auditor rejects it, and the retry dies on a
+    // provider session limit. Nothing the rejected/failed candidates wrote may
+    // survive — "your last input was not applied" must be literally true.
+    const model = new BridgeMcpModel([
+      {
+        calls: [{ name: 'give_item', args: { id: 'sword', name: 'Sword' } }],
+        text: 'A sword appears.',
+      },
+      {
+        calls: [{ name: 'give_item', args: { id: 'sword', name: 'Sword' } }],
+        text: '',
+        throwAfter: true,
+      },
+    ]);
+    const auditor = new ScriptedAuditor([rejectGiveItem]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput({ playerInput: 'What am I equipped with?' }),
+    );
+
+    expect(result.ok).toBe(false);
+    // Both the rejected candidate AND the failed retry were discarded.
+    expect(inventoryIds(db)).toEqual([]);
+    // The failed turn is not written to the scene log or trace.
+    expect(
+      listSceneLog(db, {
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        sceneId: 'scene-0',
+      }).filter((e) => e.role === 'dm'),
+    ).toHaveLength(0);
+    expect(
+      getTurnTrace(db, {
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        turnId: 'turn-1',
+      }),
+    ).toBeUndefined();
+    db.close();
+  });
+
+  it('read-only MCP tool needs no staged-mutation handling: accepted with no canon write', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new BridgeMcpModel([
+      {
+        calls: [
+          { name: 'roll', args: { dice: '1d20', reason: 'recall lore' } },
+        ],
+        text: 'You recall the sigil.',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([accept]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    // The roll is classified non-mutating, so there is nothing to stage.
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls[0]).toMatchObject({ tool: 'roll', mutates: false });
+    expect(inventoryIds(db)).toEqual([]);
+    db.close();
+  });
+
+  it('records staged → committed and staged → rolled-back dispositions in debug traces', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new BridgeMcpModel([
+      {
+        calls: [{ name: 'give_item', args: { id: 'sword', name: 'Sword' } }],
+        text: 'A sword appears.',
+      },
+      {
+        calls: [{ name: 'give_item', args: { id: 'shield', name: 'Shield' } }],
+        text: 'You ready your shield.',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([rejectGiveItem, accept]);
+    const sink = collectingDispositionSink();
+
+    await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        debug: sink,
+      },
+      baseInput(),
+    );
+
+    // Attempt 1 rolled back (audit rejected), attempt 2 committed (accepted).
+    expect(
+      sink.dispositions.map((d) => `${d.disposition}:${d.reason}`),
+    ).toEqual(['rolled_back:audit_rejected', 'committed:accepted']);
+    expect(sink.dispositions[0]).toMatchObject({
+      attempt: 1,
+      mutatingToolCount: 1,
+      toolCalls: [{ tool: 'give_item', mutates: true, ok: true }],
+    });
+    expect(sink.dispositions[1]).toMatchObject({
+      attempt: 2,
+      mutatingToolCount: 1,
+    });
+    db.close();
+  });
+
+  it('records a turn-error rollback disposition when a retry fails (eshyra-dwkm)', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new BridgeMcpModel([
+      {
+        calls: [{ name: 'give_item', args: { id: 'sword', name: 'Sword' } }],
+        text: 'A sword appears.',
+      },
+      { calls: [], text: '', throwAfter: true },
+    ]);
+    const auditor = new ScriptedAuditor([rejectGiveItem]);
+    const sink = collectingDispositionSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        debug: sink,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(false);
+    // The rejected candidate's rollback, then the turn-level error rollback.
+    expect(sink.dispositions.map((d) => d.reason)).toEqual([
+      'audit_rejected',
+      'turn_error',
+    ]);
+    expect(
+      sink.dispositions.every((d) => d.disposition === 'rolled_back'),
+    ).toBe(true);
     db.close();
   });
 });

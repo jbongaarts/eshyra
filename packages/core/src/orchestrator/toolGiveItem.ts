@@ -11,6 +11,8 @@ import {
 
 export const giveItemTool: Tool = {
   name: 'give_item',
+  // Writes inventory rows — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     "Add an item to a character's inventory or update an existing one. " +
     'Creates the item if it does not exist; updates fields if it does.',

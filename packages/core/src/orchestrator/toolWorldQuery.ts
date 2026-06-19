@@ -5,6 +5,8 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const worldQueryTool: Tool = {
   name: 'world_query',
+  // Read-only world resolution (template + overlay); no canon write (eshyra-dwkm).
+  mutates: false,
   description:
     'Resolve a world target (template + live overlay). ' +
     'The result includes visibility annotations: fields marked DM-only ' +

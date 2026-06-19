@@ -4,6 +4,8 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const rollTool: Tool = {
   name: 'roll',
+  // Pure deterministic dice from the seeded RNG; writes no canon (eshyra-dwkm).
+  mutates: false,
   description:
     'Roll dice with code-owned RNG. args: { dice: "NdM+K", reason: string }.',
   inputSchema: {

@@ -22,6 +22,8 @@ export function isMarkSceneToolData(data: unknown): data is MarkSceneToolData {
 
 export const markSceneTool: Tool = {
   name: 'mark_scene',
+  // Opens/closes scene rows — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     'Open or close a scene. args: { boundary: "open" | "close", title?: string }.',
   inputSchema: {

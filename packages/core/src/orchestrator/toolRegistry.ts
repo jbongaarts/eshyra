@@ -38,6 +38,18 @@ export interface Tool {
   readonly name: string;
   readonly description: string;
   /**
+   * Whether this tool writes campaign/session/character canon (eshyra-dwkm).
+   * `true` for any tool that mutates persisted state; `false` for a pure
+   * read/query/dice tool that only inspects state or computes a value. This is
+   * a REQUIRED, explicit classification — not an inference — so the orchestrator
+   * can reason about which of a candidate turn's tool effects must be discarded
+   * if the turn auditor rejects the candidate or a retry fails. The per-turn
+   * SAVEPOINT already wraps *all* tool writes (read-only tools write nothing, so
+   * wrapping them is harmless); this flag exists so a turn's committed-vs-rolled
+   * -back tool effects are explicit in traces/debug rather than guessed at.
+   */
+  readonly mutates: boolean;
+  /**
    * Provider-neutral input schema (eshyra-0jq.10). Lifted straight into
    * {@link ToolRegistry.definitions} so adapters can render native tool calls;
    * {@link ToolRegistry.invoke} enforces it before `run`. Tool authors remain
@@ -116,6 +128,18 @@ export class ToolRegistry {
 
   list(): string[] {
     return [...this.tools.keys()];
+  }
+
+  /**
+   * Whether the named tool writes canon (eshyra-dwkm). An unknown tool is
+   * treated as mutating: a call the registry cannot classify must be assumed to
+   * have side effects so callers never under-stage a candidate's effects. A
+   * tool that never executed (parse/validation error) has no effect regardless;
+   * callers that record dispositions should consult the actual tool result, not
+   * just this classification.
+   */
+  isMutating(name: string): boolean {
+    return this.tools.get(name)?.mutates ?? true;
   }
 
   /**

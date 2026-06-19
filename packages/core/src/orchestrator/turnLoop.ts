@@ -55,6 +55,16 @@ export interface ExecutedToolCall {
   args: unknown;
   result: ToolResult;
   /**
+   * Whether the executed tool writes canon (eshyra-dwkm), taken from the
+   * registry's explicit per-tool classification. Carried on every recorded call
+   * so a turn's committed-vs-rolled-back tool effects are explicit in
+   * traces/debug — a rejected candidate's `mutates: true` call that returned
+   * `applied: true` was still discarded by the per-attempt SAVEPOINT rollback.
+   * A call that never executed (unknown tool / parse error) is `false`: it had
+   * no effect to stage.
+   */
+  mutates: boolean;
+  /**
    * Transport the request arrived through, carried for tracing/debugging
    * provenance.
    */
@@ -201,6 +211,7 @@ export async function runModelLoop(
           tool: call.name,
           args: call.args,
           result: call.result,
+          mutates: registry.isMutating(call.name),
           source: 'native-mcp',
           ...(call.callId ? { callId: call.callId } : {}),
           ...(completion.stopReason
@@ -232,6 +243,7 @@ export async function runModelLoop(
           tool: req.tool,
           args: req.args,
           result,
+          mutates: registry.isMutating(req.tool),
           source: req.source,
           ...(req.callId ? { callId: req.callId } : {}),
           ...(completion.stopReason
@@ -249,6 +261,8 @@ export async function runModelLoop(
           tool: 'unknown',
           args: req.raw,
           result,
+          // Never executed (parse error) — no canon effect to stage.
+          mutates: false,
           source: req.source,
           ...(req.callId ? { callId: req.callId } : {}),
           ...(completion.stopReason

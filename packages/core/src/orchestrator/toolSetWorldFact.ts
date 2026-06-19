@@ -6,6 +6,8 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const setWorldFactTool: Tool = {
   name: 'set_world_fact',
+  // Writes overlay world facts — a canon write (eshyra-dwkm).
+  mutates: true,
   description:
     'Record a world-template overlay fact — a divergence from the base module ' +
     '(e.g. a location renamed, an NPC killed, a hidden path revealed).',

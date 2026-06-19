@@ -1,4 +1,10 @@
-import type { SessionDebugSink } from '../debug/sessionDebug.js';
+import type {
+  CandidateDisposition,
+  ModelCallTrace,
+  SessionDebugSink,
+  ToolCallDisposition,
+  TurnCandidateDispositionEvent,
+} from '../debug/sessionDebug.js';
 import {
   recordTurnFailureDiagnostic,
   sanitizeDiagnosticMessage,
@@ -158,6 +164,50 @@ function recordAuditDebug(
   }
 }
 
+/** Project executed calls into the structural disposition shape (eshyra-dwkm). */
+function toToolDispositions(
+  calls: readonly ExecutedToolCall[],
+): ToolCallDisposition[] {
+  return calls.map((c) => ({
+    tool: c.tool,
+    mutates: c.mutates,
+    ok: c.result.ok,
+  }));
+}
+
+/**
+ * Best-effort candidate-disposition debug (eshyra-dwkm). Records whether a
+ * candidate's staged tool effects were committed or rolled back, so the
+ * staged → committed/rolled-back transition is explicit in the session log. A
+ * sink failure must never break a turn.
+ */
+function recordDispositionDebug(
+  sink: SessionDebugSink | undefined,
+  trace: ModelCallTrace,
+  attempt: number,
+  disposition: CandidateDisposition,
+  reason: TurnCandidateDispositionEvent['reason'],
+  calls: readonly ExecutedToolCall[],
+): void {
+  if (sink?.recordCandidateDisposition === undefined) {
+    return;
+  }
+  const toolCalls = toToolDispositions(calls);
+  try {
+    sink.recordCandidateDisposition({
+      kind: 'turn_candidate_disposition',
+      trace,
+      attempt,
+      disposition,
+      reason,
+      toolCalls,
+      mutatingToolCount: toolCalls.filter((c) => c.mutates).length,
+    });
+  } catch {
+    // Diagnostics must never destabilize a turn.
+  }
+}
+
 export async function runTurn(
   deps: RunTurnDeps,
   input: RunTurnInput,
@@ -177,6 +227,9 @@ export async function runTurn(
   // report the round count the turn reached before it threw.
   let rounds = 0;
   let phase = 'resolve_acting_character';
+  // Last candidate attempt reached, so the catch path can label the turn-error
+  // rollback disposition with the attempt it aborted on (eshyra-dwkm).
+  let dispositionAttempt = 0;
 
   db.exec(`SAVEPOINT ${TURN_SAVEPOINT}`);
   try {
@@ -209,6 +262,10 @@ export async function runTurn(
       sessionId: input.sessionId,
       turnId: input.turnId,
     };
+    const dispositionTrace: ModelCallTrace = {
+      ...auditTrace,
+      purpose: 'turn_candidate_disposition',
+    };
     // Each candidate runs inside its OWN savepoint so a rejected attempt's tool
     // mutations are rolled back before a retry — only the accepted candidate's
     // writes survive. The auditor gate (eshyra-oobh) sits between producing a
@@ -219,6 +276,7 @@ export async function runTurn(
     let toolCalls: ExecutedToolCall[] = [];
     let correctiveNote: string | undefined;
     for (let attempt = 1; ; attempt += 1) {
+      dispositionAttempt = attempt;
       db.exec(`SAVEPOINT ${ATTEMPT_SAVEPOINT}`);
       const candidate = await runModelLoop({
         model,
@@ -241,6 +299,14 @@ export async function runTurn(
 
       if (deps.auditor === undefined) {
         db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
+        recordDispositionDebug(
+          deps.debug,
+          dispositionTrace,
+          attempt,
+          'committed',
+          'accepted',
+          candidate.toolCalls,
+        );
         narration = candidate.narration;
         toolCalls = candidate.toolCalls;
         break;
@@ -273,6 +339,14 @@ export async function runTurn(
 
       if (accepted) {
         db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
+        recordDispositionDebug(
+          deps.debug,
+          dispositionTrace,
+          attempt,
+          'committed',
+          'accepted',
+          candidate.toolCalls,
+        );
         narration = candidate.narration;
         toolCalls = candidate.toolCalls;
         break;
@@ -282,6 +356,14 @@ export async function runTurn(
       // survive, then either retry with a corrective note or fail the turn.
       db.exec(`ROLLBACK TO ${ATTEMPT_SAVEPOINT}`);
       db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
+      recordDispositionDebug(
+        deps.debug,
+        dispositionTrace,
+        attempt,
+        'rolled_back',
+        'audit_rejected',
+        candidate.toolCalls,
+      );
       if (action === 'fail') {
         throw new OrchestratorError(formatAuditFailure(verdict));
       }
@@ -327,6 +409,8 @@ export async function runTurn(
           args: (c.args ?? null) as TraceJsonValue,
           result: c.result as unknown as TraceJsonValue,
           source: c.source,
+          // Explicit canon-write classification of each committed call (eshyra-dwkm).
+          mutates: c.mutates,
           ...(c.callId ? { callId: c.callId } : {}),
           ...(c.stopReason ? { stopReason: c.stopReason } : {}),
         }),
@@ -350,6 +434,25 @@ export async function runTurn(
   } catch (e) {
     db.exec(`ROLLBACK TO ${TURN_SAVEPOINT}`);
     db.exec(`RELEASE ${TURN_SAVEPOINT}`);
+    // Any thrown failure — model/provider error, exhausted rounds, audit-retry
+    // exhaustion — rolls the whole turn back to its pre-turn state. Record a
+    // turn-error disposition so the log shows the candidate's effects were
+    // discarded (eshyra-dwkm). Per-candidate detail, when an audit rejected a
+    // candidate before the throw, was already emitted above; this confirms the
+    // turn-level rollback even when the failing attempt produced no candidate.
+    recordDispositionDebug(
+      deps.debug,
+      {
+        campaignId: input.campaignId,
+        sessionId: input.sessionId,
+        turnId: input.turnId,
+        purpose: 'turn_candidate_disposition',
+      },
+      dispositionAttempt,
+      'rolled_back',
+      'turn_error',
+      [],
+    );
     const error = sanitizeDiagnosticMessage(
       e instanceof Error ? e.message : String(e),
     );
