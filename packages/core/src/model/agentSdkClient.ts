@@ -9,6 +9,7 @@ import {
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import { buildChildSdkEnv } from './agentSdkEnv.js';
 import type {
+  ModelAdapterCapabilities,
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,
@@ -65,6 +66,18 @@ export interface AgentSdkDebugOptions {
 }
 
 /**
+ * Capability declaration for {@link AgentSdkModelClient} (ADR 0010). Fenced-text
+ * tool transport is NOT gameplay-capable — see `gameplayCapable: false`.
+ */
+export const AGENT_SDK_LEGACY_ADAPTER_CAPABILITIES: ModelAdapterCapabilities = {
+  adapterFamily: 'agent-harness',
+  toolTransport: 'fenced-text',
+  turnLoopOwner: 'provider-harness',
+  vendor: 'anthropic',
+  gameplayCapable: false,
+};
+
+/**
  * The ONLY file permitted to import the Claude Agent SDK. If the installed SDK's
  * surface differs from the assumptions below, adapt ONLY this file — the
  * ModelClient contract and all unit tests stay unchanged.
@@ -82,6 +95,10 @@ export interface AgentSdkDebugOptions {
  * `ModelClientError`, never a silent empty-string return — see ModelClient.
  */
 export class AgentSdkModelClient implements ModelClient {
+  /** Capability declaration (ADR 0010). Not gameplay-capable; throws if tools provided. */
+  readonly capabilities: ModelAdapterCapabilities =
+    AGENT_SDK_LEGACY_ADAPTER_CAPABILITIES;
+
   // ECMAScript-private (`#`) so an accidentally serialized client — e.g. one
   // captured into a turn trace or a log line — cannot leak the auth source.
   // TypeScript's `private` keyword would still leave an enumerable own property.
@@ -107,6 +124,18 @@ export class AgentSdkModelClient implements ModelClient {
   }
 
   async complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
+    // Guard: fenced-text cannot forward tools to the provider natively. Failing
+    // loudly here prevents released gameplay from silently proceeding with
+    // tools provided but not forwarded (ADR 0010). Use AgentSdkMcpModelClient
+    // for gameplay; this adapter is research/non-tool use only.
+    if (input.tools && input.tools.length > 0) {
+      throw new ModelClientError(
+        'AgentSdkModelClient (fenced-text) cannot forward tools to the provider — ' +
+          'the model has no native tools and the fenced-text protocol is not a ' +
+          'supported gameplay path (ADR 0010). Use AgentSdkMcpModelClient for gameplay.',
+      );
+    }
+
     // The Agent SDK exposes a single `prompt` string + `systemPrompt` option,
     // so the adapter flattens the structured messages internally. This is the
     // permitted-flatten path (eshyra-0jq.11): the contract above carries

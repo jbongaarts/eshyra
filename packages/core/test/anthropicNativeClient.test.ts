@@ -27,6 +27,7 @@ vi.mock('@anthropic-ai/sdk', () => {
 
 import type { ModelCallDebugEvent } from '../src/debug/sessionDebug.js';
 import {
+  ANTHROPIC_NATIVE_ADAPTER_CAPABILITIES,
   ANTHROPIC_NATIVE_TOOL_PROTOCOL,
   AnthropicNativeModelClient,
 } from '../src/model/anthropicNativeClient.js';
@@ -74,6 +75,16 @@ describe('AnthropicNativeModelClient', () => {
   beforeEach(() => {
     createMock.mockReset();
     ctorMock.mockReset();
+  });
+
+  it('declares api-native / api-native / gameplay-capable capabilities (ADR 0010)', () => {
+    const client = new AnthropicNativeModelClient('m');
+    expect(client.capabilities).toEqual(ANTHROPIC_NATIVE_ADAPTER_CAPABILITIES);
+    expect(client.capabilities.adapterFamily).toBe('api-native');
+    expect(client.capabilities.toolTransport).toBe('api-native');
+    expect(client.capabilities.turnLoopOwner).toBe('eshyra');
+    expect(client.capabilities.vendor).toBe('anthropic');
+    expect(client.capabilities.gameplayCapable).toBe(true);
   });
 
   it('converts ModelToolDefinition[] into native tools and sends them on the request', async () => {
@@ -335,7 +346,13 @@ describe('AnthropicNativeModelClient', () => {
       const client = new AnthropicNativeModelClient('m', {
         env: { ANTHROPIC_API_KEY: secret },
       });
-      expect(Object.keys(client)).toEqual([]);
+      // ECMAScript-private `#auth` / `#model` / `#debug` are invisible to
+      // Object.keys / JSON.stringify — a captured client cannot leak the secret.
+      // `capabilities` IS enumerable (it is public metadata, not a secret).
+      const keys = Object.keys(client);
+      expect(keys).not.toContain('auth');
+      expect(keys).not.toContain('model');
+      expect(keys).not.toContain('debug');
       expect(JSON.stringify(client)).not.toContain(secret);
     });
   });

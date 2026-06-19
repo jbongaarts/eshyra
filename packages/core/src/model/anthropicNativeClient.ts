@@ -7,6 +7,7 @@ import {
 } from '../debug/sessionDebug.js';
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type {
+  ModelAdapterCapabilities,
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,
@@ -53,6 +54,18 @@ import type { ModelToolDefinition } from './toolSchema.js';
 
 /** Debug label reported for the native provider tool channel (eshyra-eznk). */
 export const ANTHROPIC_NATIVE_TOOL_PROTOCOL = 'anthropic-native';
+
+/**
+ * Capability declaration for {@link AnthropicNativeModelClient} (ADR 0010).
+ * API-native adapter, native tool channel, Eshyra drives the turn loop.
+ */
+export const ANTHROPIC_NATIVE_ADAPTER_CAPABILITIES: ModelAdapterCapabilities = {
+  adapterFamily: 'api-native',
+  toolTransport: 'api-native',
+  turnLoopOwner: 'eshyra',
+  vendor: 'anthropic',
+  gameplayCapable: true,
+};
 
 /**
  * Per-response output cap. Kept under the ~16K threshold above which the SDK
@@ -189,6 +202,10 @@ function toStopReason(
  * ModelClient contract and the gameplay layer stay unchanged.
  */
 export class AnthropicNativeModelClient implements ModelClient {
+  /** Capability declaration (ADR 0010). Access on the concrete type. */
+  readonly capabilities: ModelAdapterCapabilities =
+    ANTHROPIC_NATIVE_ADAPTER_CAPABILITIES;
+
   // ECMAScript-private (`#`) so an accidentally serialized client cannot leak
   // the auth source — invisible to `JSON.stringify` and `Object.keys`.
   readonly #model: string;
