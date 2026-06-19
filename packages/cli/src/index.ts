@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import {
   type AgentSdkMcpDebugOptions,
   AgentSdkMcpModelClient,
+  assertGameplayCapable,
   CORE_VERSION,
   ConfigError,
   createDefaultToolRegistry,
@@ -19,6 +20,7 @@ import {
   ModelTurnAuditor,
   openDatabase,
   runTurn,
+  UnsupportedGameplayProviderError,
 } from '@eshyra/core';
 import {
   DEFAULT_MEMORY_CONFIG,
@@ -200,26 +202,38 @@ function buildPlayDeps(
   const auth = { env: cfg.auth.env };
   const adapterFamily = 'agent-harness';
 
+  // Gate gameplay on native tool transport BEFORE play begins (eshyra-qa9d,
+  // ADR 0010). Both gameplay calls must run on an adapter that forwards Eshyra
+  // tools natively; a fenced-text adapter would describe tools the model cannot
+  // actually call. The capability lives on the concrete adapter, so assert it
+  // here before the usage tracker wraps and hides the class.
+  const primaryClient = new AgentSdkMcpModelClient(
+    cfg.model,
+    auth,
+    debug?.modelDebug,
+  );
+  assertGameplayCapable(primaryClient.capabilities, 'primary DM');
+  const auditClient = new AgentSdkMcpModelClient(
+    cfg.auditModel,
+    auth,
+    debug?.auditDebug,
+  );
+  assertGameplayCapable(auditClient.capabilities, 'mechanics auditor');
+
   // Wrap each adapter with a usage tracker sharing the same store so a single
   // session's calls are co-located in the diagnostics DB under the same filters.
-  const model = new ModelUsageTracker(
-    new AgentSdkMcpModelClient(cfg.model, auth, debug?.modelDebug),
-    {
-      model: cfg.model,
-      authMode: cfg.auth.mode,
-      adapterFamily,
-      sink: usageStore,
-    },
-  );
-  const auditModel = new ModelUsageTracker(
-    new AgentSdkMcpModelClient(cfg.auditModel, auth, debug?.auditDebug),
-    {
-      model: cfg.auditModel,
-      authMode: cfg.auth.mode,
-      adapterFamily,
-      sink: usageStore,
-    },
-  );
+  const model = new ModelUsageTracker(primaryClient, {
+    model: cfg.model,
+    authMode: cfg.auth.mode,
+    adapterFamily,
+    sink: usageStore,
+  });
+  const auditModel = new ModelUsageTracker(auditClient, {
+    model: cfg.auditModel,
+    authMode: cfg.auth.mode,
+    adapterFamily,
+    sink: usageStore,
+  });
 
   return {
     io,
@@ -353,6 +367,12 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
       ),
       { dbPath },
     );
+  } catch (err) {
+    if (err instanceof UnsupportedGameplayProviderError) {
+      console.error(`gameplay provider error: ${err.message}`);
+      return 1;
+    }
+    throw err;
   } finally {
     io.close();
     usageStore.close();
@@ -393,6 +413,12 @@ export async function runDemoSubcommand(): Promise<number> {
         turnCap: DEMO_TURN_CAP,
       },
     );
+  } catch (err) {
+    if (err instanceof UnsupportedGameplayProviderError) {
+      console.error(`gameplay provider error: ${err.message}`);
+      return 1;
+    }
+    throw err;
   } finally {
     io.close();
     usageStore.close();

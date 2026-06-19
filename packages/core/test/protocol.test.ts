@@ -23,15 +23,25 @@ describe('DM system prompt', () => {
     expect(prompt).toContain('adjust_hp');
   });
 
-  it('lists the available tools and the tool-call protocol', () => {
+  it('lists the available tools and a tool-call protocol section', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     for (const name of ['roll', 'mark_scene', 'lookup_rules']) {
       expect(prompt).toContain(name);
     }
-    expect(prompt).toContain('tool_call');
+    expect(prompt).toContain('## Tool-Call Protocol');
   });
 
-  it('describes the fenced protocol on the legacy/test path (default)', () => {
+  it('defaults to the native protocol with no fenced tool_call instructions (eshyra-qa9d)', () => {
+    // Released gameplay runs on native tool transport (ADR 0010), so the
+    // default prompt must describe the native interface and must NOT teach the
+    // model to emit fenced ```tool_call blocks — the fenced default was the
+    // footgun that made native-tool models report tools as "not present".
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).not.toContain('```tool_call');
+    expect(prompt).toContain('native tool interface');
+  });
+
+  it('describes the fenced protocol only when explicitly requested (legacy/test path)', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry(), {
       toolProtocol: 'fenced',
     });

@@ -111,6 +111,9 @@ describe('Release installer policy', () => {
     expect(ps1).toContain(`'${VERSION_SENTINEL}'`);
 
     // Neither installer's custom-base fallback may use the old bare "0.0.0".
+    // This is the literal POSIX parameter-expansion string the installer must
+    // NOT contain, not a mis-typed JS template literal.
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: asserting on a literal shell parameter-expansion string, not a JS template
     expect(sh).not.toContain('${ESHYRA_VERSION:-0.0.0}');
     expect(ps1).not.toMatch(/else\s*\{\s*'0\.0\.0'\s*\}/);
   });

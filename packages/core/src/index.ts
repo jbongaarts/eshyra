@@ -158,8 +158,14 @@ export type {
   TurnLoopOwner,
 } from './model/client.js';
 
-// Model client contract + adapter capability types (ADR 0010).
-export { ModelClientError, ModelRateLimitError } from './model/client.js';
+// Model client contract + adapter capability types (ADR 0010). The gameplay
+// capability gate (eshyra-qa9d) rejects fenced-text adapters before play begins.
+export {
+  assertGameplayCapable,
+  ModelClientError,
+  ModelRateLimitError,
+  UnsupportedGameplayProviderError,
+} from './model/client.js';
 export type { ConfiguredProfileEntry } from './model/profiles.js';
 export type {
   JsonSchema,

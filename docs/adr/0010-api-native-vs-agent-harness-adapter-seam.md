@@ -40,6 +40,11 @@ A provider is supported for gameplay only if its adapter can expose Eshyra tools
 
 `AgentSdkModelClient` (fenced-text) signals this by setting `capabilities.gameplayCapable = false` and by throwing a `ModelClientError` at `complete()` time when tools are provided, so a misconfiguration is loud rather than silent.
 
+Enforcement happens at two layers (eshyra-qa9d):
+
+- **Startup gate.** `assertGameplayCapable(capabilities, role)` is called when the gameplay deps are wired (the CLI asserts both the primary DM and the mechanics auditor before play begins). A non-gameplay-capable adapter throws `UnsupportedGameplayProviderError` with an actionable message *before* the first turn — gameplay never starts with tools that are described but not transported.
+- **Prompt default.** The core owns provider-neutral tool *semantics*; the adapter owns provider-native *transport*. `buildSystemPrompt` therefore defaults to the `native` protocol: it instructs the model to use its native tool interface and explicitly NOT to emit fenced ```tool_call blocks. The `fenced` protocol is opt-in and exists only for the deterministic offline test harness; no released gameplay path selects it.
+
 ### 3. Agent-harness adapters use the in-process MCP path
 
 The `AgentSdkMcpModelClient` is the reference implementation for agent-harness adapters. It exposes Eshyra tools through the SDK's supported in-process MCP server channel (`createSdkMcpServer` + `tool()`), pre-approves the generated `mcp__eshyra__*` tool names, and delegates tool execution to the deterministic Eshyra executor via the `ModelCompleteInput.executeTool` bridge. The adapter never reimplements gameplay semantics.
