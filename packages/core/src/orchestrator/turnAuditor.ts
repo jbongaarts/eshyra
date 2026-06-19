@@ -24,6 +24,14 @@ export interface AuditVerdict {
   readonly verdict: 'accept' | 'reject';
   /** Tools the candidate needed but did not execute. Empty on accept. */
   readonly missingRequiredTools: readonly string[];
+  /**
+   * Explicit-action-only tools the candidate executed WITHOUT explicit player
+   * action intent (eshyra-4ia4). A `give_item`/`remove_item` call made merely to
+   * answer an inventory query ("What am I equipped with?") lands here. Empty on
+   * accept. Populated independently of {@link missingRequiredTools}: a candidate
+   * can be rejected for calling a forbidden tool even while it is missing none.
+   */
+  readonly disallowedToolCalls: readonly string[];
   /** One-line justification (developer/debug facing). */
   readonly reason: string;
   /** Corrective instruction fed back to the DM on a retry. */
@@ -42,6 +50,14 @@ export interface TurnAuditInput {
    * all count as executed evidence.
    */
   readonly executedToolCalls: readonly ExecutedToolCall[];
+  /**
+   * Tool names that may only be called on explicit player action intent
+   * (eshyra-4ia4) — from {@link import('./toolRegistry.js').ToolRegistry.listRequiresExplicitAction}.
+   * The auditor must reject a candidate that executed one of these without the
+   * player explicitly performing the action (e.g. calling `give_item` to answer
+   * "What am I equipped with?"). Omitted/empty means no such gating this turn.
+   */
+  readonly requiresExplicitActionTools?: readonly string[];
   /** Trace forwarded to the auditor model call for debug labelling. */
   readonly trace?: ModelTraceMetadata;
 }
@@ -81,7 +97,23 @@ const AUDIT_POLICY = [
   '- Pure narration, dialogue, description, and pacing need NO tool.',
   'Only flag a tool that is in the provided tool list. If every mechanical claim',
   'in the candidate is backed by an executed tool (or there is no mechanical',
-  'claim), the verdict is "accept" with an empty missingRequiredTools list.',
+  'claim), and no explicit-action-only tool was misused (see below), the verdict',
+  'is "accept" with empty missingRequiredTools and disallowedToolCalls lists.',
+  '',
+  'Explicit-action-only tools — the turn lists tools that may ONLY be called when',
+  'the player explicitly performs the corresponding action. You MUST evaluate the',
+  'player input for explicit action intent before allowing such a call:',
+  '- A read-only query about current state ("What am I equipped with?", "What is',
+  '  in my pack?", "Check my inventory") is NOT explicit action intent. A',
+  '  candidate that executed an explicit-action-only tool (e.g. `give_item`,',
+  '  `remove_item`) to answer such a query is a violation: list that tool in',
+  '  disallowedToolCalls and reject. State changes must NOT be invented to answer',
+  '  a question — the DM should report current state and offer a choice instead.',
+  '- An explicit player action ("I buy a torch", "I pick up the sword", "I drop',
+  '  my shield", "give the gem to the merchant") DOES authorize the matching',
+  '  explicit-action-only tool; do not flag it.',
+  'When in doubt about whether the input authorizes the action, treat ambiguous',
+  'state-query phrasing as a query and reject the mutation.',
 ].join('\n');
 
 /** Build the auditor system prompt. */
@@ -96,10 +128,13 @@ export function buildAuditSystemPrompt(): string {
     '',
     'Respond with ONLY a single JSON object, no prose and no code fences, of the',
     'exact shape:',
-    '{"verdict":"accept"|"reject","missingRequiredTools":["<tool>"],"reason":"<short>","repairInstruction":"<short>"}',
-    'On "accept", missingRequiredTools MUST be empty. On "reject", list the',
-    'missing tools and write a repairInstruction telling the DM exactly which',
-    'tool(s) to call before re-narrating.',
+    '{"verdict":"accept"|"reject","missingRequiredTools":["<tool>"],"disallowedToolCalls":["<tool>"],"reason":"<short>","repairInstruction":"<short>"}',
+    'On "accept", both missingRequiredTools and disallowedToolCalls MUST be empty.',
+    'On "reject", populate missingRequiredTools with tools the candidate needed but',
+    'did not call, and/or disallowedToolCalls with explicit-action-only tools it',
+    'called without explicit player action intent. Write a repairInstruction',
+    'telling the DM exactly what to fix before re-narrating (which tool(s) to call,',
+    'or that it must NOT mutate state to answer a query).',
   ].join('\n');
 }
 
@@ -132,10 +167,16 @@ function summarizeExecutedCall(
 /** Build the auditor user message describing the turn to judge. */
 export function buildAuditUserMessage(input: TurnAuditInput): string {
   const executed = input.executedToolCalls.map(summarizeExecutedCall);
+  const explicitActionTools = input.requiresExplicitActionTools ?? [];
   return [
     '## Provided Tools',
     input.providedToolNames.length > 0
       ? input.providedToolNames.join(', ')
+      : '(none)',
+    '',
+    '## Explicit-Action-Only Tools',
+    explicitActionTools.length > 0
+      ? `${explicitActionTools.join(', ')} — only valid when the player explicitly performs the action, never to answer a state query.`
       : '(none)',
     '',
     '## Executed Tool Calls This Turn',
@@ -192,9 +233,13 @@ export function parseAuditVerdict(text: string): AuditVerdict {
   const missingRequiredTools = Array.isArray(obj.missingRequiredTools)
     ? obj.missingRequiredTools.filter((t): t is string => typeof t === 'string')
     : [];
+  const disallowedToolCalls = Array.isArray(obj.disallowedToolCalls)
+    ? obj.disallowedToolCalls.filter((t): t is string => typeof t === 'string')
+    : [];
   return {
     verdict: obj.verdict,
     missingRequiredTools,
+    disallowedToolCalls,
     reason: typeof obj.reason === 'string' ? obj.reason : '',
     repairInstruction:
       typeof obj.repairInstruction === 'string' ? obj.repairInstruction : '',
