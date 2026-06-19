@@ -1167,6 +1167,68 @@ describe('runPlay', () => {
     dispose();
   });
 
+  it('displays rate-limit message rather than generic failed-turn message when isRateLimit=true', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO(['/defer', 'risky move', '/quit']);
+    const rateLimitRunTurn = vi.fn(
+      async (_deps: unknown, input: RunTurnInput): Promise<RunTurnResult> => ({
+        ok: false,
+        turnId: input.turnId,
+        narration: '',
+        toolCalls: [],
+        sceneId: undefined,
+        modelRounds: 0,
+        error:
+          "You've hit your session limit · resets 2:30am (America/Chicago)",
+        isRateLimit: true,
+      }),
+    );
+
+    const code = await runPlay(
+      baseDeps(db, io, rateLimitRunTurn as unknown as PlayDeps['runTurn']),
+      { dbPath: 'demo.db' },
+    );
+
+    expect(code).toBe(0);
+    expect(rateLimitRunTurn).toHaveBeenCalledOnce();
+    const out = lines.join('\n');
+    expect(out).toContain('Model provider rate limit reached.');
+    expect(out).toContain('Try again later.');
+    expect(out).not.toContain('could not be completed');
+    expect(out).toContain('closed and recapped');
+    dispose();
+  });
+
+  it('includes retry-after hint in rate-limit message when retryAfterSeconds is set', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO(['/defer', 'risky move', '/quit']);
+    const rateLimitRunTurn = vi.fn(
+      async (_deps: unknown, input: RunTurnInput): Promise<RunTurnResult> => ({
+        ok: false,
+        turnId: input.turnId,
+        narration: '',
+        toolCalls: [],
+        sceneId: undefined,
+        modelRounds: 0,
+        error: 'Anthropic API rate limit: 429',
+        isRateLimit: true,
+        retryAfterSeconds: 30,
+      }),
+    );
+
+    const code = await runPlay(
+      baseDeps(db, io, rateLimitRunTurn as unknown as PlayDeps['runTurn']),
+      { dbPath: 'demo.db' },
+    );
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain('Model provider rate limit reached.');
+    expect(out).toContain('Try again in 30s.');
+    expect(out).not.toContain('could not be completed');
+    dispose();
+  });
+
   it('checkpoints the campaign on graceful exit and reports the id', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO(['/defer', 'explore', '/quit']);

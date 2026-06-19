@@ -65,13 +65,21 @@ export interface AgentSdkDebugOptions {
   readonly authMode?: string;
 }
 
-/** True when a provider error message indicates a rate-limit condition. */
+/**
+ * True when a provider error message indicates a rate-limit or provider-quota
+ * condition. Covers both HTTP 429 patterns and Claude Code subscription exhaustion
+ * messages such as "You've hit your session limit · resets 2:30am".
+ */
 function isRateLimitMessage(msg: string): boolean {
   const lower = msg.toLowerCase();
   return (
     lower.includes('rate limit') ||
     lower.includes('rate_limit') ||
-    lower.includes('too many requests')
+    lower.includes('too many requests') ||
+    lower.includes('session limit') ||
+    lower.includes('usage limit') ||
+    (lower.includes('resets') &&
+      (lower.includes('session') || lower.includes('limit')))
   );
 }
 

@@ -166,6 +166,39 @@ describe('runTurn rate-limit result', () => {
     db.close();
   });
 
+  it('sets isRateLimit=true when model throws ModelRateLimitError with session-limit text', async () => {
+    const db = freshDbWithSession();
+    openScene(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-0',
+      title: 'The Tavern',
+      at: '2026-05-20T09:00:00.000Z',
+    });
+
+    const sessionLimitModel: ModelClient = {
+      complete: () =>
+        Promise.reject(
+          new ModelRateLimitError(
+            "You've hit your session limit · resets 2:30am (America/Chicago)",
+          ),
+        ),
+    };
+
+    const result = await runTurn(
+      {
+        db,
+        model: sessionLimitModel,
+        registry: createDefaultToolRegistry(),
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.isRateLimit).toBe(true);
+    db.close();
+  });
+
   it('sets isRateLimit=false on a successful turn', async () => {
     const db = freshDbWithSession();
     openScene(db, {

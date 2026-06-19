@@ -21,7 +21,7 @@ import {
   AGENT_SDK_LEGACY_ADAPTER_CAPABILITIES,
   AgentSdkModelClient,
 } from '../src/model/agentSdkClient.js';
-import { ModelClientError } from '../src/model/client.js';
+import { ModelClientError, ModelRateLimitError } from '../src/model/client.js';
 
 /** A collecting {@link SessionDebugSink} for adapter tests. */
 function collectingSink(captureContent = false): {
@@ -406,6 +406,65 @@ describe('AgentSdkModelClient', () => {
         },
       }).complete({ messages: [{ role: 'user', content: 'hi' }] });
       expect(out.text).toBe('narration');
+    });
+  });
+
+  describe('rate-limit and provider-quota classification (eshyra-p8d6)', () => {
+    const SESSION_LIMIT_MSG =
+      "You've hit your session limit · resets 2:30am (America/Chicago)";
+
+    it('throws ModelRateLimitError for a Claude Code session-limit thrown exception', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error(SESSION_LIMIT_MSG);
+      });
+
+      await expect(
+        new AgentSdkModelClient('m').complete({
+          messages: [{ role: 'user', content: 'x' }],
+        }),
+      ).rejects.toBeInstanceOf(ModelRateLimitError);
+    });
+
+    it('ModelRateLimitError from session-limit is also instanceof ModelClientError', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error(SESSION_LIMIT_MSG);
+      });
+
+      await expect(
+        new AgentSdkModelClient('m').complete({
+          messages: [{ role: 'user', content: 'x' }],
+        }),
+      ).rejects.toBeInstanceOf(ModelClientError);
+    });
+
+    it('sanitized error text does not leak credentials when session-limit error is thrown', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error(`${SESSION_LIMIT_MSG} Bearer sk-ant-secret-DO-NOT-LOG`);
+      });
+      const sink = collectingSink();
+
+      const err = await new AgentSdkModelClient('m', undefined, { debug: sink })
+        .complete({ messages: [{ role: 'user', content: 'x' }] })
+        .catch((e) => e);
+
+      expect(err).toBeInstanceOf(ModelRateLimitError);
+      expect(err.message).not.toContain('sk-ant-secret-DO-NOT-LOG');
+      const outcome = sink.events[0].outcome as { ok: false; error: string };
+      expect(outcome.error).not.toContain('sk-ant-secret-DO-NOT-LOG');
+      expect(outcome.error).toContain('[redacted]');
+    });
+
+    it('does NOT classify a generic connection failure as a rate-limit', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error('connect ECONNREFUSED 127.0.0.1:3000');
+      });
+
+      const err = await new AgentSdkModelClient('m')
+        .complete({ messages: [{ role: 'user', content: 'x' }] })
+        .catch((e) => e);
+
+      expect(err).toBeInstanceOf(Error);
+      expect(err).not.toBeInstanceOf(ModelRateLimitError);
     });
   });
 });

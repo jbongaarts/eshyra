@@ -56,7 +56,7 @@ import type {
   ModelToolExecutionResult,
   ModelToolExecutor,
 } from '../src/model/client.js';
-import { ModelClientError } from '../src/model/client.js';
+import { ModelClientError, ModelRateLimitError } from '../src/model/client.js';
 import type { ModelToolDefinition } from '../src/model/toolSchema.js';
 import { ModelTurnAuditor } from '../src/orchestrator/turnAuditor.js';
 
@@ -511,6 +511,133 @@ describe('AgentSdkMcpModelClient', () => {
       expect(outcome.ok).toBe(false);
       expect(outcome.error).not.toContain('oauth-leak-me');
       expect(outcome.error).toContain('[redacted]');
+    });
+  });
+
+  describe('rate-limit and provider-quota classification (eshyra-p8d6)', () => {
+    const SESSION_LIMIT_MSG =
+      "You've hit your session limit · resets 2:30am (America/Chicago)";
+    const SESSION_LIMIT_SDK_MSG = `Agent SDK MCP rate limit: ${SESSION_LIMIT_MSG}`;
+
+    it('throws ModelRateLimitError for a Claude Code session-limit thrown exception', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error(SESSION_LIMIT_MSG);
+      });
+
+      await expect(
+        new AgentSdkMcpModelClient('m').complete({
+          messages: [{ role: 'user', content: 'x' }],
+          tools: [rollDef],
+          executeTool: executorReturning({ ok: true, data: {} }),
+        }),
+      ).rejects.toBeInstanceOf(ModelRateLimitError);
+    });
+
+    it('ModelRateLimitError from session-limit is also instanceof ModelClientError', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error(SESSION_LIMIT_MSG);
+      });
+
+      await expect(
+        new AgentSdkMcpModelClient('m').complete({
+          messages: [{ role: 'user', content: 'x' }],
+          tools: [rollDef],
+          executeTool: executorReturning({ ok: true, data: {} }),
+        }),
+      ).rejects.toBeInstanceOf(ModelClientError);
+    });
+
+    it('sanitized error text does not leak credentials when session-limit error is thrown', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error(`${SESSION_LIMIT_MSG} Bearer sk-ant-secret-DO-NOT-LOG`);
+      });
+      const sink = collectingSink();
+
+      const err = await new AgentSdkMcpModelClient('m', undefined, {
+        debug: sink,
+      })
+        .complete({
+          messages: [{ role: 'user', content: 'x' }],
+          tools: [rollDef],
+          executeTool: executorReturning({ ok: true, data: {} }),
+        })
+        .catch((e) => e);
+
+      expect(err).toBeInstanceOf(ModelRateLimitError);
+      expect(err.message).not.toContain('sk-ant-secret-DO-NOT-LOG');
+      const outcome = sink.events[0].outcome as { ok: false; error: string };
+      expect(outcome.error).not.toContain('sk-ant-secret-DO-NOT-LOG');
+      expect(outcome.error).toContain('[redacted]');
+    });
+
+    it('throws ModelRateLimitError for "session limit" error result stop_reason', async () => {
+      queryMock.mockImplementation(() =>
+        (async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            mcp_servers: [{ name: 'eshyra', status: 'connected' }],
+            tools: [],
+          };
+          yield {
+            type: 'result',
+            subtype: 'error_during_execution',
+            stop_reason: 'rate_limit',
+            errors: [SESSION_LIMIT_MSG],
+            is_error: true,
+            num_turns: 0,
+            duration_ms: 0,
+            duration_api_ms: 0,
+            total_cost_usd: 0,
+            usage: {},
+            modelUsage: {},
+            permission_denials: [],
+            uuid: 'u1',
+            session_id: 's1',
+          };
+        })(),
+      );
+
+      await expect(
+        new AgentSdkMcpModelClient('m').complete({
+          messages: [{ role: 'user', content: 'x' }],
+          tools: [rollDef],
+          executeTool: executorReturning({ ok: true, data: {} }),
+        }),
+      ).rejects.toBeInstanceOf(ModelRateLimitError);
+    });
+
+    it('thrown ModelRateLimitError message contains the session-limit text', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error(SESSION_LIMIT_MSG);
+      });
+
+      const err = await new AgentSdkMcpModelClient('m')
+        .complete({
+          messages: [{ role: 'user', content: 'x' }],
+          tools: [rollDef],
+          executeTool: executorReturning({ ok: true, data: {} }),
+        })
+        .catch((e) => e);
+
+      expect(err.message).toContain(SESSION_LIMIT_SDK_MSG);
+    });
+
+    it('does NOT classify a generic connection failure as a rate-limit', async () => {
+      queryMock.mockImplementation(() => {
+        throw new Error('connect ECONNREFUSED 127.0.0.1:3000');
+      });
+
+      const err = await new AgentSdkMcpModelClient('m')
+        .complete({
+          messages: [{ role: 'user', content: 'x' }],
+          tools: [rollDef],
+          executeTool: executorReturning({ ok: true, data: {} }),
+        })
+        .catch((e) => e);
+
+      expect(err).toBeInstanceOf(ModelClientError);
+      expect(err).not.toBeInstanceOf(ModelRateLimitError);
     });
   });
 });
