@@ -45,6 +45,7 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
 
 import type { ModelCallDebugEvent } from '../src/debug/sessionDebug.js';
 import {
+  AGENT_SDK_MCP_ADAPTER_CAPABILITIES,
   AGENT_SDK_MCP_CLIENT_NAME,
   AGENT_SDK_MCP_TOOL_PROTOCOL,
   AgentSdkMcpModelClient,
@@ -190,6 +191,16 @@ describe('AgentSdkMcpModelClient', () => {
     queryMock.mockReset();
     toolMock.mockClear();
     createServerMock.mockClear();
+  });
+
+  it('declares agent-harness / agent-mcp / gameplay-capable capabilities (ADR 0010)', () => {
+    const client = new AgentSdkMcpModelClient('m');
+    expect(client.capabilities).toEqual(AGENT_SDK_MCP_ADAPTER_CAPABILITIES);
+    expect(client.capabilities.adapterFamily).toBe('agent-harness');
+    expect(client.capabilities.toolTransport).toBe('agent-mcp');
+    expect(client.capabilities.turnLoopOwner).toBe('provider-harness');
+    expect(client.capabilities.vendor).toBe('anthropic');
+    expect(client.capabilities.gameplayCapable).toBe(true);
   });
 
   it('converts each tool definition into an MCP tool() under the eshyra server', async () => {
@@ -388,7 +399,13 @@ describe('AgentSdkMcpModelClient', () => {
       const client = new AgentSdkMcpModelClient('m', {
         env: { CLAUDE_CODE_OAUTH_TOKEN: secret },
       });
-      expect(Object.keys(client)).toEqual([]);
+      // ECMAScript-private `#auth` / `#model` / `#debug` are invisible to
+      // Object.keys / JSON.stringify — a captured client cannot leak the secret.
+      // `capabilities` IS enumerable (it is public metadata, not a secret).
+      const keys = Object.keys(client);
+      expect(keys).not.toContain('auth');
+      expect(keys).not.toContain('model');
+      expect(keys).not.toContain('debug');
       expect(JSON.stringify(client)).not.toContain(secret);
     });
 

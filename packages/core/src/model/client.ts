@@ -9,6 +9,69 @@ import type { ModelToolDefinition } from './toolSchema.js';
 export type ModelResponseFormat = 'text' | 'json';
 
 /**
+ * Whether the adapter talks to a provider API directly (Eshyra owns the full
+ * call lifecycle) or delegates to a provider-owned agent harness (SDK drives
+ * its own tool loop; Eshyra bridges in via an executor delegate).
+ *
+ * ADR 0010: these are separate modes, not interchangeable auth variants.
+ */
+export type AdapterFamily = 'api-native' | 'agent-harness';
+
+/**
+ * How the adapter delivers Eshyra tool definitions to the provider.
+ *
+ * - `api-native`: native `tools` parameter on a REST API request (provider
+ *   returns structured `tool_use` blocks for the outer turn loop to execute).
+ * - `agent-mcp`: in-process MCP server handed to the provider SDK; the SDK
+ *   runs its own tool loop and calls Eshyra handlers in-process.
+ * - `fenced-text`: tools described only in the system prompt as fenced JSON
+ *   blocks — NOT a supported gameplay protocol (ADR 0010). The provider has
+ *   no native tools and can truthfully report that. Retained only as a
+ *   historical research adapter.
+ */
+export type ToolTransport = 'api-native' | 'agent-mcp' | 'fenced-text';
+
+/**
+ * Who drives the tool-call/response loop.
+ *
+ * - `eshyra`: the Eshyra orchestrator (`runModelLoop`) drives the loop,
+ *   calling the adapter once per round and executing tools between rounds.
+ * - `provider-harness`: the provider SDK drives its own loop; Eshyra hooks in
+ *   via the {@link ModelCompleteInput.executeTool} delegate or accepts the
+ *   harness output as a single completed result.
+ */
+export type TurnLoopOwner = 'eshyra' | 'provider-harness';
+
+/**
+ * Static capability declaration every concrete adapter class exposes as a
+ * `capabilities` property (ADR 0010). Makes the adapter family, tool
+ * transport, turn-loop ownership, and gameplay support explicit and
+ * inspectable without requiring a live call.
+ *
+ * The `ModelClient` interface does not include `capabilities` — test doubles
+ * implement only `complete()`. Access `capabilities` on the concrete class
+ * before widening to `ModelClient`.
+ */
+export interface ModelAdapterCapabilities {
+  /** API-native or agent-harness (ADR 0010). */
+  readonly adapterFamily: AdapterFamily;
+  /** How tools are delivered to the provider. */
+  readonly toolTransport: ToolTransport;
+  /** Who drives the turn loop. */
+  readonly turnLoopOwner: TurnLoopOwner;
+  /** Provider vendor identifier (e.g. `'anthropic'`, `'openai'`). */
+  readonly vendor: string;
+  /**
+   * Whether this adapter supports released gameplay (i.e. native or MCP tool
+   * forwarding). Adapters with `toolTransport === 'fenced-text'` set this
+   * `false` and throw at `complete()` time when tools are provided, so a
+   * misconfigured gameplay path fails loudly rather than silently dropping
+   * tools.
+   */
+  readonly gameplayCapable: boolean;
+}
+
+/**
  * Provider-neutral profile metadata threaded through the call site
  * (eshyra-0jq.11). Adapters may use this for routing, logging, or
  * rate-limit shaping. Never contains provider-specific identifiers.

@@ -17,7 +17,10 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
 }));
 
 import type { ModelCallDebugEvent } from '../src/debug/sessionDebug.js';
-import { AgentSdkModelClient } from '../src/model/agentSdkClient.js';
+import {
+  AGENT_SDK_LEGACY_ADAPTER_CAPABILITIES,
+  AgentSdkModelClient,
+} from '../src/model/agentSdkClient.js';
 import { ModelClientError } from '../src/model/client.js';
 
 /** A collecting {@link SessionDebugSink} for adapter tests. */
@@ -57,6 +60,16 @@ const ok = (result: string) => ({ type: 'result', subtype: 'success', result });
 describe('AgentSdkModelClient', () => {
   beforeEach(() => {
     queryMock.mockReset();
+  });
+
+  it('declares agent-harness / fenced-text / not gameplay-capable capabilities (ADR 0010)', () => {
+    const client = new AgentSdkModelClient('m');
+    expect(client.capabilities).toEqual(AGENT_SDK_LEGACY_ADAPTER_CAPABILITIES);
+    expect(client.capabilities.adapterFamily).toBe('agent-harness');
+    expect(client.capabilities.toolTransport).toBe('fenced-text');
+    expect(client.capabilities.turnLoopOwner).toBe('provider-harness');
+    expect(client.capabilities.vendor).toBe('anthropic');
+    expect(client.capabilities.gameplayCapable).toBe(false);
   });
 
   it('flattens messages into a "role: content" prompt and forwards model + system', async () => {
@@ -113,30 +126,42 @@ describe('AgentSdkModelClient', () => {
     expect(out.text).toBe('final');
   });
 
-  it('ignores structured tools / responseFormat / profile / trace without failing (eshyra-0jq.11)', async () => {
+  it('throws ModelClientError when tools are provided (fenced-text is not gameplay-capable, ADR 0010)', async () => {
+    // The adapter now fails loudly when tools are passed — silent tool-dropping
+    // is the bug that this guard prevents. Use AgentSdkMcpModelClient for gameplay.
+    await expect(
+      new AgentSdkModelClient('m').complete({
+        messages: [{ role: 'user', content: 'hi' }],
+        tools: [
+          {
+            name: 'roll',
+            description: 'roll dice',
+            inputSchema: {
+              type: 'object',
+              properties: { dice: { type: 'string' } },
+              required: ['dice'],
+              additionalProperties: false,
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrowError(ModelClientError);
+
+    // The guard short-circuits before any SDK call.
+    expect(queryMock).not.toHaveBeenCalled();
+  });
+
+  it('ignores responseFormat / profile / trace without failing (eshyra-0jq.11)', async () => {
     queryMock.mockReturnValue(sdkStream(ok('ok')));
 
     const out = await new AgentSdkModelClient('m').complete({
       messages: [{ role: 'user', content: 'hi' }],
-      tools: [
-        {
-          name: 'roll',
-          description: 'roll dice',
-          inputSchema: {
-            type: 'object',
-            properties: { dice: { type: 'string' } },
-            required: ['dice'],
-            additionalProperties: false,
-          },
-        },
-      ],
       responseFormat: 'text',
       profile: { profile: 'premium_dm', tier: 'premium', canonChanging: true },
       trace: { turnId: 'turn-1', campaignId: 'camp-1' },
     });
 
-    // The Agent SDK has no native tool-use surface; the adapter accepts the
-    // structured fields, ignores them, and still returns the text result.
+    // Non-tool structured fields are still accepted and ignored gracefully.
     expect(out.text).toBe('ok');
     const arg = queryMock.mock.calls[0][0] as {
       options: Record<string, unknown>;
@@ -257,9 +282,13 @@ describe('AgentSdkModelClient', () => {
       const client = new AgentSdkModelClient('m', {
         env: { ANTHROPIC_API_KEY: secret },
       });
-      // ECMAScript-private fields are invisible to Object.keys / JSON.stringify,
-      // so a client accidentally captured into a trace or log cannot leak it.
-      expect(Object.keys(client)).toEqual([]);
+      // ECMAScript-private `#auth` / `#model` / `#debug` are invisible to
+      // Object.keys / JSON.stringify — a captured client cannot leak the secret.
+      // `capabilities` IS enumerable (it is public metadata, not a secret).
+      const keys = Object.keys(client);
+      expect(keys).not.toContain('auth');
+      expect(keys).not.toContain('model');
+      expect(keys).not.toContain('debug');
       expect(JSON.stringify(client)).not.toContain(secret);
     });
   });
@@ -274,7 +303,7 @@ describe('AgentSdkModelClient', () => {
       expect(out.text).toBe('narration');
     });
 
-    it('records one structural event on success with labels and the forwarded-tool gap', async () => {
+    it('records one structural event on success with labels', async () => {
       queryMock.mockReturnValue(sdkStream(ok('You stride forward.')));
       const sink = collectingSink();
 
@@ -286,7 +315,6 @@ describe('AgentSdkModelClient', () => {
       }).complete({
         system: '## Persona\nbe a DM',
         messages: [{ role: 'user', content: '## Player Input\ngo' }],
-        tools: [rollTool],
         trace: {
           campaignId: 'c1',
           sessionId: 's1',
@@ -309,8 +337,8 @@ describe('AgentSdkModelClient', () => {
         purpose: 'turn_model_loop',
         round: '1',
       });
-      // The core handed `roll` to the client; the Agent SDK got no native tools.
-      expect(ev.providedToolNames).toEqual(['roll']);
+      // No tools provided; both provided and forwarded lists are empty.
+      expect(ev.providedToolNames).toEqual([]);
       expect(ev.forwardedToolNames).toEqual([]);
       expect(ev.outcome).toMatchObject({ ok: true, resultChars: 19 });
       // Structural by default: no captured content.

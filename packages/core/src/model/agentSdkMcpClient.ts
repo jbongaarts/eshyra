@@ -18,6 +18,7 @@ import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { AgentSdkAuth, AgentSdkAuthSource } from './agentSdkClient.js';
 import { buildAmbientSdkEnv, buildChildSdkEnv } from './agentSdkEnv.js';
 import type {
+  ModelAdapterCapabilities,
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,
@@ -68,6 +69,18 @@ export const ESHYRA_MCP_SERVER_NAME = 'eshyra';
 
 /** Transport/client label recorded in debug records (never a secret). */
 export const AGENT_SDK_MCP_CLIENT_NAME = 'claude-agent-sdk';
+
+/**
+ * Capability declaration for {@link AgentSdkMcpModelClient} (ADR 0010).
+ * Agent-harness adapter, in-process MCP tool transport, SDK drives the loop.
+ */
+export const AGENT_SDK_MCP_ADAPTER_CAPABILITIES: ModelAdapterCapabilities = {
+  adapterFamily: 'agent-harness',
+  toolTransport: 'agent-mcp',
+  turnLoopOwner: 'provider-harness',
+  vendor: 'anthropic',
+  gameplayCapable: true,
+};
 
 /** App identifier folded into the SDK User-Agent (diagnostic, not a secret). */
 const CLIENT_APP = 'eshyra-cli';
@@ -199,6 +212,10 @@ function buildMcpTool(
  * single owner of gameplay semantics.
  */
 export class AgentSdkMcpModelClient implements ModelClient {
+  /** Capability declaration (ADR 0010). Access on the concrete type. */
+  readonly capabilities: ModelAdapterCapabilities =
+    AGENT_SDK_MCP_ADAPTER_CAPABILITIES;
+
   // ECMAScript-private (`#`) so an accidentally serialized client cannot leak
   // the auth source — invisible to `JSON.stringify` and `Object.keys`.
   readonly #model: string;

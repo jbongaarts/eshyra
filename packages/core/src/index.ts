@@ -106,13 +106,17 @@ export type {
   AgentSdkAuth,
   AgentSdkAuthSource,
 } from './model/agentSdkClient.js';
-export { AgentSdkModelClient } from './model/agentSdkClient.js';
+export {
+  AGENT_SDK_LEGACY_ADAPTER_CAPABILITIES,
+  AgentSdkModelClient,
+} from './model/agentSdkClient.js';
 export type { AgentSdkMcpDebugOptions } from './model/agentSdkMcpClient.js';
 // Agent SDK in-process MCP adapter — the released gameplay tool transport
-// (eshyra-eznk). Exposes Eshyra tools to the model through the SDK's SUPPORTED
-// custom-tool path (`tool()` + `createSdkMcpServer`), so the subscription-backed
-// `eshyra play` path needs no Anthropic API key.
+// (eshyra-eznk, ADR 0010). Exposes Eshyra tools to the model through the
+// SDK's SUPPORTED custom-tool path (`tool()` + `createSdkMcpServer`), so the
+// subscription-backed `eshyra play` path needs no Anthropic API key.
 export {
+  AGENT_SDK_MCP_ADAPTER_CAPABILITIES,
   AGENT_SDK_MCP_CLIENT_NAME,
   AGENT_SDK_MCP_TOOL_PROTOCOL,
   AgentSdkMcpModelClient,
@@ -125,15 +129,17 @@ export type {
   AnthropicAuthSource,
   AnthropicNativeDebugOptions,
 } from './model/anthropicNativeClient.js';
-// Lower-level Anthropic Messages adapter (eshyra-eznk). Returns native
-// `ModelToolCall[]` for the outer turn loop; retained as the API-key-native
-// alternative, but the released subscription path uses the Agent SDK MCP adapter
-// above so no Console API key is required.
+// Lower-level Anthropic Messages adapter (eshyra-eznk, ADR 0010). Returns
+// native `ModelToolCall[]` for the outer turn loop; the API-key-native
+// alternative when no subscription token is in use.
 export {
+  ANTHROPIC_NATIVE_ADAPTER_CAPABILITIES,
   ANTHROPIC_NATIVE_TOOL_PROTOCOL,
   AnthropicNativeModelClient,
 } from './model/anthropicNativeClient.js';
 export type {
+  AdapterFamily,
+  ModelAdapterCapabilities,
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,
@@ -147,9 +153,11 @@ export type {
   ModelToolResult,
   ModelTraceMetadata,
   ProviderExecutedToolCall,
+  ToolTransport,
+  TurnLoopOwner,
 } from './model/client.js';
 
-// Model client contract + Agent SDK adapter.
+// Model client contract + adapter capability types (ADR 0010).
 export { ModelClientError } from './model/client.js';
 export type { ConfiguredProfileEntry } from './model/profiles.js';
 export type {
