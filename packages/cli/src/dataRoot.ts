@@ -73,6 +73,11 @@ export function debugDir(root: string): string {
   return join(root, 'debug');
 }
 
+/** `<root>/diagnostics` — model usage and diagnostics store (eshyra-cuxm). */
+export function diagnosticsDir(root: string): string {
+  return join(root, 'diagnostics');
+}
+
 /**
  * Create the data root and its managed subdirectories if they are absent.
  * Idempotent (recursive `mkdir`), and called lazily — only on a command that

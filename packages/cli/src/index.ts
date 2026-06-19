@@ -22,6 +22,7 @@ import {
 } from '@eshyra/core';
 import {
   DEFAULT_MEMORY_CONFIG,
+  ModelUsageTracker,
   type SessionDebugSink,
 } from '@eshyra/core/internal';
 import {
@@ -37,7 +38,13 @@ import {
   installConfigDefaults,
   loadConfigFile,
 } from './configFile.js';
-import { campaignsDir, ensureDataRoot, resolveDataRoot } from './dataRoot.js';
+import {
+  campaignsDir,
+  diagnosticsDir,
+  ensureDataRoot,
+  resolveDataRoot,
+} from './dataRoot.js';
+import { ModelUsageStore } from './modelUsageStore.js';
 import {
   type CliIO,
   doltCheckpointRunner,
@@ -47,6 +54,7 @@ import {
   runPlay,
 } from './play.js';
 import { resolveSessionDebug } from './sessionDebug.js';
+import { runUsageCommand } from './usage.js';
 
 export function buildBanner(version: string): string {
   return `Eshyra — core v${version}`;
@@ -181,14 +189,40 @@ function buildDebug(
  * Both the primary DM and the mechanics auditor run on the Agent SDK in-process
  * MCP adapter (eshyra-eznk) under the SAME resolved provider credential — never
  * an independently API-billed call (eshyra-oobh). The auditor targets the
- * (typically smaller/faster) `cfg.auditModel`.
+ * (typically smaller/faster) `cfg.auditModel`. Both calls are wrapped with a
+ * {@link ModelUsageTracker} that records per-call token and timing data to the
+ * shared diagnostics store (eshyra-cuxm).
  */
 function buildPlayDeps(
   cfg: EshyraConfig,
   io: PlayDeps['io'],
+  usageStore: ModelUsageStore,
   debug?: PlayDebug,
 ): PlayDeps {
   const auth = { env: cfg.auth.env };
+  const adapterFamily = 'agent-harness';
+
+  // Wrap each adapter with a usage tracker sharing the same store so a single
+  // session's calls are co-located in the diagnostics DB under the same filters.
+  const model = new ModelUsageTracker(
+    new AgentSdkMcpModelClient(cfg.model, auth, debug?.modelDebug),
+    {
+      model: cfg.model,
+      authMode: cfg.auth.mode,
+      adapterFamily,
+      sink: usageStore,
+    },
+  );
+  const auditModel = new ModelUsageTracker(
+    new AgentSdkMcpModelClient(cfg.auditModel, auth, debug?.auditDebug),
+    {
+      model: cfg.auditModel,
+      authMode: cfg.auth.mode,
+      adapterFamily,
+      sink: usageStore,
+    },
+  );
+
   return {
     io,
     openDb: (path) => openDatabase(path),
@@ -196,14 +230,11 @@ function buildPlayDeps(
     // key, so this path needs no Console API key. The resolved provider
     // credential is injected through the explicit auth seam rather than read from
     // ambient process.env.
-    model: new AgentSdkMcpModelClient(cfg.model, auth, debug?.modelDebug),
+    model,
     registry: createDefaultToolRegistry(),
     // Mechanics-audit gate: a second, lightweight subscription-backed call that
     // rejects a candidate response asserting an un-tooled mechanical outcome.
-    auditor: new ModelTurnAuditor(
-      new AgentSdkMcpModelClient(cfg.auditModel, auth, debug?.auditDebug),
-      cfg.auditModel,
-    ),
+    auditor: new ModelTurnAuditor(auditModel, cfg.auditModel),
     ...(debug?.sink ? { debug: debug.sink } : {}),
     runTurn,
     pack: EMBERFALL_HOLLOW,
@@ -288,6 +319,9 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
     return config.code;
   }
   const io = nodeIO();
+  const usageStore = new ModelUsageStore(
+    join(diagnosticsDir(cli.dataRoot), 'usage.db'),
+  );
   try {
     let dbPath: string;
     if (config.cfg.campaignDbPath !== undefined) {
@@ -312,11 +346,17 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
       dbPath = target.entry.dbPath;
     }
     return await runPlay(
-      buildPlayDeps(config.cfg, io, buildDebug(config.cfg, cli.dataRoot, io)),
+      buildPlayDeps(
+        config.cfg,
+        io,
+        usageStore,
+        buildDebug(config.cfg, cli.dataRoot, io),
+      ),
       { dbPath },
     );
   } finally {
     io.close();
+    usageStore.close();
   }
 }
 
@@ -340,9 +380,17 @@ export async function runDemoSubcommand(): Promise<number> {
     return config.code;
   }
   const io = nodeIO();
+  const usageStore = new ModelUsageStore(
+    join(diagnosticsDir(cli.dataRoot), 'usage.db'),
+  );
   try {
     return await runDemo(
-      buildPlayDeps(config.cfg, io, buildDebug(config.cfg, cli.dataRoot, io)),
+      buildPlayDeps(
+        config.cfg,
+        io,
+        usageStore,
+        buildDebug(config.cfg, cli.dataRoot, io),
+      ),
       {
         dbPath: demoDbPath(cli, config.cfg),
         turnCap: DEMO_TURN_CAP,
@@ -350,6 +398,7 @@ export async function runDemoSubcommand(): Promise<number> {
     );
   } finally {
     io.close();
+    usageStore.close();
   }
 }
 
@@ -386,6 +435,18 @@ export function runCheckpointSubcommand(argv: string[]): number {
   return runCheckpointCommand(argv.slice(3), {
     root: cli.dataRoot,
     env: process.env,
+    log: (message: string) => console.log(message),
+  });
+}
+
+/** `eshyra usage` — display model usage summary from the diagnostics store. */
+export function runUsageSubcommand(argv: string[]): number {
+  const cli = resolveCliEnv();
+  if (cli === undefined) {
+    return 1;
+  }
+  return runUsageCommand(argv.slice(3), {
+    dataRoot: cli.dataRoot,
     log: (message: string) => console.log(message),
   });
 }
@@ -448,6 +509,11 @@ export function main(argv: string[] = process.argv): void {
 
   if (argv[2] === 'checkpoint') {
     process.exitCode = runCheckpointSubcommand(argv);
+    return;
+  }
+
+  if (argv[2] === 'usage') {
+    process.exitCode = runUsageSubcommand(argv);
     return;
   }
 

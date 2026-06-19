@@ -231,6 +231,22 @@ export interface ModelMessage {
 }
 
 /**
+ * Actual token counts reported by the provider for a single call, when the
+ * adapter can obtain them from the API response. Token counts are
+ * provider-surface data: adapters that cannot retrieve them (e.g. the Agent
+ * SDK harness, which hides per-round details behind its own loop) leave
+ * {@link ModelCompleteResult.usage} absent.
+ */
+export interface ModelUsage {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  /** Tokens served from the provider's prompt cache (cache hit). */
+  readonly cacheReadTokens?: number;
+  /** Tokens written into the provider's prompt cache (cache fill). */
+  readonly cacheWriteTokens?: number;
+}
+
+/**
  * Structured result of a ModelClient call (eshyra-0jq.11). `text` is
  * always populated (possibly empty) so callers that only care about narration
  * can ignore the structured fields entirely. Native tool calls are normalized
@@ -254,6 +270,17 @@ export interface ModelCompleteResult {
   readonly executedToolCalls?: readonly ProviderExecutedToolCall[];
   /** Best-effort normalized stop reason. */
   readonly stopReason?: ModelStopReason;
+  /**
+   * Actual token counts from the provider API response, when the adapter can
+   * surface them (eshyra-cuxm). Absent for adapters that do not expose
+   * per-call token data (e.g. the Agent SDK harness path).
+   */
+  readonly usage?: ModelUsage;
+  /**
+   * Provider-assigned request/message identifier, when available (eshyra-cuxm).
+   * Used as a safe correlation handle in usage records — never a secret.
+   */
+  readonly requestId?: string;
 }
 
 /**

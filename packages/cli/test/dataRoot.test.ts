@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   campaignsDir,
   configFilePath,
+  diagnosticsDir,
   doltCacheDir,
   ensureDataRoot,
   registryFilePath,
@@ -58,6 +59,7 @@ describe('data-root paths', () => {
     expect(campaignsDir(root)).toBe(join(root, 'campaigns'));
     expect(rulesPacksDir(root)).toBe(join(root, 'rules-packs'));
     expect(doltCacheDir(root)).toBe(join(root, 'dolt'));
+    expect(diagnosticsDir(root)).toBe(join(root, 'diagnostics'));
   });
 });
 

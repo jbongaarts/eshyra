@@ -152,6 +152,7 @@ export type {
   ModelToolExecutor,
   ModelToolResult,
   ModelTraceMetadata,
+  ModelUsage,
   ProviderExecutedToolCall,
   ToolTransport,
   TurnLoopOwner,

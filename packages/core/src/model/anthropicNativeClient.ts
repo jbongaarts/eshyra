@@ -15,6 +15,7 @@ import type {
   ModelStopReason,
   ModelToolCall,
   ModelToolResult,
+  ModelUsage,
 } from './client.js';
 import { ModelClientError } from './client.js';
 import type { ModelToolDefinition } from './toolSchema.js';
@@ -270,6 +271,16 @@ export class AnthropicNativeModelClient implements ModelClient {
         args: block.input,
       }));
     const stopReason = toStopReason(response.stop_reason);
+    const usage: ModelUsage = {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      ...(response.usage.cache_read_input_tokens != null
+        ? { cacheReadTokens: response.usage.cache_read_input_tokens }
+        : {}),
+      ...(response.usage.cache_creation_input_tokens != null
+        ? { cacheWriteTokens: response.usage.cache_creation_input_tokens }
+        : {}),
+    };
 
     this.#recordDebug(input, forwardedToolNames, {
       ok: true,
@@ -282,6 +293,8 @@ export class AnthropicNativeModelClient implements ModelClient {
       text,
       ...(toolCalls.length > 0 ? { toolCalls } : {}),
       ...(stopReason ? { stopReason } : {}),
+      usage,
+      requestId: response.id,
     };
   }
 
