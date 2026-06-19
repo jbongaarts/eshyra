@@ -1,9 +1,9 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ModelUsageRecord } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ModelUsageStore } from '../src/modelUsageStore.js';
+import { createUsageSink, ModelUsageStore } from '../src/modelUsageStore.js';
 
 const tmpDirs: string[] = [];
 function workDir(): string {
@@ -286,5 +286,33 @@ describe('ModelUsageStore', () => {
       expect(summary.byPurpose).toHaveLength(0);
       expect(summary.byModel).toHaveLength(0);
     });
+  });
+});
+
+describe('createUsageSink', () => {
+  it('returns a working store when the data root is valid', () => {
+    const dataRoot = workDir();
+    const warnings: string[] = [];
+    const sink = createUsageSink(dataRoot, (msg) => warnings.push(msg));
+    sink.record(rec());
+    sink.close();
+    expect(warnings).toHaveLength(0);
+  });
+
+  it('falls back to a noop sink when the diagnostics directory cannot be created', () => {
+    // Block mkdirSync by placing a file at the path where the directory must go.
+    const dataRoot = workDir();
+    const diagnosticsPath = join(dataRoot, 'diagnostics');
+    writeFileSync(diagnosticsPath, 'not-a-directory');
+
+    const warnings: string[] = [];
+    const sink = createUsageSink(dataRoot, (msg) => warnings.push(msg));
+
+    // The noop sink must accept record() and close() without throwing.
+    expect(() => sink.record(rec())).not.toThrow();
+    expect(() => sink.close()).not.toThrow();
+    // One warning must have been emitted.
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/Usage tracking disabled/);
   });
 });

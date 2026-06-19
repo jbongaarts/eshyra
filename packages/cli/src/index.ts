@@ -22,6 +22,7 @@ import {
 } from '@eshyra/core';
 import {
   DEFAULT_MEMORY_CONFIG,
+  type ModelUsageSink,
   ModelUsageTracker,
   type SessionDebugSink,
 } from '@eshyra/core/internal';
@@ -38,13 +39,8 @@ import {
   installConfigDefaults,
   loadConfigFile,
 } from './configFile.js';
-import {
-  campaignsDir,
-  diagnosticsDir,
-  ensureDataRoot,
-  resolveDataRoot,
-} from './dataRoot.js';
-import { ModelUsageStore } from './modelUsageStore.js';
+import { campaignsDir, ensureDataRoot, resolveDataRoot } from './dataRoot.js';
+import { createUsageSink } from './modelUsageStore.js';
 import {
   type CliIO,
   doltCheckpointRunner,
@@ -196,7 +192,7 @@ function buildDebug(
 function buildPlayDeps(
   cfg: EshyraConfig,
   io: PlayDeps['io'],
-  usageStore: ModelUsageStore,
+  usageStore: ModelUsageSink,
   debug?: PlayDebug,
 ): PlayDeps {
   const auth = { env: cfg.auth.env };
@@ -319,9 +315,7 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
     return config.code;
   }
   const io = nodeIO();
-  const usageStore = new ModelUsageStore(
-    join(diagnosticsDir(cli.dataRoot), 'usage.db'),
-  );
+  const usageStore = createUsageSink(cli.dataRoot, (msg) => io.write(msg));
   try {
     let dbPath: string;
     if (config.cfg.campaignDbPath !== undefined) {
@@ -380,9 +374,7 @@ export async function runDemoSubcommand(): Promise<number> {
     return config.code;
   }
   const io = nodeIO();
-  const usageStore = new ModelUsageStore(
-    join(diagnosticsDir(cli.dataRoot), 'usage.db'),
-  );
+  const usageStore = createUsageSink(cli.dataRoot, (msg) => io.write(msg));
   try {
     return await runDemo(
       buildPlayDeps(

@@ -183,7 +183,7 @@ export type {
   ModelUsageSink,
   ModelUsageTrackerOptions,
 } from './model/usage.js';
-export { ModelUsageTracker } from './model/usage.js';
+export { ModelUsageTracker, NoopModelUsageSink } from './model/usage.js';
 export type {
   AssembledContext,
   AssembledSceneRef,

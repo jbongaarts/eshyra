@@ -1,11 +1,12 @@
 import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { openDatabase } from '@eshyra/core';
 import type {
   Db,
   ModelUsageRecord,
   ModelUsageSink,
 } from '@eshyra/core/internal';
+import { diagnosticsDir } from './dataRoot.js';
 
 const CREATE_TABLE = `
   CREATE TABLE IF NOT EXISTS model_usage (
@@ -260,4 +261,33 @@ function toSummaryRow(row: GroupRow): UsageSummaryByDimension {
     elapsedMs: row.ms ?? 0,
     failures: row.fails ?? 0,
   };
+}
+
+/**
+ * A usage sink with a lifecycle `close()` method so callers can manage the
+ * underlying resource without depending on the concrete {@link ModelUsageStore}.
+ */
+export type CloseableModelUsageSink = ModelUsageSink & { close(): void };
+
+/**
+ * Best-effort factory for the diagnostics usage sink (eshyra-cuxm). Opens
+ * `<dataRoot>/diagnostics/usage.db` wrapped in a {@link ModelUsageStore}. If
+ * initialization fails (e.g. a read-only filesystem or a file at the expected
+ * directory path), emits one warning via `warn` and returns a no-op sink so
+ * the calling session continues unaffected.
+ *
+ * The `eshyra usage` command bypasses this helper and opens the store
+ * directly, so it can surface DB errors to the user.
+ */
+export function createUsageSink(
+  dataRoot: string,
+  warn?: (message: string) => void,
+): CloseableModelUsageSink {
+  try {
+    return new ModelUsageStore(join(diagnosticsDir(dataRoot), 'usage.db'));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    warn?.(`Usage tracking disabled: ${msg}`);
+    return { record: () => {}, close: () => {} };
+  }
 }

@@ -53,6 +53,11 @@ export interface ModelUsageSink {
   record(entry: ModelUsageRecord): void;
 }
 
+/** No-op sink for use when storage is unavailable or in test contexts. */
+export class NoopModelUsageSink implements ModelUsageSink {
+  record(_entry: ModelUsageRecord): void {}
+}
+
 export interface ModelUsageTrackerOptions {
   readonly model: string;
   readonly authMode?: string;
