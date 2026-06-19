@@ -176,6 +176,14 @@ export {
   validateJsonSchema,
   validateToolInput,
 } from './model/toolSchemaValidation.js';
+// Model usage tracking: purpose enum, per-call record, sink contract, decorator.
+export type {
+  ModelUsagePurpose,
+  ModelUsageRecord,
+  ModelUsageSink,
+  ModelUsageTrackerOptions,
+} from './model/usage.js';
+export { ModelUsageTracker, NoopModelUsageSink } from './model/usage.js';
 export type {
   AssembledContext,
   AssembledSceneRef,
@@ -274,6 +282,7 @@ export {
   serializeCampaign,
 } from './persistence/checkpoint/serialize.js';
 // Database internals.
+export type { Db } from './persistence/db.js';
 export { withTransaction } from './persistence/db.js';
 // Built-in rules pack objects (pre-importer; superseded by 0m9 deterministic importer outputs).
 // Not on the stable public surface — use @eshyra/core for consumer-facing API.

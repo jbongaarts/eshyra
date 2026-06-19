@@ -291,6 +291,79 @@ describe('AnthropicNativeModelClient', () => {
     }
   });
 
+  describe('usage and request id (eshyra-cuxm)', () => {
+    it('surfaces input/output token counts from the API response usage field', async () => {
+      createMock.mockResolvedValue({
+        id: 'msg_usage_test',
+        type: 'message',
+        role: 'assistant',
+        model: 'claude-test',
+        content: [{ type: 'text', text: 'ok' }],
+        stop_reason: 'end_turn',
+        stop_sequence: null,
+        usage: { input_tokens: 450, output_tokens: 120 },
+      });
+      const out = await new AnthropicNativeModelClient('claude-test').complete({
+        messages: [{ role: 'user', content: 'hello' }],
+      });
+      expect(out.usage).toEqual({ inputTokens: 450, outputTokens: 120 });
+    });
+
+    it('includes cacheReadTokens when cache_read_input_tokens is non-null', async () => {
+      createMock.mockResolvedValue({
+        id: 'msg_cache',
+        type: 'message',
+        role: 'assistant',
+        model: 'claude-test',
+        content: [{ type: 'text', text: 'ok' }],
+        stop_reason: 'end_turn',
+        stop_sequence: null,
+        usage: {
+          input_tokens: 100,
+          output_tokens: 20,
+          cache_read_input_tokens: 80,
+          cache_creation_input_tokens: 40,
+        },
+      });
+      const out = await new AnthropicNativeModelClient('claude-test').complete({
+        messages: [{ role: 'user', content: 'hello' }],
+      });
+      expect(out.usage?.cacheReadTokens).toBe(80);
+      expect(out.usage?.cacheWriteTokens).toBe(40);
+    });
+
+    it('omits cacheReadTokens when cache_read_input_tokens is null', async () => {
+      createMock.mockResolvedValue({
+        id: 'msg_no_cache',
+        type: 'message',
+        role: 'assistant',
+        model: 'claude-test',
+        content: [{ type: 'text', text: 'ok' }],
+        stop_reason: 'end_turn',
+        stop_sequence: null,
+        usage: {
+          input_tokens: 100,
+          output_tokens: 20,
+          cache_read_input_tokens: null,
+        },
+      });
+      const out = await new AnthropicNativeModelClient('claude-test').complete({
+        messages: [{ role: 'user', content: 'hello' }],
+      });
+      expect(out.usage?.cacheReadTokens).toBeUndefined();
+    });
+
+    it('surfaces the provider-assigned message id as requestId', async () => {
+      createMock.mockResolvedValue(
+        message({ content: [{ type: 'text', text: 'ok' }] }),
+      );
+      const out = await new AnthropicNativeModelClient('m').complete({
+        messages: [{ role: 'user', content: 'hi' }],
+      });
+      expect(out.requestId).toBe('msg_1');
+    });
+  });
+
   describe('provider-auth injection seam', () => {
     it('uses ambient auth (no constructor options) when no auth source is given', async () => {
       createMock.mockResolvedValue(
