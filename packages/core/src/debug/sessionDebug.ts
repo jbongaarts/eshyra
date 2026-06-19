@@ -361,6 +361,33 @@ export function buildModelCallEvent(
 }
 
 /**
+ * One mechanics-audit decision's debug record (eshyra-oobh). The auditor's own
+ * MODEL call is logged as a normal {@link ModelCallDebugEvent} (distinguished by
+ * `trace.purpose === 'turn_audit'` and the auditor model id); this event captures
+ * the orchestrator-level VERDICT and the action it drove, so a turn's tool-use
+ * enforcement is reconstructable. Carries only labels, names, and counts — no
+ * prompt or narration content, so it cannot leak campaign text or secrets.
+ */
+export interface TurnAuditDebugEvent {
+  readonly kind: 'turn_audit';
+  readonly trace: ModelCallTrace;
+  /** 1-based candidate attempt this verdict judged. */
+  readonly attempt: number;
+  /** The auditor's verdict on the candidate response. */
+  readonly verdict: 'accept' | 'reject';
+  /** Tool names the auditor judged were required but missing. */
+  readonly missingRequiredTools: readonly string[];
+  /** Eshyra tool names the candidate turn actually executed. */
+  readonly executedToolNames: readonly string[];
+  /** Action the orchestrator took from this verdict. */
+  readonly action: 'accept' | 'retry' | 'fail';
+  /** Provider model id the auditor call targeted. */
+  readonly auditorModel: string;
+  /** Auth mode label (`api-key` / `oauth-token`) — never the credential. */
+  readonly authMode?: string;
+}
+
+/**
  * Destination for session debug events. The core emits events; an implementation
  * (the CLI's file-backed sink) stamps a timestamp and persists them under the
  * data root. A sink that wants full prompt/message capture sets
@@ -375,6 +402,12 @@ export interface SessionDebugSink {
    * {@link buildModelCallEvent}.
    */
   readonly captureContent: boolean;
-  /** Persist one debug event. Implementations must never throw into the turn. */
+  /** Persist one model-call debug event. Must never throw into the turn. */
   record(event: ModelCallDebugEvent): void;
+  /**
+   * Persist one mechanics-audit verdict event (eshyra-oobh). Optional so older
+   * sinks keep compiling; the orchestrator calls it best-effort. Must never throw
+   * into the turn.
+   */
+  recordAudit?(event: TurnAuditDebugEvent): void;
 }

@@ -128,6 +128,34 @@ describe('createFileSessionDebugSink', () => {
     expect((lines[1].outcome as { ok: boolean }).ok).toBe(false);
   });
 
+  it('records a mechanics-audit verdict to the structural session file (eshyra-oobh)', () => {
+    const dir = workDir();
+    const sink = createFileSessionDebugSink({
+      dir,
+      captureContent: false,
+      now: () => '2026-06-18T00:00:00.000Z',
+    });
+    sink.recordAudit?.({
+      kind: 'turn_audit',
+      trace: { sessionId: 's1', turnId: 't1', purpose: 'turn_audit' },
+      attempt: 1,
+      verdict: 'reject',
+      missingRequiredTools: ['roll'],
+      executedToolNames: [],
+      action: 'retry',
+      auditorModel: 'claude-haiku-test',
+    });
+
+    const lines = readLines(join(dir, 's1.jsonl'));
+    expect(lines).toHaveLength(1);
+    expect(lines[0].kind).toBe('turn_audit');
+    expect(lines[0].verdict).toBe('reject');
+    expect(lines[0].action).toBe('retry');
+    expect(lines[0].missingRequiredTools).toEqual(['roll']);
+    expect(lines[0].auditorModel).toBe('claude-haiku-test');
+    expect(lines[0].at).toBe('2026-06-18T00:00:00.000Z');
+  });
+
   it('writes sanitized content to a separate sensitive file under full capture', () => {
     const dir = workDir();
     const sink = createFileSessionDebugSink({ dir, captureContent: true });

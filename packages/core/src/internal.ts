@@ -54,6 +54,7 @@ export type {
   ModelCallOutcome,
   ModelCallTrace,
   SessionDebugSink,
+  TurnAuditDebugEvent,
 } from './debug/sessionDebug.js';
 export {
   approxTokens,

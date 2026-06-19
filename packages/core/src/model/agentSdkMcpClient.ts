@@ -16,6 +16,7 @@ import {
 } from '../debug/sessionDebug.js';
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { AgentSdkAuth, AgentSdkAuthSource } from './agentSdkClient.js';
+import { buildAmbientSdkEnv, buildChildSdkEnv } from './agentSdkEnv.js';
 import type {
   ModelClient,
   ModelCompleteInput,
@@ -315,22 +316,21 @@ export class AgentSdkMcpModelClient implements ModelClient {
   }
 
   /**
-   * Build the SDK subprocess environment. The Agent SDK REPLACES the subprocess
-   * env when `env` is set, so `process.env` is spread first to preserve PATH and
-   * friends; the resolved auth secret then wins. `ENABLE_TOOL_SEARCH=false` keeps
-   * the small Eshyra tool set loaded upfront with no tool-search round trip.
+   * Build the SDK subprocess environment. `ENABLE_TOOL_SEARCH=false` keeps the
+   * small Eshyra tool set loaded upfront with no tool-search round trip. When an
+   * explicit credential is resolved, {@link buildChildSdkEnv} strips every
+   * inherited provider credential before applying it, so an ambient
+   * `ANTHROPIC_API_KEY` can never shadow a selected subscription token
+   * (eshyra-oobh). With no explicit credential the ambient environment is used
+   * as-is (local-dev path).
    */
   #buildEnv(): Record<string, string> {
+    const extra = {
+      ENABLE_TOOL_SEARCH: 'false',
+      CLAUDE_AGENT_SDK_CLIENT_APP: CLIENT_APP,
+    };
     const auth = this.#resolveAuth();
-    const base: Record<string, string> = {};
-    for (const [key, value] of Object.entries(process.env)) {
-      if (value !== undefined) {
-        base[key] = value;
-      }
-    }
-    base.ENABLE_TOOL_SEARCH = 'false';
-    base.CLAUDE_AGENT_SDK_CLIENT_APP = CLIENT_APP;
-    return auth ? { ...base, ...auth.env } : base;
+    return auth ? buildChildSdkEnv(auth.env, extra) : buildAmbientSdkEnv(extra);
   }
 
   /**

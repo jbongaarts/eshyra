@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type {
   ModelCallDebugEvent,
   SessionDebugSink,
+  TurnAuditDebugEvent,
 } from '@eshyra/core/internal';
 import { debugDir } from './dataRoot.js';
 
@@ -76,29 +77,55 @@ export function createFileSessionDebugSink(
     (options.warn ?? ((m: string) => console.error(m)))(message);
   };
 
+  const appendStructural = (
+    sessionId: string | undefined,
+    line: unknown,
+  ): void => {
+    if (!dirReady) {
+      mkdirSync(options.dir, { recursive: true });
+      dirReady = true;
+    }
+    const session = safeName(sessionId ?? 'unknown-session');
+    appendFileSync(
+      join(options.dir, `${session}.jsonl`),
+      `${JSON.stringify({ at: now(), ...(line as object) })}\n`,
+    );
+  };
+
   return {
     captureContent: options.captureContent,
     record(event: ModelCallDebugEvent): void {
       try {
-        if (!dirReady) {
-          mkdirSync(options.dir, { recursive: true });
-          dirReady = true;
-        }
-        const session = safeName(event.trace.sessionId ?? 'unknown-session');
-        const at = now();
         // Structural log: strip any captured content so the default artifact is
         // never sensitive.
         const { content, ...structural } = event;
-        appendFileSync(
-          join(options.dir, `${session}.jsonl`),
-          `${JSON.stringify({ at, ...structural })}\n`,
-        );
+        appendStructural(event.trace.sessionId, structural);
         if (options.captureContent && content !== undefined) {
+          if (!dirReady) {
+            mkdirSync(options.dir, { recursive: true });
+            dirReady = true;
+          }
           appendFileSync(
-            join(options.dir, `${session}.sensitive.jsonl`),
-            `${JSON.stringify({ at, ...event })}\n`,
+            join(
+              options.dir,
+              `${safeName(event.trace.sessionId ?? 'unknown-session')}.sensitive.jsonl`,
+            ),
+            `${JSON.stringify({ at: now(), ...event })}\n`,
           );
         }
+      } catch (err) {
+        warn(
+          `session debug logging failed (continuing without it): ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
+    },
+    // Mechanics-audit verdicts (eshyra-oobh) are structural by construction —
+    // names, counts, and labels only — so they go straight into the default log.
+    recordAudit(event: TurnAuditDebugEvent): void {
+      try {
+        appendStructural(event.trace.sessionId, event);
       } catch (err) {
         warn(
           `session debug logging failed (continuing without it): ${

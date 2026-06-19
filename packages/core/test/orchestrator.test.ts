@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  AuditVerdict,
   Db,
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,
+  SessionDebugSink,
+  TurnAuditDebugEvent,
+  TurnAuditInput,
+  TurnAuditor,
 } from '../src/internal.js';
 import {
   createDefaultToolRegistry,
@@ -937,6 +942,222 @@ describe('orchestrator turn loop', () => {
     );
 
     expect(model.seen[0].system).toContain('```tool_call');
+    db.close();
+  });
+});
+
+/** A {@link TurnAuditor} replaying a scripted sequence of verdicts. */
+class ScriptedAuditor implements TurnAuditor {
+  private index = 0;
+  readonly seen: TurnAuditInput[] = [];
+  readonly modelId = 'claude-audit-test';
+  constructor(private readonly verdicts: AuditVerdict[]) {}
+  audit(input: TurnAuditInput): Promise<AuditVerdict> {
+    this.seen.push(input);
+    const verdict = this.verdicts[this.index] ?? {
+      verdict: 'accept',
+      missingRequiredTools: [],
+      reason: '',
+      repairInstruction: '',
+    };
+    this.index += 1;
+    return Promise.resolve(verdict);
+  }
+}
+
+const accept: AuditVerdict = {
+  verdict: 'accept',
+  missingRequiredTools: [],
+  reason: 'ok',
+  repairInstruction: '',
+};
+const rejectRoll: AuditVerdict = {
+  verdict: 'reject',
+  missingRequiredTools: ['roll'],
+  reason: 'dice asserted without roll',
+  repairInstruction: 'Call the roll tool before narrating the result.',
+};
+
+function collectingAuditSink(): SessionDebugSink & {
+  audits: TurnAuditDebugEvent[];
+} {
+  const audits: TurnAuditDebugEvent[] = [];
+  return {
+    captureContent: false,
+    record: () => {},
+    recordAudit: (e) => audits.push(e),
+    audits,
+  };
+}
+
+describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
+  it('accepts a candidate whose mechanical claim is backed by an executed tool', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new StructuredScriptedModel([
+      {
+        text: 'You strike for 11.',
+        executedToolCalls: [
+          {
+            name: 'roll',
+            args: { dice: '2d8' },
+            result: { ok: true, data: { total: 11 } },
+          },
+        ],
+        stopReason: 'end_turn',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([accept]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.narration).toBe('You strike for 11.');
+    // The auditor saw the executed (MCP) roll as evidence.
+    expect(auditor.seen[0].executedToolCalls.map((c) => c.tool)).toEqual([
+      'roll',
+    ]);
+    expect(auditor.seen[0].executedToolCalls[0].source).toBe('native-mcp');
+    const trace = getTurnTrace(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      turnId: 'turn-1',
+    });
+    expect(trace?.finalNarration).toBe('You strike for 11.');
+    db.close();
+  });
+
+  it('accepts a purely narrative response with no mechanical claim', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel(['The tavern is warm and loud.']);
+    const auditor = new ScriptedAuditor([accept]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(auditor.seen).toHaveLength(1);
+    db.close();
+  });
+
+  it('rejects an improvised dice result, retries once, and accepts the repaired candidate', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    // 1st candidate: improvised dice, no tool. 2nd candidate: rolls properly.
+    const model = new StructuredScriptedModel([
+      { text: 'You rolled an 11 on 2d8.', stopReason: 'end_turn' },
+      {
+        text: 'The dice land: 11 total.',
+        executedToolCalls: [
+          {
+            name: 'roll',
+            args: { dice: '2d8' },
+            result: { ok: true, data: { total: 11 } },
+          },
+        ],
+        stopReason: 'end_turn',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([rejectRoll, accept]);
+    const sink = collectingAuditSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        debug: sink,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    // Only the repaired candidate is shown/persisted.
+    expect(result.narration).toBe('The dice land: 11 total.');
+    const log = listSceneLog(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-0',
+    });
+    const dmLines = log.filter((e) => e.role === 'dm').map((e) => e.content);
+    expect(dmLines).toEqual(['The dice land: 11 total.']);
+    expect(dmLines).not.toContain('You rolled an 11 on 2d8.');
+    // The retry received a corrective note naming the missing tool.
+    expect(model.seen).toHaveLength(2);
+    expect(model.seen[1].messages[0].content).toContain('Correction Required');
+    expect(model.seen[1].messages[0].content).toContain('roll');
+    // Debug recorded both verdicts with their actions.
+    expect(sink.audits.map((a) => `${a.verdict}:${a.action}`)).toEqual([
+      'reject:retry',
+      'accept:accept',
+    ]);
+    expect(sink.audits[0].missingRequiredTools).toEqual(['roll']);
+    expect(sink.audits[0].auditorModel).toBe('claude-audit-test');
+    db.close();
+  });
+
+  it('fails the turn (rolling everything back) when the retry also fails audit', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel([
+      'You rolled an 11 on 2d8.',
+      'You still rolled an 11.',
+    ]);
+    const auditor = new ScriptedAuditor([rejectRoll, rejectRoll]);
+    const sink = collectingAuditSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        debug: sink,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.narration).toBe('');
+    // Neither rejected candidate reached the scene log / turn trace.
+    const log = listSceneLog(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-0',
+    });
+    expect(log.filter((e) => e.role === 'dm')).toHaveLength(0);
+    expect(
+      getTurnTrace(db, {
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        turnId: 'turn-1',
+      }),
+    ).toBeUndefined();
+    // The second verdict's action is the terminal failure.
+    expect(sink.audits.map((a) => a.action)).toEqual(['retry', 'fail']);
+    db.close();
+  });
+
+  it('does not audit when no auditor is wired (legacy/test path)', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel(['You rolled an 11 with no tool.']);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput(),
+    );
+
+    // Without an auditor the candidate is accepted unconditionally.
+    expect(result.ok).toBe(true);
+    expect(result.narration).toBe('You rolled an 11 with no tool.');
     db.close();
   });
 });

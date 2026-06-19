@@ -7,8 +7,9 @@ import type {
   RunTurnResult,
   SessionCheckpointRunner,
   ToolRegistry,
+  TurnAuditor,
 } from '@eshyra/core';
-import type { MemoryConfig } from '@eshyra/core/internal';
+import type { MemoryConfig, SessionDebugSink } from '@eshyra/core/internal';
 
 /** Player-facing input/output seam. A terminal impl is {@link nodeIO}. */
 export interface CliIO {
@@ -34,6 +35,17 @@ export interface PlayDeps {
   model: ModelClient;
   /** Tool registry passed straight to `runTurn`. */
   registry: ToolRegistry;
+  /**
+   * Mechanics-audit gate (eshyra-oobh) passed straight to `runTurn`. Enforces
+   * canonical tool use before a candidate DM response is shown/persisted. Omitted
+   * in tests that exercise the loop without an auditor.
+   */
+  auditor?: TurnAuditor;
+  /**
+   * Opt-in session debug sink (eshyra-iu18 / eshyra-oobh) passed to `runTurn` so
+   * audit verdicts are logged alongside the model-call diagnostics.
+   */
+  debug?: SessionDebugSink;
   /**
    * Run one orchestrated turn. Injected (rather than imported) so the loop is
    * exercisable in tests without a live model — defaults to the core `runTurn`.

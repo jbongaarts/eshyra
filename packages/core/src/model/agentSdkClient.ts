@@ -7,6 +7,7 @@ import {
   type SessionDebugSink,
 } from '../debug/sessionDebug.js';
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
+import { buildChildSdkEnv } from './agentSdkEnv.js';
 import type {
   ModelClient,
   ModelCompleteInput,
@@ -125,11 +126,12 @@ export class AgentSdkModelClient implements ModelClient {
         options: {
           model: this.#model,
           ...(input.system ? { systemPrompt: input.system } : {}),
-          // Auth env is merged OVER process.env so the SDK subprocess keeps its
-          // inherited environment (PATH, ...) while the explicit secret wins.
-          // Omitted entirely when no auth source is set, so the SDK keeps its
-          // default ambient-`process.env` behaviour.
-          ...(auth ? { env: { ...process.env, ...auth.env } } : {}),
+          // With an explicit credential, build a child env that strips every
+          // inherited provider credential before applying the selected one, so an
+          // ambient ANTHROPIC_API_KEY cannot shadow a chosen subscription token
+          // (eshyra-oobh). Omitted entirely when no auth source is set, so the SDK
+          // keeps its default ambient-`process.env` behaviour.
+          ...(auth ? { env: buildChildSdkEnv(auth.env) } : {}),
         },
       })) {
         if (message.type === 'result') {

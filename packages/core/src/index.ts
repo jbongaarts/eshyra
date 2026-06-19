@@ -74,7 +74,7 @@ export type {
   ProviderAuthMode,
 } from './config.js';
 // Configuration.
-export { ConfigError, loadConfig } from './config.js';
+export { ConfigError, DEFAULT_AUDIT_MODEL, loadConfig } from './config.js';
 export type { ComposeArcSummaryInput } from './memory/arcSummary.js';
 export { composeArcSummary } from './memory/arcSummary.js';
 export type { ExtractCampaignBibleInput } from './memory/campaignBibleExtractor.js';
@@ -173,6 +173,17 @@ export {
   DEFAULT_TOOLS,
   ToolRegistry,
 } from './orchestrator/tools.js';
+export type {
+  AuditVerdict,
+  TurnAuditInput,
+  TurnAuditor,
+} from './orchestrator/turnAuditor.js';
+// Mechanics-audit gate (eshyra-oobh): the turn-referee that enforces canonical
+// tool use before a candidate DM response is shown or persisted.
+export {
+  AuditError,
+  ModelTurnAuditor,
+} from './orchestrator/turnAuditor.js';
 export { DoltUnavailableError } from './persistence/checkpoint/doltBinary.js';
 export type {
   DoltInstallPrompt,

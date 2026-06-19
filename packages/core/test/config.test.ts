@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, loadConfig } from '../src/config.js';
+import { ConfigError, DEFAULT_AUDIT_MODEL, loadConfig } from '../src/config.js';
 import { DEFAULT_PROFILE_REGISTRY, getProfile } from '../src/model/profiles.js';
 
 describe('loadConfig', () => {
@@ -12,9 +12,20 @@ describe('loadConfig', () => {
     expect(cfg).toEqual({
       campaignDbPath: './campaigns/x.db',
       model: 'claude-opus-4-7',
+      auditModel: DEFAULT_AUDIT_MODEL,
       dmProfile: DEFAULT_PROFILE_REGISTRY.premium_dm,
       auth: { mode: 'api-key', env: { ANTHROPIC_API_KEY: 'sk-test' } },
     });
+  });
+
+  it('resolves the audit model from ESHYRA_AUDIT_MODEL, else the fast default', () => {
+    const def = loadConfig({ ANTHROPIC_API_KEY: 'sk-test' });
+    expect(def.auditModel).toBe(DEFAULT_AUDIT_MODEL);
+    const overridden = loadConfig({
+      ANTHROPIC_API_KEY: 'sk-test',
+      ESHYRA_AUDIT_MODEL: 'claude-custom-audit',
+    });
+    expect(overridden.auditModel).toBe('claude-custom-audit');
   });
 
   it('defaults the model to the premium_dm profile when unset', () => {

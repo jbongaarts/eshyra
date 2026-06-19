@@ -13,6 +13,14 @@ import {
  */
 export type ProviderAuthMode = 'api-key' | 'oauth-token';
 
+/**
+ * Default mechanics-audit model (eshyra-oobh): the cheapest/fastest current
+ * Claude tier, appropriate for the bounded tool-use judgement the auditor makes.
+ * Overridable via `ESHYRA_AUDIT_MODEL`. The auditor always uses the same provider
+ * auth as the primary DM, so this must be entitled on that subscription/key.
+ */
+export const DEFAULT_AUDIT_MODEL = 'claude-haiku-4-5-20251001';
+
 /** Resolved provider authentication for the Agent SDK adapter. */
 export interface ProviderAuth {
   mode: ProviderAuthMode;
@@ -41,6 +49,16 @@ export interface EshyraConfig {
    * wins, for backward compatibility with the pre-registry flat config path.
    */
   model: string;
+  /**
+   * Model id for the mechanics-audit / turn-referee call (eshyra-oobh). A small,
+   * fast model is appropriate — the audit is a bounded tool-use judgement, not
+   * narration. Resolved from `ESHYRA_AUDIT_MODEL`, defaulting to
+   * {@link DEFAULT_AUDIT_MODEL}. It runs under the SAME provider auth as the
+   * primary DM (never independently API-billed), so it must be a model the
+   * resolved subscription/credential is entitled to. Set `ESHYRA_AUDIT_MODEL` to
+   * the primary model if a smaller model is not available on the subscription.
+   */
+  auditModel: string;
   /**
    * Resolved `premium_dm` profile entry (provider + model + tier) from the
    * profile registry, including any `ESHYRA_PROFILE_PREMIUM_DM_*` overrides.
@@ -124,6 +142,10 @@ export function loadConfig(
   // (its own ESHYRA_PROFILE_PREMIUM_DM_MODEL override, or the default).
   const model = env.ESHYRA_MODEL?.trim() || dmProfile.model;
 
+  // The mechanics-audit model defaults to a fast tier and runs under the same
+  // provider auth as the primary DM (eshyra-oobh).
+  const auditModel = env.ESHYRA_AUDIT_MODEL?.trim() || DEFAULT_AUDIT_MODEL;
+
   // The CLI ships only the Claude Agent SDK adapter, so the resolved DM
   // profile must select the `anthropic` provider. A non-anthropic override
   // would otherwise be silently ignored.
@@ -133,5 +155,5 @@ export function loadConfig(
     );
   }
 
-  return { campaignDbPath, model, dmProfile, auth };
+  return { campaignDbPath, model, auditModel, dmProfile, auth };
 }

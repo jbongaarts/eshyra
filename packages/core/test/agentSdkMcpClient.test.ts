@@ -344,6 +344,26 @@ describe('AgentSdkMcpModelClient', () => {
       expect(arg.options.env.ESHYRA_MCP_AMBIENT).toBe('ambient');
     });
 
+    it('strips an ambient ANTHROPIC_API_KEY so it cannot shadow the subscription token (eshyra-oobh)', async () => {
+      queryMock.mockImplementation((arg: QueryArg) => driveSdk({ arg }));
+      process.env.ANTHROPIC_API_KEY = 'sk-ambient-must-not-bill';
+      try {
+        await new AgentSdkMcpModelClient('m', {
+          env: { CLAUDE_CODE_OAUTH_TOKEN: 'oauth-sub-token' },
+        }).complete({
+          messages: [{ role: 'user', content: 'hi' }],
+          tools: [rollDef],
+          executeTool: executorReturning({ ok: true, data: {} }),
+        });
+      } finally {
+        Reflect.deleteProperty(process.env, 'ANTHROPIC_API_KEY');
+      }
+      const arg = queryMock.mock.calls[0][0] as QueryArg;
+      // Subscription auth is exclusive: the API key never reaches the child.
+      expect('ANTHROPIC_API_KEY' in arg.options.env).toBe(false);
+      expect(arg.options.env.CLAUDE_CODE_OAUTH_TOKEN).toBe('oauth-sub-token');
+    });
+
     it('confines the secret to options.env — never the prompt or model', async () => {
       queryMock.mockImplementation((arg: QueryArg) => driveSdk({ arg }));
       const secret = 'oauth-DO-NOT-LEAK';
