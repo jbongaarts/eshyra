@@ -46,6 +46,22 @@ const VALID_BIBLE_OUTPUT =
   '```';
 
 describe('extractCampaignBible', () => {
+  it('stamps campaign_bible usage trace with the campaign id (eshyra-f0hj)', async () => {
+    let captured: ModelCompleteInput | undefined;
+    const model = fakeModel((input) => {
+      captured = input;
+      return VALID_BIBLE_OUTPUT;
+    });
+    await extractCampaignBible(model, {
+      campaignId: 'camp-1',
+      recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],
+    });
+    expect(captured?.trace?.campaignId).toBe('camp-1');
+    // Bible extraction spans many recaps, so it carries no single sessionId.
+    expect(captured?.trace?.sessionId).toBeUndefined();
+    expect(captured?.trace?.extra?.purpose).toBe('campaign_bible');
+  });
+
   it('parses a valid fenced bible_json block from the model', async () => {
     const model = fakeModel(() => VALID_BIBLE_OUTPUT);
     const bible = await extractCampaignBible(model, {

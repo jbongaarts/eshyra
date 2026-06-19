@@ -29,6 +29,7 @@ function rec(overrides: Partial<ModelUsageRecord> = {}): ModelUsageRecord {
     campaignId: 'camp-1',
     sessionId: 'sess-1',
     turnId: 'turn-1',
+    arcId: null,
     purpose: 'gameplay_turn',
     model: 'claude-opus-4-8',
     profile: 'premium_dm',
@@ -303,6 +304,35 @@ describe('ModelUsageStore', () => {
       expect(summary.totalCalls).toBe(1);
     });
 
+    it('persists and filters by arcId for maintenance calls (eshyra-f0hj)', () => {
+      const dir = workDir();
+      const store = new ModelUsageStore(join(dir, 'usage.db'));
+      store.record(
+        rec({
+          purpose: 'arc_rollup',
+          campaignId: 'camp-1',
+          sessionId: null,
+          turnId: null,
+          arcId: 'arc-1',
+        }),
+      );
+      store.record(
+        rec({
+          purpose: 'arc_rollup',
+          campaignId: 'camp-1',
+          sessionId: null,
+          turnId: null,
+          arcId: 'arc-2',
+        }),
+      );
+      const summary = store.query({ arcId: 'arc-1' });
+      store.close();
+      expect(summary.totalCalls).toBe(1);
+      expect(summary.byPurpose).toEqual([
+        expect.objectContaining({ label: 'arc_rollup', calls: 1 }),
+      ]);
+    });
+
     it('filters by since (inclusive)', () => {
       const dir = workDir();
       const store = populatedStore(dir);
@@ -438,7 +468,8 @@ describe('turn timing diagnostics (eshyra-17ng)', () => {
   it('migrates a pre-eshyra-17ng model_usage table by adding the new columns', () => {
     const dir = workDir();
     const dbPath = join(dir, 'usage.db');
-    // Create an old-schema model_usage table without attempt/round/failure_kind.
+    // Create an old-schema model_usage table without
+    // attempt/round/failure_kind/arc_id.
     const legacy = openDatabase(dbPath);
     legacy.exec(`
       CREATE TABLE model_usage (
@@ -454,9 +485,15 @@ describe('turn timing diagnostics (eshyra-17ng)', () => {
     // Opening the store must add the missing columns rather than fail on insert.
     const store = new ModelUsageStore(dbPath);
     expect(() => store.record(rec({ attempt: 3, round: 2 }))).not.toThrow();
+    // The arc_id column added by eshyra-f0hj must also exist after migration.
+    expect(() =>
+      store.record(rec({ purpose: 'arc_rollup', arcId: 'arc-9' })),
+    ).not.toThrow();
     const turn = store.timeline()[0];
+    const arcMatch = store.query({ arcId: 'arc-9' });
     store.close();
     expect(turn.modelCalls[0].attempt).toBe(3);
+    expect(arcMatch.totalCalls).toBe(1);
   });
 });
 

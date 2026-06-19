@@ -63,6 +63,13 @@ export async function extractCampaignBible(
     // response. Adapters with a native JSON mode (e.g. provider response_format)
     // may opt in; today's Agent SDK adapter ignores the hint per the contract.
     responseFormat: 'json',
+    // Usage attribution (eshyra-f0hj): mark this maintenance call so `eshyra
+    // usage` groups it as a campaign-bible extraction rather than a generic
+    // maintenance call. Spans many recaps, so it carries no single sessionId.
+    trace: {
+      campaignId: input.campaignId,
+      extra: { purpose: 'campaign_bible' },
+    },
   });
   return parseBibleResponse(result.text);
 }

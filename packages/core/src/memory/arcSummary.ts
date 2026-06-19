@@ -49,6 +49,14 @@ export async function composeArcSummary(
   const result = await model.complete({
     system: ARC_SUMMARY_SYSTEM_PROMPT,
     messages,
+    // Usage attribution (eshyra-f0hj): mark this maintenance call as an arc
+    // rollup and stamp the arc it summarizes. Spans many sessions, so it
+    // carries no single sessionId.
+    trace: {
+      campaignId: input.campaignId,
+      arcId: input.arcId,
+      extra: { purpose: 'arc_rollup' },
+    },
   });
   return result.text;
 }
