@@ -132,18 +132,7 @@ describe('AgentSdkModelClient', () => {
     await expect(
       new AgentSdkModelClient('m').complete({
         messages: [{ role: 'user', content: 'hi' }],
-        tools: [
-          {
-            name: 'roll',
-            description: 'roll dice',
-            inputSchema: {
-              type: 'object',
-              properties: { dice: { type: 'string' } },
-              required: ['dice'],
-              additionalProperties: false,
-            },
-          },
-        ],
+        tools: [rollTool],
       }),
     ).rejects.toThrowError(ModelClientError);
 

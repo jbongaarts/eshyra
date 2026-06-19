@@ -1201,9 +1201,13 @@ class BridgeMcpModel implements ModelClient {
     const round = this.rounds[this.index] ?? { calls: [], text: '' };
     this.index += 1;
     const executed: ProviderExecutedToolCall[] = [];
+    const { executeTool } = input;
     for (const c of round.calls) {
+      if (executeTool === undefined) {
+        throw new Error('BridgeMcpModel requires an executeTool bridge');
+      }
       // Same bridge the real adapter's in-process MCP handlers call.
-      const result = await input.executeTool!({ name: c.name, args: c.args });
+      const result = await executeTool({ name: c.name, args: c.args });
       executed.push({ name: c.name, args: c.args, result });
     }
     if (round.throwAfter) {
