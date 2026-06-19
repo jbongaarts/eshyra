@@ -72,6 +72,50 @@ export interface ModelAdapterCapabilities {
 }
 
 /**
+ * Raised when a model adapter that cannot transport Eshyra tools natively is
+ * selected for released gameplay (eshyra-qa9d). Thrown by
+ * {@link assertGameplayCapable} at startup — before any turn runs — so a
+ * misconfigured gameplay path fails loudly with an actionable message rather
+ * than silently running a DM with no real tools (the fenced-text failure mode
+ * of eshyra-eznk).
+ */
+export class UnsupportedGameplayProviderError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnsupportedGameplayProviderError';
+  }
+}
+
+/**
+ * Enforce ADR 0010's gameplay-support rule at startup: a provider is supported
+ * for released gameplay ONLY if its adapter forwards Eshyra's provider-neutral
+ * tool definitions through a native tool channel (`api-native` or `agent-mcp`).
+ * Fenced-text adapters declare `gameplayCapable: false`; selecting one for
+ * gameplay throws {@link UnsupportedGameplayProviderError} here so play never
+ * begins with tools that are described but not transported.
+ *
+ * `role` labels the call site (e.g. `'primary DM'`, `'mechanics auditor'`) so a
+ * misconfiguration names which model was at fault. The check reads the static
+ * {@link ModelAdapterCapabilities} a concrete adapter exposes; it does not make
+ * a provider call.
+ */
+export function assertGameplayCapable(
+  capabilities: ModelAdapterCapabilities,
+  role = 'gameplay',
+): void {
+  if (capabilities.gameplayCapable) {
+    return;
+  }
+  throw new UnsupportedGameplayProviderError(
+    `The selected ${role} model adapter (vendor=${capabilities.vendor}, ` +
+      `toolTransport=${capabilities.toolTransport}) cannot transport Eshyra ` +
+      'tools natively, so it is not supported for released gameplay (ADR 0010). ' +
+      'Fenced-text tool calls are not a supported gameplay protocol. Use an ' +
+      'adapter with native or MCP tool transport (e.g. AgentSdkMcpModelClient).',
+  );
+}
+
+/**
  * Provider-neutral profile metadata threaded through the call site
  * (eshyra-0jq.11). Adapters may use this for routing, logging, or
  * rate-limit shaping. Never contains provider-specific identifiers.

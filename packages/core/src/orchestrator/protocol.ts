@@ -2,15 +2,22 @@ import type { ToolRequest } from './toolRequest.js';
 import type { ToolRegistry, ToolResult } from './tools.js';
 
 /**
- * DM system prompt and the fenced text-channel tool-call protocol (E5).
+ * DM system prompt builder plus the legacy/test-only fenced text-channel
+ * tool-call protocol (E5).
  *
- * This module owns the *fenced* transport: the model emits fenced ```tool_call
- * blocks, this parser turns them into the transport-neutral {@link ToolRequest}
- * shape the orchestrator executes, and `renderToolResults` feeds ```tool_result
- * blocks back. When the model replies with no tool_call block, that reply is the
- * final narration. Native provider tool use is a separate producer of the same
- * {@link ToolRequest} shape; the loop does not care which transport a request
- * arrived through once it has been normalized.
+ * Released gameplay runs on the `native` transport: the provider's native tool
+ * channel (api-native) or in-process MCP server (agent-mcp) carries the Eshyra
+ * tool definitions, and {@link buildSystemPrompt} therefore DEFAULTS to `native`
+ * (ADR 0010, eshyra-qa9d). The fenced transport — the model emits fenced
+ * ```tool_call blocks, {@link parseToolCalls} turns them into the
+ * transport-neutral {@link ToolRequest} shape, and {@link renderToolResults}
+ * feeds ```tool_result blocks back — is NOT a supported gameplay protocol. It is
+ * retained only for the deterministic offline test harness (a scripted
+ * ModelClient with no native tool channel), reachable solely by passing
+ * `toolProtocol: 'fenced'` explicitly. When the model replies with no tool_call
+ * block, that reply is the final narration. Native provider tool use is a
+ * separate producer of the same {@link ToolRequest} shape; the loop does not
+ * care which transport a request arrived through once it has been normalized.
  */
 
 const TOOL_CALL_FENCE = /```tool_call[^\S\n]*\n([\s\S]*?)```/g;
@@ -91,28 +98,34 @@ export function renderToolResults(
  *    native-tool models into reporting the described tools were "not present"
  *    (eshyra-eznk). The model calls tools through the provider mechanism.
  *  - `fenced`: legacy/test-only transport where the model emits fenced
- *    ```tool_call blocks parsed out of its text. Retained for adapters with no
- *    native tool channel and for deterministic offline tests.
+ *    ```tool_call blocks parsed out of its text. NOT a supported gameplay
+ *    protocol (ADR 0010) — retained only for the deterministic offline test
+ *    harness, and never selected by default.
  */
 export type ToolProtocol = 'native' | 'fenced';
 
 export interface BuildSystemPromptOptions {
-  /** Tool transport the prompt should describe. Defaults to `fenced` (legacy). */
+  /**
+   * Tool transport the prompt should describe. Defaults to `native` (the
+   * released gameplay transport, ADR 0010). Pass `fenced` only for a
+   * legacy/test ModelClient that has no native tool channel.
+   */
   readonly toolProtocol?: ToolProtocol;
 }
 
 /**
  * Build the DM system prompt: persona plus the refined-Hybrid rules contract,
  * with the live tool roster and a transport-appropriate tool-call protocol
- * section. With `toolProtocol: 'native'` the fenced-block instructions are
- * replaced by guidance to use the provider-native tool interface; with the
- * default `fenced` the legacy fenced protocol spec is appended.
+ * section. With the default `native` the prompt instructs the model to use the
+ * provider-native tool interface and explicitly NOT to emit fenced ```tool_call
+ * blocks; passing `fenced` appends the legacy fenced protocol spec for the
+ * offline test harness only.
  */
 export function buildSystemPrompt(
   registry: ToolRegistry,
   options?: BuildSystemPromptOptions,
 ): string {
-  const toolProtocol = options?.toolProtocol ?? 'fenced';
+  const toolProtocol = options?.toolProtocol ?? 'native';
   const toolLines = registry
     .list()
     .sort()
