@@ -10,10 +10,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * native (not fenced) debug protocol mode, and the error path.
  */
 
-const { createMock, ctorMock } = vi.hoisted(() => ({
-  createMock: vi.fn(),
-  ctorMock: vi.fn(),
-}));
+const { createMock, ctorMock, MockRateLimitError } = vi.hoisted(() => {
+  class MockRateLimitError extends Error {
+    readonly status = 429;
+    readonly headers: Map<string, string>;
+    constructor(message: string, headers: Record<string, string> = {}) {
+      super(message);
+      this.name = 'RateLimitError';
+      this.headers = new Map(Object.entries(headers));
+    }
+    // Minimal Headers-compatible .get() used by the adapter.
+    get(name: string): string | null {
+      return this.headers.get(name) ?? null;
+    }
+  }
+  return {
+    createMock: vi.fn(),
+    ctorMock: vi.fn(),
+    MockRateLimitError,
+  };
+});
 
 vi.mock('@anthropic-ai/sdk', () => {
   class MockAnthropic {
@@ -22,7 +38,7 @@ vi.mock('@anthropic-ai/sdk', () => {
       ctorMock(options);
     }
   }
-  return { default: MockAnthropic };
+  return { default: MockAnthropic, RateLimitError: MockRateLimitError };
 });
 
 import type { ModelCallDebugEvent } from '../src/debug/sessionDebug.js';
@@ -31,7 +47,7 @@ import {
   ANTHROPIC_NATIVE_TOOL_PROTOCOL,
   AnthropicNativeModelClient,
 } from '../src/model/anthropicNativeClient.js';
-import { ModelClientError } from '../src/model/client.js';
+import { ModelClientError, ModelRateLimitError } from '../src/model/client.js';
 
 /** A collecting {@link import('../src/debug/sessionDebug.js').SessionDebugSink}. */
 function collectingSink(captureContent = false): {
@@ -438,6 +454,48 @@ describe('AnthropicNativeModelClient', () => {
           messages: [{ role: 'user', content: 'x' }],
         }),
       ).rejects.toThrowError(ModelClientError);
+    });
+
+    it('throws ModelRateLimitError (instanceof ModelClientError) when the SDK throws RateLimitError', async () => {
+      createMock.mockRejectedValue(
+        new MockRateLimitError('429 rate_limit_error'),
+      );
+      await expect(
+        new AnthropicNativeModelClient('m').complete({
+          messages: [{ role: 'user', content: 'x' }],
+        }),
+      ).rejects.toBeInstanceOf(ModelRateLimitError);
+    });
+
+    it('populates retryAfterSeconds from the Retry-After header', async () => {
+      createMock.mockRejectedValue(
+        new MockRateLimitError('429 rate_limit_error', { 'retry-after': '45' }),
+      );
+      const err = await new AnthropicNativeModelClient('m')
+        .complete({ messages: [{ role: 'user', content: 'x' }] })
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(ModelRateLimitError);
+      expect((err as ModelRateLimitError).retryAfterSeconds).toBe(45);
+    });
+
+    it('leaves retryAfterSeconds undefined when no Retry-After header is present', async () => {
+      createMock.mockRejectedValue(
+        new MockRateLimitError('429 rate_limit_error'),
+      );
+      const err = await new AnthropicNativeModelClient('m')
+        .complete({ messages: [{ role: 'user', content: 'x' }] })
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(ModelRateLimitError);
+      expect((err as ModelRateLimitError).retryAfterSeconds).toBeUndefined();
+    });
+
+    it('throws a generic ModelClientError for non-rate-limit SDK errors', async () => {
+      createMock.mockRejectedValue(new Error('connection reset'));
+      const err = await new AnthropicNativeModelClient('m')
+        .complete({ messages: [{ role: 'user', content: 'x' }] })
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(ModelClientError);
+      expect(err).not.toBeInstanceOf(ModelRateLimitError);
     });
 
     it('redacts secrets from the thrown error message', async () => {

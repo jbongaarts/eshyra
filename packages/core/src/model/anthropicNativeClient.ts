@@ -1,4 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic, {
+  RateLimitError as AnthropicRateLimitError,
+} from '@anthropic-ai/sdk';
 import {
   buildModelCallEvent,
   type ModelCallOutcome,
@@ -17,7 +19,7 @@ import type {
   ModelToolResult,
   ModelUsage,
 } from './client.js';
-import { ModelClientError } from './client.js';
+import { ModelClientError, ModelRateLimitError } from './client.js';
 import type { ModelToolDefinition } from './toolSchema.js';
 
 /**
@@ -254,6 +256,19 @@ export class AnthropicNativeModelClient implements ModelClient {
         ok: false,
         error: message,
       });
+      if (err instanceof AnthropicRateLimitError) {
+        const retryAfterRaw = err.headers?.get('retry-after');
+        const retryAfterSeconds =
+          retryAfterRaw !== null && retryAfterRaw !== undefined
+            ? Number.parseInt(retryAfterRaw, 10)
+            : undefined;
+        throw new ModelRateLimitError(
+          `Anthropic API rate limit: ${message}`,
+          retryAfterSeconds !== undefined && Number.isFinite(retryAfterSeconds)
+            ? retryAfterSeconds
+            : undefined,
+        );
+      }
       throw new ModelClientError(`Anthropic API call failed: ${message}`);
     }
 

@@ -15,6 +15,7 @@ import type {
 } from '../memory/turnTrace.js';
 import { recordTurnTrace } from '../memory/turnTrace.js';
 import type { ModelClient } from '../model/client.js';
+import { ModelRateLimitError } from '../model/client.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
@@ -118,6 +119,10 @@ export interface RunTurnResult {
   sceneId: string | undefined;
   modelRounds: number;
   error: string | undefined;
+  /** True when the turn failed because the provider rate-limited the request. */
+  isRateLimit: boolean;
+  /** Provider-reported retry delay in seconds, when available. */
+  retryAfterSeconds?: number;
 }
 
 /** Developer-facing message for a turn that failed the mechanics audit twice. */
@@ -430,6 +435,7 @@ export async function runTurn(
       sceneId: activeScene.sceneId,
       modelRounds: rounds,
       error: undefined,
+      isRateLimit: false,
     };
   } catch (e) {
     db.exec(`ROLLBACK TO ${TURN_SAVEPOINT}`);
@@ -456,6 +462,10 @@ export async function runTurn(
     const error = sanitizeDiagnosticMessage(
       e instanceof Error ? e.message : String(e),
     );
+    const isRateLimit = e instanceof ModelRateLimitError;
+    const retryAfterSeconds = isRateLimit
+      ? (e as ModelRateLimitError).retryAfterSeconds
+      : undefined;
     try {
       recordTurnFailureDiagnostic(db, {
         campaignId: input.campaignId,
@@ -477,6 +487,8 @@ export async function runTurn(
       sceneId: undefined,
       modelRounds: rounds,
       error,
+      isRateLimit,
+      ...(retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
     };
   }
 }
