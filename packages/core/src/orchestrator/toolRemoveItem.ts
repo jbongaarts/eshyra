@@ -13,9 +13,13 @@ export const removeItemTool: Tool = {
   name: 'remove_item',
   // Writes inventory rows — a canon write (eshyra-dwkm).
   mutates: true,
+  // Only valid when player explicitly drops, uses, or loses an item (eshyra-4ia4).
+  requiresExplicitAction: true,
   description:
     'Remove an item or reduce its quantity. Omit quantity to remove the item entirely. ' +
-    'If quantity would drop to zero or below, the item is deleted.',
+    'If quantity would drop to zero or below, the item is deleted. ' +
+    'Call ONLY when the player explicitly drops, uses, sells, or loses an item — ' +
+    'never call to answer a question about what is currently equipped or carried.',
   inputSchema: {
     type: 'object',
     properties: {

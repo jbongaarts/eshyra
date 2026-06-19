@@ -13,9 +13,13 @@ export const giveItemTool: Tool = {
   name: 'give_item',
   // Writes inventory rows — a canon write (eshyra-dwkm).
   mutates: true,
+  // Only valid when player explicitly receives or is granted an item (eshyra-4ia4).
+  requiresExplicitAction: true,
   description:
     "Add an item to a character's inventory or update an existing one. " +
-    'Creates the item if it does not exist; updates fields if it does.',
+    'Creates the item if it does not exist; updates fields if it does. ' +
+    'Call ONLY when the player explicitly receives, purchases, or is granted an item — ' +
+    'never call to answer a question about what is currently equipped or carried.',
   inputSchema: {
     type: 'object',
     properties: {
