@@ -252,7 +252,7 @@ export class CodexSdkMcpModelClient implements ModelClient {
   readonly #debug: CodexSdkMcpDebugOptions | undefined;
 
   /**
-   * @param model Codex model id (e.g. `gpt-5-codex`).
+   * @param model Codex model id (e.g. `gpt-5.5`).
    * @param debug Optional opt-in session debug wiring (off by default).
    */
   constructor(model: string, debug?: CodexSdkMcpDebugOptions) {

@@ -443,7 +443,7 @@ describe('makeGameplayClient (provider -> adapter mapping, eshyra-6ygw)', () => 
   it('maps codex-sub to the agent-harness OpenAI adapter', () => {
     const c = makeGameplayClient(
       provider('codex-sub', 'openai', 'agent-harness'),
-      'gpt-5-codex',
+      'gpt-5.5',
       'primary DM',
     );
     expect(c.capabilities.vendor).toBe('openai');
