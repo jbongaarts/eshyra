@@ -423,6 +423,10 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
       { dbPath },
     );
   } catch (err) {
+    if (err instanceof ConfigError) {
+      console.error(formatConfigError(err));
+      return 1;
+    }
     if (err instanceof UnsupportedGameplayProviderError) {
       console.error(`gameplay provider error: ${err.message}`);
       return 1;
@@ -469,6 +473,10 @@ export async function runDemoSubcommand(): Promise<number> {
       },
     );
   } catch (err) {
+    if (err instanceof ConfigError) {
+      console.error(formatConfigError(err));
+      return 1;
+    }
     if (err instanceof UnsupportedGameplayProviderError) {
       console.error(`gameplay provider error: ${err.message}`);
       return 1;
