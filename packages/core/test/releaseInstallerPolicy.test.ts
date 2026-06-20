@@ -305,13 +305,14 @@ describe('Release installer policy', () => {
     expect(install).not.toContain('win32-x64');
   });
 
-  it('docs install path matches actual script path (eshyra-<version>-<target>)', () => {
+  it('docs install path matches actual script path (eshyra-<edition>-<version>-<target>)', () => {
     const install = readText('docs/install.md');
     const sh = readText('scripts/release/install.sh');
 
-    // Docs must describe the full artifact subdirectory name, not just <version>.
+    // Docs must describe the full artifact subdirectory name, now including the
+    // edition segment (ADR 0011), not just <version>.
     expect(install).toMatch(
-      /eshyra-<version>-<target>|eshyra-<version>-linux-x64|eshyra-<version>-windows-x64/,
+      /eshyra-<edition>-<version>-<target>|eshyra-<edition>-<version>-linux-x64|eshyra-<edition>-<version>-windows-x64/,
     );
 
     // The script itself must derive install_dir from the artifact name (not template).

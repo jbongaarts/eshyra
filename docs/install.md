@@ -14,14 +14,31 @@ installer handles download, verification, and PATH setup automatically.
 > commercial use requires a separate license. See
 > [Licensing](#licensing-and-attribution) below.
 
+## Editions
+
+Each Release ships **per-edition** archives. An edition picks which gameplay
+provider binaries are bundled. Pick the one that matches how you will play; you
+can switch later by re-running the installer with a different edition.
+
+| Edition  | Bundles                            | Pick if you play with                        |
+| -------- | ---------------------------------- | -------------------------------------------- |
+| `api`    | nothing extra (smallest)           | an API key only (no agent CLI binary needed) |
+| `claude` | Claude Agent SDK (Claude Code CLI) | a Claude Pro/Max subscription (**default**)  |
+| `codex`  | Codex SDK (`@openai/codex` CLI)    | a ChatGPT/Codex subscription                 |
+| `full`   | both agent binaries                | both subscriptions on one machine            |
+
+The **default edition is `claude`**. The one-line installer takes a flag/env var
+to select another, and (in an interactive terminal) prompts when you do not.
+See [CLI Distribution](cli-distribution.md) for the full rationale (ADR 0011).
+
 ## Supported platforms
 
-| Platform                         | Archive name                           | Format    |
-| -------------------------------- | -------------------------------------- | --------- |
-| Linux x64 (including WSL)        | `eshyra-<version>-linux-x64.tar.gz`   | `.tar.gz` |
-| Linux arm64                      | `eshyra-<version>-linux-arm64.tar.gz` | `.tar.gz` |
-| macOS (Apple Silicon / arm64)    | `eshyra-<version>-darwin-arm64.tar.gz`| `.tar.gz` |
-| Windows x64                      | `eshyra-<version>-windows-x64.zip`    | `.zip`    |
+| Platform                         | Archive name                                    | Format    |
+| -------------------------------- | ----------------------------------------------- | --------- |
+| Linux x64 (including WSL)        | `eshyra-<edition>-<version>-linux-x64.tar.gz`   | `.tar.gz` |
+| Linux arm64                      | `eshyra-<edition>-<version>-linux-arm64.tar.gz` | `.tar.gz` |
+| macOS (Apple Silicon / arm64)    | `eshyra-<edition>-<version>-darwin-arm64.tar.gz`| `.tar.gz` |
+| Windows x64                      | `eshyra-<edition>-<version>-windows-x64.zip`    | `.zip`    |
 
 Notes:
 
@@ -39,17 +56,24 @@ Notes:
 ### Linux, macOS, and WSL
 
 ```bash
+# Default (claude) edition:
 curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
+
+# Choose an edition with --edition (api | claude | codex | full):
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh -s -- --edition codex
 ```
 
 The installer:
-1. Detects your OS and CPU architecture.
-2. Queries the GitHub Releases API to find the actual archive URL for your platform.
-3. Downloads the archive and verifies its SHA-256 checksum.
-4. Installs to `${XDG_DATA_HOME:-$HOME/.local/share}/eshyra/app/eshyra-<version>-<target>/`.
-5. Creates (or repoints) a symlink at `$HOME/.local/bin/eshyra`.
-6. Prints `export PATH` guidance if `$HOME/.local/bin` is not yet on your PATH.
-7. Runs the CLI in no-config mode to confirm the install worked.
+1. Selects the edition (`--edition`, then `ESHYRA_EDITION`, then a prompt on a
+   TTY, else the `claude` default).
+2. Detects your OS and CPU architecture.
+3. Queries the GitHub Releases API to find the actual archive URL for your
+   edition + platform.
+4. Downloads the archive and verifies its SHA-256 checksum.
+5. Installs to `${XDG_DATA_HOME:-$HOME/.local/share}/eshyra/app/eshyra-<edition>-<version>-<target>/`.
+6. Creates (or repoints) a symlink at `$HOME/.local/bin/eshyra`.
+7. Prints `export PATH` guidance if `$HOME/.local/bin` is not yet on your PATH.
+8. Runs the CLI in no-config mode to confirm the install worked.
 
 It does **not** install Node.js, npm, or any system packages. It does **not**
 touch your campaign data.
@@ -59,6 +83,11 @@ touch your campaign data.
 curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | ESHYRA_VERSION=v0.1.0 sh
 ```
 
+You can combine an edition and a pinned version:
+```bash
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | ESHYRA_VERSION=v0.1.0 sh -s -- --edition codex
+```
+
 ### Windows (PowerShell)
 
 ```powershell
@@ -66,17 +95,27 @@ irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | 
 ```
 
 The installer:
-1. Detects Windows x64 (AMD64) architecture.
-2. Queries the GitHub Releases API to find the actual archive URL for Windows x64.
-3. Downloads the archive and verifies its SHA-256 checksum.
-4. Installs to `$env:LOCALAPPDATA\Eshyra\app\eshyra-<version>-windows-x64\`.
-5. Creates `$env:LOCALAPPDATA\Eshyra\bin\eshyra.cmd` pointing to the installed launcher.
-6. Adds `$env:LOCALAPPDATA\Eshyra\bin` to your user PATH if not already present.
-7. Updates the current PowerShell session PATH so `eshyra` is immediately usable.
-8. Runs the CLI in no-config mode to confirm the install worked.
+1. Selects the edition (`-Edition`, then `$env:ESHYRA_EDITION`, then a console
+   prompt, else the `claude` default).
+2. Detects Windows x64 (AMD64) architecture.
+3. Queries the GitHub Releases API to find the actual archive URL for your
+   edition + Windows x64.
+4. Downloads the archive and verifies its SHA-256 checksum.
+5. Installs to `$env:LOCALAPPDATA\Eshyra\app\eshyra-<edition>-<version>-windows-x64\`.
+6. Creates `$env:LOCALAPPDATA\Eshyra\bin\eshyra.cmd` pointing to the installed launcher.
+7. Adds `$env:LOCALAPPDATA\Eshyra\bin` to your user PATH if not already present.
+8. Updates the current PowerShell session PATH so `eshyra` is immediately usable.
+9. Runs the CLI in no-config mode to confirm the install worked.
 
 It does **not** install Node.js, npm, or any system packages. It does **not**
 touch your campaign data.
+
+**To choose an edition** under `irm … | iex`, set `$env:ESHYRA_EDITION` first
+(`-Edition` cannot be passed to `iex`):
+```powershell
+$env:ESHYRA_EDITION = 'codex'
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+```
 
 **To install a specific version**, set `$env:ESHYRA_VERSION` before piping
 (`-Version` cannot be passed to `iex`):
@@ -165,26 +204,27 @@ directories from `~/.local/share/eshyra/app/` (Linux/macOS) or
 For offline or air-gapped environments where the one-line installer cannot
 reach GitHub:
 
-1. Download the archive for your platform from the
-   [latest GitHub Release](https://github.com/jbongaarts/eshyra/releases/latest).
+1. Download the archive for your **edition** and platform from the
+   [latest GitHub Release](https://github.com/jbongaarts/eshyra/releases/latest)
+   (e.g. the `claude` edition: `eshyra-claude-<version>-linux-x64.tar.gz`).
 2. Optionally verify the SHA-256 checksum against `sha256sums.txt` on the Release:
    ```bash
    sha256sum -c --ignore-missing sha256sums.txt
    ```
 3. Unpack and run:
    ```bash
-   tar -xzf eshyra-<version>-linux-x64.tar.gz -C ~/.local/share/eshyra/app
-   ~/.local/share/eshyra/app/eshyra-<version>-linux-x64/bin/eshyra
+   tar -xzf eshyra-claude-<version>-linux-x64.tar.gz -C ~/.local/share/eshyra/app
+   ~/.local/share/eshyra/app/eshyra-claude-<version>-linux-x64/bin/eshyra
    ```
 4. Optionally create the symlink yourself:
    ```bash
-   ln -sf ~/.local/share/eshyra/app/eshyra-<version>-linux-x64/bin/eshyra ~/.local/bin/eshyra
+   ln -sf ~/.local/share/eshyra/app/eshyra-claude-<version>-linux-x64/bin/eshyra ~/.local/bin/eshyra
    ```
 
 Windows (PowerShell):
 ```powershell
-Expand-Archive -Path eshyra-<version>-windows-x64.zip -DestinationPath "$env:LOCALAPPDATA\Eshyra\app" -Force
-& "$env:LOCALAPPDATA\Eshyra\app\eshyra-<version>-windows-x64\bin\eshyra.cmd"
+Expand-Archive -Path eshyra-claude-<version>-windows-x64.zip -DestinationPath "$env:LOCALAPPDATA\Eshyra\app" -Force
+& "$env:LOCALAPPDATA\Eshyra\app\eshyra-claude-<version>-windows-x64\bin\eshyra.cmd"
 ```
 
 ## Licensing and attribution
@@ -203,6 +243,8 @@ Eshyra is **source-available and free for non-commercial use** under the
 Eshyra source-code license.** Each archive includes a `NOTICE` file with the
 required attributions. In particular, the bundled **D&D System Reference
 Document 5.1** content is licensed under **CC BY 4.0** and must retain its
-attribution. Bundled-runtime notices for Node.js, `better-sqlite3`, and the
-Claude Agent SDK ship under `THIRD-PARTY/` inside the archive. Review the
-`NOTICE` and `THIRD-PARTY/` files distributed with your download.
+attribution. Bundled-runtime notices for Node.js and `better-sqlite3`, plus any
+agent SDK your **edition** bundles (the Claude Agent SDK and/or the Codex CLI),
+ship under `THIRD-PARTY/` and `app/` inside the archive. The generated `NOTICE`
+lists exactly the provider SDKs that edition includes. Review the `NOTICE` and
+`THIRD-PARTY/` files distributed with your download.

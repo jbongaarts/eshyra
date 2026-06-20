@@ -41,11 +41,18 @@ permissions:
 
 jobs:
   build:
-    name: Build artifact (${{ matrix.os }})
+    name: Build artifact (${{ matrix.edition }}/${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        # Edition x platform grid (ADR 0011). Each edition is a per-provider
+        # subset of the bundled agent CLI binaries; the build prunes the staged
+        # app tree to the edition's subset.
+        #   api    -> lean, no agent CLI binary
+        #   claude -> Claude Agent SDK (≈ today's artifact)
+        #   codex  -> Codex CLI binary
+        #   full   -> both agent binaries
         # GitHub-hosted runners covering the target matrix:
         #   ubuntu-latest      -> linux-x64 (also the WSL target)
         #   ubuntu-24.04-arm   -> linux-arm64
@@ -53,11 +60,19 @@ jobs:
         #   windows-latest     -> windows-x64
         # macOS is supported on Apple Silicon (arm64) only; we do not ship a
         # darwin-x64 build.
+        #
+        # COST: 4 editions x 4 platforms = 16 archives per release. This
+        # multiplies release size AND CI build minutes vs. the single-artifact-
+        # per-platform model; see ADR 0011 and bead eshyra-5cd6 (artifact-size
+        # work) for the trimming/throttling follow-up.
+        edition: [api, claude, codex, full]
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-14, windows-latest]
     env:
       # Keep prebuild-install on the prebuilt-first path (ADR 0008): the bundled
       # better-sqlite3 binding must be a downloaded prebuild, not a source build.
       npm_config_build_from_source: "false"
+      # Edition selected per matrix leg; the builder also reads ESHYRA_EDITION.
+      ESHYRA_EDITION: ${{ matrix.edition }}
     steps:
       - uses: actions/checkout@v6
 
@@ -70,8 +85,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build release artifact
-        run: npm run release:build
+      - name: Build release artifact (${{ matrix.edition }} edition)
+        run: npm run release:build -- --edition "${{ matrix.edition }}"
 
       - name: Validate release artifact
         run: npm run release:validate
@@ -79,7 +94,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: eshyra-cli-${{ matrix.os }}
+          name: eshyra-cli-${{ matrix.edition }}-${{ matrix.os }}
           path: |
             dist-release/*.tar.gz
             dist-release/*.zip

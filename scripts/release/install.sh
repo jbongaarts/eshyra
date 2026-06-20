@@ -3,8 +3,19 @@
 #
 # Usage:
 #   curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
+#   curl -fsSL ...install.sh | sh -s -- --edition codex
+#
+# Editions (ADR 0011) -- pick which gameplay provider binaries are bundled:
+#   api    -- lean: api-native SDKs only, no bundled agent CLI binary (smallest)
+#   claude -- Claude Agent SDK (Claude Code CLI) bundled   [DEFAULT]
+#   codex  -- Codex SDK (@openai/codex CLI) bundled
+#   full   -- both agent binaries bundled
+# Select with `--edition <name>`, or ESHYRA_EDITION=<name>. With an interactive
+# TTY and no selection, the installer prompts (default: claude).
 #
 # Environment variables (all optional):
+#   ESHYRA_EDITION   -- which edition to install (api|claude|codex|full)
+#                       defaults to claude; --edition overrides it
 #   ESHYRA_VERSION   -- install a specific release tag, e.g. v0.1.0
 #                       pass to sh, not curl:
 #                         curl -fsSL ...install.sh | ESHYRA_VERSION=v0.1.0 sh
@@ -46,6 +57,10 @@ set -eu
 
 GITHUB_REPO="${GITHUB_REPO:-jbongaarts/eshyra}"
 
+# Single named default edition (ADR 0011). Keep in lockstep with editions.mjs
+# DEFAULT_EDITION; releaseInstallerPolicy.test.ts guards that they match.
+ESHYRA_DEFAULT_EDITION="claude"
+
 # ---------- helpers -----------------------------------------------------------
 
 die() { printf '\nerror: %s\n\n' "$1" >&2; exit 1; }
@@ -84,6 +99,76 @@ detect_platform() {
     printf '%s-%s' "$os" "$arch"
 }
 
+# ---------- edition selection -------------------------------------------------
+# Resolves which edition to install: --edition flag > ESHYRA_EDITION env >
+# interactive prompt (TTY only) > ESHYRA_DEFAULT_EDITION. Sets the EDITION global.
+
+EDITION=""
+
+validate_edition() {
+    case "$1" in
+        api|claude|codex|full) return 0 ;;
+        *) die "unknown edition: \"$1\" (supported: api, claude, codex, full)" ;;
+    esac
+}
+
+# CLI flag parsing (only --edition is recognized; everything else is an error so
+# typos surface). Sets EDITION_FLAG when present.
+EDITION_FLAG=""
+parse_args() {
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --edition)
+                shift
+                [ "$#" -gt 0 ] || die "--edition requires a value (api|claude|codex|full)"
+                EDITION_FLAG="$1"
+                ;;
+            --edition=*)
+                EDITION_FLAG="${1#--edition=}"
+                ;;
+            -h|--help)
+                printf 'Usage: install.sh [--edition api|claude|codex|full]\n'
+                exit 0
+                ;;
+            *)
+                die "unknown argument: $1 (supported: --edition <name>)"
+                ;;
+        esac
+        shift
+    done
+}
+
+prompt_edition() {
+    # Only prompt when stdin is an interactive terminal; piped installs
+    # (curl ... | sh) are non-interactive and fall through to the default.
+    if [ -t 0 ]; then
+        printf '\nSelect an Eshyra edition (gameplay provider binaries to bundle):\n' >&2
+        printf '  api    - lean, no agent CLI binary (smallest)\n' >&2
+        printf '  claude - Claude Agent SDK [default]\n' >&2
+        printf '  codex  - Codex CLI\n' >&2
+        printf '  full   - both agent binaries\n' >&2
+        printf 'edition [%s]: ' "$ESHYRA_DEFAULT_EDITION" >&2
+        read -r _choice || _choice=""
+        if [ -n "$_choice" ]; then
+            printf '%s' "$_choice"
+            return
+        fi
+    fi
+    printf '%s' "$ESHYRA_DEFAULT_EDITION"
+}
+
+resolve_edition() {
+    # Precedence: --edition flag, then ESHYRA_EDITION env, then prompt/default.
+    if [ -n "$EDITION_FLAG" ]; then
+        EDITION="$EDITION_FLAG"
+    elif [ -n "${ESHYRA_EDITION:-}" ]; then
+        EDITION="$ESHYRA_EDITION"
+    else
+        EDITION=$(prompt_edition)
+    fi
+    validate_edition "$EDITION"
+}
+
 # ---------- archive URL resolution --------------------------------------------
 # Sets three globals: ARCHIVE_URL, ARCHIVE_NAME, CHECKSUMS_URL.
 # Using globals avoids subshell/pipe issues with command substitution in sh.
@@ -97,12 +182,12 @@ resolve_urls() {
 
     if [ -n "${ESHYRA_BASE_URL:-}" ]; then
         # Custom base URL mode (local testing or staging).
-        # Derive the archive name from ESHYRA_VERSION + target; the version
-        # defaults to 0.0.0-dev to match the builder's sentinel fallback when no
-        # release version is injected (untagged dev/local builds).
+        # Derive the archive name from EDITION + ESHYRA_VERSION + target; the
+        # version defaults to 0.0.0-dev to match the builder's sentinel fallback
+        # when no release version is injected (untagged dev/local builds).
         _ver="${ESHYRA_VERSION:-0.0.0-dev}"
         _ver="${_ver#v}"
-        ARCHIVE_NAME="eshyra-${_ver}-${_target}.tar.gz"
+        ARCHIVE_NAME="eshyra-${EDITION}-${_ver}-${_target}.tar.gz"
         ARCHIVE_URL="${ESHYRA_BASE_URL}/${ARCHIVE_NAME}"
         CHECKSUMS_URL="${ESHYRA_BASE_URL}/sha256sums.txt"
         return
@@ -128,10 +213,14 @@ resolve_urls() {
         || die "failed to fetch release info from GitHub API: ${_api_url}"
 
     # The API response has lines like:
-    #   "browser_download_url": "https://.../eshyra-0.1.0-linux-x64.tar.gz"
-    # We select by the target-specific suffix, not by constructing the name.
+    #   "browser_download_url": "https://.../eshyra-claude-0.1.0-linux-x64.tar.gz"
+    # We select by the edition PREFIX and the target-specific suffix, not by
+    # constructing the full name (the version segment is the builder's resolved
+    # version, which we do not know here). Each Release carries one archive per
+    # edition x target, so prefix+suffix uniquely identifies the asset.
     ARCHIVE_URL=$(printf '%s' "$_release_json" \
         | grep '"browser_download_url"' \
+        | grep -- "/eshyra-${EDITION}-" \
         | grep -- "-${_target}\\.tar\\.gz\"" \
         | head -1 \
         | sed 's/.*"browser_download_url" *: *"\([^"]*\)".*/\1/')
@@ -140,7 +229,7 @@ resolve_urls() {
         _tag_found=$(printf '%s' "$_release_json" \
             | grep '"tag_name"' | head -1 \
             | sed 's/.*"tag_name" *: *"\([^"]*\)".*/\1/' || printf 'unknown')
-        die "no ${_target} archive found in release ${_tag_found} assets.\nThe release may not have all artifacts yet, or the target is not supported."
+        die "no ${EDITION} ${_target} archive found in release ${_tag_found} assets.\nThe release may not have all artifacts/editions yet, or the target is not supported."
     fi
 
     ARCHIVE_NAME=$(basename "$ARCHIVE_URL")
@@ -209,6 +298,12 @@ The download may be corrupt or tampered. Please retry."
 main() {
     need_cmd curl
     need_cmd tar
+
+    parse_args "$@"
+
+    log_step "Selecting edition"
+    resolve_edition
+    log "edition: ${EDITION}"
 
     log_step "Detecting platform"
     target=$(detect_platform)

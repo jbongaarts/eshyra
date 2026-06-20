@@ -7,7 +7,10 @@
 //   2. the required license/commercial/notice/readme files are present;
 //   3. the bundled third-party rules content (and its attribution NOTICE) ship;
 //   4. no forbidden content leaked in (audit bundles, tsbuildinfo, temp files,
-//      local secrets, stray native binaries, source tarballs, VCS/source dirs).
+//      local secrets, stray native binaries, source tarballs, VCS/source dirs);
+//   5. the EDITION encoded in the archive name matches the packed provider set:
+//      every agent SDK the edition includes is present, and every agent SDK it
+//      excludes is absent (ADR 0011).
 //
 // Usage:
 //   node scripts/release/validate-release-artifact.mjs [archive]
@@ -26,6 +29,13 @@ import {
 import { tmpdir } from 'node:os';
 import { basename, delimiter, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  editionPackages,
+  editionRunsNoConfigSmoke,
+  excludedProviderKeys,
+  isEdition,
+  isRemovablePackage,
+} from './editions.mjs';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
@@ -152,6 +162,102 @@ function nodeBinary(rootDir, isWindows) {
   return join(rootDir, 'runtime', isWindows ? 'node.exe' : 'node');
 }
 
+/**
+ * Parse the edition from an archive basename of the form
+ *   eshyra-<edition>-<version>-<os>-<arch>.<ext>
+ * The edition is the first dash-delimited token after the `eshyra-` prefix.
+ * Returns undefined if the name does not encode a known edition (so legacy /
+ * unexpected names skip the edition check rather than hard-failing).
+ */
+function editionFromArchive(archive) {
+  const name = basename(archive).replace(/\.(tar\.gz|zip)$/, '');
+  const m = /^eshyra-([^-]+)-/.exec(name);
+  if (m && isEdition(m[1])) return m[1];
+  return undefined;
+}
+
+/**
+ * Every npm package name installed anywhere under the staged tree, at any
+ * `node_modules` nesting depth. Derived from each `.../node_modules/<pkg>/...`
+ * path segment (scoped names keep their `@scope/` prefix). Mirrors how the
+ * builder walks/prunes nested `node_modules` (npm may hoist provider binaries
+ * under `@eshyra/core` rather than the top level).
+ */
+function installedPackageNames(relPaths) {
+  const names = new Set();
+  for (const p of relPaths) {
+    const segs = p.split('/');
+    for (let i = 0; i < segs.length - 1; i++) {
+      if (segs[i] !== 'node_modules') continue;
+      const first = segs[i + 1];
+      if (!first || first === '.bin') continue;
+      if (first.startsWith('@')) {
+        if (segs[i + 2]) names.add(`${first}/${segs[i + 2]}`);
+      } else {
+        names.add(first);
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * The provider wrapper packages actually declared in this checkout's dependency
+ * graph (root + @eshyra/core, `dependencies` + `optionalDependencies`). A
+ * provider's SDK that is not declared cannot be installed or bundled, so the
+ * "must include" assertion is skipped for it — this is the documented
+ * coordination tolerance (editions.mjs): the Codex SDK is owned by the adapter
+ * stream (bead eshyra-jl8n) and may not be present until that lands.
+ */
+function declaredProviderWrappers() {
+  const declared = new Set();
+  for (const rel of ['package.json', 'packages/core/package.json']) {
+    const manifestPath = join(root, rel);
+    if (!existsSync(manifestPath)) continue;
+    const pkg = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    for (const block of ['dependencies', 'optionalDependencies']) {
+      for (const name of Object.keys(pkg[block] ?? {})) declared.add(name);
+    }
+  }
+  return declared;
+}
+
+/**
+ * Assert the packed agent-SDK provider set matches the edition: the wrapper of
+ * every included AND DECLARED provider must be present somewhere in the tree,
+ * and NO package belonging to an excluded provider — wrapper, launcher, OR heavy
+ * per-platform binary (see `isRemovablePackage` in editions.mjs) — may appear at
+ * any nesting depth. The binary subpackages are the whole point of the exclude
+ * check: a leftover `@anthropic-ai/claude-agent-sdk-linux-x64` is ~223 MB.
+ */
+function validateEditionProviders(_appRoot, edition, relPaths) {
+  const installed = installedPackageNames(relPaths);
+  const declared = declaredProviderWrappers();
+  for (const wrapper of editionPackages(edition)) {
+    if (!declared.has(wrapper)) {
+      console.log(
+        `  ⚠ edition "${edition}" provider ${wrapper} is not declared in ` +
+          'this checkout yet (adapter stream / bead eshyra-jl8n); skipping its ' +
+          'presence assertion.',
+      );
+      continue;
+    }
+    if (!installed.has(wrapper)) {
+      fail(
+        `edition "${edition}" must include provider ${wrapper}, but it is absent from the staged node_modules`,
+      );
+    }
+  }
+  const excludedKeys = excludedProviderKeys(edition);
+  for (const name of installed) {
+    if (isRemovablePackage(name, excludedKeys)) {
+      fail(
+        `edition "${edition}" must NOT bundle ${name}, but it is present in the staged node_modules`,
+      );
+    }
+  }
+}
+
 function validate(archive) {
   console.log(`\n=== ${basename(archive)} ===`);
   const isWindows = archive.includes('-windows-');
@@ -227,10 +333,42 @@ function validate(archive) {
       }
     }
 
+    // 4b. Edition ↔ packed-provider consistency (ADR 0011). Skip silently if the
+    //     archive name does not encode a known edition (legacy artifacts).
+    const edition = editionFromArchive(archive);
+    if (edition) {
+      validateEditionProviders(appRoot, edition, relPaths);
+    }
+
     // 5. Run from the clean unpacked dir using ONLY the bundled Node.
     //    The runtime dir is the sole PATH entry that could provide `node`, and
     //    we additionally invoke the bundled binary by absolute path, so success
     //    proves the artifact has no system-Node dependency.
+    //
+    //    Edition gate (ADR 0011 / bead eshyra-ern3):
+    //    the no-config execution smoke imports the @eshyra/core barrel, which
+    //    today eagerly imports the Claude Agent SDK. Until the core's agent-SDK
+    //    adapters import their SDK lazily, an edition that PRUNES the Claude SDK
+    //    (api, codex) crashes that smoke with a module-not-found instead of the
+    //    expected config error. For those editions we validate structure +
+    //    unpack + launcher resolution above and DEFER the execution smoke,
+    //    logging it loudly rather than asserting a run we know cannot pass yet.
+    //    Editions that bundle the Claude SDK (claude, full) run the full smoke.
+    if (edition && !editionRunsNoConfigSmoke(edition)) {
+      console.log(
+        `  ⚠ edition "${edition}" prunes an eagerly-imported agent SDK; ` +
+          'deferring no-config execution smoke until lazy SDK loading lands ' +
+          '(structure, prune, and unpack still validated).',
+      );
+      const bytes = walk(appRoot)
+        .filter((f) => !f.dir)
+        .reduce((sum, f) => sum + lstatSync(join(appRoot, f.rel)).size, 0);
+      console.log(
+        `✓ valid (structural) — ${relPaths.length} files, ` +
+          `${(bytes / 1e6).toFixed(1)} MB unpacked`,
+      );
+      return;
+    }
     const entry = findCliEntry(appRoot);
     const sanitizedPath = [join(appRoot, 'runtime'), systemBinDirs()].join(
       delimiter,
