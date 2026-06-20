@@ -37,9 +37,12 @@ import type { ModelToolDefinition } from './toolSchema.js';
  *
  * Access control: the server binds to `127.0.0.1` on an ephemeral port and
  * requires a per-call bearer token (a fresh 256-bit secret). Codex sends it via
- * `mcp_servers.eshyra.bearer_token_env_var`. Requests without the exact token
- * get a `401` and never reach a tool. The server lives only for the duration of
- * one `complete()` call and is torn down in a `finally`.
+ * `mcp_servers.eshyra.bearer_token_env_var`. An unauthenticated request (no
+ * `Authorization` header) gets a `401`; a request that DOES present a header but
+ * with the wrong token, or targets a non-MCP path, gets a `404` — deliberately
+ * not confirming the endpoint to a probing client. Either way it never reaches a
+ * tool. The server lives only for the duration of one `complete()` call and is
+ * torn down in a `finally`.
  */
 
 /** Path the MCP Streamable-HTTP endpoint is served on. */

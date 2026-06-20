@@ -176,19 +176,40 @@ function mapUsage(usage: Usage | null | undefined): ModelUsage | undefined {
 }
 
 /**
+ * Recover the bare Eshyra tool name from a Codex `mcp_tool_call` item. Codex
+ * reports the MCP `server` ("eshyra") and the `tool` it invoked; whether `tool`
+ * is the bare name (`roll`) or a namespaced label (`mcp__eshyra__roll`,
+ * `eshyra__roll`, `eshyra/roll`) is not contractually guaranteed and may vary by
+ * `codex` build, so strip any leading server namespace before correlating. This
+ * only affects transcript call-id attachment, never deterministic execution.
+ */
+export function bareToolName(item: McpToolCallItem): string {
+  const server = item.server;
+  for (const prefix of [`mcp__${server}__`, `${server}__`, `${server}/`]) {
+    if (item.tool.startsWith(prefix)) {
+      return item.tool.slice(prefix.length);
+    }
+  }
+  return item.tool;
+}
+
+/**
  * Attach Codex-assigned MCP call ids to the in-process executed records by
  * correlating on tool name in call order. The deterministic result always comes
  * from the in-process handler; the stream only supplies the provider call id.
+ * Item tool names are normalized to the bare Eshyra name first (see
+ * {@link bareToolName}) so namespaced labels still correlate.
  */
-function attachCallIds(
+export function attachCallIds(
   executed: readonly ProviderExecutedToolCall[],
   toolCallItems: readonly McpToolCallItem[],
 ): ProviderExecutedToolCall[] {
   const idsByTool = new Map<string, string[]>();
   for (const item of toolCallItems) {
-    const ids = idsByTool.get(item.tool) ?? [];
+    const name = bareToolName(item);
+    const ids = idsByTool.get(name) ?? [];
     ids.push(item.id);
-    idsByTool.set(item.tool, ids);
+    idsByTool.set(name, ids);
   }
   const cursor = new Map<string, number>();
   return executed.map((call) => {

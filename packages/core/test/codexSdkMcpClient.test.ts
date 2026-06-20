@@ -54,14 +54,38 @@ vi.mock('@openai/codex-sdk', () => {
 });
 
 import type { ModelCallDebugEvent } from '../src/debug/sessionDebug.js';
+import type {
+  ModelToolExecutionResult,
+  ProviderExecutedToolCall,
+} from '../src/model/client.js';
 import { ModelClientError, ModelRateLimitError } from '../src/model/client.js';
 import {
+  attachCallIds,
+  bareToolName,
   CODEX_SDK_MCP_ADAPTER_CAPABILITIES,
   CODEX_SDK_MCP_CLIENT_NAME,
   CODEX_SDK_MCP_TOOL_PROTOCOL,
   CodexSdkMcpModelClient,
 } from '../src/model/codexSdkMcpClient.js';
 import type { ModelToolDefinition } from '../src/model/toolSchema.js';
+
+/** Build a minimal Codex `mcp_tool_call` item for correlation tests. */
+function toolCallItem(id: string, tool: string, server = 'eshyra') {
+  return {
+    id,
+    type: 'mcp_tool_call' as const,
+    server,
+    tool,
+    arguments: {},
+    status: 'completed' as const,
+  };
+}
+
+/** Build an executed-call record (deterministic result is irrelevant here). */
+function executedCall(name: string): ProviderExecutedToolCall {
+  const result: ModelToolExecutionResult = { ok: true, data: {} };
+  return { name, args: {}, result };
+}
 
 const rollDef: ModelToolDefinition = {
   name: 'roll',
@@ -262,5 +286,57 @@ describe('CodexSdkMcpModelClient', () => {
       expect(outcome.ok).toBe(false);
       expect(outcome.error).toContain('boom');
     });
+  });
+});
+
+describe('bareToolName (namespace-tolerant tool-name recovery)', () => {
+  it('returns a bare tool name unchanged', () => {
+    expect(bareToolName(toolCallItem('c', 'roll'))).toBe('roll');
+  });
+
+  it('strips the mcp__<server>__ namespace Codex may report', () => {
+    expect(bareToolName(toolCallItem('c', 'mcp__eshyra__roll'))).toBe('roll');
+  });
+
+  it('strips <server>__ and <server>/ namespace forms', () => {
+    expect(bareToolName(toolCallItem('c', 'eshyra__roll'))).toBe('roll');
+    expect(bareToolName(toolCallItem('c', 'eshyra/roll'))).toBe('roll');
+  });
+
+  it('does not strip an unrelated server prefix', () => {
+    expect(bareToolName(toolCallItem('c', 'mcp__other__roll'))).toBe(
+      'mcp__other__roll',
+    );
+  });
+});
+
+describe('attachCallIds (transcript correlation, not execution)', () => {
+  it('attaches ids by tool name in call order', () => {
+    const out = attachCallIds(
+      [executedCall('roll'), executedCall('roll'), executedCall('world_query')],
+      [
+        toolCallItem('id-roll-1', 'roll'),
+        toolCallItem('id-roll-2', 'roll'),
+        toolCallItem('id-wq', 'world_query'),
+      ],
+    );
+    expect(out.map((c) => c.callId)).toEqual([
+      'id-roll-1',
+      'id-roll-2',
+      'id-wq',
+    ]);
+  });
+
+  it('correlates even when Codex reports namespaced tool labels', () => {
+    const out = attachCallIds(
+      [executedCall('roll')],
+      [toolCallItem('id-1', 'mcp__eshyra__roll')],
+    );
+    expect(out[0].callId).toBe('id-1');
+  });
+
+  it('leaves a record without a matching item untouched', () => {
+    const out = attachCallIds([executedCall('roll')], []);
+    expect(out[0].callId).toBeUndefined();
   });
 });
