@@ -31,7 +31,6 @@ import { basename, delimiter, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   editionPackages,
-  editionRunsNoConfigSmoke,
   excludedProviderKeys,
   isEdition,
   isRemovablePackage,
@@ -345,30 +344,10 @@ function validate(archive) {
     //    we additionally invoke the bundled binary by absolute path, so success
     //    proves the artifact has no system-Node dependency.
     //
-    //    Edition gate (ADR 0011 / bead eshyra-ern3):
-    //    the no-config execution smoke imports the @eshyra/core barrel, which
-    //    today eagerly imports the Claude Agent SDK. Until the core's agent-SDK
-    //    adapters import their SDK lazily, an edition that PRUNES the Claude SDK
-    //    (api, codex) crashes that smoke with a module-not-found instead of the
-    //    expected config error. For those editions we validate structure +
-    //    unpack + launcher resolution above and DEFER the execution smoke,
-    //    logging it loudly rather than asserting a run we know cannot pass yet.
-    //    Editions that bundle the Claude SDK (claude, full) run the full smoke.
-    if (edition && !editionRunsNoConfigSmoke(edition)) {
-      console.log(
-        `  ⚠ edition "${edition}" prunes an eagerly-imported agent SDK; ` +
-          'deferring no-config execution smoke until lazy SDK loading lands ' +
-          '(structure, prune, and unpack still validated).',
-      );
-      const bytes = walk(appRoot)
-        .filter((f) => !f.dir)
-        .reduce((sum, f) => sum + lstatSync(join(appRoot, f.rel)).size, 0);
-      console.log(
-        `✓ valid (structural) — ${relPaths.length} files, ` +
-          `${(bytes / 1e6).toFixed(1)} MB unpacked`,
-      );
-      return;
-    }
+    //    Every edition runs this smoke (eshyra-ern3): the core's agent-SDK
+    //    adapters load their SDK lazily, so an edition that prunes the Claude
+    //    SDK (api, codex) still loads the @eshyra/core barrel and reaches the
+    //    no-config error path rather than a module-not-found.
     const entry = findCliEntry(appRoot);
     const sanitizedPath = [join(appRoot, 'runtime'), systemBinDirs()].join(
       delimiter,

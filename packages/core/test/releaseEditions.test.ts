@@ -20,7 +20,6 @@ import {
   EDITION_NAMES,
   EDITIONS,
   editionPackages,
-  editionRunsNoConfigSmoke,
   excludedProviderKeys,
   isEdition,
   isRemovablePackage,
@@ -144,25 +143,6 @@ describe('provider pruning targets (heavy binary, not just the wrapper)', () => 
       isRemovablePackage('@anthropic-ai/claude-agent-sdk-linux-x64', ['codex']),
     ).toBe(false);
     expect(isRemovablePackage('@openai/codex', ['claude'])).toBe(false);
-  });
-});
-
-describe('no-config execution-smoke gate (deferred until lazy SDK loading)', () => {
-  it('runs only for editions that bundle the eagerly-imported Claude SDK', () => {
-    // Editions including the Claude wrapper can run the no-config smoke today;
-    // api/codex prune it and defer the smoke to bead eshyra-ern3.
-    expect(editionRunsNoConfigSmoke('claude')).toBe(true);
-    expect(editionRunsNoConfigSmoke('full')).toBe(true);
-    expect(editionRunsNoConfigSmoke('api')).toBe(false);
-    expect(editionRunsNoConfigSmoke('codex')).toBe(false);
-  });
-
-  it('agrees with whether the edition includes the Claude wrapper', () => {
-    for (const name of EDITION_NAMES) {
-      expect(editionRunsNoConfigSmoke(name)).toBe(
-        editionPackages(name).includes(AGENT_SDK_PACKAGES.claude),
-      );
-    }
   });
 });
 

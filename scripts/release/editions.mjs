@@ -135,19 +135,6 @@ function editionPackages(edition) {
 }
 
 /**
- * Whether the release validator can run its no-config CLI EXECUTION smoke for
- * this edition today. The smoke imports the `@eshyra/core` barrel, which (until
- * bead eshyra-ern3 makes the Claude adapters lazy) eagerly imports the Claude
- * Agent SDK. An edition that prunes that SDK therefore cannot pass the smoke
- * yet, so the validator defers it for those editions and asserts structure +
- * prune + unpack instead. Editions that bundle the Claude SDK run the full
- * smoke. Once eshyra-ern3 lands, this gate is removed and all editions run it.
- */
-function editionRunsNoConfigSmoke(edition) {
-  return editionPackages(edition).includes(AGENT_SDK_PACKAGES.claude);
-}
-
-/**
  * The provider keys an edition EXCLUDES (the complement of its
  * `optionalProviders` within the catalogue) — i.e. the providers whose packages
  * must be pruned from this edition's staged tree. Throws on an unknown edition.
@@ -169,7 +156,6 @@ export {
   EDITION_NAMES,
   EDITIONS,
   editionPackages,
-  editionRunsNoConfigSmoke,
   excludedProviderKeys,
   isEdition,
   isRemovablePackage,
