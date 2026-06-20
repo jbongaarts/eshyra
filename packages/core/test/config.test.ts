@@ -82,8 +82,8 @@ describe('loadConfig provider selection', () => {
     expect(claude.auditModel).toBe('claude-haiku-4-5-20251001');
 
     const codex = loadConfig({}, CODEX_PRESENT);
-    expect(codex.model).toBe('gpt-5-codex');
-    expect(codex.auditModel).toBe('gpt-5-codex');
+    expect(codex.model).toBe('gpt-5.5');
+    expect(codex.auditModel).toBe('gpt-5.4-mini');
 
     const overridden = load({
       ANTHROPIC_API_KEY: 'sk',

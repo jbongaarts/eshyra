@@ -59,7 +59,7 @@ export type AdapterFamily = 'agent-harness' | 'api-native';
  */
 const DEFAULT_DM_MODEL: Record<ProviderVendor, string> = {
   anthropic: 'claude-opus-4-8',
-  openai: 'gpt-5-codex',
+  openai: 'gpt-5.5',
 };
 
 /**
@@ -72,7 +72,7 @@ const DEFAULT_DM_MODEL: Record<ProviderVendor, string> = {
  */
 const DEFAULT_AUDIT_MODEL_BY_VENDOR: Record<ProviderVendor, string> = {
   anthropic: 'claude-haiku-4-5-20251001',
-  openai: 'gpt-5-codex',
+  openai: 'gpt-5.4-mini',
 };
 
 /**
