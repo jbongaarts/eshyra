@@ -38,6 +38,10 @@
     "better-sqlite3": "^12.11.1",
     "zod": "^4.0.0"
   },
+  "optionalDependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.0",
+    "@openai/codex-sdk": "0.141.0"
+  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
     "@types/pdfkit": "^0.17.6",

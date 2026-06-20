@@ -157,7 +157,6 @@ export type {
   ToolTransport,
   TurnLoopOwner,
 } from './model/client.js';
-
 // Model client contract + adapter capability types (ADR 0010). The gameplay
 // capability gate (eshyra-qa9d) rejects fenced-text adapters before play begins.
 export {
@@ -166,6 +165,18 @@ export {
   ModelRateLimitError,
   UnsupportedGameplayProviderError,
 } from './model/client.js';
+export type { CodexSdkMcpDebugOptions } from './model/codexSdkMcpClient.js';
+// Codex SDK in-process-MCP adapter (eshyra-jl8n, ADR 0010) — the OpenAI/Codex
+// sibling of the Agent SDK MCP adapter. Hosts an in-process Streamable-HTTP MCP
+// server so Codex executes Eshyra tools in the live turn process; authenticates
+// from a Codex subscription with no API-key fallback. The Codex/MCP SDKs load
+// lazily, so this re-export does not pull them into editions that omit Codex.
+export {
+  CODEX_SDK_MCP_ADAPTER_CAPABILITIES,
+  CODEX_SDK_MCP_CLIENT_NAME,
+  CODEX_SDK_MCP_TOOL_PROTOCOL,
+  CodexSdkMcpModelClient,
+} from './model/codexSdkMcpClient.js';
 export type { ConfiguredProfileEntry } from './model/profiles.js';
 export type {
   JsonSchema,
