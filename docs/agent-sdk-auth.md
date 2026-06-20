@@ -43,7 +43,7 @@ adapter (ADR 0010):
 | `claude-sub` | `CLAUDE_CODE_OAUTH_TOKEN` (Claude Pro/Max) | `AgentSdkMcpModelClient` |
 | `codex-sub` | a `codex login` session under `CODEX_HOME` | `CodexSdkMcpModelClient` |
 | `anthropic-api` | `ANTHROPIC_API_KEY` (Console key) | `AnthropicNativeModelClient` |
-| `openai-api` | `OPENAI_API_KEY` | not built yet (eshyra-fxxf) |
+| `openai-api` | `OPENAI_API_KEY` | `OpenAiNativeModelClient` |
 
 **Eshyra never silently falls back to API billing (eshyra-oobh).** `loadConfig`
 selects a provider by **auth presence**, generalizing the original Anthropic
@@ -68,6 +68,24 @@ share the one resolved provider.
 
 To run on a subscription with an API key also present, set `ESHYRA_AUTH_MODE` to
 the subscription provider (e.g. `claude-sub` or `codex-sub`).
+
+## OpenAI API-key setup
+
+Create an OpenAI API key, keep it in a server-side environment variable, and
+select the API-native provider:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export ESHYRA_AUTH_MODE=openai-api
+eshyra play
+```
+
+`OpenAiNativeModelClient` sends the key only as an HTTPS bearer credential to
+the OpenAI Chat Completions endpoint. It is not placed in prompts, tool
+payloads, diagnostics, or serialized client state. `ESHYRA_MODEL` optionally
+overrides the OpenAI primary-DM model, and `ESHYRA_AUDIT_MODEL` overrides the
+mechanics-auditor model. If OpenAI is the only available provider,
+`ESHYRA_AUTH_MODE` may be omitted and automatic provider selection chooses it.
 
 ## Subscription setup
 

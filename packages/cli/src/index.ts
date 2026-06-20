@@ -20,6 +20,7 @@ import {
   loadConfig,
   type ModelClient,
   ModelTurnAuditor,
+  OpenAiNativeModelClient,
   openDatabase,
   type ResolvedProvider,
   runTurn,
@@ -71,7 +72,7 @@ export function formatConfigError(err: ConfigError): string {
     '  - claude-sub:    CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`)',
     '  - codex-sub:     `codex login` (a ChatGPT/Codex subscription under CODEX_HOME)',
     '  - anthropic-api: ANTHROPIC_API_KEY (an Anthropic Console key)',
-    '  - openai-api:    OPENAI_API_KEY (adapter not built yet — eshyra-fxxf)',
+    '  - openai-api:    OPENAI_API_KEY (an OpenAI API key)',
     'If more than one is available, pick with ESHYRA_AUTH_MODE=<provider> so play',
     'is never silently billed to the wrong account. Then run: eshyra play',
   ].join('\n');
@@ -205,8 +206,7 @@ function buildDebug(
  * Construct the gameplay model client for the resolved provider (eshyra-6ygw)
  * and assert it can transport Eshyra tools natively before play begins
  * (eshyra-qa9d, ADR 0010). Each of the four providers maps to exactly one
- * adapter; `openai-api` resolves in config but has no adapter yet (eshyra-fxxf),
- * so it fails here with an actionable message rather than silently.
+ * adapter. API-native providers return tool calls to the Eshyra-owned loop.
  */
 export function makeGameplayClient(
   provider: ResolvedProvider,
@@ -218,7 +218,8 @@ export function makeGameplayClient(
   let client:
     | AgentSdkMcpModelClient
     | CodexSdkMcpModelClient
-    | AnthropicNativeModelClient;
+    | AnthropicNativeModelClient
+    | OpenAiNativeModelClient;
   switch (provider.id) {
     case 'claude-sub':
       client = new AgentSdkMcpModelClient(model, auth, debugOptions);
@@ -231,11 +232,8 @@ export function makeGameplayClient(
       client = new AnthropicNativeModelClient(model, auth, debugOptions);
       break;
     case 'openai-api':
-      throw new ConfigError(
-        'provider "openai-api" is selected but its API-native adapter is not ' +
-          'implemented yet (eshyra-fxxf). Use claude-sub, codex-sub, or ' +
-          'anthropic-api.',
-      );
+      client = new OpenAiNativeModelClient(model, auth, debugOptions);
+      break;
   }
   assertGameplayCapable(client.capabilities, role);
   return client;
