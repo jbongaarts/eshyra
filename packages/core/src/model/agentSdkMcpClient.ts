@@ -4,11 +4,6 @@ import type {
   SDKSystemMessage,
 } from '@anthropic-ai/claude-agent-sdk';
 import {
-  createSdkMcpServer,
-  query,
-  tool,
-} from '@anthropic-ai/claude-agent-sdk';
-import {
   buildModelCallEvent,
   type McpServerStatus,
   type ModelCallOutcome,
@@ -18,6 +13,7 @@ import {
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { AgentSdkAuth, AgentSdkAuthSource } from './agentSdkClient.js';
 import { buildAmbientSdkEnv, buildChildSdkEnv } from './agentSdkEnv.js';
+import { type AgentSdkRuntime, loadAgentSdk } from './agentSdkLoader.js';
 import type {
   ModelAdapterCapabilities,
   ModelClient,
@@ -57,9 +53,12 @@ import type { ModelToolDefinition } from './toolSchema.js';
  * `CLAUDE_CODE_OAUTH_TOKEN` (Claude Pro/Max) just as well as from
  * `ANTHROPIC_API_KEY`, so released local gameplay needs no Console API key.
  *
- * This file plus `agentSdkClient.ts` are the only ones permitted to import the
- * Claude Agent SDK. Adapt provider-surface changes ONLY here; the ModelClient
- * contract and the gameplay layer stay provider-neutral.
+ * This file plus `agentSdkClient.ts` are the only ones that reference the Claude
+ * Agent SDK, and they import only TYPES from it directly — the runtime surface
+ * comes from `agentSdkLoader.ts`, loaded lazily inside `complete()` so the
+ * `@eshyra/core` barrel never requires the SDK at import time (eshyra-ern3).
+ * Adapt provider-surface changes ONLY here; the ModelClient contract and the
+ * gameplay layer stay provider-neutral.
  */
 
 /** Debug label reported for the Agent SDK MCP tool channel (eshyra-eznk). */
@@ -201,10 +200,11 @@ function toStopReason(
  * `isError`) rather than thrown, so one bad call cannot crash the agent loop.
  */
 function buildMcpTool(
+  tool: AgentSdkRuntime['tool'],
   def: ModelToolDefinition,
   executor: ModelToolExecutor | undefined,
   executed: ProviderExecutedToolCall[],
-): ReturnType<typeof tool> {
+): ReturnType<AgentSdkRuntime['tool']> {
   return tool(
     def.name,
     def.description,
@@ -260,8 +260,13 @@ export class AgentSdkMcpModelClient implements ModelClient {
   async complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
     const defs = input.tools ?? [];
     const executed: ProviderExecutedToolCall[] = [];
+    // Load the Claude Agent SDK lazily so the `@eshyra/core` barrel does not
+    // require it at runtime — installer editions that prune the Claude binary
+    // (api/codex) must still load core (eshyra-ern3). The SDK type imports above
+    // are erased; only this runtime load touches the package.
+    const { query, tool, createSdkMcpServer } = await loadAgentSdk();
     const mcpTools = defs.map((def) =>
-      buildMcpTool(def, input.executeTool, executed),
+      buildMcpTool(tool, def, input.executeTool, executed),
     );
     const server = createSdkMcpServer({
       name: ESHYRA_MCP_SERVER_NAME,

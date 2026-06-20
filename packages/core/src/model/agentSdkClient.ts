@@ -1,5 +1,4 @@
 import type { SDKResultSuccess } from '@anthropic-ai/claude-agent-sdk';
-import { query } from '@anthropic-ai/claude-agent-sdk';
 import {
   buildModelCallEvent,
   type ModelCallOutcome,
@@ -8,6 +7,7 @@ import {
 } from '../debug/sessionDebug.js';
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import { buildChildSdkEnv } from './agentSdkEnv.js';
+import { loadAgentSdk } from './agentSdkLoader.js';
 import type {
   ModelAdapterCapabilities,
   ModelClient,
@@ -96,9 +96,12 @@ export const AGENT_SDK_LEGACY_ADAPTER_CAPABILITIES: ModelAdapterCapabilities = {
 };
 
 /**
- * The ONLY file permitted to import the Claude Agent SDK. If the installed SDK's
- * surface differs from the assumptions below, adapt ONLY this file — the
- * ModelClient contract and all unit tests stay unchanged.
+ * Legacy fenced-text Agent SDK adapter. It references the Claude Agent SDK by
+ * TYPE only; the runtime `query` comes from `agentSdkLoader.ts`, loaded lazily
+ * inside `complete()` so the `@eshyra/core` barrel never requires the SDK at
+ * import time (eshyra-ern3). If the installed SDK's surface differs from the
+ * assumptions below, adapt here and the loader — the ModelClient contract and
+ * all unit tests stay unchanged.
  *
  * Verified against @anthropic-ai/claude-agent-sdk@0.3.143:
  * - `query()` returns `Query extends AsyncGenerator<SDKMessage, void>`
@@ -165,6 +168,12 @@ export class AgentSdkModelClient implements ModelClient {
       .map((m) => `${m.role}: ${m.content}`)
       .join('\n');
     const auth = this.#resolveAuth();
+    // Load the Claude Agent SDK lazily so importing this module (and the
+    // `@eshyra/core` barrel) does not require the SDK at runtime — installer
+    // editions that omit the Claude binary (api/codex) must still load core
+    // (eshyra-ern3). `import type` above is erased, so only this runtime import
+    // touches the package.
+    const { query } = await loadAgentSdk();
     let text: string | undefined;
     let errorSubtype: string | undefined;
     try {

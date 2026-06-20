@@ -12,8 +12,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { queryMock } = vi.hoisted(() => ({ queryMock: vi.fn() }));
 
+// The shared lazy loader (agentSdkLoader) reads `query`, `tool`, and
+// `createSdkMcpServer` from the SDK module, so the mock must define all three
+// even though this fenced-text adapter only uses `query` — otherwise vitest's
+// dynamic-import export validation throws on the unmocked names.
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: queryMock,
+  tool: vi.fn(),
+  createSdkMcpServer: vi.fn(),
 }));
 
 import type { ModelCallDebugEvent } from '../src/debug/sessionDebug.js';
