@@ -500,8 +500,13 @@ function main() {
   }
 
   try {
-    console.log('• building workspace (tsc --build)…');
-    npm(['run', 'build']);
+    // Release packaging must never trust incremental tsbuildinfo. A stale build
+    // graph can report success while leaving old files under dist/, causing the
+    // archive to ship behavior that no longer matches source. `typecheck` uses
+    // `tsc --build --force` and deterministically refreshes every workspace
+    // output before npm pack reads it.
+    console.log('• building workspace (tsc --build --force)…');
+    npm(['run', 'typecheck']);
 
     // Stamp the resolved version into the built core dist BEFORE packing, so the
     // packed @eshyra/core tarball (and thus the bundled CLI banner) carries it.

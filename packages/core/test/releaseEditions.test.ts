@@ -162,6 +162,12 @@ describe('edition-aware artifact naming and installers', () => {
     expect(build).toMatch(/editionPackages/);
   });
 
+  it('forces a deterministic workspace build before packing', () => {
+    const build = readText('scripts/release/build-release-artifact.mjs');
+    expect(build).toContain("npm(['run', 'typecheck'])");
+    expect(build).not.toContain("npm(['run', 'build'])");
+  });
+
   it('POSIX installer exposes an --edition flag and ESHYRA_EDITION env', () => {
     const sh = readText('scripts/release/install.sh');
     expect(sh).toContain('--edition');
