@@ -9,9 +9,30 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getCampaign, getOpenSession, openDatabase } from '@eshyra/core';
+import {
+  ConfigError,
+  getCampaign,
+  getOpenSession,
+  openDatabase,
+  type ResolvedProvider,
+} from '@eshyra/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildBanner, main, runDoltInstall } from '../src/index.js';
+import {
+  buildBanner,
+  main,
+  makeGameplayClient,
+  runDoltInstall,
+} from '../src/index.js';
+
+/** A resolved provider record for makeGameplayClient mapping tests. */
+function provider(
+  id: ResolvedProvider['id'],
+  vendor: ResolvedProvider['vendor'],
+  adapterFamily: ResolvedProvider['adapterFamily'],
+  env: Record<string, string> = {},
+): ResolvedProvider {
+  return { id, vendor, adapterFamily, env };
+}
 
 describe('cli', () => {
   it('builds a banner that includes the core version', () => {
@@ -54,6 +75,18 @@ describe('runDoltInstall', () => {
   });
 });
 
+// A CODEX_HOME with no auth.json so the codex-sub provider is never detected
+// from a developer machine's real `codex login`; combined with clearing the
+// other credential env vars this keeps provider selection hermetic (eshyra-6ygw).
+const NO_CODEX_HOME = join(tmpdir(), 'eshyra-test-no-codex-home');
+/** Clear every provider credential so a test controls exactly which are present. */
+function clearProviderEnv(): void {
+  vi.stubEnv('ANTHROPIC_API_KEY', '');
+  vi.stubEnv('CLAUDE_CODE_OAUTH_TOKEN', '');
+  vi.stubEnv('OPENAI_API_KEY', '');
+  vi.stubEnv('CODEX_HOME', NO_CODEX_HOME);
+}
+
 describe('main', () => {
   const startExitCode = process.exitCode;
 
@@ -66,6 +99,7 @@ describe('main', () => {
   });
 
   it('prints the banner and resolved config on the happy path', () => {
+    clearProviderEnv();
     vi.stubEnv('ESHYRA_DB_PATH', '/tmp/lw.db');
     vi.stubEnv('ANTHROPIC_API_KEY', 'sk-test');
     vi.stubEnv('ESHYRA_MODEL', '');
@@ -80,8 +114,8 @@ describe('main', () => {
   });
 
   it('reports a ConfigError to stderr and sets process.exitCode to 1', () => {
+    clearProviderEnv();
     vi.stubEnv('ESHYRA_DB_PATH', '');
-    vi.stubEnv('ANTHROPIC_API_KEY', '');
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const err = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -112,6 +146,9 @@ describe('entrypoint guard', () => {
         ...process.env,
         ESHYRA_DB_PATH: '/tmp/lw-entrypoint.db',
         ANTHROPIC_API_KEY: 'sk-test',
+        CLAUDE_CODE_OAUTH_TOKEN: '',
+        OPENAI_API_KEY: '',
+        CODEX_HOME: NO_CODEX_HOME,
       },
     });
     expect(stdout).toContain('Eshyra — core v');
@@ -132,6 +169,9 @@ describe('entrypoint guard', () => {
             ...process.env,
             ESHYRA_DB_PATH: '',
             ANTHROPIC_API_KEY: '',
+            CLAUDE_CODE_OAUTH_TOKEN: '',
+            OPENAI_API_KEY: '',
+            CODEX_HOME: NO_CODEX_HOME,
           },
         });
 
@@ -216,6 +256,9 @@ describe('play graceful close on stdin EOF', () => {
           ...process.env,
           ESHYRA_DB_PATH: dbPath,
           ANTHROPIC_API_KEY: 'sk-eof-test-not-used',
+          CLAUDE_CODE_OAUTH_TOKEN: '',
+          OPENAI_API_KEY: '',
+          CODEX_HOME: NO_CODEX_HOME,
         },
       });
 
@@ -321,3 +364,61 @@ function npmPackEnv(scratchDir: string): NodeJS.ProcessEnv {
   env.npm_config_loglevel = 'silent';
   return env;
 }
+
+describe('makeGameplayClient (provider -> adapter mapping, eshyra-6ygw)', () => {
+  it('maps claude-sub to the agent-harness Anthropic adapter', () => {
+    const c = makeGameplayClient(
+      provider('claude-sub', 'anthropic', 'agent-harness', {
+        CLAUDE_CODE_OAUTH_TOKEN: 'tok',
+      }),
+      'claude-opus-4-8',
+      'primary DM',
+    );
+    expect(c.capabilities.vendor).toBe('anthropic');
+    expect(c.capabilities.adapterFamily).toBe('agent-harness');
+    expect(c.capabilities.gameplayCapable).toBe(true);
+  });
+
+  it('maps codex-sub to the agent-harness OpenAI adapter', () => {
+    const c = makeGameplayClient(
+      provider('codex-sub', 'openai', 'agent-harness'),
+      'gpt-5-codex',
+      'primary DM',
+    );
+    expect(c.capabilities.vendor).toBe('openai');
+    expect(c.capabilities.adapterFamily).toBe('agent-harness');
+  });
+
+  it('maps anthropic-api to the api-native Anthropic adapter', () => {
+    const c = makeGameplayClient(
+      provider('anthropic-api', 'anthropic', 'api-native', {
+        ANTHROPIC_API_KEY: 'sk',
+      }),
+      'claude-opus-4-8',
+      'primary DM',
+    );
+    expect(c.capabilities.vendor).toBe('anthropic');
+    expect(c.capabilities.adapterFamily).toBe('api-native');
+  });
+
+  it('throws an actionable error for openai-api (adapter not built yet)', () => {
+    expect(() =>
+      makeGameplayClient(
+        provider('openai-api', 'openai', 'api-native', {
+          OPENAI_API_KEY: 'sk',
+        }),
+        'gpt-5',
+        'primary DM',
+      ),
+    ).toThrow(ConfigError);
+    expect(() =>
+      makeGameplayClient(
+        provider('openai-api', 'openai', 'api-native', {
+          OPENAI_API_KEY: 'sk',
+        }),
+        'gpt-5',
+        'primary DM',
+      ),
+    ).toThrow(/eshyra-fxxf/);
+  });
+});

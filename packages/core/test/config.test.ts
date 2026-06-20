@@ -1,10 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, DEFAULT_AUDIT_MODEL, loadConfig } from '../src/config.js';
-import { DEFAULT_PROFILE_REGISTRY, getProfile } from '../src/model/profiles.js';
+import {
+  ConfigError,
+  DEFAULT_AUDIT_MODEL,
+  loadConfig,
+  type ProviderProbes,
+} from '../src/config.js';
+import { DEFAULT_PROFILE_REGISTRY } from '../src/model/profiles.js';
 
-describe('loadConfig', () => {
-  it('returns a valid config from a complete env', () => {
-    const cfg = loadConfig({
+/**
+ * loadConfig resolves one of four gameplay providers (eshyra-6ygw). Provider and
+ * auth are one concern; selection is auto when exactly one provider's auth is
+ * present, else ESHYRA_AUTH_MODE forces it.
+ *
+ * The default Codex-subscription probe reads the real `$CODEX_HOME/auth.json`, so
+ * every test injects an explicit `codexLoginPresent` to stay hermetic (otherwise
+ * a developer machine with a `codex login` would add a second present provider).
+ */
+function load(
+  env: Record<string, string | undefined>,
+  probes: ProviderProbes = { codexLoginPresent: () => false },
+) {
+  return loadConfig(env, probes);
+}
+
+const CODEX_PRESENT: ProviderProbes = { codexLoginPresent: () => true };
+
+describe('loadConfig provider selection', () => {
+  it('returns a full config for a single Anthropic API key', () => {
+    const cfg = load({
       ESHYRA_DB_PATH: './campaigns/x.db',
       ESHYRA_MODEL: 'claude-opus-4-7',
       ANTHROPIC_API_KEY: 'sk-test',
@@ -14,205 +37,151 @@ describe('loadConfig', () => {
       model: 'claude-opus-4-7',
       auditModel: DEFAULT_AUDIT_MODEL,
       dmProfile: DEFAULT_PROFILE_REGISTRY.premium_dm,
-      auth: { mode: 'api-key', env: { ANTHROPIC_API_KEY: 'sk-test' } },
+      auth: {
+        id: 'anthropic-api',
+        vendor: 'anthropic',
+        adapterFamily: 'api-native',
+        env: { ANTHROPIC_API_KEY: 'sk-test' },
+      },
     });
   });
 
-  it('resolves the audit model from ESHYRA_AUDIT_MODEL, else the fast default', () => {
-    const def = loadConfig({ ANTHROPIC_API_KEY: 'sk-test' });
-    expect(def.auditModel).toBe(DEFAULT_AUDIT_MODEL);
-    const overridden = loadConfig({
-      ANTHROPIC_API_KEY: 'sk-test',
-      ESHYRA_AUDIT_MODEL: 'claude-custom-audit',
+  it('resolves claude-sub from CLAUDE_CODE_OAUTH_TOKEN', () => {
+    const cfg = load({ CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test' });
+    expect(cfg.auth).toEqual({
+      id: 'claude-sub',
+      vendor: 'anthropic',
+      adapterFamily: 'agent-harness',
+      env: { CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test' },
     });
-    expect(overridden.auditModel).toBe('claude-custom-audit');
   });
 
-  it('defaults the model to the premium_dm profile when unset', () => {
-    const cfg = loadConfig({
-      ESHYRA_DB_PATH: './x.db',
-      ANTHROPIC_API_KEY: 'sk-test',
+  it('resolves openai-api from OPENAI_API_KEY', () => {
+    const cfg = load({ OPENAI_API_KEY: 'sk-openai-test' });
+    expect(cfg.auth).toEqual({
+      id: 'openai-api',
+      vendor: 'openai',
+      adapterFamily: 'api-native',
+      env: { OPENAI_API_KEY: 'sk-openai-test' },
     });
-    const premiumDm = getProfile(DEFAULT_PROFILE_REGISTRY, 'premium_dm');
-    expect(cfg.model).toBe(premiumDm.model);
-    expect(cfg.dmProfile).toEqual(premiumDm);
   });
 
-  it('resolves the runtime DM model from a premium_dm profile override', () => {
-    const cfg = loadConfig({
-      ESHYRA_DB_PATH: './x.db',
-      ANTHROPIC_API_KEY: 'sk-test',
-      ESHYRA_PROFILE_PREMIUM_DM_MODEL: 'claude-future-1',
+  it('resolves codex-sub from a Codex login with no env credential', () => {
+    const cfg = loadConfig({}, CODEX_PRESENT);
+    expect(cfg.auth).toEqual({
+      id: 'codex-sub',
+      vendor: 'openai',
+      adapterFamily: 'agent-harness',
+      env: {},
     });
-    expect(cfg.model).toBe('claude-future-1');
-    expect(cfg.dmProfile.model).toBe('claude-future-1');
   });
 
-  it('lets the legacy flat ESHYRA_MODEL override win over the profile', () => {
-    const cfg = loadConfig({
-      ESHYRA_DB_PATH: './x.db',
-      ANTHROPIC_API_KEY: 'sk-test',
-      ESHYRA_MODEL: 'claude-flat-override',
-      ESHYRA_PROFILE_PREMIUM_DM_MODEL: 'claude-profile-model',
+  it('defaults the model per vendor and honors ESHYRA_MODEL / ESHYRA_AUDIT_MODEL', () => {
+    const claude = load({ CLAUDE_CODE_OAUTH_TOKEN: 'tok' });
+    expect(claude.model).toBe('claude-opus-4-8');
+    expect(claude.auditModel).toBe('claude-haiku-4-5-20251001');
+
+    const codex = loadConfig({}, CODEX_PRESENT);
+    expect(codex.model).toBe('gpt-5-codex');
+    expect(codex.auditModel).toBe('gpt-5-codex');
+
+    const overridden = load({
+      ANTHROPIC_API_KEY: 'sk',
+      ESHYRA_MODEL: 'claude-custom',
+      ESHYRA_AUDIT_MODEL: 'claude-audit-custom',
     });
-    expect(cfg.model).toBe('claude-flat-override');
-    // The resolved profile entry still reflects the profile-level override.
-    expect(cfg.dmProfile.model).toBe('claude-profile-model');
+    expect(overridden.model).toBe('claude-custom');
+    expect(overridden.auditModel).toBe('claude-audit-custom');
+  });
+});
+
+describe('loadConfig auto vs forced selection', () => {
+  it('uses the single present provider under auto (default)', () => {
+    expect(load({ ANTHROPIC_API_KEY: 'sk' }).auth.id).toBe('anthropic-api');
+    expect(load({ CLAUDE_CODE_OAUTH_TOKEN: 'tok' }).auth.id).toBe('claude-sub');
   });
 
-  it('throws ConfigError when the premium_dm profile selects a non-anthropic provider', () => {
+  it('fails fast when more than one provider is available and no mode is set', () => {
     expect(() =>
-      loadConfig({
-        ESHYRA_DB_PATH: './x.db',
-        ANTHROPIC_API_KEY: 'sk-test',
-        ESHYRA_PROFILE_PREMIUM_DM_PROVIDER: 'openai',
-      }),
+      load({ ANTHROPIC_API_KEY: 'sk', CLAUDE_CODE_OAUTH_TOKEN: 'tok' }),
+    ).toThrow(ConfigError);
+    // A real Codex login alongside an env credential is also ambiguous.
+    expect(() =>
+      loadConfig({ ANTHROPIC_API_KEY: 'sk' }, CODEX_PRESENT),
     ).toThrow(ConfigError);
   });
 
-  it('throws ConfigError when a profile provider override is not a known provider id', () => {
+  it('ESHYRA_AUTH_MODE forces one provider when several are available', () => {
+    const env = {
+      ANTHROPIC_API_KEY: 'sk',
+      CLAUDE_CODE_OAUTH_TOKEN: 'tok',
+      OPENAI_API_KEY: 'sk-oai',
+    };
+    expect(load({ ...env, ESHYRA_AUTH_MODE: 'claude-sub' }).auth.id).toBe(
+      'claude-sub',
+    );
+    expect(load({ ...env, ESHYRA_AUTH_MODE: 'anthropic-api' }).auth).toEqual({
+      id: 'anthropic-api',
+      vendor: 'anthropic',
+      adapterFamily: 'api-native',
+      env: { ANTHROPIC_API_KEY: 'sk' },
+    });
+  });
+
+  it('forcing codex-sub uses the login and injects no env credential', () => {
+    const cfg = loadConfig(
+      { ANTHROPIC_API_KEY: 'sk', ESHYRA_AUTH_MODE: 'codex-sub' },
+      CODEX_PRESENT,
+    );
+    expect(cfg.auth.id).toBe('codex-sub');
+    expect(cfg.auth.env).toEqual({});
+  });
+
+  it('throws when ESHYRA_AUTH_MODE forces a provider whose auth is absent', () => {
     expect(() =>
-      loadConfig({
-        ESHYRA_DB_PATH: './x.db',
-        ANTHROPIC_API_KEY: 'sk-test',
+      load({ ANTHROPIC_API_KEY: 'sk', ESHYRA_AUTH_MODE: 'claude-sub' }),
+    ).toThrow(ConfigError);
+    expect(() =>
+      load({ ANTHROPIC_API_KEY: 'sk', ESHYRA_AUTH_MODE: 'codex-sub' }),
+    ).toThrow(ConfigError);
+  });
+
+  it('throws for an unrecognized ESHYRA_AUTH_MODE', () => {
+    expect(() =>
+      load({ ANTHROPIC_API_KEY: 'sk', ESHYRA_AUTH_MODE: 'bogus' }),
+    ).toThrow(ConfigError);
+  });
+
+  it('throws when no provider auth is present', () => {
+    expect(() => load({ ESHYRA_DB_PATH: './x.db' })).toThrow(ConfigError);
+  });
+
+  it('treats a blank credential as unset', () => {
+    expect(() =>
+      load({ ANTHROPIC_API_KEY: '   ', ESHYRA_DB_PATH: './x.db' }),
+    ).toThrow(ConfigError);
+    const cfg = load({
+      ANTHROPIC_API_KEY: '  ',
+      CLAUDE_CODE_OAUTH_TOKEN: 'tok',
+    });
+    expect(cfg.auth.id).toBe('claude-sub');
+  });
+});
+
+describe('loadConfig misc', () => {
+  it('leaves campaignDbPath undefined when ESHYRA_DB_PATH is missing or blank', () => {
+    expect(load({ ANTHROPIC_API_KEY: 'sk' }).campaignDbPath).toBeUndefined();
+    expect(
+      load({ ANTHROPIC_API_KEY: 'sk', ESHYRA_DB_PATH: '  ' }).campaignDbPath,
+    ).toBeUndefined();
+  });
+
+  it('surfaces a malformed profile override as a ConfigError', () => {
+    expect(() =>
+      load({
+        ANTHROPIC_API_KEY: 'sk',
         ESHYRA_PROFILE_PREMIUM_DM_PROVIDER: 'not-a-provider',
       }),
     ).toThrow(ConfigError);
-  });
-
-  it('leaves campaignDbPath undefined when ESHYRA_DB_PATH is missing', () => {
-    // ESHYRA_DB_PATH is optional (ADR 0004): the CLI resolves the campaign
-    // from its registry when it is unset. Provider auth is still mandatory.
-    const cfg = loadConfig({ ANTHROPIC_API_KEY: 'sk-test' });
-    expect(cfg.campaignDbPath).toBeUndefined();
-  });
-
-  it('leaves campaignDbPath undefined when ESHYRA_DB_PATH is blank', () => {
-    const cfg = loadConfig({
-      ESHYRA_DB_PATH: '   ',
-      ANTHROPIC_API_KEY: 'sk-test',
-    });
-    expect(cfg.campaignDbPath).toBeUndefined();
-  });
-
-  describe('provider auth', () => {
-    it('resolves api-key auth from ANTHROPIC_API_KEY', () => {
-      const cfg = loadConfig({
-        ESHYRA_DB_PATH: './x.db',
-        ANTHROPIC_API_KEY: 'sk-test',
-      });
-      expect(cfg.auth).toEqual({
-        mode: 'api-key',
-        env: { ANTHROPIC_API_KEY: 'sk-test' },
-      });
-    });
-
-    it('resolves oauth-token auth from CLAUDE_CODE_OAUTH_TOKEN (Pro/Max plan)', () => {
-      const cfg = loadConfig({
-        ESHYRA_DB_PATH: './x.db',
-        CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
-      });
-      expect(cfg.auth).toEqual({
-        mode: 'oauth-token',
-        env: { CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test' },
-      });
-    });
-
-    it('fails fast when both credentials are set and no explicit mode is given', () => {
-      // Released gameplay must never silently fall back to API billing: when
-      // both are present, loadConfig refuses to guess (eshyra-oobh).
-      expect(() =>
-        loadConfig({
-          ESHYRA_DB_PATH: './x.db',
-          ANTHROPIC_API_KEY: 'sk-test',
-          CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
-        }),
-      ).toThrow(ConfigError);
-    });
-
-    it('selects oauth-token when both are set and ESHYRA_AUTH_MODE=oauth-token', () => {
-      const cfg = loadConfig({
-        ESHYRA_DB_PATH: './x.db',
-        ANTHROPIC_API_KEY: 'sk-test',
-        CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
-        ESHYRA_AUTH_MODE: 'oauth-token',
-      });
-      // Only the subscription token is injected — never the API key.
-      expect(cfg.auth).toEqual({
-        mode: 'oauth-token',
-        env: { CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test' },
-      });
-    });
-
-    it('selects api-key when both are set and ESHYRA_AUTH_MODE=api-key', () => {
-      const cfg = loadConfig({
-        ESHYRA_DB_PATH: './x.db',
-        ANTHROPIC_API_KEY: 'sk-test',
-        CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
-        ESHYRA_AUTH_MODE: 'api-key',
-      });
-      expect(cfg.auth).toEqual({
-        mode: 'api-key',
-        env: { ANTHROPIC_API_KEY: 'sk-test' },
-      });
-    });
-
-    it('throws ConfigError when ESHYRA_AUTH_MODE=oauth-token but the token is missing', () => {
-      expect(() =>
-        loadConfig({
-          ESHYRA_DB_PATH: './x.db',
-          ANTHROPIC_API_KEY: 'sk-test',
-          ESHYRA_AUTH_MODE: 'oauth-token',
-        }),
-      ).toThrow(ConfigError);
-    });
-
-    it('throws ConfigError when ESHYRA_AUTH_MODE=api-key but the key is missing', () => {
-      expect(() =>
-        loadConfig({
-          ESHYRA_DB_PATH: './x.db',
-          CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
-          ESHYRA_AUTH_MODE: 'api-key',
-        }),
-      ).toThrow(ConfigError);
-    });
-
-    it('throws ConfigError for an unrecognized ESHYRA_AUTH_MODE', () => {
-      expect(() =>
-        loadConfig({
-          ESHYRA_DB_PATH: './x.db',
-          ANTHROPIC_API_KEY: 'sk-test',
-          ESHYRA_AUTH_MODE: 'bogus',
-        }),
-      ).toThrow(ConfigError);
-    });
-
-    it('uses the single present credential under explicit auto mode', () => {
-      const apiOnly = loadConfig({
-        ANTHROPIC_API_KEY: 'sk-test',
-        ESHYRA_AUTH_MODE: 'auto',
-      });
-      expect(apiOnly.auth.mode).toBe('api-key');
-      const oauthOnly = loadConfig({
-        CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
-        ESHYRA_AUTH_MODE: 'auto',
-      });
-      expect(oauthOnly.auth.mode).toBe('oauth-token');
-    });
-
-    it('throws ConfigError when neither credential is set', () => {
-      expect(() => loadConfig({ ESHYRA_DB_PATH: './x.db' })).toThrow(
-        ConfigError,
-      );
-    });
-
-    it('treats a blank ANTHROPIC_API_KEY as unset and falls back to the OAuth token', () => {
-      const cfg = loadConfig({
-        ESHYRA_DB_PATH: './x.db',
-        ANTHROPIC_API_KEY: '   ',
-        CLAUDE_CODE_OAUTH_TOKEN: 'sk-ant-oat01-test',
-      });
-      expect(cfg.auth.mode).toBe('oauth-token');
-    });
   });
 });

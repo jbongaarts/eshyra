@@ -31,25 +31,43 @@ The critical consequence: inside Claude Code, **`ANTHROPIC_API_KEY` outranks the
 subscription token.** If an API key reaches the SDK process, it silently wins —
 you bill API credits while believing you are on your subscription.
 
-**Eshyra does not mirror that precedence for gameplay (eshyra-oobh).** Released
-gameplay must never silently fall back to API billing, so `loadConfig` selects a
-credential *explicitly*:
+### Four gameplay providers (eshyra-6ygw)
 
-- Only `CLAUDE_CODE_OAUTH_TOKEN` set → `oauth-token`.
-- Only `ANTHROPIC_API_KEY` set → `api-key`.
-- **Both set, no `ESHYRA_AUTH_MODE`** → **fail fast** with a `ConfigError` asking
-  you to choose. Eshyra will not guess which credential to bill.
-- `ESHYRA_AUTH_MODE=oauth-token` / `=api-key` forces that mode (and errors if its
-  credential is missing); `ESHYRA_AUTH_MODE=auto` is the default behaviour above.
+Provider and auth are not separate axes — the agent-harness adapters exist
+precisely to enable subscription auth — so Eshyra models gameplay as **four
+discrete providers**, each a (vendor × auth) pair that maps 1:1 to a model
+adapter (ADR 0010):
 
-Whichever mode is selected, the CLI injects only that one credential, and the
-child SDK environment then **strips every other inherited provider credential**
-(`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`) before
-the SDK runs — so a stray API key in the shell cannot override the choice. The
-primary DM and the mechanics auditor share the one resolved selection.
+| `ESHYRA_AUTH_MODE` | Auth | Adapter |
+| --- | --- | --- |
+| `claude-sub` | `CLAUDE_CODE_OAUTH_TOKEN` (Claude Pro/Max) | `AgentSdkMcpModelClient` |
+| `codex-sub` | a `codex login` session under `CODEX_HOME` | `CodexSdkMcpModelClient` |
+| `anthropic-api` | `ANTHROPIC_API_KEY` (Console key) | `AnthropicNativeModelClient` |
+| `openai-api` | `OPENAI_API_KEY` | not built yet (eshyra-fxxf) |
 
-To run on the subscription with an API key also present, set
-`ESHYRA_AUTH_MODE=oauth-token` (or simply leave `ANTHROPIC_API_KEY` unset).
+**Eshyra never silently falls back to API billing (eshyra-oobh).** `loadConfig`
+selects a provider by **auth presence**, generalizing the original Anthropic
+logic across all four:
+
+- Detect which providers' auth is present (env credentials, plus a Codex login
+  detected by `auth_mode: "chatgpt"` in `$CODEX_HOME/auth.json` — a non-secret
+  discriminator; tokens are never read).
+- **Exactly one present** → use it.
+- **More than one present** → **fail fast**; set `ESHYRA_AUTH_MODE` to one of the
+  four provider values to force it. Eshyra will not guess which subscription/key
+  to bill.
+- **None present** → `ConfigError` listing the four ways to authenticate.
+- `ESHYRA_AUTH_MODE=<provider>` forces that provider (and errors if its auth is
+  absent); unset / `auto` is the presence-based behaviour above.
+
+The CLI injects only the selected provider's single credential (none for the
+login-based `codex-sub`), and each agent-harness adapter then **strips every
+other inherited provider credential** from its child process — so a stray key in
+the shell cannot override the choice. The primary DM and the mechanics auditor
+share the one resolved provider.
+
+To run on a subscription with an API key also present, set `ESHYRA_AUTH_MODE` to
+the subscription provider (e.g. `claude-sub` or `codex-sub`).
 
 ## Subscription setup
 

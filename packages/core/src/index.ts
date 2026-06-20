@@ -69,12 +69,22 @@ export {
   completeCharacterCreation,
 } from './character/creation.js';
 export type {
+  AdapterFamily as ConfigAdapterFamily,
   EshyraConfig,
-  ProviderAuth,
-  ProviderAuthMode,
+  GameplayProvider,
+  ProviderProbes,
+  ProviderSelection,
+  ProviderVendor,
+  ResolvedProvider,
 } from './config.js';
 // Configuration.
-export { ConfigError, DEFAULT_AUDIT_MODEL, loadConfig } from './config.js';
+export {
+  ConfigError,
+  DEFAULT_AUDIT_MODEL,
+  defaultCodexLoginPresent,
+  GAMEPLAY_PROVIDERS,
+  loadConfig,
+} from './config.js';
 export type { ComposeArcSummaryInput } from './memory/arcSummary.js';
 export { composeArcSummary } from './memory/arcSummary.js';
 export type { ExtractCampaignBibleInput } from './memory/campaignBibleExtractor.js';

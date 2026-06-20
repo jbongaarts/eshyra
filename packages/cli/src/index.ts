@@ -4,10 +4,11 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { pathToFileURL } from 'node:url';
 import {
-  type AgentSdkMcpDebugOptions,
   AgentSdkMcpModelClient,
+  AnthropicNativeModelClient,
   assertGameplayCapable,
   CORE_VERSION,
+  CodexSdkMcpModelClient,
   ConfigError,
   createDefaultToolRegistry,
   DEMO_TURN_CAP,
@@ -17,8 +18,10 @@ import {
   type EshyraConfig,
   ensureDoltAvailable,
   loadConfig,
+  type ModelClient,
   ModelTurnAuditor,
   openDatabase,
+  type ResolvedProvider,
   runTurn,
   UnsupportedGameplayProviderError,
 } from '@eshyra/core';
@@ -64,10 +67,13 @@ export function buildBanner(version: string): string {
 export function formatConfigError(err: ConfigError): string {
   return [
     `config error: ${err.message}`,
-    'For the Claude Agent SDK adapter, set ANTHROPIC_API_KEY (a Console API',
-    'key) or CLAUDE_CODE_OAUTH_TOKEN (a Claude Pro/Max subscription token). If',
-    'both are set, choose one with ESHYRA_AUTH_MODE=oauth-token or =api-key so',
-    'subscription play is never silently API-billed. Then run: eshyra play',
+    'Provide exactly one gameplay provider:',
+    '  - claude-sub:    CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`)',
+    '  - codex-sub:     `codex login` (a ChatGPT/Codex subscription under CODEX_HOME)',
+    '  - anthropic-api: ANTHROPIC_API_KEY (an Anthropic Console key)',
+    '  - openai-api:    OPENAI_API_KEY (adapter not built yet — eshyra-fxxf)',
+    'If more than one is available, pick with ESHYRA_AUTH_MODE=<provider> so play',
+    'is never silently billed to the wrong account. Then run: eshyra play',
   ].join('\n');
 }
 
@@ -136,14 +142,26 @@ export async function runDoltInstall(
   }
 }
 
+/**
+ * Per-call debug labels. Structurally shared by every gameplay adapter's debug
+ * options (Agent SDK MCP / Codex MCP / Anthropic native), so one shape works for
+ * whichever provider is resolved.
+ */
+interface GameplayDebugOptions {
+  readonly debug?: SessionDebugSink;
+  readonly profile?: string;
+  readonly tier?: string;
+  readonly authMode?: string;
+}
+
 /** Resolved debug wiring for `eshyra play`: the shared sink plus per-call labels. */
 interface PlayDebug {
   /** The shared file-backed sink, or `undefined` when debug is off. */
   readonly sink?: SessionDebugSink;
   /** Debug labels for the primary DM (gameplay) model call. */
-  readonly modelDebug?: AgentSdkMcpDebugOptions;
+  readonly modelDebug?: GameplayDebugOptions;
   /** Debug labels for the mechanics-audit model call. */
-  readonly auditDebug?: AgentSdkMcpDebugOptions;
+  readonly auditDebug?: GameplayDebugOptions;
 }
 
 /**
@@ -172,26 +190,65 @@ function buildDebug(
       debug: resolved.sink,
       profile: 'premium_dm',
       tier: cfg.dmProfile.tier,
-      authMode: cfg.auth.mode,
+      authMode: cfg.auth.id,
     },
     auditDebug: {
       debug: resolved.sink,
       profile: 'mechanics_auditor',
       tier: 'auditor',
-      authMode: cfg.auth.mode,
+      authMode: cfg.auth.id,
     },
   };
 }
 
 /**
+ * Construct the gameplay model client for the resolved provider (eshyra-6ygw)
+ * and assert it can transport Eshyra tools natively before play begins
+ * (eshyra-qa9d, ADR 0010). Each of the four providers maps to exactly one
+ * adapter; `openai-api` resolves in config but has no adapter yet (eshyra-fxxf),
+ * so it fails here with an actionable message rather than silently.
+ */
+export function makeGameplayClient(
+  provider: ResolvedProvider,
+  model: string,
+  role: string,
+  debugOptions?: GameplayDebugOptions,
+): ModelClient {
+  const auth = { env: provider.env };
+  let client:
+    | AgentSdkMcpModelClient
+    | CodexSdkMcpModelClient
+    | AnthropicNativeModelClient;
+  switch (provider.id) {
+    case 'claude-sub':
+      client = new AgentSdkMcpModelClient(model, auth, debugOptions);
+      break;
+    case 'codex-sub':
+      // Codex authenticates from the CODEX_HOME login; it takes no auth arg.
+      client = new CodexSdkMcpModelClient(model, debugOptions);
+      break;
+    case 'anthropic-api':
+      client = new AnthropicNativeModelClient(model, auth, debugOptions);
+      break;
+    case 'openai-api':
+      throw new ConfigError(
+        'provider "openai-api" is selected but its API-native adapter is not ' +
+          'implemented yet (eshyra-fxxf). Use claude-sub, codex-sub, or ' +
+          'anthropic-api.',
+      );
+  }
+  assertGameplayCapable(client.capabilities, role);
+  return client;
+}
+
+/**
  * Build the real, terminal-and-model-backed dependencies for `eshyra play`.
  *
- * Both the primary DM and the mechanics auditor run on the Agent SDK in-process
- * MCP adapter (eshyra-eznk) under the SAME resolved provider credential — never
- * an independently API-billed call (eshyra-oobh). The auditor targets the
- * (typically smaller/faster) `cfg.auditModel`. Both calls are wrapped with a
- * {@link ModelUsageTracker} that records per-call token and timing data to the
- * shared diagnostics store (eshyra-cuxm).
+ * The primary DM and the mechanics auditor run on the SAME resolved gameplay
+ * provider (eshyra-6ygw) — never an independently billed call (eshyra-oobh). The
+ * auditor targets the (typically smaller/faster) `cfg.auditModel`. Both calls
+ * are wrapped with a {@link ModelUsageTracker} that records per-call token and
+ * timing data to the shared diagnostics store (eshyra-cuxm).
  */
 function buildPlayDeps(
   cfg: EshyraConfig,
@@ -199,38 +256,36 @@ function buildPlayDeps(
   usageStore: CloseableModelUsageSink,
   debug?: PlayDebug,
 ): PlayDeps {
-  const auth = { env: cfg.auth.env };
-  const adapterFamily = 'agent-harness';
+  const adapterFamily = cfg.auth.adapterFamily;
 
-  // Gate gameplay on native tool transport BEFORE play begins (eshyra-qa9d,
-  // ADR 0010). Both gameplay calls must run on an adapter that forwards Eshyra
-  // tools natively; a fenced-text adapter would describe tools the model cannot
-  // actually call. The capability lives on the concrete adapter, so assert it
-  // here before the usage tracker wraps and hides the class.
-  const primaryClient = new AgentSdkMcpModelClient(
+  // Build the primary DM and mechanics-auditor clients for the resolved provider
+  // (eshyra-6ygw). Both run on the SAME provider — never an independently billed
+  // call (eshyra-oobh) — and gameplay is gated on native tool transport BEFORE
+  // play begins (eshyra-qa9d, ADR 0010); makeGameplayClient asserts that.
+  const primaryClient = makeGameplayClient(
+    cfg.auth,
     cfg.model,
-    auth,
+    'primary DM',
     debug?.modelDebug,
   );
-  assertGameplayCapable(primaryClient.capabilities, 'primary DM');
-  const auditClient = new AgentSdkMcpModelClient(
+  const auditClient = makeGameplayClient(
+    cfg.auth,
     cfg.auditModel,
-    auth,
+    'mechanics auditor',
     debug?.auditDebug,
   );
-  assertGameplayCapable(auditClient.capabilities, 'mechanics auditor');
 
   // Wrap each adapter with a usage tracker sharing the same store so a single
   // session's calls are co-located in the diagnostics DB under the same filters.
   const model = new ModelUsageTracker(primaryClient, {
     model: cfg.model,
-    authMode: cfg.auth.mode,
+    authMode: cfg.auth.id,
     adapterFamily,
     sink: usageStore,
   });
   const auditModel = new ModelUsageTracker(auditClient, {
     model: cfg.auditModel,
-    authMode: cfg.auth.mode,
+    authMode: cfg.auth.id,
     adapterFamily,
     sink: usageStore,
   });
