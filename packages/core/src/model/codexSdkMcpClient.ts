@@ -71,10 +71,10 @@ import {
  *
  * Live-validation note. The Codex CLI config surface below is built from the
  * published config reference (developers.openai.com/codex/config-reference) and
- * `@openai/codex-sdk@0.141.0` types. The experimental Streamable-HTTP MCP client
- * flag (`experimental_use_rmcp_client`) and `project_doc_max_bytes` are the keys
- * most likely to drift across `codex` releases — confirm them with the manual
- * smoke test in `docs/codex-adapter.md` once Codex usage is available.
+ * `@openai/codex-sdk@0.141.0` types. Streamable HTTP is a first-class MCP
+ * transport in this Codex release; no experimental transport flag is needed.
+ * Confirm `project_doc_max_bytes` and the MCP approval settings with the manual
+ * smoke test in `docs/codex-adapter.md` when upgrading Codex.
  */
 
 /** Debug label reported for the Codex MCP tool channel (never fenced text). */
@@ -97,13 +97,6 @@ export const CODEX_SDK_MCP_ADAPTER_CAPABILITIES: ModelAdapterCapabilities = {
   vendor: 'openai',
   gameplayCapable: true,
 };
-
-/**
- * Enables Codex's Streamable-HTTP MCP client, required for `url`-based MCP
- * servers on Codex builds where the legacy client is stdio-only. Isolated here
- * as the primary live-validation risk (see the file header).
- */
-const ENABLE_RMCP_CLIENT = true;
 
 /**
  * Map an Eshyra tool name to the namespaced label recorded in debug records.
@@ -286,7 +279,7 @@ export class CodexSdkMcpModelClient implements ModelClient {
       const { Codex } = codexModule;
       const codex = new Codex({
         env: buildSterileCodexEnv(mcp.token),
-        config: this.#buildCodexConfig(mcp.url),
+        config: this.#buildCodexConfig(mcp.url, defs.length > 0),
       });
       const thread = codex.startThread(
         this.#buildThreadOptions(workingDirectory),
@@ -307,24 +300,36 @@ export class CodexSdkMcpModelClient implements ModelClient {
             break;
           case 'turn.completed':
             usage = mapUsage(event.usage);
-            // The model server reported the eshyra MCP tools as reachable.
-            mcpServers = [
-              { name: ESHYRA_MCP_SERVER_NAME, status: 'connected' },
-            ];
+            // A tool-bearing turn completed with the required Eshyra MCP
+            // server initialized. Tool-less calls do not configure the server.
+            mcpServers =
+              defs.length > 0
+                ? [{ name: ESHYRA_MCP_SERVER_NAME, status: 'connected' }]
+                : [];
             break;
           case 'turn.failed':
-            failureMessage ??= event.error.message;
+            // A terminal turn failure is more authoritative than an earlier
+            // item-level warning (for example, fallback model metadata).
+            failureMessage = event.error.message;
             break;
           case 'error':
-            failureMessage ??= event.message;
+            // Later stream errors carry the provider/API response and should
+            // supersede preliminary item-level diagnostics.
+            failureMessage = event.message;
             break;
           default:
             break;
         }
       }
     } catch (err) {
+      // The TypeScript SDK yields stdout JSONL events before checking the CLI's
+      // exit code. Codex can therefore yield the actionable `turn.failed` or
+      // `error` message and then throw a generic stderr-only error such as
+      // "Codex Exec exited with code 1: Reading prompt from stdin...". Preserve
+      // the streamed provider error when one was observed; it is the useful
+      // diagnostic (for example, an unsupported subscription model).
       const messageText = redactSecrets(
-        err instanceof Error ? err.message : String(err),
+        failureMessage ?? (err instanceof Error ? err.message : String(err)),
       );
       this.#recordDebug(input, forwardedToolNames, [], undefined, {
         ok: false,
@@ -369,21 +374,35 @@ export class CodexSdkMcpModelClient implements ModelClient {
 
   /**
    * Build the global Codex CLI config overrides. Only keys NOT exposed as typed
-   * thread options live here: the in-process MCP server pointer and the
-   * AGENTS.md suppression. `experimental_use_rmcp_client` enables the
-   * Streamable-HTTP MCP client (see the file header live-validation note).
+   * thread options live here: the in-process MCP server pointer, MCP tool
+   * approval policy, and AGENTS.md suppression.
    */
-  #buildCodexConfig(mcpUrl: string): NonNullable<CodexOptions['config']> {
+  #buildCodexConfig(
+    mcpUrl: string,
+    hasTools: boolean,
+  ): NonNullable<CodexOptions['config']> {
     return {
-      mcp_servers: {
-        [ESHYRA_MCP_SERVER_NAME]: {
-          url: mcpUrl,
-          bearer_token_env_var: ESHYRA_MCP_TOKEN_VAR,
-        },
-      },
+      ...(hasTools
+        ? {
+            mcp_servers: {
+              [ESHYRA_MCP_SERVER_NAME]: {
+                url: mcpUrl,
+                bearer_token_env_var: ESHYRA_MCP_TOKEN_VAR,
+                // A gameplay turn is invalid without its deterministic tools.
+                // Fail startup if the loopback server cannot initialize rather
+                // than silently running narration-only.
+                required: true,
+                // The thread itself uses approvalPolicy=never because gameplay
+                // is non-interactive. Pre-approve this private, loopback-only
+                // server so Codex executes tools instead of returning "user
+                // cancelled MCP tool call" when no prompt can be shown.
+                default_tools_approval_mode: 'approve',
+              },
+            },
+          }
+        : {}),
       // Suppress all AGENTS.md / project-instruction loading into gameplay.
       project_doc_max_bytes: 0,
-      ...(ENABLE_RMCP_CLIENT ? { experimental_use_rmcp_client: true } : {}),
     };
   }
 

@@ -23,6 +23,7 @@ const state = vi.hoisted(() => ({
   prompts: [] as string[],
   events: [] as unknown[],
   runError: undefined as unknown,
+  streamError: undefined as unknown,
 }));
 
 vi.mock('@openai/codex-sdk', () => {
@@ -43,6 +44,9 @@ vi.mock('@openai/codex-sdk', () => {
             events: (async function* () {
               for (const e of events) {
                 yield e;
+              }
+              if (state.streamError !== undefined) {
+                throw state.streamError;
               }
             })(),
           };
@@ -135,6 +139,7 @@ describe('CodexSdkMcpModelClient', () => {
     state.prompts.length = 0;
     state.events = successEvents();
     state.runError = undefined;
+    state.streamError = undefined;
   });
 
   afterEach(() => {
@@ -151,12 +156,18 @@ describe('CodexSdkMcpModelClient', () => {
     expect(client.capabilities.gameplayCapable).toBe(true);
   });
 
-  it('points Codex at the in-process MCP server and suppresses AGENTS.md', async () => {
+  it('requires and pre-approves the in-process MCP server and suppresses AGENTS.md', async () => {
     await new CodexSdkMcpModelClient('gpt-5.5').complete(baseInput);
     const config = state.ctorOptions[0].config as {
-      mcp_servers: { eshyra: { url: string; bearer_token_env_var: string } };
+      mcp_servers: {
+        eshyra: {
+          url: string;
+          bearer_token_env_var: string;
+          required: boolean;
+          default_tools_approval_mode: string;
+        };
+      };
       project_doc_max_bytes: number;
-      experimental_use_rmcp_client: boolean;
     };
     expect(config.mcp_servers.eshyra.url).toMatch(
       /^http:\/\/127\.0\.0\.1:\d+\/mcp$/,
@@ -164,9 +175,13 @@ describe('CodexSdkMcpModelClient', () => {
     expect(config.mcp_servers.eshyra.bearer_token_env_var).toBe(
       'ESHYRA_MCP_TOKEN',
     );
+    expect(config.mcp_servers.eshyra.required).toBe(true);
+    expect(config.mcp_servers.eshyra.default_tools_approval_mode).toBe(
+      'approve',
+    );
     // No project instructions (AGENTS.md) load into gameplay context.
     expect(config.project_doc_max_bytes).toBe(0);
-    expect(config.experimental_use_rmcp_client).toBe(true);
+    expect(config).not.toHaveProperty('experimental_use_rmcp_client');
   });
 
   it('strips an ambient OPENAI_API_KEY and injects the MCP bearer token', async () => {
@@ -176,6 +191,15 @@ describe('CodexSdkMcpModelClient', () => {
     // Subscription billing is exclusive: the API key never reaches the CLI.
     expect('OPENAI_API_KEY' in env).toBe(false);
     expect(env.ESHYRA_MCP_TOKEN).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('does not configure an empty required MCP server for tool-less calls', async () => {
+    await new CodexSdkMcpModelClient('gpt-5.4-mini').complete({
+      messages: [{ role: 'user', content: 'audit this turn' }],
+      tools: [],
+    });
+
+    expect(state.ctorOptions[0].config).not.toHaveProperty('mcp_servers');
   });
 
   it('runs a sterile, read-only, network/web-disabled thread in a temp workdir', async () => {
@@ -251,6 +275,42 @@ describe('CodexSdkMcpModelClient', () => {
       .catch((e) => e);
     expect(err).toBeInstanceOf(ModelClientError);
     expect(err).not.toBeInstanceOf(ModelRateLimitError);
+  });
+
+  it('preserves a streamed provider failure when the CLI later exits nonzero', async () => {
+    state.events = [
+      {
+        type: 'item.completed',
+        item: {
+          id: 'warning',
+          type: 'error',
+          message: 'Model metadata not found; using fallback metadata.',
+        },
+      },
+      {
+        type: 'error',
+        message:
+          "The 'gpt-5-codex' model is not supported when using Codex with a ChatGPT account.",
+      },
+      {
+        type: 'turn.failed',
+        error: {
+          message:
+            "The 'gpt-5-codex' model is not supported when using Codex with a ChatGPT account.",
+        },
+      },
+    ];
+    state.streamError = new Error(
+      'Codex Exec exited with code 1: Reading prompt from stdin...',
+    );
+
+    const err = await new CodexSdkMcpModelClient('gpt-5.5')
+      .complete(baseInput)
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(ModelClientError);
+    expect(err.message).toContain('not supported when using Codex');
+    expect(err.message).not.toContain('Reading prompt from stdin');
   });
 
   describe('opt-in session debug logging', () => {

@@ -78,18 +78,20 @@ adapter throws a clear `ModelClientError` telling the user to install the
 `codex` or `full` edition. See the installer-editions ADR for how the Codex
 binary is packaged.
 
-## Live-validation caveats (confirm when Codex usage is available)
+## Live-validation caveats (confirm when upgrading Codex)
 
 The adapter's offline unit tests mock the Codex SDK, so the CLI config surface
 is built from the published config reference
 (`developers.openai.com/codex/config-reference`) and
-`@openai/codex-sdk@0.141.0` types. Two config keys are the most likely to drift
-across `codex` releases and **must** be confirmed with the manual smoke test:
+`@openai/codex-sdk@0.141.0` types. Streamable HTTP is a first-class MCP
+transport and needs no experimental feature flag. The settings most likely to
+drift across Codex releases and requiring confirmation with the manual smoke
+test are:
 
-- `experimental_use_rmcp_client = true` — enables the Streamable-HTTP MCP client
-  for `url`-based servers. If a future `codex` ships HTTP MCP as the default (or
-  renames the flag), update `ENABLE_RMCP_CLIENT` / `#buildCodexConfig`.
-- `project_doc_max_bytes = 0` — the AGENTS.md suppression key.
+- `project_doc_max_bytes = 0` — the AGENTS.md suppression key;
+- `required = true` — fail the turn if the Eshyra MCP server cannot initialize;
+- `default_tools_approval_mode = "approve"` — pre-approve deterministic Eshyra
+  tools because gameplay uses non-interactive `approvalPolicy = "never"`.
 
 ### Manual smoke test
 
