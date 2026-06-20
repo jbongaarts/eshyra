@@ -1,0 +1,6 @@
+# Cloudflare Pages project config for eshyra.app.
+# Used by `wrangler pages deploy` (the site GitHub Actions workflow and local
+# deploys). `pages_build_output_dir` points at the generated static output so
+# `wrangler pages deploy` needs no directory argument.
+name = "eshyra-site"
+pages_build_output_dir = "dist"

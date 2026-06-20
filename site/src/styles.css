@@ -1,0 +1,207 @@
+:root {
+  --bg: #14131a;
+  --panel: #1d1b27;
+  --ink: #ece9f3;
+  --muted: #a7a2bd;
+  --accent: #b69cff;
+  --accent-ink: #1a1330;
+  --border: #2f2c3d;
+  --line: 1px solid var(--border);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font:
+    16px / 1.6 system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+
+.wrap {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+}
+
+.status-pill {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.hero {
+  padding: 28px 0 8px;
+}
+
+h1 {
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  line-height: 1.2;
+  margin: 0 0 16px;
+}
+
+h2 {
+  font-size: 1.35rem;
+  margin: 0 0 12px;
+}
+
+.lede {
+  font-size: 1.08rem;
+  color: var(--ink);
+}
+
+.construction {
+  color: var(--muted);
+}
+
+.offer,
+.license {
+  background: var(--panel);
+  border: var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  margin: 24px 0;
+}
+
+.callout {
+  background: rgba(182, 156, 255, 0.08);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--muted);
+  margin: 16px 0;
+}
+
+.download {
+  margin: 20px 0 8px;
+}
+
+.button {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+}
+
+.button:hover {
+  filter: brightness(1.08);
+}
+
+.meta {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.meta li {
+  padding: 2px 0;
+}
+
+.provenance {
+  margin: 18px 0 0;
+  border-top: var(--line);
+  padding-top: 14px;
+}
+
+summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+code {
+  background: #100f15;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 0.86em;
+}
+
+.hashes code {
+  word-break: break-all;
+}
+
+.kinds {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.kinds th,
+.kinds td {
+  text-align: left;
+  border-bottom: var(--line);
+  padding: 6px 8px;
+}
+
+.kinds td:last-child,
+.kinds th:last-child {
+  text-align: right;
+}
+
+.repo-link,
+.fine {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.attribution {
+  border-left: 3px solid var(--accent);
+  margin: 14px 0;
+  padding: 8px 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.site-footer {
+  border-top: var(--line);
+  margin-top: 32px;
+  padding: 20px 0 40px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.site-footer a {
+  color: var(--muted);
+}

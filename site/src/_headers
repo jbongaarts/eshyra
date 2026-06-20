@@ -1,0 +1,10 @@
+# Cloudflare Pages headers (https://developers.cloudflare.com/pages/configuration/headers/)
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'
+
+/downloads/*
+  Cache-Control: public, max-age=3600
+  Content-Disposition: attachment
