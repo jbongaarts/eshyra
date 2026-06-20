@@ -1,0 +1,66 @@
+# Build and deploy the eshyra.app static site to Cloudflare Pages.
+#
+# INDEPENDENT RELEASE CYCLE: this workflow is intentionally decoupled from the
+# application release pipeline (release.yml, which fires on `v*` tags). The site
+# has its own trigger surface so content can ship without an app release and an
+# app release never redeploys the site:
+#
+#   - push of a `site-v*` tag  -> production deploy (the site's release cycle)
+#   - manual workflow_dispatch  -> production deploy on demand
+#   - pull_request touching site files -> build-only validation, no deploy
+#
+# CREDENTIALS: deploys require two repository secrets. See
+# docs/site-deployment.md for how to create the Cloudflare API token and find
+# the account ID, and how to add them with `gh secret set`:
+#
+#   - CLOUDFLARE_API_TOKEN   (scoped token with the Pages:Edit permission)
+#   - CLOUDFLARE_ACCOUNT_ID  (your Cloudflare account id)
+#
+# The build is dependency-free (Node built-ins + the `zip` CLI, preinstalled on
+# ubuntu runners), so there is no npm install step for the site.
+
+name: Site deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "site-v*"
+  pull_request:
+    paths:
+      - "site/**"
+      - "packages/core/data/rules-packs/**"
+      - ".github/workflows/site-deploy.yml"
+
+# Least-privilege: the workflow only checks out the repo. Cloudflare auth is via
+# the scoped API token secret, not the GITHUB_TOKEN.
+permissions:
+  contents: read
+
+concurrency:
+  group: site-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node 24 LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Build site
+        run: node build.mjs
+        working-directory: site
+
+      - name: Deploy to Cloudflare Pages
+        if: github.event_name != 'pull_request'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          command: pages deploy dist --project-name=eshyra-site --branch=main

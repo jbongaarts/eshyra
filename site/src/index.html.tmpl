@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Eshyra — text-first persistent AI Dungeon Master</title>
+    <meta
+      name="description"
+      content="Eshyra is an early pre-release, text-first persistent AI Dungeon Master. Download the structured D&D 5e SRD 5.1 rules pack, a machine-friendly CC BY 4.0 reference artifact."
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <span class="brand">Eshyra</span>
+        <span class="status-pill">Under construction</span>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <h1>A text-first, persistent AI Dungeon Master</h1>
+        <p class="lede">
+          Eshyra is a campaign engine for long-running fantasy play: it
+          remembers prior events, tracks structured game state, adjudicates
+          rules through deterministic tools, and sustains a tabletop-like solo
+          or small-group experience entirely through text.
+        </p>
+        <p class="construction">
+          <strong>Eshyra itself is early pre-release and under
+          construction.</strong> There is no sign-up yet. In the meantime, the
+          project has produced something useful on its own — a structured,
+          openly licensed D&D 5e SRD rules pack you can download and use today.
+        </p>
+      </section>
+
+      <section class="offer" id="rules-pack">
+        <h2>Download: D&amp;D 5e SRD 5.1 rules pack</h2>
+        <p>
+          A structured, machine-friendly representation of the
+          <strong>System Reference Document 5.1</strong>, extracted by Eshyra's
+          deterministic importer into a single JSON records file with per-record
+          provenance. Useful for tools, bots, search indexes, and other
+          tabletop software.
+        </p>
+
+        <div class="callout">
+          This is reference data derived from CC BY 4.0 source material. It is
+          <strong>not</strong> original game content and
+          <strong>not</strong> an endorsement by Wizards of the Coast.
+        </div>
+
+        <div class="download">
+          <a class="button" href="/downloads/{{ZIP_NAME}}" download>
+            Download rules pack ({{ZIP_SIZE}})
+          </a>
+          <ul class="meta">
+            <li><strong>{{RECORD_COUNT}}</strong> records across
+              <strong>{{KIND_COUNT}}</strong> record kinds</li>
+            <li>License: Creative Commons Attribution 4.0 International</li>
+            <li>Source: SRD 5.1 ({{SOURCE_DATE}})</li>
+            <li>Built: {{BUILD_DATE}}</li>
+          </ul>
+        </div>
+
+        <details class="provenance">
+          <summary>What's inside &amp; how to verify it</summary>
+          <p>
+            The ZIP contains <code>manifest.json</code> (pack metadata, license,
+            and source provenance), <code>records.json</code> (the rules
+            records), <code>ATTRIBUTION.txt</code>, and a short
+            <code>README.md</code>. Each record names the SRD location it was
+            extracted from.
+          </p>
+          <p class="hashes">
+            ZIP SHA-256:
+            <code>{{ZIP_SHA256}}</code><br />
+            Source SRD 5.1 SHA-256:
+            <code>{{SOURCE_HASH}}</code>
+          </p>
+          <table class="kinds">
+            <thead>
+              <tr><th>Record kind</th><th>Count</th></tr>
+            </thead>
+            <tbody>
+{{KINDS_ROWS}}
+            </tbody>
+          </table>
+        </details>
+
+        <p class="repo-link">
+          Prefer the source? Browse the rules-pack files in the repository:
+          <a
+            href="https://github.com/jbongaarts/eshyra/tree/main/packages/core/data/rules-packs/rules__dnd5e-srd-5.1"
+            >github.com/jbongaarts/eshyra</a
+          >.
+        </p>
+      </section>
+
+      <section class="license" id="license">
+        <h2>License &amp; attribution</h2>
+        <p>
+          The rules pack is distributed under the
+          <a href="https://creativecommons.org/licenses/by/4.0/legalcode"
+            >Creative Commons Attribution 4.0 International License</a
+          >. If you redistribute these records or derivatives, preserve the
+          attribution below.
+        </p>
+        <blockquote class="attribution">
+          This work includes material taken from the System Reference Document
+          5.1 (&ldquo;SRD 5.1&rdquo;) by Wizards of the Coast LLC and available
+          at
+          <a href="https://dnd.wizards.com/resources/systems-reference-document"
+            >dnd.wizards.com/resources/systems-reference-document</a
+          >. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0
+          International License available at
+          <a href="https://creativecommons.org/licenses/by/4.0/legalcode"
+            >creativecommons.org/licenses/by/4.0/legalcode</a
+          >.
+        </blockquote>
+        <p class="fine">
+          The Eshyra application itself is a separate work and is not offered
+          here; its source is governed by its own license in the
+          <a href="https://github.com/jbongaarts/eshyra">repository</a>.
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          Eshyra &middot; early pre-release &middot;
+          <a href="https://github.com/jbongaarts/eshyra">source on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

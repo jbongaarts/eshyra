@@ -1,0 +1,11 @@
+{
+  "name": "eshyra-site",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Static eshyra.app landing page and SRD rules-pack download. Independent release cycle from the Eshyra application.",
+  "type": "module",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}
