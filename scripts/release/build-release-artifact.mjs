@@ -33,6 +33,7 @@ import {
   chmodSync,
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -133,9 +134,12 @@ function* walkInstalledPackages(startDir) {
  */
 function pruneAgentSdks(stageDir, edition) {
   const excludedKeys = excludedProviderKeys(edition);
-  if (excludedKeys.length === 0) return [];
+  if (excludedKeys.length === 0) {
+    return { removed: [], prunedBins: [] };
+  }
   const appDir = join(stageDir, 'app');
   const removed = [];
+  const prunedBins = [];
   // Collect first so removing a directory cannot disturb an in-progress walk.
   const targets = [];
   for (const pkg of walkInstalledPackages(appDir)) {
@@ -144,12 +148,69 @@ function pruneAgentSdks(stageDir, edition) {
     }
   }
   for (const pkg of targets) {
-    if (existsSync(pkg.dir)) {
-      rmSync(pkg.dir, { recursive: true, force: true });
-      removed.push(pkg.name);
+    if (!existsSync(pkg.dir)) continue;
+    // Remove the package's launcher shims FIRST, reading its `bin` field while
+    // the package.json is still present. The staging copy dereferences symlinks,
+    // so a leftover `.bin/codex` is a real file (not a dangling link) that a
+    // resolve-based sweep would miss — drive it from the manifest instead, so a
+    // non-codex edition never ships a broken `codex` launcher on PATH.
+    prunedBins.push(...removeBinShimsFor(pkg));
+    rmSync(pkg.dir, { recursive: true, force: true });
+    removed.push(pkg.name);
+  }
+  return {
+    removed: [...new Set(removed)].sort(),
+    prunedBins: [...new Set(prunedBins)].sort(),
+  };
+}
+
+/**
+ * Remove the `.bin` launcher shims a package owns, in the `node_modules/.bin`
+ * dir that sibling-hosts it. Shim names come from the package's `bin` field
+ * (string → the package's unscoped name; object → its keys). Also clears the
+ * Windows `.cmd`/`.ps1` companions npm writes. Returns the removed shim names.
+ */
+function removeBinShimsFor(pkg) {
+  const manifestPath = join(pkg.dir, 'package.json');
+  if (!existsSync(manifestPath)) return [];
+  let bin;
+  try {
+    bin = readJson(manifestPath).bin;
+  } catch {
+    return [];
+  }
+  if (!bin) return [];
+  const names = Array.isArray(bin)
+    ? []
+    : typeof bin === 'string'
+      ? [pkg.name.split('/').pop()]
+      : Object.keys(bin);
+  // The hosting node_modules is the package dir's parent (unscoped) or its
+  // grandparent (scoped `@scope/name`). `.bin` sits directly inside it.
+  const hostModules = pkg.name.startsWith('@')
+    ? dirname(dirname(pkg.dir))
+    : dirname(pkg.dir);
+  const binDir = join(hostModules, '.bin');
+  const removed = [];
+  for (const name of names) {
+    for (const shim of [name, `${name}.cmd`, `${name}.ps1`]) {
+      const shimPath = join(binDir, shim);
+      if (existsSync(shimPath) || isSymlink(shimPath)) {
+        rmSync(shimPath, { force: true });
+        if (shim === name) removed.push(name);
+      }
     }
   }
-  return [...new Set(removed)].sort();
+  return removed;
+}
+
+/** True if `p` exists as a symbolic link (even a dangling one). */
+function isSymlink(p) {
+  try {
+    return lstatSync(p).isSymbolicLink();
+  } catch {
+    return false;
+  }
 }
 
 // The placeholder literal compiled into packages/core/dist/index.js (and used
@@ -492,13 +553,13 @@ function main() {
     // agent SDKs; claude/codex keep exactly one; full keeps both. Packages not
     // declared in the dependency graph yet (e.g. @openai/codex-sdk before the
     // adapter stream adds it) are skipped — the edition simply ships without it.
-    const pruned = pruneAgentSdks(stageDir, edition);
+    const { removed: pruned, prunedBins } = pruneAgentSdks(stageDir, edition);
     console.log(
       `• edition "${edition}": ${
         pruned.length
           ? `pruned ${pruned.join(', ')}`
           : 'no provider packages pruned'
-      }`,
+      }${prunedBins.length ? ` (+ .bin shims: ${prunedBins.join(', ')})` : ''}`,
     );
 
     // runtime/: the Node binary running this script (ABI-matched to the
@@ -607,7 +668,13 @@ function packWorkspace(workspace, packDir, cache) {
   return tarball;
 }
 
-export { normalizeVersion, resolveEdition, resolveVersion, VERSION_SENTINEL };
+export {
+  normalizeVersion,
+  removeBinShimsFor,
+  resolveEdition,
+  resolveVersion,
+  VERSION_SENTINEL,
+};
 
 // Run only when invoked directly (not when imported by a test).
 if (

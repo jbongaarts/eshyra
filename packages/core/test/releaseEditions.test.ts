@@ -1,7 +1,16 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
 import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  removeBinShimsFor,
   resolveEdition,
   // @ts-expect-error - .mjs tooling script without type declarations
 } from '../../../scripts/release/build-release-artifact.mjs';
@@ -242,5 +251,67 @@ describe('docs document the editions', () => {
     const doc = readText('docs/install.md');
     expect(doc).toContain('--edition');
     expect(doc).toContain('ESHYRA_EDITION');
+  });
+});
+
+describe('removeBinShimsFor (manifest-driven launcher cleanup)', () => {
+  let scratch: string;
+
+  beforeEach(() => {
+    scratch = mkdtempSync(join(tmpdir(), 'eshyra-bin-test-'));
+  });
+
+  afterEach(() => {
+    rmSync(scratch, { recursive: true, force: true });
+  });
+
+  /** Build a scoped package dir with a `bin` field + its `.bin` shims. */
+  function seedScoped(bin: unknown): { nm: string; pkgDir: string } {
+    const nm = join(scratch, 'node_modules');
+    const pkgDir = join(nm, '@openai', 'codex');
+    mkdirSync(pkgDir, { recursive: true });
+    mkdirSync(join(nm, '.bin'), { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: '@openai/codex', bin }),
+    );
+    return { nm, pkgDir };
+  }
+
+  it('removes the shim AND its Windows .cmd/.ps1 companions (string bin)', () => {
+    const { nm, pkgDir } = seedScoped('bin/codex.js');
+    // The staging copy dereferences symlinks, so the shims are real files.
+    for (const f of ['codex', 'codex.cmd', 'codex.ps1', 'keep'])
+      writeFileSync(join(nm, '.bin', f), '');
+
+    const removed = removeBinShimsFor({ name: '@openai/codex', dir: pkgDir });
+
+    expect(removed).toEqual(['codex']);
+    // codex + companions gone; an unrelated shim is untouched.
+    expect(readdirSync(join(nm, '.bin')).sort()).toEqual(['keep']);
+  });
+
+  it('removes every key of an object bin', () => {
+    const nm = join(scratch, 'node_modules');
+    const pkgDir = join(nm, 'multi');
+    mkdirSync(pkgDir, { recursive: true });
+    mkdirSync(join(nm, '.bin'), { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: 'multi', bin: { a: 'a.js', b: 'b.js' } }),
+    );
+    for (const f of ['a', 'b']) writeFileSync(join(nm, '.bin', f), '');
+
+    expect(removeBinShimsFor({ name: 'multi', dir: pkgDir }).sort()).toEqual([
+      'a',
+      'b',
+    ]);
+  });
+
+  it('is a no-op for a package with no bin field', () => {
+    const { pkgDir } = seedScoped(undefined);
+    expect(removeBinShimsFor({ name: '@openai/codex', dir: pkgDir })).toEqual(
+      [],
+    );
   });
 });
