@@ -15,6 +15,10 @@ import {
   VERSION_SENTINEL,
   // @ts-expect-error - .mjs tooling script without type declarations
 } from '../../../scripts/release/build-release-artifact.mjs';
+import {
+  DEFAULT_EDITION,
+  // @ts-expect-error - .mjs tooling script without type declarations
+} from '../../../scripts/release/editions.mjs';
 
 // Functional fail-closed regression tests for the POSIX installer
 // (scripts/release/install.sh). These run install.sh against a fake local
@@ -45,9 +49,10 @@ function target(): string {
 }
 
 // No ESHYRA_VERSION is set, so install.sh's custom-base mode falls back to the
-// builder's version sentinel — match that here so the fixture archive name is
-// the one the installer actually requests.
-const ARCHIVE_NAME = `eshyra-${VERSION_SENTINEL}-${target()}.tar.gz`;
+// builder's version sentinel; no --edition/ESHYRA_EDITION is set either, so it
+// falls back to DEFAULT_EDITION. Match both here so the fixture archive name is
+// the one the installer actually requests (ADR 0011 edition-prefixed naming).
+const ARCHIVE_NAME = `eshyra-${DEFAULT_EDITION}-${VERSION_SENTINEL}-${target()}.tar.gz`;
 
 interface RunResult {
   status: number | null;

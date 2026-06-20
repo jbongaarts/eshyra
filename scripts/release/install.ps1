@@ -7,9 +7,22 @@
 #   $env:ESHYRA_VERSION = 'v0.1.0'
 #   irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
 #
+# Editions (ADR 0011) -- pick which gameplay provider binaries are bundled:
+#   api    -- lean: api-native SDKs only, no bundled agent CLI binary (smallest)
+#   claude -- Claude Agent SDK (Claude Code CLI) bundled   [DEFAULT]
+#   codex  -- Codex SDK (@openai/codex CLI) bundled
+#   full   -- both agent binaries bundled
+# Select with -Edition <name> (direct invocation) or $env:ESHYRA_EDITION (works
+# under `irm ... | iex` too). With an interactive console and no selection, the
+# installer prompts (default: claude).
+#   $env:ESHYRA_EDITION = 'codex'
+#   irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+#
 # Parameters (when running the script directly, not via iex):
 #   -Version <tag>      install a specific release tag, e.g. v0.1.0
 #                       also read from $env:ESHYRA_VERSION
+#   -Edition <name>     edition to install (api|claude|codex|full)
+#                       also read from $env:ESHYRA_EDITION; defaults to claude
 #   -BaseUrl <url>      override the base download URL (for local testing)
 #                       also read from $env:ESHYRA_BASE_URL
 #   -GithubRepo <slug>  GitHub repo slug (default: jbongaarts/eshyra)
@@ -32,6 +45,7 @@
 [CmdletBinding()]
 param(
     [string]$Version = $env:ESHYRA_VERSION,
+    [string]$Edition = $env:ESHYRA_EDITION,
     [string]$BaseUrl = $env:ESHYRA_BASE_URL,
     [string]$GithubRepo = 'jbongaarts/eshyra',
     # Test/development support only (NOT a normal user install path):
@@ -48,6 +62,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Single named default edition (ADR 0011). Keep in lockstep with editions.mjs
+# DEFAULT_EDITION; releaseInstallerPolicy.test.ts guards that they match.
+$EshyraDefaultEdition = 'claude'
+
 # ---------- helpers -----------------------------------------------------------
 
 function Write-Step([string]$Msg) {
@@ -56,6 +74,32 @@ function Write-Step([string]$Msg) {
 
 function Write-Log([string]$Msg) {
     Write-Host "  $Msg"
+}
+
+# ---------- edition selection -------------------------------------------------
+
+function Resolve-EshyraEdition([string]$Requested) {
+    # Precedence: -Edition / $env:ESHYRA_EDITION, then interactive prompt (when a
+    # console is attached), then the single default edition.
+    $value = $Requested
+    if (-not $value -or $value -eq '') {
+        if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+            Write-Host "`nSelect an Eshyra edition (gameplay provider binaries to bundle):"
+            Write-Host '  api    - lean, no agent CLI binary (smallest)'
+            Write-Host '  claude - Claude Agent SDK [default]'
+            Write-Host '  codex  - Codex CLI'
+            Write-Host '  full   - both agent binaries'
+            $choice = Read-Host "edition [$EshyraDefaultEdition]"
+            $value = if ($choice -and $choice -ne '') { $choice } else { $EshyraDefaultEdition }
+        }
+        else {
+            $value = $EshyraDefaultEdition
+        }
+    }
+    if ($value -notin @('api', 'claude', 'codex', 'full')) {
+        throw "Unknown edition: `"$value`" (supported: api, claude, codex, full)"
+    }
+    return $value
 }
 
 # ---------- platform detection ------------------------------------------------
@@ -75,14 +119,14 @@ function Get-EshyraPlatform {
 
 # ---------- release asset resolution -----------------------------------------
 
-function Resolve-EshyraRelease([string]$Repo, [string]$Target) {
+function Resolve-EshyraRelease([string]$Repo, [string]$Target, [string]$Edition) {
     if ($BaseUrl -and $BaseUrl -ne '') {
         # Custom base URL mode (local testing or staging).
-        # Derive the archive name from Version + Target. Version defaults to
-        # 0.0.0-dev to match the builder's sentinel fallback when no release
-        # version is injected (untagged dev/local builds).
+        # Derive the archive name from Edition + Version + Target. Version
+        # defaults to 0.0.0-dev to match the builder's sentinel fallback when no
+        # release version is injected (untagged dev/local builds).
         $ver = if ($Version -and $Version -ne '') { $Version.TrimStart('v') } else { '0.0.0-dev' }
-        $archiveName = "eshyra-$ver-$Target.zip"
+        $archiveName = "eshyra-$Edition-$ver-$Target.zip"
         return @{
             ArchiveUrl   = "$BaseUrl/$archiveName"
             ChecksumsUrl = "$BaseUrl/sha256sums.txt"
@@ -91,11 +135,12 @@ function Resolve-EshyraRelease([string]$Repo, [string]$Target) {
     }
 
     # GitHub Releases mode.
-    # Query the API to find the actual archive asset URL by target suffix.
-    # This intentionally avoids constructing the filename from the tag name:
-    # the released artifact is named by the builder's resolved version, which is
-    # the tag with its leading "v" stripped (e.g. tag v0.1.0 -> eshyra-0.1.0-…).
-    # Selecting the asset by target suffix is robust to that normalization.
+    # Query the API to find the actual archive asset URL by edition prefix +
+    # target suffix. This intentionally avoids constructing the filename from the
+    # tag name: the released artifact is named by the builder's resolved version,
+    # which is the tag with its leading "v" stripped
+    # (e.g. tag v0.1.0 -> eshyra-claude-0.1.0-…). Matching prefix+suffix is robust
+    # to that normalization and uniquely identifies the edition x target asset.
     $apiUrl = if ($Version -and $Version -ne '') {
         $tag = "v$($Version.TrimStart('v'))"
         "https://api.github.com/repos/$Repo/releases/tags/$tag"
@@ -112,10 +157,10 @@ function Resolve-EshyraRelease([string]$Repo, [string]$Target) {
         throw "Failed to fetch release info from GitHub API ($apiUrl): $_"
     }
 
-    # Find the Windows x64 archive asset by name suffix.
-    $asset = $release.assets | Where-Object { $_.name -like "*-$Target.zip" } | Select-Object -First 1
+    # Find the Windows x64 archive asset for this edition by name prefix+suffix.
+    $asset = $release.assets | Where-Object { $_.name -like "eshyra-$Edition-*-$Target.zip" } | Select-Object -First 1
     if (-not $asset) {
-        throw "No $Target archive found in release $($release.tag_name) assets. The release may not have all artifacts yet."
+        throw "No $Edition $Target archive found in release $($release.tag_name) assets. The release may not have all artifacts/editions yet."
     }
 
     # Find sha256sums.txt in the assets list; fall back to a sibling URL.
@@ -163,12 +208,16 @@ function Confirm-EshyraChecksum([string]$ArchivePath, [string]$ChecksumsPath) {
 # ---------- main --------------------------------------------------------------
 
 function Install-Eshyra {
+    Write-Step "Selecting edition"
+    $resolvedEdition = Resolve-EshyraEdition $Edition
+    Write-Log "edition: $resolvedEdition"
+
     Write-Step "Detecting platform"
     $target = Get-EshyraPlatform
     Write-Log "platform: $target"
 
     Write-Step "Resolving release"
-    $release = Resolve-EshyraRelease $GithubRepo $target
+    $release = Resolve-EshyraRelease $GithubRepo $target $resolvedEdition
     Write-Log "archive: $($release.ArchiveName)"
     Write-Log "from:    $($release.ArchiveUrl)"
 

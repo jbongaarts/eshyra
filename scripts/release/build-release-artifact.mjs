@@ -13,17 +13,27 @@
 // model the existing install-smoke job already uses. No npm package is
 // published and no package `private` guard is touched.
 //
-// Usage:
-//   node scripts/release/build-release-artifact.mjs [--out <dir>] [--keep-stage]
+// Editions (ADR 0011 / bead eshyra-7zhm): the build produces a per-EDITION
+// archive. An edition is a named subset of the heavy, per-platform agent SDK
+// packages (Claude Agent SDK / Codex CLI) that ship in the packed app tree. The
+// full production tree is installed once, then PRUNED down to the edition's
+// subset, so excluded provider binaries never travel in that edition's archive.
 //
-// Output: dist-release/eshyra-<version>-<os>-<arch>.(tar.gz|zip) plus a
-// matching .json metadata sidecar.
+// Usage:
+//   node scripts/release/build-release-artifact.mjs \
+//     [--edition <api|claude|codex|full>] [--out <dir>] [--keep-stage]
+//   (ESHYRA_EDITION may set the edition when --edition is omitted; default
+//    edition = DEFAULT_EDITION from editions.mjs.)
+//
+// Output: dist-release/eshyra-<edition>-<version>-<os>-<arch>.(tar.gz|zip) plus
+// a matching .json metadata sidecar.
 
 import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -35,6 +45,13 @@ import {
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  DEFAULT_EDITION,
+  editionPackages,
+  excludedProviderKeys,
+  isEdition,
+  isRemovablePackage,
+} from './editions.mjs';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
@@ -48,6 +65,9 @@ function parseArgs(argv) {
     } else if (arg === '--version') {
       i += 1;
       opts.version = argv[i];
+    } else if (arg === '--edition') {
+      i += 1;
+      opts.edition = argv[i];
     } else if (arg === '--keep-stage') {
       opts.keepStage = true;
     } else {
@@ -55,6 +75,142 @@ function parseArgs(argv) {
     }
   }
   return opts;
+}
+
+/**
+ * Resolve the edition to build, in precedence order:
+ *   1. explicit `--edition` argument
+ *   2. ESHYRA_EDITION env var
+ *   3. DEFAULT_EDITION (preserves today's `claude` artifact behavior)
+ * Validates against the edition catalogue so a typo fails the build loudly.
+ */
+function resolveEdition(explicit, env = process.env) {
+  const candidate = explicit ?? env.ESHYRA_EDITION ?? DEFAULT_EDITION;
+  if (!isEdition(candidate)) {
+    throw new Error(
+      `invalid edition: "${candidate}" (known: api, claude, codex, full)`,
+    );
+  }
+  return candidate;
+}
+
+/**
+ * Yield every installed package directory (`@scope/name` and bare `name`) under
+ * any `node_modules` reachable from `startDir`, recursing into nested
+ * `node_modules` (npm may hoist provider binaries under `@eshyra/core` rather
+ * than the top level). Each yielded entry is `{ name, dir }` where `name` is the
+ * full npm package name.
+ */
+function* walkInstalledPackages(startDir) {
+  const modulesDir = join(startDir, 'node_modules');
+  if (!existsSync(modulesDir)) return;
+  for (const entry of readdirSync(modulesDir)) {
+    if (entry === '.bin') continue;
+    const entryDir = join(modulesDir, entry);
+    if (!statSync(entryDir).isDirectory()) continue;
+    if (entry.startsWith('@')) {
+      // Scoped: one more level down to the actual package directories.
+      for (const sub of readdirSync(entryDir)) {
+        const pkgDir = join(entryDir, sub);
+        if (!statSync(pkgDir).isDirectory()) continue;
+        yield { name: `${entry}/${sub}`, dir: pkgDir };
+        yield* walkInstalledPackages(pkgDir);
+      }
+    } else {
+      yield { name: entry, dir: entryDir };
+      yield* walkInstalledPackages(entryDir);
+    }
+  }
+}
+
+/**
+ * Prune the staged app tree down to the edition's provider subset. For every
+ * provider the edition EXCLUDES, remove that provider's wrapper AND its heavy
+ * per-platform CLI binary / launcher siblings (see `AGENT_SDK_REMOVAL` /
+ * `isRemovablePackage` in editions.mjs) wherever they are nested in the staged
+ * `node_modules`. Pruning the wrapper alone would save almost nothing — the
+ * weight is the ~223 MB platform binary the wrapper pulls in. Returns the sorted
+ * list of full package names actually removed.
+ */
+function pruneAgentSdks(stageDir, edition) {
+  const excludedKeys = excludedProviderKeys(edition);
+  if (excludedKeys.length === 0) {
+    return { removed: [], prunedBins: [] };
+  }
+  const appDir = join(stageDir, 'app');
+  const removed = [];
+  const prunedBins = [];
+  // Collect first so removing a directory cannot disturb an in-progress walk.
+  const targets = [];
+  for (const pkg of walkInstalledPackages(appDir)) {
+    if (isRemovablePackage(pkg.name, excludedKeys)) {
+      targets.push(pkg);
+    }
+  }
+  for (const pkg of targets) {
+    if (!existsSync(pkg.dir)) continue;
+    // Remove the package's launcher shims FIRST, reading its `bin` field while
+    // the package.json is still present. The staging copy dereferences symlinks,
+    // so a leftover `.bin/codex` is a real file (not a dangling link) that a
+    // resolve-based sweep would miss — drive it from the manifest instead, so a
+    // non-codex edition never ships a broken `codex` launcher on PATH.
+    prunedBins.push(...removeBinShimsFor(pkg));
+    rmSync(pkg.dir, { recursive: true, force: true });
+    removed.push(pkg.name);
+  }
+  return {
+    removed: [...new Set(removed)].sort(),
+    prunedBins: [...new Set(prunedBins)].sort(),
+  };
+}
+
+/**
+ * Remove the `.bin` launcher shims a package owns, in the `node_modules/.bin`
+ * dir that sibling-hosts it. Shim names come from the package's `bin` field
+ * (string → the package's unscoped name; object → its keys). Also clears the
+ * Windows `.cmd`/`.ps1` companions npm writes. Returns the removed shim names.
+ */
+function removeBinShimsFor(pkg) {
+  const manifestPath = join(pkg.dir, 'package.json');
+  if (!existsSync(manifestPath)) return [];
+  let bin;
+  try {
+    bin = readJson(manifestPath).bin;
+  } catch {
+    return [];
+  }
+  if (!bin) return [];
+  const names = Array.isArray(bin)
+    ? []
+    : typeof bin === 'string'
+      ? [pkg.name.split('/').pop()]
+      : Object.keys(bin);
+  // The hosting node_modules is the package dir's parent (unscoped) or its
+  // grandparent (scoped `@scope/name`). `.bin` sits directly inside it.
+  const hostModules = pkg.name.startsWith('@')
+    ? dirname(dirname(pkg.dir))
+    : dirname(pkg.dir);
+  const binDir = join(hostModules, '.bin');
+  const removed = [];
+  for (const name of names) {
+    for (const shim of [name, `${name}.cmd`, `${name}.ps1`]) {
+      const shimPath = join(binDir, shim);
+      if (existsSync(shimPath) || isSymlink(shimPath)) {
+        rmSync(shimPath, { force: true });
+        if (shim === name) removed.push(name);
+      }
+    }
+  }
+  return removed;
+}
+
+/** True if `p` exists as a symbolic link (even a dangling one). */
+function isSymlink(p) {
+  try {
+    return lstatSync(p).isSymbolicLink();
+  } catch {
+    return false;
+  }
 }
 
 // The placeholder literal compiled into packages/core/dist/index.js (and used
@@ -211,15 +367,22 @@ function readNodeLicense() {
  * so the required CC-BY 4.0 SRD attribution can never drift from the data that
  * actually ships.
  */
-function buildNotice() {
+function buildNotice(edition, providers) {
   const manifestPath = join(
     root,
     'packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json',
   );
   const manifest = readJson(manifestPath);
   const srd = manifest.license?.attributionText ?? '';
+  // Only list provider SDKs this edition actually bundles, so the NOTICE never
+  // claims an attribution for a package pruned out of the archive (ADR 0011).
+  const providerLines = providers.map(
+    (name) => `- ${name}: see its bundled LICENSE under app/.`,
+  );
   return `${[
     'Eshyra — Third-Party Notices',
+    '',
+    `Edition: ${edition}.`,
     '',
     'Eshyra source code is licensed under the PolyForm Noncommercial License',
     '1.0.0 (see LICENSE). Commercial rights are reserved (see',
@@ -238,16 +401,16 @@ function buildNotice() {
     '- Node.js runtime (runtime/): full license text bundled at',
     '  THIRD-PARTY/node-LICENSE.txt.',
     '- better-sqlite3 (native SQLite binding): MIT License.',
-    '- @anthropic-ai/claude-agent-sdk: see its bundled LICENSE under app/.',
+    ...providerLines,
     '',
     'Full dependency license texts ship alongside each package under app/.',
   ].join('\n')}\n`;
 }
 
-function buildReadme(version, target) {
+function buildReadme(version, target, edition) {
   const ext = target.isWindows ? 'zip' : 'tar.gz';
   return `${[
-    `Eshyra CLI — core v${version} (${target.os}-${target.arch})`,
+    `Eshyra CLI — core v${version} (${edition} edition, ${target.os}-${target.arch})`,
     '',
     'Self-contained build. A Node.js runtime is bundled under runtime/, so you',
     'do NOT need Node installed. Checkpoint/history support (dolt) is downloaded',
@@ -322,7 +485,10 @@ function main() {
   const opts = parseArgs(process.argv.slice(2));
   const target = targetName();
   const version = resolveVersion(opts.version);
-  const baseName = `eshyra-${version}-${target.os}-${target.arch}`;
+  const edition = resolveEdition(opts.edition);
+  // Edition is encoded in the artifact name so all four editions can coexist on
+  // one Release and the installer can select by name: eshyra-<edition>-<ver>-…
+  const baseName = `eshyra-${edition}-${version}-${target.os}-${target.arch}`;
 
   const scratch = mkdtempSync(join(tmpdir(), 'eshyra-release-'));
   const packDir = join(scratch, 'packs');
@@ -382,6 +548,20 @@ function main() {
       recursive: true,
     });
 
+    // Edition prune: drop the agent-SDK provider packages this edition excludes
+    // from the staged module tree (ADR 0011). The api edition removes both heavy
+    // agent SDKs; claude/codex keep exactly one; full keeps both. Packages not
+    // declared in the dependency graph yet (e.g. @openai/codex-sdk before the
+    // adapter stream adds it) are skipped — the edition simply ships without it.
+    const { removed: pruned, prunedBins } = pruneAgentSdks(stageDir, edition);
+    console.log(
+      `• edition "${edition}": ${
+        pruned.length
+          ? `pruned ${pruned.join(', ')}`
+          : 'no provider packages pruned'
+      }${prunedBins.length ? ` (+ .bin shims: ${prunedBins.join(', ')})` : ''}`,
+    );
+
     // runtime/: the Node binary running this script (ABI-matched to the
     // better-sqlite3 prebuild we just installed). Official Node builds are
     // self-contained single binaries.
@@ -409,8 +589,14 @@ function main() {
       join(root, 'COMMERCIAL-LICENSE.md'),
       join(stageDir, 'COMMERCIAL-LICENSE.md'),
     );
-    writeFileSync(join(stageDir, 'NOTICE'), buildNotice());
-    writeFileSync(join(stageDir, 'README.txt'), buildReadme(version, target));
+    writeFileSync(
+      join(stageDir, 'NOTICE'),
+      buildNotice(edition, editionPackages(edition)),
+    );
+    writeFileSync(
+      join(stageDir, 'README.txt'),
+      buildReadme(version, target, edition),
+    );
 
     // THIRD-PARTY/: redistribute the bundled Node runtime's own license text
     // (the binary under runtime/ is not an npm package, so its license does not
@@ -434,6 +620,8 @@ function main() {
     const meta = {
       name: baseName,
       version,
+      edition,
+      providers: editionPackages(edition),
       os: target.os,
       arch: target.arch,
       node: process.version,
@@ -480,7 +668,13 @@ function packWorkspace(workspace, packDir, cache) {
   return tarball;
 }
 
-export { normalizeVersion, resolveVersion, VERSION_SENTINEL };
+export {
+  normalizeVersion,
+  removeBinShimsFor,
+  resolveEdition,
+  resolveVersion,
+  VERSION_SENTINEL,
+};
 
 // Run only when invoked directly (not when imported by a test).
 if (

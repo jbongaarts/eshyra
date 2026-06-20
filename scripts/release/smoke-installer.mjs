@@ -30,10 +30,14 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_EDITION } from './editions.mjs';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const distRelease = join(root, 'dist-release');
 const installScript = join(root, 'scripts', 'release', 'install.sh');
+// The build below produces the default edition; the installer is then driven
+// with that same edition so the file:// asset name matches.
+const EDITION = DEFAULT_EDITION;
 
 function fail(msg) {
   console.error(`\nSMOKE FAILED: ${msg}\n`);
@@ -67,15 +71,19 @@ function target() {
 
 function findArchive() {
   if (!existsSync(distRelease)) return undefined;
-  const want = `-${target()}.tar.gz`;
-  return readdirSync(distRelease).find((f) => f.endsWith(want));
+  const prefix = `eshyra-${EDITION}-`;
+  const suffix = `-${target()}.tar.gz`;
+  return readdirSync(distRelease).find(
+    (f) => f.startsWith(prefix) && f.endsWith(suffix),
+  );
 }
 
 function releaseVersionFromArchive(archive) {
-  const prefix = 'eshyra-';
+  // Archive name: eshyra-<edition>-<version>-<target>.tar.gz
+  const prefix = `eshyra-${EDITION}-`;
   const suffix = `-${target()}.tar.gz`;
   if (!archive.startsWith(prefix) || !archive.endsWith(suffix)) {
-    fail(`unexpected archive name for ${target()}: ${archive}`);
+    fail(`unexpected archive name for ${EDITION}/${target()}: ${archive}`);
   }
 
   const version = archive.slice(prefix.length, -suffix.length);
@@ -118,7 +126,7 @@ try {
   //    no GitHub release API asset list, so the smoke must provide the version.
   //    Install into throwaway install/bin/home locations.
   console.log('• running install.sh (file:// base URL, temp install root)…');
-  const install = spawnSync('sh', [installScript], {
+  const install = spawnSync('sh', [installScript, '--edition', EDITION], {
     encoding: 'utf8',
     env: {
       PATH: process.env.PATH,
