@@ -155,7 +155,19 @@ Eshyra owns the full call lifecycle (prompt, tools, turn loop). This adapter
 returns native `tool_use` blocks for the Eshyra turn loop to execute and is
 the clean-architecture alternative for API-key-only deployments.
 
-OpenAI and Codex SDK adapter support is planned; see follow-up beads.
+### OpenAI Chat Completions API — API-key native
+
+Uses direct HTTPS calls to OpenAI's Chat Completions API. Eshyra sends native
+function declarations, receives structured `tool_calls`, executes them in its
+deterministic turn loop, and returns `tool` results on the next round. Set
+`OPENAI_API_KEY` and select `ESHYRA_AUTH_MODE=openai-api` when another provider
+credential or subscription login is also present.
+
+### Codex SDK — subscription-backed
+
+Uses `@openai/codex-sdk` with an in-process MCP server and an existing
+`codex login` ChatGPT subscription session. The SDK owns the agent loop and
+calls Eshyra's deterministic tools through MCP.
 
 ## Configuration
 
@@ -164,17 +176,18 @@ variables. Campaigns normally live under Eshyra's per-user data root and
 are selected through the managed registry. `.env.example` is a template, but
 the CLI does not currently load `.env` files by itself.
 
-Provider authentication: set **exactly one** credential before running
-model-backed play. If both `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN`
-are present, Eshyra fails fast and asks you to choose — it will not guess
-which one to bill. Set `ESHYRA_AUTH_MODE=api-key` or `=oauth-token` to force
-a specific mode when both are present. See
+Provider authentication: make exactly one gameplay provider available before
+running model-backed play. If multiple credentials or subscription sessions
+are present, Eshyra fails fast and asks you to choose — it will not guess which
+one to bill. Set `ESHYRA_AUTH_MODE` to `claude-sub`, `codex-sub`,
+`anthropic-api`, or `openai-api` to force a provider. See
 [docs/agent-sdk-auth.md](docs/agent-sdk-auth.md):
 
 - `ANTHROPIC_API_KEY` - an Anthropic Console API key (API-billed per token).
 - `CLAUDE_CODE_OAUTH_TOKEN` - a Claude Pro/Max subscription token, generated
   by `claude setup-token`. Lets the CLI run on a subscription credit instead
   of billing API tokens.
+- `OPENAI_API_KEY` - an OpenAI API key (API-billed per token).
 
 Optional:
 

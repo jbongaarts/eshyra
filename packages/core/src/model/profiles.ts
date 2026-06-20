@@ -40,8 +40,8 @@ export type ModelProfileName = (typeof MODEL_PROFILES)[number];
 /**
  * Provider adapters selectable per profile, by neutral identifier. These are
  * NOT implemented here — they only make adapter selection representable. The
- * one concrete adapter that exists today is the Claude Agent SDK adapter
- * (`AgentSdkModelClient`), which corresponds to the `anthropic` identifier.
+ * `anthropic` and `openai` both have concrete API-native adapters; the runtime
+ * provider selection chooses between them independently of this registry.
  */
 export const PROVIDER_IDS = [
   'anthropic',
@@ -129,9 +129,10 @@ export const PREMIUM_DM_CAPABILITY_FLOOR =
 /**
  * Default, provider-neutral profile registry.
  *
- * Only `premium_dm` ships with a configured default (the Claude Agent SDK
- * adapter + claude-opus-4-8) because it is the only profile with a live
- * adapter and production callers today. All other profiles are declared
+ * Only `premium_dm` ships with a configured default (Anthropic +
+ * claude-opus-4-8). The provider can be overridden with `openai` and an OpenAI
+ * model id; released gameplay selects its concrete adapter separately from the
+ * auth-resolved provider. All other profiles are declared
  * (`configured: false`) — they carry capability metadata but have no
  * provider/model assignment. Accessing an unconfigured profile via
  * {@link getProfile} throws {@link ProfileConfigError}; set both

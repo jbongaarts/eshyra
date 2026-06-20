@@ -10,7 +10,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  ConfigError,
   getCampaign,
   getOpenSession,
   openDatabase,
@@ -21,9 +20,7 @@ import {
   buildBanner,
   main,
   makeGameplayClient,
-  runDemoSubcommand,
   runDoltInstall,
-  runPlaySubcommand,
 } from '../src/index.js';
 
 /** A resolved provider record for makeGameplayClient mapping tests. */
@@ -128,65 +125,6 @@ describe('main', () => {
     expect(printed).toContain('config error:');
     expect(printed).toContain('ANTHROPIC_API_KEY');
     expect(printed).toContain('eshyra play');
-  });
-});
-
-describe('play/demo late ConfigError formatting', () => {
-  const tempDirs: string[] = [];
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.restoreAllMocks();
-    for (const dir of tempDirs.splice(0)) {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  function configureOpenAiOnlyEnv(): string {
-    clearProviderEnv();
-    const dir = mkdtempSync(join(tmpdir(), 'eshyra-openai-api-'));
-    tempDirs.push(dir);
-    vi.stubEnv('ESHYRA_HOME', dir);
-    vi.stubEnv('OPENAI_API_KEY', 'sk-openai-test');
-    vi.stubEnv('ESHYRA_AUTH_MODE', '');
-    vi.stubEnv('ESHYRA_MODEL', '');
-    vi.stubEnv('ESHYRA_AUDIT_MODEL', '');
-    return dir;
-  }
-
-  function expectFormattedOpenAiAdapterError(err: unknown): void {
-    const printed = String(err);
-    expect(printed).toContain('config error:');
-    expect(printed).toContain('openai-api');
-    expect(printed).toContain('not implemented yet');
-    expect(printed).toContain('eshyra-fxxf');
-    expect(printed).toContain('Provide exactly one gameplay provider');
-    expect(printed).not.toContain('ConfigError:');
-    expect(printed).not.toContain('at makeGameplayClient');
-  }
-
-  it('formats late openai-api ConfigError from play dependency construction', async () => {
-    const dir = configureOpenAiOnlyEnv();
-    vi.stubEnv('ESHYRA_DB_PATH', join(dir, 'campaign.db'));
-    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    const code = await runPlaySubcommand();
-
-    expect(code).toBe(1);
-    expect(err).toHaveBeenCalledOnce();
-    expectFormattedOpenAiAdapterError(err.mock.calls[0][0]);
-  });
-
-  it('formats late openai-api ConfigError from demo dependency construction', async () => {
-    configureOpenAiOnlyEnv();
-    vi.stubEnv('ESHYRA_DB_PATH', '');
-    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    const code = await runDemoSubcommand();
-
-    expect(code).toBe(1);
-    expect(err).toHaveBeenCalledOnce();
-    expectFormattedOpenAiAdapterError(err.mock.calls[0][0]);
   });
 });
 
@@ -462,24 +400,16 @@ describe('makeGameplayClient (provider -> adapter mapping, eshyra-6ygw)', () => 
     expect(c.capabilities.adapterFamily).toBe('api-native');
   });
 
-  it('throws an actionable error for openai-api (adapter not built yet)', () => {
-    expect(() =>
-      makeGameplayClient(
-        provider('openai-api', 'openai', 'api-native', {
-          OPENAI_API_KEY: 'sk',
-        }),
-        'gpt-5',
-        'primary DM',
-      ),
-    ).toThrow(ConfigError);
-    expect(() =>
-      makeGameplayClient(
-        provider('openai-api', 'openai', 'api-native', {
-          OPENAI_API_KEY: 'sk',
-        }),
-        'gpt-5',
-        'primary DM',
-      ),
-    ).toThrow(/eshyra-fxxf/);
+  it('maps openai-api to the API-native OpenAI adapter', () => {
+    const c = makeGameplayClient(
+      provider('openai-api', 'openai', 'api-native', {
+        OPENAI_API_KEY: 'sk',
+      }),
+      'gpt-5.5',
+      'primary DM',
+    );
+    expect(c.capabilities.vendor).toBe('openai');
+    expect(c.capabilities.adapterFamily).toBe('api-native');
+    expect(c.capabilities.gameplayCapable).toBe(true);
   });
 });

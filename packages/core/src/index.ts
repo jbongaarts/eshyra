@@ -187,6 +187,18 @@ export {
   CODEX_SDK_MCP_TOOL_PROTOCOL,
   CodexSdkMcpModelClient,
 } from './model/codexSdkMcpClient.js';
+export type {
+  OpenAiAuth,
+  OpenAiAuthSource,
+  OpenAiNativeDebugOptions,
+} from './model/openaiNativeClient.js';
+// OpenAI Chat Completions adapter (eshyra-fxxf, ADR 0010). Returns native
+// `ModelToolCall[]` for the Eshyra-owned outer turn loop.
+export {
+  OPENAI_NATIVE_ADAPTER_CAPABILITIES,
+  OPENAI_NATIVE_TOOL_PROTOCOL,
+  OpenAiNativeModelClient,
+} from './model/openaiNativeClient.js';
 export type { ConfiguredProfileEntry } from './model/profiles.js';
 export type {
   JsonSchema,

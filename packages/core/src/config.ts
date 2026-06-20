@@ -21,9 +21,8 @@ import {
  *                     `CodexSdkMcpModelClient`.
  * - `anthropic-api` — Anthropic Console key (`ANTHROPIC_API_KEY`), api-native,
  *                     `AnthropicNativeModelClient`.
- * - `openai-api`    — OpenAI API key (`OPENAI_API_KEY`), api-native; the adapter
- *                     is not built yet (eshyra-fxxf), so selecting it resolves in
- *                     config but fails with a clear message at adapter wiring.
+ * - `openai-api`    — OpenAI API key (`OPENAI_API_KEY`), api-native,
+ *                     `OpenAiNativeModelClient`.
  */
 export type GameplayProvider =
   | 'claude-sub'
