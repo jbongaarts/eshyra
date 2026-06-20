@@ -25,33 +25,32 @@ export interface AgentSdkRuntime {
   createSdkMcpServer: typeof import('@anthropic-ai/claude-agent-sdk').createSdkMcpServer;
 }
 
+type AgentSdkImporter = () => Promise<AgentSdkRuntime>;
+
 /**
  * True when an error is a genuine module-resolution failure for the Claude Agent
  * SDK (the package is not installed in this edition). Matched narrowly on the
- * Node resolution error code or a "cannot find module/package" message — NOT on
- * any text mentioning the package name, so an unrelated error thrown from inside
- * a loaded SDK (or a test mock's export-validation message) is not misreported
- * as "not installed".
+ * quoted missing module/package specifier in a "cannot find module/package"
+ * message — NOT on arbitrary module-resolution failures or importer paths that
+ * merely mention the SDK, so an SDK-internal missing dependency is not
+ * misreported as "the Claude edition is not installed".
  */
 export function isMissingAgentSdk(err: unknown): boolean {
-  const code = (err as { code?: string } | null)?.code;
-  if (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') {
-    return true;
-  }
   const msg = err instanceof Error ? err.message : String(err);
-  return (
-    /cannot find (module|package)/i.test(msg) &&
-    msg.includes('@anthropic-ai/claude-agent-sdk')
-  );
+  const missingSpecifier =
+    /cannot find (?:module|package) ['"`]([^'"`]+)['"`]/i.exec(msg)?.[1];
+  return missingSpecifier === '@anthropic-ai/claude-agent-sdk';
 }
 
 /**
  * Dynamically import the Claude Agent SDK runtime surface. Throws a clear
  * {@link ModelClientError} if the package is not installed in this edition.
  */
-export async function loadAgentSdk(): Promise<AgentSdkRuntime> {
+export async function loadAgentSdk(
+  importSdk: AgentSdkImporter = () => import('@anthropic-ai/claude-agent-sdk'),
+): Promise<AgentSdkRuntime> {
   try {
-    const mod = await import('@anthropic-ai/claude-agent-sdk');
+    const mod = await importSdk();
     return {
       query: mod.query,
       tool: mod.tool,
