@@ -21,7 +21,9 @@ import {
   buildBanner,
   main,
   makeGameplayClient,
+  runDemoSubcommand,
   runDoltInstall,
+  runPlaySubcommand,
 } from '../src/index.js';
 
 /** A resolved provider record for makeGameplayClient mapping tests. */
@@ -126,6 +128,65 @@ describe('main', () => {
     expect(printed).toContain('config error:');
     expect(printed).toContain('ANTHROPIC_API_KEY');
     expect(printed).toContain('eshyra play');
+  });
+});
+
+describe('play/demo late ConfigError formatting', () => {
+  const tempDirs: string[] = [];
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  function configureOpenAiOnlyEnv(): string {
+    clearProviderEnv();
+    const dir = mkdtempSync(join(tmpdir(), 'eshyra-openai-api-'));
+    tempDirs.push(dir);
+    vi.stubEnv('ESHYRA_HOME', dir);
+    vi.stubEnv('OPENAI_API_KEY', 'sk-openai-test');
+    vi.stubEnv('ESHYRA_AUTH_MODE', '');
+    vi.stubEnv('ESHYRA_MODEL', '');
+    vi.stubEnv('ESHYRA_AUDIT_MODEL', '');
+    return dir;
+  }
+
+  function expectFormattedOpenAiAdapterError(err: unknown): void {
+    const printed = String(err);
+    expect(printed).toContain('config error:');
+    expect(printed).toContain('openai-api');
+    expect(printed).toContain('not implemented yet');
+    expect(printed).toContain('eshyra-fxxf');
+    expect(printed).toContain('Provide exactly one gameplay provider');
+    expect(printed).not.toContain('ConfigError:');
+    expect(printed).not.toContain('at makeGameplayClient');
+  }
+
+  it('formats late openai-api ConfigError from play dependency construction', async () => {
+    const dir = configureOpenAiOnlyEnv();
+    vi.stubEnv('ESHYRA_DB_PATH', join(dir, 'campaign.db'));
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const code = await runPlaySubcommand();
+
+    expect(code).toBe(1);
+    expect(err).toHaveBeenCalledOnce();
+    expectFormattedOpenAiAdapterError(err.mock.calls[0][0]);
+  });
+
+  it('formats late openai-api ConfigError from demo dependency construction', async () => {
+    configureOpenAiOnlyEnv();
+    vi.stubEnv('ESHYRA_DB_PATH', '');
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const code = await runDemoSubcommand();
+
+    expect(code).toBe(1);
+    expect(err).toHaveBeenCalledOnce();
+    expectFormattedOpenAiAdapterError(err.mock.calls[0][0]);
   });
 });
 
