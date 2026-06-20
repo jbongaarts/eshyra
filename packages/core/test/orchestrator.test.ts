@@ -965,6 +965,7 @@ class ScriptedAuditor implements TurnAuditor {
     const verdict = this.verdicts[this.index] ?? {
       verdict: 'accept',
       missingRequiredTools: [],
+      missingRequiredCalls: [],
       disallowedToolCalls: [],
       reason: '',
       repairInstruction: '',
@@ -977,6 +978,7 @@ class ScriptedAuditor implements TurnAuditor {
 const accept: AuditVerdict = {
   verdict: 'accept',
   missingRequiredTools: [],
+  missingRequiredCalls: [],
   disallowedToolCalls: [],
   reason: 'ok',
   repairInstruction: '',
@@ -984,6 +986,7 @@ const accept: AuditVerdict = {
 const rejectRoll: AuditVerdict = {
   verdict: 'reject',
   missingRequiredTools: ['roll'],
+  missingRequiredCalls: [{ tool: 'roll' }],
   disallowedToolCalls: [],
   reason: 'dice asserted without roll',
   repairInstruction: 'Call the roll tool before narrating the result.',
@@ -1111,6 +1114,92 @@ describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
     ]);
     expect(sink.audits[0].missingRequiredTools).toEqual(['roll']);
     expect(sink.audits[0].auditorModel).toBe('claude-audit-test');
+    db.close();
+  });
+
+  it('reports a target-specific missing lookup even when the tool was already executed (eshyra-znzn)', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    // Candidate 1 DID call lookup_rules once (for armor generically) but asserts
+    // stats for three specific records without looking each up. Candidate 2 is
+    // accepted. This is the session-mqkis411-rlsh20 shape: the same tool is both
+    // executed AND missing — coarse tool-name-only diagnostics looked
+    // contradictory; the target-specific verdict explains which records were missed.
+    const model = new StructuredScriptedModel([
+      {
+        text: 'Your chain mail (AC 16), shield (+2 AC), and longsword (1d8) are ready.',
+        executedToolCalls: [
+          {
+            name: 'lookup_rules',
+            args: { kind: 'equipment', name: 'armor' },
+            result: { ok: true, data: { name: 'armor' } },
+          },
+        ],
+        stopReason: 'end_turn',
+      },
+      {
+        text: 'Your gear is confirmed against the rules.',
+        executedToolCalls: [
+          {
+            name: 'lookup_rules',
+            args: { kind: 'equipment', name: 'chain mail' },
+            result: { ok: true, data: { name: 'chain mail' } },
+          },
+        ],
+        stopReason: 'end_turn',
+      },
+    ]);
+    const rejectTargets: AuditVerdict = {
+      verdict: 'reject',
+      missingRequiredTools: ['lookup_rules'],
+      missingRequiredCalls: [
+        { tool: 'lookup_rules', target: 'chain mail' },
+        { tool: 'lookup_rules', target: 'shield' },
+        { tool: 'lookup_rules', target: 'longsword' },
+      ],
+      disallowedToolCalls: [],
+      reason: 'stats asserted for specific records without per-record lookups',
+      repairInstruction:
+        'Look up chain mail, shield, and longsword before narrating.',
+    };
+    const auditor = new ScriptedAuditor([rejectTargets, accept]);
+    const sink = collectingAuditSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        debug: sink,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    // (1) A tool may have been executed and still be missing a specific target:
+    // the rejected candidate's executed call includes lookup_rules, yet the
+    // verdict still reports lookup_rules missing for three specific records.
+    expect(auditor.seen[0].executedToolCalls.map((c) => c.tool)).toEqual([
+      'lookup_rules',
+    ]);
+    expect(sink.audits[0].missingRequiredCalls).toEqual([
+      { tool: 'lookup_rules', target: 'chain mail' },
+      { tool: 'lookup_rules', target: 'shield' },
+      { tool: 'lookup_rules', target: 'longsword' },
+    ]);
+    // (2) Debug output does not misleadingly imply the tool was never called:
+    // the SAME tool appears in both the executed list and the missing list, and
+    // the missing entries carry the targets that explain why.
+    expect(sink.audits[0].executedToolNames).toContain('lookup_rules');
+    expect(sink.audits[0].missingRequiredTools).toEqual(['lookup_rules']);
+    // (3) The retry's corrective note carries the target-specific requirements,
+    // not just the (already-satisfied) tool name.
+    const retryNote = model.seen[1].messages[0].content;
+    expect(retryNote).toContain('Correction Required');
+    expect(retryNote).toContain('lookup_rules (target: chain mail)');
+    expect(retryNote).toContain('lookup_rules (target: shield)');
+    expect(retryNote).toContain('lookup_rules (target: longsword)');
     db.close();
   });
 
@@ -1244,6 +1333,7 @@ function collectingDispositionSink(): SessionDebugSink & {
 const rejectGiveItem: AuditVerdict = {
   verdict: 'reject',
   missingRequiredTools: [],
+  missingRequiredCalls: [],
   disallowedToolCalls: ['give_item'],
   reason: 'mutated state for a read-style question',
   repairInstruction: 'Answer without mutating inventory.',

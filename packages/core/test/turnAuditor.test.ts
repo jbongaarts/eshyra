@@ -8,6 +8,7 @@ import {
   AuditError,
   buildAuditSystemPrompt,
   buildAuditUserMessage,
+  formatMissingCall,
   ModelTurnAuditor,
   parseAuditVerdict,
 } from '../src/orchestrator/turnAuditor.js';
@@ -95,6 +96,68 @@ describe('parseAuditVerdict', () => {
       '{"verdict":"accept","missingRequiredTools":[]}',
     );
     expect(v.disallowedToolCalls).toEqual([]);
+  });
+
+  it('parses target-specific missingRequiredCalls (eshyra-znzn)', () => {
+    const v = parseAuditVerdict(
+      '{"verdict":"reject","missingRequiredCalls":[{"tool":"lookup_rules","target":"chain mail"},{"tool":"lookup_rules","target":"shield"},{"tool":"lookup_rules","target":"longsword"}],"reason":"r","repairInstruction":"look each up"}',
+    );
+    expect(v.missingRequiredCalls).toEqual([
+      { tool: 'lookup_rules', target: 'chain mail' },
+      { tool: 'lookup_rules', target: 'shield' },
+      { tool: 'lookup_rules', target: 'longsword' },
+    ]);
+    // The coarse tool-name projection deduplicates the repeated tool.
+    expect(v.missingRequiredTools).toEqual(['lookup_rules']);
+  });
+
+  it('derives missingRequiredCalls from a legacy tool-only verdict (eshyra-znzn)', () => {
+    const v = parseAuditVerdict(
+      '{"verdict":"reject","missingRequiredTools":["roll"],"reason":"r","repairInstruction":"call roll"}',
+    );
+    // A verdict that only knows the tool name still yields a structured entry
+    // (with no target), so downstream consumers can read one shape.
+    expect(v.missingRequiredCalls).toEqual([{ tool: 'roll' }]);
+    expect(v.missingRequiredTools).toEqual(['roll']);
+  });
+
+  it('folds a legacy tool only when not already covered by structured calls (eshyra-znzn)', () => {
+    const v = parseAuditVerdict(
+      '{"verdict":"reject","missingRequiredCalls":[{"tool":"lookup_rules","target":"shield"}],"missingRequiredTools":["lookup_rules","roll"]}',
+    );
+    // lookup_rules already has a target-specific entry, so the redundant coarse
+    // name is not appended; roll (uncovered) is folded in.
+    expect(v.missingRequiredCalls).toEqual([
+      { tool: 'lookup_rules', target: 'shield' },
+      { tool: 'roll' },
+    ]);
+    expect(v.missingRequiredTools).toEqual(['lookup_rules', 'roll']);
+  });
+
+  it('drops a blank target to a tool-only entry (eshyra-znzn)', () => {
+    const v = parseAuditVerdict(
+      '{"verdict":"reject","missingRequiredCalls":[{"tool":"roll","target":"  "}]}',
+    );
+    expect(v.missingRequiredCalls).toEqual([{ tool: 'roll' }]);
+  });
+
+  it('ignores malformed missingRequiredCalls entries (eshyra-znzn)', () => {
+    const v = parseAuditVerdict(
+      '{"verdict":"reject","missingRequiredCalls":[{"target":"no tool"},null,42,{"tool":"roll"}]}',
+    );
+    expect(v.missingRequiredCalls).toEqual([{ tool: 'roll' }]);
+  });
+});
+
+describe('formatMissingCall (eshyra-znzn)', () => {
+  it('renders tool and target when target is present', () => {
+    expect(
+      formatMissingCall({ tool: 'lookup_rules', target: 'chain mail' }),
+    ).toBe('lookup_rules (target: chain mail)');
+  });
+
+  it('renders the tool alone when no target is known', () => {
+    expect(formatMissingCall({ tool: 'roll' })).toBe('roll');
   });
 });
 

@@ -378,6 +378,19 @@ export interface TurnAuditDebugEvent {
   /** Tool names the auditor judged were required but missing. */
   readonly missingRequiredTools: readonly string[];
   /**
+   * Target-specific missing calls (eshyra-znzn): the same missing requirements as
+   * {@link missingRequiredTools}, but each carrying the specific record/intent the
+   * call should have addressed when the auditor could recover it (e.g.
+   * `{ tool: 'lookup_rules', target: 'chain mail' }`). This is what lets a trace
+   * explain WHY a tool that also appears in `executedToolNames` is still missing —
+   * a per-record lookup, not a never-called tool. Structural labels only (tool
+   * names + a short target string); no prompt or narration content.
+   */
+  readonly missingRequiredCalls: readonly {
+    readonly tool: string;
+    readonly target?: string;
+  }[];
+  /**
    * Explicit-action-only tool names the candidate called without explicit player
    * action intent (eshyra-4ia4). Empty unless that gate fired.
    */
