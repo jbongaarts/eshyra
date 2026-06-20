@@ -19,11 +19,49 @@ import type { ExecutedToolCall } from './turnLoop.js';
  * The orchestrator turns the verdict into accept / retry-once / fail.
  */
 
+/**
+ * One required-but-missing tool call the auditor identified, named by tool AND
+ * (when recoverable) the specific target/intent of the call (eshyra-znzn).
+ *
+ * Tool-name-only diagnostics are too coarse: a turn can execute `lookup_rules`
+ * and still be missing additional `lookup_rules` calls for specific records
+ * (chain mail, shield, longsword). Reporting only the tool name then looks
+ * self-contradictory — the same tool appears in BOTH executed and missing lists,
+ * and the actual missing record is recoverable only from prose. The `target`
+ * field carries that record/intent so debug traces and repair prompts can say
+ * exactly which call was missing.
+ */
+export interface MissingRequiredCall {
+  /** Tool the candidate needed to call (e.g. `lookup_rules`). */
+  readonly tool: string;
+  /**
+   * The specific record/intent the missing call should have targeted (e.g.
+   * `chain mail`). Omitted when the auditor can only identify the tool, not a
+   * specific target — coarse data is still acceptable (the auditor is not
+   * required to semantically parse every call).
+   */
+  readonly target?: string;
+}
+
 /** Strict verdict an auditor returns for one candidate DM response. */
 export interface AuditVerdict {
   readonly verdict: 'accept' | 'reject';
-  /** Tools the candidate needed but did not execute. Empty on accept. */
+  /**
+   * Tools the candidate needed but did not execute, by tool name only. Empty on
+   * accept. Retained for compatibility; kept as the deduplicated set of tool
+   * names across {@link missingRequiredCalls} so existing tool-name consumers
+   * keep working.
+   */
   readonly missingRequiredTools: readonly string[];
+  /**
+   * Target-specific missing calls (eshyra-znzn): the same missing requirements
+   * as {@link missingRequiredTools} but each carrying the specific record/intent
+   * when the auditor could recover it. Empty on accept. A single tool may appear
+   * multiple times with different targets (e.g. three `lookup_rules` calls for
+   * chain mail, shield, and longsword). Debug traces and repair prompts prefer
+   * this richer structure; `missingRequiredTools` is the coarse projection.
+   */
+  readonly missingRequiredCalls: readonly MissingRequiredCall[];
   /**
    * Explicit-action-only tools the candidate executed WITHOUT explicit player
    * action intent (eshyra-4ia4). A `give_item`/`remove_item` call made merely to
@@ -128,13 +166,22 @@ export function buildAuditSystemPrompt(): string {
     '',
     'Respond with ONLY a single JSON object, no prose and no code fences, of the',
     'exact shape:',
-    '{"verdict":"accept"|"reject","missingRequiredTools":["<tool>"],"disallowedToolCalls":["<tool>"],"reason":"<short>","repairInstruction":"<short>"}',
-    'On "accept", both missingRequiredTools and disallowedToolCalls MUST be empty.',
-    'On "reject", populate missingRequiredTools with tools the candidate needed but',
-    'did not call, and/or disallowedToolCalls with explicit-action-only tools it',
-    'called without explicit player action intent. Write a repairInstruction',
-    'telling the DM exactly what to fix before re-narrating (which tool(s) to call,',
-    'or that it must NOT mutate state to answer a query).',
+    '{"verdict":"accept"|"reject","missingRequiredCalls":[{"tool":"<tool>","target":"<record/intent>"}],"disallowedToolCalls":["<tool>"],"reason":"<short>","repairInstruction":"<short>"}',
+    'On "accept", both missingRequiredCalls and disallowedToolCalls MUST be empty.',
+    'On "reject", populate missingRequiredCalls with the calls the candidate needed',
+    'but did not make. Identify each missing call by tool AND, when you can recover',
+    'it, the specific target/record the call should have addressed. A tool that was',
+    'already executed can still be missing additional calls for specific records:',
+    'e.g. a turn that called `lookup_rules` once but asserts stats for chain mail,',
+    'a shield, and a longsword without looking each up is missing',
+    '[{"tool":"lookup_rules","target":"chain mail"},{"tool":"lookup_rules","target":"shield"},{"tool":"lookup_rules","target":"longsword"}].',
+    'Set "target" to the specific record/intent when you can identify it; omit it',
+    'only when you genuinely cannot — coarse, tool-only entries are acceptable, but',
+    'prefer target-specific ones. Also populate disallowedToolCalls with any',
+    'explicit-action-only tool the candidate called without explicit player action',
+    'intent. Write a repairInstruction telling the DM exactly what to fix before',
+    're-narrating (which call(s) to make, including their targets, or that it must',
+    'NOT mutate state to answer a query).',
   ].join('\n');
 }
 
@@ -230,20 +277,62 @@ export function parseAuditVerdict(text: string): AuditVerdict {
       `auditor verdict field must be "accept" or "reject" (got ${JSON.stringify(obj.verdict)})`,
     );
   }
-  const missingRequiredTools = Array.isArray(obj.missingRequiredTools)
+  // The richer target-specific shape (eshyra-znzn) is preferred, but the auditor
+  // may still emit the legacy tool-name-only `missingRequiredTools`. Parse both
+  // and reconcile so the two stay consistent: `missingRequiredCalls` is the
+  // union of structured entries plus any tool-only names not already covered,
+  // and `missingRequiredTools` is the deduplicated tool-name projection of it.
+  const structuredCalls = Array.isArray(obj.missingRequiredCalls)
+    ? obj.missingRequiredCalls.flatMap((c): MissingRequiredCall[] => {
+        if (typeof c !== 'object' || c === null) {
+          return [];
+        }
+        const entry = c as Record<string, unknown>;
+        if (typeof entry.tool !== 'string') {
+          return [];
+        }
+        return [
+          typeof entry.target === 'string' && entry.target.trim() !== ''
+            ? { tool: entry.tool, target: entry.target }
+            : { tool: entry.tool },
+        ];
+      })
+    : [];
+  const legacyTools = Array.isArray(obj.missingRequiredTools)
     ? obj.missingRequiredTools.filter((t): t is string => typeof t === 'string')
     : [];
+  const missingRequiredCalls: MissingRequiredCall[] = [...structuredCalls];
+  for (const tool of legacyTools) {
+    // Only fold in a legacy tool-only name when the structured list does not
+    // already cover that tool, so a tool with target-specific entries is not
+    // diluted by a redundant coarse one.
+    if (!missingRequiredCalls.some((c) => c.tool === tool)) {
+      missingRequiredCalls.push({ tool });
+    }
+  }
+  const missingRequiredTools = [
+    ...new Set(missingRequiredCalls.map((c) => c.tool)),
+  ];
   const disallowedToolCalls = Array.isArray(obj.disallowedToolCalls)
     ? obj.disallowedToolCalls.filter((t): t is string => typeof t === 'string')
     : [];
   return {
     verdict: obj.verdict,
     missingRequiredTools,
+    missingRequiredCalls,
     disallowedToolCalls,
     reason: typeof obj.reason === 'string' ? obj.reason : '',
     repairInstruction:
       typeof obj.repairInstruction === 'string' ? obj.repairInstruction : '',
   };
+}
+
+/**
+ * Format one missing required call for human/debug display: `tool` alone when no
+ * target is known, or `tool (target: <target>)` when target-specific.
+ */
+export function formatMissingCall(call: MissingRequiredCall): string {
+  return call.target ? `${call.tool} (target: ${call.target})` : call.tool;
 }
 
 /**

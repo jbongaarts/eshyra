@@ -31,6 +31,7 @@ import type { ToolContext, ToolRegistry } from './tools.js';
 import {
   AuditError,
   type AuditVerdict,
+  formatMissingCall,
   type TurnAuditor,
 } from './turnAuditor.js';
 import {
@@ -146,10 +147,16 @@ export interface RunTurnResult {
 
 /** Developer-facing message for a turn that failed the mechanics audit twice. */
 function formatAuditFailure(verdict: AuditVerdict): string {
+  // Prefer the target-specific missing calls (eshyra-znzn) so the failure
+  // message names which record/intent was missing, not just the tool — a turn
+  // can execute `lookup_rules` and still be rejected for missing a per-record
+  // lookup, which a tool-name-only message makes look self-contradictory.
   const missing =
-    verdict.missingRequiredTools.length > 0
-      ? verdict.missingRequiredTools.join(', ')
-      : '(none)';
+    verdict.missingRequiredCalls.length > 0
+      ? verdict.missingRequiredCalls.map(formatMissingCall).join(', ')
+      : verdict.missingRequiredTools.length > 0
+        ? verdict.missingRequiredTools.join(', ')
+        : '(none)';
   const disallowed =
     verdict.disallowedToolCalls.length > 0
       ? verdict.disallowedToolCalls.join(', ')
@@ -181,14 +188,19 @@ function formatCorrectiveNote(
     verdict.missingRequiredTools.length > 0 ||
     verdict.disallowedToolCalls.length === 0
   ) {
-    const tools =
-      verdict.missingRequiredTools.length > 0
-        ? verdict.missingRequiredTools.join(', ')
-        : toolNames.join(', ');
+    // Prefer the target-specific missing calls (eshyra-znzn): a retry told to
+    // "call lookup_rules" when it already did is useless, but "call lookup_rules
+    // for chain mail, shield, longsword" is actionable.
+    const calls =
+      verdict.missingRequiredCalls.length > 0
+        ? verdict.missingRequiredCalls.map(formatMissingCall).join(', ')
+        : verdict.missingRequiredTools.length > 0
+          ? verdict.missingRequiredTools.join(', ')
+          : toolNames.join(', ');
     lines.push(
       'Your previous response asserted a mechanical outcome without calling the',
       'tool that owns it, so it was rejected and NOT shown to the player.',
-      `Use your native tool interface to call: ${tools}. Do not state any dice`,
+      `Use your native tool interface to call: ${calls}. Do not state any dice`,
       'result, state change, or rules fact unless a tool produced it this turn.',
     );
   }
@@ -485,6 +497,7 @@ export async function runTurn(
         attempt,
         verdict: verdict.verdict,
         missingRequiredTools: verdict.missingRequiredTools,
+        missingRequiredCalls: verdict.missingRequiredCalls,
         disallowedToolCalls: verdict.disallowedToolCalls,
         executedToolNames: candidate.toolCalls.map((c) => c.tool),
         action,
