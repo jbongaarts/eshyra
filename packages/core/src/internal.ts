@@ -18,6 +18,32 @@
  * core's own tests, `'../src/internal.js'`) covers both buckets.
  */
 
+// Adventure module schema (immutable authored scenario source) + validator.
+export type {
+  AdventureClock,
+  AdventureEncounter,
+  AdventureEncounterCreature,
+  AdventureEndingState,
+  AdventureHook,
+  AdventureLocation,
+  AdventureMilestone,
+  AdventureModule,
+  AdventureNpc,
+  AdventureObjective,
+  AdventureRandomTableRef,
+  AdventureScene,
+  AdventureSecret,
+  AdventureTreasure,
+  EndingKind,
+  LevelRange,
+  PartySizeRange,
+  SceneKind,
+  SettingCompatibilityRef,
+} from './adventure/types.js';
+export {
+  AdventureModuleError,
+  validateAdventureModule,
+} from './adventure/validate.js';
 // Demo-mode policy + budget helpers (the high-level entrypoints are stable).
 export {
   assertDemoContentAllowed,
@@ -282,7 +308,6 @@ export {
   verifyArchive,
 } from './persistence/checkpoint/doltProvision.js';
 export type { DoltRemote } from './persistence/checkpoint/separation.js';
-
 // Checkpoint internals (separation guard, snapshot serialization, raw dolt
 // install/provision helpers).
 export {
