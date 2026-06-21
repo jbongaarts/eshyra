@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  adventureModuleDirName,
   DND5E_SRD_RULES_PACK,
   loadAdventureModuleFromDir,
   type ResolvedRulesStack,
@@ -11,13 +12,17 @@ import {
   validateAdventureModuleReferences,
 } from '../src/internal.js';
 
+const MODULE_ID = 'eshyra:hollow-beneath-emberfall';
 const HERE = dirname(fileURLToPath(import.meta.url));
+// Derive the directory from the module id via the SAME path-safe convention the
+// CLI/audit resolver uses, rather than hardcoding it — so the canonical fixture
+// folder is guaranteed to be the one a run's moduleId will resolve to.
 const MODULE_DIR = join(
   HERE,
   '..',
   'data',
   'adventure-modules',
-  'hollow-beneath-emberfall',
+  adventureModuleDirName(MODULE_ID),
 );
 
 // Reuse the SRD pack's license/provenance so the tiny fixture stack stays
@@ -62,10 +67,20 @@ function makeRulesStack(): ResolvedRulesStack {
 }
 
 describe('The Hollow Beneath Emberfall starter module', () => {
+  it('installs under the path-safe directory derived from its module id', () => {
+    // The namespaced id maps to a single path-safe segment (no ':'), and that is
+    // exactly the folder the fixture ships in.
+    expect(adventureModuleDirName(MODULE_ID)).toBe(
+      'eshyra_hollow-beneath-emberfall',
+    );
+    const module = loadAdventureModuleFromDir(MODULE_DIR);
+    expect(module.id).toBe(MODULE_ID);
+  });
+
   it('loads and validates through the module loader', () => {
     const module = loadAdventureModuleFromDir(MODULE_DIR);
 
-    expect(module.id).toBe('eshyra:hollow-beneath-emberfall');
+    expect(module.id).toBe(MODULE_ID);
     expect(module.title).toBe('The Hollow Beneath Emberfall');
     expect(module.rulesRequirements.baseSystemId).toBe('dnd5e-srd');
     // The authored set the acceptance calls for is present.

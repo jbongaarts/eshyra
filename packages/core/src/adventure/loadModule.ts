@@ -17,6 +17,22 @@ import { AdventureModuleError, validateAdventureModule } from './validate.js';
 /** File name an authored adventure module pack directory must contain. */
 export const ADVENTURE_MODULE_FILE = 'adventure-module.json';
 
+/**
+ * Map a module id to the single path-safe directory segment its pack installs
+ * under. Module ids may be `:`-namespaced (e.g.
+ * `eshyra:hollow-beneath-emberfall`), which is illegal in a Windows path
+ * component, so any character outside `[A-Za-z0-9._-]` is mapped to `_`
+ * (`eshyra:hollow-beneath-emberfall` -> `eshyra_hollow-beneath-emberfall`).
+ *
+ * This is the single source of truth for the on-disk pack directory name: the
+ * canonical fixture directory, the CLI/audit module-source resolver, and any
+ * runtime/smoke resolver must all derive the directory from the run's
+ * `moduleId` through this function so a namespaced id resolves consistently.
+ */
+export function adventureModuleDirName(moduleId: string): string {
+  return moduleId.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
 /** Parse and structurally validate an adventure module from a JSON string. */
 export function parseAdventureModule(json: string): AdventureModule {
   let value: unknown;

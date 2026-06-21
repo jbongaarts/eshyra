@@ -20,6 +20,7 @@
 
 export {
   ADVENTURE_MODULE_FILE,
+  adventureModuleDirName,
   loadAdventureModuleFromDir,
   parseAdventureModule,
 } from './adventure/loadModule.js';
