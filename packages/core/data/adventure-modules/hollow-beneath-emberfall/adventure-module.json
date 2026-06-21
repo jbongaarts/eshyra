@@ -1,0 +1,290 @@
+{
+  "id": "eshyra:hollow-beneath-emberfall",
+  "title": "The Hollow Beneath Emberfall",
+  "summary": "A short cave-delve beneath Emberfall's ruined watchtower, where goblins have crept back into a cellar that was sealed for a reason.",
+  "intendedLevels": { "min": 1, "max": 2 },
+  "intendedPartySize": { "min": 1, "max": 4 },
+  "rulesRequirements": { "baseSystemId": "dnd5e-srd" },
+  "settingCompatibility": [
+    { "settingPackId": "eshyra:emberfall", "anchorLocationId": "emberfall-square" }
+  ],
+  "startingSituation": "A tremor reopened the stair beneath Emberfall's abandoned watchtower, and goblins have begun raiding the village's grain from the hollow below. Warden Sela hires the party to drive them out before the winter stores are gone.",
+  "startingSceneId": "scene-arrival",
+  "hooks": [
+    {
+      "id": "hook-grain-raids",
+      "title": "The Grain Raids",
+      "text": "Warden Sela stops the party in Emberfall Square: clear the goblins from the hollow under the old watchtower before the next raid empties the winter stores.",
+      "originNpcId": "npc-warden-sela",
+      "originLocationId": "loc-emberfall-square"
+    }
+  ],
+  "locations": [
+    {
+      "id": "loc-emberfall-square",
+      "name": "Emberfall Square",
+      "summary": "A small village square ringed by soot-streaked houses.",
+      "description": "The well at the center is dry and villagers eye the dark hill where the old watchtower leans. This is the safe hub the delve sets out from.",
+      "exits": [{ "direction": "north", "toLocationId": "loc-watchtower-mouth" }],
+      "tags": ["safe", "hub"]
+    },
+    {
+      "id": "loc-watchtower-mouth",
+      "name": "The Watchtower Mouth",
+      "summary": "A collapsed tower base opening into a black hollow.",
+      "description": "The watchtower has half-fallen into the hill, leaving a jagged opening. Cold air and the smell of wet stone breathe out of the dark, and goblin sentries watch the rubble.",
+      "exits": [
+        { "direction": "south", "toLocationId": "loc-emberfall-square" },
+        { "direction": "down", "toLocationId": "loc-collapsed-stair" }
+      ],
+      "tags": ["threshold"]
+    },
+    {
+      "id": "loc-collapsed-stair",
+      "name": "The Collapsed Stair",
+      "summary": "A half-fallen spiral of broken steps and loose rubble.",
+      "description": "The old service stair drops in a ruined spiral toward the cellar. The footing is treacherous; a careless descent could collapse the steps or send loose stone clattering down to alert the warren.",
+      "exits": [
+        { "direction": "up", "toLocationId": "loc-watchtower-mouth" },
+        {
+          "direction": "down",
+          "toLocationId": "loc-deep-hollow",
+          "requirement": "A careful climb or a successful Dexterity (Acrobatics) check to descend quietly."
+        }
+      ],
+      "tags": ["hazard"]
+    },
+    {
+      "id": "loc-deep-hollow",
+      "name": "The Deep Hollow",
+      "summary": "A wide cellar-cavern: the goblin camp and a sealed stone door.",
+      "description": "Crude bone-charms hang from worked-stone walls that no goblin cut. A cookfire smokes beside stolen Emberfall grain, and at the far wall the goblins are trying to pry open a heavy stone door that someone shut long ago.",
+      "exits": [{ "direction": "up", "toLocationId": "loc-collapsed-stair" }],
+      "tags": ["objective"]
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene-arrival",
+      "title": "Arrival in Emberfall",
+      "summary": "The party meets Warden Sela and takes (or refuses) the hook.",
+      "kind": "social",
+      "locationIds": ["loc-emberfall-square"],
+      "npcIds": ["npc-warden-sela"],
+      "objectiveIds": ["obj-clear-the-hollow"],
+      "encounterIds": [],
+      "secretIds": ["secret-sela-abandoned-tower"]
+    },
+    {
+      "id": "scene-descent",
+      "title": "Into the Hollow",
+      "summary": "The party fights past the mouth sentries and descends the broken stair.",
+      "kind": "exploration",
+      "locationIds": ["loc-watchtower-mouth", "loc-collapsed-stair"],
+      "npcIds": [],
+      "objectiveIds": [],
+      "encounterIds": ["enc-mouth-ambush", "enc-collapsed-stair"],
+      "secretIds": []
+    },
+    {
+      "id": "scene-the-warren",
+      "title": "The Warren",
+      "summary": "The goblin camp: fight the raiders or parley with Grik.",
+      "kind": "mixed",
+      "locationIds": ["loc-deep-hollow"],
+      "npcIds": ["npc-grik"],
+      "objectiveIds": ["obj-clear-the-hollow", "obj-learn-the-truth"],
+      "encounterIds": ["enc-warren-standoff"],
+      "secretIds": ["secret-not-a-natural-lair"]
+    },
+    {
+      "id": "scene-the-sealed-door",
+      "title": "The Sealed Door",
+      "summary": "The choice: reseal the lowest door, open it, or leave it be.",
+      "kind": "exploration",
+      "locationIds": ["loc-deep-hollow"],
+      "npcIds": [],
+      "objectiveIds": ["obj-decide-the-door"],
+      "encounterIds": [],
+      "secretIds": ["secret-the-sealed-door"]
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc-warden-sela",
+      "name": "Warden Sela",
+      "role": "quest-giver",
+      "disposition": "wary but grateful",
+      "summary": "A tired militia warden who lost two scouts to the hollow and will not enter it herself.",
+      "secret": "Sela ordered the watchtower abandoned years ago; the goblins moved in because of that decision, and she dreads the village learning it.",
+      "locationId": "loc-emberfall-square"
+    },
+    {
+      "id": "npc-grik",
+      "name": "Grik",
+      "role": "antagonist who can become an informant",
+      "disposition": "hostile but bribable",
+      "summary": "A goblin forager who would rather talk than die and can be turned with a bribe or a show of force.",
+      "secret": "The goblins did not choose this place; something below 'calls' in their dreams and they dig toward it. Grik is terrified of what is behind the door.",
+      "locationId": "loc-deep-hollow"
+    }
+  ],
+  "encounters": [
+    {
+      "id": "enc-mouth-ambush",
+      "name": "Ambush at the Mouth",
+      "description": "Two goblin sentries loose arrows from the rubble before closing to knife range.",
+      "creatures": [{ "rulesRef": "creature:goblin", "count": 2, "role": "sentry" }],
+      "locationId": "loc-watchtower-mouth",
+      "reward": "A bent iron key that opens the goblins' grain cache below."
+    },
+    {
+      "id": "enc-collapsed-stair",
+      "name": "The Broken Descent",
+      "description": "The ruined stair must be climbed down without triggering a collapse or alerting the warren; an ability check, not a fight. Failure means a short fall or noise that rouses the camp, never a dead end.",
+      "creatures": [],
+      "locationId": "loc-collapsed-stair",
+      "reward": "A quiet, intact descent that leaves the warren unaware of the party's approach."
+    },
+    {
+      "id": "enc-warren-standoff",
+      "name": "Standoff in the Warren",
+      "description": "The goblin camp rouses. Grik can be parleyed for information, safe passage, or a bribe; if talks fail, the raiders fight.",
+      "creatures": [{ "rulesRef": "creature:goblin", "count": 3, "role": "raider" }],
+      "locationId": "loc-deep-hollow",
+      "reward": "Passage to the sealed door, and Grik's account of the digging if he is spared."
+    }
+  ],
+  "treasure": [
+    {
+      "id": "treasure-grain-key",
+      "name": "Bent Iron Key",
+      "description": "Taken from the mouth sentries; it opens the goblins' grain cache and returns Emberfall's winter stores.",
+      "locationId": "loc-watchtower-mouth"
+    },
+    {
+      "id": "treasure-wardens-cache",
+      "name": "Old Militia Cache",
+      "description": "A forgotten watch-cache in the cellar wall: a healing draught and a handful of coins.",
+      "rulesRef": "magic-item:potion-of-healing",
+      "locationId": "loc-deep-hollow"
+    }
+  ],
+  "secrets": [
+    {
+      "id": "secret-sela-abandoned-tower",
+      "title": "Sela's Old Order",
+      "dmText": "Warden Sela ordered the watchtower abandoned years ago. The goblins moved into the undefended hollow because of it, and she fears the village learning the raids are indirectly her fault.",
+      "revealableLocationIds": ["loc-emberfall-square", "loc-deep-hollow"],
+      "revealableSceneIds": ["scene-arrival"]
+    },
+    {
+      "id": "secret-not-a-natural-lair",
+      "title": "Not a Natural Lair",
+      "dmText": "The hollow is the watchtower's old sealed cellar, not a goblin warren by nature; the worked stone and militia marks give it away.",
+      "revealableLocationIds": ["loc-deep-hollow"],
+      "revealableSceneIds": ["scene-the-warren"]
+    },
+    {
+      "id": "secret-the-sealed-door",
+      "title": "What Was Sealed",
+      "dmText": "Something older than the goblins was sealed behind the lowest door, and the goblins are digging toward it in their sleep-driven compulsion. Opening it is the scenario's real danger.",
+      "revealableLocationIds": ["loc-deep-hollow"],
+      "revealableSceneIds": ["scene-the-sealed-door"]
+    }
+  ],
+  "objectives": [
+    {
+      "id": "obj-clear-the-hollow",
+      "title": "Clear the Hollow",
+      "description": "Stop the goblin raids on Emberfall.",
+      "optional": false,
+      "successCondition": "The goblins no longer threaten the village, whether driven off, slain, or brought to terms.",
+      "failureCondition": "The goblins raid Emberfall again before they are dealt with.",
+      "relatedSceneIds": ["scene-arrival", "scene-the-warren"],
+      "relatedLocationIds": ["loc-deep-hollow"]
+    },
+    {
+      "id": "obj-learn-the-truth",
+      "title": "Learn the Truth",
+      "description": "Discover why the goblins really came to the hollow.",
+      "optional": true,
+      "successCondition": "The party learns the goblins are digging toward the sealed door rather than nesting by choice.",
+      "relatedSceneIds": ["scene-the-warren", "scene-the-sealed-door"],
+      "relatedLocationIds": ["loc-deep-hollow"]
+    },
+    {
+      "id": "obj-decide-the-door",
+      "title": "Decide the Door",
+      "description": "Choose what to do with the sealed door at the bottom of the hollow.",
+      "optional": false,
+      "successCondition": "The party deliberately reseals the door, opens it, or leaves it intact; the choice drives the ending and none is the single correct answer.",
+      "failureCondition": "The door is breached unintentionally, for example when the goblins finish digging.",
+      "relatedSceneIds": ["scene-the-sealed-door"],
+      "relatedLocationIds": ["loc-deep-hollow"]
+    }
+  ],
+  "clocksOrThreats": [
+    {
+      "id": "clock-the-dig",
+      "name": "The Goblins Dig",
+      "description": "The goblins claw at the sealed door whenever they are left to it.",
+      "segments": 4,
+      "advanceWhen": "The party rests, delays, or noisily alerts the warren.",
+      "resultWhenFilled": "The goblins breach the sealed door and whatever was shut below begins to wake, tipping the scenario toward the breached ending.",
+      "linkedObjectiveId": "obj-decide-the-door"
+    }
+  ],
+  "randomTables": [],
+  "milestones": [
+    {
+      "id": "ms-hollow-cleared",
+      "title": "The Hollow Cleared",
+      "description": "The immediate goblin threat to Emberfall is resolved.",
+      "objectiveIds": ["obj-clear-the-hollow"]
+    }
+  ],
+  "endingStates": [
+    {
+      "id": "end-resealed",
+      "title": "Sealed Again",
+      "summary": "The goblins are dealt with and the lowest door is resealed; Emberfall is safe and Sela offers the watchtower as a base.",
+      "kind": "success",
+      "condition": "The goblins are resolved and the door is resealed before The Goblins Dig clock fills."
+    },
+    {
+      "id": "end-truce",
+      "title": "An Uneasy Truce",
+      "summary": "The goblins are driven off or bought off and the party leaves the door as it is; the raids stop but the hollow's deeper question is unanswered.",
+      "kind": "partial",
+      "condition": "The goblins are resolved and the door is neither resealed nor breached."
+    },
+    {
+      "id": "end-breached",
+      "title": "The Door Opened",
+      "summary": "The door is opened or breached and whatever was sealed below is loosed, leaving an open thread for a later scenario.",
+      "kind": "failure",
+      "condition": "The Goblins Dig clock fills, or the party opens the door."
+    }
+  ],
+  "provenance": {
+    "sourceRef": "first-party:hollow-beneath-emberfall",
+    "note": "Wholly original starter adventure authored in-repo for Eshyra (eshyra-eh54.7.2)."
+  },
+  "license": {
+    "licenseClass": "original",
+    "licenseName": "Creative Commons Attribution 4.0 International",
+    "attributionText": "The Hollow Beneath Emberfall, original work for Eshyra, released under CC-BY-4.0.",
+    "requiresAttribution": true,
+    "commercialUseAllowed": true,
+    "hostedUseAllowed": true,
+    "redistributionAllowed": true,
+    "publicSharingAllowed": true,
+    "derivativeAllowed": true,
+    "containsUserSuppliedText": false,
+    "containsTrademarkedSettingMaterial": false,
+    "sourceMaterialDescription": "Wholly original prose and structure; creature stat blocks and items are referenced from SRD 5.1 (CC-BY-4.0) by rulesRef, not copied here.",
+    "provenancePolicy": "Authored in-repo; no third-party adventure text incorporated.",
+    "outputRestrictions": "None beyond CC-BY-4.0 attribution."
+  }
+}
