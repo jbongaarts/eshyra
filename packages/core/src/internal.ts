@@ -18,6 +18,13 @@
  * core's own tests, `'../src/internal.js'`) covers both buckets.
  */
 
+export {
+  ADVENTURE_MODULE_FILE,
+  loadAdventureModuleFromDir,
+  parseAdventureModule,
+} from './adventure/loadModule.js';
+export type { AdventureReferenceContext } from './adventure/references.js';
+export { validateAdventureModuleReferences } from './adventure/references.js';
 // Adventure module schema (immutable authored scenario source) + validator.
 export type {
   AdventureClock,
