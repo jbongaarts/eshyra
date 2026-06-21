@@ -103,11 +103,26 @@ export function validateAdventureModuleReferences(
       `rulesRequirements.baseSystemId '${module.rulesRequirements.baseSystemId}' does not match the rules stack base system '${baseSystemId}'`,
     );
   }
-  const packIds = new Set(rules.packs.map((p) => p.meta.packId));
+  // `baseVersions`, when present, constrains acceptable base versions (matching
+  // the campaign rules-binding checker).
+  const baseVersion = rules.base.meta.version;
+  const allowedBaseVersions = module.rulesRequirements.baseVersions;
+  if (
+    allowedBaseVersions !== undefined &&
+    allowedBaseVersions.length > 0 &&
+    !allowedBaseVersions.includes(baseVersion)
+  ) {
+    throw new AdventureModuleError(
+      `rulesRequirements.baseVersions does not allow loaded base version '${baseVersion}'`,
+    );
+  }
+  // `requiredAddonPackIds` must be satisfied by loaded *add-on* packs only — the
+  // base pack id does not count.
+  const addonPackIds = new Set(rules.addons.map((p) => p.meta.packId));
   for (const required of module.rulesRequirements.requiredAddonPackIds ?? []) {
-    if (!packIds.has(required)) {
+    if (!addonPackIds.has(required)) {
       throw new AdventureModuleError(
-        `rulesRequirements.requiredAddonPackIds names add-on pack '${required}' which is not present in the rules stack`,
+        `rulesRequirements.requiredAddonPackIds references missing add-on rules pack '${required}'`,
       );
     }
   }

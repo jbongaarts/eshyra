@@ -64,12 +64,18 @@ function rec(
   };
 }
 
-/** A tiny base rules pack holding exactly the records the fixture references. */
-function makeRulesStack(): ResolvedRulesStack {
+const BASE_PACK_ID = 'rules:test-base';
+const ADDON_PACK_ID = 'rules:test-addon';
+
+/**
+ * A tiny base rules pack holding exactly the records the fixture references,
+ * optionally with an add-on pack so add-on-requirement checks can be exercised.
+ */
+function makeRulesStack(withAddon = false): ResolvedRulesStack {
   const base: RulesPack = {
     meta: {
       ...DND5E_SRD_RULES_PACK.meta,
-      packId: 'rules:test-base',
+      packId: BASE_PACK_ID,
       title: 'Test Base Pack',
       role: 'base',
       systemId: 'dnd5e-srd',
@@ -82,7 +88,22 @@ function makeRulesStack(): ResolvedRulesStack {
       rec('table', 'dungeon-ambience', 'Dungeon Ambience'),
     ],
   };
-  return resolveRulesStack({ base });
+  if (!withAddon) {
+    return resolveRulesStack({ base });
+  }
+  const addon: RulesPack = {
+    meta: {
+      ...DND5E_SRD_RULES_PACK.meta,
+      packId: ADDON_PACK_ID,
+      title: 'Test Add-on Pack',
+      role: 'addon',
+      systemId: 'dnd5e-srd-addon',
+      version: '1.0.0',
+      compatibleBaseSystems: [{ systemId: 'dnd5e-srd', versions: ['1.0.0'] }],
+    },
+    records: [rec('creature', 'kobold', 'Kobold')],
+  };
+  return resolveRulesStack({ base, addons: [addon] });
 }
 
 function makeValidModule(): AdventureModule {
@@ -297,6 +318,30 @@ describe('validateAdventureModuleReferences', () => {
     ).toThrow(/baseSystemId/);
   });
 
+  it('rejects a baseVersions list that excludes the loaded base version', () => {
+    const stack = makeRulesStack();
+    const module = makeValidModule();
+    module.rulesRequirements = {
+      baseSystemId: 'dnd5e-srd',
+      baseVersions: ['9.9.9'],
+    };
+    expect(() =>
+      validateAdventureModuleReferences(module, { rules: stack }),
+    ).toThrow(/baseVersions does not allow loaded base version '1.0.0'/);
+  });
+
+  it('accepts a baseVersions list that includes the loaded base version', () => {
+    const stack = makeRulesStack();
+    const module = makeValidModule();
+    module.rulesRequirements = {
+      baseSystemId: 'dnd5e-srd',
+      baseVersions: ['1.0.0'],
+    };
+    expect(() =>
+      validateAdventureModuleReferences(module, { rules: stack }),
+    ).not.toThrow();
+  });
+
   it('rejects a required add-on pack not present in the rules stack', () => {
     const stack = makeRulesStack();
     const module = makeValidModule();
@@ -306,7 +351,32 @@ describe('validateAdventureModuleReferences', () => {
     };
     expect(() =>
       validateAdventureModuleReferences(module, { rules: stack }),
-    ).toThrow(/requiredAddonPackIds/);
+    ).toThrow(/requiredAddonPackIds references missing add-on rules pack/);
+  });
+
+  it('does not let the base pack id satisfy an add-on requirement', () => {
+    const stack = makeRulesStack(true);
+    const module = makeValidModule();
+    // BASE_PACK_ID is loaded (as the base), but it is not an add-on.
+    module.rulesRequirements = {
+      baseSystemId: 'dnd5e-srd',
+      requiredAddonPackIds: [BASE_PACK_ID],
+    };
+    expect(() =>
+      validateAdventureModuleReferences(module, { rules: stack }),
+    ).toThrow(/requiredAddonPackIds references missing add-on rules pack/);
+  });
+
+  it('accepts a required add-on pack that is actually loaded as an add-on', () => {
+    const stack = makeRulesStack(true);
+    const module = makeValidModule();
+    module.rulesRequirements = {
+      baseSystemId: 'dnd5e-srd',
+      requiredAddonPackIds: [ADDON_PACK_ID],
+    };
+    expect(() =>
+      validateAdventureModuleReferences(module, { rules: stack }),
+    ).not.toThrow();
   });
 
   it('rejects an unknown setting pack id when the setting universe is supplied', () => {
