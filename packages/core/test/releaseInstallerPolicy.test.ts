@@ -245,13 +245,38 @@ describe('Release installer policy', () => {
     expect(ps1).toMatch(/installDir.*artifactDir|artifactDir.*install/i);
   });
 
-  it('installer scripts verify the installed command', () => {
+  it('installer verification accepts setup guidance without provider credentials', () => {
     const sh = readText('scripts/release/install.sh');
     const ps1 = readText('scripts/release/install.ps1');
 
-    // Both should check for the no-config marker string.
+    // A bare no-config invocation exits 1 after printing provider setup guidance.
     expect(sh).toContain('ANTHROPIC_API_KEY');
     expect(ps1).toContain('ANTHROPIC_API_KEY');
+  });
+
+  it('installer verification accepts the startup banner with provider credentials', () => {
+    const sh = readText('scripts/release/install.sh');
+    const ps1 = readText('scripts/release/install.ps1');
+
+    // A bare invocation with a resolved provider exits 0 after printing this
+    // stable banner. Matching it prevents ambient credentials from causing a
+    // false verification warning.
+    expect(sh).toMatch(
+      /grep -Eq 'ANTHROPIC_API_KEY\|Eshyra \.\* core v\[0-9\]'/,
+    );
+    expect(ps1).toMatch(
+      /-match 'ANTHROPIC_API_KEY\|Eshyra \.\* core v\[0-9\]'/,
+    );
+  });
+
+  it('installer verification uses bare startup and cannot invoke a model call', () => {
+    const sh = readText('scripts/release/install.sh');
+    const ps1 = readText('scripts/release/install.ps1');
+
+    expect(sh).toMatch(/_out=\$\("\$\{symlink\}" 2>&1 \|\| true\)/);
+    expect(ps1).toContain('$out = & $wrapperPath 2>&1 | Out-String');
+    expect(sh).not.toMatch(/\$\{symlink\}[^\n]*(?:play|demo)/);
+    expect(ps1).not.toMatch(/\$wrapperPath[^\n]*(?:play|demo)/i);
   });
 
   it('release workflow references all installer assets', () => {

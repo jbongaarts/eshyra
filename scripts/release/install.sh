@@ -378,9 +378,11 @@ main() {
     esac
 
     log_step "Verifying install"
-    # No-config run: should exit 1 and print setup guidance including ANTHROPIC_API_KEY.
+    # Bare startup never invokes gameplay or a model. Without provider credentials
+    # it exits 1 with setup guidance; with credentials it exits 0 after printing
+    # the stable banner/config summary. Either proves the installed command starts.
     _out=$("${symlink}" 2>&1 || true)
-    if printf '%s' "$_out" | grep -q 'ANTHROPIC_API_KEY'; then
+    if printf '%s' "$_out" | grep -Eq 'ANTHROPIC_API_KEY|Eshyra .* core v[0-9]'; then
         log "Eshyra is ready"
     else
         log_warn "verification did not match expected output; try running: ${symlink}"

@@ -306,7 +306,9 @@ function Install-Eshyra {
         }
 
         Write-Step "Verifying install"
-        # No-config run: should exit 1 and print setup guidance including ANTHROPIC_API_KEY.
+        # Bare startup never invokes gameplay or a model. Without provider credentials
+        # it exits 1 with setup guidance; with credentials it exits 0 after printing
+        # the stable banner/config summary. Either proves the installed command starts.
         $out = ''
         try {
             $out = & $wrapperPath 2>&1 | Out-String
@@ -314,7 +316,7 @@ function Install-Eshyra {
         catch {
             $out = $_.Exception.Message
         }
-        if ($out -match 'ANTHROPIC_API_KEY') {
+        if ($out -match 'ANTHROPIC_API_KEY|Eshyra .* core v[0-9]') {
             Write-Log "Eshyra is ready"
         }
         else {
