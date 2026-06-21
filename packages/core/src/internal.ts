@@ -255,6 +255,19 @@ export {
   NoopTurnDiagnosticsSink,
 } from './model/usage.js';
 export type {
+  AdventureModuleSourceSummary,
+  AdventureObjectiveAuditView,
+  AdventureRunAudit,
+  AdventureSecretAuditView,
+  BuildCampaignAdventureAuditInput,
+  CampaignAdventureAudit,
+} from './orchestrator/adventureAudit.js';
+// Adventure module progress audit/debug output.
+export {
+  buildCampaignAdventureAudit,
+  formatCampaignAdventureAudit,
+} from './orchestrator/adventureAudit.js';
+export type {
   AdventureClockContext,
   AdventureCompletedElements,
   AdventureContextSlice,

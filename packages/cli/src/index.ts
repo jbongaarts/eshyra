@@ -31,6 +31,7 @@ import {
   ModelUsageTracker,
   type SessionDebugSink,
 } from '@eshyra/core/internal';
+import { runAdventuresCommand } from './adventures.js';
 import {
   type CampaignDeps,
   resolvePlayCampaign,
@@ -523,6 +524,19 @@ export function runCheckpointSubcommand(argv: string[]): number {
   });
 }
 
+/** `eshyra adventures [campaign-id]` — inspect adventure module state. */
+export function runAdventuresSubcommand(argv: string[]): number {
+  const cli = resolveCliEnv();
+  if (cli === undefined) {
+    return 1;
+  }
+  return runAdventuresCommand(argv.slice(3), {
+    root: cli.dataRoot,
+    env: process.env,
+    log: (message: string) => console.log(message),
+  });
+}
+
 /** `eshyra usage` — display model usage summary from the diagnostics store. */
 export function runUsageSubcommand(argv: string[]): number {
   const cli = resolveCliEnv();
@@ -598,6 +612,11 @@ export function main(argv: string[] = process.argv): void {
 
   if (argv[2] === 'usage') {
     process.exitCode = runUsageSubcommand(argv);
+    return;
+  }
+
+  if (argv[2] === 'adventures') {
+    process.exitCode = runAdventuresSubcommand(argv);
     return;
   }
 
