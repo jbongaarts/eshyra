@@ -255,6 +255,26 @@ export {
   NoopTurnDiagnosticsSink,
 } from './model/usage.js';
 export type {
+  AdventureClockContext,
+  AdventureCompletedElements,
+  AdventureContextSlice,
+  AdventureEncounterContext,
+  AdventureExitContext,
+  AdventureLocationContext,
+  AdventureNpcContext,
+  AdventureObjectiveContext,
+  AdventureObjectiveStatus,
+  AdventureSceneContext,
+  AdventureSecretContext,
+  BuildAdventureContextOptions,
+} from './orchestrator/adventureContext.js';
+// Bounded adventure-module context slice builder + renderer.
+export {
+  buildAdventureContextSlice,
+  renderAdventureContextSlice,
+} from './orchestrator/adventureContext.js';
+export type {
+  AdventureModuleResolver,
   AssembledContext,
   AssembledSceneRef,
   CharacterSnapshot,

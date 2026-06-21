@@ -13,7 +13,9 @@ import {
   renderContextMessage,
   rollupSessionRecap,
   stampSessionWithOpenArc,
+  startAdventureRun,
 } from '../src/internal.js';
+import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import { freshDbWithSession } from './support/db.js';
 
 const CAMPAIGN = 'campaign-1';
@@ -449,6 +451,95 @@ describe('Context Assembler', () => {
     expect(message).toContain('The Tavern');
     expect(message).toContain('The fire crackles.');
     expect(message).toContain('I order food.');
+    db.close();
+  });
+
+  it('omits adventure context when no resolver is supplied', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN,
+      runId: 'run-1',
+      moduleId: 'test-delve',
+      provenance: 'test:adventure',
+      sessionId: SESSION,
+      updatedAt: '2026-06-20T00:00:00.000Z',
+    });
+
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'look around',
+    });
+
+    expect(ctx.adventures).toEqual([]);
+    expect(renderContextMessage(ctx)).not.toContain('Adventure Module');
+    db.close();
+  });
+
+  it('assembles a bounded module slice for an active run, seated at the live location', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN,
+      runId: 'run-1',
+      moduleId: 'test-delve',
+      provenance: 'test:adventure',
+      sessionId: SESSION,
+      updatedAt: '2026-06-20T00:00:00.000Z',
+    });
+    // Campaign truth: the party is currently in the cellar.
+    mutateState(db, {
+      target: 'clock',
+      field: 'current_location_id',
+      op: 'set',
+      value: 'loc-cellar',
+      provenance: 'test:clock',
+      sessionId: SESSION,
+      at: '2026-06-20T00:00:00.000Z',
+    });
+
+    const module = makeTestAdventureModule();
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'search the cellar',
+      resolveAdventureModule: (id) => (id === module.id ? module : undefined),
+    });
+
+    expect(ctx.adventures).toHaveLength(1);
+    const slice = ctx.adventures[0];
+    expect(slice?.moduleId).toBe('test-delve');
+    expect(slice?.currentScene?.id).toBe('scene-cellar');
+    expect(slice?.currentLocation?.id).toBe('loc-cellar');
+
+    const message = renderContextMessage(ctx);
+    expect(message).toContain('## Adventure Module (DM-only)');
+    expect(message).toContain('A Small Test Delve');
+    expect(message).toContain('Into the Cellar');
+    db.close();
+  });
+
+  it('skips runs whose module the resolver cannot supply', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN,
+      runId: 'run-1',
+      moduleId: 'missing-module',
+      provenance: 'test:adventure',
+      sessionId: SESSION,
+      updatedAt: '2026-06-20T00:00:00.000Z',
+    });
+
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'look around',
+      resolveAdventureModule: () => undefined,
+    });
+
+    expect(ctx.adventures).toEqual([]);
     db.close();
   });
 });

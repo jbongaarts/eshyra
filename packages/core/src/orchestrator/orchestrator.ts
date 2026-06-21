@@ -24,6 +24,7 @@ import type {
 } from '../model/usage.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
+import type { AdventureModuleResolver } from './contextAssembler.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
 import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
@@ -98,6 +99,15 @@ export interface RunTurnDeps {
    * is recorded separately by the {@link ModelUsageTracker} wrapping `model`.
    */
   diagnostics?: TurnDiagnosticsSink;
+  /**
+   * Optional resolver that binds a campaign's active adventure-run module id to
+   * its immutable module source (eshyra-eh54.5). When provided, the bounded
+   * context assembler includes a per-active-run adventure module slice in the
+   * DM context. When omitted, no module context is fed and campaigns without
+   * adventure runs are unaffected. The campaign→module-source wiring (loading
+   * the module pack from disk) is the caller's concern.
+   */
+  resolveAdventureModule?: AdventureModuleResolver;
 }
 
 export interface RunTurnInput {
@@ -390,6 +400,7 @@ export async function runTurn(
       playerInput: input.playerInput,
       recentSessionLimit: input.recentSessionLimit,
       actingCharacterId,
+      resolveAdventureModule: deps.resolveAdventureModule,
     });
 
     phase = 'model_loop';
