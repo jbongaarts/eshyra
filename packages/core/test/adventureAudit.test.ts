@@ -112,6 +112,44 @@ describe('buildCampaignAdventureAudit', () => {
     db.close();
   });
 
+  it('does not build a runtime slice for a completed run, but still shows source and progress', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    seedActiveRun(db);
+    // Close the run out — the runtime would no longer feed it to the DM.
+    recordAdventureRunProgress(db, {
+      campaignId: CAMPAIGN,
+      runId: 'run-1',
+      status: 'completed',
+      ...writeMeta,
+    });
+    const module = makeTestAdventureModule();
+
+    const audit = buildCampaignAdventureAudit(db, {
+      campaignId: CAMPAIGN,
+      resolveAdventureModule: () => module,
+      currentLocationId: 'loc-cellar',
+    });
+
+    const run = audit.runs[0];
+    expect(run?.status).toBe('completed');
+    expect(run?.moduleResolved).toBe(true);
+    // Source + progress views remain available for an inactive run.
+    expect(run?.source?.counts.scenes).toBe(2);
+    expect(run?.objectives?.completed).toEqual(['obj-investigate']);
+    // But no runtime slice is captured for an inactive run.
+    expect(run?.contextSlice).toBeUndefined();
+
+    const text = formatCampaignAdventureAudit(audit);
+    expect(text).toContain('Source module: "A Small Test Delve"');
+    expect(text).toContain(
+      'Runtime context slice: NOT BUILT — run is completed; only active runs are fed to the DM.',
+    );
+    expect(text).not.toContain(
+      'Runtime context slice (bounded, as fed to the DM)',
+    );
+    db.close();
+  });
+
   it('degrades gracefully when the module source does not resolve', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     seedActiveRun(db);

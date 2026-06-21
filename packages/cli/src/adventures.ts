@@ -7,11 +7,15 @@
  * module, the campaign-owned adventure run / module binding, mutable progress /
  * deviations, and the bounded runtime context slice the DM receives.
  *
- * Module SOURCE is resolved from `<root>/adventure-modules/<moduleId>/` (the
- * `adventureModulesDir` convention). When a module is absent the audit still
- * reports the binding and mutable progress; only the source summary and runtime
- * slice are omitted. The active campaign database is opened read-only-in-spirit:
- * this command never writes to it.
+ * Module SOURCE is resolved from `<root>/adventure-modules/<dirName>/`, where
+ * `<dirName>` is the path-safe form of the module id (module ids may be
+ * namespaced with `:` per eshyra-eh54.2, which is illegal in a Windows path, so
+ * any path-unsafe character is mapped to `_`). When a module is absent the audit
+ * still reports the binding and mutable progress; only the source summary and
+ * runtime slice are omitted. The final first-party install layout is owned by
+ * eshyra-eh54.7; this resolver only needs to agree with it on the directory
+ * name, and the path-safe mapping below is that contract. The active campaign
+ * database is opened read-only-in-spirit: this command never writes to it.
  */
 
 import { existsSync } from 'node:fs';
@@ -39,9 +43,19 @@ export interface AdventuresDeps {
 }
 
 /**
- * Build a module-source resolver over `<root>/adventure-modules/<id>/`. Missing
- * or unparseable modules resolve to `undefined` (the audit degrades) rather than
- * throwing, so an inspection never fails because a pack is absent.
+ * Map a (possibly `:`-namespaced) module id to a single path-safe directory
+ * segment. Mirrors the `safeName` approach used for debug filenames so a
+ * namespaced id like `eshyra:hollow-beneath-emberfall` cannot produce an
+ * illegal path component on Windows.
+ */
+function moduleDirName(moduleId: string): string {
+  return moduleId.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+/**
+ * Build a module-source resolver over `<root>/adventure-modules/<dirName>/`.
+ * Missing or unparseable modules resolve to `undefined` (the audit degrades)
+ * rather than throwing, so an inspection never fails because a pack is absent.
  */
 function makeModuleResolver(
   root: string,
@@ -51,7 +65,7 @@ function makeModuleResolver(
     if (cache.has(moduleId)) {
       return cache.get(moduleId);
     }
-    const dir = join(adventureModulesDir(root), moduleId);
+    const dir = join(adventureModulesDir(root), moduleDirName(moduleId));
     let module: AdventureModule | undefined;
     if (existsSync(dir)) {
       try {

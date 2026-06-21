@@ -65,9 +65,11 @@ export function rulesPacksDir(root: string): string {
 
 /**
  * `<root>/adventure-modules` — installed adventure module packs, one per
- * `<moduleId>/` subdirectory (each holding an `adventure-module.json`). Mirrors
- * the `rules-packs` convention; the adventure audit resolves module source from
- * here. Population of first-party modules is later eh54 work (eshyra-eh54.7).
+ * subdirectory (each holding an `adventure-module.json`). The subdirectory is
+ * the path-safe form of the module id (module ids may be `:`-namespaced, which
+ * is illegal in a Windows path). Mirrors the `rules-packs` convention; the
+ * adventure audit resolves module source from here. Population of first-party
+ * modules is later eh54 work (eshyra-eh54.7).
  */
 export function adventureModulesDir(root: string): string {
   return join(root, 'adventure-modules');

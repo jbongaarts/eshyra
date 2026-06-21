@@ -200,15 +200,19 @@ function auditRun(
       contextSlice: undefined,
     };
   }
+  // The runtime only feeds a bounded slice for ACTIVE runs (eshyra-eh54.5), so
+  // the audit captures one only for active runs. Source/progress views are still
+  // built for completed/abandoned runs; the slice is simply not applicable.
   return {
     ...base,
     moduleResolved: true,
     source: summarizeSource(module),
     secrets: auditSecrets(module, run.progress),
     objectives: auditObjectives(module, run.progress),
-    contextSlice: buildAdventureContextSlice(module, run, {
-      currentLocationId,
-    }),
+    contextSlice:
+      run.status === 'active'
+        ? buildAdventureContextSlice(module, run, { currentLocationId })
+        : undefined,
   };
 }
 
@@ -328,14 +332,20 @@ function renderRunAudit(run: AdventureRunAudit): string {
     }`,
   );
 
-  // Section 4: bounded runtime slice.
-  if (run.contextSlice === undefined) {
+  // Section 4: bounded runtime slice. Only active runs are fed to the DM, so an
+  // inactive run never has a slice even when its module resolves — distinguish
+  // that from an unresolved module so the audit is not misleading.
+  if (run.contextSlice !== undefined) {
+    lines.push('Runtime context slice (bounded, as fed to the DM):');
+    lines.push(renderAdventureContextSlice(run.contextSlice));
+  } else if (!run.moduleResolved) {
     lines.push(
       'Runtime context slice: UNAVAILABLE — module source did not resolve.',
     );
   } else {
-    lines.push('Runtime context slice (bounded, as fed to the DM):');
-    lines.push(renderAdventureContextSlice(run.contextSlice));
+    lines.push(
+      `Runtime context slice: NOT BUILT — run is ${run.status}; only active runs are fed to the DM.`,
+    );
   }
   return lines.join('\n');
 }
