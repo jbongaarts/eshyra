@@ -1,3 +1,5 @@
+import type { AdventureModule } from '../adventure/types.js';
+import { listAdventureRuns } from '../campaign/adventureRun.js';
 import { listClosedArcSummaries } from '../memory/campaignArc.js';
 import type {
   ArcSummaryRecord,
@@ -23,6 +25,11 @@ import {
 } from '../state/liveStateSchema.js';
 import type { PartyMember } from '../state/party.js';
 import { listParty } from '../state/party.js';
+import type { AdventureContextSlice } from './adventureContext.js';
+import {
+  buildAdventureContextSlice,
+  renderAdventureContextSlice,
+} from './adventureContext.js';
 import type { SceneLogRecord } from './scene.js';
 import { countSceneLog, getOpenScene, listSceneLogWindow } from './scene.js';
 
@@ -51,6 +58,18 @@ const inventoryPropertiesColumn = jsonColumn<unknown>(
   'inventory.properties_json',
 );
 
+/**
+ * Resolves an immutable adventure module by id for context assembly. The module
+ * source lives outside the per-turn DB (it is read-only authored content loaded
+ * from a pack), so the assembler cannot read it directly; the caller supplies
+ * this resolver to bind a campaign's active run id to its module source. Return
+ * `undefined` when the module is unavailable — the run is then skipped rather
+ * than failing the turn.
+ */
+export type AdventureModuleResolver = (
+  moduleId: string,
+) => AdventureModule | undefined;
+
 export interface ContextAssemblyInput {
   db: Db;
   campaignId: string;
@@ -65,6 +84,13 @@ export interface ContextAssemblyInput {
    * character (`meta.active_character_id`) when omitted.
    */
   actingCharacterId?: string;
+  /**
+   * Optional resolver for active adventure-module source. When provided, the
+   * assembler builds a bounded module context slice for each ACTIVE adventure
+   * run whose module resolves. When omitted (the default), no module context is
+   * assembled and campaigns without adventure runs are unaffected.
+   */
+  resolveAdventureModule?: AdventureModuleResolver;
 }
 
 export interface CharacterSnapshot {
@@ -120,6 +146,12 @@ export interface AssembledContext {
   scene: AssembledSceneRef | undefined;
   sceneTranscript: SceneLogRecord[];
   sceneTranscriptOmittedCount: number;
+  /**
+   * Bounded context slices for the campaign's active adventure runs. Empty when
+   * no resolver was supplied, the campaign has no active runs, or none of those
+   * runs' modules resolved.
+   */
+  adventures: AdventureContextSlice[];
   playerInput: string;
 }
 
@@ -284,6 +316,15 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
       ? 0
       : Math.max(0, countSceneLog(input.db, sceneKey) - sceneTranscript.length);
 
+  const state = readStateSnapshot(input.db, input.actingCharacterId);
+
+  const adventures = assembleAdventureContext(
+    input.db,
+    input.campaignId,
+    state.clock.currentLocationId,
+    input.resolveAdventureModule,
+  );
+
   return {
     campaignId: input.campaignId,
     sessionId: input.sessionId,
@@ -296,15 +337,44 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     omittedSessionCount: alwaysOn.omittedSessionCount,
     drilldownAvailable:
       alwaysOn.drilldownAvailable || sceneTranscriptOmittedCount > 0,
-    state: readStateSnapshot(input.db, input.actingCharacterId),
+    state,
     scene:
       openScene === undefined
         ? undefined
         : { sceneId: openScene.sceneId, title: openScene.title },
     sceneTranscript,
     sceneTranscriptOmittedCount,
+    adventures,
     playerInput: input.playerInput,
   };
+}
+
+/**
+ * Build bounded context slices for the campaign's ACTIVE adventure runs. A run
+ * whose module the resolver cannot supply is skipped (logged by omission) rather
+ * than failing the turn. Returns an empty array when no resolver is supplied.
+ */
+function assembleAdventureContext(
+  db: Db,
+  campaignId: string,
+  currentLocationId: string | undefined,
+  resolve: AdventureModuleResolver | undefined,
+): AdventureContextSlice[] {
+  if (resolve === undefined) {
+    return [];
+  }
+  const slices: AdventureContextSlice[] = [];
+  for (const run of listAdventureRuns(db, { campaignId })) {
+    if (run.status !== 'active') {
+      continue;
+    }
+    const module = resolve(run.moduleId);
+    if (module === undefined) {
+      continue;
+    }
+    slices.push(buildAdventureContextSlice(module, run, { currentLocationId }));
+  }
+  return slices;
 }
 
 function renderParty(party: PartyMember[], actingId: string): string {
@@ -407,6 +477,13 @@ export function renderContextMessage(ctx: AssembledContext): string {
   }
 
   sections.push(`## Game State\n${renderState(ctx.state)}`);
+
+  if (ctx.adventures.length > 0) {
+    const body = ctx.adventures.map(renderAdventureContextSlice).join('\n\n');
+    sections.push(
+      `## Adventure Module (DM-only)\nGuidance from the active authored scenario; campaign truth above overrides it where they conflict. Do not narrate DM-only details verbatim.\n\n${body}`,
+    );
+  }
 
   if (ctx.scene !== undefined) {
     const transcript =
