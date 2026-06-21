@@ -63,6 +63,16 @@ export function rulesPacksDir(root: string): string {
   return join(root, 'rules-packs');
 }
 
+/**
+ * `<root>/adventure-modules` — installed adventure module packs, one per
+ * `<moduleId>/` subdirectory (each holding an `adventure-module.json`). Mirrors
+ * the `rules-packs` convention; the adventure audit resolves module source from
+ * here. Population of first-party modules is later eh54 work (eshyra-eh54.7).
+ */
+export function adventureModulesDir(root: string): string {
+  return join(root, 'adventure-modules');
+}
+
 /** `<root>/dolt` — the managed Dolt binary cache. */
 export function doltCacheDir(root: string): string {
   return join(root, 'dolt');
