@@ -27,10 +27,16 @@ import { migrateSchema } from './migrations.js';
  * validated by the pack importer at load time — not by mutateState or the
  * context assembler.
  *
+ * Campaign-owned adventure run progress — mutable campaign-instance state typed
+ * at the adventure-run module's own read/write boundary
+ * (`campaign/adventureRun.ts`), not by mutateState. The referenced adventure
+ * module source is never written back here:
+ *   - `adventure_run.progress_json`     (shape: AdventureRunProgress)
+ *
  * Operational diagnostics are non-canon debugging records, not game history:
  *   - `turn_failure_diagnostic`
  */
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 
 export class SchemaCompatibilityError extends Error {
   constructor(message: string) {
@@ -294,6 +300,26 @@ export function initSchema(db: Db): void {
       base_version TEXT NOT NULL,
       addons_json TEXT NOT NULL DEFAULT '[]',
       resolved_at TEXT NOT NULL
+    );
+
+    -- Campaign-owned adventure run / module binding (eshyra-eh54.4). Mutable
+    -- campaign-instance state: each row binds the campaign to one immutable
+    -- adventure module by id and records that campaign's progress through it.
+    -- A campaign may hold several runs. The authored module source is never
+    -- written back here; progress lives only in progress_json.
+    CREATE TABLE IF NOT EXISTS adventure_run (
+      campaign_id TEXT NOT NULL,
+      run_id TEXT NOT NULL,
+      module_id TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'abandoned')),
+      started_at_session_id TEXT,
+      completed_at_session_id TEXT,
+      progress_json TEXT NOT NULL DEFAULT '{}',
+      notes TEXT NOT NULL DEFAULT '',
+      provenance TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (campaign_id, run_id)
     );
     `,
     );

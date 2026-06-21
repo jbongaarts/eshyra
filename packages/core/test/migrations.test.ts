@@ -289,4 +289,37 @@ describe('migrations', () => {
     expect(versionRow?.value).toBe('11');
     db.close();
   });
+
+  it('v11→v12 creates the campaign-owned adventure_run table', () => {
+    const db = openDatabase(':memory:');
+    db.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('schema_version', '11');
+    `);
+
+    migrateSchema(db, 11, 12);
+
+    const tables = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='adventure_run'",
+      )
+      .all();
+    expect(tables).toHaveLength(1);
+    const cols = db.prepare('PRAGMA table_info(adventure_run)').all() as {
+      name: string;
+    }[];
+    expect(cols.map((c) => c.name)).toEqual(
+      expect.arrayContaining([
+        'campaign_id',
+        'run_id',
+        'module_id',
+        'progress_json',
+      ]),
+    );
+    const versionRow = db
+      .prepare('SELECT value FROM meta WHERE key = ?')
+      .get('schema_version') as { value: string } | undefined;
+    expect(versionRow?.value).toBe('12');
+    db.close();
+  });
 });

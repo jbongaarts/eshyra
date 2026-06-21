@@ -51,6 +51,27 @@ export {
   AdventureModuleError,
   validateAdventureModule,
 } from './adventure/validate.js';
+// Campaign-owned adventure run / module binding + mutable module progress.
+export type {
+  AdventureClockState,
+  AdventureEncounterOutcome,
+  AdventureModuleDeviation,
+  AdventureRun,
+  AdventureRunKey,
+  AdventureRunProgress,
+  AdventureRunProgressDelta,
+  AdventureRunStatus,
+  EncounterResolution,
+  RecordAdventureRunProgressInput,
+  StartAdventureRunInput,
+} from './campaign/adventureRun.js';
+export {
+  AdventureRunError,
+  getAdventureRun,
+  listAdventureRuns,
+  recordAdventureRunProgress,
+  startAdventureRun,
+} from './campaign/adventureRun.js';
 // Demo-mode policy + budget helpers (the high-level entrypoints are stable).
 export {
   assertDemoContentAllowed,
