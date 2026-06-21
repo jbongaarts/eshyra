@@ -287,7 +287,18 @@ describe('validateAdventureModule', () => {
     expect(() => validateAdventureModule(base)).toThrow(/duplicate id/);
   });
 
-  it('rejects an id containing a colon', () => {
+  it('accepts a namespaced root module id', () => {
+    // The root id is a pack identity and may be namespaced with ':' (matching
+    // the world `ModulePack` `packId` convention, e.g. 'eshyra:emberfall-hollow').
+    const base = clone();
+    (base as { id: string }).id = 'eshyra:hollow-beneath-emberfall';
+    const module = validateAdventureModule(base);
+    expect(module.id).toBe('eshyra:hollow-beneath-emberfall');
+  });
+
+  it('rejects a child id containing a colon', () => {
+    // Child/structural ids may key progress overlays (eshyra-eh54.4), so they
+    // must stay colon-free even though the root id may not.
     const base = clone();
     base.locations[0] = { ...base.locations[0], id: 'loc:inn' };
     expect(() => validateAdventureModule(base)).toThrow(/must not contain/);

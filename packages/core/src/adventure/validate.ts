@@ -480,11 +480,12 @@ function assertRef(
 /**
  * Structurally validate an untrusted value as an {@link AdventureModule}.
  * Throws {@link AdventureModuleError} on the first problem; on success returns a
- * typed module. Enforces intra-module referential integrity: ids are unique and
- * colon-free within a kind, `startingSceneId` resolves, location exits resolve,
- * and every intra-module reference (scene → location/npc/objective/encounter/
- * secret, hook → npc/location, objective/clock/milestone links, secret reveal
- * sites, optional location ids) resolves to a real record.
+ * typed module. Enforces intra-module referential integrity: child ids are
+ * unique and colon-free within a kind (the root module id is a pack identity
+ * and may be namespaced with ':'), `startingSceneId` resolves, location exits
+ * resolve, and every intra-module reference (scene → location/npc/objective/
+ * encounter/secret, hook → npc/location, objective/clock/milestone links,
+ * secret reveal sites, optional location ids) resolves to a real record.
  *
  * Cross-pack references (creature/item/table `rulesRef`s, setting-compatibility
  * ids) are checked only for shape here; resolving them is the loader's job
@@ -521,10 +522,10 @@ export function validateAdventureModule(value: unknown): AdventureModule {
     license: license(o.license),
   };
 
-  if (module.id.includes(':')) {
-    throw new AdventureModuleError(`id must not contain ':': '${module.id}'`);
-  }
-
+  // The root module id is a pack identity and may be namespaced with ':'
+  // (e.g. 'eshyra:hollow-beneath-emberfall'), matching the world `ModulePack`
+  // `packId` convention. Only the child/structural ids below must stay
+  // colon-free, since those may key progress overlays (eshyra-eh54.4).
   const collections: readonly [readonly { id: string }[], string][] = [
     [module.hooks, 'hooks'],
     [module.locations, 'locations'],
