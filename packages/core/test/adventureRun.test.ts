@@ -230,6 +230,117 @@ describe('adventure run state', () => {
     db.close();
   });
 
+  it('rejects invalid nested progress payloads at the write boundary', () => {
+    const db = freshDb();
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN_ID,
+      runId: 'run-1',
+      moduleId: 'mod',
+      ...writeMeta,
+    });
+    const record = (delta: Record<string, unknown>) =>
+      recordAdventureRunProgress(db, {
+        campaignId: CAMPAIGN_ID,
+        runId: 'run-1',
+        delta: delta as never,
+        ...writeMeta,
+      });
+
+    expect(() => record({ visitedLocations: [''] })).toThrow(
+      /visitedLocations\[0\] must be a non-empty string/,
+    );
+    expect(() =>
+      record({ encounterOutcomes: [{ encounterId: '', outcome: 'defeated' }] }),
+    ).toThrow(/encounterOutcomes\[0\].encounterId/);
+    expect(() =>
+      record({
+        encounterOutcomes: [{ encounterId: 'enc', outcome: 'exploded' }],
+      }),
+    ).toThrow(/encounterOutcomes\[0\].outcome must be one of/);
+    expect(() =>
+      record({ activeClocks: [{ clockId: '', filled: 1 }] }),
+    ).toThrow(/activeClocks\[0\].clockId/);
+    expect(() =>
+      record({ activeClocks: [{ clockId: 'c', filled: -1 }] }),
+    ).toThrow(/activeClocks\[0\].filled must be a non-negative integer/);
+    expect(() =>
+      record({ activeClocks: [{ clockId: 'c', filled: 1.5 }] }),
+    ).toThrow(/activeClocks\[0\].filled must be a non-negative integer/);
+    expect(() =>
+      record({ deviations: [{ id: '', description: 'x' }] }),
+    ).toThrow(/deviations\[0\].id/);
+    expect(() =>
+      record({ deviations: [{ id: 'd', description: '' }] }),
+    ).toThrow(/deviations\[0\].description/);
+    db.close();
+  });
+
+  it('rejects empty optional session ids', () => {
+    const db = freshDb();
+    expect(() =>
+      startAdventureRun(db, {
+        campaignId: CAMPAIGN_ID,
+        runId: 'run-1',
+        moduleId: 'mod',
+        startedAtSessionId: '',
+        ...writeMeta,
+      }),
+    ).toThrow(/startedAtSessionId must not be empty/);
+
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN_ID,
+      runId: 'run-2',
+      moduleId: 'mod',
+      ...writeMeta,
+    });
+    expect(() =>
+      recordAdventureRunProgress(db, {
+        campaignId: CAMPAIGN_ID,
+        runId: 'run-2',
+        completedAtSessionId: '',
+        ...writeMeta,
+      }),
+    ).toThrow(/completedAtSessionId must not be empty/);
+    db.close();
+  });
+
+  it('does not write any progress when a delta is rejected', () => {
+    const db = freshDb();
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN_ID,
+      runId: 'run-1',
+      moduleId: 'mod',
+      ...writeMeta,
+    });
+    // First valid update lands.
+    recordAdventureRunProgress(db, {
+      campaignId: CAMPAIGN_ID,
+      runId: 'run-1',
+      delta: { visitedLocations: ['loc-a'] },
+      ...writeMeta,
+    });
+    // A delta that mixes a valid id with an invalid clock must be fully rejected.
+    expect(() =>
+      recordAdventureRunProgress(db, {
+        campaignId: CAMPAIGN_ID,
+        runId: 'run-1',
+        delta: {
+          visitedLocations: ['loc-b'],
+          activeClocks: [{ clockId: 'c', filled: -5 }],
+        } as never,
+        ...writeMeta,
+      }),
+    ).toThrow(/non-negative integer/);
+    // State is unchanged: loc-b was not partially written.
+    const run = getAdventureRun(db, {
+      campaignId: CAMPAIGN_ID,
+      runId: 'run-1',
+    });
+    expect(run?.progress.visitedLocations).toEqual(['loc-a']);
+    expect(run?.progress.activeClocks).toEqual([]);
+    db.close();
+  });
+
   it('preserves runs and progress across a save/resume (reopen) cycle', () => {
     const dir = mkdtempSync(join(tmpdir(), 'eshyra-run-'));
     tmpDirs.push(dir);

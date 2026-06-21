@@ -39,6 +39,14 @@ export type EncounterResolution =
   | 'negotiated'
   | 'other';
 
+const ENCOUNTER_RESOLUTIONS: readonly EncounterResolution[] = [
+  'defeated',
+  'bypassed',
+  'fled',
+  'negotiated',
+  'other',
+];
+
 export interface AdventureEncounterOutcome {
   readonly encounterId: string;
   readonly outcome: EncounterResolution;
@@ -168,6 +176,68 @@ function assertStatus(status: AdventureRunStatus): void {
       `invalid adventure run status '${status}'; expected one of: ${RUN_STATUSES.join(', ')}`,
     );
   }
+}
+
+function assertNonEmptyString(value: unknown, where: string): void {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new AdventureRunError(`${where} must be a non-empty string`);
+  }
+}
+
+/** Optional session markers may be omitted, but never the empty string. */
+function assertOptionalSessionId(
+  value: string | undefined,
+  name: string,
+): void {
+  if (value !== undefined && value.length === 0) {
+    throw new AdventureRunError(`${name} must not be empty when provided`);
+  }
+}
+
+/**
+ * Validate a progress delta before it is merged into canonical campaign state.
+ * This is the typed write boundary for `adventure_run.progress_json` (no
+ * mutateState pass), so it is defensive against untyped JS/runtime callers:
+ * ids must be non-empty, encounter outcomes well-formed, clock fills
+ * non-negative integers, and deviations fully described.
+ */
+function validateProgressDelta(delta: AdventureRunProgressDelta): void {
+  const idLists: readonly [string, readonly string[] | undefined][] = [
+    ['visitedLocations', delta.visitedLocations],
+    ['completedOrBypassedScenes', delta.completedOrBypassedScenes],
+    ['revealedSecrets', delta.revealedSecrets],
+    ['completedObjectives', delta.completedObjectives],
+    ['failedObjectives', delta.failedObjectives],
+    ['claimedTreasure', delta.claimedTreasure],
+  ];
+  for (const [field, ids] of idLists) {
+    ids?.forEach((id, i) => {
+      assertNonEmptyString(id, `${field}[${i}]`);
+    });
+  }
+  delta.encounterOutcomes?.forEach((outcome, i) => {
+    assertNonEmptyString(
+      outcome.encounterId,
+      `encounterOutcomes[${i}].encounterId`,
+    );
+    if (!ENCOUNTER_RESOLUTIONS.includes(outcome.outcome)) {
+      throw new AdventureRunError(
+        `encounterOutcomes[${i}].outcome must be one of: ${ENCOUNTER_RESOLUTIONS.join(', ')}`,
+      );
+    }
+  });
+  delta.activeClocks?.forEach((clock, i) => {
+    assertNonEmptyString(clock.clockId, `activeClocks[${i}].clockId`);
+    if (!Number.isInteger(clock.filled) || clock.filled < 0) {
+      throw new AdventureRunError(
+        `activeClocks[${i}].filled must be a non-negative integer`,
+      );
+    }
+  });
+  delta.deviations?.forEach((deviation, i) => {
+    assertNonEmptyString(deviation.id, `deviations[${i}].id`);
+    assertNonEmptyString(deviation.description, `deviations[${i}].description`);
+  });
 }
 
 /** Order-preserving union of two id lists. */
@@ -326,6 +396,7 @@ export function startAdventureRun(
   );
   const status = input.status ?? 'active';
   assertStatus(status);
+  assertOptionalSessionId(input.startedAtSessionId, 'startedAtSessionId');
 
   return withTransaction(db, (txnDb) => {
     if (getAdventureRun(txnDb, input) !== undefined) {
@@ -388,6 +459,11 @@ export function recordAdventureRunProgress(
   );
   if (input.status !== undefined) {
     assertStatus(input.status);
+  }
+  assertOptionalSessionId(input.startedAtSessionId, 'startedAtSessionId');
+  assertOptionalSessionId(input.completedAtSessionId, 'completedAtSessionId');
+  if (input.delta !== undefined) {
+    validateProgressDelta(input.delta);
   }
 
   return withTransaction(db, (txnDb) => {
