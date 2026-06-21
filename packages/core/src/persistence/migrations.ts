@@ -152,11 +152,34 @@ const v10_to_v11: Migration = (db) => {
   `);
 };
 
+// v11 → v12: campaign-owned adventure run / module binding (eshyra-eh54.4).
+// Mutable campaign-instance state recording a campaign's progress through an
+// immutable adventure module; the module source is never written back here.
+const v11_to_v12: Migration = (db) => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS adventure_run (
+      campaign_id TEXT NOT NULL,
+      run_id TEXT NOT NULL,
+      module_id TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'abandoned')),
+      started_at_session_id TEXT,
+      completed_at_session_id TEXT,
+      progress_json TEXT NOT NULL DEFAULT '{}',
+      notes TEXT NOT NULL DEFAULT '',
+      provenance TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (campaign_id, run_id)
+    );
+  `);
+};
+
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   8: v7_to_v8,
   9: v8_to_v9,
   10: v9_to_v10,
   11: v10_to_v11,
+  12: v11_to_v12,
 };
 
 /**
