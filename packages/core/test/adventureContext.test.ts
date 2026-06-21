@@ -26,7 +26,9 @@ describe('buildAdventureContextSlice', () => {
     expect(slice.nearbyLocations.map((l) => l.id)).toEqual(['loc-cellar']);
     expect(slice.relevantNpcs.map((n) => n.id)).toEqual(['npc-innkeeper']);
     // Scene's only objective is active.
-    expect(slice.activeObjectives.map((o) => o.id)).toEqual(['obj-investigate']);
+    expect(slice.activeObjectives.map((o) => o.id)).toEqual([
+      'obj-investigate',
+    ]);
   });
 
   it('seats at the live current location and overrides the scene guess', () => {
@@ -103,7 +105,10 @@ describe('buildAdventureContextSlice', () => {
       makeTestAdventureModule(),
       makeTestAdventureRun({
         deviations: [
-          { id: 'dev-1', description: 'The innkeeper was killed in session 2.' },
+          {
+            id: 'dev-1',
+            description: 'The innkeeper was killed in session 2.',
+          },
         ],
       }),
     );
@@ -118,6 +123,37 @@ describe('buildAdventureContextSlice', () => {
       makeTestAdventureRun({ completedOrBypassedScenes: ['scene-arrival'] }),
     );
     expect(slice.currentScene?.id).toBe('scene-cellar');
+  });
+
+  it('does not fall back to another location’s unfinished scene when the live location’s scene is done', () => {
+    // Party is at the inn; the inn's only scene is completed, but the cellar
+    // scene is still unfinished. Campaign truth (the live location) must win:
+    // no current scene, and certainly not the cellar's.
+    const slice = buildAdventureContextSlice(
+      makeTestAdventureModule(),
+      makeTestAdventureRun({ completedOrBypassedScenes: ['scene-arrival'] }),
+      { currentLocationId: 'loc-inn' },
+    );
+    expect(slice.currentScene).toBeUndefined();
+    expect(slice.currentLocation?.id).toBe('loc-inn');
+    // The cellar's encounter / secret must NOT leak in via a wrong scene guess.
+    expect(slice.pendingEncounters).toEqual([]);
+    expect(slice.unrevealedSecrets).toEqual([]);
+  });
+
+  it('does not seat the module at the starting scene when the live location is outside its keyed space', () => {
+    const slice = buildAdventureContextSlice(
+      makeTestAdventureModule(),
+      makeTestAdventureRun(),
+      { currentLocationId: 'loc-not-in-module' },
+    );
+    expect(slice.currentScene).toBeUndefined();
+    expect(slice.currentLocation).toBeUndefined();
+    expect(slice.relevantNpcs).toEqual([]);
+    expect(slice.pendingEncounters).toEqual([]);
+    expect(slice.unrevealedSecrets).toEqual([]);
+    // Global pressures (clocks) and deviations are still available.
+    expect(slice.activeClocks.map((c) => c.id)).toEqual(['clock-corruption']);
   });
 
   it('renders a compact DM-only section without empty groups', () => {

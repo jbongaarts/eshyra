@@ -178,29 +178,42 @@ function hasAnyProgress(run: AdventureRun): boolean {
 }
 
 /**
- * Pick the campaign's current scene. Campaign truth (the live location and the
- * set of completed scenes) drives the choice; the authored `startingSceneId` is
- * only a fallback for a fresh run.
+ * Pick the campaign's current scene. Campaign truth drives the choice and is
+ * never overridden by an authored fallback:
+ *
+ * - When the caller supplies live location truth (`hasLocationTruth`), the scene
+ *   must belong to that location. If the live location resolves to a module
+ *   location with an unfinished scene, that scene is current; if it has no
+ *   unfinished scene, or the live location is outside the module's keyed space
+ *   (does not resolve), there is NO current scene — we never seat the party at a
+ *   different location's scene or at the authored start as though they were
+ *   there.
+ * - Only when the caller supplies no location truth at all (a fresh or
+ *   location-unknown run) do we fall back to the authored `startingSceneId` (for
+ *   a run with no completed scenes) or the next unfinished scene.
  */
 function pickCurrentScene(
   module: AdventureModule,
   completedScenes: ReadonlySet<string>,
   currentLocation: AdventureLocation | undefined,
+  hasLocationTruth: boolean,
 ): AdventureScene | undefined {
-  if (currentLocation !== undefined) {
-    const atLocation = module.scenes.find(
+  if (hasLocationTruth) {
+    // The party's location is known. A scene is only "current" if it is staged
+    // at that location and still unfinished; otherwise leave it undefined.
+    if (currentLocation === undefined) {
+      return undefined;
+    }
+    return module.scenes.find(
       (s) =>
         !completedScenes.has(s.id) &&
         s.locationIds.includes(currentLocation.id),
     );
-    if (atLocation !== undefined) {
-      return atLocation;
-    }
   }
+  // No live location truth: fall back to the authored start, then the next
+  // unfinished scene.
   if (completedScenes.size === 0) {
-    const starting = module.scenes.find(
-      (s) => s.id === module.startingSceneId,
-    );
+    const starting = module.scenes.find((s) => s.id === module.startingSceneId);
     if (starting !== undefined) {
       return starting;
     }
@@ -253,12 +266,22 @@ export function buildAdventureContextSlice(
 
   const locationsById = indexById(module.locations);
 
+  // Whether the caller asserted the party's live location (campaign truth). When
+  // asserted, it governs scene selection even if it does not resolve to a keyed
+  // module location — we must not silently seat the party elsewhere.
+  const liveLocationId = options.currentLocationId;
+  const hasLocationTruth = liveLocationId !== undefined;
   const liveLocation =
-    options.currentLocationId !== undefined
-      ? locationsById.get(options.currentLocationId)
+    liveLocationId !== undefined
+      ? locationsById.get(liveLocationId)
       : undefined;
 
-  const currentScene = pickCurrentScene(module, completedScenes, liveLocation);
+  const currentScene = pickCurrentScene(
+    module,
+    completedScenes,
+    liveLocation,
+    hasLocationTruth,
+  );
 
   // Seat the slice at the live location when it resolves; otherwise fall back to
   // the current scene's first declared location.
@@ -428,7 +451,9 @@ export function buildAdventureContextSlice(
     moduleTitle: module.title,
     runId: run.runId,
     runStatus: run.status,
-    startingSituation: hasAnyProgress(run) ? undefined : module.startingSituation,
+    startingSituation: hasAnyProgress(run)
+      ? undefined
+      : module.startingSituation,
     currentScene:
       currentScene === undefined
         ? undefined
@@ -465,7 +490,9 @@ const RESOLUTION_LABEL: Record<EncounterResolution, string> = {
  * Render one adventure context slice into the DM-only Markdown section. Kept
  * compact: empty groups are dropped so the slice never balloons the prompt.
  */
-export function renderAdventureContextSlice(slice: AdventureContextSlice): string {
+export function renderAdventureContextSlice(
+  slice: AdventureContextSlice,
+): string {
   const lines: string[] = [
     `### Adventure: ${slice.moduleTitle} (${slice.moduleId})`,
   ];
