@@ -49,6 +49,20 @@ function logTurn(
 }
 
 describe('Context Assembler', () => {
+  it('renders an empty inventory explicitly in the bounded game state', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'What equipment do I have?',
+    });
+
+    expect(ctx.state.inventory).toEqual([]);
+    expect(renderContextMessage(ctx)).toContain('Inventory: (empty)');
+    db.close();
+  });
+
   it('assembles only the bounded set and excludes older closed scenes', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
 

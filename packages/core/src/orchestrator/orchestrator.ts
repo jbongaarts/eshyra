@@ -496,6 +496,7 @@ export async function runTurn(
         candidateResponse: candidate.narration,
         providedToolNames: registry.list(),
         executedToolCalls: candidate.toolCalls,
+        currentStateSnapshot: assembled.state,
         requiresExplicitActionTools: registry.listRequiresExplicitAction(),
         trace: {
           ...auditTrace,

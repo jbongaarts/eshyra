@@ -1,5 +1,6 @@
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { ModelClient, ModelTraceMetadata } from '../model/client.js';
+import type { StateSnapshot } from './contextAssembler.js';
 import type { ExecutedToolCall } from './turnLoop.js';
 
 /**
@@ -90,6 +91,12 @@ export interface TurnAuditInput {
    */
   readonly executedToolCalls: readonly ExecutedToolCall[];
   /**
+   * Structured current state already present in the DM's bounded context. This
+   * is evidence for read-only claims and avoids requiring memory drilldown for
+   * facts (including an empty inventory) that are available in the snapshot.
+   */
+  readonly currentStateSnapshot?: StateSnapshot;
+  /**
    * Tool names that may only be called on explicit player action intent
    * (eshyra-4ia4) — from {@link import('./toolRegistry.js').ToolRegistry.listRequiresExplicitAction}.
    * The auditor must reject a candidate that executed one of these without the
@@ -133,6 +140,15 @@ const AUDIT_POLICY = [
   '  `give_item`, `update_clock`, `set_plot_flag`, `set_world_fact`).',
   '- A claim that resolves or advances a location/NPC/lore requires the canonical',
   '  tool (e.g. `world_query`); opening/closing a scene requires `mark_scene`.',
+  '- The Current State Snapshot is evidence for read-only claims about current',
+  '  character state, including HP, conditions, inventory/equipment, flags, and',
+  '  clock/location. Do NOT require `memory_drilldown` when the answer is fully',
+  '  supported by that snapshot. In particular, an empty inventory array supports',
+  '  a response that says the character has no recorded equipment.',
+  '- Require `memory_drilldown` for a memory claim only when it depends on older,',
+  '  archived, or otherwise absent state not contained in the bounded current',
+  '  snapshot or other supplied evidence. Reject claims that contradict or add',
+  '  facts beyond the snapshot unless executed tool evidence supports them.',
   '- Pure narration, dialogue, description, and pacing need NO tool.',
   'Only flag a tool that is in the provided tool list. If every mechanical claim',
   'in the candidate is backed by an executed tool (or there is no mechanical',
@@ -274,6 +290,11 @@ export function buildAuditUserMessage(input: TurnAuditInput): string {
     '',
     '## Executed Tool Calls This Turn',
     executed.length > 0 ? JSON.stringify(executed) : '(none executed)',
+    '',
+    '## Current State Snapshot',
+    input.currentStateSnapshot === undefined
+      ? '(not supplied)'
+      : boundedAuditJson(input.currentStateSnapshot),
     '',
     '## Player Input',
     input.playerInput,
