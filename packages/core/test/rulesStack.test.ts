@@ -346,4 +346,71 @@ describe('rules stack resolution', () => {
       },
     );
   });
+
+  it('indexes punctuation, parenthetical, plural, and canonical-key aliases', () => {
+    const stack = resolveRulesStack({
+      base: basePack({
+        records: [
+          record('equipment:torch', {
+            kind: 'equipment',
+            name: 'Torch',
+          }),
+          record('equipment:crossbow-bolts-20', {
+            kind: 'equipment',
+            name: 'Crossbow bolts (20)',
+          }),
+          record('equipment:rations-1-day', {
+            kind: 'equipment',
+            name: 'Rations (1 day)',
+          }),
+          record('equipment:dungeoneers-pack', {
+            kind: 'equipment',
+            name: 'Dungeoneer’s Pack',
+          }),
+          record('equipment:crossbow-light', {
+            kind: 'equipment',
+            name: 'Crossbow, light',
+          }),
+        ],
+      }),
+      addons: [],
+    });
+
+    for (const [name, key] of [
+      ['torches', 'equipment:torch'],
+      ['crossbow-bolt', 'equipment:crossbow-bolts-20'],
+      ['crossbow bolts', 'equipment:crossbow-bolts-20'],
+      ['days of rations', 'equipment:rations-1-day'],
+      ["dungeoneer's pack", 'equipment:dungeoneers-pack'],
+      ['dungeoneers pack', 'equipment:dungeoneers-pack'],
+      ['light crossbow', 'equipment:crossbow-light'],
+    ]) {
+      expect(
+        lookupRulesRecord(stack, { kind: 'equipment', name }),
+        name,
+      ).toMatchObject({ ok: true, record: { key } });
+    }
+  });
+
+  it('handles adversarially long rules names with linear alias parsing', () => {
+    const names = [
+      `${'('.repeat(20_000)})`,
+      `Qualifier,${' '.repeat(20_000)}value`,
+      'A'.repeat(20_000),
+    ];
+    const stack = resolveRulesStack({
+      base: basePack({
+        records: names.map((name, index) =>
+          record(`equipment:long-${index}`, { kind: 'equipment', name }),
+        ),
+      }),
+      addons: [],
+    });
+
+    for (const [index, name] of names.entries()) {
+      expect(
+        lookupRulesRecord(stack, { kind: 'equipment', name }),
+      ).toMatchObject({ ok: true, record: { key: `equipment:long-${index}` } });
+    }
+  });
 });

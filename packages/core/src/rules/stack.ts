@@ -257,19 +257,20 @@ function addToKindIndex(
   // (ADR 0013): keep every distinct-key record under the shared name so name
   // lookup can report ambiguity instead of silently picking one. Records are
   // addressed by key first, so a re-add for the same key replaces its slot.
-  const normalizedName = normalizeName(record.name);
-  const entries = index.byName.get(normalizedName);
-  if (entries === undefined) {
-    index.byName.set(normalizedName, [entry]);
-    return;
-  }
-  const existingIndex = entries.findIndex(
-    (candidate) => candidate.record.key === record.key,
-  );
-  if (existingIndex === -1) {
-    entries.push(entry);
-  } else {
-    entries[existingIndex] = entry;
+  for (const name of recordLookupNames(record)) {
+    const entries = index.byName.get(name);
+    if (entries === undefined) {
+      index.byName.set(name, [entry]);
+      continue;
+    }
+    const existingIndex = entries.findIndex(
+      (candidate) => candidate.record.key === record.key,
+    );
+    if (existingIndex === -1) {
+      entries.push(entry);
+    } else {
+      entries[existingIndex] = entry;
+    }
   }
 }
 
@@ -285,16 +286,17 @@ function removeFromKindIndex(
   if (index.byKey.get(entry.record.key) === entry) {
     index.byKey.delete(entry.record.key);
   }
-  const name = normalizeName(entry.record.name);
-  const entries = index.byName.get(name);
-  if (entries === undefined) {
-    return;
-  }
-  const remaining = entries.filter((candidate) => candidate !== entry);
-  if (remaining.length === 0) {
-    index.byName.delete(name);
-  } else if (remaining.length !== entries.length) {
-    index.byName.set(name, remaining);
+  for (const name of recordLookupNames(entry.record)) {
+    const entries = index.byName.get(name);
+    if (entries === undefined) {
+      continue;
+    }
+    const remaining = entries.filter((candidate) => candidate !== entry);
+    if (remaining.length === 0) {
+      index.byName.delete(name);
+    } else if (remaining.length !== entries.length) {
+      index.byName.set(name, remaining);
+    }
   }
 }
 
@@ -310,7 +312,108 @@ function freezeKindIndexes(
 }
 
 function normalizeName(name: string): string {
-  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
+  return name
+    .trim()
+    .replace(/[‘’]/g, "'")
+    .replace(/[‐‑‒–—-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('en-US');
+}
+
+/**
+ * Generated SRD equipment names sometimes carry package quantities while
+ * gameplay refers to the item generically (for example "Crossbow bolts (20)").
+ * Keep those aliases attached to canonical record keys instead of inventing
+ * additional rules records.
+ */
+const RECORD_NAME_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  'equipment:crossbow-bolts-20': [
+    'crossbow bolt',
+    'crossbow bolts',
+    '20 bolts',
+  ],
+  'equipment:rations-1-day': [
+    'ration',
+    'rations',
+    'day of rations',
+    'days of rations',
+  ],
+  'equipment:leather': ['leather armor'],
+};
+
+function recordLookupNames(record: RulesRecord): readonly string[] {
+  const names = new Set<string>();
+  const add = (name: string): void => {
+    const normalized = normalizeName(name);
+    names.add(normalized);
+    names.add(normalized.replaceAll("'", ''));
+  };
+
+  add(record.name);
+  const withoutParenthetical = stripTrailingParenthetical(record.name);
+  add(withoutParenthetical);
+  const commaIndex = withoutParenthetical.indexOf(',');
+  if (commaIndex > 0) {
+    const qualifier = withoutParenthetical.slice(commaIndex + 1).trim();
+    if (qualifier.length > 0) {
+      add(`${qualifier} ${withoutParenthetical.slice(0, commaIndex)}`);
+    }
+  }
+
+  if (record.kind === 'equipment') {
+    add(pluralizeLastWord(withoutParenthetical));
+  }
+
+  for (const alias of RECORD_NAME_ALIASES[record.key] ?? []) {
+    add(alias);
+  }
+  return [...names];
+}
+
+function stripTrailingParenthetical(name: string): string {
+  const trimmed = name.trimEnd();
+  if (!trimmed.endsWith(')')) {
+    return name;
+  }
+  const openIndex = trimmed.lastIndexOf('(');
+  const previousCloseIndex = trimmed.lastIndexOf(')', trimmed.length - 2);
+  return openIndex <= previousCloseIndex
+    ? name
+    : trimmed.slice(0, openIndex).trimEnd();
+}
+
+function pluralizeLastWord(name: string): string {
+  let wordStart = name.length;
+  while (wordStart > 0 && isAsciiLetter(name.charCodeAt(wordStart - 1))) {
+    wordStart -= 1;
+  }
+  if (wordStart === name.length) {
+    return name;
+  }
+  const prefix = name.slice(0, wordStart);
+  const word = name.slice(wordStart);
+  const lowerWord = word.toLocaleLowerCase('en-US');
+  if (lowerWord.endsWith('s')) return name;
+  if (
+    lowerWord.endsWith('y') &&
+    lowerWord.length > 1 &&
+    !'aeiou'.includes(lowerWord.at(-2) ?? '')
+  ) {
+    return `${prefix}${word.slice(0, -1)}ies`;
+  }
+  if (
+    lowerWord.endsWith('ch') ||
+    lowerWord.endsWith('sh') ||
+    lowerWord.endsWith('x') ||
+    lowerWord.endsWith('z')
+  ) {
+    return `${prefix}${word}es`;
+  }
+  return `${prefix}${word}s`;
+}
+
+function isAsciiLetter(code: number): boolean {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
 }
 
 export { normalizeName as normalizeRulesRecordName };

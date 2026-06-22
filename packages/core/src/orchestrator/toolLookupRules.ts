@@ -63,8 +63,10 @@ export const lookupRulesTool: Tool = {
   mutates: false,
   description:
     'Look up a rules record (creature, spell, class, ancestry, feat, ' +
-    'equipment, etc.) by exact name or ref through the campaign rules ' +
+    'equipment, etc.) by name or ref through the campaign rules ' +
     'binding. args: { kind, name?: string, ref?: string, systemId?: string }. ' +
+    'Name lookup accepts deterministic punctuation, plural, and common ' +
+    'equipment aliases. ' +
     'Omit systemId to use the campaign binding; pass it to query a specific ' +
     'bundled rules system (e.g. "dnd5e-srd", "pathfinder2e-remaster"). ' +
     'If a name matches multiple records of the same kind, the result is an ' +
