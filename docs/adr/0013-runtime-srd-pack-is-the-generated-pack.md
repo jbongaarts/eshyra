@@ -88,26 +88,62 @@ Specifically:
    loaded once and cached (lazily on first use) so module-load cost is not paid
    by editions that never play.
 
-2. **Name uniqueness.** Relax the rules stack's name model so legitimately
-   duplicated names within a kind are allowed. Records remain addressed
-   canonically by `(kind, key)`; **name lookup becomes best-effort** — a name
-   that is ambiguous within a kind resolves to a deterministic, documented
-   choice (or reports ambiguity) rather than failing pack resolution. Pack
-   resolution must never throw on a name collision that the audited SRD source
-   actually contains.
+2. **Name uniqueness and ambiguous name lookup.** Relax the rules stack's name
+   model so legitimately duplicated names within a kind are allowed, and make the
+   ambiguous-lookup behavior explicit (not "deterministic pick or report"):
 
-3. **Placeholder removal.** Delete `DND5E_SRD_RULES_PACK` /`SRD_CATALOG` once
+   - Pack resolution must **allow** duplicate normalized names within the same
+     kind — it must never throw on a name collision the audited SRD source
+     actually contains.
+   - Key/ref lookup remains **canonical and deterministic**: a record is
+     addressed by `(kind, key)`.
+   - Name lookup remains available only when the normalized `(kind, name)` maps
+     to **exactly one** record. If multiple records of the same kind share that
+     normalized name, pack resolution succeeds, but **name lookup returns an
+     explicit `ambiguous` result listing candidate keys**, capped/truncated for
+     prompt/tool safety — it never silently picks one.
+   - `lookup_rules` surfaces that ambiguity clearly to the DM (the candidate
+     keys, so the DM can re-query by key) instead of returning an arbitrary
+     record.
+   - This implies a future implementation change to `RulesLookupResult`: a
+     distinct `ambiguous` failure code, separate from `not_found`.
+
+   Rationale: a deterministic pick for a name like `Ability Score Improvement`
+   would silently return one class's feature and could contaminate DM reasoning.
+   Explicit ambiguity is the safer default and still preserves deterministic
+   key/ref lookup.
+
+3. **Retired placeholder pack id (pre-v1, no compatibility shims).** The
+   placeholder pack id is `rules:dnd5e-srd`; the generated pack id is
+   `rules:dnd5e-srd-5.1`. Campaign rules bindings store and resolve by exact
+   `packId`, so a pre-adoption campaign DB with `base_pack_id = rules:dnd5e-srd`
+   would no longer resolve after the switch. Eshyra has an explicit pre-v1
+   policy of **no backwards-compatibility compromises or migration effort before
+   v1.0.0**, so:
+
+   - `rules:dnd5e-srd` is a **retired pre-v1 placeholder** pack id.
+   - The runtime canonical D&D SRD 5.1 pack id is **`rules:dnd5e-srd-5.1`**.
+   - Existing pre-v1 campaign DBs that reference `rules:dnd5e-srd` are **not**
+     preserved by compatibility shims, aliases, or migrations.
+   - If an old campaign DB still references `rules:dnd5e-srd`, runtime
+     resolution should **fail with a clear error** that names the retired
+     placeholder id and instructs the developer to recreate the pre-v1 campaign
+     or update the binding to `rules:dnd5e-srd-5.1`.
+   - Do **not** implement general fuzzy pack-id matching or legacy aliases.
+
+4. **Placeholder removal.** Delete `DND5E_SRD_RULES_PACK` /`SRD_CATALOG` once
    nothing depends on them. Public/internal exports that re-export the constant
    are repointed at the loaded pack (or removed if no external consumer needs
    the symbol). The ~7 tests asserting stub contents are rewritten against the
    generated pack's real, stable records.
 
-4. **Addressing convention is out of scope here.** The `rulesRef` ↔ key
+5. **Addressing convention is out of scope here.** The `rulesRef` ↔ key
    mismatch (obstacle 2) is owned by `eshyra-8bit`. This ADR only guarantees the
-   runtime stack *contains* the real records (including items); `eshyra-8bit`
-   then decides how an adventure `rulesRef` addresses them (bare-slug
-   normalization in lookup is the leading candidate, since generated keys are
-   `<kind>:<slug>` and the slug is unambiguous within a kind).
+   runtime stack *contains* the real records — including `creature:goblin` and
+   `magic-item:potion-of-healing` — for `eshyra-8bit` to resolve against;
+   `eshyra-8bit` then decides how an adventure `rulesRef` addresses them
+   (bare-slug normalization in lookup is the leading candidate, since generated
+   keys are `<kind>:<slug>` and the slug is unambiguous within a kind).
 
 ## Consequences
 
@@ -130,7 +166,9 @@ Specifically:
   stay green.
 - Relaxing name uniqueness is a semantic change to a load-bearing index; it must
   preserve key-addressed determinism and only soften the *name* path.
-- Startup must load/parse 1811 records; mitigated by lazy + cached loading.
+- The first SRD lookup must load/parse 1811 records; mitigated by lazy + cached
+  loading (the cost is paid on first use, not at startup or for editions that
+  never play).
 - Test churn (~7 files) and any snapshot/golden updates.
 - Editions/packaging must continue to resolve the data dir at runtime in every
   shipped edition (already in `files`, but the no-config execution smoke should
