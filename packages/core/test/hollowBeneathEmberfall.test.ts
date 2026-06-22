@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   adventureModuleDirName,
-  DND5E_SRD_RULES_PACK,
+  getBundledDnd5eSrdPack,
   loadAdventureModuleFromDir,
   type ResolvedRulesStack,
   type RulesPack,
@@ -11,6 +11,8 @@ import {
   resolveRulesStack,
   validateAdventureModuleReferences,
 } from '../src/internal.js';
+
+const DND5E_SRD_RULES_PACK = getBundledDnd5eSrdPack();
 
 const MODULE_ID = 'eshyra:hollow-beneath-emberfall';
 const HERE = dirname(fileURLToPath(import.meta.url));

@@ -19,6 +19,7 @@ import {
   rollDice,
   startSession,
   ToolRegistry,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 
 const closedMarkSceneDataTypecheck = {
@@ -300,12 +301,42 @@ describe('lookup_rules tool', () => {
   it('returns not_found for an unknown name', () => {
     const result = createDefaultToolRegistry().invoke(
       'lookup_rules',
-      { kind: 'creature', name: 'Tarrasque' },
+      { kind: 'creature', name: 'Definitely Not A Real Monster' },
       ctx(),
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.code).toBe('not_found');
+    }
+  });
+
+  it('resolves a magic item the placeholder pack never carried', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'magic-item', name: 'Potion of Healing' },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { record: { key: string } };
+      expect(data.record.key).toBe('magic-item:potion-of-healing');
+    }
+  });
+
+  it('reports an ambiguous name with candidate keys instead of mis-picking', () => {
+    // "Ability Score Improvement" is a `feature` on every class in the SRD.
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'feature', name: 'Ability Score Improvement' },
+      ctx(),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe('ambiguous');
+      // Candidate keys are embedded in the message so the DM can re-query by ref.
+      expect(result.message).toContain(
+        'feature:fighter:ability-score-improvement',
+      );
     }
   });
 
@@ -331,6 +362,33 @@ describe('lookup_rules tool', () => {
       .definitions()
       .find((d) => d.name === 'lookup_rules') as ModelToolDefinition;
     expect(def.inputSchema.properties.kind?.enum).toContain('magic-item');
+  });
+
+  it('fails clearly when the binding names the retired placeholder pack id (ADR 0013)', () => {
+    const c = ctx();
+    // Simulate a pre-adoption campaign DB still bound to the retired id.
+    writeCampaignRulesBinding(c.db, {
+      base: {
+        systemId: 'dnd5e-srd',
+        packId: 'rules:dnd5e-srd',
+        version: '5.1',
+      },
+      addons: [],
+      resolvedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'creature', name: 'Goblin' },
+      c,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe('retired_pack');
+      // Names the retired id and points at the canonical one.
+      expect(result.message).toContain('rules:dnd5e-srd');
+      expect(result.message).toContain('rules:dnd5e-srd-5.1');
+    }
   });
 });
 

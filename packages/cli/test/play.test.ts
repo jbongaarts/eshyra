@@ -27,7 +27,8 @@ import {
   appendSceneLog,
   assembleContext,
   DEFAULT_MEMORY_CONFIG,
-  DND5E_SRD_RULES_PACK,
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
   getClosedSessionsInOpenArc,
   getOpenArc,
   getOpenScene,
@@ -262,8 +263,8 @@ describe('runPlay', () => {
     // D&D SRD rules binding — runPlay relies on the DB binding/defaulting, not
     // any external registry metadata, for system identity.
     const binding = readCampaignRulesBinding(db);
-    expect(binding?.base.systemId).toBe(DND5E_SRD_RULES_PACK.meta.systemId);
-    expect(binding?.base.packId).toBe(DND5E_SRD_RULES_PACK.meta.packId);
+    expect(binding?.base.systemId).toBe(DND5E_SRD_SYSTEM_ID);
+    expect(binding?.base.packId).toBe(DND5E_SRD_PACK_ID);
 
     dispose();
   });

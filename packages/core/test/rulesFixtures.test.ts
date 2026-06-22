@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { RulesRecord, RulesRecordKind } from '../src/internal.js';
 import {
   assertShippableRulesPack,
-  DND5E_SRD_RULES_PACK,
   evaluateRulesPackPolicy,
+  getBundledDnd5eSrdPack,
   lookupRulesRecord,
   PATHFINDER2E_REMASTER_RULES_PACK,
   RulesPackError,
@@ -11,10 +11,15 @@ import {
   validateRulesPack,
 } from '../src/internal.js';
 
+// The bundled D&D SRD pack is the importer-generated runtime pack (ADR 0013),
+// loaded from the packaged data dir rather than an in-code constant.
+const DND5E_SRD_RULES_PACK = getBundledDnd5eSrdPack();
+
 describe('rules pack fixtures', () => {
   it('validates the D&D 5e SRD rules pack as a base pack', () => {
     const pack = validateRulesPack(DND5E_SRD_RULES_PACK);
     expect(pack.meta.systemId).toBe('dnd5e-srd');
+    expect(pack.meta.packId).toBe('rules:dnd5e-srd-5.1');
     expect(pack.meta.role).toBe('base');
     expect(pack.meta.version).toBe('5.1');
     expect(pack.meta.license.licenseName).toContain('Creative Commons');
@@ -94,13 +99,20 @@ describe('rules pack fixtures', () => {
         expect(byRef.pack.systemId).toBe(pack.meta.systemId);
       }
 
+      // Name lookup resolves to the same record when the name is unique within
+      // its kind, or reports ambiguity listing the key when the audited SRD
+      // legitimately repeats the name (ADR 0013) — it never silently mis-picks.
       const byName = lookupRulesRecord(stack, {
         kind: first.kind,
         name: first.name,
       });
-      expect(byName.ok).toBe(true);
       if (byName.ok) {
         expect(byName.record.key).toBe(first.key);
+      } else {
+        expect(byName.code).toBe('ambiguous');
+        if (byName.code === 'ambiguous') {
+          expect(byName.candidateKeys).toContain(first.key);
+        }
       }
     }
   });

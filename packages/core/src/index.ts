@@ -259,10 +259,12 @@ export type {
   CampaignRulesBindingPackRef,
 } from './rules/binding.js';
 // Campaign rules-binding read/write API.
-// Note: the built-in pack objects (DND5E_SRD_RULES_PACK, PATHFINDER2E_REMASTER_RULES_PACK) are
-// intentionally NOT exported here. They are pre-importer generated-data blobs that will be
-// superseded by the 0m9 deterministic importer outputs. Access them via @eshyra/core/internal
-// for in-repo use only until stable, consumer-facing packs exist.
+// Note: the bundled rules packs are intentionally NOT exported from the root.
+// The D&D SRD pack is loaded at runtime from the packaged data dir via
+// getBundledDnd5eSrdPack (ADR 0013); the in-code Pathfinder fixture
+// (PATHFINDER2E_REMASTER_RULES_PACK) is pre-importer data. Access either via
+// @eshyra/core/internal for in-repo use only until a stable consumer-facing
+// pack surface exists.
 export {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,

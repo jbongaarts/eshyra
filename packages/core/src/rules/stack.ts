@@ -24,7 +24,15 @@ export interface RulesStackRecordEntry extends RulesStackRecordSource {
 
 export interface RulesStackKindIndex {
   readonly byKey: ReadonlyMap<string, RulesStackRecordEntry>;
-  readonly byName: ReadonlyMap<string, RulesStackRecordEntry>;
+  /**
+   * Normalized name → every record of this kind currently carrying that name.
+   * The audited SRD legitimately repeats names within a kind (e.g. the
+   * `feature` "Ability Score Improvement" on every class), so a name maps to a
+   * list, not a single entry. Key/ref lookup stays canonical via `byKey`; name
+   * lookup is only unambiguous when exactly one entry shares the name (ADR
+   * 0013).
+   */
+  readonly byName: ReadonlyMap<string, readonly RulesStackRecordEntry[]>;
 }
 
 export interface ResolvedRulesStack {
@@ -221,7 +229,7 @@ function overrideRefMatches(ref: string, packId: string, key: string): boolean {
 
 interface RulesStackKindIndexBuilder {
   readonly byKey: Map<string, RulesStackRecordEntry>;
-  readonly byName: Map<string, RulesStackRecordEntry>;
+  readonly byName: Map<string, RulesStackRecordEntry[]>;
 }
 
 function kindIndexFor(
@@ -243,16 +251,26 @@ function addToKindIndex(
   record: RulesRecord,
   entry: RulesStackRecordEntry,
 ): void {
-  const normalizedName = normalizeName(record.name);
-  const existingName = index.byName.get(normalizedName);
-  if (existingName !== undefined && existingName.record.key !== record.key) {
-    throw new RulesPackError(
-      `duplicate record name ${record.name} for ${record.kind} records: ${existingName.record.key} and ${record.key}`,
-    );
-  }
-
   index.byKey.set(record.key, entry);
-  index.byName.set(normalizedName, entry);
+
+  // Duplicate normalized names within a kind are legitimate in the audited SRD
+  // (ADR 0013): keep every distinct-key record under the shared name so name
+  // lookup can report ambiguity instead of silently picking one. Records are
+  // addressed by key first, so a re-add for the same key replaces its slot.
+  const normalizedName = normalizeName(record.name);
+  const entries = index.byName.get(normalizedName);
+  if (entries === undefined) {
+    index.byName.set(normalizedName, [entry]);
+    return;
+  }
+  const existingIndex = entries.findIndex(
+    (candidate) => candidate.record.key === record.key,
+  );
+  if (existingIndex === -1) {
+    entries.push(entry);
+  } else {
+    entries[existingIndex] = entry;
+  }
 }
 
 function removeFromKindIndex(
@@ -268,8 +286,15 @@ function removeFromKindIndex(
     index.byKey.delete(entry.record.key);
   }
   const name = normalizeName(entry.record.name);
-  if (index.byName.get(name) === entry) {
+  const entries = index.byName.get(name);
+  if (entries === undefined) {
+    return;
+  }
+  const remaining = entries.filter((candidate) => candidate !== entry);
+  if (remaining.length === 0) {
     index.byName.delete(name);
+  } else if (remaining.length !== entries.length) {
+    index.byName.set(name, remaining);
   }
 }
 

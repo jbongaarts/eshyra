@@ -195,7 +195,7 @@ describe('rules stack resolution', () => {
     ]);
   });
 
-  it('rejects duplicate normalized record names within the same kind', () => {
+  it('allows duplicate normalized names within a kind and reports them as ambiguous (ADR 0013)', () => {
     const addon = addonPack({
       records: [
         record('creature:cave-goblin', {
@@ -204,12 +204,35 @@ describe('rules stack resolution', () => {
       ],
     });
 
-    expect(() =>
-      resolveRulesStack({ base: basePack(), addons: [addon] }),
-    ).toThrow(RulesPackError);
-    expect(() =>
-      resolveRulesStack({ base: basePack(), addons: [addon] }),
-    ).toThrow(/duplicate record name/i);
+    // Resolution must not throw: the audited SRD legitimately repeats names
+    // within a kind (e.g. "Ability Score Improvement" on every class).
+    const stack = resolveRulesStack({ base: basePack(), addons: [addon] });
+
+    // Key/ref lookup stays canonical and deterministic.
+    const byRef = lookupRulesRecord(stack, {
+      kind: 'creature',
+      ref: 'creature:cave-goblin',
+    });
+    expect(byRef.ok).toBe(true);
+    if (byRef.ok) {
+      expect(byRef.record.key).toBe('creature:cave-goblin');
+    }
+
+    // Name lookup is ambiguous and lists candidate keys instead of mis-picking.
+    const byName = lookupRulesRecord(stack, {
+      kind: 'creature',
+      name: 'Goblin',
+    });
+    expect(byName.ok).toBe(false);
+    if (!byName.ok) {
+      expect(byName.code).toBe('ambiguous');
+      if (byName.code === 'ambiguous') {
+        expect([...byName.candidateKeys].sort()).toEqual([
+          'creature:cave-goblin',
+          'creature:goblin',
+        ]);
+      }
+    }
   });
 
   it('rejects explicit overrides that change record kind', () => {

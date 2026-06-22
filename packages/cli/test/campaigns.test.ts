@@ -7,7 +7,7 @@ import {
   openDatabase,
   readCampaignRulesBinding,
 } from '@eshyra/core';
-import { DND5E_SRD_RULES_PACK } from '@eshyra/core/internal';
+import { DND5E_SRD_PACK_ID, DND5E_SRD_SYSTEM_ID } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   type CampaignDeps,
@@ -80,8 +80,8 @@ describe('runNewCommand', () => {
       // managed campaigns ship with an authoritative system identity.
       const binding = readCampaignRulesBinding(db);
       expect(binding).toBeDefined();
-      expect(binding?.base.systemId).toBe(DND5E_SRD_RULES_PACK.meta.systemId);
-      expect(binding?.base.packId).toBe(DND5E_SRD_RULES_PACK.meta.packId);
+      expect(binding?.base.systemId).toBe(DND5E_SRD_SYSTEM_ID);
+      expect(binding?.base.packId).toBe(DND5E_SRD_PACK_ID);
       expect(binding?.addons).toEqual([]);
     } finally {
       db.close();

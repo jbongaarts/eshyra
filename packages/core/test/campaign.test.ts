@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CampaignError,
   createCampaign,
-  DND5E_SRD_RULES_PACK,
+  DND5E_SRD_PACK_ID,
   EMBERFALL_HOLLOW,
   getCampaign,
 } from '../src/internal.js';
@@ -29,9 +29,7 @@ describe('campaign create / select', () => {
     expect(created.startingLocationId).toBe(
       EMBERFALL_HOLLOW.meta.startingLocationId,
     );
-    expect(created.rulesBinding.base.packId).toBe(
-      DND5E_SRD_RULES_PACK.meta.packId,
-    );
+    expect(created.rulesBinding.base.packId).toBe(DND5E_SRD_PACK_ID);
     // The module template was forked in: select reads the same identity back.
     expect(getCampaign(db)).toEqual(created);
     db.close();
