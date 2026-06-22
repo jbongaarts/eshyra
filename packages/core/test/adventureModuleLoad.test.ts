@@ -49,15 +49,19 @@ afterEach(() => {
 const sampleLicense = DND5E_SRD_RULES_PACK.records[0].license;
 const sampleProvenance = DND5E_SRD_RULES_PACK.records[0].provenance;
 
+// `bareKey` is the kind-local key; the canonical record key is the
+// kind-prefixed `<kind>:<bareKey>` form the generated SRD pack and module
+// `rulesRef`s both use (e.g. `creature:goblin`), so build it here rather than
+// letting test fixtures drift to an unrealistic bare-key shape.
 function rec(
   kind: RulesRecord['kind'],
-  key: string,
+  bareKey: string,
   name: string,
 ): RulesRecord {
   return {
     systemId: 'dnd5e-srd',
     kind,
-    key,
+    key: `${kind}:${bareKey}`,
     name,
     data: {},
     source: 'test fixture',
