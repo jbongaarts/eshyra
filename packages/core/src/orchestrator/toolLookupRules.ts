@@ -3,26 +3,35 @@ import {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,
 } from '../rules/binding.js';
-import { DND5E_SRD_RULES_PACK } from '../rules/dnd5eSrd.js';
+import {
+  DND5E_SRD_PACK_ID,
+  getBundledDnd5eSrdPack,
+  RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
+} from '../rules/bundledSrdPack.js';
 import { lookupRulesRecord } from '../rules/lookup.js';
 import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
+import type { ResolvedRulesStack } from '../rules/stack.js';
 import { resolveRulesStack } from '../rules/stack.js';
 import type { RulesPack, RulesRecordKind } from '../rules/types.js';
 import { RulesPackError } from '../rules/types.js';
 import type { Tool, ToolContext } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
 
-const BUNDLED_RULES_PACKS: readonly RulesPack[] = [
-  DND5E_SRD_RULES_PACK,
-  PATHFINDER2E_REMASTER_RULES_PACK,
-];
+/**
+ * Bundled base rules packs available to `lookup_rules`. The D&D SRD pack is
+ * loaded lazily from the packaged data dir on first use (ADR 0013); Pathfinder
+ * is still the in-code fixture pending its own importer.
+ */
+function bundledRulesPacks(): readonly RulesPack[] {
+  return [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK];
+}
 
 function findBundledPackById(packId: string): RulesPack | undefined {
-  return BUNDLED_RULES_PACKS.find((pack) => pack.meta.packId === packId);
+  return bundledRulesPacks().find((pack) => pack.meta.packId === packId);
 }
 
 function findBundledBaseBySystemId(systemId: string): RulesPack | undefined {
-  return BUNDLED_RULES_PACKS.find(
+  return bundledRulesPacks().find(
     (pack) => pack.meta.systemId === systemId && pack.meta.role === 'base',
   );
 }
@@ -31,6 +40,21 @@ function resolveBindingBasePack(ctx: ToolContext): RulesPack | undefined {
   const binding: CampaignRulesBinding =
     readCampaignRulesBinding(ctx.db) ?? DEFAULT_DND5E_SRD_BINDING;
   return findBundledPackById(binding.base.packId);
+}
+
+// Resolving a single-base, no-addon stack is deterministic per pack object, so
+// memoize it: the bundled SRD pack is 1811 records and lookups run on the hot
+// gameplay path. Keyed on the pack identity (the loader returns the same cached
+// object), so a re-import or different pack rebuilds correctly.
+const singleBaseStackCache = new WeakMap<RulesPack, ResolvedRulesStack>();
+
+function resolveSingleBaseStack(base: RulesPack): ResolvedRulesStack {
+  let stack = singleBaseStackCache.get(base);
+  if (stack === undefined) {
+    stack = resolveRulesStack({ base });
+    singleBaseStackCache.set(base, stack);
+  }
+  return stack;
 }
 
 export const lookupRulesTool: Tool = {
@@ -42,7 +66,9 @@ export const lookupRulesTool: Tool = {
     'equipment, etc.) by exact name or ref through the campaign rules ' +
     'binding. args: { kind, name?: string, ref?: string, systemId?: string }. ' +
     'Omit systemId to use the campaign binding; pass it to query a specific ' +
-    'bundled rules system (e.g. "dnd5e-srd", "pathfinder2e-remaster").',
+    'bundled rules system (e.g. "dnd5e-srd", "pathfinder2e-remaster"). ' +
+    'If a name matches multiple records of the same kind, the result is an ' +
+    'ambiguous error listing candidate keys; re-query by ref with one of them.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -112,15 +138,31 @@ export const lookupRulesTool: Tool = {
         : resolveBindingBasePack(ctx);
 
     if (basePack === undefined) {
-      const detail =
-        a.systemId !== undefined
-          ? `systemId '${a.systemId}' is not a bundled rules system`
-          : 'campaign rules binding references a pack that is not bundled in core';
-      return err('unknown_pack', `lookup_rules: ${detail}`);
+      if (a.systemId !== undefined) {
+        return err(
+          'unknown_pack',
+          `lookup_rules: systemId '${a.systemId}' is not a bundled rules system`,
+        );
+      }
+      const binding =
+        readCampaignRulesBinding(ctx.db) ?? DEFAULT_DND5E_SRD_BINDING;
+      if (binding.base.packId === RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID) {
+        return err(
+          'retired_pack',
+          'lookup_rules: campaign rules binding references the retired pre-v1 ' +
+            `placeholder pack id '${RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID}'. ` +
+            `The canonical D&D SRD pack id is now '${DND5E_SRD_PACK_ID}'. ` +
+            'Recreate the pre-v1 campaign or update the binding base pack id.',
+        );
+      }
+      return err(
+        'unknown_pack',
+        'lookup_rules: campaign rules binding references a pack that is not bundled in core',
+      );
     }
 
     try {
-      const stack = resolveRulesStack({ base: basePack });
+      const stack = resolveSingleBaseStack(basePack);
       const result =
         typeof a.ref === 'string'
           ? lookupRulesRecord(stack, { kind, ref: a.ref })
@@ -134,6 +176,9 @@ export const lookupRulesTool: Tool = {
           overrideChain: result.overrideChain,
         });
       }
+      // For `ambiguous`, the candidate keys are embedded in the message so the
+      // DM can re-query by an exact key (the ToolResult error shape carries no
+      // structured payload). See lookupRulesRecord (ADR 0013).
       return err(result.code, result.message);
     } catch (e) {
       if (e instanceof RulesPackError) {

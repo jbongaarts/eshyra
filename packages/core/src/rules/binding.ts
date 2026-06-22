@@ -1,7 +1,11 @@
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
 import type { ModuleRulesRequirements } from '../world/types.js';
-import { DND5E_SRD_RULES_PACK } from './dnd5eSrd.js';
+import {
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
+  DND5E_SRD_VERSION,
+} from './bundledSrdPack.js';
 
 export interface CampaignRulesBindingPackRef {
   readonly systemId: string;
@@ -19,9 +23,9 @@ const DEFAULT_RESOLVED_AT = '1970-01-01T00:00:00.000Z';
 
 export const DEFAULT_DND5E_SRD_BINDING: CampaignRulesBinding = {
   base: {
-    systemId: DND5E_SRD_RULES_PACK.meta.systemId,
-    packId: DND5E_SRD_RULES_PACK.meta.packId,
-    version: DND5E_SRD_RULES_PACK.meta.version,
+    systemId: DND5E_SRD_SYSTEM_ID,
+    packId: DND5E_SRD_PACK_ID,
+    version: DND5E_SRD_VERSION,
   },
   addons: [],
   resolvedAt: DEFAULT_RESOLVED_AT,

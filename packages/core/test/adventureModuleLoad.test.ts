@@ -6,7 +6,7 @@ import {
   ADVENTURE_MODULE_FILE,
   type AdventureModule,
   AdventureModuleError,
-  DND5E_SRD_RULES_PACK,
+  getBundledDnd5eSrdPack,
   loadAdventureModuleFromDir,
   type PackLicense,
   parseAdventureModule,
@@ -16,6 +16,8 @@ import {
   resolveRulesStack,
   validateAdventureModuleReferences,
 } from '../src/internal.js';
+
+const DND5E_SRD_RULES_PACK = getBundledDnd5eSrdPack();
 
 const moduleLicense: PackLicense = {
   licenseClass: 'original',

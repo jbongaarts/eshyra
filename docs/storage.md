@@ -108,13 +108,17 @@ Static content ships with the package source/build output:
 
 - `EMBERFALL_HOLLOW` is the bundled sample module currently forked into new
   campaigns by the CLI.
-- The SRD catalog and license metadata are bundled in the core package.
-- Bundled rules packs ship in `@eshyra/core` under `src/rules/`:
-  `DND5E_SRD_RULES_PACK` (D&D 5e SRD 5.1, CC-BY-4.0, adapted from the SRD
-  catalog) and `PATHFINDER2E_REMASTER_RULES_PACK` (Pathfinder 2e Remaster
-  fixture under the Open RPG Creative License). The Pathfinder fixture uses
-  ORC-licensed mechanical content only — no Paizo trade dress, compatibility
-  logo, or reserved setting material is bundled.
+- The legacy SRD catalog and license metadata (used by character creation) are
+  bundled in the core package under `src/rules/srd/`.
+- The runtime D&D 5e SRD 5.1 rules pack (CC-BY-4.0) is the importer-generated
+  pack shipped in `@eshyra/core` under `data/rules-packs/rules__dnd5e-srd-5.1/`
+  and loaded at runtime via `getBundledDnd5eSrdPack` (ADR 0013). The former
+  in-code `DND5E_SRD_RULES_PACK` placeholder has been removed.
+- `PATHFINDER2E_REMASTER_RULES_PACK` (Pathfinder 2e Remaster fixture under the
+  Open RPG Creative License) still ships as an in-code fixture under
+  `src/rules/`. The Pathfinder fixture uses ORC-licensed mechanical content
+  only — no Paizo trade dress, compatibility logo, or reserved setting material
+  is bundled.
 
 When a new campaign is created, module template records are copied into
 immutable `module_*` tables in the campaign SQLite database. Later play writes

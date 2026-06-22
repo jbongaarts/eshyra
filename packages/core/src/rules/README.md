@@ -1,8 +1,9 @@
 # `rules/` — Rules-Pack Subsystem
 
 This directory owns everything related to the cross-system rules-pack model:
-the type definitions, validators, loaders, in-memory base-pack constants, and
-the legacy SRD catalog that those constants depend on.
+the type definitions, validators, loaders, the runtime D&D SRD pack loader, the
+in-memory Pathfinder fixture, and the legacy SRD catalog still used by character
+creation.
 
 ## Pack model (source files)
 
@@ -13,27 +14,24 @@ the legacy SRD catalog that those constants depend on.
 | `validate.ts` | Deterministic pack validator — checks structural correctness and license completeness of a `RulesPack` |
 | `license.ts` | License helper utilities shared across pack loading and validation |
 | `packLoader.ts` | On-disk pack loader: `loadRulesPackFromDirectory` reads `manifest.json` + `records.json` from a pack directory |
-| `stack.ts` | Rules-pack stack resolver — merges an ordered list of packs for a campaign, applying override semantics |
-| `lookup.ts` | `lookupRulesRecord`: typed lookup across a resolved pack stack by kind, key, or name |
+| `stack.ts` | Rules-pack stack resolver — merges an ordered list of packs for a campaign, applying override semantics. Duplicate normalized names within a kind are allowed (ADR 0013); name lookup reports them as ambiguous |
+| `lookup.ts` | `lookupRulesRecord`: typed lookup across a resolved pack stack. Key/ref lookup is canonical and deterministic; name lookup returns `not_found`, the single match, or an `ambiguous` result listing candidate keys |
+| `bundledSrdPack.ts` | Runtime loader for the bundled D&D 5e SRD pack: `getBundledDnd5eSrdPack` (lazy + cached) plus the canonical pack-id/system/version constants and the retired placeholder id (ADR 0013) |
 | `binding.ts` | Campaign-to-pack binding model: `readCampaignRulesBinding`, `DEFAULT_DND5E_SRD_BINDING` |
 
-## In-memory base-pack constants
+## Runtime D&D SRD pack and the Pathfinder fixture
 
-`dnd5eSrd.ts` and `pathfinder2eRemaster.ts` are hand-authored fixtures that
-export a fully constructed `RulesPack` constant for use without disk I/O.
+Gameplay resolves D&D rules against the **importer-generated** SRD 5.1 pack
+shipped under `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/` and loaded
+at runtime by `bundledSrdPack.ts` (`getBundledDnd5eSrdPack`, lazy + cached).
+This is the durable, audited rules product. The former `dnd5eSrd.ts` adapter
+and its three-record `DND5E_SRD_RULES_PACK` placeholder have been **removed**
+(ADR 0013).
 
-These fixtures are **temporary**. They will be replaced by deterministic
-importers tracked in epic `loreweaver-0m9`:
-
-- `dnd5eSrd.ts` — targeted for replacement by the 0m9.5 D&D 5e SRD importer.
-  The importer foundation + spell parser ship under `loreweaver-0m9.5`; see
-  `packages/core/scripts/importers/dnd5e-srd-5.1/` and that directory's
-  `README.md` for the current parser coverage and regeneration procedure.
-  Until parser coverage is broad enough to be reference-complete, the
-  importer writes to a scratch path by default and `dnd5eSrd.ts` continues to
-  wrap the legacy SRD catalog in `srd/` (see below).
-- `pathfinder2eRemaster.ts` — targeted for replacement by the 0m9.8
-  Pathfinder 2e Remaster importer.
+`pathfinder2eRemaster.ts` remains a hand-authored fixture that exports a fully
+constructed `RulesPack` constant for use without disk I/O. It is **temporary**,
+targeted for replacement by the 0m9.8 Pathfinder 2e Remaster importer; applying
+the same runtime-pack treatment is deferred with that importer work.
 
 ## Legacy SRD catalog (`srd/`)
 
@@ -45,18 +43,21 @@ importers tracked in epic `loreweaver-0m9`:
 | `srd/data.ts` | `SRD_CATALOG` (seed records for monsters, spells, and classes) and `SRD_LICENSE` |
 | `srd/store.ts` | `buildSrdIndex`, `lookupSrdRecord` — builds a ref/name index over a catalog and performs lookups |
 
-This catalog predates the rules-pack model. Today it is consumed by two
-callers:
+This catalog predates the rules-pack model. As of ADR 0013 its only remaining
+caller is:
 
-- `characterCreation.ts` — uses `lookupSrdRecord` and `SRD_CATALOG` for D&D
+- `character/creation.ts` — uses `lookupSrdRecord` and `SRD_CATALOG` for D&D
   class/spell draft validation during character creation.
-- `rules/dnd5eSrd.ts` — wraps `SRD_CATALOG` and `SRD_LICENSE` into the
-  `DND5E_SRD_RULES_PACK` constant.
+
+The former `rules/dnd5eSrd.ts` adapter (which wrapped `SRD_CATALOG` into the
+`DND5E_SRD_RULES_PACK` placeholder) has been **removed**; gameplay rules lookup
+now uses the runtime generated pack via `bundledSrdPack.ts`.
 
 `srd/` is placed under `rules/` (rather than as a top-level peer of `rules/`)
 so it no longer appears to be a parallel subsystem. It is not part of the
-stable public API. When the 0m9.5 importer lands and `characterCreation.ts`
-migrates to `lookupRulesRecord`, this catalog will be retired.
+stable public API. When `character/creation.ts` migrates to `lookupRulesRecord`
+against the runtime pack, this catalog will be retired (a follow-up to ADR
+0013).
 
 ## Generated/seed pack data on disk
 

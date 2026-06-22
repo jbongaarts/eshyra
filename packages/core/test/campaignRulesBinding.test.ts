@@ -4,7 +4,9 @@ import {
   CampaignError,
   createCampaign,
   DEFAULT_DND5E_SRD_BINDING,
-  DND5E_SRD_RULES_PACK,
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
+  DND5E_SRD_VERSION,
   EMBERFALL_HOLLOW,
   getCampaign,
   PATHFINDER2E_REMASTER_RULES_PACK,
@@ -22,21 +24,15 @@ describe('campaign rules binding', () => {
       pack: EMBERFALL_HOLLOW,
     });
 
-    expect(info.rulesBinding.base.systemId).toBe(
-      DND5E_SRD_RULES_PACK.meta.systemId,
-    );
-    expect(info.rulesBinding.base.packId).toBe(
-      DND5E_SRD_RULES_PACK.meta.packId,
-    );
-    expect(info.rulesBinding.base.version).toBe(
-      DND5E_SRD_RULES_PACK.meta.version,
-    );
+    expect(info.rulesBinding.base.systemId).toBe(DND5E_SRD_SYSTEM_ID);
+    expect(info.rulesBinding.base.packId).toBe(DND5E_SRD_PACK_ID);
+    expect(info.rulesBinding.base.version).toBe(DND5E_SRD_VERSION);
     expect(info.rulesBinding.addons).toEqual([]);
 
     const stored = readCampaignRulesBinding(db);
     expect(stored).toBeDefined();
-    expect(stored?.base.systemId).toBe(DND5E_SRD_RULES_PACK.meta.systemId);
-    expect(stored?.base.packId).toBe(DND5E_SRD_RULES_PACK.meta.packId);
+    expect(stored?.base.systemId).toBe(DND5E_SRD_SYSTEM_ID);
+    expect(stored?.base.packId).toBe(DND5E_SRD_PACK_ID);
     expect(stored?.resolvedAt.length).toBeGreaterThan(0);
 
     db.close();
@@ -46,18 +42,18 @@ describe('campaign rules binding', () => {
     const db = bareDb();
     const binding: CampaignRulesBinding = {
       base: {
-        systemId: DND5E_SRD_RULES_PACK.meta.systemId,
-        packId: DND5E_SRD_RULES_PACK.meta.packId,
-        version: DND5E_SRD_RULES_PACK.meta.version,
+        systemId: DND5E_SRD_SYSTEM_ID,
+        packId: DND5E_SRD_PACK_ID,
+        version: DND5E_SRD_VERSION,
       },
       addons: [
         {
-          systemId: DND5E_SRD_RULES_PACK.meta.systemId,
+          systemId: DND5E_SRD_SYSTEM_ID,
           packId: 'rules:dnd5e-bestiary',
           version: '1.0',
         },
         {
-          systemId: DND5E_SRD_RULES_PACK.meta.systemId,
+          systemId: DND5E_SRD_SYSTEM_ID,
           packId: 'rules:dnd5e-house-rules',
           version: '0.1',
         },
@@ -155,15 +151,9 @@ describe('campaign rules binding', () => {
   });
 
   it('exposes DEFAULT_DND5E_SRD_BINDING with the D&D SRD pack identity', () => {
-    expect(DEFAULT_DND5E_SRD_BINDING.base.systemId).toBe(
-      DND5E_SRD_RULES_PACK.meta.systemId,
-    );
-    expect(DEFAULT_DND5E_SRD_BINDING.base.packId).toBe(
-      DND5E_SRD_RULES_PACK.meta.packId,
-    );
-    expect(DEFAULT_DND5E_SRD_BINDING.base.version).toBe(
-      DND5E_SRD_RULES_PACK.meta.version,
-    );
+    expect(DEFAULT_DND5E_SRD_BINDING.base.systemId).toBe(DND5E_SRD_SYSTEM_ID);
+    expect(DEFAULT_DND5E_SRD_BINDING.base.packId).toBe(DND5E_SRD_PACK_ID);
+    expect(DEFAULT_DND5E_SRD_BINDING.base.version).toBe(DND5E_SRD_VERSION);
     expect(DEFAULT_DND5E_SRD_BINDING.addons).toEqual([]);
   });
 });

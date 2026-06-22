@@ -406,7 +406,13 @@ export {
   formatAuditReport,
   formatDiffReport,
 } from './rules/audit.js';
-export { DND5E_SRD_RULES_PACK } from './rules/dnd5eSrd.js';
+export {
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
+  DND5E_SRD_VERSION,
+  getBundledDnd5eSrdPack,
+  RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
+} from './rules/bundledSrdPack.js';
 export { validateRecordKindSchema } from './rules/kindSchemas.js';
 export type { RulesPackUsePolicy } from './rules/license.js';
 export {
@@ -414,7 +420,10 @@ export {
   evaluateRulesPackPolicy,
 } from './rules/license.js';
 export type { RulesLookupInput, RulesLookupResult } from './rules/lookup.js';
-export { lookupRulesRecord } from './rules/lookup.js';
+export {
+  lookupRulesRecord,
+  RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
+} from './rules/lookup.js';
 export {
   loadRulesPackFromDirectory,
   PACK_MANIFEST_FILE,
