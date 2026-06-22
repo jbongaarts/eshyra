@@ -129,6 +129,16 @@ describe('tool character targeting', () => {
     );
 
     expect(result.ok).toBe(true);
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 1,
+        character: 'Brielle',
+        characterId: 'pc-2',
+      },
+    });
     const owner = (
       db
         .prepare('SELECT character_id FROM inventory WHERE id = ?')
@@ -137,6 +147,64 @@ describe('tool character targeting', () => {
       }
     ).character_id;
     expect(owner).toBe('pc-2');
+
+    const removed = registry.invoke(
+      'remove_item',
+      { id: 'torch', quantity: 1, character: 'Brielle' },
+      ctx(db),
+    );
+    expect(removed).toMatchObject({
+      ok: true,
+      data: {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 1,
+        character: 'Brielle',
+        characterId: 'pc-2',
+      },
+    });
+  });
+
+  it('remove_item does not report metadata from another character inventory row', () => {
+    const db = freshDb();
+    ensureCharacterRow(db, 'pc-2', 'test', 'session-1', AT);
+    registry.invoke(
+      'give_item',
+      {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 3,
+        location: 'pc-1 pack',
+        character: 'pc-1',
+      },
+      ctx(db),
+    );
+
+    const result = registry.invoke(
+      'remove_item',
+      { id: 'torch', quantity: 1, character: 'pc-2' },
+      ctx(db),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        id: 'torch',
+        quantity: 1,
+        previousQuantity: 0,
+        newQuantity: 0,
+        character: 'pc-2',
+        characterId: 'pc-2',
+      },
+    });
+    if (result.ok) {
+      const evidence = result.data as Record<string, unknown>;
+      expect(evidence).not.toHaveProperty('name');
+      expect(evidence).not.toHaveProperty('location');
+    }
+    expect(
+      db.prepare('SELECT quantity FROM inventory WHERE id = ?').get('torch'),
+    ).toEqual({ quantity: 3 });
   });
 
   it('add_condition does not store the character target in the condition entry', () => {

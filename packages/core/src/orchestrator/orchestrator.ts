@@ -183,7 +183,13 @@ function formatCorrectiveNote(
   // owning tool (missingRequiredTools) and/or for calling an explicit-action-only
   // tool with no explicit player action (disallowedToolCalls). The corrective
   // note addresses whichever applies so the retry knows what to change.
-  const lines: string[] = ['## Correction Required'];
+  const lines: string[] = [
+    '## Correction Required',
+    'The previous candidate was rejected. All tool calls from that rejected',
+    'candidate were rolled back and did not apply. Recreate the full intended',
+    'accepted outcome from scratch: replay every required tool call with the',
+    'correct quantities and targets; do not merely patch the previous answer.',
+  ];
   if (verdict.disallowedToolCalls.length > 0) {
     const disallowed = verdict.disallowedToolCalls.join(', ');
     lines.push(

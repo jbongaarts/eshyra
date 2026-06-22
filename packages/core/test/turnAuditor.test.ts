@@ -34,8 +34,25 @@ const rollExecuted: ExecutedToolCall = {
   tool: 'roll',
   args: { dice: '2d8' },
   result: { ok: true, data: { total: 11 } },
+  mutates: false,
   source: 'native-mcp',
 };
+
+class QuantityEvidenceAuditModel implements ModelClient {
+  readonly seen: ModelCompleteInput[] = [];
+  complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
+    this.seen.push(input);
+    const evidence = input.messages[0]?.content ?? '';
+    const supported =
+      evidence.includes('\\"id\\":\\"torch\\"') &&
+      evidence.includes('\\"quantity\\":10');
+    return Promise.resolve({
+      text: supported
+        ? '{"verdict":"accept","missingRequiredTools":[]}'
+        : '{"verdict":"reject","missingRequiredTools":["give_item"],"reason":"quantity unsupported","repairInstruction":"give 10 torches"}',
+    });
+  }
+}
 
 describe('parseAuditVerdict', () => {
   it('parses a clean accept verdict', () => {
@@ -194,6 +211,73 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
 });
 
 describe('ModelTurnAuditor', () => {
+  it.each([
+    { quantity: 10, expected: 'accept' },
+    { quantity: 1, expected: 'reject' },
+    { quantity: undefined, expected: 'reject' },
+  ] as const)('accepts a 10-torch claim only with quantity 10 evidence ($quantity)', async ({
+    quantity,
+    expected,
+  }) => {
+    const model = new QuantityEvidenceAuditModel();
+    const auditor = new ModelTurnAuditor(model, 'm');
+    const args = {
+      id: 'torch',
+      name: 'Torch',
+      ...(quantity === undefined ? {} : { quantity }),
+    };
+
+    const verdict = await auditor.audit({
+      playerInput: 'Give Bob ten torches.',
+      candidateResponse: 'Bob now has 10 torches.',
+      providedToolNames: ['give_item'],
+      executedToolCalls: [
+        {
+          tool: 'give_item',
+          args,
+          result: {
+            ok: true,
+            data: {
+              applied: true,
+              id: 'torch',
+              name: 'Torch',
+              quantity: quantity ?? 1,
+            },
+          },
+          mutates: true,
+          source: 'native-mcp',
+        },
+      ],
+    });
+
+    expect(verdict.verdict).toBe(expected);
+  });
+
+  it('bounds and redacts original tool arguments in audit evidence', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'Give Bob a torch.',
+      candidateResponse: 'Done.',
+      providedToolNames: ['give_item'],
+      executedToolCalls: [
+        {
+          tool: 'give_item',
+          args: {
+            id: 'torch',
+            token: 'sk-test-abcdefghijklmnopqrstuvwxyz',
+            properties: { notes: 'x'.repeat(2_000) },
+          },
+          result: { ok: true, data: { applied: true } },
+          mutates: true,
+          source: 'native-mcp',
+        },
+      ],
+    });
+
+    expect(message).toContain('[redacted]');
+    expect(message).not.toContain('sk-test-abcdefghijklmnopqrstuvwxyz');
+    expect(message.length).toBeLessThan(2_000);
+  });
+
   it('delegates to the model and returns the parsed verdict', async () => {
     const model = new FakeAuditModel(
       '{"verdict":"reject","missingRequiredTools":["roll"],"reason":"r","repairInstruction":"call roll"}',
@@ -251,6 +335,7 @@ describe('ModelTurnAuditor', () => {
           tool: 'give_item',
           args: { id: 'longsword', name: 'Longsword' },
           result: { ok: true, data: { id: 'longsword' } },
+          mutates: true,
           source: 'native-mcp',
         },
       ],

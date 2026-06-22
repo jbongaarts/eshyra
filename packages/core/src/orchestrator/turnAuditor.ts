@@ -1,3 +1,4 @@
+import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { ModelClient, ModelTraceMetadata } from '../model/client.js';
 import type { ExecutedToolCall } from './turnLoop.js';
 
@@ -185,6 +186,58 @@ export function buildAuditSystemPrompt(): string {
   ].join('\n');
 }
 
+const AUDIT_VALUE_MAX_DEPTH = 3;
+const AUDIT_VALUE_MAX_ENTRIES = 20;
+const AUDIT_VALUE_MAX_STRING_LENGTH = 200;
+const AUDIT_JSON_MAX_LENGTH = 800;
+
+/** Bound and redact model-supplied tool data before placing it in an audit prompt. */
+function boundedAuditJson(value: unknown): string {
+  const seen = new WeakSet<object>();
+  const project = (candidate: unknown, depth: number): unknown => {
+    if (typeof candidate === 'string') {
+      return redactSecrets(candidate).slice(0, AUDIT_VALUE_MAX_STRING_LENGTH);
+    }
+    if (
+      candidate === null ||
+      typeof candidate === 'number' ||
+      typeof candidate === 'boolean'
+    ) {
+      return candidate;
+    }
+    if (typeof candidate !== 'object') {
+      return String(candidate).slice(0, AUDIT_VALUE_MAX_STRING_LENGTH);
+    }
+    if (depth >= AUDIT_VALUE_MAX_DEPTH || seen.has(candidate)) {
+      return '[truncated]';
+    }
+    seen.add(candidate);
+    if (Array.isArray(candidate)) {
+      return candidate
+        .slice(0, AUDIT_VALUE_MAX_ENTRIES)
+        .map((entry) => project(entry, depth + 1));
+    }
+    return Object.fromEntries(
+      Object.entries(candidate)
+        .slice(0, AUDIT_VALUE_MAX_ENTRIES)
+        .map(([key, entry]) => [
+          redactSecrets(key).slice(0, AUDIT_VALUE_MAX_STRING_LENGTH),
+          project(entry, depth + 1),
+        ]),
+    );
+  };
+
+  let json: string;
+  try {
+    json = JSON.stringify(project(value, 0));
+  } catch {
+    json = '"[unserializable]"';
+  }
+  return json.length > AUDIT_JSON_MAX_LENGTH
+    ? `${json.slice(0, AUDIT_JSON_MAX_LENGTH)}…`
+    : json;
+}
+
 /** Compact, bounded JSON summary of one executed tool call for the auditor. */
 function summarizeExecutedCall(
   call: ExecutedToolCall,
@@ -193,19 +246,12 @@ function summarizeExecutedCall(
     tool: call.tool,
     source: call.source,
     ok: call.result.ok,
+    args: boundedAuditJson(call.args),
   };
   if (call.result.ok) {
-    // Include a truncated view of the result data so the auditor can see, e.g.,
-    // a roll total — but never an unbounded payload.
-    let data = '';
-    try {
-      data = JSON.stringify(call.result.data);
-    } catch {
-      data = String(call.result.data);
-    }
     return {
       ...base,
-      data: data.length > 400 ? `${data.slice(0, 400)}…` : data,
+      data: boundedAuditJson(call.result.data),
     };
   }
   return { ...base, code: call.result.code };

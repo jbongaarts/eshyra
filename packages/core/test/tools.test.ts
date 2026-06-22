@@ -374,6 +374,56 @@ describe('domain mutation tools', () => {
       .get('torch') as { name: string; quantity: number };
     expect(row.name).toBe('Torch');
     expect(row.quantity).toBe(3);
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        applied: true,
+        id: 'torch',
+        name: 'Torch',
+        quantity: 3,
+      },
+    });
+  });
+
+  it('inventory mutation results carry comparable bounded audit evidence', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    const given = registry.invoke(
+      'give_item',
+      {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 10,
+        location: 'backpack',
+      },
+      c,
+    );
+    expect(given).toMatchObject({
+      ok: true,
+      data: {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 10,
+        location: 'backpack',
+      },
+    });
+
+    const removed = registry.invoke(
+      'remove_item',
+      { id: 'torch', quantity: 4 },
+      c,
+    );
+    expect(removed).toMatchObject({
+      ok: true,
+      data: {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 4,
+        location: 'backpack',
+        previousQuantity: 10,
+        newQuantity: 6,
+      },
+    });
   });
 
   it('set_plot_flag sets a flag with model provenance', () => {
