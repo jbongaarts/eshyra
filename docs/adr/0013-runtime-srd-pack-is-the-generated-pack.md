@@ -1,6 +1,6 @@
 # ADR 0013: The Runtime SRD Rules Pack Is the Generated Pack, Not the In-Code Placeholder
 
-Status: proposed
+Status: accepted
 
 Date: 2026-06-21
 
