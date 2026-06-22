@@ -5,14 +5,12 @@ import {
   adventureModuleDirName,
   getBundledDnd5eSrdPack,
   loadAdventureModuleFromDir,
+  lookupRulesRecord,
   type ResolvedRulesStack,
-  type RulesPack,
-  type RulesRecord,
+  type RulesRecordKind,
   resolveRulesStack,
   validateAdventureModuleReferences,
 } from '../src/internal.js';
-
-const DND5E_SRD_RULES_PACK = getBundledDnd5eSrdPack();
 
 const MODULE_ID = 'eshyra:hollow-beneath-emberfall';
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -27,45 +25,13 @@ const MODULE_DIR = join(
   adventureModuleDirName(MODULE_ID),
 );
 
-// Reuse the SRD pack's license/provenance so the tiny fixture stack stays
-// terse; only the (kind, key) addressing matters for reference resolution.
-const sampleLicense = DND5E_SRD_RULES_PACK.records[0].license;
-const sampleProvenance = DND5E_SRD_RULES_PACK.records[0].provenance;
-
-function rec(
-  kind: RulesRecord['kind'],
-  key: string,
-  name: string,
-): RulesRecord {
-  return {
-    systemId: 'dnd5e-srd',
-    kind,
-    key,
-    name,
-    data: {},
-    source: 'test fixture',
-    license: sampleLicense,
-    provenance: sampleProvenance,
-  };
-}
-
-/** A tiny base rules pack holding exactly the records the module references. */
-function makeRulesStack(): ResolvedRulesStack {
-  const base: RulesPack = {
-    meta: {
-      ...DND5E_SRD_RULES_PACK.meta,
-      packId: 'rules:test-base',
-      title: 'Test Base Pack',
-      role: 'base',
-      systemId: 'dnd5e-srd',
-      version: '1.0.0',
-    },
-    records: [
-      rec('creature', 'goblin', 'Goblin'),
-      rec('magic-item', 'potion-of-healing', 'Potion of Healing'),
-    ],
-  };
-  return resolveRulesStack({ base });
+// Resolve the module's rulesRefs against the REAL bundled, importer-generated
+// SRD 5.1 stack (ADR 0013), not a hand-built fixture. A module `rulesRef` IS the
+// canonical record key (`<kind>:<key>`, e.g. `creature:goblin`), so this proves
+// the encounter/treasure refs mechanically resolve against the shipped, audited
+// pack — the gap eshyra-8bit closed.
+function makeSrdStack(): ResolvedRulesStack {
+  return resolveRulesStack({ base: getBundledDnd5eSrdPack() });
 }
 
 describe('The Hollow Beneath Emberfall starter module', () => {
@@ -121,7 +87,7 @@ describe('The Hollow Beneath Emberfall starter module', () => {
     }
   });
 
-  it('references rules-pack content by rulesRef and resolves against a rules stack', () => {
+  it('references rules-pack content by rulesRef and resolves against the real SRD stack', () => {
     const module = loadAdventureModuleFromDir(MODULE_DIR);
 
     // Encounters reference creatures by provider-neutral rulesRef, not copied
@@ -135,11 +101,38 @@ describe('The Hollow Beneath Emberfall starter module', () => {
       .filter((r): r is string => r !== undefined);
     expect(treasureRefs).toContain('magic-item:potion-of-healing');
 
-    // The cross-pack references resolve against a rules stack that supplies
-    // exactly those records.
+    // The cross-pack references resolve against the REAL bundled SRD stack —
+    // every encounter creature and rules-referencing treasure item. This is the
+    // mechanical resolution eshyra-8bit reconciled: a rulesRef is the canonical
+    // kind-prefixed record key, so it must resolve whole against the shipped pack
+    // (it did not before, because the validator re-split it into a bare key).
+    const stack = makeSrdStack();
     expect(() =>
-      validateAdventureModuleReferences(module, { rules: makeRulesStack() }),
+      validateAdventureModuleReferences(module, { rules: stack }),
     ).not.toThrow();
+
+    // And concretely: each authored rulesRef looks up its real record by the
+    // whole `<kind>:<key>` string.
+    for (const e of module.encounters) {
+      for (const c of e.creatures) {
+        const [kind] = c.rulesRef.split(':');
+        const result = lookupRulesRecord(stack, {
+          kind: kind as RulesRecordKind,
+          ref: c.rulesRef,
+        });
+        expect(result.ok).toBe(true);
+      }
+    }
+    const goblin = lookupRulesRecord(stack, {
+      kind: 'creature',
+      ref: 'creature:goblin',
+    });
+    expect(goblin.ok).toBe(true);
+    const potion = lookupRulesRecord(stack, {
+      kind: 'magic-item',
+      ref: 'magic-item:potion-of-healing',
+    });
+    expect(potion.ok).toBe(true);
   });
 
   it('stays separate from the Emberfall setting (depends on it by reference only)', () => {

@@ -7,7 +7,12 @@
 //     addressed by a provider-neutral `rulesRef` of the form `<kind>:<key>`
 //     (e.g. `creature:goblin`, `magic-item:amulet-of-health`,
 //     `table:wild-magic`) — resolved through the campaign's rules stack, never
-//     copied into the module;
+//     copied into the module. A `rulesRef` *is* the canonical rules-pack record
+//     key: the generated SRD pack and every other in-system cross-reference
+//     (`recordsByKey`, spell→table links, lookup candidate keys) address records
+//     by the same kind-prefixed `<kind>:<key>` form, so the ref resolves by the
+//     whole string. The `<kind>` prefix is also parsed out to assert the ref
+//     names the kind the slot expects;
 //   - rules requirements → the base system id and add-on pack ids actually
 //     present in that stack;
 //   - setting compatibility → known campaign-template/setting pack ids (and
@@ -38,28 +43,27 @@ export interface AdventureReferenceContext {
   readonly settingLocationIds?: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
-/** Split a `<kind>:<key>` rules reference; throws on a malformed ref. */
-function splitRulesRef(
-  ref: string,
-  where: string,
-): {
-  kind: string;
-  key: string;
-} {
+/**
+ * Parse the leading `<kind>` from a `<kind>:<key>` rules reference; throws on a
+ * malformed ref. Only the kind prefix is returned — the full `ref` is the
+ * canonical record key used for lookup, so it is never re-split into a bare key.
+ */
+function rulesRefKind(ref: string, where: string): string {
   const idx = ref.indexOf(':');
   if (idx <= 0 || idx >= ref.length - 1) {
     throw new AdventureModuleError(
       `${where}: malformed rules reference '${ref}' (expected '<kind>:<key>')`,
     );
   }
-  return { kind: ref.slice(0, idx), key: ref.slice(idx + 1) };
+  return ref.slice(0, idx);
 }
 
 /**
  * Resolve a `rulesRef` against the stack, requiring it to name one of
  * `expectedKinds` and to resolve to a real record. The ref encodes its own
  * kind, so a mismatch (e.g. an encounter pointing at `magic-item:…`) is a
- * reference error, not just a not-found.
+ * reference error, not just a not-found. The ref is the canonical record key,
+ * so it is looked up whole (`creature:goblin`), not re-split into a bare key.
  */
 function assertRulesRef(
   stack: ResolvedRulesStack,
@@ -67,7 +71,7 @@ function assertRulesRef(
   where: string,
   expectedKinds: readonly RulesRecordKind[],
 ): void {
-  const { kind, key } = splitRulesRef(ref, where);
+  const kind = rulesRefKind(ref, where);
   if (!(expectedKinds as readonly string[]).includes(kind)) {
     throw new AdventureModuleError(
       `${where}: rules reference '${ref}' must name one of: ${expectedKinds.join(', ')}`,
@@ -75,7 +79,7 @@ function assertRulesRef(
   }
   const result = lookupRulesRecord(stack, {
     kind: kind as RulesRecordKind,
-    ref: key,
+    ref,
   });
   if (!result.ok) {
     throw new AdventureModuleError(
