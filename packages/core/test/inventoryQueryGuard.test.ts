@@ -118,6 +118,38 @@ class IntentSimulatingAuditModel {
   }
 }
 
+/** Accepts an empty-inventory answer only when the orchestrator supplies it. */
+class SnapshotEvidenceAuditModel {
+  readonly seen: ModelCompleteInput[] = [];
+
+  complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
+    this.seen.push(input);
+    const message = String(input.messages[0]?.content ?? '');
+    const hasEmptyInventoryEvidence = message.includes('"inventory":[]');
+    return Promise.resolve({
+      text: JSON.stringify(
+        hasEmptyInventoryEvidence
+          ? {
+              verdict: 'accept',
+              missingRequiredCalls: [],
+              disallowedToolCalls: [],
+              reason: 'empty inventory is established by current state',
+              repairInstruction: '',
+            }
+          : {
+              verdict: 'reject',
+              missingRequiredCalls: [
+                { tool: 'memory_drilldown', target: 'inventory' },
+              ],
+              disallowedToolCalls: [],
+              reason: 'inventory state is absent from supplied evidence',
+              repairInstruction: 'Retrieve the inventory state.',
+            },
+      ),
+    });
+  }
+}
+
 function baseInput(overrides: Record<string, unknown> = {}) {
   return {
     campaignId: CAMPAIGN,
@@ -246,6 +278,28 @@ describe('system prompt inventory guard (eshyra-4ia4)', () => {
 // ---------------------------------------------------------------------------
 
 describe('AC1: inventory query with empty inventory does not mutate (eshyra-4ia4)', () => {
+  it('accepts "What equipment do I have?" from the empty current snapshot without drilldown (eshyra-n01v)', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new ScriptedModel([
+      'You have nothing recorded in your inventory.',
+    ]);
+    const auditModel = new SnapshotEvidenceAuditModel();
+    const auditor = new ModelTurnAuditor(auditModel, 'snapshot-audit');
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput({ playerInput: 'What equipment do I have?' }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.toolCalls).toHaveLength(0);
+    expect(inventoryCount(db)).toBe(0);
+    expect(auditModel.seen).toHaveLength(1);
+    expect(auditModel.seen[0].messages[0].content).toContain('"inventory":[]');
+    db.close();
+  });
+
   it('reports empty inventory without calling give_item', async () => {
     const db = freshDbWithSession();
     withOpenScene(db);

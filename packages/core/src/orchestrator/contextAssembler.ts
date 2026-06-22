@@ -418,6 +418,8 @@ function renderState(state: StateSnapshot): string {
         .map((i) => `${i.name} x${i.quantity}`)
         .join(', ')}`,
     );
+  } else {
+    lines.push('Inventory: (empty)');
   }
   const flagKeys = Object.keys(state.plotFlags);
   if (flagKeys.length > 0) {

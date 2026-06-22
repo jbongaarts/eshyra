@@ -4,6 +4,7 @@ import type {
   ModelCompleteInput,
   ModelCompleteResult,
 } from '../src/model/client.js';
+import type { StateSnapshot } from '../src/orchestrator/contextAssembler.js';
 import {
   AuditError,
   buildAuditSystemPrompt,
@@ -36,6 +37,31 @@ const rollExecuted: ExecutedToolCall = {
   result: { ok: true, data: { total: 11 } },
   mutates: false,
   source: 'native-mcp',
+};
+
+const emptyInventorySnapshot: StateSnapshot = {
+  character: {
+    id: 'pc-1',
+    name: 'Mira',
+    ancestry: 'Human',
+    className: 'Fighter',
+    level: 1,
+    hpCurrent: 10,
+    hpMax: 10,
+    abilityScores: {
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10,
+    },
+    conditions: [],
+    role: 'pc',
+  },
+  inventory: [],
+  plotFlags: {},
+  clock: { inGameTime: '', currentLocationId: undefined },
 };
 
 class QuantityEvidenceAuditModel implements ModelClient {
@@ -207,6 +233,42 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
       executedToolCalls: [],
     });
     expect(message).toContain('## Explicit-Action-Only Tools\n(none)');
+  });
+});
+
+describe('audit prompt current-state evidence (eshyra-n01v)', () => {
+  it('treats the current snapshot as evidence and limits drilldown to absent state', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain('Current State Snapshot is evidence');
+    expect(prompt).toContain('empty inventory array supports');
+    expect(prompt).toContain('older,');
+    expect(prompt).toContain('archived, or otherwise absent state');
+    expect(prompt).toContain('Reject claims that contradict or add');
+  });
+
+  it('includes an empty inventory snapshot in the audit evidence', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What equipment do I have?',
+      candidateResponse: 'You have no equipment recorded.',
+      providedToolNames: ['memory_drilldown'],
+      executedToolCalls: [],
+      currentStateSnapshot: emptyInventorySnapshot,
+    });
+
+    expect(message).toContain('## Current State Snapshot');
+    expect(message).toContain('"inventory":[]');
+    expect(message).toContain('You have no equipment recorded.');
+  });
+
+  it('marks the snapshot absent instead of implying current-state evidence', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What sword did I lose last year?',
+      candidateResponse: 'It was a silver longsword.',
+      providedToolNames: ['memory_drilldown'],
+      executedToolCalls: [],
+    });
+
+    expect(message).toContain('## Current State Snapshot\n(not supplied)');
   });
 });
 
