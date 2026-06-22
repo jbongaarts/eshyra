@@ -323,6 +323,33 @@ describe('lookup_rules tool', () => {
     }
   });
 
+  it.each([
+    ['torch', 'equipment:torch'],
+    ['torches', 'equipment:torch'],
+    ['crossbow bolt', 'equipment:crossbow-bolts-20'],
+    ['crossbow bolts', 'equipment:crossbow-bolts-20'],
+    ['rations', 'equipment:rations-1-day'],
+    ['days of rations', 'equipment:rations-1-day'],
+    ['leather armor', 'equipment:leather'],
+    ["explorer's pack", 'equipment:explorers-pack'],
+    ["dungeoneer's pack", 'equipment:dungeoneers-pack'],
+    ['chain mail', 'equipment:chain-mail'],
+    ['light crossbow', 'equipment:crossbow-light'],
+    ['shield', 'equipment:shield'],
+    ['backpack', 'equipment:backpack'],
+  ])('resolves generated SRD equipment alias %s', (name, key) => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'equipment', name },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { record: { key: string } };
+      expect(data.record.key).toBe(key);
+    }
+  });
+
   it('reports an ambiguous name with candidate keys instead of mis-picking', () => {
     // "Ability Score Improvement" is a `feature` on every class in the SRD.
     const result = createDefaultToolRegistry().invoke(

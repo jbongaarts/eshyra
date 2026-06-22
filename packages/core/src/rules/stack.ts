@@ -257,19 +257,20 @@ function addToKindIndex(
   // (ADR 0013): keep every distinct-key record under the shared name so name
   // lookup can report ambiguity instead of silently picking one. Records are
   // addressed by key first, so a re-add for the same key replaces its slot.
-  const normalizedName = normalizeName(record.name);
-  const entries = index.byName.get(normalizedName);
-  if (entries === undefined) {
-    index.byName.set(normalizedName, [entry]);
-    return;
-  }
-  const existingIndex = entries.findIndex(
-    (candidate) => candidate.record.key === record.key,
-  );
-  if (existingIndex === -1) {
-    entries.push(entry);
-  } else {
-    entries[existingIndex] = entry;
+  for (const name of recordLookupNames(record)) {
+    const entries = index.byName.get(name);
+    if (entries === undefined) {
+      index.byName.set(name, [entry]);
+      continue;
+    }
+    const existingIndex = entries.findIndex(
+      (candidate) => candidate.record.key === record.key,
+    );
+    if (existingIndex === -1) {
+      entries.push(entry);
+    } else {
+      entries[existingIndex] = entry;
+    }
   }
 }
 
@@ -285,16 +286,17 @@ function removeFromKindIndex(
   if (index.byKey.get(entry.record.key) === entry) {
     index.byKey.delete(entry.record.key);
   }
-  const name = normalizeName(entry.record.name);
-  const entries = index.byName.get(name);
-  if (entries === undefined) {
-    return;
-  }
-  const remaining = entries.filter((candidate) => candidate !== entry);
-  if (remaining.length === 0) {
-    index.byName.delete(name);
-  } else if (remaining.length !== entries.length) {
-    index.byName.set(name, remaining);
+  for (const name of recordLookupNames(entry.record)) {
+    const entries = index.byName.get(name);
+    if (entries === undefined) {
+      continue;
+    }
+    const remaining = entries.filter((candidate) => candidate !== entry);
+    if (remaining.length === 0) {
+      index.byName.delete(name);
+    } else if (remaining.length !== entries.length) {
+      index.byName.set(name, remaining);
+    }
   }
 }
 
@@ -310,7 +312,71 @@ function freezeKindIndexes(
 }
 
 function normalizeName(name: string): string {
-  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
+  return name
+    .trim()
+    .replace(/[‘’]/g, "'")
+    .replace(/[‐‑‒–—-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('en-US');
+}
+
+/**
+ * Generated SRD equipment names sometimes carry package quantities while
+ * gameplay refers to the item generically (for example "Crossbow bolts (20)").
+ * Keep those aliases attached to canonical record keys instead of inventing
+ * additional rules records.
+ */
+const RECORD_NAME_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  'equipment:crossbow-bolts-20': [
+    'crossbow bolt',
+    'crossbow bolts',
+    '20 bolts',
+  ],
+  'equipment:rations-1-day': [
+    'ration',
+    'rations',
+    'day of rations',
+    'days of rations',
+  ],
+  'equipment:leather': ['leather armor'],
+};
+
+function recordLookupNames(record: RulesRecord): readonly string[] {
+  const names = new Set<string>();
+  const add = (name: string): void => {
+    const normalized = normalizeName(name);
+    names.add(normalized);
+    names.add(normalized.replaceAll("'", ''));
+  };
+
+  add(record.name);
+  const withoutParenthetical = record.name.replace(/\s*\([^)]*\)\s*$/, '');
+  add(withoutParenthetical);
+  const commaParts = /^([^,]+),\s*(.+)$/.exec(withoutParenthetical);
+  if (commaParts !== null) {
+    add(`${commaParts[2]} ${commaParts[1]}`);
+  }
+
+  if (record.kind === 'equipment') {
+    add(pluralizeLastWord(withoutParenthetical));
+  }
+
+  for (const alias of RECORD_NAME_ALIASES[record.key] ?? []) {
+    add(alias);
+  }
+  return [...names];
+}
+
+function pluralizeLastWord(name: string): string {
+  const match = /^(.*?)([A-Za-z]+)$/.exec(name);
+  if (match === null) {
+    return name;
+  }
+  const [, prefix = '', word = ''] = match;
+  if (/s$/i.test(word)) return name;
+  if (/[^aeiou]y$/i.test(word)) return `${prefix}${word.slice(0, -1)}ies`;
+  if (/(?:ch|sh|x|z)$/i.test(word)) return `${prefix}${word}es`;
+  return `${prefix}${word}s`;
 }
 
 export { normalizeName as normalizeRulesRecordName };
