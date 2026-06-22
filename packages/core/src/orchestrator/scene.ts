@@ -301,6 +301,32 @@ export function listSceneLog(db: Db, key: SceneKey): SceneLogRecord[] {
   return rows.map(sceneLogFromRow);
 }
 
+/**
+ * The most recent DM (`role: 'dm'`) scene-log line recorded anywhere in the
+ * campaign — across every session and scene, regardless of open/closed status,
+ * or `undefined` when the campaign has no DM output yet. Scene-log rows persist
+ * after their scene and session close (close only flips a status flag), so this
+ * sees the DM's last words from a cleanly-ended prior session, which the play
+ * UI replays as a resume recap at session start. Ordered by wall-clock then
+ * insertion order (`rowid`) so the truly-last line wins even when two rows
+ * share a timestamp (common in tests and within a single turn).
+ */
+export function getLastDmOutput(
+  db: Db,
+  selector: { campaignId: string },
+): SceneLogRecord | undefined {
+  const row = db
+    .prepare(
+      `SELECT campaign_id, session_id, scene_id, seq, turn_id, role, content, created_at
+       FROM scene_log
+       WHERE campaign_id = ? AND role = 'dm'
+       ORDER BY created_at DESC, rowid DESC
+       LIMIT 1`,
+    )
+    .get(selector.campaignId) as SceneLogRow | undefined;
+  return row === undefined ? undefined : sceneLogFromRow(row);
+}
+
 export function countSceneLog(db: Db, key: SceneKey): number {
   const row = db
     .prepare(

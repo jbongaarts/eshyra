@@ -1117,6 +1117,39 @@ describe('runPlay', () => {
     dispose();
   });
 
+  it("replays the DM's last output as a recap when resuming an existing campaign in a new session (eshyra-w8f2)", async () => {
+    const { db, dispose } = makeDb();
+    // First session: play a turn so the DM records output, then quit to close
+    // it cleanly. This leaves the campaign with prior DM output but no open
+    // session.
+    await runPlay(
+      baseDeps(db, scriptedIO(['/defer', 'look around', '/quit']).io),
+      { dbPath: 'demo.db' },
+    );
+
+    // Second session over the same campaign: no session is open, so launch
+    // starts a new one — and must first replay the DM's last words.
+    const { io, lines } = scriptedIO(['/defer', '/quit']);
+    await runPlay(baseDeps(db, io), { dbPath: 'demo.db' });
+
+    const out = lines.join('\n');
+    expect(out).toContain('— Resuming campaign. The DM last said: —');
+    expect(out).toContain('DM: you said "look around"');
+    dispose();
+  });
+
+  it('does not replay a recap for a brand-new campaign with no prior DM output (eshyra-w8f2)', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO(['/defer', '/quit']);
+
+    await runPlay(baseDeps(db, io), { dbPath: 'demo.db' });
+
+    expect(lines.join('\n')).not.toContain(
+      'Resuming campaign. The DM last said',
+    );
+    dispose();
+  });
+
   it('closes and recaps an open session when the player chooses close', async () => {
     const { db, dispose } = makeDb();
     seedOpenSession(db);
