@@ -350,11 +350,14 @@ function recordLookupNames(record: RulesRecord): readonly string[] {
   };
 
   add(record.name);
-  const withoutParenthetical = record.name.replace(/\s*\([^)]*\)\s*$/, '');
+  const withoutParenthetical = stripTrailingParenthetical(record.name);
   add(withoutParenthetical);
-  const commaParts = /^([^,]+),\s*(.+)$/.exec(withoutParenthetical);
-  if (commaParts !== null) {
-    add(`${commaParts[2]} ${commaParts[1]}`);
+  const commaIndex = withoutParenthetical.indexOf(',');
+  if (commaIndex > 0) {
+    const qualifier = withoutParenthetical.slice(commaIndex + 1).trim();
+    if (qualifier.length > 0) {
+      add(`${qualifier} ${withoutParenthetical.slice(0, commaIndex)}`);
+    }
   }
 
   if (record.kind === 'equipment') {
@@ -367,16 +370,50 @@ function recordLookupNames(record: RulesRecord): readonly string[] {
   return [...names];
 }
 
-function pluralizeLastWord(name: string): string {
-  const match = /^(.*?)([A-Za-z]+)$/.exec(name);
-  if (match === null) {
+function stripTrailingParenthetical(name: string): string {
+  const trimmed = name.trimEnd();
+  if (!trimmed.endsWith(')')) {
     return name;
   }
-  const [, prefix = '', word = ''] = match;
-  if (/s$/i.test(word)) return name;
-  if (/[^aeiou]y$/i.test(word)) return `${prefix}${word.slice(0, -1)}ies`;
-  if (/(?:ch|sh|x|z)$/i.test(word)) return `${prefix}${word}es`;
+  const openIndex = trimmed.lastIndexOf('(');
+  const previousCloseIndex = trimmed.lastIndexOf(')', trimmed.length - 2);
+  return openIndex <= previousCloseIndex
+    ? name
+    : trimmed.slice(0, openIndex).trimEnd();
+}
+
+function pluralizeLastWord(name: string): string {
+  let wordStart = name.length;
+  while (wordStart > 0 && isAsciiLetter(name.charCodeAt(wordStart - 1))) {
+    wordStart -= 1;
+  }
+  if (wordStart === name.length) {
+    return name;
+  }
+  const prefix = name.slice(0, wordStart);
+  const word = name.slice(wordStart);
+  const lowerWord = word.toLocaleLowerCase('en-US');
+  if (lowerWord.endsWith('s')) return name;
+  if (
+    lowerWord.endsWith('y') &&
+    lowerWord.length > 1 &&
+    !'aeiou'.includes(lowerWord.at(-2) ?? '')
+  ) {
+    return `${prefix}${word.slice(0, -1)}ies`;
+  }
+  if (
+    lowerWord.endsWith('ch') ||
+    lowerWord.endsWith('sh') ||
+    lowerWord.endsWith('x') ||
+    lowerWord.endsWith('z')
+  ) {
+    return `${prefix}${word}es`;
+  }
   return `${prefix}${word}s`;
+}
+
+function isAsciiLetter(code: number): boolean {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
 }
 
 export { normalizeName as normalizeRulesRecordName };

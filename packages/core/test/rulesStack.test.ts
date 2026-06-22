@@ -391,4 +391,26 @@ describe('rules stack resolution', () => {
       ).toMatchObject({ ok: true, record: { key } });
     }
   });
+
+  it('handles adversarially long rules names with linear alias parsing', () => {
+    const names = [
+      `${'('.repeat(20_000)})`,
+      `Qualifier,${' '.repeat(20_000)}value`,
+      'A'.repeat(20_000),
+    ];
+    const stack = resolveRulesStack({
+      base: basePack({
+        records: names.map((name, index) =>
+          record(`equipment:long-${index}`, { kind: 'equipment', name }),
+        ),
+      }),
+      addons: [],
+    });
+
+    for (const [index, name] of names.entries()) {
+      expect(
+        lookupRulesRecord(stack, { kind: 'equipment', name }),
+      ).toMatchObject({ ok: true, record: { key: `equipment:long-${index}` } });
+    }
+  });
 });
