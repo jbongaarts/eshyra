@@ -1107,6 +1107,15 @@ describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
     expect(model.seen).toHaveLength(2);
     expect(model.seen[1].messages[0].content).toContain('Correction Required');
     expect(model.seen[1].messages[0].content).toContain('roll');
+    expect(model.seen[1].messages[0].content).toContain(
+      'All tool calls from that rejected\ncandidate were rolled back and did not apply',
+    );
+    expect(model.seen[1].messages[0].content).toContain(
+      'Recreate the full intended\naccepted outcome from scratch',
+    );
+    expect(model.seen[1].messages[0].content).toContain(
+      'correct quantities and targets; do not merely patch',
+    );
     // Debug recorded both verdicts with their actions.
     expect(sink.audits.map((a) => `${a.verdict}:${a.action}`)).toEqual([
       'reject:retry',

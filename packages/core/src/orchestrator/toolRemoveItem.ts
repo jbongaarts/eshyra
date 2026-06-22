@@ -48,6 +48,13 @@ export const removeItemTool: Tool = {
       return target;
     }
     try {
+      const existing = ctx.db
+        .prepare(
+          'SELECT name, location, character_id FROM inventory WHERE id = ?',
+        )
+        .get(a.id) as
+        | { name: string; location: string | null; character_id: string | null }
+        | undefined;
       const result = removeItem(
         ctx.db,
         a.id,
@@ -59,7 +66,23 @@ export const removeItemTool: Tool = {
           characterId: target.id,
         },
       );
-      return ok(result);
+      return ok({
+        ...result,
+        id: a.id,
+        ...(existing !== undefined ? { name: existing.name } : {}),
+        quantity:
+          typeof a.quantity === 'number' ? a.quantity : result.previousQuantity,
+        ...(existing?.location !== null && existing?.location !== undefined
+          ? { location: existing.location }
+          : {}),
+        ...(typeof a.character === 'string' ? { character: a.character } : {}),
+        ...(existing?.character_id !== null &&
+        existing?.character_id !== undefined
+          ? { characterId: existing.character_id }
+          : target.id !== undefined
+            ? { characterId: target.id }
+            : {}),
+      });
     } catch (e) {
       if (e instanceof MutateStateError) {
         return err('mutate_error', e.message);

@@ -86,7 +86,15 @@ export const giveItemTool: Tool = {
           characterId: target.id,
         },
       );
-      return ok({ applied: true, id: a.id, name: a.name });
+      return ok({
+        applied: true,
+        id: a.id,
+        name: a.name,
+        quantity: typeof a.quantity === 'number' ? a.quantity : 1,
+        ...(typeof a.location === 'string' ? { location: a.location } : {}),
+        ...(typeof a.character === 'string' ? { character: a.character } : {}),
+        ...(target.id !== undefined ? { characterId: target.id } : {}),
+      });
     } catch (e) {
       if (e instanceof MutateStateError) {
         return err('mutate_error', e.message);

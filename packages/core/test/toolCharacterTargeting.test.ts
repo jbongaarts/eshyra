@@ -129,6 +129,16 @@ describe('tool character targeting', () => {
     );
 
     expect(result.ok).toBe(true);
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 1,
+        character: 'Brielle',
+        characterId: 'pc-2',
+      },
+    });
     const owner = (
       db
         .prepare('SELECT character_id FROM inventory WHERE id = ?')
@@ -137,6 +147,22 @@ describe('tool character targeting', () => {
       }
     ).character_id;
     expect(owner).toBe('pc-2');
+
+    const removed = registry.invoke(
+      'remove_item',
+      { id: 'torch', quantity: 1, character: 'Brielle' },
+      ctx(db),
+    );
+    expect(removed).toMatchObject({
+      ok: true,
+      data: {
+        id: 'torch',
+        name: 'Torch',
+        quantity: 1,
+        character: 'Brielle',
+        characterId: 'pc-2',
+      },
+    });
   });
 
   it('add_condition does not store the character target in the condition entry', () => {
