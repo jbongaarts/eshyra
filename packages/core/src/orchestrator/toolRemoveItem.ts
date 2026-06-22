@@ -1,3 +1,4 @@
+import { resolveCharacterId } from '../state/activeCharacter.js';
 import { removeItem } from '../state/domainMutations.js';
 import { MutateStateError } from '../state/mutateState.js';
 import type { Tool } from './toolRegistry.js';
@@ -48,11 +49,14 @@ export const removeItemTool: Tool = {
       return target;
     }
     try {
+      const targetCharacterId = resolveCharacterId(ctx.db, target.id);
       const existing = ctx.db
         .prepare(
-          'SELECT name, location, character_id FROM inventory WHERE id = ?',
+          `SELECT name, location, character_id
+           FROM inventory
+           WHERE id = ? AND (character_id = ? OR character_id IS NULL)`,
         )
-        .get(a.id) as
+        .get(a.id, targetCharacterId) as
         | { name: string; location: string | null; character_id: string | null }
         | undefined;
       const result = removeItem(
