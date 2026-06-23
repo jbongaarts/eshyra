@@ -225,6 +225,22 @@ satisfied. The generated Beads session-completion block below still requires
 pushing so work is not stranded locally; in this repository that means pushing
 the feature branch and opening the PR for review.
 
+### PR Merge Policy
+
+Default PR merge method is a **merge commit**, not squash. Rationale: Eshyra's
+history is frequently traversed by coding agents and bead/PR tooling. Preserving
+commit ancestry lets agents answer "did this work land on `main`?" with
+deterministic Git-graph checks instead of spending tokens reconstructing
+squashed diffs.
+
+- PR branches may be cleaned up before review/merge, but once reviewed, the
+  reviewed commits should remain reachable from `main`.
+- For the readable mainline narrative, use `git log --first-parent main`.
+- Squash merges are rare exceptions for tiny, human-authored changes where
+  preserving branch commit identity has no future diagnostic value.
+- Merge commit titles should include the PR number and bead ID when applicable,
+  e.g. `Merge PR #277: eshyra-hlte Fix mechanics audit evidence`.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 ## Beads Issue Tracker
 
