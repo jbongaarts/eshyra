@@ -1212,6 +1212,35 @@ describe('runPlay', () => {
     dispose();
   });
 
+  it('rejects a numeric-prefixed answer like "1abc" as malformed rather than parsing it as 1 (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    // '1abc' must NOT be accepted as choice 1 (a bare Number.parseInt would);
+    // 'abc' is plainly non-numeric. Both re-prompt; '1' then selects.
+    const { io, lines } = scriptedIO(['/defer', '1abc', 'abc', '1', '/quit']);
+
+    await runPlay(
+      baseDeps(
+        db,
+        io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+
+    const out = lines.join('\n');
+    expect(out).toContain("'1abc' is not one of 0–1");
+    expect(out).toContain("'abc' is not one of 0–1");
+    // Only the explicit '1' bound a run — '1abc' did not silently bind one.
+    expect(
+      listAdventureRuns(db, { campaignId: campaignId(db) }).map(
+        (r) => r.moduleId,
+      ),
+    ).toEqual([HOLLOW_MODULE_ID]);
+    dispose();
+  });
+
   it('keeps the default and binds nothing when the player declines with 0 (eshyra-47ob)', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO(['/defer', '0', '/quit']);

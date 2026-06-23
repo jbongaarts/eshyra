@@ -67,15 +67,29 @@ export async function chooseAdventureModule(
     const answer = await deps.io.prompt(
       `Enter a number [0–${modules.length}], or press Enter for the default: `,
     );
-    // EOF (closed stream) or an empty answer keeps the default.
-    if (answer === undefined || answer.length === 0) {
+    // EOF (closed stream) keeps the default.
+    if (answer === undefined) {
       return undefined;
     }
-    const choice = Number.parseInt(answer, 10);
-    if (Number.isInteger(choice) && choice === 0) {
+    const trimmed = answer.trim();
+    // An empty or whitespace-only answer keeps the default.
+    if (trimmed.length === 0) {
       return undefined;
     }
-    if (Number.isInteger(choice) && choice >= 1 && choice <= modules.length) {
+    // Require a pure run of digits: `Number.parseInt` would accept a trailing
+    // tail (e.g. '1abc' -> 1), silently binding a module the player did not
+    // clearly choose, so reject anything non-numeric and re-prompt instead.
+    if (!/^\d+$/.test(trimmed)) {
+      deps.io.write(
+        `'${answer}' is not one of 0–${modules.length}. Please try again.`,
+      );
+      continue;
+    }
+    const choice = Number(trimmed);
+    if (choice === 0) {
+      return undefined;
+    }
+    if (choice >= 1 && choice <= modules.length) {
       return modules[choice - 1];
     }
     deps.io.write(
