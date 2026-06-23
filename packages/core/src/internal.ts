@@ -332,6 +332,7 @@ export {
   appendSceneLog,
   closeScene,
   countSceneLog,
+  getLastDmOutput,
   getOpenScene,
   getScene,
   listSceneLog,

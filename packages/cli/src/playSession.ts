@@ -23,6 +23,27 @@ function renderSceneTail(
   io.write('—');
 }
 
+/**
+ * Replay the DM's last recorded line as a resume recap so a player returning to
+ * an existing campaign sees where the story left off before their first input
+ * (eshyra-w8f2). Fires once per launch, only when the campaign has prior DM
+ * output. When it has none — a brand-new campaign — there is nothing to replay;
+ * the new-session adventure-module selector that belongs in that branch is
+ * deferred to a follow-up bead (eshyra-47ob), so this returns silently and the
+ * flow falls through to the existing campaign creation.
+ */
+function renderResumeRecap(
+  io: PlayDeps['io'],
+  state: Extract<SessionLaunchState, { kind: 'start_new' }>,
+): void {
+  if (state.lastDmOutput === undefined) {
+    return;
+  }
+  io.write('— Resuming campaign. The DM last said: —');
+  io.write(state.lastDmOutput.content);
+  io.write('—');
+}
+
 function startNewSession(deps: PlayDeps, db: Db, campaignId: string): string {
   const sessionId = deps.nextId('session');
   startSession(db, { campaignId, sessionId, startedAt: deps.now() });
@@ -60,6 +81,11 @@ export async function launch(
 ): Promise<string> {
   const state = getSessionLaunchState(db, { campaignId: campaign.campaignId });
   if (state.kind === 'start_new') {
+    // Returning to a campaign whose last session closed cleanly: replay the
+    // DM's last words before the new session starts so the player has context
+    // for their first input. A brand-new campaign has no prior output and this
+    // is a no-op.
+    renderResumeRecap(deps.io, state);
     return startNewSession(deps, db, campaign.campaignId);
   }
 
