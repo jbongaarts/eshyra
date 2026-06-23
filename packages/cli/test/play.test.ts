@@ -32,6 +32,8 @@ import {
   getClosedSessionsInOpenArc,
   getOpenArc,
   getOpenScene,
+  listAdventureRuns,
+  listBundledAdventureModules,
   listClosedArcSummaries,
   mutateState,
   openScene,
@@ -127,6 +129,11 @@ function scriptedIO(answers: ReadonlyArray<string>): {
   };
 }
 
+// The real bundled adventure modules (The Hollow Beneath Emberfall), used to
+// drive the session-start selector without hand-authoring a module fixture.
+const HOLLOW_MODULES = listBundledAdventureModules();
+const HOLLOW_MODULE_ID = 'eshyra:hollow-beneath-emberfall';
+
 const VALID_CHARACTER_ANSWERS = [
   'Mira',
   'Human',
@@ -196,6 +203,7 @@ function baseDeps(
   io: CliIO,
   runTurn: PlayDeps['runTurn'] = fakeRunTurn,
   makeCheckpointRunner: PlayDeps['makeCheckpointRunner'] = () => undefined,
+  listAdventureModules: PlayDeps['listAdventureModules'] = () => [],
 ): PlayDeps {
   let ids = 0;
   let clock = 0;
@@ -209,6 +217,7 @@ function baseDeps(
     registry: createDefaultToolRegistry(),
     runTurn,
     pack: EMBERFALL_HOLLOW,
+    listAdventureModules,
     now: () => new Date(Date.UTC(2026, 4, 20, 0, 0, clock++)).toISOString(),
     nextId: (prefix) => `${prefix}-${++ids}`,
     seed: () => 1,
@@ -1146,6 +1155,188 @@ describe('runPlay', () => {
 
     expect(lines.join('\n')).not.toContain(
       'Resuming campaign. The DM last said',
+    );
+    dispose();
+  });
+
+  it('offers the adventure-module selector on a fresh campaign and binds the choice (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO(['/defer', '1', '/quit']);
+
+    await runPlay(
+      baseDeps(
+        db,
+        io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+
+    const out = lines.join('\n');
+    expect(out).toContain('Choose an adventure to begin this campaign:');
+    expect(out).toContain('The Hollow Beneath Emberfall');
+    expect(out).toContain('Beginning adventure: The Hollow Beneath Emberfall.');
+
+    const runs = listAdventureRuns(db, { campaignId: campaignId(db) });
+    expect(runs.map((r) => r.moduleId)).toEqual([HOLLOW_MODULE_ID]);
+    expect(runs[0]?.status).toBe('active');
+    dispose();
+  });
+
+  it('re-prompts on an out-of-range answer, then binds the valid choice (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    // '9' is out of the [0–1] range for a one-module list; the selector
+    // re-prompts and '1' selects.
+    const { io, lines } = scriptedIO(['/defer', '9', '1', '/quit']);
+
+    await runPlay(
+      baseDeps(
+        db,
+        io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+
+    const out = lines.join('\n');
+    expect(out).toContain("'9' is not one of 0–1");
+    expect(
+      listAdventureRuns(db, { campaignId: campaignId(db) }).map(
+        (r) => r.moduleId,
+      ),
+    ).toEqual([HOLLOW_MODULE_ID]);
+    dispose();
+  });
+
+  it('rejects a numeric-prefixed answer like "1abc" as malformed rather than parsing it as 1 (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    // '1abc' must NOT be accepted as choice 1 (a bare Number.parseInt would);
+    // 'abc' is plainly non-numeric. Both re-prompt; '1' then selects.
+    const { io, lines } = scriptedIO(['/defer', '1abc', 'abc', '1', '/quit']);
+
+    await runPlay(
+      baseDeps(
+        db,
+        io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+
+    const out = lines.join('\n');
+    expect(out).toContain("'1abc' is not one of 0–1");
+    expect(out).toContain("'abc' is not one of 0–1");
+    // Only the explicit '1' bound a run — '1abc' did not silently bind one.
+    expect(
+      listAdventureRuns(db, { campaignId: campaignId(db) }).map(
+        (r) => r.moduleId,
+      ),
+    ).toEqual([HOLLOW_MODULE_ID]);
+    dispose();
+  });
+
+  it('keeps the default and binds nothing when the player declines with 0 (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO(['/defer', '0', '/quit']);
+
+    await runPlay(
+      baseDeps(
+        db,
+        io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+
+    const out = lines.join('\n');
+    expect(out).toContain('Choose an adventure to begin this campaign:');
+    expect(out).not.toContain('Beginning adventure:');
+    expect(listAdventureRuns(db, { campaignId: campaignId(db) })).toEqual([]);
+    dispose();
+  });
+
+  it('does not offer the selector when no adventure modules are installed (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    // baseDeps defaults listAdventureModules to an empty list.
+    const { io, lines } = scriptedIO(['/defer', '/quit']);
+
+    await runPlay(baseDeps(db, io), { dbPath: 'demo.db' });
+
+    expect(lines.join('\n')).not.toContain('Choose an adventure');
+    expect(listAdventureRuns(db, { campaignId: campaignId(db) })).toEqual([]);
+    dispose();
+  });
+
+  it('does not offer the selector when resuming a campaign with prior DM output (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    // First session plays a turn (records DM output) and closes cleanly.
+    await runPlay(
+      baseDeps(db, scriptedIO(['/defer', 'look around', '/quit']).io),
+      { dbPath: 'demo.db' },
+    );
+
+    // Second session: modules are now available, but prior DM output exists, so
+    // the new-session selector must not fire.
+    const { io, lines } = scriptedIO(['/defer', '/quit']);
+    await runPlay(
+      baseDeps(
+        db,
+        io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+
+    expect(lines.join('\n')).not.toContain('Choose an adventure');
+    expect(listAdventureRuns(db, { campaignId: campaignId(db) })).toEqual([]);
+    dispose();
+  });
+
+  it('does not re-offer the selector when a run is already bound but no turns were played (eshyra-47ob)', async () => {
+    const { db, dispose } = makeDb();
+    // First launch: select a module, then quit before any turn — a run is bound
+    // but there is no DM output yet.
+    await runPlay(
+      baseDeps(
+        db,
+        scriptedIO(['/defer', '1', '/quit']).io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+    expect(listAdventureRuns(db, { campaignId: campaignId(db) })).toHaveLength(
+      1,
+    );
+
+    // Second launch: lastDmOutput is still undefined, but the existing run must
+    // suppress a second prompt and a duplicate binding.
+    const { io, lines } = scriptedIO(['/defer', '/quit']);
+    await runPlay(
+      baseDeps(
+        db,
+        io,
+        fakeRunTurn,
+        () => undefined,
+        () => HOLLOW_MODULES,
+      ),
+      { dbPath: 'demo.db' },
+    );
+
+    expect(lines.join('\n')).not.toContain('Choose an adventure');
+    expect(listAdventureRuns(db, { campaignId: campaignId(db) })).toHaveLength(
+      1,
     );
     dispose();
   });

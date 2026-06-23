@@ -28,6 +28,9 @@ import {
 } from '@eshyra/core';
 import {
   DEFAULT_MEMORY_CONFIG,
+  type InstalledAdventureModule,
+  listAdventureModulesInDir,
+  listBundledAdventureModules,
   ModelUsageTracker,
   type SessionDebugSink,
 } from '@eshyra/core/internal';
@@ -45,7 +48,12 @@ import {
   installConfigDefaults,
   loadConfigFile,
 } from './configFile.js';
-import { campaignsDir, ensureDataRoot, resolveDataRoot } from './dataRoot.js';
+import {
+  adventureModulesDir,
+  campaignsDir,
+  ensureDataRoot,
+  resolveDataRoot,
+} from './dataRoot.js';
 import {
   type CloseableModelUsageSink,
   createUsageSink,
@@ -249,10 +257,34 @@ export function makeGameplayClient(
  * are wrapped with a {@link ModelUsageTracker} that records per-call token and
  * timing data to the shared diagnostics store (eshyra-cuxm).
  */
+/**
+ * The adventure modules offered by the session-start selector: the core-bundled
+ * modules plus any the user has installed under `<root>/adventure-modules/`. The
+ * two lists are merged with installed taking precedence over a bundled module of
+ * the same id (a user override wins), then sorted by id for a stable menu order.
+ */
+function availableAdventureModules(
+  dataRoot: string,
+): InstalledAdventureModule[] {
+  const byId = new Map<string, InstalledAdventureModule>();
+  for (const entry of listBundledAdventureModules()) {
+    byId.set(entry.module.id, entry);
+  }
+  for (const entry of listAdventureModulesInDir(
+    adventureModulesDir(dataRoot),
+  )) {
+    byId.set(entry.module.id, entry);
+  }
+  return [...byId.values()].sort((a, b) =>
+    a.module.id.localeCompare(b.module.id),
+  );
+}
+
 function buildPlayDeps(
   cfg: EshyraConfig,
   io: PlayDeps['io'],
   usageStore: CloseableModelUsageSink,
+  dataRoot: string,
   debug?: PlayDebug,
 ): PlayDeps {
   const adapterFamily = cfg.auth.adapterFamily;
@@ -307,6 +339,7 @@ function buildPlayDeps(
     diagnostics: usageStore,
     runTurn,
     pack: EMBERFALL_HOLLOW,
+    listAdventureModules: () => availableAdventureModules(dataRoot),
     now: nowIso,
     nextId: makeId,
     seed: () => (Math.random() * 0x7fffffff) | 0,
@@ -417,6 +450,7 @@ export async function runPlaySubcommand(campaignArg?: string): Promise<number> {
         config.cfg,
         io,
         usageStore,
+        cli.dataRoot,
         buildDebug(config.cfg, cli.dataRoot, io),
       ),
       { dbPath },
@@ -464,6 +498,7 @@ export async function runDemoSubcommand(): Promise<number> {
         config.cfg,
         io,
         usageStore,
+        cli.dataRoot,
         buildDebug(config.cfg, cli.dataRoot, io),
       ),
       {
