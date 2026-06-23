@@ -6,6 +6,10 @@ import {
   startSession,
 } from '@eshyra/core';
 import { gracefulClose } from './playClose.js';
+import {
+  bindAdventureModule,
+  chooseAdventureModule,
+} from './playModuleSelector.js';
 import type { PlayDeps } from './playTypes.js';
 
 /** Replay the volatile tail of the open scene so a resumed player has context. */
@@ -27,10 +31,9 @@ function renderSceneTail(
  * Replay the DM's last recorded line as a resume recap so a player returning to
  * an existing campaign sees where the story left off before their first input
  * (eshyra-w8f2). Fires once per launch, only when the campaign has prior DM
- * output. When it has none — a brand-new campaign — there is nothing to replay;
- * the new-session adventure-module selector that belongs in that branch is
- * deferred to a follow-up bead (eshyra-47ob), so this returns silently and the
- * flow falls through to the existing campaign creation.
+ * output. When it has none — a brand-new campaign — there is nothing to replay,
+ * so this returns silently and {@link launch} instead offers the adventure-module
+ * selector before starting the new session (eshyra-47ob).
  */
 function renderResumeRecap(
   io: PlayDeps['io'],
@@ -86,7 +89,25 @@ export async function launch(
     // for their first input. A brand-new campaign has no prior output and this
     // is a no-op.
     renderResumeRecap(deps.io, state);
-    return startNewSession(deps, db, campaign.campaignId);
+    // A fresh campaign (no prior DM output) offers the adventure-module
+    // selector before the session starts (eshyra-47ob). Selection only prompts;
+    // binding happens after startNewSession because an adventure run records
+    // the session it began in. An existing campaign skips selection entirely.
+    const chosenModule =
+      state.lastDmOutput === undefined
+        ? await chooseAdventureModule(deps, db, campaign.campaignId)
+        : undefined;
+    const sessionId = startNewSession(deps, db, campaign.campaignId);
+    if (chosenModule !== undefined) {
+      bindAdventureModule(
+        deps,
+        db,
+        campaign.campaignId,
+        sessionId,
+        chosenModule,
+      );
+    }
+    return sessionId;
   }
 
   deps.io.write(

@@ -18,6 +18,11 @@
  * core's own tests, `'../src/internal.js'`) covers both buckets.
  */
 
+export type { InstalledAdventureModule } from './adventure/listModules.js';
+export {
+  listAdventureModulesInDir,
+  listBundledAdventureModules,
+} from './adventure/listModules.js';
 export {
   ADVENTURE_MODULE_FILE,
   adventureModuleDirName,

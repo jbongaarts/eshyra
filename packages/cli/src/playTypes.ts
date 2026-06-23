@@ -10,6 +10,7 @@ import type {
   TurnAuditor,
 } from '@eshyra/core';
 import type {
+  InstalledAdventureModule,
   MemoryConfig,
   SessionDebugSink,
   TurnDiagnosticsSink,
@@ -64,6 +65,16 @@ export interface PlayDeps {
   runTurn: (deps: RunTurnDeps, input: RunTurnInput) => Promise<RunTurnResult>;
   /** Module template forked into a brand-new campaign. */
   pack: ModulePack;
+  /**
+   * Enumerate the adventure modules offered by the session-start selector when
+   * a brand-new campaign begins (eshyra-47ob). Defaults (in the CLI wiring) to
+   * the core-bundled modules plus any installed under
+   * `<root>/adventure-modules/`. Injected rather than read from the filesystem
+   * inline so the selector is testable without a populated data root; an empty
+   * list makes session start fall back to the default campaign content with no
+   * prompt.
+   */
+  listAdventureModules: () => InstalledAdventureModule[];
   /** ISO-8601 timestamp source. */
   now: () => string;
   /** Unique id source for new campaigns / sessions / turns. */
