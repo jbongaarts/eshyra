@@ -110,7 +110,10 @@ export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
     };
   }
 
-  if (target.type === 'search') {
+  if (
+    target.type === 'search' ||
+    (target.query !== undefined && target.query.trim().length > 0)
+  ) {
     const results = worldSearch(db, target);
     return {
       ok: true,
@@ -119,7 +122,7 @@ export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
       results,
       evidence: results.map((result) => ({
         tier: result.tier,
-        source: result.tier,
+        source: result.source,
         id: result.id,
         truthStatus: result.truthStatus,
         visibility: result.visibility,
@@ -227,11 +230,13 @@ export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
 }
 
 function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
-  const query = (target.query ?? target.subject ?? '').toLowerCase();
+  const terms = normalizeSearchTerms(target.query ?? target.subject ?? '');
   const limit = Math.max(1, Math.min(target.limit ?? 20, 50));
   const moduleResults: WorldSearchResult[] = [];
+  const constrainedType = target.type === 'search' ? undefined : target.type;
   for (const [type, table] of Object.entries(TABLE_BY_TYPE)) {
     if (type === 'meta') continue;
+    if (constrainedType !== undefined && type !== constrainedType) continue;
     const rows = db
       .prepare(`SELECT id, data_json FROM ${table} ORDER BY id`)
       .all() as { id: string; data_json: string }[];
@@ -239,19 +244,27 @@ function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
       const data = templateDataColumn.decode(row.data_json);
       const label = labelFor(data, row.id);
       const summary = summaryFor(data, label);
-      const haystack = `${row.id} ${label} ${summary}`.toLowerCase();
-      if (query.length === 0 || haystack.includes(query)) {
+      if (
+        moduleSearchMatchesExplicitTarget(row.id, type, target) ||
+        terms.length === 0 ||
+        moduleSearchMatches(row.id, type, data, terms)
+      ) {
+        const { visibility } = classifyVisibility(
+          type as ModuleWorldTargetType,
+          data,
+        );
         moduleResults.push({
           tier: 'module_canon',
+          source: table,
           type: type as WorldTargetType,
           id: row.id,
           label,
           summary,
+          visibility: visibilityToEvidenceVisibility(visibility),
         });
       }
     }
   }
-  const terms = normalizeSearchTerms(target.query ?? target.subject ?? '');
   const overlayResults = queryCampaignOverlayLore(db, {
     subject: target.subject,
     locationId: target.locationId,
@@ -267,9 +280,13 @@ function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
     .map((record): WorldSearchResult => {
       return {
         tier:
-          record.kind === 'rumor' || record.truthStatus === 'believed'
+          record.kind === 'rumor' ||
+          record.truthStatus === 'rumored' ||
+          record.truthStatus === 'reported' ||
+          record.truthStatus === 'believed'
             ? 'rumor_belief'
             : 'campaign_overlay_lore',
+        source: record.source,
         type: 'overlay_lore',
         id: record.id,
         label: record.subjectText,
@@ -278,7 +295,7 @@ function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
         visibility: record.visibility,
       };
     });
-  return [...moduleResults, ...overlayResults].slice(0, limit);
+  return interleaveSearchResults(moduleResults, overlayResults, limit);
 }
 
 function overlayLoreEvidence(
@@ -318,6 +335,117 @@ function normalizeSearchTerms(text: string): string[] {
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter((term) => term.length >= 2);
+}
+
+function moduleSearchMatches(
+  id: string,
+  type: string,
+  data: Record<string, unknown>,
+  terms: readonly string[],
+): boolean {
+  const haystack = moduleSearchText(id, type, data);
+  return terms.every((term) => haystack.includes(term));
+}
+
+function moduleSearchMatchesExplicitTarget(
+  id: string,
+  type: string,
+  target: WorldQueryTarget,
+): boolean {
+  if (
+    target.type !== 'search' &&
+    target.type === type &&
+    target.id !== undefined
+  ) {
+    return id === target.id;
+  }
+  if (type === 'location' && target.locationId !== undefined) {
+    return id === target.locationId;
+  }
+  if (type === 'npc' && target.npcId !== undefined) {
+    return id === target.npcId;
+  }
+  return false;
+}
+
+function moduleSearchText(
+  id: string,
+  type: string,
+  data: Record<string, unknown>,
+): string {
+  const text = [
+    id,
+    type,
+    ...flattenSearchValues(data),
+    ...moduleSearchAliases(type, data),
+  ]
+    .join(' ')
+    .toLowerCase();
+  return text;
+}
+
+function flattenSearchValues(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return [String(value)];
+  }
+  if (Array.isArray(value)) return value.flatMap(flattenSearchValues);
+  if (value !== null && typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>).flatMap(
+      ([key, child]) => [key, ...flattenSearchValues(child)],
+    );
+  }
+  return [];
+}
+
+function moduleSearchAliases(
+  type: string,
+  data: Record<string, unknown>,
+): string[] {
+  const aliases: string[] = [];
+  if (type === 'npc') {
+    const role = typeof data.role === 'string' ? data.role.toLowerCase() : '';
+    if (/\b(warden|mayor|elder|captain|chief|leader|magistrate)\b/.test(role)) {
+      aliases.push('authority figure local official');
+    }
+  }
+  if (type === 'location') {
+    const exits = Array.isArray(data.exits) ? data.exits : [];
+    for (const exit of exits) {
+      if (exit !== null && typeof exit === 'object') {
+        const direction = (exit as Record<string, unknown>).direction;
+        if (typeof direction === 'string') {
+          aliases.push(`${direction} road ${direction} route`);
+        }
+      }
+    }
+  }
+  return aliases;
+}
+
+function visibilityToEvidenceVisibility(
+  visibility: ReturnType<typeof classifyVisibility>['visibility'],
+): 'player_visible' | 'dm_only' | 'mixed' {
+  if (visibility === 'public') return 'player_visible';
+  if (visibility === 'dm') return 'dm_only';
+  return 'mixed';
+}
+
+function interleaveSearchResults(
+  moduleResults: readonly WorldSearchResult[],
+  overlayResults: readonly WorldSearchResult[],
+  limit: number,
+): WorldSearchResult[] {
+  const results: WorldSearchResult[] = [];
+  const maxLength = Math.max(moduleResults.length, overlayResults.length);
+  for (let index = 0; index < maxLength && results.length < limit; index += 1) {
+    const moduleResult = moduleResults[index];
+    if (moduleResult !== undefined) results.push(moduleResult);
+    if (results.length >= limit) break;
+    const overlayResult = overlayResults[index];
+    if (overlayResult !== undefined) results.push(overlayResult);
+  }
+  return results;
 }
 
 function overlaySearchMatches(
