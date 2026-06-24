@@ -1,327 +1,274 @@
 # Eshyra
 
-**A text-first, persistent AI Dungeon Master for long-running fantasy campaigns.**
+**A text-first, persistent AI Dungeon Master for long-running fantasy
+campaigns.**
 
-Eshyra is not a generic fantasy chatbot and not a virtual tabletop. It is a
-campaign engine that preserves canon across many play sessions: it remembers
-prior events, tracks structured game state, adjudicates rules through
-deterministic tools, and sustains a tabletop-like solo or small-group
-experience entirely through text.
+Eshyra is a local campaign engine for open-ended fantasy roleplaying through
+text. It preserves campaign canon across sessions, stores structured game
+state in SQLite, adjudicates dice and state changes through deterministic
+tools, and uses a frontier model as the Dungeon Master instead of treating the
+model as an unbounded fantasy chatbot.
 
-It is built for two overlapping kinds of player:
+It is not a virtual tabletop and not a general-purpose story bot. The current
+product is a local CLI for solo or small-group campaign play; the core is kept
+UI-agnostic so a hosted web/PWA surface can be built later without rewriting
+the engine.
 
-- **Tabletop-seeking solo adventurers** who want D&D/TTRPG-style play when
-  friends are unavailable or nobody wants to DM.
-- **Living text-world nostalgists** who loved text adventures, MUDs, and BBS
-  door games but wanted worlds that could understand actions the designer
-  never pre-authored.
+## Current Status
 
-The promise: open-ended text adventure plus tabletop rules and consequences
-plus persistent campaign memory. It should feel like a real DM inhabiting a
-living world, not a video game missing its graphics.
+Eshyra is pre-1.0 local CLI software. The repository currently includes:
 
-> **Project status:** local CLI MVP. The repository now contains the
-> provider-neutral core, SQLite persistence, module/world loading,
-> multi-system rules packs (bundled D&D 5e SRD and Pathfinder 2e Remaster
-> fixtures) with provider-neutral `lookup_rules`, deterministic tools, model
-> orchestration, session launch/resume,
-> graceful session close, and optional Dolt checkpoints. The CLI can create or
-> resume a local campaign and run interactive model-backed turns, and manages
-> campaigns through a per-user data root and registry (`ESHYRA_DB_PATH`
-> still works as an explicit-path override). The CLI is distributed as
-> self-contained, per-platform GitHub Release archives that bundle their own
-> Node.js runtime — see [docs/install.md](docs/install.md).
+- `@eshyra/core`: provider-neutral campaign orchestration, model adapters,
+  deterministic tools, SQLite persistence, optional Dolt checkpoints, rules
+  lookup, character creation, memory/recap handling, and adventure/module
+  context assembly.
+- `@eshyra/cli`: the local command-line front end for creating, resuming,
+  inspecting, checkpointing, and playing campaigns.
+- A bundled starter adventure, **The Hollow Beneath Emberfall**.
+- A generated, audited D&D 5e SRD 5.1 rules pack under
+  `packages/core/data/rules-packs/`.
+- A small Pathfinder 2e Remaster fixture used for early rules-system coverage.
+- Four gameplay providers: Claude subscription, Codex subscription, Anthropic
+  API, and OpenAI API.
 
-## Why It's Built This Way
+Eshyra is distributed through GitHub Releases as self-contained CLI archives
+that bundle their own Node.js runtime. The npm packages are private and are not
+the current end-user distribution channel.
 
-- **Text-first.** The MVP is pure text: narration, player input, dice/results,
-  state tracking, campaign memory, summaries, checkpoints, and
-  theater-of-the-mind combat. Structured UI panels, tactical abstractions, and
-  VTT export come later; native VTT and native mobile are explicit non-goals
-  for early scope.
-- **CLI now, web later.** The current surface is CLI/local-friendly because it
-  is the fastest route to the core game loop, local campaign state, and
-  bring-your-own-key use. The likely public product is a hosted,
-  mobile-friendly web app / PWA. The CLI remains supported as the local and
-  power-user surface.
-- **Provider-neutral core.** Model access is isolated behind provider adapters
-  and capability-based model profiles such as `premium_dm`, `state_extractor`,
-  and `summarizer`. The Claude Agent SDK is the initial adapter, not a hardcoded
-  core assumption.
-- **Premium quality floor.** The primary DM targets frontier-model quality
-  (Opus 4.6+ / GPT-5.5-class or a future equivalent). Cheaper models are only
-  for bounded auxiliary tasks that cannot corrupt canon. Eshyra targets a
-  capability floor, not a price floor.
-- **Separated knowledge.** Rules/mechanics, campaign/module content, live
-  campaign state, user-private content, and generated memory are kept separate.
-  Bundled/public content must be open-licensed, public domain, original, or
-  publisher-licensed; fair use is not the permission model.
+## Install
 
-See [docs/architecture-report.md](docs/architecture-report.md) for the full
-strategy,
-[docs/adr/0001-product-model-deployment-content-strategy.md](docs/adr/0001-product-model-deployment-content-strategy.md)
-for the product/model/content decision record, and
-[docs/adr/0002-hosted-web-pwa-byok-deployment-path.md](docs/adr/0002-hosted-web-pwa-byok-deployment-path.md)
-for the CLI-to-hosted deployment path, and
-[docs/adr/0004-config-file-and-campaign-registry.md](docs/adr/0004-config-file-and-campaign-registry.md)
-for the managed local storage decision. The local CLI release plan is in
-[docs/cli-distribution.md](docs/cli-distribution.md).
+Use the one-line installer from the latest GitHub Release. It downloads the
+right archive for your platform, verifies checksums, installs the CLI, and
+places `eshyra` on your `PATH`.
 
-## Repository Layout
-
-Monorepo using npm workspaces:
-
-| Package            | Path             | Role                                                    |
-| ------------------ | ---------------- | ------------------------------------------------------- |
-| `@eshyra/core` | `packages/core`  | UI-agnostic engine: config, models, tools, persistence  |
-| `@eshyra/cli`  | `packages/cli`   | Thin CLI front end for local play and development       |
-
-## Getting Started
-
-### Prerequisites
-
-- **Node.js 24 LTS is the supported runtime.** The package engines intentionally
-  use `>=24 <25`, and the native `better-sqlite3` dependency is on 12.x for
-  Node 24 prebuilt binary support. See
-  [ADR 0008](docs/adr/0008-node-runtime-and-native-sqlite-support.md).
-- **Provider credential.** Eshyra supports two ways to authenticate with
-  Anthropic models — see [Supported Provider Modes](#supported-provider-modes)
-  below.
-- **Dolt optional.** Dolt is used only for local campaign checkpoints on
-  graceful session close. Play still works without Dolt; the CLI reports that
-  the session was closed without a checkpoint.
-
-### Install The CLI
-
-The CLI is distributed through **GitHub Releases** as a self-contained,
-per-platform archive that **bundles its own Node.js runtime** -- there is
-nothing to `npm install` and no system Node.js to set up.
-
-**Linux, macOS, and WSL:**
+Linux, macOS, and WSL:
 
 ```bash
 curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh
 ```
 
-**Windows (PowerShell):**
+Windows PowerShell:
 
 ```powershell
 irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
 ```
 
-The installer detects your platform, downloads the matching archive, verifies
-its SHA-256 checksum, installs to your local app directory, and puts `eshyra`
-on your PATH. Running the CLI with no provider key set prints setup guidance.
-
-See **[docs/install.md](docs/install.md)** for the full guide: supported
-platforms (Linux x64/arm64 incl. WSL, macOS Apple Silicon, Windows x64),
-version-pinned installs, updating, and uninstalling.
-
-### Build From Source
+The default edition is `claude`, for Claude Pro/Max subscription-backed play.
+To install a different edition:
 
 ```bash
-npm install        # local install
-npm run build      # tsc --build (incremental)
-npm run typecheck  # tsc --build --force (full deterministic build)
-npm run test       # vitest run
+curl -fsSL https://github.com/jbongaarts/eshyra/releases/latest/download/install.sh | sh -s -- --edition codex
 ```
 
-Use `npm ci` for clean CI-style installs and `npm run clean` before any proof
-that needs fresh build output. Incremental TypeScript builds can otherwise
-report "up to date" after `dist/` was deleted if `.tsbuildinfo` remains.
+```powershell
+$env:ESHYRA_EDITION = 'codex'
+irm https://github.com/jbongaarts/eshyra/releases/latest/download/install.ps1 | iex
+```
 
-## Supported Provider Modes
+Available editions:
 
-Eshyra supports two ways to call the language model. They are separate provider
-modes, not interchangeable auth variants (see
-[ADR 0010](docs/adr/0010-api-native-vs-agent-harness-adapter-seam.md)).
+| Edition | Bundles | Use when |
+| --- | --- | --- |
+| `api` | API-native dependencies only | You play with API keys only |
+| `claude` | Claude Agent SDK / Claude Code binary | You play with a Claude Pro/Max subscription |
+| `codex` | Codex SDK / Codex binary | You play with a ChatGPT/Codex subscription |
+| `full` | Both agent-harness providers | You use both subscriptions on one machine |
 
-### Claude Agent SDK — subscription-backed (default for released gameplay)
+See [docs/install.md](docs/install.md) for supported platforms, pinned
+versions, updating, uninstalling, and manual archive installs. See
+[docs/cli-distribution.md](docs/cli-distribution.md) for the release artifact
+strategy.
 
-Uses the `@anthropic-ai/claude-agent-sdk` with an in-process MCP server.
-Authentication can be an Anthropic Console API key **or** a Claude Pro/Max
-subscription token (`CLAUDE_CODE_OAUTH_TOKEN`). The subscription path draws
-from the monthly Agent SDK credit rather than per-token API billing, making
-it the practical choice for sustained local development and play.
+## First Run
 
-The SDK drives its own tool loop internally; Eshyra bridges in via an
-in-process MCP server and an executor delegate. Fenced-text tool calls are
-**not** a supported gameplay protocol — this path uses native MCP tools.
+Set up exactly one gameplay provider, then create and play a campaign.
 
-### Anthropic Messages API — API-key native
+Claude subscription:
 
-Uses `@anthropic-ai/sdk` to call the Anthropic Messages API directly.
-Eshyra owns the full call lifecycle (prompt, tools, turn loop). This adapter
-returns native `tool_use` blocks for the Eshyra turn loop to execute and is
-the clean-architecture alternative for API-key-only deployments.
+```bash
+claude setup-token
+export CLAUDE_CODE_OAUTH_TOKEN="sk-ant-oat01-..."
+eshyra new "Emberfall Hollow"
+eshyra play
+```
 
-### OpenAI Chat Completions API — API-key native
+Anthropic API key:
 
-Uses direct HTTPS calls to OpenAI's Chat Completions API. Eshyra sends native
-function declarations, receives structured `tool_calls`, executes them in its
-deterministic turn loop, and returns `tool` results on the next round. Set
-`OPENAI_API_KEY` and select `ESHYRA_AUTH_MODE=openai-api` when another provider
-credential or subscription login is also present.
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+eshyra new "Emberfall Hollow"
+eshyra play
+```
 
-### Codex SDK — subscription-backed
+OpenAI API key:
 
-Uses `@openai/codex-sdk` with an in-process MCP server and an existing
-`codex login` ChatGPT subscription session. The SDK owns the agent loop and
-calls Eshyra's deterministic tools through MCP.
+```bash
+export OPENAI_API_KEY="sk-..."
+export ESHYRA_AUTH_MODE=openai-api
+eshyra new "Emberfall Hollow"
+eshyra play
+```
+
+Codex subscription:
+
+```bash
+codex login
+export ESHYRA_AUTH_MODE=codex-sub
+eshyra new "Emberfall Hollow"
+eshyra play
+```
+
+If more than one provider is available, Eshyra fails fast and asks you to set
+`ESHYRA_AUTH_MODE` instead of guessing which account or subscription to bill.
+Provider setup and billing boundaries are documented in
+[docs/agent-sdk-auth.md](docs/agent-sdk-auth.md).
+
+## CLI Overview
+
+Common commands:
+
+```bash
+eshyra                          # banner and resolved configuration
+eshyra new "Campaign Name"      # create a managed campaign database
+eshyra campaigns list           # list registered campaigns
+eshyra play [campaign-id]       # play or resume a campaign
+eshyra demo                     # start the bounded public demo campaign
+eshyra adventures [campaign-id] # inspect adventure/module state
+eshyra usage [--timeline]       # inspect local model/tool usage diagnostics
+eshyra dolt install             # install optional managed Dolt binary
+eshyra checkpoint list [id]     # list Dolt checkpoints for a campaign
+```
+
+During play, type `/quit` or `/exit` to close the session gracefully. When Dolt
+is available, graceful close writes a checkpoint beside the campaign database;
+without Dolt, play still works and closes without checkpoint history.
 
 ## Configuration
 
-The CLI reads provider credentials and model overrides from environment
-variables. Campaigns normally live under Eshyra's per-user data root and
-are selected through the managed registry. `.env.example` is a template, but
-the CLI does not currently load `.env` files by itself.
+The installed CLI stores non-secret local data under a per-user data root:
 
-Provider authentication: make exactly one gameplay provider available before
-running model-backed play. If multiple credentials or subscription sessions
-are present, Eshyra fails fast and asks you to choose — it will not guess which
-one to bill. Set `ESHYRA_AUTH_MODE` to `claude-sub`, `codex-sub`,
-`anthropic-api`, or `openai-api` to force a provider. See
-[docs/agent-sdk-auth.md](docs/agent-sdk-auth.md):
+- `ESHYRA_HOME`, when set.
+- Otherwise `%LOCALAPPDATA%\Eshyra` on Windows.
+- Otherwise `~/.eshyra` on macOS and Linux.
 
-- `ANTHROPIC_API_KEY` - an Anthropic Console API key (API-billed per token).
-- `CLAUDE_CODE_OAUTH_TOKEN` - a Claude Pro/Max subscription token, generated
-  by `claude setup-token`. Lets the CLI run on a subscription credit instead
-  of billing API tokens.
-- `OPENAI_API_KEY` - an OpenAI API key (API-billed per token).
+The data root contains the non-secret `config.json`, campaign registry,
+managed campaign databases, installed rules/adventure modules, diagnostics,
+and the managed Dolt cache. Provider credentials always come from the
+environment or provider login state; they are rejected from `config.json`.
 
-Optional:
+Useful environment variables:
 
-- `ESHYRA_HOME` - explicit data-root directory for config, the campaign
-  registry, managed campaign databases, rules packs, and the managed Dolt cache.
-- `ESHYRA_MODEL` - legacy flat override for the primary-DM model id. When
-  set it still takes precedence over the profile registry.
-- `ESHYRA_PROFILE_*_PROVIDER` / `ESHYRA_PROFILE_*_MODEL` - per-profile
-  provider/model overrides for the provider-neutral profile registry. The CLI
-  runtime resolves its primary-DM model from the `premium_dm` profile entry, so
-  `ESHYRA_PROFILE_PREMIUM_DM_MODEL` selects the DM model when
-  `ESHYRA_MODEL` is unset. The resolved `premium_dm` provider must be
-  `anthropic` — the only adapter the CLI ships today.
-- `ESHYRA_DOLT_BIN` - explicit path to a Dolt binary for checkpoints.
-- `ESHYRA_DOLT_HOME` - managed Dolt cache directory used by
-  `eshyra dolt install`; defaults to `<data-root>/dolt`.
-- `ESHYRA_DB_PATH` - advanced override for an explicit, unmanaged SQLite
-  campaign database. When set, `eshyra play` opens that file directly and
-  bypasses the managed campaign registry.
+| Variable | Purpose |
+| --- | --- |
+| `ESHYRA_AUTH_MODE` | Force `claude-sub`, `codex-sub`, `anthropic-api`, `openai-api`, or `auto` |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Pro/Max token from `claude setup-token` |
+| `ANTHROPIC_API_KEY` | Anthropic Console API key |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `CODEX_HOME` | Alternate Codex login directory for `codex-sub` detection |
+| `ESHYRA_MODEL` | Override the primary DM model for the selected provider |
+| `ESHYRA_AUDIT_MODEL` | Override the mechanics-auditor model for the same provider |
+| `ESHYRA_DB_PATH` | Open one explicit unmanaged SQLite campaign database |
+| `ESHYRA_DOLT_BIN` | Explicit Dolt binary path |
+| `ESHYRA_DOLT_HOME` | Managed Dolt cache directory |
+| `ESHYRA_DEBUG_SESSION` | Opt in to structural or full session debug logs |
 
-Installed CLI PowerShell example:
+See [docs/storage.md](docs/storage.md) for the storage model,
+`config.json`, schema migration expectations, and checkpoint layout. See
+[docs/session-debug-logging.md](docs/session-debug-logging.md) for debug log
+capture modes.
 
-```powershell
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
-eshyra new "Emberfall Hollow"
-eshyra campaigns list
-eshyra play
-```
+## Development
 
-## CLI Usage
+Prerequisites for repository work:
 
-After install, run the CLI with:
+- Node.js 24 LTS (`>=24 <25`).
+- npm.
+- A C++ toolchain only if `better-sqlite3` cannot use its Node 24 prebuild.
+- Dolt is optional; Dolt-gated tests skip when the binary is absent.
+
+Install and verify from a checkout:
 
 ```bash
-eshyra
+npm install
+npm run build
+npm run typecheck
+npm run test
+npm run check
 ```
 
-This prints the core version and resolved config.
+Use `npm ci` for clean CI-style installs. Use `npm run clean` before any proof
+that requires fresh TypeScript build output; deleting only `dist/` can leave
+stale `.tsbuildinfo` and create false positives.
 
-Start or resume a campaign:
+Run the built CLI from source:
 
 ```bash
-eshyra new "Emberfall Hollow"
-eshyra campaigns list
-eshyra play
+npm run build
+node packages/cli/dist/index.js
 ```
 
-`new` creates a managed SQLite campaign database under the data root, forks the
-bundled `EMBERFALL_HOLLOW` module into it, and records it in the registry.
-`campaigns list` shows registered campaigns. `play` opens the only registered
-campaign, prompts you to choose when several exist, or offers to create the
-first one when the registry is empty. You can also pass a campaign id:
-`eshyra play <id>`.
+The monorepo has two workspaces:
 
-During play, each player input goes through the core turn orchestrator. Type
-`/quit` or `/exit` to close and recap the session.
+| Package | Path | Role |
+| --- | --- | --- |
+| `@eshyra/core` | `packages/core` | UI-agnostic engine, persistence, rules, tools, model orchestration |
+| `@eshyra/cli` | `packages/cli` | Local CLI front end |
 
-For scripted, CI, synced-folder, or other explicit-path workflows, set
-`ESHYRA_DB_PATH`. In that mode `play` opens exactly that SQLite file as an
-unmanaged campaign and bypasses the registry.
+See [AGENTS.md](AGENTS.md) for repository workflow, quality gates, Beads issue
+tracking, and PR rules. Dependency updates follow
+[docs/dependencies.md](docs/dependencies.md).
 
-Install Dolt into the managed cache when you want local checkpoints and Dolt is
-not already on `PATH`:
+## Architecture
 
-```bash
-eshyra dolt install
-```
+Eshyra keeps these concerns separate:
 
-Managed Dolt install is consent-based. Non-interactive shells decline
-automatically so CI and automation cannot trigger an unattended binary
-download.
+- rules/mechanics and deterministic tool execution;
+- authored campaign templates and adventure modules;
+- live campaign state and player-specific changes;
+- campaign overlay lore promoted during play;
+- generated memory, recaps, traces, and diagnostics;
+- provider adapters and model capability profiles.
 
-When working directly from a repository checkout before package publication,
-run `npm run build` and invoke the built entrypoint with
-`node packages/cli/dist/index.js`.
+The full design rationale is in
+[docs/architecture-report.md](docs/architecture-report.md). Key decisions are
+captured in:
 
-## Storage Model
-
-Local CLI storage is managed through a per-user data root and campaign
-registry. See [docs/storage.md](docs/storage.md) and
-[ADR 0004](docs/adr/0004-config-file-and-campaign-registry.md) for the full
-user-facing storage boundary.
-
-- **Static bundled content** lives in the package source/build output,
-  including `EMBERFALL_HOLLOW` sample module data, SRD catalog data, and
-  bundled rules packs (`DND5E_SRD_RULES_PACK`, `PATHFINDER2E_REMASTER_RULES_PACK`).
-- **Managed user data** lives under the data root: `ESHYRA_HOME` when set,
-  otherwise `%LOCALAPPDATA%\Eshyra` on Windows and `~/.eshyra` on
-  macOS/Linux. The registry is `registry.json`; managed campaign databases live
-  under `campaigns/`.
-- **Live campaign state** lives in the SQLite file selected by the registry.
-  `eshyra new` creates managed databases under `<root>/campaigns/`, while
-  `eshyra campaigns add <path>` registers an existing external database.
-  SQLite sidecar files such as `-wal`, `-shm`, or `-journal` may appear beside
-  the database while it is open.
-- **Explicit unmanaged campaigns** use `ESHYRA_DB_PATH`. When set, the CLI
-  opens exactly that SQLite file and does not consult or update the registry.
-- **Dolt checkpoints** live beside the selected database in
-  `<dbPath>.checkpoints` when Dolt is available. Restore/fork commands
-  materialize checkpoints into a new SQLite database path chosen by the caller.
-- **Beads tracker data** is separate from campaign checkpoints. Checkpoint code
-  guards against reusing the beads Dolt ref/remote.
-- **Provider secrets** come from the local environment in the CLI release. They
-  must not be written to campaign SQLite databases, Dolt checkpoints,
-  `turn_trace`, exports, or logs. Hosted BYOK secret handling is governed by
-  ADR 0002.
-
-The managed Dolt binary cache defaults inside the data root, and bundled static
-content lives in the npm package build output.
+- [ADR 0001](docs/adr/0001-product-model-deployment-content-strategy.md):
+  product, model, deployment, and content strategy.
+- [ADR 0002](docs/adr/0002-hosted-web-pwa-byok-deployment-path.md):
+  hosted web/PWA and bring-your-own-key direction.
+- [ADR 0004](docs/adr/0004-config-file-and-campaign-registry.md):
+  local config file and campaign registry.
+- [ADR 0010](docs/adr/0010-api-native-vs-agent-harness-adapter-seam.md):
+  API-native versus agent-harness model adapters.
+- [ADR 0011](docs/adr/0011-multi-provider-installer-editions.md):
+  multi-provider release editions.
+- [ADR 0012](docs/adr/0012-rules-pack-campaign-template-adventure-module-campaign-instance.md):
+  rules packs, campaign templates, adventure modules, and campaign instances.
+- [ADR 0014](docs/adr/0014-campaign-overlay-canon.md):
+  durable campaign overlay lore.
 
 ## Contributing
 
-- **External code contributions are not accepted yet.** There is no contributor
-  agreement in place under which outside contributions could be received. See
-  [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/licensing.md](docs/licensing.md).
-- Issue tracking uses **bd (beads)**, not GitHub issues or markdown TODO lists.
-  Run `bd ready` to find available work and `bd prime` for the full workflow.
-- Operational guidance for both humans and AI agents lives in
-  [AGENTS.md](AGENTS.md). `CLAUDE.md` simply imports it.
-- Dependency updates use the conservative policy in
-  [docs/dependencies.md](docs/dependencies.md), including special handling for
-  Node runtime and `better-sqlite3` compatibility.
-- Bundled or publicly shared campaign/rules content must be open-licensed,
-  public domain, original, or publisher-licensed.
+External code contributions are not accepted yet because there is no
+contributor agreement or inbound license arrangement. Non-code feedback is
+welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Internal work uses [bd/beads](https://github.com/gastownhall/beads) for task
+tracking, not GitHub issues or markdown TODO lists. Run `bd prime` inside the
+repository for the current workflow.
+
+Bundled or publicly shared campaign/rules content must be open-licensed,
+public domain, original, or publisher-licensed. Fair use is not the content
+permission model.
 
 ## License
 
-Eshyra is source-available and free for non-commercial use under the
-**PolyForm Noncommercial License 1.0.0**. Commercial use requires separate
-written permission or a separate commercial license. See [LICENSE](LICENSE) and
-[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for details.
+Eshyra source code is source-available and free for non-commercial use under
+the **PolyForm Noncommercial License 1.0.0**. Commercial use requires separate
+written permission or a commercial license. See [LICENSE](LICENSE) and
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
 
-Bundled rules/campaign content (e.g. the D&D 5e SRD, Pathfinder 2e Remaster
-fixtures) is governed by its own upstream licenses and attribution requirements,
-separate from the Eshyra source-code license. Third-party adventure or module
-text must be confirmed open, public domain, original, or publisher-licensed
-before bundling. See [docs/licensing.md](docs/licensing.md).
+Bundled rules and campaign content carry their own upstream licenses and
+attribution requirements, separate from the Eshyra source-code license. See
+[docs/licensing.md](docs/licensing.md).
