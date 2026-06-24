@@ -94,6 +94,14 @@ export {
   validateCharacterDraft,
 } from './character/creation.js';
 export type {
+  Dnd5eCreationMode,
+  Dnd5eDerivedValues,
+} from './character/dnd5eRecipe.js';
+export {
+  DND5E_SRD_CHARACTER_RECIPE,
+  resolveCharacterCreationRecipe,
+} from './character/dnd5eRecipe.js';
+export type {
   CreatedPathfinderCharacter,
   PathfinderCharacterCreationResult,
   PathfinderCharacterDraft,
@@ -102,6 +110,17 @@ export {
   PathfinderCharacterCreationError,
   validatePathfinderCharacterDraft,
 } from './character/pathfinder2e.js';
+// Character-creation recipe boundary (eshyra-b69j.4): the system-agnostic
+// contract plus the D&D 5e SRD recipe that owns modes, step order, validation,
+// derived values, and finalization. The shared creation shell depends only on
+// the contract; Pathfinder stays future-compatible without a recipe here.
+export type {
+  CharacterCreationMode,
+  CharacterCreationRecipe,
+  CharacterCreationStep,
+  RecipeDraftValidation,
+  RecipeFinalization,
+} from './character/recipe.js';
 // Generated-rules-pack character resolver (eshyra-b69j.3 / eshyra-x50w):
 // resolves class/spell/ancestry choices for character creation against the
 // runtime SRD pack, replacing the retired hand-authored SRD_CATALOG.
