@@ -1,7 +1,7 @@
 import type {
+  ModuleWorldTargetType,
   WorldEntityVisibility,
   WorldQueryResult,
-  WorldTargetType,
 } from './types.js';
 
 const NPC_DM_ONLY_FIELDS: readonly string[] = ['secret'];
@@ -12,7 +12,7 @@ const NPC_DM_ONLY_FIELDS: readonly string[] = ['secret'];
  * DM-only `secret` field; `lore` with `scope === 'dm'` is entirely DM-only.
  */
 export function classifyVisibility(
-  type: WorldTargetType,
+  type: ModuleWorldTargetType,
   resolved: Record<string, unknown>,
 ): { visibility: WorldEntityVisibility; dmOnlyFields: readonly string[] } {
   if (type === 'lore' && resolved.scope === 'dm') {
@@ -31,7 +31,7 @@ export function classifyVisibility(
  * DM-internal and are not included.
  */
 export function toPlayerSafeView(
-  result: WorldQueryResult & { ok: true },
+  result: Extract<WorldQueryResult, { ok: true; resolved: unknown }>,
 ): Record<string, unknown> | undefined {
   if (result.visibility === 'dm') return undefined;
   if (result.dmOnlyFields.length === 0) return result.resolved;

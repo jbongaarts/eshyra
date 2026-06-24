@@ -128,6 +128,7 @@ describe('ToolRegistry', () => {
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',
+        'record_world_fact',
         'remove_condition',
         'remove_item',
         'roll',
@@ -541,6 +542,112 @@ describe('world_query tool', () => {
   });
 });
 
+describe('record_world_fact tool', () => {
+  it('records a player-visible rumor with truth status evidence', () => {
+    const c = ctx();
+    const result = createDefaultToolRegistry().invoke(
+      'record_world_fact',
+      {
+        id: 'old-renn-rumor',
+        kind: 'rumor',
+        subjectText: 'Old Renn',
+        fact: 'Villagers say Old Renn failed to return with his charcoal cart.',
+        truthStatus: 'reported',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+        tags: ['hearthmere', 'missing-cart'],
+      },
+      c,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toMatchObject({
+        applied: true,
+        canonTier: 'campaign_overlay_lore',
+        record: {
+          id: 'old-renn-rumor',
+          kind: 'rumor',
+          truthStatus: 'reported',
+          visibility: 'player_visible',
+        },
+        evidence: {
+          tier: 'rumor_belief',
+          truthStatus: 'reported',
+        },
+      });
+    }
+  });
+
+  it('records observed evidence and NPC details', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    const clue = registry.invoke(
+      'record_world_fact',
+      {
+        kind: 'clue',
+        subjectText: 'north palisade',
+        locationId: 'hearthmere',
+        fact: 'Fresh axe-cuts mark the north palisade.',
+        truthStatus: 'observed',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      c,
+    );
+    const npc = registry.invoke(
+      'record_world_fact',
+      {
+        kind: 'npc_detail',
+        subjectText: 'Old Renn',
+        npcId: 'old-renn',
+        fact: 'Old Renn is a charcoal burner known to local villagers.',
+        truthStatus: 'confirmed',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      c,
+    );
+
+    expect(clue.ok).toBe(true);
+    expect(npc.ok).toBe(true);
+  });
+
+  it('rejects malformed records and decorative-color kinds', () => {
+    const missingFact = createDefaultToolRegistry().invoke(
+      'record_world_fact',
+      {
+        kind: 'clue',
+        subjectText: 'north palisade',
+        truthStatus: 'observed',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      ctx(),
+    );
+    const decorative = createDefaultToolRegistry().invoke(
+      'record_world_fact',
+      {
+        kind: 'decorative_color',
+        subjectText: 'chipped cup',
+        fact: 'A chipped cup sits on the table.',
+        truthStatus: 'observed',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      ctx(),
+    );
+
+    expect(missingFact.ok).toBe(false);
+    expect(decorative.ok).toBe(false);
+  });
+});
+
 describe('memory_drilldown tool', () => {
   it('resolves a recorded scene summary', () => {
     const c = ctx();
@@ -649,6 +756,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',
+        'record_world_fact',
         'remove_condition',
         'remove_item',
         'roll',

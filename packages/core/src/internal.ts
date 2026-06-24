@@ -546,6 +546,23 @@ export {
 export type { PartyMember } from './state/party.js';
 // Party roster reads.
 export { listParty } from './state/party.js';
+export type {
+  CampaignOverlayLoreQuery,
+  CampaignOverlayLoreRecord,
+  CanonTier,
+  OverlayLoreKind,
+  OverlayLoreScope,
+  OverlayLoreSource,
+  OverlayLoreTruthStatus,
+  OverlayLoreVisibility,
+  RecordCampaignOverlayLoreInput,
+} from './world/campaignOverlayLore.js';
+export {
+  CampaignOverlayLoreError,
+  getCampaignOverlayLore,
+  queryCampaignOverlayLore,
+  recordCampaignOverlayLore,
+} from './world/campaignOverlayLore.js';
 export { forkModuleIntoCampaign } from './world/forkCampaign.js';
 export type { PackUsePolicy } from './world/license.js';
 export {
@@ -566,10 +583,12 @@ export type {
   LoreScope,
   Npc,
   Trigger,
+  WorldCanonEvidence,
   WorldEntityVisibility,
   WorldOverlay,
   WorldQueryResult,
   WorldQueryTarget,
+  WorldSearchResult,
   WorldTargetType,
 } from './world/types.js';
 // World module loader + validator + license/policy helpers.

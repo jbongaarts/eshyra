@@ -25,10 +25,26 @@ describe('DM system prompt', () => {
 
   it('lists the available tools and a tool-call protocol section', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
-    for (const name of ['roll', 'mark_scene', 'lookup_rules']) {
+    for (const name of [
+      'roll',
+      'mark_scene',
+      'lookup_rules',
+      'record_world_fact',
+    ]) {
       expect(prompt).toContain(name);
     }
     expect(prompt).toContain('## Tool-Call Protocol');
+  });
+
+  it('teaches when to promote consequential improvised lore', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain('## Improvised Lore Canon');
+    expect(prompt).toContain(
+      'Campaign overlay lore is for consequential facts',
+    );
+    expect(prompt).toContain('Old Renn');
+    expect(prompt).toContain('chipped cup');
+    expect(prompt).toContain('Truth status matters');
   });
 
   it('defaults to the native protocol with no fenced tool_call instructions (eshyra-qa9d)', () => {

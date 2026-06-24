@@ -174,12 +174,81 @@ const v11_to_v12: Migration = (db) => {
   `);
 };
 
+// v12 → v13: typed campaign overlay lore for consequential improvised canon.
+// These append-friendly records are distinct from module-template field
+// overlays: they track improvised hooks, clues, reports, and beliefs with
+// truth-status and visibility metadata.
+const v12_to_v13: Migration = (db) => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS campaign_overlay_lore (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL CHECK (kind IN (
+        'rumor',
+        'clue',
+        'npc_detail',
+        'location_detail',
+        'quest_hook',
+        'threat_report',
+        'scene_consequence',
+        'player_created_detail',
+        'other'
+      )),
+      subject_id TEXT,
+      subject_text TEXT NOT NULL,
+      location_id TEXT,
+      npc_id TEXT,
+      faction_id TEXT,
+      fact TEXT NOT NULL,
+      truth_status TEXT NOT NULL CHECK (truth_status IN (
+        'confirmed',
+        'true',
+        'false',
+        'disproven',
+        'unknown',
+        'rumored',
+        'reported',
+        'observed',
+        'believed',
+        'lie',
+        'exaggeration'
+      )),
+      source TEXT NOT NULL CHECK (source IN (
+        'dm_improvised',
+        'player_declared',
+        'module_derived',
+        'tool_result',
+        'consequence'
+      )),
+      scope TEXT NOT NULL CHECK (scope IN ('scene', 'session', 'campaign')),
+      visibility TEXT NOT NULL CHECK (visibility IN (
+        'player_visible',
+        'dm_only',
+        'mixed'
+      )),
+      introduced_at_turn_id TEXT NOT NULL,
+      introduced_at_session_id TEXT NOT NULL,
+      supersedes TEXT,
+      invalidates TEXT,
+      tags_json TEXT NOT NULL DEFAULT '[]',
+      provenance TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS campaign_overlay_lore_location
+      ON campaign_overlay_lore(location_id);
+    CREATE INDEX IF NOT EXISTS campaign_overlay_lore_npc
+      ON campaign_overlay_lore(npc_id);
+    CREATE INDEX IF NOT EXISTS campaign_overlay_lore_kind
+      ON campaign_overlay_lore(kind);
+  `);
+};
+
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   8: v7_to_v8,
   9: v8_to_v9,
   10: v9_to_v10,
   11: v10_to_v11,
   12: v11_to_v12,
+  13: v12_to_v13,
 };
 
 /**
