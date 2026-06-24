@@ -352,6 +352,13 @@ function moduleSearchMatchesExplicitTarget(
   type: string,
   target: WorldQueryTarget,
 ): boolean {
+  if (
+    target.type !== 'search' &&
+    target.type === type &&
+    target.id !== undefined
+  ) {
+    return id === target.id;
+  }
   if (type === 'location' && target.locationId !== undefined) {
     return id === target.locationId;
   }

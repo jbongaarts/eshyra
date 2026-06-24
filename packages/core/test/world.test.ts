@@ -494,6 +494,74 @@ describe('campaign fork + worldQuery', () => {
     db.close();
   });
 
+  it('keeps an exact NPC id anchored during typed query discovery', () => {
+    const db = freshCampaign();
+
+    const result = worldQuery(db, {
+      type: 'npc',
+      id: 'warden-sela',
+      query: 'what does she know about the smoke',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok && result.type === 'search') {
+      expect(result.results).toContainEqual(
+        expect.objectContaining({
+          tier: 'module_canon',
+          source: 'module_npc',
+          type: 'npc',
+          id: 'warden-sela',
+          label: 'Warden Sela',
+        }),
+      );
+    }
+    db.close();
+  });
+
+  it('keeps an exact location id anchored during typed query discovery', () => {
+    const db = freshCampaign();
+
+    const result = worldQuery(db, {
+      type: 'location',
+      id: 'emberfall-square',
+      query: 'what did the blacksmith confess',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok && result.type === 'search') {
+      expect(result.results).toContainEqual(
+        expect.objectContaining({
+          tier: 'module_canon',
+          source: 'module_location',
+          type: 'location',
+          id: 'emberfall-square',
+          label: 'Emberfall Square',
+        }),
+      );
+    }
+    db.close();
+  });
+
+  it('keeps typed query without an id as constrained discovery', () => {
+    const db = freshCampaign();
+
+    const result = worldQuery(db, { type: 'npc', query: 'Warden Sela' });
+
+    expect(result.ok).toBe(true);
+    if (result.ok && result.type === 'search') {
+      expect(result.results).toContainEqual(
+        expect.objectContaining({
+          tier: 'module_canon',
+          source: 'module_npc',
+          type: 'npc',
+          id: 'warden-sela',
+        }),
+      );
+      expect(result.results.every((entry) => entry.type === 'npc')).toBe(true);
+    }
+    db.close();
+  });
+
   it('finds Warden Sela by natural authority terms', () => {
     const db = freshCampaign();
 
