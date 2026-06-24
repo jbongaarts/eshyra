@@ -200,6 +200,7 @@ export interface WorldCanonEvidence {
 
 export interface WorldSearchResult {
   readonly tier: WorldCanonEvidence['tier'];
+  readonly source: string;
   readonly type: WorldTargetType;
   readonly id: string;
   readonly label: string;

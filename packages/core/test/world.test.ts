@@ -473,6 +473,154 @@ describe('campaign fork + worldQuery', () => {
     db.close();
   });
 
+  it('finds Warden Sela with a constrained NPC search by name', () => {
+    const db = freshCampaign();
+
+    const result = worldQuery(db, { type: 'npc', query: 'Warden Sela' });
+
+    expect(result.ok).toBe(true);
+    if (result.ok && result.type === 'search') {
+      expect(result.results).toContainEqual(
+        expect.objectContaining({
+          tier: 'module_canon',
+          source: 'module_npc',
+          type: 'npc',
+          id: 'warden-sela',
+          label: 'Warden Sela',
+          visibility: 'mixed',
+        }),
+      );
+    }
+    db.close();
+  });
+
+  it('finds Warden Sela by natural authority terms', () => {
+    const db = freshCampaign();
+
+    const result = worldQuery(db, {
+      type: 'search',
+      query: 'authority figure Emberfall',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok && result.type === 'search') {
+      expect(result.results).toContainEqual(
+        expect.objectContaining({
+          tier: 'module_canon',
+          source: 'module_npc',
+          type: 'npc',
+          id: 'warden-sela',
+        }),
+      );
+    }
+    db.close();
+  });
+
+  it('finds module locations and lore by natural subject terms', () => {
+    const db = freshCampaign();
+
+    const watchtower = worldQuery(db, {
+      type: 'search',
+      query: 'watchtower',
+    });
+    const northRoad = worldQuery(db, {
+      type: 'search',
+      query: 'north road',
+    });
+    const hollow = worldQuery(db, { type: 'search', query: 'hollow' });
+
+    expect(watchtower.ok).toBe(true);
+    if (watchtower.ok && watchtower.type === 'search') {
+      expect(watchtower.results).toContainEqual(
+        expect.objectContaining({
+          tier: 'module_canon',
+          source: 'module_location',
+          type: 'location',
+          id: 'watchtower-mouth',
+        }),
+      );
+    }
+    expect(northRoad.ok).toBe(true);
+    if (northRoad.ok && northRoad.type === 'search') {
+      expect(northRoad.results).toContainEqual(
+        expect.objectContaining({
+          tier: 'module_canon',
+          source: 'module_location',
+          type: 'location',
+          id: 'emberfall-square',
+        }),
+      );
+    }
+    expect(hollow.ok).toBe(true);
+    if (hollow.ok && hollow.type === 'search') {
+      expect(hollow.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            tier: 'module_canon',
+            source: 'module_location',
+            type: 'location',
+            id: 'watchtower-mouth',
+          }),
+          expect.objectContaining({
+            tier: 'module_canon',
+            source: 'module_lore',
+            type: 'lore',
+            id: 'the-hollow-truth',
+          }),
+        ]),
+      );
+    }
+    db.close();
+  });
+
+  it('returns module canon and overlay lore for a location-oriented query', () => {
+    const db = freshCampaign();
+    recordCampaignOverlayLore(db, {
+      id: 'emberfall-incident',
+      kind: 'threat_report',
+      subjectText: 'Emberfall incident',
+      locationId: 'emberfall-square',
+      fact: 'Three houses burned near Emberfall Square during the incident.',
+      truthStatus: 'reported',
+      source: 'dm_improvised',
+      scope: 'campaign',
+      visibility: 'player_visible',
+      introducedAtTurnId: 'turn-1',
+      introducedAtSessionId: 'session-1',
+      tags: ['emberfall', 'incident'],
+      provenance: 'model:turn-1',
+      at: '2026-05-20T10:00:00.000Z',
+    });
+
+    const result = worldQuery(db, {
+      type: 'search',
+      query: 'Emberfall incident',
+      locationId: 'emberfall-square',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok && result.type === 'search') {
+      expect(result.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            tier: 'module_canon',
+            source: 'module_location',
+            type: 'location',
+            id: 'emberfall-square',
+          }),
+          expect.objectContaining({
+            tier: 'rumor_belief',
+            source: 'dm_improvised',
+            type: 'overlay_lore',
+            id: 'emberfall-incident',
+            visibility: 'player_visible',
+          }),
+        ]),
+      );
+    }
+    db.close();
+  });
+
   it('does not make decorative color queryable unless promoted', () => {
     const db = freshCampaign();
     recordCampaignOverlayLore(db, {
