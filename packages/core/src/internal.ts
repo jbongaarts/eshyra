@@ -112,10 +112,19 @@ export {
   buildCharacterCreationMutations,
   validateCharacterDraft,
 } from './character/creation.js';
+// Deterministic level-1 derived-value computation (eshyra-b69j.6): the single
+// pure source the draft engine and the recipe both derive from.
 export type {
-  Dnd5eCreationMode,
-  Dnd5eDerivedValues,
-} from './character/dnd5eRecipe.js';
+  CharacterDerivedValues,
+  DerivedClassInput,
+  DeriveLevel1Input,
+  SavingThrowDerived,
+} from './character/derivedValues.js';
+export {
+  deriveLevel1Values,
+  LEVEL_1_PROFICIENCY_BONUS,
+} from './character/derivedValues.js';
+export type { Dnd5eCreationMode } from './character/dnd5eRecipe.js';
 export {
   DND5E_SRD_CHARACTER_RECIPE,
   resolveCharacterCreationRecipe,
