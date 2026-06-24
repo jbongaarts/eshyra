@@ -74,7 +74,7 @@ jobs:
       # Edition selected per matrix leg; the builder also reads ESHYRA_EDITION.
       ESHYRA_EDITION: ${{ matrix.edition }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node 24 LTS
         uses: actions/setup-node@v6
@@ -92,7 +92,7 @@ jobs:
         run: npm run release:validate
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eshyra-cli-${{ matrix.edition }}-${{ matrix.os }}
           path: |
@@ -109,7 +109,7 @@ jobs:
     name: Validate installer scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check installer scripts exist
         run: |
@@ -158,7 +158,7 @@ jobs:
     env:
       npm_config_build_from_source: "false"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node 24 LTS
         uses: actions/setup-node@v6
@@ -185,10 +185,10 @@ jobs:
       # Required to upload assets to the Release; still no npm publish anywhere.
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 

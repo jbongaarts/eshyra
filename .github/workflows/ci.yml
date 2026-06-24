@@ -55,7 +55,7 @@ jobs:
       # alone forbids source compilation.
       npm_config_build_from_source: "false"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node 24 LTS
         uses: actions/setup-node@v6
@@ -90,7 +90,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Node 24 LTS
         uses: actions/setup-node@v6
