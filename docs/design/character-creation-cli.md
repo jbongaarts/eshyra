@@ -463,7 +463,7 @@ A complete level-1 D&D character creator needs structured choice metadata, not j
 - features granted at level 1;
 - formulas or metadata for derived values.
 
-If the current SRD import stores any of these only as prose, the character creator should not rely on brittle prose parsing inside the CLI. Instead, create importer/schema work to expose the required choice metadata deterministically.
+If the current SRD import stores any of these only as prose, the character creator should not rely on brittle prose parsing inside the CLI. The `rules:dnd5e-srd-5.1` pack is a frozen, audited artifact, so the metadata is **not** added by re-running the importer or regenerating the pack. Instead, character creation may add a narrow, source-backed, deterministic **metadata overlay** for facts that are present in the SRD but not structured in the frozen generated pack. This overlay is consumer-side code, keyed to frozen record keys, and must not mutate or regenerate the frozen pack. If such overlays grow beyond character creation, revisit addon-pack / field-merge architecture in a separate ADR. The inventory of what is structured today versus filled by overlay lives in [`character-creation-level1-metadata-inventory.md`](./character-creation-level1-metadata-inventory.md).
 
 The guided shell can ship before every optional polish feature exists, but it should honestly show missing required choices and avoid claiming completeness before all mechanically required choices can be represented.
 
