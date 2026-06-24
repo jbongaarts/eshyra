@@ -86,6 +86,25 @@ export {
   evaluateDemoContent,
   resolveDemoModel,
 } from './campaign/demoMode.js';
+// Incremental character-creation draft engine (eshyra-b69j.5): a serializable
+// work-in-progress draft plus a pure, dependency-aware engine that preserves
+// prior answers, validates incrementally, and avoids prerequisite cascades.
+export type {
+  CharacterCreationDiagnostic,
+  CharacterCreationEngine,
+  CharacterDraft,
+  CharacterDraftDerived,
+  CharacterDraftIdentity,
+  CreateDraftInput,
+  Dnd5eDraftSelections,
+  DraftDiagnosticSeverity,
+  FinalizableDraftResult,
+  RequiredChoice,
+} from './character/characterDraft.js';
+export {
+  createCharacterCreationEngine,
+  getDnd5eCharacterCreationEngine,
+} from './character/characterDraft.js';
 export type { CharacterCreationMutationMetadata } from './character/creation.js';
 // Character-creation low-level helpers + Pathfinder-specific draft validator
 // (the high-level `completeCharacterCreation` is the stable entrypoint).

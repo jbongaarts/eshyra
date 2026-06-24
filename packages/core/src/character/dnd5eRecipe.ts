@@ -20,6 +20,7 @@
 
 import { DEFAULT_DND5E_SRD_BINDING } from '../rules/binding.js';
 import type { MutateStateInput } from '../state/mutateState.js';
+import { ABILITY_SCORE_NAMES, abilityModifier } from './abilities.js';
 import {
   type AbilityScoreName,
   type AbilityScores,
@@ -51,15 +52,6 @@ export type Dnd5eDerivedValues = {
   readonly proficiencyBonus: number;
   readonly maxHitPoints: number;
 };
-
-const ABILITY_SCORE_NAMES: readonly AbilityScoreName[] = [
-  'strength',
-  'dexterity',
-  'constitution',
-  'intelligence',
-  'wisdom',
-  'charisma',
-];
 
 /** Level-1 proficiency bonus is +2 for every D&D 5e class. */
 const LEVEL_1_PROFICIENCY_BONUS = 2;
@@ -120,10 +112,6 @@ const ABILITY_FIRST_STEP_IDS: readonly string[] = [
 
 function toSteps(stepIds: readonly string[]): readonly CharacterCreationStep[] {
   return stepIds.map((id) => ({ id, label: STEP_LABELS[id] ?? id }));
-}
-
-function abilityModifier(score: number): number {
-  return Math.floor((score - 10) / 2);
 }
 
 function computeAbilityModifiers(

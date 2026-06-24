@@ -12,6 +12,13 @@ import {
   type MutateStateInput,
   mutateStateBatch,
 } from '../state/mutateState.js';
+import {
+  ABILITY_SCORE_NAMES,
+  abilityModifier,
+  POINT_BUY_BUDGET,
+  pointBuyCost,
+  STANDARD_ARRAY,
+} from './abilities.js';
 import type {
   CreatedPathfinderCharacter,
   PathfinderCharacterDraft,
@@ -97,28 +104,6 @@ export type CompleteCharacterCreationResult =
       readonly errors: readonly string[];
       readonly prompt: string;
     };
-
-const ABILITY_SCORE_NAMES: readonly AbilityScoreName[] = [
-  'strength',
-  'dexterity',
-  'constitution',
-  'intelligence',
-  'wisdom',
-  'charisma',
-];
-
-const POINT_BUY_COSTS = new Map([
-  [8, 0],
-  [9, 1],
-  [10, 2],
-  [11, 3],
-  [12, 4],
-  [13, 5],
-  [14, 7],
-  [15, 9],
-]);
-
-const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const;
 
 export class CharacterCreationError extends Error {
   readonly errors: readonly string[];
@@ -422,7 +407,7 @@ function validateAbilityScores(
 function validatePointBuy(scores: readonly number[], errors: string[]): void {
   let total = 0;
   for (const score of scores) {
-    const cost = POINT_BUY_COSTS.get(score);
+    const cost = pointBuyCost(score);
     if (cost === undefined) {
       errors.push(
         `point-buy score must be between 8 and 15 before bonuses: ${score}`,
@@ -432,8 +417,8 @@ function validatePointBuy(scores: readonly number[], errors: string[]): void {
     total += cost;
   }
 
-  if (total > 27) {
-    errors.push(`point-buy total exceeds 27: ${total}`);
+  if (total > POINT_BUY_BUDGET) {
+    errors.push(`point-buy total exceeds ${POINT_BUY_BUDGET}: ${total}`);
   }
 }
 
@@ -476,10 +461,6 @@ function validateSpells(
       errors.push(`${result.record.name} is not legal for ${className}`);
     }
   }
-}
-
-function abilityModifier(score: number): number {
-  return Math.floor((score - 10) / 2);
 }
 
 function fallbackClass(): ResolvedClassData {
