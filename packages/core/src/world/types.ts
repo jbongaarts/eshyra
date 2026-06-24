@@ -194,6 +194,7 @@ export interface WorldCanonEvidence {
   readonly source: string;
   readonly id?: string;
   readonly truthStatus?: string;
+  readonly visibility?: 'player_visible' | 'dm_only' | 'mixed';
   readonly summary: string;
 }
 
@@ -204,6 +205,7 @@ export interface WorldSearchResult {
   readonly label: string;
   readonly summary: string;
   readonly truthStatus?: string;
+  readonly visibility?: 'player_visible' | 'dm_only' | 'mixed';
 }
 
 export type WorldQueryResult =

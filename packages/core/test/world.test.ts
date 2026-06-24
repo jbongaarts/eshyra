@@ -387,6 +387,7 @@ describe('campaign fork + worldQuery', () => {
           id: 'hearthmere-old-renn-cart',
           tier: 'rumor_belief',
           truthStatus: 'reported',
+          visibility: 'player_visible',
         }),
       ]);
     }
@@ -431,6 +432,7 @@ describe('campaign fork + worldQuery', () => {
           id: 'north-gate-axe-cuts',
           tier: 'campaign_overlay_lore',
           truthStatus: 'observed',
+          visibility: 'player_visible',
         },
       ],
     });
@@ -464,6 +466,7 @@ describe('campaign fork + worldQuery', () => {
           tier: 'campaign_overlay_lore',
           type: 'overlay_lore',
           id: 'old-renn-mule',
+          visibility: 'player_visible',
         }),
       );
     }
@@ -493,6 +496,187 @@ describe('campaign fork + worldQuery', () => {
     expect(result.ok).toBe(true);
     if (result.ok && result.type === 'search') {
       expect(result.results).toEqual([]);
+    }
+    db.close();
+  });
+
+  it('hides invalidated rumors by default and keeps the disproof visible', () => {
+    const db = freshCampaign();
+    recordCampaignOverlayLore(db, {
+      id: 'goblin-rumor',
+      kind: 'rumor',
+      subjectText: 'Old Renn',
+      fact: 'Villagers believe goblins took Old Renn.',
+      truthStatus: 'believed',
+      source: 'dm_improvised',
+      scope: 'campaign',
+      visibility: 'player_visible',
+      introducedAtTurnId: 'turn-1',
+      introducedAtSessionId: 'session-1',
+      provenance: 'model:turn-1',
+      at: '2026-05-20T10:00:00.000Z',
+    });
+    recordCampaignOverlayLore(db, {
+      id: 'goblin-rumor-disproved',
+      kind: 'threat_report',
+      subjectText: 'Old Renn',
+      fact: 'Tracks show Old Renn was not taken by goblins.',
+      truthStatus: 'disproven',
+      source: 'consequence',
+      scope: 'campaign',
+      visibility: 'player_visible',
+      introducedAtTurnId: 'turn-2',
+      introducedAtSessionId: 'session-1',
+      invalidates: 'goblin-rumor',
+      provenance: 'model:turn-2',
+      at: '2026-05-20T11:00:00.000Z',
+    });
+
+    expect(queryCampaignOverlayLore(db).map((record) => record.id)).toEqual([
+      'goblin-rumor-disproved',
+    ]);
+    expect(
+      queryCampaignOverlayLore(db, { includeInvalidated: true }).map(
+        (record) => record.id,
+      ),
+    ).toEqual(['goblin-rumor', 'goblin-rumor-disproved']);
+    db.close();
+  });
+
+  it('hides superseded rumors by default and keeps the confirmed correction visible', () => {
+    const db = freshCampaign();
+    recordCampaignOverlayLore(db, {
+      id: 'old-renn-missing-rumor',
+      kind: 'rumor',
+      subjectText: 'Old Renn',
+      fact: 'Villagers think Old Renn vanished somewhere north of town.',
+      truthStatus: 'rumored',
+      source: 'dm_improvised',
+      scope: 'campaign',
+      visibility: 'player_visible',
+      introducedAtTurnId: 'turn-1',
+      introducedAtSessionId: 'session-1',
+      provenance: 'model:turn-1',
+      at: '2026-05-20T10:00:00.000Z',
+    });
+    recordCampaignOverlayLore(db, {
+      id: 'old-renn-missing-confirmed',
+      kind: 'quest_hook',
+      subjectText: 'Old Renn',
+      fact: 'Old Renn is missing from the north road after his mule returned alone.',
+      truthStatus: 'confirmed',
+      source: 'consequence',
+      scope: 'campaign',
+      visibility: 'player_visible',
+      introducedAtTurnId: 'turn-2',
+      introducedAtSessionId: 'session-1',
+      supersedes: 'old-renn-missing-rumor',
+      provenance: 'model:turn-2',
+      at: '2026-05-20T11:00:00.000Z',
+    });
+
+    expect(
+      queryCampaignOverlayLore(db, { subject: 'Old Renn' }).map(
+        (record) => record.id,
+      ),
+    ).toEqual(['old-renn-missing-confirmed']);
+    expect(
+      queryCampaignOverlayLore(db, {
+        subject: 'Old Renn',
+        includeInvalidated: true,
+      }).map((record) => record.id),
+    ).toEqual(['old-renn-missing-rumor', 'old-renn-missing-confirmed']);
+    db.close();
+  });
+
+  it('preserves overlay lore visibility in query, search, and evidence results', () => {
+    const db = freshCampaign();
+    for (const [id, visibility] of [
+      ['visible-hook', 'player_visible'],
+      ['hidden-hook', 'dm_only'],
+      ['mixed-hook', 'mixed'],
+    ] as const) {
+      recordCampaignOverlayLore(db, {
+        id,
+        kind: 'quest_hook',
+        subjectText: 'Hearthmere hooks',
+        locationId: 'emberfall-square',
+        fact: `${visibility} fact`,
+        truthStatus: 'confirmed',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility,
+        introducedAtTurnId: `turn-${id}`,
+        introducedAtSessionId: 'session-1',
+        tags: ['visibility-proof'],
+        provenance: `model:turn-${id}`,
+        at: '2026-05-20T10:00:00.000Z',
+      });
+    }
+
+    const overlay = worldQuery(db, {
+      type: 'overlay_lore',
+      tags: ['visibility-proof'],
+    });
+    expect(overlay).toMatchObject({
+      ok: true,
+    });
+    if (overlay.ok && overlay.type === 'overlay_lore') {
+      expect(overlay.records).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'visible-hook',
+            visibility: 'player_visible',
+          }),
+          expect.objectContaining({ id: 'hidden-hook', visibility: 'dm_only' }),
+          expect.objectContaining({ id: 'mixed-hook', visibility: 'mixed' }),
+        ]),
+      );
+    }
+
+    const location = worldQuery(db, {
+      type: 'location',
+      id: 'emberfall-square',
+    });
+    expect(location.ok).toBe(true);
+    if (location.ok && location.type === 'location') {
+      expect(location.overlayLore).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'hidden-hook',
+            visibility: 'dm_only',
+          }),
+          expect.objectContaining({ id: 'mixed-hook', visibility: 'mixed' }),
+        ]),
+      );
+    }
+
+    const search = worldQuery(db, {
+      type: 'search',
+      query: 'Hearthmere hooks',
+    });
+    expect(search.ok).toBe(true);
+    if (search.ok && search.type === 'search') {
+      expect(search.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'visible-hook',
+            visibility: 'player_visible',
+          }),
+          expect.objectContaining({ id: 'hidden-hook', visibility: 'dm_only' }),
+          expect.objectContaining({ id: 'mixed-hook', visibility: 'mixed' }),
+        ]),
+      );
+      expect(
+        search.results
+          .filter((result) => result.visibility === 'player_visible')
+          .map((result) => result.id),
+      ).toEqual(['visible-hook']);
+      expect(search.evidence).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'hidden-hook', visibility: 'dm_only' }),
+        ]),
+      );
     }
     db.close();
   });

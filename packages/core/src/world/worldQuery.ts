@@ -122,6 +122,7 @@ export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
         source: result.tier,
         id: result.id,
         truthStatus: result.truthStatus,
+        visibility: result.visibility,
         summary: result.summary,
       })),
     };
@@ -274,6 +275,7 @@ function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
         label: record.subjectText,
         summary: record.fact,
         truthStatus: record.truthStatus,
+        visibility: record.visibility,
       };
     });
   return [...moduleResults, ...overlayResults].slice(0, limit);
@@ -293,6 +295,7 @@ function overlayLoreEvidence(
     source: record.source,
     id: record.id,
     truthStatus: record.truthStatus,
+    visibility: record.visibility,
     summary: `${record.subjectText}: ${record.fact}`,
   };
 }

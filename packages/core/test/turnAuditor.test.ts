@@ -282,6 +282,9 @@ describe('audit prompt campaign overlay lore evidence', () => {
     expect(prompt).toContain('successful `record_world_fact`');
     expect(prompt).toContain('rumor/reported/believed');
     expect(prompt).toContain('does NOT support "X is true"');
+    expect(prompt).toContain('Overlay visibility is binding');
+    expect(prompt).toContain('`dm_only` overlay lore');
+    expect(prompt).toContain('must not be narrated as player-facing support');
   });
 
   it('summarizes current-turn recorded overlay lore by canon tier', () => {
@@ -302,6 +305,7 @@ describe('audit prompt campaign overlay lore evidence', () => {
                 id: 'old-renn-rumor',
                 fact: 'Old Renn is missing.',
                 truthStatus: 'reported',
+                visibility: 'player_visible',
               },
             },
           },
@@ -315,6 +319,55 @@ describe('audit prompt campaign overlay lore evidence', () => {
     expect(message).toContain('campaign_overlay_lore');
     expect(message).toContain('old-renn-rumor');
     expect(message).toContain('reported');
+    expect(message).toContain('player_visible');
+  });
+
+  it('exposes dm_only and mixed visibility in debug evidence summaries', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What do I know about Old Renn?',
+      candidateResponse: 'You do not know the hidden kidnapper yet.',
+      providedToolNames: ['world_query'],
+      executedToolCalls: [
+        {
+          tool: 'world_query',
+          args: { type: 'search', query: 'Old Renn' },
+          result: {
+            ok: true,
+            data: {
+              ok: true,
+              type: 'search',
+              evidence: [
+                {
+                  tier: 'campaign_overlay_lore',
+                  id: 'visible-hook',
+                  visibility: 'player_visible',
+                  summary: 'Old Renn is missing.',
+                },
+                {
+                  tier: 'campaign_overlay_lore',
+                  id: 'hidden-kidnapper',
+                  visibility: 'dm_only',
+                  summary: 'The reeve staged the disappearance.',
+                },
+                {
+                  tier: 'campaign_overlay_lore',
+                  id: 'mixed-rumor',
+                  visibility: 'mixed',
+                  summary: 'Villagers know only part of the rumor.',
+                },
+              ],
+            },
+          },
+          mutates: false,
+          source: 'native',
+        },
+      ],
+    });
+
+    expect(message).toContain('hidden-kidnapper');
+    expect(message).toContain('dm_only');
+    expect(message).toContain('mixed-rumor');
+    expect(message).toContain('mixed');
   });
 
   it('marks failed world_query calls as non-evidence', () => {

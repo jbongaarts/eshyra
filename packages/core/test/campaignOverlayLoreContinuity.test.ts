@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   createDefaultToolRegistry,
   createSeededRng,
+  EMBERFALL_HOLLOW,
+  forkModuleIntoCampaign,
   initSchema,
   openDatabase,
   startSession,
+  updateClock,
+  validateModulePack,
   worldQuery,
 } from '../src/internal.js';
 import { buildAuditUserMessage } from '../src/orchestrator/turnAuditor.js';
@@ -13,6 +17,7 @@ import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
 function toolCtx(turnId: string) {
   const db = openDatabase(':memory:');
   initSchema(db);
+  forkModuleIntoCampaign(db, validateModulePack(EMBERFALL_HOLLOW));
   startSession(db, {
     campaignId: 'campaign-1',
     sessionId: 'session-1',
@@ -31,6 +36,15 @@ function toolCtx(turnId: string) {
 describe('improvised hook continuity', () => {
   it('records Old Renn hooks, retrieves them later, and respects rumor truth', () => {
     const ctx = toolCtx('turn-1');
+    updateClock(
+      ctx.db,
+      { locationId: 'emberfall-square' },
+      {
+        provenance: 'test:clock',
+        sessionId: ctx.sessionId,
+        at: ctx.at,
+      },
+    );
     const registry = createDefaultToolRegistry();
     const recorded = [
       registry.invoke(
@@ -96,6 +110,27 @@ describe('improvised hook continuity', () => {
     ];
 
     expect(recorded.every((result) => result.ok)).toBe(true);
+    for (const result of recorded) {
+      expect(result).toMatchObject({
+        ok: true,
+        data: { record: { locationId: 'emberfall-square' } },
+      });
+    }
+
+    const locationLater = worldQuery(ctx.db, {
+      type: 'location',
+      id: 'emberfall-square',
+    });
+    expect(locationLater.ok).toBe(true);
+    if (locationLater.ok && locationLater.type === 'location') {
+      expect(locationLater.overlayLore.map((entry) => entry.id)).toEqual(
+        expect.arrayContaining([
+          'old-renn-missing-cart',
+          'old-renn-mule',
+          'north-palisade-axe-cuts',
+        ]),
+      );
+    }
 
     const later = worldQuery(ctx.db, {
       type: 'search',

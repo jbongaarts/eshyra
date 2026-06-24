@@ -1,3 +1,4 @@
+import type { Db } from '../persistence/db.js';
 import {
   CampaignOverlayLoreError,
   recordCampaignOverlayLore,
@@ -61,7 +62,11 @@ export const recordWorldFactTool: Tool = {
         minLength: 1,
         description: 'Human-readable subject, e.g. "Old Renn".',
       },
-      locationId: { type: 'string' },
+      locationId: {
+        type: 'string',
+        description:
+          'Location id where the lore applies. If omitted, the tool attaches the current clock location when one is known.',
+      },
       npcId: { type: 'string' },
       factionId: { type: 'string' },
       fact: {
@@ -103,9 +108,7 @@ export const recordWorldFactTool: Tool = {
         kind: a.kind as never,
         ...(typeof a.subjectId === 'string' ? { subjectId: a.subjectId } : {}),
         subjectText: a.subjectText as string,
-        ...(typeof a.locationId === 'string'
-          ? { locationId: a.locationId }
-          : {}),
+        ...resolveLocationId(a, ctx.db),
         ...(typeof a.npcId === 'string' ? { npcId: a.npcId } : {}),
         ...(typeof a.factionId === 'string' ? { factionId: a.factionId } : {}),
         fact: a.fact as string,
@@ -141,6 +144,7 @@ export const recordWorldFactTool: Tool = {
               : 'campaign_overlay_lore',
           id: record.id,
           truthStatus: record.truthStatus,
+          visibility: record.visibility,
           summary: `${record.subjectText}: ${record.fact}`,
         },
       });
@@ -152,3 +156,23 @@ export const recordWorldFactTool: Tool = {
     }
   },
 };
+
+function resolveLocationId(
+  args: Record<string, unknown>,
+  db: Db,
+): { locationId?: string } {
+  if (typeof args.locationId === 'string') {
+    return { locationId: args.locationId };
+  }
+  const row = db
+    .prepare('SELECT current_location_id FROM clock WHERE id = 1')
+    .get() as { current_location_id: string | null } | undefined;
+  if (
+    row === undefined ||
+    row.current_location_id === null ||
+    row.current_location_id.length === 0
+  ) {
+    return {};
+  }
+  return { locationId: row.current_location_id };
+}

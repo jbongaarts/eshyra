@@ -232,21 +232,19 @@ export function queryCampaignOverlayLore(
   db: Db,
   query: CampaignOverlayLoreQuery = {},
 ): CampaignOverlayLoreRecord[] {
-  if (query.id !== undefined) {
-    const record = getCampaignOverlayLore(db, query.id);
-    return record === undefined ? [] : [record];
-  }
   const rows = db
     .prepare('SELECT * FROM campaign_overlay_lore ORDER BY updated_at, id')
     .all() as OverlayLoreRow[];
+  const records = rows.map(rowToRecord);
+  const invalidatedIds = query.includeInvalidated
+    ? new Set<string>()
+    : invalidatedRecordIds(records);
   const terms = normalizeTerms(query.query ?? query.subject ?? '');
   const requiredTags = new Set(query.tags ?? []);
   const limit = query.limit ?? 20;
-  return rows
-    .map(rowToRecord)
-    .filter(
-      (record) => query.includeInvalidated || record.invalidates === undefined,
-    )
+  return records
+    .filter((record) => query.id === undefined || record.id === query.id)
+    .filter((record) => !invalidatedIds.has(record.id))
     .filter((record) => query.kind === undefined || record.kind === query.kind)
     .filter(
       (record) =>
@@ -261,6 +259,37 @@ export function queryCampaignOverlayLore(
     )
     .filter((record) => terms.length === 0 || matchesTerms(record, terms))
     .slice(0, Math.max(1, Math.min(limit, 50)));
+}
+
+function invalidatedRecordIds(
+  records: readonly CampaignOverlayLoreRecord[],
+): Set<string> {
+  const referencedByAnyCorrection = new Set<string>();
+  for (const record of records) {
+    if (record.supersedes !== undefined) {
+      referencedByAnyCorrection.add(record.supersedes);
+    }
+    if (record.invalidates !== undefined) {
+      referencedByAnyCorrection.add(record.invalidates);
+    }
+  }
+
+  const invalidated = new Set<string>();
+  for (const record of records) {
+    // Only currently active correction records invalidate/supersede another
+    // record. This intentionally avoids recursive chains where a correction
+    // that was itself corrected can keep hiding older records.
+    if (referencedByAnyCorrection.has(record.id)) {
+      continue;
+    }
+    if (record.supersedes !== undefined) {
+      invalidated.add(record.supersedes);
+    }
+    if (record.invalidates !== undefined) {
+      invalidated.add(record.invalidates);
+    }
+  }
+  return invalidated;
 }
 
 function validateLoreInput(input: RecordCampaignOverlayLoreInput): void {

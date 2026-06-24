@@ -153,6 +153,11 @@ const AUDIT_POLICY = [
   '  such as "NPCs say/believe/report X"; it does NOT support "X is true" unless',
   '  the evidence has true/confirmed/observed status or another tool result',
   '  establishes that stronger claim.',
+  '- Overlay visibility is binding: player-facing narration can rely only on',
+  '  `player_visible` overlay lore. `dm_only` overlay lore may guide hidden DM',
+  '  reasoning/debugging but must not be narrated as player-facing support; keep',
+  '  `mixed` records attributed to the visible portion and do not reveal hidden',
+  '  content verbatim.',
   '- Decorative scene color does not need a tool, but if the candidate treats a',
   '  new improvised detail as consequential established canon, it must be',
   '  recorded first.',
@@ -313,6 +318,7 @@ function summarizeCanonTierEvidence(
       tier: readString(data, 'canonTier') ?? 'campaign_overlay_lore',
       id: readString(record, 'id'),
       truthStatus: readString(record, 'truthStatus'),
+      visibility: readString(record, 'visibility'),
       summary: readString(record, 'fact'),
     };
   }

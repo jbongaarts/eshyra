@@ -19,6 +19,7 @@ import {
   rollDice,
   startSession,
   ToolRegistry,
+  updateClock,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
 
@@ -614,6 +615,99 @@ describe('record_world_fact tool', () => {
 
     expect(clue.ok).toBe(true);
     expect(npc.ok).toBe(true);
+  });
+
+  it('auto-attaches the current clock location when locationId is omitted', () => {
+    const c = ctx();
+    updateClock(
+      c.db,
+      { locationId: 'hearthmere' },
+      {
+        provenance: 'test:clock',
+        sessionId: c.sessionId,
+        at: c.at,
+      },
+    );
+
+    const result = createDefaultToolRegistry().invoke(
+      'record_world_fact',
+      {
+        id: 'missing-cart',
+        kind: 'quest_hook',
+        subjectText: 'Old Renn',
+        fact: 'Old Renn and his charcoal cart are missing.',
+        truthStatus: 'reported',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      c,
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: { record: { id: 'missing-cart', locationId: 'hearthmere' } },
+    });
+  });
+
+  it('preserves an explicit locationId over the current clock location', () => {
+    const c = ctx();
+    updateClock(
+      c.db,
+      { locationId: 'hearthmere' },
+      {
+        provenance: 'test:clock',
+        sessionId: c.sessionId,
+        at: c.at,
+      },
+    );
+
+    const result = createDefaultToolRegistry().invoke(
+      'record_world_fact',
+      {
+        id: 'north-gate-cuts',
+        kind: 'clue',
+        subjectText: 'north gate',
+        locationId: 'north-gate',
+        fact: 'Fresh axe-cuts mark the north gate.',
+        truthStatus: 'observed',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      c,
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: { record: { id: 'north-gate-cuts', locationId: 'north-gate' } },
+    });
+  });
+
+  it('does not attach a bogus location when no current location is known', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'record_world_fact',
+      {
+        id: 'locationless-hook',
+        kind: 'quest_hook',
+        subjectText: 'Old Renn',
+        fact: 'Old Renn and his charcoal cart are missing.',
+        truthStatus: 'reported',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      ctx(),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: { record: { id: 'locationless-hook' } },
+    });
+    if (result.ok) {
+      const record = result.data as { record: { locationId?: string } };
+      expect(record.record.locationId).toBeUndefined();
+    }
   });
 
   it('rejects malformed records and decorative-color kinds', () => {
