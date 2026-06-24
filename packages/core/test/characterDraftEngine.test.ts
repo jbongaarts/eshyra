@@ -167,6 +167,47 @@ describe('character creation draft engine', () => {
     );
   });
 
+  it('accepts a rolled score outside the point-buy range and recomputes its modifier', () => {
+    let draft = newDraft();
+    draft = engine.setAbilityScoreMethod(draft, 'rolled');
+    // 18 is illegal for point buy but a legitimate 4d6-drop-lowest result.
+    draft = engine.setAbilityScore(draft, 'strength', 18);
+    expect(errorFields(draft)).not.toContain('abilityScores.strength');
+    expect(draft.derived.abilityModifiers.strength).toBe(4);
+  });
+
+  it('rejects manual scores outside the plausibility range', () => {
+    let draft = newDraft();
+    draft = engine.setAbilityScoreMethod(draft, 'manual');
+    draft = engine.setAbilityScore(draft, 'strength', 25);
+    const error = draft.diagnostics.find(
+      (d) => d.field === 'abilityScores.strength' && d.severity === 'error',
+    );
+    expect(error?.message).toMatch(/between 1 and 20/);
+    // The out-of-range score is excluded from derived modifiers.
+    expect(draft.derived.abilityModifiers.strength).toBeUndefined();
+  });
+
+  it('collects ability-first scores before class and uses them for HP later', () => {
+    // Ability-first: scores entered first (no method total constraint), class last.
+    let draft = newDraft();
+    draft = engine.setAbilityScoreMethod(draft, 'rolled');
+    draft = engine.setAbilityScore(draft, 'constitution', 16);
+    expect(draft.derived.abilityModifiers.constitution).toBe(3);
+    expect(draft.derived.maxHitPoints).toBeUndefined();
+
+    // Editing one score at a time preserves the others.
+    draft = engine.setAbilityScore(draft, 'strength', 15);
+    expect(draft.selections.baseAbilityScores).toMatchObject({
+      constitution: 16,
+      strength: 15,
+    });
+
+    draft = engine.setClass(draft, 'Barbarian');
+    // Barbarian d12 + CON +3 = 15.
+    expect(draft.derived.maxHitPoints).toBe(15);
+  });
+
   it('projects a finalizable draft into the legacy finalization input', () => {
     const result = engine.toFinalizableDraft(fullValidDraft());
     expect(result.ok).toBe(true);

@@ -27,6 +27,18 @@ describe('rules-pack character resolver', () => {
     }
   });
 
+  it('lists every SRD class in canonical-key order', () => {
+    const classes = resolver.listClasses();
+    expect(classes).toHaveLength(12);
+    const keys = classes.map((c) => c.key);
+    expect(keys).toEqual([...keys].sort((a, b) => a.localeCompare(b)));
+    expect(keys).toContain('class:fighter');
+    expect(keys).toContain('class:warlock');
+    const fighter = classes.find((c) => c.key === 'class:fighter');
+    expect(fighter?.hitDie).toBe(10);
+    expect(fighter?.primaryAbilities).toContain('Strength');
+  });
+
   it('resolves a class by canonical key as well as by name', () => {
     const byKey = resolver.resolveClass('class:wizard');
     expect(byKey.ok).toBe(true);

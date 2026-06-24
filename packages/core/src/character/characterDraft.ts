@@ -27,6 +27,9 @@
 import { DEFAULT_DND5E_SRD_BINDING } from '../rules/binding.js';
 import {
   ABILITY_SCORE_NAMES,
+  FREE_ENTRY_MAX_SCORE,
+  FREE_ENTRY_MIN_SCORE,
+  isPlausibleFreeEntryScore,
   POINT_BUY_BUDGET,
   pointBuyCost,
   STANDARD_ARRAY,
@@ -186,6 +189,27 @@ export interface CharacterCreationEngine {
 
 const DEFAULT_LEVEL = 1;
 
+/**
+ * Whether a single base score is valid under the active method: an integer, and
+ * within the method's per-score bounds (point-buy 8–15, manual/rolled the
+ * plausibility range; standard-array values are enforced as a set, not here).
+ */
+function isValidBaseScore(
+  value: number,
+  method: AbilityScoreMethod | undefined,
+): boolean {
+  if (!Number.isInteger(value)) {
+    return false;
+  }
+  if (method === 'point_buy') {
+    return pointBuyCost(value) !== undefined;
+  }
+  if (method === 'manual' || method === 'rolled') {
+    return isPlausibleFreeEntryScore(value);
+  }
+  return true;
+}
+
 const REQUIRED_CHOICE_LABELS: Readonly<Record<string, string>> = {
   name: 'Character name',
   class: 'Class',
@@ -295,6 +319,18 @@ export function createCharacterCreationEngine(
         });
         continue;
       }
+      if (
+        (method === 'manual' || method === 'rolled') &&
+        !isPlausibleFreeEntryScore(value)
+      ) {
+        diagnostics.push({
+          field: `abilityScores.${name}`,
+          severity: 'error',
+          message: `ability score must be between ${FREE_ENTRY_MIN_SCORE} and ${FREE_ENTRY_MAX_SCORE}`,
+          value,
+        });
+        continue;
+      }
       validAbilityScores[name] = value;
     }
 
@@ -367,9 +403,7 @@ export function createCharacterCreationEngine(
     const constitution = selections.baseAbilityScores?.constitution;
     const constitutionValid =
       constitution !== undefined &&
-      Number.isInteger(constitution) &&
-      (selections.abilityScoreMethod !== 'point_buy' ||
-        pointBuyCost(constitution) !== undefined);
+      isValidBaseScore(constitution, selections.abilityScoreMethod);
 
     const classErrored =
       selections.className !== undefined && classRecord === undefined;

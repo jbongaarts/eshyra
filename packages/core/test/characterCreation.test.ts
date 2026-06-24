@@ -84,6 +84,34 @@ describe('character creation', () => {
     ).toThrow(CharacterCreationError);
   });
 
+  it('accepts manual/rolled scores free of point-buy and array constraints', () => {
+    // A rolled spread that is neither point-buy-legal nor the standard array.
+    const rolledDraft = {
+      ...validDraft,
+      abilityScoreMethod: 'rolled',
+      abilityScores: {
+        strength: 17,
+        dexterity: 16,
+        constitution: 16,
+        intelligence: 9,
+        wisdom: 12,
+        charisma: 11,
+      },
+      // Fighter d10 + CON +3 = 13.
+      maxHitPoints: 13,
+    } as const;
+    expect(validateCharacterDraft(rolledDraft).ok).toBe(true);
+
+    // Still bounded: a wildly out-of-range manual score is rejected.
+    expect(() =>
+      validateCharacterDraft({
+        ...rolledDraft,
+        abilityScoreMethod: 'manual',
+        abilityScores: { ...rolledDraft.abilityScores, strength: 25 },
+      }),
+    ).toThrow(CharacterCreationError);
+  });
+
   it('builds mutate_state-compatible writes for the canonical character row', () => {
     expect(
       buildCharacterCreationMutations(validDraft, {
