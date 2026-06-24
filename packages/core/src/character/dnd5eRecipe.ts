@@ -20,10 +20,7 @@
 
 import { DEFAULT_DND5E_SRD_BINDING } from '../rules/binding.js';
 import type { MutateStateInput } from '../state/mutateState.js';
-import { ABILITY_SCORE_NAMES, abilityModifier } from './abilities.js';
 import {
-  type AbilityScoreName,
-  type AbilityScores,
   buildCharacterCreationMutations,
   type CharacterCreationDraft,
   CharacterCreationError,
@@ -31,6 +28,10 @@ import {
   type CreatedCharacter,
   validateCharacterDraft,
 } from './creation.js';
+import {
+  type CharacterDerivedValues,
+  deriveLevel1Values,
+} from './derivedValues.js';
 import type {
   CharacterCreationMode,
   CharacterCreationRecipe,
@@ -38,23 +39,13 @@ import type {
   RecipeDraftValidation,
   RecipeFinalization,
 } from './recipe.js';
+import {
+  getBundledDnd5eCharacterResolver,
+  type RulesPackCharacterResolver,
+} from './rulesPackResolver.js';
 
 /** Canonical D&D 5e SRD creation modes (design: character-creation-cli.md). */
 export type Dnd5eCreationMode = 'concept-first' | 'ability-first';
-
-/**
- * Derived values the D&D recipe surfaces for a draft. Declared as a type alias
- * (not an interface) so it carries the implicit index signature that satisfies
- * the recipe contract's `Record<string, unknown>` derived-values return.
- */
-export type Dnd5eDerivedValues = {
-  readonly abilityModifiers: Readonly<Record<AbilityScoreName, number>>;
-  readonly proficiencyBonus: number;
-  readonly maxHitPoints: number;
-};
-
-/** Level-1 proficiency bonus is +2 for every D&D 5e class. */
-const LEVEL_1_PROFICIENCY_BONUS = 2;
 
 const MODES: readonly CharacterCreationMode[] = [
   {
@@ -114,14 +105,12 @@ function toSteps(stepIds: readonly string[]): readonly CharacterCreationStep[] {
   return stepIds.map((id) => ({ id, label: STEP_LABELS[id] ?? id }));
 }
 
-function computeAbilityModifiers(
-  scores: AbilityScores,
-): Readonly<Record<AbilityScoreName, number>> {
-  const modifiers = {} as Record<AbilityScoreName, number>;
-  for (const name of ABILITY_SCORE_NAMES) {
-    modifiers[name] = abilityModifier(scores[name]);
-  }
-  return modifiers;
+function resolveClassRecord(
+  resolver: RulesPackCharacterResolver,
+  className: string,
+): { hitDie: number; savingThrowProficiencies: readonly string[] } | undefined {
+  const result = resolver.resolveClass(className);
+  return result.ok ? result.record : undefined;
 }
 
 function completionPrompt(character: CreatedCharacter): string {
@@ -169,12 +158,12 @@ export const DND5E_SRD_CHARACTER_RECIPE: CharacterCreationRecipe<
     }
   },
 
-  computeDerivedValues(draft: CharacterCreationDraft): Dnd5eDerivedValues {
-    return {
-      abilityModifiers: computeAbilityModifiers(draft.abilityScores),
-      proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
-      maxHitPoints: draft.maxHitPoints,
-    };
+  computeDerivedValues(draft: CharacterCreationDraft): CharacterDerivedValues {
+    const resolver = getBundledDnd5eCharacterResolver();
+    return deriveLevel1Values({
+      validAbilityScores: draft.abilityScores,
+      classRecord: resolveClassRecord(resolver, draft.className),
+    });
   },
 
   finalize(

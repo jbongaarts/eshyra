@@ -27,7 +27,6 @@
 import { DEFAULT_DND5E_SRD_BINDING } from '../rules/binding.js';
 import {
   ABILITY_SCORE_NAMES,
-  abilityModifier,
   POINT_BUY_BUDGET,
   pointBuyCost,
   STANDARD_ARRAY,
@@ -38,6 +37,11 @@ import type {
   AbilityScores,
   CharacterCreationDraft,
 } from './creation.js';
+import {
+  type CharacterDerivedValues,
+  deriveLevel1Values,
+  LEVEL_1_PROFICIENCY_BONUS,
+} from './derivedValues.js';
 import {
   getBundledDnd5eCharacterResolver,
   type RulesPackCharacterResolver,
@@ -68,20 +72,11 @@ export interface RequiredChoice {
   readonly label: string;
 }
 
-/** Derived values for a (possibly partial) draft. */
-export interface CharacterDraftDerived {
-  /** Level-1 proficiency bonus (+2). */
-  readonly proficiencyBonus: number;
-  /** Modifiers for each valid base score present so far. */
-  readonly abilityModifiers: Partial<Record<AbilityScoreName, number>>;
-  /**
-   * Final scores per ability. Equal to base scores until ancestry ability
-   * bonuses are modeled (eshyra-b69j.12).
-   */
-  readonly finalAbilityScores: Partial<Record<AbilityScoreName, number>>;
-  /** Level-1 max HP, present only once class hit die and Constitution exist. */
-  readonly maxHitPoints?: number;
-}
+/**
+ * Derived values for a (possibly partial) draft. Computed by the shared
+ * deterministic derivation in `derivedValues.ts` (eshyra-b69j.6).
+ */
+export type CharacterDraftDerived = CharacterDerivedValues;
 
 /** Identity fields, all optional while the draft is in progress. */
 export interface CharacterDraftIdentity {
@@ -190,7 +185,6 @@ export interface CharacterCreationEngine {
 }
 
 const DEFAULT_LEVEL = 1;
-const LEVEL_1_PROFICIENCY_BONUS = 2;
 
 const REQUIRED_CHOICE_LABELS: Readonly<Record<string, string>> = {
   name: 'Character name',
@@ -232,21 +226,18 @@ export function createCharacterCreationEngine(
       });
     }
 
-    const { abilityModifiers, finalAbilityScores } = validateAbilityScores(
+    const validAbilityScores = validateAbilityScores(selections, diagnostics);
+
+    const derived = deriveLevel1Values({ validAbilityScores, classRecord });
+
+    emitHitPointsPending(
       selections,
+      classRecord,
+      derived.maxHitPoints,
       diagnostics,
     );
 
-    const maxHitPoints = computeHitPoints(selections, classRecord, diagnostics);
-
     validateSpells(selections, classRecord, diagnostics, stale);
-
-    const derived: CharacterDraftDerived = {
-      proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
-      abilityModifiers,
-      finalAbilityScores,
-      ...(maxHitPoints !== undefined ? { maxHitPoints } : {}),
-    };
 
     return { ...draft, derived, diagnostics, stale };
   }
@@ -267,17 +258,18 @@ export function createCharacterCreationEngine(
     return result.ok ? result.record.name : undefined;
   }
 
+  /**
+   * Emit per-score diagnostics and return the subset of scores that are valid
+   * (integer, and within point-buy range when that method is selected). Derived
+   * value computation runs off these validated scores.
+   */
   function validateAbilityScores(
     selections: Dnd5eDraftSelections,
     diagnostics: CharacterCreationDiagnostic[],
-  ): {
-    abilityModifiers: Partial<Record<AbilityScoreName, number>>;
-    finalAbilityScores: Partial<Record<AbilityScoreName, number>>;
-  } {
+  ): Partial<Record<AbilityScoreName, number>> {
     const base = selections.baseAbilityScores ?? {};
     const method = selections.abilityScoreMethod;
-    const abilityModifiers: Partial<Record<AbilityScoreName, number>> = {};
-    const finalAbilityScores: Partial<Record<AbilityScoreName, number>> = {};
+    const validAbilityScores: Partial<Record<AbilityScoreName, number>> = {};
 
     for (const name of ABILITY_SCORE_NAMES) {
       const value = base[name];
@@ -303,14 +295,11 @@ export function createCharacterCreationEngine(
         });
         continue;
       }
-      // Ancestry ability bonuses are not yet modeled (eshyra-b69j.12), so the
-      // final score equals the base score for now.
-      finalAbilityScores[name] = value;
-      abilityModifiers[name] = abilityModifier(value);
+      validAbilityScores[name] = value;
     }
 
     validateScoreMethodTotals(selections, base, diagnostics);
-    return { abilityModifiers, finalAbilityScores };
+    return validAbilityScores;
   }
 
   function validateScoreMethodTotals(
@@ -360,11 +349,21 @@ export function createCharacterCreationEngine(
     }
   }
 
-  function computeHitPoints(
+  /**
+   * Surface a `pending` notice when HP could not be computed yet, naming the
+   * missing prerequisite(s). Cascade-guarded: silent on a wholly empty draft
+   * and never stacked on top of an existing class error.
+   */
+  function emitHitPointsPending(
     selections: Dnd5eDraftSelections,
-    classRecord: { hitDie: number } | undefined,
+    classRecord: unknown,
+    maxHitPoints: number | undefined,
     diagnostics: CharacterCreationDiagnostic[],
-  ): number | undefined {
+  ): void {
+    if (maxHitPoints !== undefined) {
+      return;
+    }
+
     const constitution = selections.baseAbilityScores?.constitution;
     const constitutionValid =
       constitution !== undefined &&
@@ -372,33 +371,28 @@ export function createCharacterCreationEngine(
       (selections.abilityScoreMethod !== 'point_buy' ||
         pointBuyCost(constitution) !== undefined);
 
-    if (classRecord !== undefined && constitutionValid) {
-      return classRecord.hitDie + abilityModifier(constitution as number);
-    }
-
-    // Cascade guard: do not stack an HP-pending notice on top of an existing
-    // class error, and stay silent on a wholly empty draft.
     const classErrored =
       selections.className !== undefined && classRecord === undefined;
     const started =
       selections.className !== undefined || constitution !== undefined;
-    if (!classErrored && started) {
-      const dependsOn: string[] = [];
-      if (classRecord === undefined) {
-        dependsOn.push('class');
-      }
-      if (!constitutionValid) {
-        dependsOn.push('abilityScores.constitution');
-      }
-      diagnostics.push({
-        field: 'maxHitPoints',
-        severity: 'pending',
-        message:
-          'Hit points will be calculated after class and Constitution are known.',
-        dependsOn,
-      });
+    if (classErrored || !started) {
+      return;
     }
-    return undefined;
+
+    const dependsOn: string[] = [];
+    if (classRecord === undefined) {
+      dependsOn.push('class');
+    }
+    if (!constitutionValid) {
+      dependsOn.push('abilityScores.constitution');
+    }
+    diagnostics.push({
+      field: 'maxHitPoints',
+      severity: 'pending',
+      message:
+        'Hit points will be calculated after class and Constitution are known.',
+      dependsOn,
+    });
   }
 
   function validateSpells(
@@ -552,6 +546,7 @@ export function createCharacterCreationEngine(
           proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
           abilityModifiers: {},
           finalAbilityScores: {},
+          savingThrows: {},
         },
         stale: [],
         diagnostics: [],
