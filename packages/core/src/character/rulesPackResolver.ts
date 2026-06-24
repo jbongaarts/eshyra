@@ -72,6 +72,13 @@ export interface RulesPackCharacterResolver {
   resolveClass(nameOrRef: string): CharacterResolution<ResolvedClassData>;
   resolveSpell(nameOrRef: string): CharacterResolution<ResolvedSpellData>;
   resolveAncestry(nameOrRef: string): CharacterResolution<ResolvedAncestryData>;
+  /**
+   * Every well-formed `class` record in the stack, in canonical-key order.
+   * Drives ability-score-driven class recommendations (eshyra-b69j.7), which
+   * need to score the whole class list rather than resolve a single name.
+   * Malformed records (failing the generated-data shape guard) are skipped.
+   */
+  listClasses(): readonly ResolvedClassData[];
 }
 
 /** Build a resolver over an already-resolved rules stack (e.g. for tests). */
@@ -82,6 +89,7 @@ export function createRulesPackCharacterResolver(
     resolveClass: (nameOrRef) => resolveClass(stack, nameOrRef),
     resolveSpell: (nameOrRef) => resolveSpell(stack, nameOrRef),
     resolveAncestry: (nameOrRef) => resolveAncestry(stack, nameOrRef),
+    listClasses: () => listClasses(stack),
   };
 }
 
@@ -120,6 +128,28 @@ function resolveClass(
       savingThrowProficiencies: data.savingThrowProficiencies,
     },
   };
+}
+
+function listClasses(stack: ResolvedRulesStack): readonly ResolvedClassData[] {
+  const index = stack.recordsByKind.get('class');
+  if (index === undefined) {
+    return [];
+  }
+  const classes: ResolvedClassData[] = [];
+  for (const entry of index.byKey.values()) {
+    const { record } = entry;
+    if (!isGeneratedClassData(record.data)) {
+      continue;
+    }
+    classes.push({
+      key: record.key,
+      name: record.name,
+      hitDie: record.data.hitDie,
+      primaryAbilities: record.data.primaryAbilities,
+      savingThrowProficiencies: record.data.savingThrowProficiencies,
+    });
+  }
+  return classes.sort((left, right) => left.key.localeCompare(right.key));
 }
 
 function resolveSpell(

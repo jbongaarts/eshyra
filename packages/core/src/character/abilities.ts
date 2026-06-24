@@ -38,6 +38,54 @@ export const POINT_BUY_BUDGET = 27;
 /** The standard array, highest first. */
 export const STANDARD_ARRAY: readonly number[] = [15, 14, 13, 12, 10, 8];
 
+/**
+ * Plausibility bounds for `manual` / `rolled` base scores (before ancestry
+ * bonuses). Those methods carry no point-buy/standard-array total constraint —
+ * the player or the dice are the authority — so this is only a typo guard that
+ * still admits the full 4d6-drop-lowest range (3–18) and hand-entered imports.
+ */
+export const FREE_ENTRY_MIN_SCORE = 1;
+export const FREE_ENTRY_MAX_SCORE = 20;
+
+/** Display (full) name for each ability score, as stored on class records. */
+export const ABILITY_FULL_NAMES: Readonly<Record<AbilityScoreName, string>> = {
+  strength: 'Strength',
+  dexterity: 'Dexterity',
+  constitution: 'Constitution',
+  intelligence: 'Intelligence',
+  wisdom: 'Wisdom',
+  charisma: 'Charisma',
+};
+
+/** Three-letter abbreviation for each ability score (entry-command shorthand). */
+export const ABILITY_ABBREVIATIONS: Readonly<Record<AbilityScoreName, string>> =
+  {
+    strength: 'str',
+    dexterity: 'dex',
+    constitution: 'con',
+    intelligence: 'int',
+    wisdom: 'wis',
+    charisma: 'cha',
+  };
+
+const ABILITY_NAME_BY_TOKEN: ReadonlyMap<string, AbilityScoreName> = new Map(
+  ABILITY_SCORE_NAMES.flatMap((name) => [
+    [name, name] as const,
+    [ABILITY_ABBREVIATIONS[name], name] as const,
+    [ABILITY_FULL_NAMES[name].toLowerCase(), name] as const,
+  ]),
+);
+
+/**
+ * Resolve a user-typed ability token (full name, canonical key, or three-letter
+ * abbreviation, case-insensitively) to a canonical {@link AbilityScoreName}.
+ */
+export function abilityNameFromToken(
+  token: string,
+): AbilityScoreName | undefined {
+  return ABILITY_NAME_BY_TOKEN.get(token.trim().toLowerCase());
+}
+
 /** D&D 5e ability modifier for a final score. */
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);
@@ -46,4 +94,13 @@ export function abilityModifier(score: number): number {
 /** Point-buy cost of a base score, or `undefined` if out of the 8–15 range. */
 export function pointBuyCost(score: number): number | undefined {
   return POINT_BUY_COSTS.get(score);
+}
+
+/** True when a `manual`/`rolled` base score is an integer within plausible bounds. */
+export function isPlausibleFreeEntryScore(score: number): boolean {
+  return (
+    Number.isInteger(score) &&
+    score >= FREE_ENTRY_MIN_SCORE &&
+    score <= FREE_ENTRY_MAX_SCORE
+  );
 }

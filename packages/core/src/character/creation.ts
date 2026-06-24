@@ -15,6 +15,9 @@ import {
 import {
   ABILITY_SCORE_NAMES,
   abilityModifier,
+  FREE_ENTRY_MAX_SCORE,
+  FREE_ENTRY_MIN_SCORE,
+  isPlausibleFreeEntryScore,
   POINT_BUY_BUDGET,
   pointBuyCost,
   STANDARD_ARRAY,
@@ -48,7 +51,18 @@ export type AbilityScoreName =
   | 'wisdom'
   | 'charisma';
 
-export type AbilityScoreMethod = 'point_buy' | 'standard_array';
+/**
+ * How a character's base ability scores were produced. `point_buy` and
+ * `standard_array` carry total/value constraints validated here; `manual`
+ * (hand-entered) and `rolled` (dice-given or imported) are constraint-free
+ * apart from a plausibility bound, but are still recorded distinctly so the
+ * draft never treats a rolled 18 as if it had been point-bought.
+ */
+export type AbilityScoreMethod =
+  | 'point_buy'
+  | 'standard_array'
+  | 'manual'
+  | 'rolled';
 
 export type AbilityScores = Readonly<Record<AbilityScoreName, number>>;
 
@@ -396,12 +410,27 @@ function validateAbilityScores(
     return;
   }
 
-  if (draft.abilityScoreMethod === 'point_buy') {
-    validatePointBuy(scores, errors);
-    return;
+  switch (draft.abilityScoreMethod) {
+    case 'point_buy':
+      validatePointBuy(scores, errors);
+      return;
+    case 'standard_array':
+      validateStandardArray(scores, errors);
+      return;
+    default:
+      // `manual` / `rolled`: no total constraint, only a plausibility bound.
+      validateFreeEntry(scores, errors);
   }
+}
 
-  validateStandardArray(scores, errors);
+function validateFreeEntry(scores: readonly number[], errors: string[]): void {
+  for (const score of scores) {
+    if (!isPlausibleFreeEntryScore(score)) {
+      errors.push(
+        `ability score out of range (${FREE_ENTRY_MIN_SCORE}-${FREE_ENTRY_MAX_SCORE}): ${score}`,
+      );
+    }
+  }
 }
 
 function validatePointBuy(scores: readonly number[], errors: string[]): void {

@@ -86,6 +86,44 @@ export {
   evaluateDemoContent,
   resolveDemoModel,
 } from './campaign/demoMode.js';
+// Shared D&D 5e ability-score rules constants/helpers (eshyra-b69j.5/.7).
+export {
+  ABILITY_ABBREVIATIONS,
+  ABILITY_FULL_NAMES,
+  ABILITY_SCORE_NAMES,
+  abilityModifier,
+  abilityNameFromToken,
+  FREE_ENTRY_MAX_SCORE,
+  FREE_ENTRY_MIN_SCORE,
+  isPlausibleFreeEntryScore,
+  POINT_BUY_BUDGET,
+  POINT_BUY_COSTS,
+  pointBuyCost,
+  STANDARD_ARRAY,
+} from './character/abilities.js';
+// Ability-score entry and allocation domain layer (eshyra-b69j.7): the
+// UI-agnostic building blocks (point-buy budget, standard-array/rolled pool
+// assignment, dice rolling, class recommendations, entry-command parsing) the
+// concept-first and ability-first wizard flows render on top of the engine.
+export type {
+  AbilityScoreCommand,
+  ClassRecommendation,
+  PartialAbilityScores,
+  PointBuyLine,
+  PointBuySummary,
+  PoolAssignment,
+  RecommendClassesOptions,
+  RolledAbilityScore,
+} from './character/abilityAllocation.js';
+export {
+  parseAbilityScoreCommand,
+  recommendClasses,
+  rollAbilityScore,
+  rollAbilityScoreSet,
+  summarizePointBuy,
+  summarizePoolAssignment,
+  summarizeStandardArray,
+} from './character/abilityAllocation.js';
 // Incremental character-creation draft engine (eshyra-b69j.5): a serializable
 // work-in-progress draft plus a pure, dependency-aware engine that preserves
 // prior answers, validates incrementally, and avoids prerequisite cascades.

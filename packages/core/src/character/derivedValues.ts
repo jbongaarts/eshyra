@@ -26,7 +26,11 @@
  *   - armor class / attack bonuses — need equipment (eshyra-b69j.13).
  */
 
-import { ABILITY_SCORE_NAMES, abilityModifier } from './abilities.js';
+import {
+  ABILITY_FULL_NAMES,
+  ABILITY_SCORE_NAMES,
+  abilityModifier,
+} from './abilities.js';
 import type { AbilityScoreName } from './creation.js';
 
 /** Level-1 proficiency bonus is +2 for every D&D 5e class. */
@@ -79,16 +83,6 @@ export interface DeriveLevel1Input {
   /** The resolved class, when one has been chosen and resolves cleanly. */
   readonly classRecord?: DerivedClassInput;
 }
-
-/** Display (full) name for each ability score, as stored on class records. */
-const ABILITY_FULL_NAMES: Readonly<Record<AbilityScoreName, string>> = {
-  strength: 'Strength',
-  dexterity: 'Dexterity',
-  constitution: 'Constitution',
-  intelligence: 'Intelligence',
-  wisdom: 'Wisdom',
-  charisma: 'Charisma',
-};
 
 /** Compute every level-1 derived value the current inputs support. */
 export function deriveLevel1Values(
