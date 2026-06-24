@@ -1,9 +1,8 @@
 # `rules/` — Rules-Pack Subsystem
 
 This directory owns everything related to the cross-system rules-pack model:
-the type definitions, validators, loaders, the runtime D&D SRD pack loader, the
-in-memory Pathfinder fixture, and the legacy SRD catalog still used by character
-creation.
+the type definitions, validators, loaders, the runtime D&D SRD pack loader, and
+the in-memory Pathfinder fixture.
 
 ## Pack model (source files)
 
@@ -33,31 +32,23 @@ constructed `RulesPack` constant for use without disk I/O. It is **temporary**,
 targeted for replacement by the 0m9.8 Pathfinder 2e Remaster importer; applying
 the same runtime-pack treatment is deferred with that importer work.
 
-## Legacy SRD catalog (`srd/`)
+## Retired legacy SRD catalog (`srd/`)
 
-`rules/srd/` holds a small hand-authored D&D 5e SRD 5.1 reference catalog:
+The hand-authored `rules/srd/` catalog (`SRD_CATALOG`, `lookupSrdRecord`,
+`buildSrdIndex`, and the `Srd*` types) has been **removed** (eshyra-b69j.3 /
+eshyra-x50w, completing the migration ADR 0013 anticipated). It predated the
+rules-pack model and its only remaining caller was character creation, which now
+resolves classes, spells, and ancestries against the runtime generated pack.
 
-| File | Contents |
-|------|----------|
-| `srd/types.ts` | `SrdKind`, `SrdRecord` union, `SrdCatalog`, `SrdLookupInput`, `SrdLookupResult`, `SrdLicenseMetadata` |
-| `srd/data.ts` | `SRD_CATALOG` (seed records for monsters, spells, and classes) and `SRD_LICENSE` |
-| `srd/store.ts` | `buildSrdIndex`, `lookupSrdRecord` — builds a ref/name index over a catalog and performs lookups |
-
-This catalog predates the rules-pack model. As of ADR 0013 its only remaining
-caller is:
-
-- `character/creation.ts` — uses `lookupSrdRecord` and `SRD_CATALOG` for D&D
-  class/spell draft validation during character creation.
+Character creation resolves rules through
+`character/rulesPackResolver.ts` (`RulesPackCharacterResolver`,
+`getBundledDnd5eCharacterResolver`), a thin adapter over `getBundledDnd5eSrdPack`
++ `resolveRulesStack` + `lookupRulesRecord`. It narrows generated `data: unknown`
+into typed class/spell/ancestry fields (e.g. class `hitDie`, spell `classes`)
+and centralises display-name/key matching so callers never need internal ids.
 
 The former `rules/dnd5eSrd.ts` adapter (which wrapped `SRD_CATALOG` into the
-`DND5E_SRD_RULES_PACK` placeholder) has been **removed**; gameplay rules lookup
-now uses the runtime generated pack via `bundledSrdPack.ts`.
-
-`srd/` is placed under `rules/` (rather than as a top-level peer of `rules/`)
-so it no longer appears to be a parallel subsystem. It is not part of the
-stable public API. When `character/creation.ts` migrates to `lookupRulesRecord`
-against the runtime pack, this catalog will be retired (a follow-up to ADR
-0013).
+`DND5E_SRD_RULES_PACK` placeholder) was likewise removed under ADR 0013.
 
 ## Generated/seed pack data on disk
 

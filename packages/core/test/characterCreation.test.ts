@@ -48,8 +48,10 @@ describe('character creation', () => {
   });
 
   it('rejects illegal class, point-buy, standard-array, and spell choices', () => {
+    // Artificer is not in the SRD 5.1 pack; the twelve SRD classes (including
+    // Warlock) now resolve from the generated pack.
     expect(() =>
-      validateCharacterDraft({ ...validDraft, className: 'Warlock' }),
+      validateCharacterDraft({ ...validDraft, className: 'Artificer' }),
     ).toThrow(CharacterCreationError);
 
     expect(() =>
@@ -178,7 +180,7 @@ describe('character creation', () => {
     initSchema(db);
 
     const result = completeCharacterCreation(db, {
-      draft: { ...validDraft, className: 'Warlock' },
+      draft: { ...validDraft, className: 'Artificer' },
       sessionId: 'session-0',
       at: '2026-05-20T22:46:00.000Z',
     });
@@ -186,11 +188,11 @@ describe('character creation', () => {
     expect(result).toEqual({
       ok: false,
       errors: [
-        'unsupported SRD class: Warlock',
+        'unsupported SRD class: Artificer',
         'level-1 hit point maximum must be 2',
       ],
       prompt:
-        'Revise the character draft before persisting it: unsupported SRD class: Warlock; level-1 hit point maximum must be 2',
+        'Revise the character draft before persisting it: unsupported SRD class: Artificer; level-1 hit point maximum must be 2',
     });
     expect(
       db
