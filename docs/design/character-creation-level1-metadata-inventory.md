@@ -75,7 +75,27 @@ eshyra-b69j.12:
 - **eshyra-b69j.12.4** — structured language grants and choices on ancestry and
   background.
 
-Each requires importer/extractor/schema changes and pack regeneration; per
-`docs/importer-fix-protocol.md` those are kept separate from this modeling/
-inventory slice, which adds only consumer-side code (resolver fields + the
-enumeration) and touches no importer or generated-pack files.
+## How the gaps get filled — a consumer-side overlay, not pack regeneration
+
+The `rules:dnd5e-srd-5.1` pack is a **frozen, hash-pinned, signed-off** artifact
+(`docs/audits/dnd5e-srd-5.1-final/`; freeze guard via
+`npm run verify:dnd5e-srd-freeze`). The prose-only facts above must therefore
+**not** be added by re-running the importer/extractor or regenerating the pack —
+that would require thawing and re-auditing a closed artifact.
+
+Instead, the design rule's sanctioned alternative applies — a **deterministic
+derived metadata layer** — under this governing policy:
+
+> For the frozen D&D 5e SRD pack, character creation may add a narrow,
+> source-backed, deterministic **metadata overlay** for facts that are present
+> in the SRD but not structured in the frozen generated pack. This overlay is
+> **consumer-side code, keyed to frozen record keys, and must not mutate or
+> regenerate the frozen pack.** If such overlays grow beyond character creation,
+> revisit addon-pack / field-merge architecture in a separate ADR.
+
+So each child bead is fulfilled by authored, SRD-cited constant tables keyed by
+the frozen record keys (e.g. `ancestry:elf → [{ ability: 'dexterity', bonus: 2 }]`,
+`class:wizard → spellcastingAbility: 'intelligence'`), living in the
+character-creation code next to `requiredChoices.ts` / `rulesPackResolver.ts`.
+This is ordinary consumer-side work — **not** importer-fix-protocol work, and it
+touches no importer, extractor, or generated-pack files.
