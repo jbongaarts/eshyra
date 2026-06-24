@@ -389,7 +389,7 @@ describe('runPlay', () => {
     const { io, lines } = scriptedIO([
       'Mira',
       'Human',
-      'Warlock',
+      'Artificer',
       'point_buy',
       '15',
       '14',
@@ -408,7 +408,7 @@ describe('runPlay', () => {
 
     expect(code).toBe(0);
     const out = lines.join('\n');
-    expect(out).toContain('unsupported SRD class: Warlock');
+    expect(out).toContain('unsupported SRD class: Artificer');
     expect(out).toContain('Character creation complete');
     expect(out).toContain('DM: you said "look around"');
     expect(

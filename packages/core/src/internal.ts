@@ -102,6 +102,20 @@ export {
   PathfinderCharacterCreationError,
   validatePathfinderCharacterDraft,
 } from './character/pathfinder2e.js';
+// Generated-rules-pack character resolver (eshyra-b69j.3 / eshyra-x50w):
+// resolves class/spell/ancestry choices for character creation against the
+// runtime SRD pack, replacing the retired hand-authored SRD_CATALOG.
+export type {
+  CharacterResolution,
+  ResolvedAncestryData,
+  ResolvedClassData,
+  ResolvedSpellData,
+  RulesPackCharacterResolver,
+} from './character/rulesPackResolver.js';
+export {
+  createRulesPackCharacterResolver,
+  getBundledDnd5eCharacterResolver,
+} from './character/rulesPackResolver.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {
@@ -436,21 +450,6 @@ export {
   PACK_RECORDS_FILE,
 } from './rules/packLoader.js';
 export { PATHFINDER2E_REMASTER_RULES_PACK } from './rules/pathfinder2eRemaster.js';
-// SRD raw catalog data and lookup index.
-export { SRD_CATALOG, SRD_LICENSE } from './rules/srd/data.js';
-export { buildSrdIndex, lookupSrdRecord } from './rules/srd/store.js';
-export type {
-  SrdBaseRecord,
-  SrdCatalog,
-  SrdClassRecord,
-  SrdKind,
-  SrdLicenseMetadata,
-  SrdLookupInput,
-  SrdLookupResult,
-  SrdMonsterRecord,
-  SrdRecord,
-  SrdSpellRecord,
-} from './rules/srd/types.js';
 export type {
   SrdAuditCategory,
   SrdAuditFinding,

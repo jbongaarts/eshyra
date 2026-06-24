@@ -4,14 +4,6 @@ import {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,
 } from '../rules/binding.js';
-import { SRD_CATALOG } from '../rules/srd/data.js';
-import { lookupSrdRecord } from '../rules/srd/store.js';
-import type {
-  SrdCatalog,
-  SrdClassRecord,
-  SrdRecord,
-  SrdSpellRecord,
-} from '../rules/srd/types.js';
 import {
   ensureCharacterRow,
   setActiveCharacterId,
@@ -28,6 +20,11 @@ import {
   PathfinderCharacterCreationError,
   validatePathfinderCharacterDraft,
 } from './pathfinder2e.js';
+import {
+  getBundledDnd5eCharacterResolver,
+  type ResolvedClassData,
+  type RulesPackCharacterResolver,
+} from './rulesPackResolver.js';
 
 /**
  * The rules system the character creator is dispatching for. The string set
@@ -122,7 +119,6 @@ const POINT_BUY_COSTS = new Map([
 ]);
 
 const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const;
-const SRD_ANCESTRIES = new Set(['Human']);
 
 export class CharacterCreationError extends Error {
   readonly errors: readonly string[];
@@ -136,14 +132,14 @@ export class CharacterCreationError extends Error {
 
 export function validateCharacterDraft(
   draft: CharacterCreationDraft,
-  catalog: SrdCatalog = SRD_CATALOG,
+  resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
 ): CharacterCreationResult {
   const errors: string[] = [];
-  const characterClass = validateClass(draft, catalog, errors);
-  validateIdentity(draft, errors);
+  const characterClass = validateClass(draft, resolver, errors);
+  validateIdentity(draft, resolver, errors);
   validateAbilityScores(draft, errors);
   validateHitPoints(draft, characterClass, errors);
-  validateSpells(draft, characterClass.name, catalog, errors);
+  validateSpells(draft, characterClass.name, resolver, errors);
 
   if (errors.length > 0) {
     throw new CharacterCreationError(errors);
@@ -166,17 +162,17 @@ export function validateCharacterDraft(
 export function buildCharacterCreationMutations(
   draft: CharacterCreationDraft,
   metadata: CharacterCreationMutationMetadata,
-  catalog: SrdCatalog = SRD_CATALOG,
+  resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
   characterId = 'pc-1',
 ): MutateStateInput[] {
-  const { character } = validateCharacterDraft(draft, catalog);
+  const { character } = validateCharacterDraft(draft, resolver);
   return characterMutations(character, metadata, characterId);
 }
 
 export function completeCharacterCreation(
   db: Db,
   input: CompleteCharacterCreationInput,
-  catalog: SrdCatalog = SRD_CATALOG,
+  resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
 ): CompleteCharacterCreationResult {
   const system = resolveCampaignSystem(db);
 
@@ -193,7 +189,7 @@ export function completeCharacterCreation(
   try {
     const { character } = validateCharacterDraft(
       input.draft as CharacterCreationDraft,
-      catalog,
+      resolver,
     );
 
     const charId = input.characterId ?? 'pc-1';
@@ -333,12 +329,13 @@ function resolveCampaignSystem(db: Db): string {
 
 function validateIdentity(
   draft: CharacterCreationDraft,
+  resolver: RulesPackCharacterResolver,
   errors: string[],
 ): void {
   if (draft.name.trim().length === 0) {
     errors.push('character name is required');
   }
-  if (!SRD_ANCESTRIES.has(draft.ancestry.trim())) {
+  if (resolver.resolveAncestry(draft.ancestry.trim()).ok === false) {
     errors.push(`unsupported SRD ancestry: ${draft.ancestry}`);
   }
   if (draft.level !== 1) {
@@ -392,19 +389,16 @@ function characterMutations(
 
 function validateClass(
   draft: CharacterCreationDraft,
-  catalog: SrdCatalog,
+  resolver: RulesPackCharacterResolver,
   errors: string[],
-): SrdClassRecord {
-  const result = lookupSrdRecord(
-    { kind: 'class', name: draft.className },
-    catalog,
-  );
+): ResolvedClassData {
+  const result = resolver.resolveClass(draft.className);
   if (!result.ok) {
     errors.push(`unsupported SRD class: ${draft.className}`);
     return fallbackClass();
   }
 
-  return result.record as SrdClassRecord;
+  return result.record;
 }
 
 function validateAbilityScores(
@@ -455,7 +449,7 @@ function validateStandardArray(
 
 function validateHitPoints(
   draft: CharacterCreationDraft,
-  characterClass: SrdClassRecord,
+  characterClass: ResolvedClassData,
   errors: string[],
 ): void {
   const expected =
@@ -468,22 +462,18 @@ function validateHitPoints(
 function validateSpells(
   draft: Pick<CharacterCreationDraft, 'spells'>,
   className: string,
-  catalog: SrdCatalog,
+  resolver: RulesPackCharacterResolver,
   errors: string[],
 ): void {
   for (const spellNameOrRef of draft.spells) {
-    const result = spellNameOrRef.startsWith('spell:')
-      ? lookupSrdRecord({ kind: 'spell', ref: spellNameOrRef }, catalog)
-      : lookupSrdRecord({ kind: 'spell', name: spellNameOrRef }, catalog);
-
+    const result = resolver.resolveSpell(spellNameOrRef);
     if (!result.ok) {
       errors.push(`unsupported SRD spell: ${spellNameOrRef}`);
       continue;
     }
 
-    const spell = asSpellRecord(result.record);
-    if (!spell.classes.includes(className)) {
-      errors.push(`${spell.name} is not legal for ${className}`);
+    if (!result.record.classes.includes(className)) {
+      errors.push(`${result.record.name} is not legal for ${className}`);
     }
   }
 }
@@ -492,25 +482,12 @@ function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);
 }
 
-function fallbackClass(): SrdClassRecord {
+function fallbackClass(): ResolvedClassData {
   return {
-    kind: 'class',
-    ref: 'class:invalid',
+    key: 'class:invalid',
     name: 'Invalid',
     hitDie: 0,
     primaryAbilities: [],
     savingThrowProficiencies: [],
-    armorProficiencies: [],
-    weaponProficiencies: [],
   };
-}
-
-function asSpellRecord(record: SrdRecord): SrdSpellRecord {
-  if (record.kind !== 'spell') {
-    throw new CharacterCreationError([
-      `expected spell SRD record: ${record.ref}`,
-    ]);
-  }
-
-  return record;
 }
