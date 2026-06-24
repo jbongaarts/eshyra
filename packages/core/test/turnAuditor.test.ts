@@ -538,6 +538,66 @@ describe('ModelTurnAuditor', () => {
     );
   });
 
+  it('sanitizes set_plot_flag out of disallowedToolCalls and requires record_world_fact', async () => {
+    const model = new FakeAuditModel(
+      '{"verdict":"reject","missingRequiredTools":[],"disallowedToolCalls":["set_plot_flag"],"reason":"set_plot_flag is not valid lore support","repairInstruction":"do not use set_plot_flag"}',
+    );
+    const auditor = new ModelTurnAuditor(model, 'm');
+
+    const verdict = await auditor.audit({
+      playerInput: 'What did Sela say?',
+      candidateResponse:
+        'Bob learned that Warden Sela lost two scouts near the hollow.',
+      providedToolNames: ['set_plot_flag', 'record_world_fact'],
+      executedToolCalls: [
+        {
+          tool: 'set_plot_flag',
+          args: {
+            key: 'bob-learned-sela-scouts',
+            value: true,
+          },
+          result: { ok: true, data: { applied: true } },
+          mutates: true,
+          source: 'native-mcp',
+        },
+      ],
+      requiresExplicitActionTools: [],
+    });
+
+    expect(verdict.verdict).toBe('reject');
+    expect(verdict.disallowedToolCalls).toEqual([]);
+    expect(verdict.missingRequiredTools).toEqual(['record_world_fact']);
+    expect(verdict.missingRequiredCalls).toEqual([
+      {
+        tool: 'record_world_fact',
+        target: 'consequential improvised lore asserted with set_plot_flag',
+      },
+    ]);
+    expect(verdict.reason).toContain(
+      'Sanitized invalid disallowedToolCalls classification(s): set_plot_flag',
+    );
+    expect(verdict.repairInstruction).toContain('record_world_fact');
+  });
+
+  it('preserves truly explicit-action-only disallowed tools while filtering invalid ones', async () => {
+    const model = new FakeAuditModel(
+      '{"verdict":"reject","missingRequiredTools":[],"disallowedToolCalls":["give_item","set_plot_flag"],"reason":"bad mutation","repairInstruction":"do not mutate"}',
+    );
+    const auditor = new ModelTurnAuditor(model, 'm');
+
+    const verdict = await auditor.audit({
+      playerInput: 'What am I carrying?',
+      candidateResponse: 'You gain a torch, and I mark the plot flag.',
+      providedToolNames: ['give_item', 'set_plot_flag', 'record_world_fact'],
+      executedToolCalls: [],
+      requiresExplicitActionTools: ['give_item'],
+    });
+
+    expect(verdict.verdict).toBe('reject');
+    expect(verdict.disallowedToolCalls).toEqual(['give_item']);
+    expect(verdict.missingRequiredTools).toEqual(['record_world_fact']);
+  });
+
   it('forwards the audit trace purpose for debug labelling', async () => {
     const model = new FakeAuditModel(
       '{"verdict":"accept","missingRequiredTools":[]}',

@@ -493,6 +493,73 @@ export function formatMissingCall(call: MissingRequiredCall): string {
   return call.target ? `${call.tool} (target: ${call.target})` : call.tool;
 }
 
+function repairMissingCallsForInvalidDisallowedTools(
+  verdict: AuditVerdict,
+  input: TurnAuditInput,
+  invalidDisallowedTools: readonly string[],
+): readonly MissingRequiredCall[] {
+  const missingRequiredCalls: MissingRequiredCall[] = [
+    ...verdict.missingRequiredCalls,
+  ];
+  if (
+    invalidDisallowedTools.includes('set_plot_flag') &&
+    input.providedToolNames.includes('record_world_fact') &&
+    !missingRequiredCalls.some((call) => call.tool === 'record_world_fact')
+  ) {
+    missingRequiredCalls.push({
+      tool: 'record_world_fact',
+      target: 'consequential improvised lore asserted with set_plot_flag',
+    });
+  }
+  return missingRequiredCalls;
+}
+
+function sanitizeAuditVerdict(
+  verdict: AuditVerdict,
+  input: TurnAuditInput,
+): AuditVerdict {
+  const allowedDisallowedTools = new Set(
+    input.requiresExplicitActionTools ?? [],
+  );
+  const disallowedToolCalls = verdict.disallowedToolCalls.filter((tool) =>
+    allowedDisallowedTools.has(tool),
+  );
+  const invalidDisallowedTools = verdict.disallowedToolCalls.filter(
+    (tool) => !allowedDisallowedTools.has(tool),
+  );
+  if (invalidDisallowedTools.length === 0) {
+    return verdict;
+  }
+
+  const missingRequiredCalls = repairMissingCallsForInvalidDisallowedTools(
+    verdict,
+    input,
+    invalidDisallowedTools,
+  );
+  const missingRequiredTools = [
+    ...new Set(missingRequiredCalls.map((call) => call.tool)),
+  ];
+  const correction = `Sanitized invalid disallowedToolCalls classification(s): ${invalidDisallowedTools.join(', ')}.`;
+  return {
+    ...verdict,
+    missingRequiredTools,
+    missingRequiredCalls,
+    disallowedToolCalls,
+    reason: verdict.reason ? `${verdict.reason} ${correction}` : correction,
+    repairInstruction:
+      invalidDisallowedTools.includes('set_plot_flag') &&
+      input.providedToolNames.includes('record_world_fact') &&
+      !verdict.missingRequiredTools.includes('record_world_fact')
+        ? [
+            verdict.repairInstruction,
+            'Use record_world_fact for consequential improvised lore; set_plot_flag alone is not lore evidence.',
+          ]
+            .filter((line) => line.length > 0)
+            .join(' ')
+        : verdict.repairInstruction,
+  };
+}
+
 /**
  * The {@link TurnAuditor} backed by a {@link ModelClient}. The model client is
  * injected so the auditor uses the SAME subscription-backed provider family as
@@ -516,6 +583,6 @@ export class ModelTurnAuditor implements TurnAuditor {
       responseFormat: 'json',
       ...(input.trace ? { trace: input.trace } : {}),
     });
-    return parseAuditVerdict(completion.text);
+    return sanitizeAuditVerdict(parseAuditVerdict(completion.text), input);
   }
 }
