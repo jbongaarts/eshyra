@@ -81,9 +81,28 @@ npm run check         # CI-style Biome validation (format + lint, no writes)
 ```
 
 Run `npm run check` before opening or updating any PR that touches source files.
-The full config is in `biome.json`; existing style warnings are tracked there
-and addressed incrementally — do not suppress them with inline ignores without
-a reason.
+The full config is in `biome.json`. **CI fails on any Biome warning, not just
+errors:** the `check`, `format:check`, and `lint` scripts all pass
+`--error-on-warnings`, so a warning is as blocking as an error. There is no
+"tracked warnings, fixed incrementally" backlog — the tree must stay clean. Fix
+the underlying code rather than suppressing a finding with an inline ignore
+unless there is a clear, documented reason.
+
+`--error-on-warnings` exits non-zero on warnings and errors but **not** on
+info-level diagnostics — Biome has no exit-on-info flag. So info noise is kept
+out two ways instead:
+
+- **Config/CLI infos** (e.g. a schema/CLI version mismatch): keep `biome.json`
+  migrated to the installed Biome version (`npx biome migrate --write`) so that
+  output stays clean.
+- **Lint rules that default to `info`** (e.g. `complexity/useLiteralKeys`): raise
+  them to `warn`/`error` in `biome.json` so `--error-on-warnings` enforces them.
+  `useLiteralKeys` is set to `error`. Its one finding sat in
+  `packages/core/scripts/verify-dnd5e-srd-freeze/cli.ts`, a **frozen**
+  SRD-artifact path; rather than leave info noise suppressed-by-omission, the
+  verifier was thawed (see `docs/audits/dnd5e-srd-5.1-final/thaw-notes/`) to fix
+  the code at the source. Before promoting an info rule, confirm the tree can be
+  made clean — including any frozen paths, which need a thaw note.
 
 The root scripts run repo-wide (`biome … .`), not against narrowed package
 allowlists, so newly added root-level files stay covered. Biome honors
