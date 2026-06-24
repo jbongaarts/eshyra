@@ -1,0 +1,210 @@
+import { describe, expect, it } from 'vitest';
+import {
+  type CharacterDraft,
+  createCharacterCreationEngine,
+  getDnd5eCharacterCreationEngine,
+} from '../src/internal.js';
+
+const engine = getDnd5eCharacterCreationEngine();
+
+const POINT_BUY_SCORES = {
+  strength: 15,
+  dexterity: 14,
+  constitution: 14,
+  intelligence: 10,
+  wisdom: 10,
+  charisma: 8,
+} as const;
+
+function newDraft(): CharacterDraft {
+  return engine.createDraft({ id: 'draft-1', mode: 'concept-first' });
+}
+
+function fullValidDraft(): CharacterDraft {
+  let draft = newDraft();
+  draft = engine.setIdentity(draft, { name: 'Mira' });
+  draft = engine.setClass(draft, 'Fighter');
+  draft = engine.setAncestry(draft, 'Human');
+  draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+  draft = engine.setAbilityScores(draft, POINT_BUY_SCORES);
+  return draft;
+}
+
+function errorFields(draft: CharacterDraft): string[] {
+  return draft.diagnostics
+    .filter((d) => d.severity === 'error')
+    .map((d) => d.field);
+}
+
+describe('character creation draft engine', () => {
+  it('creates an empty draft with default level and recipe metadata', () => {
+    const draft = newDraft();
+    expect(draft.level).toBe(1);
+    expect(draft.recipeId).toBe('dnd5e-srd');
+    expect(draft.rulesPackId).toBe('rules:dnd5e-srd-5.1');
+    expect(draft.diagnostics).toEqual([]);
+    expect(draft.derived.proficiencyBonus).toBe(2);
+  });
+
+  it('preserves prior answers when name changes', () => {
+    let draft = fullValidDraft();
+    draft = engine.setIdentity(draft, { name: 'Renamed' });
+    expect(draft.identity.name).toBe('Renamed');
+    expect(draft.selections.className).toBe('Fighter');
+    expect(draft.selections.ancestry).toBe('Human');
+    expect(draft.selections.baseAbilityScores).toEqual(POINT_BUY_SCORES);
+    expect(engine.isFinalizable(draft)).toBe(true);
+  });
+
+  it('changing class preserves identity and scores but revalidates spells', () => {
+    let draft = fullValidDraft();
+    // Fire Bolt is a Wizard/Sorcerer cantrip — legal once class is a caster.
+    draft = engine.setClass(draft, 'Wizard');
+    draft = engine.setSpells(draft, ['Fire Bolt']);
+    expect(errorFields(draft)).not.toContain('spells');
+
+    // Switching to Fighter makes the previously legal spell illegal; identity
+    // and ability scores are untouched.
+    draft = engine.setClass(draft, 'Fighter');
+    expect(draft.identity.name).toBe('Mira');
+    expect(draft.selections.baseAbilityScores).toEqual(POINT_BUY_SCORES);
+    expect(draft.selections.spells).toEqual(['Fire Bolt']);
+    expect(errorFields(draft)).toContain('spells');
+    expect(draft.stale).toContain('spells');
+  });
+
+  it('changing ancestry preserves base scores and recomputes derived values', () => {
+    let draft = fullValidDraft();
+    const before = draft.derived.abilityModifiers;
+    draft = engine.setAncestry(draft, 'Elf');
+    expect(draft.selections.baseAbilityScores).toEqual(POINT_BUY_SCORES);
+    expect(draft.derived.abilityModifiers).toEqual(before);
+    expect(draft.derived.finalAbilityScores.strength).toBe(15);
+  });
+
+  it('reports an invalid class without cascading', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Artificer');
+    expect(errorFields(draft)).toEqual(['class']);
+    // No HP nonsense and no spell cascade from the bad class.
+    expect(draft.diagnostics.some((d) => d.field === 'maxHitPoints')).toBe(
+      false,
+    );
+  });
+
+  it('reports an invalid ancestry', () => {
+    let draft = newDraft();
+    draft = engine.setAncestry(draft, 'Gobbo');
+    expect(errorFields(draft)).toContain('ancestry');
+  });
+
+  it('flags non-integer ability scores', () => {
+    let draft = newDraft();
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScore(draft, 'strength', 13.5);
+    expect(errorFields(draft)).toContain('abilityScores.strength');
+  });
+
+  it('flags point-buy scores out of the 8–15 range', () => {
+    let draft = newDraft();
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScore(draft, 'strength', 17);
+    const strengthError = draft.diagnostics.find(
+      (d) => d.field === 'abilityScores.strength' && d.severity === 'error',
+    );
+    expect(strengthError?.message).toMatch(/between 8 and 15/);
+  });
+
+  it('flags an over-budget point-buy total once all six scores are present', () => {
+    let draft = newDraft();
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScores(draft, {
+      strength: 15,
+      dexterity: 15,
+      constitution: 15,
+      intelligence: 15,
+      wisdom: 15,
+      charisma: 15,
+    });
+    const totalError = draft.diagnostics.find(
+      (d) => d.field === 'abilityScores' && d.severity === 'error',
+    );
+    expect(totalError?.message).toMatch(/exceeds 27/);
+  });
+
+  it('reports missing name as a required choice after other revisions', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Fighter');
+    draft = engine.setAncestry(draft, 'Human');
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScores(draft, POINT_BUY_SCORES);
+    const missing = engine.missingRequiredChoices(draft).map((c) => c.field);
+    expect(missing).toEqual(['name']);
+    expect(engine.isFinalizable(draft)).toBe(false);
+  });
+
+  it('does not validate HP until class and Constitution are both valid', () => {
+    let draft = newDraft();
+    // Constitution present, class not yet chosen → pending, never an error.
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScore(draft, 'constitution', 14);
+    expect(draft.derived.maxHitPoints).toBeUndefined();
+    const pending = draft.diagnostics.find((d) => d.field === 'maxHitPoints');
+    expect(pending?.severity).toBe('pending');
+    expect(pending?.dependsOn).toContain('class');
+    expect(errorFields(draft)).not.toContain('maxHitPoints');
+  });
+
+  it('computes level-1 HP once class hit die and Constitution exist', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Fighter');
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScore(draft, 'constitution', 14);
+    // Fighter d10 + CON +2 = 12.
+    expect(draft.derived.maxHitPoints).toBe(12);
+    expect(draft.diagnostics.some((d) => d.field === 'maxHitPoints')).toBe(
+      false,
+    );
+  });
+
+  it('projects a finalizable draft into the legacy finalization input', () => {
+    const result = engine.toFinalizableDraft(fullValidDraft());
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.draft).toMatchObject({
+        name: 'Mira',
+        ancestry: 'Human',
+        className: 'Fighter',
+        level: 1,
+        maxHitPoints: 12,
+        abilityScores: POINT_BUY_SCORES,
+      });
+    }
+  });
+
+  it('refuses to project an incomplete draft and reports what is missing', () => {
+    const result = engine.toFinalizableDraft(newDraft());
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      const fields = result.missing.map((c) => c.field);
+      expect(fields).toEqual(
+        expect.arrayContaining([
+          'name',
+          'class',
+          'ancestry',
+          'abilityScoreMethod',
+          'abilityScores',
+        ]),
+      );
+    }
+  });
+
+  it('can be constructed with an explicit resolver', () => {
+    const explicit = createCharacterCreationEngine();
+    const draft = explicit.setClass(
+      explicit.createDraft({ id: 'd', mode: 'concept-first' }),
+      'Rogue',
+    );
+    expect(errorFields(draft)).not.toContain('class');
+  });
+});

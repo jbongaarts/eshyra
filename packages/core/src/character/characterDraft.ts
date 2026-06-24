@@ -1,0 +1,624 @@
+/**
+ * Stateful character-creation draft + pure engine (eshyra-b69j.5).
+ *
+ * The legacy `validateCharacterDraft` path in `creation.ts` validates a fully
+ * specified draft in one shot and throws on the first batch of errors — it
+ * cannot represent a half-built character, preserve prior answers across edits,
+ * or tell the user *why* a derived value is not ready. This module is the
+ * incremental replacement the guided wizard needs (the core failure modes from
+ * eshyra-4jiu):
+ *
+ *   - a serializable {@link CharacterDraft} that holds partial answers;
+ *   - a pure {@link CharacterCreationEngine} (no terminal I/O, no DB) whose
+ *     setters return a new draft with derived values, diagnostics, and the set
+ *     of stale dependent choices recomputed every time;
+ *   - incremental, dependency-aware validation that waits for prerequisites
+ *     instead of emitting cascade nonsense (no "HP must be -4" before a class
+ *     and Constitution exist).
+ *
+ * Scope: this slice owns the engine and its validation/derived seams. Ancestry
+ * ability bonuses (eshyra-b69j.12), the full derived-value set (eshyra-b69j.6),
+ * equipment/skill choices (eshyra-b69j.13), and the wizard flows
+ * (eshyra-b69j.8/.9) build on top of it. The engine is D&D-specific for now,
+ * per the epic's "minimal envelope + D&D-typed selections" guidance; the recipe
+ * boundary (eshyra-b69j.4) keeps a second system possible later.
+ */
+
+import { DEFAULT_DND5E_SRD_BINDING } from '../rules/binding.js';
+import {
+  ABILITY_SCORE_NAMES,
+  abilityModifier,
+  POINT_BUY_BUDGET,
+  pointBuyCost,
+  STANDARD_ARRAY,
+} from './abilities.js';
+import type {
+  AbilityScoreMethod,
+  AbilityScoreName,
+  AbilityScores,
+  CharacterCreationDraft,
+} from './creation.js';
+import {
+  getBundledDnd5eCharacterResolver,
+  type RulesPackCharacterResolver,
+} from './rulesPackResolver.js';
+
+/** Severity of an incremental draft diagnostic. */
+export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
+
+/**
+ * One incremental diagnostic. `pending` means a check is blocked on a missing
+ * prerequisite (named in {@link dependsOn}) — it is informational, not a user
+ * error, and never blocks finalization the way an `error` does.
+ */
+export interface CharacterCreationDiagnostic {
+  /** Stable field id (e.g. `class`, `abilityScores.constitution`, `spells`). */
+  readonly field: string;
+  readonly severity: DraftDiagnosticSeverity;
+  readonly message: string;
+  /** The current offending value, when one applies. */
+  readonly value?: unknown;
+  /** Prerequisite fields this check is waiting on (for `pending`). */
+  readonly dependsOn?: readonly string[];
+}
+
+/** A required choice that is not yet satisfied. */
+export interface RequiredChoice {
+  readonly field: string;
+  readonly label: string;
+}
+
+/** Derived values for a (possibly partial) draft. */
+export interface CharacterDraftDerived {
+  /** Level-1 proficiency bonus (+2). */
+  readonly proficiencyBonus: number;
+  /** Modifiers for each valid base score present so far. */
+  readonly abilityModifiers: Partial<Record<AbilityScoreName, number>>;
+  /**
+   * Final scores per ability. Equal to base scores until ancestry ability
+   * bonuses are modeled (eshyra-b69j.12).
+   */
+  readonly finalAbilityScores: Partial<Record<AbilityScoreName, number>>;
+  /** Level-1 max HP, present only once class hit die and Constitution exist. */
+  readonly maxHitPoints?: number;
+}
+
+/** Identity fields, all optional while the draft is in progress. */
+export interface CharacterDraftIdentity {
+  readonly name?: string;
+  readonly concept?: string;
+  readonly description?: string;
+  readonly pronouns?: string;
+}
+
+/**
+ * D&D-typed selections. Values are stored as the user entered them (display
+ * name or canonical ref); resolution happens during recompute so prior answers
+ * are never silently rewritten.
+ */
+export interface Dnd5eDraftSelections {
+  readonly className?: string;
+  readonly ancestry?: string;
+  readonly background?: string;
+  readonly abilityScoreMethod?: AbilityScoreMethod;
+  readonly baseAbilityScores?: Partial<Record<AbilityScoreName, number>>;
+  readonly spells?: readonly string[];
+}
+
+/**
+ * Serializable work-in-progress character. Distinct from the legacy
+ * fully-specified `CharacterCreationDraft` (the finalization input): this holds
+ * partial answers plus recomputed derived/diagnostics/stale state.
+ */
+export interface CharacterDraft {
+  readonly id: string;
+  readonly rulesPackId: string;
+  readonly recipeId: string;
+  readonly creationMode: string;
+  readonly level: number;
+  readonly identity: CharacterDraftIdentity;
+  readonly selections: Dnd5eDraftSelections;
+  readonly derived: CharacterDraftDerived;
+  /** Selection fields whose current value is invalid under live prerequisites. */
+  readonly stale: readonly string[];
+  readonly diagnostics: readonly CharacterCreationDiagnostic[];
+}
+
+/** Input to {@link CharacterCreationEngine.createDraft}. */
+export interface CreateDraftInput {
+  readonly id: string;
+  readonly mode: string;
+  readonly level?: number;
+  readonly rulesPackId?: string;
+  readonly recipeId?: string;
+  readonly identity?: CharacterDraftIdentity;
+  readonly selections?: Dnd5eDraftSelections;
+}
+
+/** Result of projecting a draft into a finalizable legacy draft. */
+export type FinalizableDraftResult =
+  | { readonly ok: true; readonly draft: CharacterCreationDraft }
+  | {
+      readonly ok: false;
+      readonly missing: readonly RequiredChoice[];
+      readonly errors: readonly CharacterCreationDiagnostic[];
+    };
+
+/**
+ * Pure character-creation domain layer. Every setter returns a new, fully
+ * recomputed draft; nothing here touches the terminal or the database.
+ */
+export interface CharacterCreationEngine {
+  createDraft(input: CreateDraftInput): CharacterDraft;
+  setIdentity(
+    draft: CharacterDraft,
+    patch: Partial<CharacterDraftIdentity>,
+  ): CharacterDraft;
+  setClass(draft: CharacterDraft, value: string | undefined): CharacterDraft;
+  setAncestry(draft: CharacterDraft, value: string | undefined): CharacterDraft;
+  setBackground(
+    draft: CharacterDraft,
+    value: string | undefined,
+  ): CharacterDraft;
+  setAbilityScoreMethod(
+    draft: CharacterDraft,
+    method: AbilityScoreMethod | undefined,
+  ): CharacterDraft;
+  setAbilityScore(
+    draft: CharacterDraft,
+    ability: AbilityScoreName,
+    value: number | undefined,
+  ): CharacterDraft;
+  setAbilityScores(
+    draft: CharacterDraft,
+    scores: Partial<Record<AbilityScoreName, number>>,
+  ): CharacterDraft;
+  setSpells(
+    draft: CharacterDraft,
+    spells: readonly string[] | undefined,
+  ): CharacterDraft;
+  /** Recompute and return the draft's diagnostics. */
+  validate(draft: CharacterDraft): readonly CharacterCreationDiagnostic[];
+  /** Recompute and return the draft's derived values. */
+  computeDerived(draft: CharacterDraft): CharacterDraftDerived;
+  /** Required choices not yet satisfied. */
+  missingRequiredChoices(draft: CharacterDraft): readonly RequiredChoice[];
+  /** True when the draft has no errors and no missing required choices. */
+  isFinalizable(draft: CharacterDraft): boolean;
+  /** Project a finalizable draft into the legacy finalization input. */
+  toFinalizableDraft(draft: CharacterDraft): FinalizableDraftResult;
+}
+
+const DEFAULT_LEVEL = 1;
+const LEVEL_1_PROFICIENCY_BONUS = 2;
+
+const REQUIRED_CHOICE_LABELS: Readonly<Record<string, string>> = {
+  name: 'Character name',
+  class: 'Class',
+  ancestry: 'Ancestry',
+  abilityScoreMethod: 'Ability score method',
+  abilityScores: 'Ability scores',
+};
+
+/**
+ * Build a character-creation engine over a rules-pack resolver. Defaults to the
+ * bundled D&D 5e SRD resolver; tests can inject an explicit resolver.
+ */
+export function createCharacterCreationEngine(
+  resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
+): CharacterCreationEngine {
+  function recompute(draft: CharacterDraft): CharacterDraft {
+    const diagnostics: CharacterCreationDiagnostic[] = [];
+    const stale: string[] = [];
+    const { selections } = draft;
+
+    const classRecord = resolveClass(selections.className);
+    if (selections.className !== undefined && classRecord === undefined) {
+      diagnostics.push({
+        field: 'class',
+        severity: 'error',
+        message: `unknown class: ${selections.className}`,
+        value: selections.className,
+      });
+    }
+
+    const ancestryName = resolveAncestry(selections.ancestry);
+    if (selections.ancestry !== undefined && ancestryName === undefined) {
+      diagnostics.push({
+        field: 'ancestry',
+        severity: 'error',
+        message: `unknown ancestry: ${selections.ancestry}`,
+        value: selections.ancestry,
+      });
+    }
+
+    const { abilityModifiers, finalAbilityScores } = validateAbilityScores(
+      selections,
+      diagnostics,
+    );
+
+    const maxHitPoints = computeHitPoints(selections, classRecord, diagnostics);
+
+    validateSpells(selections, classRecord, diagnostics, stale);
+
+    const derived: CharacterDraftDerived = {
+      proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
+      abilityModifiers,
+      finalAbilityScores,
+      ...(maxHitPoints !== undefined ? { maxHitPoints } : {}),
+    };
+
+    return { ...draft, derived, diagnostics, stale };
+  }
+
+  function resolveClass(value: string | undefined) {
+    if (value === undefined) {
+      return undefined;
+    }
+    const result = resolver.resolveClass(value);
+    return result.ok ? result.record : undefined;
+  }
+
+  function resolveAncestry(value: string | undefined): string | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    const result = resolver.resolveAncestry(value);
+    return result.ok ? result.record.name : undefined;
+  }
+
+  function validateAbilityScores(
+    selections: Dnd5eDraftSelections,
+    diagnostics: CharacterCreationDiagnostic[],
+  ): {
+    abilityModifiers: Partial<Record<AbilityScoreName, number>>;
+    finalAbilityScores: Partial<Record<AbilityScoreName, number>>;
+  } {
+    const base = selections.baseAbilityScores ?? {};
+    const method = selections.abilityScoreMethod;
+    const abilityModifiers: Partial<Record<AbilityScoreName, number>> = {};
+    const finalAbilityScores: Partial<Record<AbilityScoreName, number>> = {};
+
+    for (const name of ABILITY_SCORE_NAMES) {
+      const value = base[name];
+      if (value === undefined) {
+        continue;
+      }
+      if (!Number.isInteger(value)) {
+        diagnostics.push({
+          field: `abilityScores.${name}`,
+          severity: 'error',
+          message: 'ability score must be an integer',
+          value,
+        });
+        continue;
+      }
+      if (method === 'point_buy' && pointBuyCost(value) === undefined) {
+        diagnostics.push({
+          field: `abilityScores.${name}`,
+          severity: 'error',
+          message:
+            'point-buy score must be between 8 and 15 before ancestry bonuses',
+          value,
+        });
+        continue;
+      }
+      // Ancestry ability bonuses are not yet modeled (eshyra-b69j.12), so the
+      // final score equals the base score for now.
+      finalAbilityScores[name] = value;
+      abilityModifiers[name] = abilityModifier(value);
+    }
+
+    validateScoreMethodTotals(selections, base, diagnostics);
+    return { abilityModifiers, finalAbilityScores };
+  }
+
+  function validateScoreMethodTotals(
+    selections: Dnd5eDraftSelections,
+    base: Partial<Record<AbilityScoreName, number>>,
+    diagnostics: CharacterCreationDiagnostic[],
+  ): void {
+    const method = selections.abilityScoreMethod;
+    const values = ABILITY_SCORE_NAMES.map((name) => base[name]);
+    const allPresent = values.every(
+      (value): value is number =>
+        value !== undefined && Number.isInteger(value),
+    );
+    if (!allPresent) {
+      return;
+    }
+
+    if (method === 'point_buy') {
+      const costs = values.map((value) => pointBuyCost(value));
+      if (costs.some((cost) => cost === undefined)) {
+        return; // per-score range errors already reported
+      }
+      let total = 0;
+      for (const cost of costs) {
+        total += cost ?? 0;
+      }
+      if (total > POINT_BUY_BUDGET) {
+        diagnostics.push({
+          field: 'abilityScores',
+          severity: 'error',
+          message: `point-buy total exceeds ${POINT_BUY_BUDGET}: ${total}`,
+          value: total,
+        });
+      }
+      return;
+    }
+
+    if (method === 'standard_array') {
+      const sorted = [...values].sort((left, right) => right - left);
+      if (!STANDARD_ARRAY.every((score, index) => sorted[index] === score)) {
+        diagnostics.push({
+          field: 'abilityScores',
+          severity: 'error',
+          message: 'standard-array scores must be 15, 14, 13, 12, 10, and 8',
+        });
+      }
+    }
+  }
+
+  function computeHitPoints(
+    selections: Dnd5eDraftSelections,
+    classRecord: { hitDie: number } | undefined,
+    diagnostics: CharacterCreationDiagnostic[],
+  ): number | undefined {
+    const constitution = selections.baseAbilityScores?.constitution;
+    const constitutionValid =
+      constitution !== undefined &&
+      Number.isInteger(constitution) &&
+      (selections.abilityScoreMethod !== 'point_buy' ||
+        pointBuyCost(constitution) !== undefined);
+
+    if (classRecord !== undefined && constitutionValid) {
+      return classRecord.hitDie + abilityModifier(constitution as number);
+    }
+
+    // Cascade guard: do not stack an HP-pending notice on top of an existing
+    // class error, and stay silent on a wholly empty draft.
+    const classErrored =
+      selections.className !== undefined && classRecord === undefined;
+    const started =
+      selections.className !== undefined || constitution !== undefined;
+    if (!classErrored && started) {
+      const dependsOn: string[] = [];
+      if (classRecord === undefined) {
+        dependsOn.push('class');
+      }
+      if (!constitutionValid) {
+        dependsOn.push('abilityScores.constitution');
+      }
+      diagnostics.push({
+        field: 'maxHitPoints',
+        severity: 'pending',
+        message:
+          'Hit points will be calculated after class and Constitution are known.',
+        dependsOn,
+      });
+    }
+    return undefined;
+  }
+
+  function validateSpells(
+    selections: Dnd5eDraftSelections,
+    classRecord: { name: string } | undefined,
+    diagnostics: CharacterCreationDiagnostic[],
+    stale: string[],
+  ): void {
+    const spells = selections.spells ?? [];
+    if (spells.length === 0) {
+      return;
+    }
+    if (classRecord === undefined) {
+      diagnostics.push({
+        field: 'spells',
+        severity: 'pending',
+        message: 'Spell validation is waiting for class selection.',
+        dependsOn: ['class'],
+      });
+      return;
+    }
+    let invalid = false;
+    for (const spell of spells) {
+      const result = resolver.resolveSpell(spell);
+      if (!result.ok) {
+        diagnostics.push({
+          field: 'spells',
+          severity: 'error',
+          message: `unknown spell: ${spell}`,
+          value: spell,
+        });
+        invalid = true;
+        continue;
+      }
+      if (!result.record.classes.includes(classRecord.name)) {
+        diagnostics.push({
+          field: 'spells',
+          severity: 'error',
+          message: `${result.record.name} is not legal for ${classRecord.name}`,
+          value: spell,
+        });
+        invalid = true;
+      }
+    }
+    if (invalid) {
+      stale.push('spells');
+    }
+  }
+
+  function missingRequiredChoices(
+    draft: CharacterDraft,
+  ): readonly RequiredChoice[] {
+    const missing: string[] = [];
+    const { selections, identity } = draft;
+
+    if ((identity.name ?? '').trim().length === 0) {
+      missing.push('name');
+    }
+    if (resolveClass(selections.className) === undefined) {
+      missing.push('class');
+    }
+    if (resolveAncestry(selections.ancestry) === undefined) {
+      missing.push('ancestry');
+    }
+    if (selections.abilityScoreMethod === undefined) {
+      missing.push('abilityScoreMethod');
+    }
+    if (!hasCompleteValidScores(draft)) {
+      missing.push('abilityScores');
+    }
+
+    return missing.map((field) => ({
+      field,
+      label: REQUIRED_CHOICE_LABELS[field] ?? field,
+    }));
+  }
+
+  function hasCompleteValidScores(draft: CharacterDraft): boolean {
+    const base = draft.selections.baseAbilityScores ?? {};
+    const allPresent = ABILITY_SCORE_NAMES.every((name) => {
+      const value = base[name];
+      return value !== undefined && Number.isInteger(value);
+    });
+    if (!allPresent) {
+      return false;
+    }
+    return !draft.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.severity === 'error' &&
+        diagnostic.field.startsWith('abilityScores'),
+    );
+  }
+
+  function isFinalizable(draft: CharacterDraft): boolean {
+    return (
+      missingRequiredChoices(draft).length === 0 &&
+      !draft.diagnostics.some((diagnostic) => diagnostic.severity === 'error')
+    );
+  }
+
+  function toFinalizableDraft(draft: CharacterDraft): FinalizableDraftResult {
+    const missing = missingRequiredChoices(draft);
+    const errors = draft.diagnostics.filter(
+      (diagnostic) => diagnostic.severity === 'error',
+    );
+    if (missing.length > 0 || errors.length > 0) {
+      return { ok: false, missing, errors };
+    }
+
+    const base = draft.selections.baseAbilityScores ?? {};
+    const abilityScores = {} as Record<AbilityScoreName, number>;
+    for (const name of ABILITY_SCORE_NAMES) {
+      abilityScores[name] = base[name] as number;
+    }
+
+    const finalizable: CharacterCreationDraft = {
+      name: (draft.identity.name ?? '').trim(),
+      ancestry: resolveAncestry(draft.selections.ancestry) as string,
+      className: resolveClass(draft.selections.className)?.name as string,
+      level: draft.level,
+      abilityScoreMethod: draft.selections
+        .abilityScoreMethod as AbilityScoreMethod,
+      abilityScores: abilityScores as AbilityScores,
+      maxHitPoints: draft.derived.maxHitPoints as number,
+      spells: [...(draft.selections.spells ?? [])],
+    };
+    return { ok: true, draft: finalizable };
+  }
+
+  function withSelections(
+    draft: CharacterDraft,
+    patch: Partial<Dnd5eDraftSelections>,
+  ): CharacterDraft {
+    return recompute({
+      ...draft,
+      selections: { ...draft.selections, ...patch },
+    });
+  }
+
+  return {
+    createDraft(input: CreateDraftInput): CharacterDraft {
+      return recompute({
+        id: input.id,
+        rulesPackId: input.rulesPackId ?? DEFAULT_DND5E_SRD_BINDING.base.packId,
+        recipeId: input.recipeId ?? 'dnd5e-srd',
+        creationMode: input.mode,
+        level: input.level ?? DEFAULT_LEVEL,
+        identity: { ...input.identity },
+        selections: { ...input.selections },
+        derived: {
+          proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
+          abilityModifiers: {},
+          finalAbilityScores: {},
+        },
+        stale: [],
+        diagnostics: [],
+      });
+    },
+
+    setIdentity(draft, patch): CharacterDraft {
+      return recompute({
+        ...draft,
+        identity: { ...draft.identity, ...patch },
+      });
+    },
+
+    setClass(draft, value): CharacterDraft {
+      return withSelections(draft, { className: value });
+    },
+
+    setAncestry(draft, value): CharacterDraft {
+      return withSelections(draft, { ancestry: value });
+    },
+
+    setBackground(draft, value): CharacterDraft {
+      return withSelections(draft, { background: value });
+    },
+
+    setAbilityScoreMethod(draft, method): CharacterDraft {
+      return withSelections(draft, { abilityScoreMethod: method });
+    },
+
+    setAbilityScore(draft, ability, value): CharacterDraft {
+      const base = { ...(draft.selections.baseAbilityScores ?? {}) };
+      if (value === undefined) {
+        delete base[ability];
+      } else {
+        base[ability] = value;
+      }
+      return withSelections(draft, { baseAbilityScores: base });
+    },
+
+    setAbilityScores(draft, scores): CharacterDraft {
+      return withSelections(draft, { baseAbilityScores: { ...scores } });
+    },
+
+    setSpells(draft, spells): CharacterDraft {
+      return withSelections(draft, {
+        spells: spells === undefined ? undefined : [...spells],
+      });
+    },
+
+    validate(draft): readonly CharacterCreationDiagnostic[] {
+      return recompute(draft).diagnostics;
+    },
+
+    computeDerived(draft): CharacterDraftDerived {
+      return recompute(draft).derived;
+    },
+
+    missingRequiredChoices,
+    isFinalizable,
+    toFinalizableDraft,
+  };
+}
+
+let cachedEngine: CharacterCreationEngine | undefined;
+
+/** Shared engine over the bundled D&D 5e SRD resolver. */
+export function getDnd5eCharacterCreationEngine(): CharacterCreationEngine {
+  cachedEngine ??= createCharacterCreationEngine();
+  return cachedEngine;
+}
