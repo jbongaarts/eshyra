@@ -75,7 +75,7 @@ async function main(): Promise<void> {
 
   // --- Thaw-note check (only when a base ref is known) --------------------
 
-  const ciBase = process.env['GITHUB_BASE_REF'];
+  const ciBase = process.env.GITHUB_BASE_REF;
   const effectiveBase =
     base ??
     (ciBase !== undefined && ciBase !== '' ? `origin/${ciBase}` : undefined);

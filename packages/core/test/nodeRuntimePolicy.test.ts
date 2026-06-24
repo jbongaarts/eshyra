@@ -223,7 +223,13 @@ describe('Node runtime policy', () => {
       'node scripts/verify-current-worktree.mjs',
     );
     expect(scripts.format).toBe('biome check --write .');
-    expect(scripts['format:check']).toBe('biome check .');
+    // CI fails on any Biome diagnostic, not just errors: the read-only Biome
+    // scripts pass --error-on-warnings so a warning is as blocking as an error.
+    expect(scripts['format:check']).toBe('biome check --error-on-warnings .');
+    expect(scripts.lint).toBe('biome lint --error-on-warnings .');
+    expect(scripts.check).toBe(
+      'npm run check:hidden-unicode && biome ci --error-on-warnings .',
+    );
 
     const preflight = readText('scripts/agent-preflight-main.mjs');
     expect(preflight).toContain(

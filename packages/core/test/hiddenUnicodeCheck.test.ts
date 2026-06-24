@@ -99,7 +99,7 @@ describe('hidden/bidi Unicode guard', () => {
       'node scripts/check-hidden-unicode.mjs',
     );
     expect(scripts.check).toContain('check:hidden-unicode');
-    expect(scripts.check).toContain('biome ci .');
+    expect(scripts.check).toContain('biome ci --error-on-warnings .');
 
     const biome = readJson('biome.json') as {
       linter?: { rules?: { suspicious?: Record<string, unknown> } };

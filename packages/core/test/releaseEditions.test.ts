@@ -188,7 +188,11 @@ describe('edition-aware artifact naming and installers', () => {
     // GitHub mode must filter assets by the edition prefix, not just target.
     expect(sh).toMatch(/grep -- "\/eshyra-\$\{EDITION\}-"/);
     // Custom-base mode must include the edition in the constructed name.
-    expect(sh).toContain('eshyra-${EDITION}-${_ver}-${_target}.tar.gz');
+    // Matched as a regex (like the prefix assertion above) so the literal bash
+    // ${...} variables in install.sh are not read as JS template placeholders.
+    expect(sh).toMatch(
+      /eshyra-\$\{EDITION\}-\$\{_ver\}-\$\{_target\}\.tar\.gz/,
+    );
   });
 
   it('PowerShell installer exposes -Edition and $env:ESHYRA_EDITION', () => {
