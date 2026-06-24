@@ -187,14 +187,31 @@ export type {
   RecipeDraftValidation,
   RecipeFinalization,
 } from './character/recipe.js';
+// Level-1 required-choice enumeration (eshyra-b69j.12): turns a resolved class
+// (+ ancestry/background) into structured vs prose-only (tracked) required
+// choices, so the CLI never parses prose to discover core mechanical choices.
+export type {
+  EnumerateRequiredChoicesInput,
+  Level1RequiredChoice,
+  Level1RequiredChoiceKind,
+  Level1RequiredChoiceSource,
+  Level1RequiredChoiceStatus,
+} from './character/requiredChoices.js';
+export { enumerateLevel1RequiredChoices } from './character/requiredChoices.js';
 // Generated-rules-pack character resolver (eshyra-b69j.3 / eshyra-x50w):
 // resolves class/spell/ancestry choices for character creation against the
 // runtime SRD pack, replacing the retired hand-authored SRD_CATALOG.
 export type {
   CharacterResolution,
   ResolvedAncestryData,
+  ResolvedAncestryTrait,
+  ResolvedBackgroundData,
+  ResolvedChoiceSpec,
   ResolvedClassData,
+  ResolvedClassLevel1,
+  ResolvedLevelSpellcasting,
   ResolvedSpellData,
+  ResolvedStartingEquipment,
   RulesPackCharacterResolver,
 } from './character/rulesPackResolver.js';
 export {

@@ -53,6 +53,59 @@ describe('rules-pack character resolver', () => {
     expect(result).toMatchObject({ ok: false, code: 'not_found' });
   });
 
+  it('exposes structured class option/progression metadata for level-1 creation', () => {
+    const fighter = resolver.resolveClass('Fighter');
+    expect(fighter.ok).toBe(true);
+    if (fighter.ok) {
+      expect(fighter.record.skillChoices?.[0]).toMatchObject({ choose: 2 });
+      expect(fighter.record.skillChoices?.[0].from).toContain('Athletics');
+      expect(fighter.record.startingEquipment?.entries.length).toBeGreaterThan(
+        0,
+      );
+      expect(fighter.record.level1?.featureRefs).toContain(
+        'feature:fighter:second-wind',
+      );
+      // A martial class has no level-1 spellcasting block.
+      expect(fighter.record.level1?.spellcasting).toBeUndefined();
+    }
+
+    const wizard = resolver.resolveClass('Wizard');
+    expect(wizard.ok).toBe(true);
+    if (wizard.ok) {
+      expect(wizard.record.level1?.spellcasting).toMatchObject({
+        cantripsKnown: 3,
+        slots: { '1': 2 },
+      });
+    }
+
+    const bard = resolver.resolveClass('Bard');
+    if (bard.ok) {
+      expect(bard.record.level1?.spellcasting?.spellsKnown).toBe(4);
+    }
+  });
+
+  it('exposes ancestry traits and resolves the background record', () => {
+    const elf = resolver.resolveAncestry('Elf');
+    expect(elf.ok).toBe(true);
+    if (elf.ok) {
+      expect(elf.record.speed).toBe(30);
+      const increase = elf.record.traits?.find((t) =>
+        /ability score increase/i.test(t.name),
+      );
+      expect(increase?.text).toMatch(/Dexterity/);
+    }
+
+    const acolyte = resolver.resolveBackground('Acolyte');
+    expect(acolyte.ok).toBe(true);
+    if (acolyte.ok) {
+      expect(acolyte.record.skillProficiencies).toEqual(
+        expect.arrayContaining(['Insight', 'Religion']),
+      );
+      expect(acolyte.record.languages).toMatch(/choice/i);
+    }
+    expect(resolver.resolveBackground('Noble').ok).toBe(false);
+  });
+
   it('resolves spells with their legal class list', () => {
     const fireBolt = resolver.resolveSpell('Fire Bolt');
     expect(fireBolt.ok).toBe(true);
