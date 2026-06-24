@@ -15,6 +15,11 @@ import { migrateSchema } from './migrations.js';
  *   - `plot_flags.value_json`           (any JSON value)
  *   - `overlay_facts.value_json`        (any JSON value)
  *
+ * Typed live campaign canon:
+ *   - `campaign_overlay_lore`           (consequential improvised lore promoted
+ *                                        during play; append-friendly rows with
+ *                                        truth status and visibility)
+ *
  * Archival / trace / generated — deliberately opaque, jsonColumn<TraceJsonValue[]>.
  * Do not add shape validation here; these blobs are owned by the memory subsystem:
  *   - `turn_trace.*_json`
@@ -36,7 +41,7 @@ import { migrateSchema } from './migrations.js';
  * Operational diagnostics are non-canon debugging records, not game history:
  *   - `turn_failure_diagnostic`
  */
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 
 export class SchemaCompatibilityError extends Error {
   constructor(message: string) {
@@ -107,6 +112,67 @@ export function initSchema(db: Db): void {
       session_id TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS campaign_overlay_lore (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL CHECK (kind IN (
+        'rumor',
+        'clue',
+        'npc_detail',
+        'location_detail',
+        'quest_hook',
+        'threat_report',
+        'scene_consequence',
+        'player_created_detail',
+        'other'
+      )),
+      subject_id TEXT,
+      subject_text TEXT NOT NULL,
+      location_id TEXT,
+      npc_id TEXT,
+      faction_id TEXT,
+      fact TEXT NOT NULL,
+      truth_status TEXT NOT NULL CHECK (truth_status IN (
+        'confirmed',
+        'true',
+        'false',
+        'disproven',
+        'unknown',
+        'rumored',
+        'reported',
+        'observed',
+        'believed',
+        'lie',
+        'exaggeration'
+      )),
+      source TEXT NOT NULL CHECK (source IN (
+        'dm_improvised',
+        'player_declared',
+        'module_derived',
+        'tool_result',
+        'consequence'
+      )),
+      scope TEXT NOT NULL CHECK (scope IN ('scene', 'session', 'campaign')),
+      visibility TEXT NOT NULL CHECK (visibility IN (
+        'player_visible',
+        'dm_only',
+        'mixed'
+      )),
+      introduced_at_turn_id TEXT NOT NULL,
+      introduced_at_session_id TEXT NOT NULL,
+      supersedes TEXT,
+      invalidates TEXT,
+      tags_json TEXT NOT NULL DEFAULT '[]',
+      provenance TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS campaign_overlay_lore_location
+      ON campaign_overlay_lore(location_id);
+    CREATE INDEX IF NOT EXISTS campaign_overlay_lore_npc
+      ON campaign_overlay_lore(npc_id);
+    CREATE INDEX IF NOT EXISTS campaign_overlay_lore_kind
+      ON campaign_overlay_lore(kind);
 
     -- E2: immutable campaign template forked from an authored module pack.
     -- These rows are never mutated during play; live divergence is recorded

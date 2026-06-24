@@ -26,6 +26,7 @@ import { giveItemTool } from './toolGiveItem.js';
 import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
+import { recordWorldFactTool } from './toolRecordWorldFact.js';
 import type { Tool } from './toolRegistry.js';
 import { ToolRegistry } from './toolRegistry.js';
 import { removeConditionTool } from './toolRemoveCondition.js';
@@ -48,6 +49,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   updateClockTool,
   setPlotFlagTool,
   setWorldFactTool,
+  recordWorldFactTool,
   worldQueryTool,
   memoryDrilldownTool,
 ];

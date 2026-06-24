@@ -8,16 +8,24 @@ export const worldQueryTool: Tool = {
   // Read-only world resolution (template + overlay); no canon write (eshyra-dwkm).
   mutates: false,
   description:
-    'Resolve a world target (template + live overlay). ' +
+    'Resolve or search a world target (module canon + campaign overlay lore). ' +
     'The result includes visibility annotations: fields marked DM-only ' +
     '(e.g. an NPC\'s "secret") must not be narrated to the player verbatim. ' +
-    'args: { type: "location"|"encounter"|"npc"|"lore"|"meta", id?: string }.',
+    'args: { type: "location"|"encounter"|"npc"|"lore"|"meta"|"overlay_lore"|"search", id?, query?, locationId?, npcId?, subject?, kind?, tags? }.',
   inputSchema: {
     type: 'object',
     properties: {
       type: {
         type: 'string',
-        enum: ['location', 'encounter', 'npc', 'lore', 'meta'],
+        enum: [
+          'location',
+          'encounter',
+          'npc',
+          'lore',
+          'meta',
+          'overlay_lore',
+          'search',
+        ],
         description: 'The world target kind to resolve.',
       },
       id: {
@@ -25,6 +33,51 @@ export const worldQueryTool: Tool = {
         description:
           'Target id. Required for every type except "meta" (the singleton ' +
           'pack metadata).',
+      },
+      query: {
+        type: 'string',
+        description:
+          'Search/discovery terms for type "search" or overlay lore filtering.',
+      },
+      locationId: {
+        type: 'string',
+        description: 'Filter overlay lore by location id.',
+      },
+      npcId: {
+        type: 'string',
+        description: 'Filter overlay lore by NPC id.',
+      },
+      subject: {
+        type: 'string',
+        description: 'Filter overlay lore by natural subject text.',
+      },
+      kind: {
+        type: 'string',
+        enum: [
+          'rumor',
+          'clue',
+          'npc_detail',
+          'location_detail',
+          'quest_hook',
+          'threat_report',
+          'scene_consequence',
+          'player_created_detail',
+          'other',
+        ],
+      },
+      tags: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Overlay lore tags to require.',
+      },
+      includeInvalidated: {
+        type: 'boolean',
+        description: 'Include lore records that invalidate earlier records.',
+      },
+      limit: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 50,
       },
     },
     required: ['type'],

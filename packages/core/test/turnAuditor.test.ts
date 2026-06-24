@@ -272,6 +272,129 @@ describe('audit prompt current-state evidence (eshyra-n01v)', () => {
   });
 });
 
+describe('audit prompt campaign overlay lore evidence', () => {
+  it('instructs the auditor on lore recording, failed calls, and truth status', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain('record_world_fact');
+    expect(prompt).toContain(
+      'Failed tool calls (`ok:false`) are never evidence',
+    );
+    expect(prompt).toContain('successful `record_world_fact`');
+    expect(prompt).toContain('rumor/reported/believed');
+    expect(prompt).toContain('does NOT support "X is true"');
+    expect(prompt).toContain('Overlay visibility is binding');
+    expect(prompt).toContain('`dm_only` overlay lore');
+    expect(prompt).toContain('must not be narrated as player-facing support');
+  });
+
+  it('summarizes current-turn recorded overlay lore by canon tier', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What is wrong in town?',
+      candidateResponse:
+        'Villagers report Old Renn is missing and his mule came back alone.',
+      providedToolNames: ['record_world_fact', 'world_query'],
+      executedToolCalls: [
+        {
+          tool: 'record_world_fact',
+          args: { subjectText: 'Old Renn' },
+          result: {
+            ok: true,
+            data: {
+              canonTier: 'campaign_overlay_lore',
+              record: {
+                id: 'old-renn-rumor',
+                fact: 'Old Renn is missing.',
+                truthStatus: 'reported',
+                visibility: 'player_visible',
+              },
+            },
+          },
+          mutates: true,
+          source: 'native',
+        },
+      ],
+    });
+
+    expect(message).toContain('## Canon-Tier Evidence Summary');
+    expect(message).toContain('campaign_overlay_lore');
+    expect(message).toContain('old-renn-rumor');
+    expect(message).toContain('reported');
+    expect(message).toContain('player_visible');
+  });
+
+  it('exposes dm_only and mixed visibility in debug evidence summaries', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What do I know about Old Renn?',
+      candidateResponse: 'You do not know the hidden kidnapper yet.',
+      providedToolNames: ['world_query'],
+      executedToolCalls: [
+        {
+          tool: 'world_query',
+          args: { type: 'search', query: 'Old Renn' },
+          result: {
+            ok: true,
+            data: {
+              ok: true,
+              type: 'search',
+              evidence: [
+                {
+                  tier: 'campaign_overlay_lore',
+                  id: 'visible-hook',
+                  visibility: 'player_visible',
+                  summary: 'Old Renn is missing.',
+                },
+                {
+                  tier: 'campaign_overlay_lore',
+                  id: 'hidden-kidnapper',
+                  visibility: 'dm_only',
+                  summary: 'The reeve staged the disappearance.',
+                },
+                {
+                  tier: 'campaign_overlay_lore',
+                  id: 'mixed-rumor',
+                  visibility: 'mixed',
+                  summary: 'Villagers know only part of the rumor.',
+                },
+              ],
+            },
+          },
+          mutates: false,
+          source: 'native',
+        },
+      ],
+    });
+
+    expect(message).toContain('hidden-kidnapper');
+    expect(message).toContain('dm_only');
+    expect(message).toContain('mixed-rumor');
+    expect(message).toContain('mixed');
+  });
+
+  it('marks failed world_query calls as non-evidence', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What does the north gate show?',
+      candidateResponse: 'The north gate has axe-cuts.',
+      providedToolNames: ['world_query'],
+      executedToolCalls: [
+        {
+          tool: 'world_query',
+          args: { type: 'location', id: 'north-gate' },
+          result: {
+            ok: false,
+            code: 'not_found',
+            message: 'no location',
+          },
+          mutates: false,
+          source: 'native',
+        },
+      ],
+    });
+
+    expect(message).toContain('failed_tool_call_not_evidence');
+    expect(message).toContain('not_found');
+  });
+});
+
 describe('ModelTurnAuditor', () => {
   it.each([
     { quantity: 10, expected: 'accept' },

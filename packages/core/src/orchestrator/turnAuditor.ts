@@ -138,8 +138,29 @@ const AUDIT_POLICY = [
   '- A change to HP, conditions, inventory, time/location, plot flags, or world',
   '  facts requires the matching state tool (e.g. `adjust_hp`, `add_condition`,',
   '  `give_item`, `update_clock`, `set_plot_flag`, `set_world_fact`).',
+  '- Consequential improvised lore that creates a hook, clue, NPC belief,',
+  '  evidence, or a future-relevant world fact requires `record_world_fact`.',
   '- A claim that resolves or advances a location/NPC/lore requires the canonical',
   '  tool (e.g. `world_query`); opening/closing a scene requires `mark_scene`.',
+  '- Failed tool calls (`ok:false`) are never evidence for factual assertions.',
+  '  Do not accept a candidate that relies on a failed `world_query` or failed',
+  '  `record_world_fact` result.',
+  '- A successful `record_world_fact` call in the current turn supports the newly',
+  '  recorded campaign overlay lore. A successful `world_query` can support',
+  '  module canon, campaign state overlays, and campaign overlay lore returned',
+  '  in its result.',
+  '- Truth status is binding: a rumor/reported/believed record supports claims',
+  '  such as "NPCs say/believe/report X"; it does NOT support "X is true" unless',
+  '  the evidence has true/confirmed/observed status or another tool result',
+  '  establishes that stronger claim.',
+  '- Overlay visibility is binding: player-facing narration can rely only on',
+  '  `player_visible` overlay lore. `dm_only` overlay lore may guide hidden DM',
+  '  reasoning/debugging but must not be narrated as player-facing support; keep',
+  '  `mixed` records attributed to the visible portion and do not reveal hidden',
+  '  content verbatim.',
+  '- Decorative scene color does not need a tool, but if the candidate treats a',
+  '  new improvised detail as consequential established canon, it must be',
+  '  recorded first.',
   '- The Current State Snapshot is evidence for read-only claims about current',
   '  character state, including HP, conditions, inventory/equipment, flags, and',
   '  clock/location. Do NOT require `memory_drilldown` when the answer is fully',
@@ -169,6 +190,11 @@ const AUDIT_POLICY = [
   '  explicit-action-only tool; do not flag it.',
   'When in doubt about whether the input authorizes the action, treat ambiguous',
   'state-query phrasing as a query and reject the mutation.',
+  '',
+  'Retry guidance for lore/world rejections: tell the DM not to rely on failed',
+  '`world_query` results; if introducing a consequential new detail, record it',
+  'with `record_world_fact` before treating it as established; if not recording',
+  'it, phrase it as tentative, attributed, or non-consequential color.',
 ].join('\n');
 
 /** Build the auditor system prompt. */
@@ -273,9 +299,69 @@ function summarizeExecutedCall(
   return { ...base, code: call.result.code };
 }
 
+function summarizeCanonTierEvidence(
+  call: ExecutedToolCall,
+): Record<string, unknown> | undefined {
+  if (!call.result.ok) {
+    return {
+      tool: call.tool,
+      ok: false,
+      reason: 'failed_tool_call_not_evidence',
+      code: call.result.code,
+    };
+  }
+  const data = call.result.data;
+  if (call.tool === 'record_world_fact') {
+    const record = readRecord(data, 'record');
+    return {
+      tool: call.tool,
+      tier: readString(data, 'canonTier') ?? 'campaign_overlay_lore',
+      id: readString(record, 'id'),
+      truthStatus: readString(record, 'truthStatus'),
+      visibility: readString(record, 'visibility'),
+      summary: readString(record, 'fact'),
+    };
+  }
+  if (call.tool === 'world_query') {
+    return {
+      tool: call.tool,
+      tier: 'world_query_result',
+      evidence: boundedAuditJson(readUnknown(data, 'evidence')),
+    };
+  }
+  if (call.mutates) {
+    return { tool: call.tool, tier: 'campaign_state' };
+  }
+  return undefined;
+}
+
+function readUnknown(value: unknown, key: string): unknown {
+  return typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)[key]
+    : undefined;
+}
+
+function readRecord(
+  value: unknown,
+  key: string,
+): Record<string, unknown> | undefined {
+  const nested = readUnknown(value, key);
+  return typeof nested === 'object' && nested !== null
+    ? (nested as Record<string, unknown>)
+    : undefined;
+}
+
+function readString(value: unknown, key: string): string | undefined {
+  const field = readUnknown(value, key);
+  return typeof field === 'string' ? field : undefined;
+}
+
 /** Build the auditor user message describing the turn to judge. */
 export function buildAuditUserMessage(input: TurnAuditInput): string {
   const executed = input.executedToolCalls.map(summarizeExecutedCall);
+  const canonEvidence = input.executedToolCalls
+    .map(summarizeCanonTierEvidence)
+    .filter((entry): entry is Record<string, unknown> => entry !== undefined);
   const explicitActionTools = input.requiresExplicitActionTools ?? [];
   return [
     '## Provided Tools',
@@ -290,6 +376,11 @@ export function buildAuditUserMessage(input: TurnAuditInput): string {
     '',
     '## Executed Tool Calls This Turn',
     executed.length > 0 ? JSON.stringify(executed) : '(none executed)',
+    '',
+    '## Canon-Tier Evidence Summary',
+    canonEvidence.length > 0
+      ? JSON.stringify(canonEvidence)
+      : '(no successful canon evidence)',
     '',
     '## Current State Snapshot',
     input.currentStateSnapshot === undefined

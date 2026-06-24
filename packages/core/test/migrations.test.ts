@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import {
+  canonicalize,
+  serializeCampaign,
+} from '../src/persistence/checkpoint/serialize.js';
 import type { Db } from '../src/persistence/db.js';
 import { openDatabase } from '../src/persistence/db.js';
 import {
@@ -320,6 +324,136 @@ describe('migrations', () => {
       .prepare('SELECT value FROM meta WHERE key = ?')
       .get('schema_version') as { value: string } | undefined;
     expect(versionRow?.value).toBe('12');
+    db.close();
+  });
+
+  it('v12→v13 creates campaign_overlay_lore and preserves existing campaign data', () => {
+    const db = openDatabase(':memory:');
+    db.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('schema_version', '12');
+      CREATE TABLE plot_flags (
+        key TEXT PRIMARY KEY,
+        value_json TEXT NOT NULL,
+        provenance TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      INSERT INTO plot_flags VALUES (
+        'existing_flag',
+        '{"still":"readable"}',
+        'test:v12',
+        'session-1',
+        '2026-05-20T09:00:00.000Z'
+      );
+      CREATE TABLE clock (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        in_game_time TEXT NOT NULL DEFAULT '',
+        current_location_id TEXT,
+        provenance TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      INSERT INTO clock VALUES (
+        1,
+        'morning',
+        'hearthmere',
+        'test:v12',
+        'session-1',
+        '2026-05-20T09:00:00.000Z'
+      );
+    `);
+
+    migrateSchema(db, 12, 13);
+
+    const versionRow = db
+      .prepare('SELECT value FROM meta WHERE key = ?')
+      .get('schema_version') as { value: string } | undefined;
+    expect(versionRow?.value).toBe('13');
+
+    const tables = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='campaign_overlay_lore'",
+      )
+      .all();
+    expect(tables).toHaveLength(1);
+
+    const cols = db
+      .prepare('PRAGMA table_info(campaign_overlay_lore)')
+      .all() as {
+      name: string;
+    }[];
+    expect(cols.map((c) => c.name)).toEqual(
+      expect.arrayContaining([
+        'id',
+        'kind',
+        'subject_id',
+        'subject_text',
+        'location_id',
+        'npc_id',
+        'faction_id',
+        'fact',
+        'truth_status',
+        'source',
+        'scope',
+        'visibility',
+        'introduced_at_turn_id',
+        'introduced_at_session_id',
+        'supersedes',
+        'invalidates',
+        'tags_json',
+        'provenance',
+        'updated_at',
+      ]),
+    );
+
+    db.prepare(
+      `INSERT INTO campaign_overlay_lore(
+        id, kind, subject_id, subject_text, location_id, npc_id, faction_id,
+        fact, truth_status, source, scope, visibility,
+        introduced_at_turn_id, introduced_at_session_id, supersedes,
+        invalidates, tags_json, provenance, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'old-renn-hook',
+      'quest_hook',
+      'old-renn',
+      'Old Renn',
+      'hearthmere',
+      null,
+      null,
+      'Old Renn and his charcoal cart are missing.',
+      'reported',
+      'dm_improvised',
+      'campaign',
+      'player_visible',
+      'turn-1',
+      'session-1',
+      null,
+      null,
+      '["hearthmere","missing-cart"]',
+      'model:turn-1',
+      '2026-05-20T10:00:00.000Z',
+    );
+
+    const row = db
+      .prepare(
+        'SELECT subject_text, tags_json, visibility FROM campaign_overlay_lore WHERE id = ?',
+      )
+      .get('old-renn-hook') as {
+      subject_text: string;
+      tags_json: string;
+      visibility: string;
+    };
+    expect(row.subject_text).toBe('Old Renn');
+    expect(JSON.parse(row.tags_json)).toEqual(['hearthmere', 'missing-cart']);
+    expect(row.visibility).toBe('player_visible');
+
+    const flag = db
+      .prepare('SELECT value_json FROM plot_flags WHERE key = ?')
+      .get('existing_flag') as { value_json: string } | undefined;
+    expect(flag?.value_json).toBe('{"still":"readable"}');
+    expect(canonicalize(serializeCampaign(db))).toContain('old-renn-hook');
     db.close();
   });
 });

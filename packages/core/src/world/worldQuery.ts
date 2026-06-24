@@ -1,9 +1,16 @@
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import {
+  type CampaignOverlayLoreRecord,
+  queryCampaignOverlayLore,
+} from './campaignOverlayLore.js';
 import type {
+  ModuleWorldTargetType,
+  WorldCanonEvidence,
   WorldOverlay,
   WorldQueryResult,
   WorldQueryTarget,
+  WorldSearchResult,
   WorldTargetType,
 } from './types.js';
 import { WorldModuleError } from './validate.js';
@@ -52,7 +59,7 @@ function escapeLikePrefix(prefix: string): string {
   return prefix.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
-const TABLE_BY_TYPE: Record<WorldTargetType, string> = {
+const TABLE_BY_TYPE: Record<ModuleWorldTargetType, string> = {
   location: 'module_location',
   encounter: 'module_encounter',
   npc: 'module_npc',
@@ -75,6 +82,52 @@ interface OverlayRow {
  * view, the raw template, and the overlay fields that diverged it.
  */
 export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
+  if (target.type === 'overlay_lore') {
+    const records = queryCampaignOverlayLore(db, {
+      id: target.id,
+      query: target.query,
+      locationId: target.locationId,
+      npcId: target.npcId,
+      subject: target.subject,
+      kind: isOverlayLoreKind(target.kind) ? target.kind : undefined,
+      tags: target.tags,
+      includeInvalidated: target.includeInvalidated,
+      limit: target.limit,
+    }).map(overlayLoreEvidence);
+    if (target.id !== undefined && records.length === 0) {
+      return {
+        ok: false,
+        code: 'not_found',
+        message: `no campaign overlay lore '${target.id}'`,
+      };
+    }
+    return {
+      ok: true,
+      type: 'overlay_lore',
+      id: target.id,
+      records,
+      evidence: records,
+    };
+  }
+
+  if (target.type === 'search') {
+    const results = worldSearch(db, target);
+    return {
+      ok: true,
+      type: 'search',
+      query: target.query,
+      results,
+      evidence: results.map((result) => ({
+        tier: result.tier,
+        source: result.tier,
+        id: result.id,
+        truthStatus: result.truthStatus,
+        visibility: result.visibility,
+        summary: result.summary,
+      })),
+    };
+  }
+
   const table = TABLE_BY_TYPE[target.type];
   const id = target.type === 'meta' ? '' : target.id;
 
@@ -133,6 +186,31 @@ export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
     target.type,
     resolved,
   );
+  const overlayLore = queryCampaignOverlayLore(db, {
+    locationId: target.type === 'location' ? id : undefined,
+    npcId: target.type === 'npc' ? id : undefined,
+    subject: target.type === 'lore' ? id : undefined,
+    limit: 10,
+  }).map(overlayLoreEvidence);
+  const moduleEvidence: WorldCanonEvidence = {
+    tier: 'module_canon',
+    source: table,
+    id: target.type === 'meta' ? 'meta' : id,
+    summary:
+      typeof resolved.name === 'string'
+        ? resolved.name
+        : typeof resolved.title === 'string'
+          ? resolved.title
+          : target.type,
+  };
+  const overlayEvidence = overlays.map((overlay): WorldCanonEvidence => {
+    return {
+      tier: 'campaign_state',
+      source: 'overlay_facts',
+      id: `${target.type}:${id ?? ''}:${overlay.field}`,
+      summary: `${overlay.field}: ${String(overlay.value)}`,
+    };
+  });
 
   return {
     ok: true,
@@ -141,7 +219,140 @@ export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
     resolved,
     template,
     overlays,
+    overlayLore,
+    evidence: [moduleEvidence, ...overlayEvidence, ...overlayLore],
     visibility,
     dmOnlyFields,
   };
+}
+
+function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
+  const query = (target.query ?? target.subject ?? '').toLowerCase();
+  const limit = Math.max(1, Math.min(target.limit ?? 20, 50));
+  const moduleResults: WorldSearchResult[] = [];
+  for (const [type, table] of Object.entries(TABLE_BY_TYPE)) {
+    if (type === 'meta') continue;
+    const rows = db
+      .prepare(`SELECT id, data_json FROM ${table} ORDER BY id`)
+      .all() as { id: string; data_json: string }[];
+    for (const row of rows) {
+      const data = templateDataColumn.decode(row.data_json);
+      const label = labelFor(data, row.id);
+      const summary = summaryFor(data, label);
+      const haystack = `${row.id} ${label} ${summary}`.toLowerCase();
+      if (query.length === 0 || haystack.includes(query)) {
+        moduleResults.push({
+          tier: 'module_canon',
+          type: type as WorldTargetType,
+          id: row.id,
+          label,
+          summary,
+        });
+      }
+    }
+  }
+  const terms = normalizeSearchTerms(target.query ?? target.subject ?? '');
+  const overlayResults = queryCampaignOverlayLore(db, {
+    subject: target.subject,
+    locationId: target.locationId,
+    npcId: target.npcId,
+    kind: isOverlayLoreKind(target.kind) ? target.kind : undefined,
+    tags: target.tags,
+    includeInvalidated: target.includeInvalidated,
+    limit,
+  })
+    .filter(
+      (record) => terms.length === 0 || overlaySearchMatches(record, terms),
+    )
+    .map((record): WorldSearchResult => {
+      return {
+        tier:
+          record.kind === 'rumor' || record.truthStatus === 'believed'
+            ? 'rumor_belief'
+            : 'campaign_overlay_lore',
+        type: 'overlay_lore',
+        id: record.id,
+        label: record.subjectText,
+        summary: record.fact,
+        truthStatus: record.truthStatus,
+        visibility: record.visibility,
+      };
+    });
+  return [...moduleResults, ...overlayResults].slice(0, limit);
+}
+
+function overlayLoreEvidence(
+  record: CampaignOverlayLoreRecord,
+): WorldCanonEvidence {
+  return {
+    tier:
+      record.kind === 'rumor' ||
+      record.truthStatus === 'rumored' ||
+      record.truthStatus === 'reported' ||
+      record.truthStatus === 'believed'
+        ? 'rumor_belief'
+        : 'campaign_overlay_lore',
+    source: record.source,
+    id: record.id,
+    truthStatus: record.truthStatus,
+    visibility: record.visibility,
+    summary: `${record.subjectText}: ${record.fact}`,
+  };
+}
+
+function labelFor(data: Record<string, unknown>, fallback: string): string {
+  if (typeof data.name === 'string') return data.name;
+  if (typeof data.title === 'string') return data.title;
+  return fallback;
+}
+
+function summaryFor(data: Record<string, unknown>, fallback: string): string {
+  if (typeof data.summary === 'string') return data.summary;
+  if (typeof data.description === 'string') return data.description;
+  if (typeof data.text === 'string') return data.text;
+  return fallback;
+}
+
+function normalizeSearchTerms(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((term) => term.length >= 2);
+}
+
+function overlaySearchMatches(
+  record: CampaignOverlayLoreRecord,
+  terms: readonly string[],
+): boolean {
+  const haystack = [
+    record.id,
+    record.kind,
+    record.subjectId,
+    record.subjectText,
+    record.locationId,
+    record.npcId,
+    record.fact,
+    record.truthStatus,
+    ...record.tags,
+  ]
+    .filter((part): part is string => typeof part === 'string')
+    .join(' ')
+    .toLowerCase();
+  return terms.some((term) => haystack.includes(term));
+}
+
+function isOverlayLoreKind(
+  value: unknown,
+): value is CampaignOverlayLoreRecord['kind'] {
+  return (
+    value === 'rumor' ||
+    value === 'clue' ||
+    value === 'npc_detail' ||
+    value === 'location_detail' ||
+    value === 'quest_hook' ||
+    value === 'threat_report' ||
+    value === 'scene_consequence' ||
+    value === 'player_created_detail' ||
+    value === 'other'
+  );
 }

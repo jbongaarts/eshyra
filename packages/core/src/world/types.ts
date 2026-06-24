@@ -141,7 +141,14 @@ export type WorldTargetType =
   | 'encounter'
   | 'npc'
   | 'lore'
-  | 'meta';
+  | 'meta'
+  | 'overlay_lore'
+  | 'search';
+
+export type ModuleWorldTargetType = Exclude<
+  WorldTargetType,
+  'overlay_lore' | 'search'
+>;
 
 /**
  * Whether a resolved world entity is safe for player-facing surfaces.
@@ -155,6 +162,15 @@ export interface WorldQueryTarget {
   readonly type: WorldTargetType;
   /** Required for every type except `meta` (the singleton pack metadata). */
   readonly id?: string;
+  /** Compact discovery terms for `search` or overlay lore filtering. */
+  readonly query?: string;
+  readonly locationId?: string;
+  readonly npcId?: string;
+  readonly subject?: string;
+  readonly kind?: string;
+  readonly tags?: readonly string[];
+  readonly includeInvalidated?: boolean;
+  readonly limit?: number;
 }
 
 /** One overlay field that diverged the template for a target. */
@@ -166,18 +182,60 @@ export interface WorldOverlay {
   readonly updatedAt: string;
 }
 
+export interface WorldCanonEvidence {
+  readonly tier:
+    | 'module_canon'
+    | 'campaign_state'
+    | 'campaign_overlay_lore'
+    | 'scene_fact'
+    | 'decorative_color'
+    | 'rumor_belief'
+    | 'tool_result';
+  readonly source: string;
+  readonly id?: string;
+  readonly truthStatus?: string;
+  readonly visibility?: 'player_visible' | 'dm_only' | 'mixed';
+  readonly summary: string;
+}
+
+export interface WorldSearchResult {
+  readonly tier: WorldCanonEvidence['tier'];
+  readonly type: WorldTargetType;
+  readonly id: string;
+  readonly label: string;
+  readonly summary: string;
+  readonly truthStatus?: string;
+  readonly visibility?: 'player_visible' | 'dm_only' | 'mixed';
+}
+
 export type WorldQueryResult =
   | {
       readonly ok: true;
-      readonly type: WorldTargetType;
+      readonly type: ModuleWorldTargetType;
       readonly id?: string;
       /** Template values with latest-wins overlay fields applied. */
       readonly resolved: Record<string, unknown>;
       readonly template: Record<string, unknown>;
       readonly overlays: readonly WorldOverlay[];
+      readonly overlayLore: readonly WorldCanonEvidence[];
+      readonly evidence: readonly WorldCanonEvidence[];
       readonly visibility: WorldEntityVisibility;
       /** Field names within `resolved` that are DM-only. Empty for fully public or fully DM-only entities. */
       readonly dmOnlyFields: readonly string[];
+    }
+  | {
+      readonly ok: true;
+      readonly type: 'overlay_lore';
+      readonly id?: string;
+      readonly records: readonly WorldCanonEvidence[];
+      readonly evidence: readonly WorldCanonEvidence[];
+    }
+  | {
+      readonly ok: true;
+      readonly type: 'search';
+      readonly query?: string;
+      readonly results: readonly WorldSearchResult[];
+      readonly evidence: readonly WorldCanonEvidence[];
     }
   | {
       readonly ok: false;
