@@ -35,7 +35,10 @@ import {
   DND5E_SRD_CHARACTER_RECIPE,
   enumerateLevel1RequiredChoices,
   parseAbilityScoreCommand,
+  type Rng,
   type RulesPackCharacterResolver,
+  recommendClasses,
+  rollAbilityScoreSet,
   summarizePointBuy,
   summarizeStandardArray,
 } from '@eshyra/core/internal';
@@ -48,6 +51,12 @@ export interface CharacterWizardDeps {
   readonly engine: CharacterCreationEngine;
   readonly resolver: RulesPackCharacterResolver;
   readonly store: CharacterDraftStore;
+  /**
+   * Dice source for the ability-first `roll` command (4d6-drop-lowest). The
+   * terminal entrypoint seeds this with entropy; tests inject a seeded RNG for
+   * deterministic roll output.
+   */
+  readonly rng: Rng;
 }
 
 /** What to create or resume. */
@@ -156,6 +165,7 @@ class Wizard {
     this.write('');
     this.write(`== ${step.label} ==`);
     this.write(this.stepIntro(step.id));
+    this.stepOnEnter(step.id);
     for (;;) {
       const input = await this.deps.io.prompt(`${step.label}> `);
       if (input === undefined) {
@@ -241,6 +251,16 @@ class Wizard {
     switch (stepId) {
       case 'identity':
         return this.applyIdentity(value);
+      case 'ability-method':
+        return this.applyAbilityMethod(value);
+      case 'class-recommendations':
+        // Informational (ability-first): suggestions are printed on entry; any
+        // input simply moves on to the class step.
+        if (value.length > 0) {
+          this.write('Press Enter to continue to class selection.');
+          return 'stay';
+        }
+        return 'advance';
       case 'class':
       case 'ancestry':
       case 'background':
@@ -278,6 +298,73 @@ class Wizard {
     this.dirty = true;
     this.write(`Name set to "${value}".`);
     return 'advance';
+  }
+
+  /**
+   * The standalone `ability-method` step (ability-first). Concept-first has no
+   * such step — its ability-scores step selects the method inline — so this only
+   * runs when the recipe puts method choice before score entry.
+   */
+  private applyAbilityMethod(value: string): Nav {
+    if (value.length === 0) {
+      if (this.draft.selections.abilityScoreMethod !== undefined) {
+        return 'advance';
+      }
+      this.write('Choose point_buy, standard_array, manual, or rolled.');
+      return 'stay';
+    }
+    const method = parseAbilityMethod(value);
+    if (method === undefined) {
+      this.write(
+        'Unknown method. Choose point_buy, standard_array, manual, or rolled.',
+      );
+      return 'stay';
+    }
+    this.draft = this.deps.engine.setAbilityScoreMethod(this.draft, method);
+    this.dirty = true;
+    this.write(`Method set to ${method}.`);
+    return 'advance';
+  }
+
+  /** Per-step entry rendering (currently only the recommendations panel). */
+  private stepOnEnter(stepId: string): void {
+    if (stepId === 'class-recommendations') {
+      this.printClassRecommendations();
+    }
+  }
+
+  /**
+   * The deterministic, recipe-data-driven class-fit panel for ability-first:
+   * rank classes by how the entered scores fit their primary abilities
+   * (eshyra-b69j.7's `recommendClasses`). Purely advisory — the next step still
+   * accepts any class, so a player can pick a "poor fit" on purpose.
+   */
+  private printClassRecommendations(): void {
+    const scores = this.draft.selections.baseAbilityScores ?? {};
+    if (Object.keys(scores).length === 0) {
+      this.write('Enter ability scores first to see class suggestions.');
+      return;
+    }
+    const recommendations = recommendClasses(scores, this.deps.resolver, {
+      limit: 5,
+    });
+    if (recommendations.length === 0) {
+      this.write('No class suggestions available.');
+      return;
+    }
+    this.write('Classes that fit your scores (best first):');
+    for (const rec of recommendations) {
+      const matched =
+        rec.matchedAbilities.length > 0
+          ? rec.matchedAbilities
+              .map((name) => ABILITY_FULL_NAMES[name])
+              .join(', ')
+          : 'no matching primary abilities';
+      this.write(
+        `  - ${rec.className} (fit ${formatSigned(rec.score)}; ${matched})`,
+      );
+    }
+    this.write('These are suggestions — you may choose any class next.');
   }
 
   private applyChoiceStep(stepId: string, value: string): Nav {
@@ -435,8 +522,11 @@ class Wizard {
         return nav;
       }
     }
+    const canRoll = this.draft.selections.abilityScoreMethod === 'rolled';
     this.write(
-      'Enter scores like `str 15`. Commands: done, reset, review, save, back, quit.',
+      canRoll
+        ? 'Enter scores like `str 15`, or `roll` to roll 4d6-drop-lowest. Commands: done, reset, review, save, back, quit.'
+        : 'Enter scores like `str 15`. Commands: done, reset, review, save, back, quit.',
     );
     for (;;) {
       this.write(this.abilitySummary());
@@ -445,6 +535,10 @@ class Wizard {
         return 'eof';
       }
       const command = parseCommand(input);
+      if (command.name === 'roll') {
+        this.rollAbilityPool();
+        continue;
+      }
       if (command.name === 'review') {
         this.printReview();
         continue;
@@ -538,6 +632,19 @@ class Wizard {
     }
   }
 
+  /**
+   * Roll six 4d6-drop-lowest values and present them as an assignable pool —
+   * the "let the dice inspire me" moment. The values are advisory: the player
+   * still assigns them with `str <value>` etc. (the `rolled` method accepts any
+   * plausible score), so the dice suggest without dictating.
+   */
+  private rollAbilityPool(): void {
+    const rolled = rollAbilityScoreSet(this.deps.rng);
+    const totals = rolled.map((r) => r.total).sort((a, b) => b - a);
+    this.write(`Rolled: ${totals.join(', ')}`);
+    this.write('Assign them with `str 15`, `dex 14`, … (highest first shown).');
+  }
+
   private abilitySummary(): string {
     const method = this.draft.selections.abilityScoreMethod;
     const scores = this.draft.selections.baseAbilityScores ?? {};
@@ -600,6 +707,10 @@ class Wizard {
     switch (stepId) {
       case 'identity':
         return 'Enter your character name.';
+      case 'ability-method':
+        return 'Choose how to set ability scores: point_buy, standard_array, manual, or rolled.';
+      case 'class-recommendations':
+        return 'Class suggestions based on your scores (advisory).';
       case 'class':
         return 'Choose a class by name or unambiguous prefix.';
       case 'ancestry':
@@ -902,6 +1013,11 @@ function abilityFromToken(token: string): AbilityScoreName | undefined {
 
 function describe(diagnostic: CharacterCreationDiagnostic): string {
   return `${diagnostic.field}: ${diagnostic.message}`;
+}
+
+/** Render a class-fit score with an explicit sign (e.g. `+3`, `0`, `-1`). */
+function formatSigned(value: number): string {
+  return value > 0 ? `+${value}` : `${value}`;
 }
 
 function optionalRecord<T>(result: {
