@@ -196,6 +196,14 @@ export interface CharacterCreationEngine {
 const DEFAULT_LEVEL = 1;
 
 /**
+ * The highest spell level a level-1 character can choose: cantrips (level 0) and
+ * 1st-level spells. Guided creation is level-1 only (see {@link DEFAULT_LEVEL}
+ * and `deriveLevel1Values`), so a chosen spell above this is never legal,
+ * independent of class.
+ */
+const LEVEL_1_MAX_SPELL_LEVEL = 1;
+
+/**
  * Whether a single base score is valid under the active method: an integer, and
  * within the method's per-score bounds (point-buy 8–15, manual/rolled the
  * plausibility range; standard-array values are enforced as a set, not here).
@@ -492,11 +500,24 @@ export function createCharacterCreationEngine(
         invalid = true;
         continue;
       }
-      if (!result.record.classes.includes(classRecord.name)) {
+      const record = result.record;
+      // Spell level is intrinsic to the spell (generated data), so an
+      // out-of-reach spell is illegal regardless of class — check it first.
+      if (record.level > LEVEL_1_MAX_SPELL_LEVEL) {
         diagnostics.push({
           field: 'spells',
           severity: 'error',
-          message: `${result.record.name} is not legal for ${classRecord.name}`,
+          message: `${record.name} is a level-${record.level} spell; a level-1 character can choose only cantrips and 1st-level spells.`,
+          value: spell,
+        });
+        invalid = true;
+        continue;
+      }
+      if (!record.classes.includes(classRecord.name)) {
+        diagnostics.push({
+          field: 'spells',
+          severity: 'error',
+          message: `${record.name} is not on the ${classRecord.name} spell list.`,
           value: spell,
         });
         invalid = true;

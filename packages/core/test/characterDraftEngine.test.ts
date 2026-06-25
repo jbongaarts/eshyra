@@ -257,3 +257,105 @@ describe('character creation draft engine', () => {
     expect(errorFields(draft)).not.toContain('class');
   });
 });
+
+/**
+ * Generated-rules-pack-backed validation of class, ancestry, and spell choices,
+ * exercised from the engine (eshyra-b69j.11). Class/ancestry/spell records are
+ * resolved against the bundled SRD pack — never a hand-authored catalog — and
+ * spell legality checks both spell level and class availability from generated
+ * data.
+ */
+describe('character creation rules-pack validation', () => {
+  function fieldMessages(draft: CharacterDraft, field: string): string[] {
+    return draft.diagnostics
+      .filter((d) => d.severity === 'error' && d.field === field)
+      .map((d) => d.message);
+  }
+
+  function spellPending(draft: CharacterDraft) {
+    return draft.diagnostics.find(
+      (d) => d.field === 'spells' && d.severity === 'pending',
+    );
+  }
+
+  it('resolves class, ancestry, and spell choices by display name', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Fighter');
+    // "High Elf" is the SRD 5.1 elf subrace (Wood Elf is not in SRD 5.1).
+    draft = engine.setAncestry(draft, 'High Elf');
+    expect(errorFields(draft)).not.toContain('class');
+    expect(errorFields(draft)).not.toContain('ancestry');
+
+    // Display-name lookup is case- and separator-insensitive.
+    draft = engine.setClass(draft, 'wizard');
+    draft = engine.setSpells(draft, ['magic missile', 'Fire Bolt']);
+    expect(errorFields(draft)).not.toContain('class');
+    expect(errorFields(draft)).not.toContain('spells');
+  });
+
+  it('accepts a level-1 spell and a cantrip on the class list', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Wizard');
+    // Magic Missile (level 1) and Fire Bolt (cantrip) are both Wizard spells.
+    draft = engine.setSpells(draft, ['Magic Missile', 'Fire Bolt']);
+    expect(errorFields(draft)).not.toContain('spells');
+  });
+
+  it('rejects a spell above the level-1 reach with a level-specific message', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Wizard');
+    // Fireball is a level-3 Wizard spell — legal class, unreachable level.
+    draft = engine.setSpells(draft, ['Fireball']);
+    const messages = fieldMessages(draft, 'spells');
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatch(/Fireball is a level-3 spell/);
+    expect(messages[0]).toMatch(/cantrips and 1st-level spells/);
+    expect(draft.stale).toContain('spells');
+  });
+
+  it('rejects a spell that is not on the chosen class spell list', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Wizard');
+    // Cure Wounds is a level-1 spell, but only for Cleric/Druid/Bard/etc.
+    draft = engine.setSpells(draft, ['Cure Wounds']);
+    const messages = fieldMessages(draft, 'spells');
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatch(/Cure Wounds is not on the Wizard spell list/);
+  });
+
+  it('reports an unknown spell name', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Wizard');
+    draft = engine.setSpells(draft, ['Frostbolt of Doom']);
+    expect(fieldMessages(draft, 'spells')).toEqual([
+      'unknown spell: Frostbolt of Doom',
+    ]);
+  });
+
+  it('waits for class before validating spells instead of cascading', () => {
+    let draft = newDraft();
+    // Spells chosen before a class: a single pending diagnostic, no errors.
+    draft = engine.setSpells(draft, ['Magic Missile', 'Fireball']);
+    expect(errorFields(draft)).not.toContain('spells');
+    const pending = spellPending(draft);
+    expect(pending?.message).toMatch(/waiting for class/i);
+    expect(pending?.dependsOn).toContain('class');
+
+    // Once the class resolves, the over-level spell is caught.
+    draft = engine.setClass(draft, 'Wizard');
+    expect(errorFields(draft)).toContain('spells');
+    expect(spellPending(draft)).toBeUndefined();
+  });
+
+  it('reports invalid class and ancestry names from the pack', () => {
+    let draft = newDraft();
+    draft = engine.setClass(draft, 'Artificer'); // not in SRD 5.1
+    draft = engine.setAncestry(draft, 'Goblin'); // not a player ancestry here
+    expect(fieldMessages(draft, 'class')[0]).toMatch(
+      /unknown class: Artificer/,
+    );
+    expect(fieldMessages(draft, 'ancestry')[0]).toMatch(
+      /unknown ancestry: Goblin/,
+    );
+  });
+});
