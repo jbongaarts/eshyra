@@ -183,9 +183,11 @@ describe('enumerateLevel1RequiredChoices', () => {
     });
     expect(languages?.blockingBead).toBeUndefined();
     expect(languages?.sourceText).toBe('Two of your choice');
-    // The choosable pool is the SRD standard languages.
+    // The choosable pool is the SRD standard languages minus the languages Elf
+    // already grants (Common + Elvish) — see the combined-exclusion test below.
     expect(languages?.from).toContain('Dwarvish');
-    expect(languages?.from).toContain('Elvish');
+    expect(languages?.from).not.toContain('Common');
+    expect(languages?.from).not.toContain('Elvish');
   });
 
   it('surfaces a free ancestry language pick as a structured choice', () => {
@@ -206,6 +208,30 @@ describe('enumerateLevel1RequiredChoices', () => {
     expect(languages?.from).not.toContain('Elvish');
     expect(languages?.from).toContain('Dwarvish');
     expect(languages?.sourceText).toMatch(/one extra language of your choice/i);
+  });
+
+  it('excludes the combined ancestry+background fixed languages from every free pick', () => {
+    // Half-Elf grants Common + Elvish (fixed) plus one choice; Acolyte grants
+    // two choices. A character with both already has Common + Elvish, so NEITHER
+    // free pick may offer them — the pool spans both sources, not just the same
+    // overlay entry's own fixed set.
+    const choices = enumerateLevel1RequiredChoices({
+      classData: classData('Fighter'),
+      ancestry: ancestry('Half-Elf'),
+      background: background('Acolyte'),
+    });
+
+    const ancestryLangs = byId(choices, 'ancestry.languages');
+    expect(ancestryLangs?.from).not.toContain('Common');
+    expect(ancestryLangs?.from).not.toContain('Elvish');
+
+    const backgroundLangs = byId(choices, 'background.languages');
+    expect(backgroundLangs?.choose).toBe(2);
+    // The key regression: Acolyte's pool must drop the Half-Elf's fixed grants.
+    expect(backgroundLangs?.from).not.toContain('Common');
+    expect(backgroundLangs?.from).not.toContain('Elvish');
+    // Other standard languages remain available.
+    expect(backgroundLangs?.from).toContain('Dwarvish');
   });
 
   it('surfaces the Half-Elf ability increase as a structured choice', () => {

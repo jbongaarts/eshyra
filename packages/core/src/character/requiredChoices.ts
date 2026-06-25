@@ -134,14 +134,33 @@ export function enumerateLevel1RequiredChoices(
   input: EnumerateRequiredChoicesInput,
 ): readonly Level1RequiredChoice[] {
   const choices: Level1RequiredChoice[] = [];
+  // Languages a free choice must exclude span BOTH sources: a character already
+  // has every fixed language from its ancestry and its background, so each
+  // free-choice `from` pool subtracts the combined set (not just the same
+  // entry's own fixed languages).
+  const grantedLanguages = combinedFixedLanguages(input);
   collectClassChoices(input.classData, input.abilityModifiers, choices);
   if (input.ancestry !== undefined) {
-    collectAncestryChoices(input.ancestry, choices);
+    collectAncestryChoices(input.ancestry, grantedLanguages, choices);
   }
   if (input.background !== undefined) {
-    collectBackgroundChoices(input.background, choices);
+    collectBackgroundChoices(input.background, grantedLanguages, choices);
   }
   return choices;
+}
+
+/** Every fixed language granted by the chosen ancestry and background overlays. */
+function combinedFixedLanguages(
+  input: EnumerateRequiredChoicesInput,
+): readonly string[] {
+  const fixed: string[] = [];
+  if (input.ancestry !== undefined) {
+    fixed.push(...(getAncestryLanguages(input.ancestry.key)?.fixed ?? []));
+  }
+  if (input.background !== undefined) {
+    fixed.push(...(getBackgroundLanguages(input.background.key)?.fixed ?? []));
+  }
+  return fixed;
 }
 
 function collectClassChoices(
@@ -341,10 +360,11 @@ function spellSelectionChoice(
 
 function collectAncestryChoices(
   ancestry: ResolvedAncestryData,
+  grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
   collectAncestryAbilityIncrease(ancestry, choices);
-  collectAncestryLanguages(ancestry, choices);
+  collectAncestryLanguages(ancestry, grantedLanguages, choices);
 }
 
 /**
@@ -353,12 +373,15 @@ function collectAncestryChoices(
  * Fixed languages (e.g. Elf's Common + Elvish) are granted automatically and
  * need no prompt; only a free-choice component (Half-Elf / Human "one extra
  * language of your choice") is a required choice, surfaced structured with
- * `choose`/`from` (the SRD standard languages minus those already granted). An
- * ancestry with no overlay falls back to the prose trait as a tracked
- * unstructured gap, so a real language choice is never dropped.
+ * `choose`/`from` (the SRD standard languages minus `grantedLanguages` — the
+ * combined fixed languages from this ancestry AND the background, so a pick
+ * never offers a language the character already has). An ancestry with no
+ * overlay falls back to the prose trait as a tracked unstructured gap, so a real
+ * language choice is never dropped.
  */
 function collectAncestryLanguages(
   ancestry: ResolvedAncestryData,
+  grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
   const overlay = getAncestryLanguages(ancestry.key);
@@ -390,7 +413,7 @@ function collectAncestryLanguages(
     status: 'structured',
     label: `Choose ${overlay.choose} language(s)`,
     choose: overlay.choose,
-    from: chooseableLanguages(overlay.fixed),
+    from: chooseableLanguages(grantedLanguages),
     sourceText: overlay.sourceText,
   });
 }
@@ -447,6 +470,7 @@ function collectAncestryAbilityIncrease(
 
 function collectBackgroundChoices(
   background: ResolvedBackgroundData,
+  grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
   const overlay = getBackgroundLanguages(background.key);
@@ -475,7 +499,7 @@ function collectBackgroundChoices(
     status: 'structured',
     label: `Choose ${overlay.choose} language(s)`,
     choose: overlay.choose,
-    from: chooseableLanguages(overlay.fixed),
+    from: chooseableLanguages(grantedLanguages),
     sourceText: overlay.sourceText,
   });
 }
