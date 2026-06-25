@@ -36,7 +36,7 @@ Record counts in the bundled pack (for context): 12 `class`, 13 `ancestry`,
 | Ancestry ability-score increases | **structured (overlay)** | source-cited overlay `srdAncestryAbilityScoreIncreases.ts` keyed by frozen ancestry key (fixed `{ability,bonus}` plus the Half-Elf choice); applied in `deriveLevel1Values` | **eshyra-b69j.12.1 (done)** |
 | Spellcasting ability (INT/WIS/CHA) | **structured (overlay)** | source-cited overlay `srdClassSpellcasting.ts` keyed by frozen class key; gated to level-1 casters via the progression row; drives spell save DC / attack in `deriveLevel1Values` | **eshyra-b69j.12.2 (done)** |
 | Prepared-caster spell counts / Wizard spellbook size | **structured (overlay)** | same overlay: `preparation` (known/prepared) + `spellbookStartingSpells` (Wizard = 6); prepared count = ability mod + level via `level1PreparedSpellCount` | **eshyra-b69j.12.2 (done)** |
-| **Starting equipment option groups** | **partial** | `class.data.startingEquipment.entries[]` are prose lines ("(a) … or (b) …"), not parsed option groups; fixed grants are mixed in | **eshyra-b69j.12.3** |
+| Starting equipment option groups | **structured (overlay)** | source-cited overlay `srdClassStartingEquipment.ts` keyed by frozen class key: choose-one groups (labelled options) + fixed grants; each entry's `sourceText` deep-equals the pack's `startingEquipment.entries` | **eshyra-b69j.12.3 (done)** |
 | **Languages (ancestry + background)** | **prose-only** | `background.data.languages` ("Two of your choice"); ancestry `traits[]` "Languages" `text` | **eshyra-b69j.12.4** |
 
 ## What this means for the engine today
@@ -46,18 +46,19 @@ background) and returns one descriptor per required choice, each tagged
 `structured` or `unstructured`:
 
 - **Martial example — Fighter:** skill choice (structured, choose 2); starting
-  equipment options (unstructured → 12.3). With ancestry/background: a fixed
-  ancestry ability increase is applied automatically (overlay, 12.1) and is not
-  a prompt; only a Half-Elf-style ability choice and the language choice (12.4)
-  remain as prompts.
+  equipment groups (structured, four choose-one groups via overlay, 12.3). With
+  ancestry/background: a fixed ancestry ability increase is applied
+  automatically (overlay, 12.1) and is not a prompt; only a Half-Elf-style
+  ability choice and the language choice (12.4) remain as prompts.
 - **Prepared caster — Wizard:** skills (structured); cantrips (structured,
   choose 3); starting spellbook (structured, choose 6 via overlay, 12.2); the
   spellcasting ability is an auto-resolved overlay fact (12.2), not a prompt;
-  equipment (12.3) remains unstructured.
+  equipment (structured, three choose-one groups; the spellbook is a fixed
+  grant, 12.3).
 - **Known caster — Bard:** skills, tool choice, cantrips, **and** known spells
   all structured (Bard's `spellsKnown` is on the progression row); the
-  spellcasting ability is resolved from the overlay (12.2); only equipment
-  (12.3) remains unstructured.
+  spellcasting ability is resolved from the overlay (12.2); equipment groups are
+  structured (12.3).
 
 The engine therefore enumerates the **pending required choices** for both a
 martial and a spellcasting class today, marking every prose-only datum with the
@@ -78,8 +79,11 @@ eshyra-b69j.12:
   `enumerateLevel1RequiredChoices` structures the level-1 spell-selection count
   (known `spellsKnown`, Wizard spellbook, or prepared ability mod + level),
   closing the remaining b69j.6 deferral.
-- **eshyra-b69j.12.3** — structured starting-equipment option groups (feeds the
-  equipment flow, eshyra-b69j.13).
+- **eshyra-b69j.12.3** — *done.* Structured starting-equipment option groups via
+  the source-cited overlay (`srdClassStartingEquipment.ts`): each SRD class's
+  choose-one groups become structured equipment choices and fixed grants are
+  auto-applied; `enumerateLevel1RequiredChoices` emits them. Feeds the equipment
+  flow (eshyra-b69j.13).
 - **eshyra-b69j.12.4** — structured language grants and choices on ancestry and
   background.
 

@@ -56,15 +56,19 @@ describe('enumerateLevel1RequiredChoices', () => {
     expect(choices.some((c) => c.kind === 'cantrips')).toBe(false);
     expect(choices.some((c) => c.kind === 'spellcasting_ability')).toBe(false);
 
-    // Starting equipment options are prose-only, tracked by the equipment bead.
+    // Starting equipment choose-one groups are now structured (overlay,
+    // eshyra-b69j.12.3). Fighter has four such groups.
     const equipment = choices.filter((c) => c.kind === 'equipment');
-    expect(equipment.length).toBeGreaterThan(0);
-    expect(equipment.every((c) => c.status === 'unstructured')).toBe(true);
-    expect(equipment.every((c) => c.blockingBead === 'eshyra-b69j.12.3')).toBe(
-      true,
-    );
-    // The fixed "longbow ... 20 arrows" line is part of an option; a bare fixed
-    // grant like Wizard's "A spellbook" must not appear as a choice (see below).
+    expect(equipment).toHaveLength(4);
+    expect(equipment.every((c) => c.status === 'structured')).toBe(true);
+    expect(equipment.every((c) => c.choose === 1)).toBe(true);
+    expect(equipment.every((c) => c.blockingBead === undefined)).toBe(true);
+    // The first group offers chain mail vs the leather-armor bundle.
+    const first = byId(choices, 'class.equipment.0');
+    expect(first?.from).toEqual([
+      'chain mail',
+      'leather armor, longbow, and 20 arrows',
+    ]);
   });
 
   it('marks a Wizard cantrips and spellbook structured, with no ability gap', () => {
@@ -89,10 +93,16 @@ describe('enumerateLevel1RequiredChoices', () => {
     expect(byId(choices, 'class.spellcastingAbility')).toBeUndefined();
     expect(choices.some((c) => c.kind === 'spellcasting_ability')).toBe(false);
 
-    // "A spellbook" is a fixed grant, not an option line, so it is not a choice.
+    // "A spellbook" is a fixed grant, so it is not surfaced as a choice; the
+    // three choose-one groups are structured and each cite their (a)/(b) prose.
     const equipment = choices.filter((c) => c.kind === 'equipment');
+    expect(equipment).toHaveLength(3);
+    expect(equipment.every((c) => c.status === 'structured')).toBe(true);
     expect(equipment.every((c) => /\(a\)/i.test(c.sourceText ?? ''))).toBe(
       true,
+    );
+    expect(equipment.some((c) => /spellbook/i.test(c.sourceText ?? ''))).toBe(
+      false,
     );
   });
 

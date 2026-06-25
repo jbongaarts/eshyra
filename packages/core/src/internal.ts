@@ -244,6 +244,18 @@ export {
   level1PreparedSpellCount,
   level1SpellcastingAbility,
 } from './character/srdClassSpellcasting.js';
+// Source-cited class starting-equipment overlay (eshyra-b69j.12.3): a
+// deterministic, consumer-side layer keyed to the frozen class record keys,
+// structuring each class's starting equipment into choose-one groups and fixed
+// grants the frozen pack carries only as prose.
+export type {
+  ClassStartingEquipment,
+  StartingEquipmentChoice,
+  StartingEquipmentEntry,
+  StartingEquipmentGrant,
+  StartingEquipmentOption,
+} from './character/srdClassStartingEquipment.js';
+export { getClassStartingEquipment } from './character/srdClassStartingEquipment.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {
