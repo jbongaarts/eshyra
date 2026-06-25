@@ -73,13 +73,21 @@ describe('character creation draft engine', () => {
     expect(draft.stale).toContain('spells');
   });
 
-  it('changing ancestry preserves base scores and recomputes derived values', () => {
+  it('changing ancestry preserves base scores but recomputes derived values', () => {
     let draft = fullValidDraft();
-    const before = draft.derived.abilityModifiers;
+    // Human (set by fullValidDraft) raises every score by 1: STR 15→16 (+3),
+    // DEX 14→15 (+2).
+    expect(draft.derived.finalAbilityScores.strength).toBe(16);
+    expect(draft.derived.abilityModifiers.dexterity).toBe(2);
+
     draft = engine.setAncestry(draft, 'Elf');
+    // Base scores are never rewritten; only the applied ancestry overlay changes.
     expect(draft.selections.baseAbilityScores).toEqual(POINT_BUY_SCORES);
-    expect(draft.derived.abilityModifiers).toEqual(before);
+    // Elf grants only +2 DEX: STR falls back to its base 15 (+2); DEX 14→16 (+3).
     expect(draft.derived.finalAbilityScores.strength).toBe(15);
+    expect(draft.derived.finalAbilityScores.dexterity).toBe(16);
+    expect(draft.derived.abilityModifiers.strength).toBe(2);
+    expect(draft.derived.abilityModifiers.dexterity).toBe(3);
   });
 
   it('reports an invalid class without cascading', () => {

@@ -20,12 +20,14 @@
  * docs/design/character-creation-level1-metadata-inventory.md.
  */
 
+import { ABILITY_FULL_NAMES } from './abilities.js';
 import type {
   ResolvedAncestryData,
   ResolvedBackgroundData,
   ResolvedChoiceSpec,
   ResolvedClassData,
 } from './rulesPackResolver.js';
+import { getAncestryAbilityScoreIncrease } from './srdAncestryAbilityScoreIncreases.js';
 
 /** Whether a required choice can be enumerated from structured pack data yet. */
 export type Level1RequiredChoiceStatus = 'structured' | 'unstructured';
@@ -209,18 +211,9 @@ function collectAncestryChoices(
   ancestry: ResolvedAncestryData,
   choices: Level1RequiredChoice[],
 ): void {
+  collectAncestryAbilityIncrease(ancestry, choices);
   for (const trait of ancestry.traits ?? []) {
-    if (/ability score increase/i.test(trait.name)) {
-      choices.push({
-        id: 'ancestry.abilityIncrease',
-        kind: 'ability_increase',
-        source: 'ancestry',
-        status: 'unstructured',
-        label: 'Apply ancestry ability score increase',
-        sourceText: trait.text,
-        blockingBead: BEAD_ABILITY_INCREASE,
-      });
-    } else if (
+    if (
       /languages?/i.test(trait.name) &&
       /\bchoice\b|choose/i.test(trait.text)
     ) {
@@ -235,6 +228,56 @@ function collectAncestryChoices(
       });
     }
   }
+}
+
+/**
+ * Ancestry ability-score increases come from the source-cited overlay
+ * (eshyra-b69j.12.1), keyed by the frozen ancestry record key — never parsed
+ * from the trait prose. A *fixed* increase (e.g. Elf's +2 Dexterity) is applied
+ * automatically in `deriveLevel1Values` and needs no prompt, so it is not a
+ * required choice. Only the player-choice component (the Half-Elf's "two other
+ * ability scores of your choice +1") is a required choice, surfaced structured
+ * with `choose`/`from`. An ancestry with no overlay falls back to the prose
+ * trait as a tracked unstructured gap, so a real increase is never dropped.
+ */
+function collectAncestryAbilityIncrease(
+  ancestry: ResolvedAncestryData,
+  choices: Level1RequiredChoice[],
+): void {
+  const overlay = getAncestryAbilityScoreIncrease(ancestry.key);
+  if (overlay === undefined) {
+    const trait = (ancestry.traits ?? []).find((entry) =>
+      /ability score increase/i.test(entry.name),
+    );
+    if (trait !== undefined) {
+      choices.push({
+        id: 'ancestry.abilityIncrease',
+        kind: 'ability_increase',
+        source: 'ancestry',
+        status: 'unstructured',
+        label: 'Apply ancestry ability score increase',
+        sourceText: trait.text,
+        blockingBead: BEAD_ABILITY_INCREASE,
+      });
+    }
+    return;
+  }
+
+  if (overlay.choice === undefined) {
+    return; // fixed increases only — applied automatically, no prompt needed
+  }
+
+  const { choose, bonus, from } = overlay.choice;
+  choices.push({
+    id: 'ancestry.abilityIncrease',
+    kind: 'ability_increase',
+    source: 'ancestry',
+    status: 'structured',
+    label: `Choose ${choose} ability scores to increase by ${bonus}`,
+    choose,
+    from: from.map((name) => ABILITY_FULL_NAMES[name]),
+    sourceText: overlay.sourceText,
+  });
 }
 
 function collectBackgroundChoices(

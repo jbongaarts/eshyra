@@ -90,4 +90,61 @@ describe('deriveLevel1Values', () => {
     });
     expect(derived.savingThrows).toEqual({});
   });
+
+  it('adds ancestry ability increases into the final scores and modifiers', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { dexterity: 13, intelligence: 13 },
+      // High Elf: +2 DEX, +1 INT.
+      abilityScoreIncreases: [
+        { ability: 'dexterity', bonus: 2 },
+        { ability: 'intelligence', bonus: 1 },
+      ],
+    });
+    expect(derived.finalAbilityScores).toEqual({
+      dexterity: 15,
+      intelligence: 14,
+    });
+    // Modifiers derive from the final scores, not the base scores.
+    expect(derived.abilityModifiers).toEqual({
+      dexterity: 2,
+      intelligence: 2,
+    });
+  });
+
+  it('derives HP and saves from the post-increase Constitution', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { constitution: 13 },
+      classRecord: FIGHTER,
+      // Hill Dwarf: +2 CON pushes 13 → 15 (mod +2).
+      abilityScoreIncreases: [{ ability: 'constitution', bonus: 2 }],
+    });
+    // Fighter d10 + final CON +2 = 12 (base CON 13 alone would give +1 → 11).
+    expect(derived.maxHitPoints).toBe(12);
+    expect(derived.savingThrows.constitution).toEqual({
+      modifier: 4,
+      proficient: true,
+    });
+  });
+
+  it('ignores increases for abilities not yet scored', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { strength: 15 },
+      abilityScoreIncreases: [
+        { ability: 'strength', bonus: 1 },
+        { ability: 'charisma', bonus: 2 },
+      ],
+    });
+    expect(derived.finalAbilityScores).toEqual({ strength: 16 });
+  });
+
+  it('stacks multiple increases to the same ability', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { strength: 14 },
+      abilityScoreIncreases: [
+        { ability: 'strength', bonus: 2 },
+        { ability: 'strength', bonus: 1 },
+      ],
+    });
+    expect(derived.finalAbilityScores).toEqual({ strength: 17 });
+  });
 });

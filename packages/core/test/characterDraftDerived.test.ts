@@ -62,4 +62,29 @@ describe('character draft derived values (engine integration)', () => {
     const draft = draftWithScores();
     expect(draft.derived.savingThrows).toEqual({});
   });
+
+  it('applies fixed ancestry ability increases to final scores and HP', () => {
+    let draft = draftWithScores();
+    draft = engine.setClass(draft, 'Fighter');
+    // Base CON 14 → Fighter d10 + (+2) = 12; base STR 15 → final 15.
+    expect(draft.derived.maxHitPoints).toBe(12);
+    expect(draft.derived.finalAbilityScores.strength).toBe(15);
+
+    draft = engine.setAncestry(draft, 'Hill Dwarf');
+    // Hill Dwarf: +2 CON (14 → 16, mod +3) and +1 WIS (10 → 11).
+    expect(draft.derived.finalAbilityScores.constitution).toBe(16);
+    expect(draft.derived.finalAbilityScores.wisdom).toBe(11);
+    // HP re-derives off the raised Constitution: d10 + 3 = 13.
+    expect(draft.derived.maxHitPoints).toBe(13);
+    expect(draft.derived.savingThrows.constitution?.modifier).toBe(5);
+  });
+
+  it('leaves base scores unchanged for an ancestry with no increase to a score', () => {
+    let draft = draftWithScores();
+    draft = engine.setAncestry(draft, 'Elf');
+    // Elf grants only +2 DEX; everything else stays at its base score.
+    expect(draft.derived.finalAbilityScores.dexterity).toBe(16);
+    expect(draft.derived.finalAbilityScores.strength).toBe(15);
+    expect(draft.derived.finalAbilityScores.constitution).toBe(14);
+  });
 });

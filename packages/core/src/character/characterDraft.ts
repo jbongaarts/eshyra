@@ -47,8 +47,13 @@ import {
 } from './derivedValues.js';
 import {
   getBundledDnd5eCharacterResolver,
+  type ResolvedAncestryData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import {
+  type AbilityScoreIncrease,
+  getAncestryAbilityScoreIncrease,
+} from './srdAncestryAbilityScoreIncreases.js';
 
 /** Severity of an incremental draft diagnostic. */
 export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
@@ -210,6 +215,24 @@ function isValidBaseScore(
   return true;
 }
 
+/**
+ * The ancestry ability-score increases to feed derived-value computation for a
+ * resolved ancestry: the fixed bonuses from the source-cited overlay
+ * (eshyra-b69j.12.1), keyed by the ancestry's frozen record key. The Half-Elf's
+ * "two of your choice +1" increases are a player choice the wizard collects
+ * (eshyra-b69j.8/.9); once threaded into selections they are appended here.
+ * Returns an empty list for an unmodeled ancestry, so derived scores fall back
+ * to the base scores rather than erroring.
+ */
+function ancestryAbilityScoreIncreases(
+  ancestry: ResolvedAncestryData | undefined,
+): readonly AbilityScoreIncrease[] {
+  if (ancestry === undefined) {
+    return [];
+  }
+  return getAncestryAbilityScoreIncrease(ancestry.key)?.fixed ?? [];
+}
+
 const REQUIRED_CHOICE_LABELS: Readonly<Record<string, string>> = {
   name: 'Character name',
   class: 'Class',
@@ -240,8 +263,8 @@ export function createCharacterCreationEngine(
       });
     }
 
-    const ancestryName = resolveAncestry(selections.ancestry);
-    if (selections.ancestry !== undefined && ancestryName === undefined) {
+    const ancestryRecord = resolveAncestry(selections.ancestry);
+    if (selections.ancestry !== undefined && ancestryRecord === undefined) {
       diagnostics.push({
         field: 'ancestry',
         severity: 'error',
@@ -252,7 +275,11 @@ export function createCharacterCreationEngine(
 
     const validAbilityScores = validateAbilityScores(selections, diagnostics);
 
-    const derived = deriveLevel1Values({ validAbilityScores, classRecord });
+    const derived = deriveLevel1Values({
+      validAbilityScores,
+      classRecord,
+      abilityScoreIncreases: ancestryAbilityScoreIncreases(ancestryRecord),
+    });
 
     emitHitPointsPending(
       selections,
@@ -274,12 +301,14 @@ export function createCharacterCreationEngine(
     return result.ok ? result.record : undefined;
   }
 
-  function resolveAncestry(value: string | undefined): string | undefined {
+  function resolveAncestry(
+    value: string | undefined,
+  ): ResolvedAncestryData | undefined {
     if (value === undefined) {
       return undefined;
     }
     const result = resolver.resolveAncestry(value);
-    return result.ok ? result.record.name : undefined;
+    return result.ok ? result.record : undefined;
   }
 
   /**
@@ -544,7 +573,7 @@ export function createCharacterCreationEngine(
 
     const finalizable: CharacterCreationDraft = {
       name: (draft.identity.name ?? '').trim(),
-      ancestry: resolveAncestry(draft.selections.ancestry) as string,
+      ancestry: resolveAncestry(draft.selections.ancestry)?.name as string,
       className: resolveClass(draft.selections.className)?.name as string,
       level: draft.level,
       abilityScoreMethod: draft.selections

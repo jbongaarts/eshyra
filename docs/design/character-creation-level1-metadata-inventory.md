@@ -33,7 +33,7 @@ Record counts in the bundled pack (for context): 12 `class`, 13 `ancestry`,
 | Background skill proficiencies | **structured** | `background.data.skillProficiencies[]` | — |
 | Background tool proficiencies | **structured** | `background.data.toolProficiencies[]` | — |
 | Ancestry size / speed | **structured** | `ancestry.data.size`, `ancestry.data.speed` | — |
-| **Ancestry ability-score increases** | **prose-only** | `ancestry.data.traits[]` "Ability Score Increase" `text` (e.g. "Your Dexterity score increases by 2.") | **eshyra-b69j.12.1** |
+| Ancestry ability-score increases | **structured (overlay)** | source-cited overlay `srdAncestryAbilityScoreIncreases.ts` keyed by frozen ancestry key (fixed `{ability,bonus}` plus the Half-Elf choice); applied in `deriveLevel1Values` | **eshyra-b69j.12.1 (done)** |
 | **Spellcasting ability (INT/WIS/CHA)** | **prose-only** | inside the `feature:<class>:spellcasting` description | **eshyra-b69j.12.2** |
 | **Prepared-caster spell counts / Wizard spellbook size** | **prose-only** | spellcasting feature prose (formula: ability mod + level); Wizard's "six 1st-level spells" in spellbook | **eshyra-b69j.12.2** |
 | **Starting equipment option groups** | **partial** | `class.data.startingEquipment.entries[]` are prose lines ("(a) … or (b) …"), not parsed option groups; fixed grants are mixed in | **eshyra-b69j.12.3** |
@@ -46,8 +46,10 @@ background) and returns one descriptor per required choice, each tagged
 `structured` or `unstructured`:
 
 - **Martial example — Fighter:** skill choice (structured, choose 2); starting
-  equipment options (unstructured → 12.3). With ancestry/background: ancestry
-  ability increase (12.1) and language choice (12.4).
+  equipment options (unstructured → 12.3). With ancestry/background: a fixed
+  ancestry ability increase is applied automatically (overlay, 12.1) and is not
+  a prompt; only a Half-Elf-style ability choice and the language choice (12.4)
+  remain as prompts.
 - **Prepared caster — Wizard:** skills (structured); cantrips (structured,
   choose 3); level-1 spells and spellcasting ability (unstructured → 12.2);
   equipment (12.3).
@@ -65,8 +67,9 @@ any prose.
 The genuinely prose-only required data are tracked as children of
 eshyra-b69j.12:
 
-- **eshyra-b69j.12.1** — structured ancestry ability-score increases (unblocks
-  ancestry bonuses in `deriveLevel1Values`; b69j.6 deferred final scores here).
+- **eshyra-b69j.12.1** — *done.* Structured ancestry ability-score increases via
+  the source-cited overlay; `deriveLevel1Values` now applies ancestry bonuses to
+  final scores (and the HP/saves derived from them), closing the b69j.6 deferral.
 - **eshyra-b69j.12.2** — structured per-class spellcasting ability and
   prepared-spell counts (unblocks spell save DC / spell attack and prepared
   counts).
