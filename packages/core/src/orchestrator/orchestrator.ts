@@ -18,12 +18,15 @@ import { recordTurnTrace } from '../memory/turnTrace.js';
 import type { ModelClient } from '../model/client.js';
 import { ModelClientError, ModelRateLimitError } from '../model/client.js';
 import type {
+  AuditRetryCause,
   ToolUsageRecord,
+  TurnAuditRecord,
   TurnDiagnosticsSink,
   TurnOutcome,
 } from '../model/usage.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
+import { classifyAuditRetryCause } from './auditRetryDiagnostics.js';
 import type { AdventureModuleResolver } from './contextAssembler.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
 import { appendPlayerVisibleRollLedger } from './playerVisibleRollLedger.js';
@@ -417,6 +420,44 @@ function recordToolUsage(
   }
 }
 
+/** Best-effort audit-retry recording; a sink failure must never break a turn. */
+function recordAuditUsage(
+  sink: TurnDiagnosticsSink | undefined,
+  entry: TurnAuditRecord,
+): void {
+  if (sink === undefined) {
+    return;
+  }
+  try {
+    sink.recordAudit(entry);
+  } catch {
+    // Diagnostics must never destabilize a turn.
+  }
+}
+
+interface RetryDiagnosticsSummary {
+  readonly auditorCallCount: number;
+  readonly retryCauses: readonly AuditRetryCause[];
+  readonly toolsRerunDuringRetry: readonly string[];
+}
+
+interface TurnOutcomeDiagnostics extends RetryDiagnosticsSummary {
+  readonly primaryDmCandidateCount: number;
+}
+
+function repeatedAcceptedRetryTools(
+  acceptedToolCalls: readonly ExecutedToolCall[],
+  rejectedAttemptToolNames: ReadonlySet<string>,
+): readonly string[] {
+  return [
+    ...new Set(
+      acceptedToolCalls
+        .map((call) => call.tool)
+        .filter((tool) => rejectedAttemptToolNames.has(tool)),
+    ),
+  ].sort();
+}
+
 /** Best-effort turn-outcome recording; a sink failure must never break a turn. */
 function recordTurnOutcome(
   sink: TurnDiagnosticsSink | undefined,
@@ -427,10 +468,15 @@ function recordTurnOutcome(
   modelRounds: number,
   elapsedMs: number,
   reason: string | null,
+  diagnostics: TurnOutcomeDiagnostics,
 ): void {
   if (sink === undefined) {
     return;
   }
+  const primaryDmRetryCount = Math.max(
+    0,
+    diagnostics.primaryDmCandidateCount - 1,
+  );
   try {
     sink.recordOutcome({
       id: randomUUID(),
@@ -443,6 +489,13 @@ function recordTurnOutcome(
       modelRounds,
       elapsedMs,
       reason,
+      auditorCallCount: diagnostics.auditorCallCount,
+      primaryDmCandidateCount: diagnostics.primaryDmCandidateCount,
+      primaryDmCallCount: modelRounds,
+      primaryDmRetryCount,
+      retryCauses: diagnostics.retryCauses,
+      retrySucceeded: primaryDmRetryCount === 0 ? null : outcome === 'accepted',
+      toolsRerunDuringRetry: diagnostics.toolsRerunDuringRetry,
     });
   } catch {
     // Diagnostics must never destabilize a turn.
@@ -474,6 +527,10 @@ export async function runTurn(
   // Last candidate attempt reached, so the catch path can label the turn-error
   // rollback disposition with the attempt it aborted on (eshyra-dwkm).
   let dispositionAttempt = 0;
+  let auditorCallCount = 0;
+  const retryCauses: AuditRetryCause[] = [];
+  const rejectedAttemptToolNames = new Set<string>();
+  let toolsRerunDuringRetry: readonly string[] = [];
 
   db.exec(`SAVEPOINT ${TURN_SAVEPOINT}`);
   try {
@@ -587,6 +644,7 @@ export async function runTurn(
       }
 
       phase = 'mechanics_audit';
+      auditorCallCount += 1;
       const verdict = await deps.auditor.audit({
         playerInput: input.playerInput,
         candidateResponse: candidateNarration,
@@ -620,6 +678,10 @@ export async function runTurn(
         : retry && attempt < maxAttempts
           ? 'retry'
           : 'fail';
+      const retryCause = classifyAuditRetryCause(verdict, candidate.toolCalls);
+      if (retryCause !== null) {
+        retryCauses.push(retryCause);
+      }
       recordAuditDebug(deps.debug, {
         kind: 'turn_audit',
         trace: { ...auditTrace, purpose: 'turn_audit' },
@@ -638,6 +700,26 @@ export async function runTurn(
         action,
         auditorModel: deps.auditor.modelId ?? 'unknown',
       });
+      recordAuditUsage(deps.diagnostics, {
+        id: randomUUID(),
+        at: input.at,
+        campaignId: input.campaignId,
+        sessionId: input.sessionId,
+        turnId: input.turnId,
+        attempt,
+        verdict: verdict.verdict,
+        action,
+        retryCause,
+        missingRequiredTools: verdict.missingRequiredTools,
+        disallowedToolCalls: verdict.disallowedToolCalls,
+        executedToolNames: candidate.toolCalls.map((call) => call.tool),
+        failedToolNames: candidate.toolCalls
+          .filter((call) => !call.result.ok)
+          .map((call) => call.tool),
+        mutatingToolCount: candidate.toolCalls.filter((call) => call.mutates)
+          .length,
+        auditorModel: deps.auditor.modelId ?? null,
+      });
 
       if (accepted) {
         db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
@@ -651,6 +733,10 @@ export async function runTurn(
         );
         narration = candidateNarration;
         toolCalls = candidate.toolCalls;
+        toolsRerunDuringRetry = repeatedAcceptedRetryTools(
+          candidate.toolCalls,
+          rejectedAttemptToolNames,
+        );
         break;
       }
 
@@ -658,6 +744,9 @@ export async function runTurn(
       // survive, then either retry with a corrective note or fail the turn.
       db.exec(`ROLLBACK TO ${ATTEMPT_SAVEPOINT}`);
       db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
+      for (const call of candidate.toolCalls) {
+        rejectedAttemptToolNames.add(call.tool);
+      }
       recordDispositionDebug(
         deps.debug,
         dispositionTrace,
@@ -738,6 +827,12 @@ export async function runTurn(
       rounds,
       Date.now() - turnStartMs,
       null,
+      {
+        auditorCallCount,
+        primaryDmCandidateCount: dispositionAttempt,
+        retryCauses,
+        toolsRerunDuringRetry,
+      },
     );
     return {
       ok: true,
@@ -800,6 +895,12 @@ export async function runTurn(
       rounds,
       Date.now() - turnStartMs,
       error,
+      {
+        auditorCallCount,
+        primaryDmCandidateCount: dispositionAttempt,
+        retryCauses,
+        toolsRerunDuringRetry,
+      },
     );
     return {
       ok: false,

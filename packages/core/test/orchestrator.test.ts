@@ -11,6 +11,7 @@ import type {
   TurnAuditDebugEvent,
   TurnAuditInput,
   TurnAuditor,
+  TurnAuditRecord,
   TurnCandidateDispositionEvent,
   TurnDiagnosticsSink,
   TurnOutcomeRecord,
@@ -1752,14 +1753,18 @@ describe('orchestrator MCP staged-mutation transactionality (eshyra-dwkm)', () =
 
 /** Collecting turn-diagnostics sink for tool spans + outcomes (eshyra-17ng). */
 function collectingDiagnosticsSink(): TurnDiagnosticsSink & {
+  audits: TurnAuditRecord[];
   tools: ToolUsageRecord[];
   outcomes: TurnOutcomeRecord[];
 } {
+  const audits: TurnAuditRecord[] = [];
   const tools: ToolUsageRecord[] = [];
   const outcomes: TurnOutcomeRecord[] = [];
   return {
+    audits,
     tools,
     outcomes,
+    recordAudit: (e) => audits.push(e),
     recordTool: (e) => tools.push(e),
     recordOutcome: (e) => outcomes.push(e),
   };
@@ -1823,7 +1828,23 @@ describe('orchestrator per-turn timing diagnostics (eshyra-17ng)', () => {
       outcome: 'accepted',
       attempts: 1,
       modelRounds: 1,
+      auditorCallCount: 1,
+      primaryDmCandidateCount: 1,
+      primaryDmCallCount: 1,
+      primaryDmRetryCount: 0,
+      retryCauses: [],
+      retrySucceeded: null,
+      toolsRerunDuringRetry: [],
       reason: null,
+    });
+    expect(diagnostics.audits).toHaveLength(1);
+    expect(diagnostics.audits[0]).toMatchObject({
+      attempt: 1,
+      verdict: 'accept',
+      action: 'accept',
+      retryCause: null,
+      auditorModel: 'claude-audit-test',
+      executedToolNames: ['roll', 'give_item'],
     });
     db.close();
   });
@@ -1865,6 +1886,157 @@ describe('orchestrator per-turn timing diagnostics (eshyra-17ng)', () => {
     expect(diagnostics.outcomes[0]).toMatchObject({
       outcome: 'accepted',
       attempts: 2,
+      auditorCallCount: 2,
+      primaryDmCandidateCount: 2,
+      primaryDmRetryCount: 1,
+      retryCauses: ['disallowed_tool'],
+      retrySucceeded: true,
+      toolsRerunDuringRetry: ['give_item'],
+    });
+    expect(diagnostics.audits.map((audit) => audit.action)).toEqual([
+      'retry',
+      'accept',
+    ]);
+    expect(diagnostics.audits[0]).toMatchObject({
+      attempt: 1,
+      verdict: 'reject',
+      retryCause: 'disallowed_tool',
+      disallowedToolCalls: ['give_item'],
+    });
+    expect(diagnostics.audits[1]).toMatchObject({
+      attempt: 2,
+      verdict: 'accept',
+      retryCause: null,
+    });
+    db.close();
+  });
+
+  it('records missing roll visibility as the retry cause for a hidden player-affecting roll', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new BridgeMcpModel([
+      {
+        calls: [
+          {
+            name: 'roll',
+            args: {
+              dice: '1d20+5',
+              reason: 'goblin attacks Bob',
+              visibility: 'dm_only',
+              category: 'attack',
+            },
+          },
+        ],
+        text: 'The goblin hits Bob.',
+      },
+      {
+        calls: [
+          {
+            name: 'roll',
+            args: {
+              dice: '1d20+5',
+              reason: 'goblin attacks Bob',
+              visibility: 'player_visible',
+              category: 'attack',
+            },
+          },
+        ],
+        text: 'The goblin misses Bob.',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([rejectRoll, accept]);
+    const diagnostics = collectingDiagnosticsSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        diagnostics,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(diagnostics.audits[0]).toMatchObject({
+      verdict: 'reject',
+      retryCause: 'missing_roll_visibility',
+      executedToolNames: ['roll'],
+    });
+    expect(diagnostics.outcomes[0]).toMatchObject({
+      retryCauses: ['missing_roll_visibility'],
+      retrySucceeded: true,
+    });
+    db.close();
+  });
+
+  it('records invalid combatant targets as state-repair retries', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new BridgeMcpModel([
+      {
+        calls: [
+          {
+            name: 'update_combatant',
+            args: { combatantId: 'near goblin', hpDelta: -4 },
+          },
+        ],
+        text: 'The near goblin staggers.',
+      },
+      {
+        calls: [
+          {
+            name: 'start_encounter',
+            args: {
+              combatInstanceId: 'ci-retry-repair',
+              actors: [
+                {
+                  actorId: 'actor:grik',
+                  displayName: 'Grik',
+                  actorKind: 'monster',
+                  sourceKind: 'campaign_created',
+                  rulesRef: 'creature:goblin',
+                  hpCurrent: 7,
+                  hpMax: 7,
+                  side: 'enemy',
+                },
+              ],
+            },
+          },
+          {
+            name: 'update_combatant',
+            args: { combatantId: 'ci-retry-repair-actor-grik', hpDelta: -4 },
+          },
+        ],
+        text: 'Grik staggers after the repaired combatant update.',
+      },
+    ]);
+    const auditor = new ScriptedAuditor([rejectRoll, accept]);
+    const diagnostics = collectingDiagnosticsSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        diagnostics,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(diagnostics.audits[0]).toMatchObject({
+      verdict: 'reject',
+      retryCause: 'invalid_target',
+      failedToolNames: ['update_combatant'],
+      executedToolNames: ['update_combatant'],
+    });
+    expect(diagnostics.outcomes[0]).toMatchObject({
+      retryCauses: ['invalid_target'],
+      retrySucceeded: true,
+      toolsRerunDuringRetry: ['update_combatant'],
     });
     db.close();
   });
