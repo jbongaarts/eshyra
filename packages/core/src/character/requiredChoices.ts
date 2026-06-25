@@ -12,7 +12,7 @@
  * flat list of {@link Level1RequiredChoice} descriptors, each tagged `structured`
  * (enumerable now from the generated pack or a source-cited overlay) or
  * `unstructured` (the option set or count lives only in prose; a follow-up bead
- * — eshyra-b69j.12.3/.4 — tracks adding the metadata). It deliberately does NOT
+ * — eshyra-b69j.12.4 — tracks adding the metadata). It deliberately does NOT
  * parse the prose: an `unstructured` choice carries the verbatim `sourceText`
  * for display and the `blockingBead` that will make it structured, nothing more.
  *
@@ -23,6 +23,11 @@
  * known casters (progression `spellsKnown`), Wizards (fixed spellbook size), and
  * prepared full casters (ability modifier + level, exact when modifiers are
  * supplied via {@link EnumerateRequiredChoicesInput.abilityModifiers}).
+ *
+ * Starting equipment is likewise structured via a source-cited overlay
+ * (`srdClassStartingEquipment.ts`, eshyra-b69j.12.3): each SRD class's
+ * choose-one groups become structured equipment choices (`choose: 1` with the
+ * option texts in `from`), while fixed grants are auto-applied and not prompted.
  *
  * The inventory of what is structured vs prose-only today lives in
  * docs/design/character-creation-level1-metadata-inventory.md.
@@ -42,6 +47,10 @@ import {
   getClassSpellcasting,
   level1PreparedSpellCount,
 } from './srdClassSpellcasting.js';
+import {
+  getClassStartingEquipment,
+  type StartingEquipmentEntry,
+} from './srdClassStartingEquipment.js';
 
 /** Whether a required choice can be enumerated from structured pack data yet. */
 export type Level1RequiredChoiceStatus = 'structured' | 'unstructured';
@@ -137,19 +146,52 @@ function collectClassChoices(
   });
 
   collectSpellcastingChoices(classData, abilityModifiers, choices);
+  collectEquipmentChoices(classData, choices);
+}
 
-  (classData.startingEquipment?.entries ?? []).forEach((entry, index) => {
-    if (!isEquipmentOption(entry)) {
-      return; // a fixed grant (e.g. "A spellbook"), not a choice
+/**
+ * Starting-equipment choose-one groups. The source-cited overlay
+ * (`srdClassStartingEquipment.ts`, eshyra-b69j.12.3) structures each SRD class's
+ * equipment into choice groups (with labelled options) and fixed grants. Only
+ * the choose-one groups are required choices — fixed grants are auto-applied and
+ * need no prompt. A class with no overlay (a future non-SRD pack) falls back to
+ * the prose `entries`, tagged unstructured so the gap stays tracked.
+ */
+function collectEquipmentChoices(
+  classData: ResolvedClassData,
+  choices: Level1RequiredChoice[],
+): void {
+  const overlay = getClassStartingEquipment(classData.key);
+  if (overlay === undefined) {
+    (classData.startingEquipment?.entries ?? []).forEach((entry, index) => {
+      if (!isEquipmentOption(entry)) {
+        return; // a fixed grant (e.g. "A spellbook"), not a choice
+      }
+      choices.push({
+        id: `class.equipment.${index}`,
+        kind: 'equipment',
+        source: 'class',
+        status: 'unstructured',
+        label: `Choose your starting equipment: ${entry}`,
+        sourceText: entry,
+        blockingBead: BEAD_EQUIPMENT,
+      });
+    });
+    return;
+  }
+  overlay.entries.forEach((entry: StartingEquipmentEntry, index) => {
+    if (entry.kind !== 'choice') {
+      return; // fixed grant — applied automatically, no prompt needed
     }
     choices.push({
       id: `class.equipment.${index}`,
       kind: 'equipment',
       source: 'class',
-      status: 'unstructured',
-      label: `Choose your starting equipment: ${entry}`,
-      sourceText: entry,
-      blockingBead: BEAD_EQUIPMENT,
+      status: 'structured',
+      label: `Choose your starting equipment: ${entry.sourceText}`,
+      choose: 1,
+      from: entry.options.map((option) => option.text),
+      sourceText: entry.sourceText,
     });
   });
 }
