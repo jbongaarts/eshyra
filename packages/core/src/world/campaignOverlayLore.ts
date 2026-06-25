@@ -8,6 +8,7 @@ export type CanonTier =
   | 'module_canon'
   | 'campaign_state'
   | 'campaign_overlay_lore'
+  | 'continuity_dressing'
   | 'scene_fact'
   | 'decorative_color'
   | 'rumor_belief'
@@ -45,6 +46,12 @@ export type OverlayLoreSource =
   | 'consequence';
 
 export type OverlayLoreScope = 'scene' | 'session' | 'campaign';
+export type OverlayLoreSignificance =
+  | 'atmosphere'
+  | 'continuity'
+  | 'clue'
+  | 'hook'
+  | 'consequence';
 export type OverlayLoreVisibility = 'player_visible' | 'dm_only' | 'mixed';
 
 export interface CampaignOverlayLoreRecord {
@@ -59,6 +66,7 @@ export interface CampaignOverlayLoreRecord {
   readonly truthStatus: OverlayLoreTruthStatus;
   readonly source: OverlayLoreSource;
   readonly scope: OverlayLoreScope;
+  readonly significance: OverlayLoreSignificance;
   readonly visibility: OverlayLoreVisibility;
   readonly introducedAtTurnId: string;
   readonly introducedAtSessionId: string;
@@ -81,6 +89,7 @@ export interface RecordCampaignOverlayLoreInput {
   readonly truthStatus: OverlayLoreTruthStatus;
   readonly source: OverlayLoreSource;
   readonly scope: OverlayLoreScope;
+  readonly significance?: OverlayLoreSignificance;
   readonly visibility: OverlayLoreVisibility;
   readonly introducedAtTurnId: string;
   readonly introducedAtSessionId: string;
@@ -98,6 +107,7 @@ export interface CampaignOverlayLoreQuery {
   readonly npcId?: string;
   readonly subject?: string;
   readonly kind?: OverlayLoreKind;
+  readonly significance?: OverlayLoreSignificance;
   readonly tags?: readonly string[];
   readonly includeInvalidated?: boolean;
   readonly limit?: number;
@@ -145,6 +155,13 @@ const SOURCES = new Set<OverlayLoreSource>([
 ]);
 
 const SCOPES = new Set<OverlayLoreScope>(['scene', 'session', 'campaign']);
+const SIGNIFICANCES = new Set<OverlayLoreSignificance>([
+  'atmosphere',
+  'continuity',
+  'clue',
+  'hook',
+  'consequence',
+]);
 const VISIBILITIES = new Set<OverlayLoreVisibility>([
   'player_visible',
   'dm_only',
@@ -163,6 +180,7 @@ interface OverlayLoreRow {
   truth_status: OverlayLoreTruthStatus;
   source: OverlayLoreSource;
   scope: OverlayLoreScope;
+  significance: OverlayLoreSignificance;
   visibility: OverlayLoreVisibility;
   introduced_at_turn_id: string;
   introduced_at_session_id: string;
@@ -184,10 +202,10 @@ export function recordCampaignOverlayLore(
       .prepare(
         `INSERT INTO campaign_overlay_lore(
            id, kind, subject_id, subject_text, location_id, npc_id, faction_id,
-           fact, truth_status, source, scope, visibility,
+           fact, truth_status, source, scope, significance, visibility,
            introduced_at_turn_id, introduced_at_session_id, supersedes,
            invalidates, tags_json, provenance, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         id,
@@ -201,6 +219,7 @@ export function recordCampaignOverlayLore(
         input.truthStatus,
         input.source,
         input.scope,
+        input.significance ?? defaultSignificance(input.kind),
         input.visibility,
         input.introducedAtTurnId,
         input.introducedAtSessionId,
@@ -246,6 +265,11 @@ export function queryCampaignOverlayLore(
     .filter((record) => query.id === undefined || record.id === query.id)
     .filter((record) => !invalidatedIds.has(record.id))
     .filter((record) => query.kind === undefined || record.kind === query.kind)
+    .filter(
+      (record) =>
+        query.significance === undefined ||
+        record.significance === query.significance,
+    )
     .filter(
       (record) =>
         query.locationId === undefined ||
@@ -314,11 +338,25 @@ function validateLoreInput(input: RecordCampaignOverlayLoreInput): void {
   if (!SCOPES.has(input.scope)) {
     throw new CampaignOverlayLoreError(`unsupported scope '${input.scope}'`);
   }
+  if (
+    input.significance !== undefined &&
+    !SIGNIFICANCES.has(input.significance)
+  ) {
+    throw new CampaignOverlayLoreError(
+      `unsupported significance '${input.significance}'`,
+    );
+  }
   if (!VISIBILITIES.has(input.visibility)) {
     throw new CampaignOverlayLoreError(
       `unsupported visibility '${input.visibility}'`,
     );
   }
+}
+
+function defaultSignificance(kind: OverlayLoreKind): OverlayLoreSignificance {
+  if (kind === 'clue') return 'clue';
+  if (kind === 'quest_hook') return 'hook';
+  return 'consequence';
 }
 
 function requireNonEmpty(field: string, value: string): void {
@@ -351,6 +389,7 @@ function rowToRecord(row: OverlayLoreRow): CampaignOverlayLoreRecord {
     truthStatus: row.truth_status,
     source: row.source,
     scope: row.scope,
+    significance: row.significance,
     visibility: row.visibility,
     introducedAtTurnId: row.introduced_at_turn_id,
     introducedAtSessionId: row.introduced_at_session_id,
@@ -385,6 +424,7 @@ function matchesTerms(
     record.truthStatus,
     record.source,
     record.scope,
+    record.significance,
     record.visibility,
     ...record.tags,
   ]

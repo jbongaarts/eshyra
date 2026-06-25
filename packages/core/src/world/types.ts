@@ -168,6 +168,7 @@ export interface WorldQueryTarget {
   readonly npcId?: string;
   readonly subject?: string;
   readonly kind?: string;
+  readonly significance?: string;
   readonly tags?: readonly string[];
   readonly includeInvalidated?: boolean;
   readonly limit?: number;
@@ -187,6 +188,7 @@ export interface WorldCanonEvidence {
     | 'module_canon'
     | 'campaign_state'
     | 'campaign_overlay_lore'
+    | 'continuity_dressing'
     | 'scene_fact'
     | 'decorative_color'
     | 'rumor_belief'

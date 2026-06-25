@@ -664,6 +664,7 @@ export type {
   CanonTier,
   OverlayLoreKind,
   OverlayLoreScope,
+  OverlayLoreSignificance,
   OverlayLoreSource,
   OverlayLoreTruthStatus,
   OverlayLoreVisibility,

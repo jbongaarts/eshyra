@@ -131,8 +131,8 @@ describe('persistence', () => {
     db.close();
   });
 
-  it('exports SCHEMA_VERSION 13', () => {
-    expect(SCHEMA_VERSION).toBe(13);
+  it('exports SCHEMA_VERSION 14', () => {
+    expect(SCHEMA_VERSION).toBe(14);
   });
 
   it('creates the campaign_arc table with the one-open partial index', () => {

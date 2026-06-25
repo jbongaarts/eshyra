@@ -90,6 +90,9 @@ export function worldQuery(db: Db, target: WorldQueryTarget): WorldQueryResult {
       npcId: target.npcId,
       subject: target.subject,
       kind: isOverlayLoreKind(target.kind) ? target.kind : undefined,
+      significance: isOverlayLoreSignificance(target.significance)
+        ? target.significance
+        : undefined,
       tags: target.tags,
       includeInvalidated: target.includeInvalidated,
       limit: target.limit,
@@ -270,6 +273,9 @@ function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
     locationId: target.locationId,
     npcId: target.npcId,
     kind: isOverlayLoreKind(target.kind) ? target.kind : undefined,
+    significance: isOverlayLoreSignificance(target.significance)
+      ? target.significance
+      : undefined,
     tags: target.tags,
     includeInvalidated: target.includeInvalidated,
     limit,
@@ -279,13 +285,7 @@ function worldSearch(db: Db, target: WorldQueryTarget): WorldSearchResult[] {
     )
     .map((record): WorldSearchResult => {
       return {
-        tier:
-          record.kind === 'rumor' ||
-          record.truthStatus === 'rumored' ||
-          record.truthStatus === 'reported' ||
-          record.truthStatus === 'believed'
-            ? 'rumor_belief'
-            : 'campaign_overlay_lore',
+        tier: overlayLoreTier(record),
         source: record.source,
         type: 'overlay_lore',
         id: record.id,
@@ -302,19 +302,29 @@ function overlayLoreEvidence(
   record: CampaignOverlayLoreRecord,
 ): WorldCanonEvidence {
   return {
-    tier:
-      record.kind === 'rumor' ||
-      record.truthStatus === 'rumored' ||
-      record.truthStatus === 'reported' ||
-      record.truthStatus === 'believed'
-        ? 'rumor_belief'
-        : 'campaign_overlay_lore',
+    tier: overlayLoreTier(record),
     source: record.source,
     id: record.id,
     truthStatus: record.truthStatus,
     visibility: record.visibility,
     summary: `${record.subjectText}: ${record.fact}`,
   };
+}
+
+function overlayLoreTier(
+  record: CampaignOverlayLoreRecord,
+): WorldCanonEvidence['tier'] {
+  if (record.significance === 'atmosphere') return 'decorative_color';
+  if (record.significance === 'continuity') return 'continuity_dressing';
+  if (
+    record.kind === 'rumor' ||
+    record.truthStatus === 'rumored' ||
+    record.truthStatus === 'reported' ||
+    record.truthStatus === 'believed'
+  ) {
+    return 'rumor_belief';
+  }
+  return 'campaign_overlay_lore';
 }
 
 function labelFor(data: Record<string, unknown>, fallback: string): string {
@@ -461,6 +471,7 @@ function overlaySearchMatches(
     record.npcId,
     record.fact,
     record.truthStatus,
+    record.significance,
     ...record.tags,
   ]
     .filter((part): part is string => typeof part === 'string')
@@ -482,5 +493,17 @@ function isOverlayLoreKind(
     value === 'scene_consequence' ||
     value === 'player_created_detail' ||
     value === 'other'
+  );
+}
+
+function isOverlayLoreSignificance(
+  value: unknown,
+): value is CampaignOverlayLoreRecord['significance'] {
+  return (
+    value === 'atmosphere' ||
+    value === 'continuity' ||
+    value === 'clue' ||
+    value === 'hook' ||
+    value === 'consequence'
   );
 }

@@ -242,6 +242,26 @@ const v12_to_v13: Migration = (db) => {
   `);
 };
 
+// v13 → v14: distinguish stable continuity dressing from consequential lore.
+const v13_to_v14: Migration = (db) => {
+  const cols = db.prepare('PRAGMA table_info(campaign_overlay_lore)').all() as {
+    name: string;
+  }[];
+  if (!cols.some((c) => c.name === 'significance')) {
+    db.exec(`
+      ALTER TABLE campaign_overlay_lore
+      ADD COLUMN significance TEXT NOT NULL DEFAULT 'consequence'
+      CHECK (significance IN (
+        'atmosphere',
+        'continuity',
+        'clue',
+        'hook',
+        'consequence'
+      ))
+    `);
+  }
+};
+
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   8: v7_to_v8,
   9: v8_to_v9,
@@ -249,6 +269,7 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   11: v10_to_v11,
   12: v11_to_v12,
   13: v12_to_v13,
+  14: v13_to_v14,
 };
 
 /**
