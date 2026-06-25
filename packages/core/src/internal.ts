@@ -218,6 +218,15 @@ export {
   createRulesPackCharacterResolver,
   getBundledDnd5eCharacterResolver,
 } from './character/rulesPackResolver.js';
+// Source-cited ancestry ability-score-increase overlay (eshyra-b69j.12.1): a
+// deterministic, consumer-side metadata layer keyed to the frozen ancestry
+// record keys, supplying the increases the frozen pack carries only as prose.
+export type {
+  AbilityScoreIncrease,
+  AbilityScoreIncreaseChoice,
+  AncestryAbilityScoreIncrease,
+} from './character/srdAncestryAbilityScoreIncreases.js';
+export { getAncestryAbilityScoreIncrease } from './character/srdAncestryAbilityScoreIncreases.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {

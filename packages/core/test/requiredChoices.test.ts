@@ -114,22 +114,16 @@ describe('enumerateLevel1RequiredChoices', () => {
     );
   });
 
-  it('surfaces ancestry ability increase and language gaps when provided', () => {
+  it('does not surface a fixed ancestry ability increase as a choice', () => {
     const choices = enumerateLevel1RequiredChoices({
       classData: classData('Fighter'),
       ancestry: ancestry('Elf'),
       background: background('Acolyte'),
     });
 
-    const abilityIncrease = byId(choices, 'ancestry.abilityIncrease');
-    expect(abilityIncrease).toMatchObject({
-      kind: 'ability_increase',
-      source: 'ancestry',
-      status: 'unstructured',
-      blockingBead: 'eshyra-b69j.12.1',
-    });
-    // The verbatim prose is carried for display but is the *only* representation.
-    expect(abilityIncrease?.sourceText).toMatch(/increases by 2/i);
+    // Elf's +2 Dexterity is a fixed increase, applied automatically in derived
+    // values (eshyra-b69j.12.1) — it is not a prompt-worthy required choice.
+    expect(byId(choices, 'ancestry.abilityIncrease')).toBeUndefined();
 
     const languages = byId(choices, 'background.languages');
     expect(languages).toMatchObject({
@@ -139,6 +133,31 @@ describe('enumerateLevel1RequiredChoices', () => {
       blockingBead: 'eshyra-b69j.12.4',
     });
     expect(languages?.sourceText).toMatch(/choice/i);
+  });
+
+  it('surfaces the Half-Elf ability increase as a structured choice', () => {
+    const choices = enumerateLevel1RequiredChoices({
+      classData: classData('Fighter'),
+      ancestry: ancestry('Half-Elf'),
+    });
+
+    const abilityIncrease = byId(choices, 'ancestry.abilityIncrease');
+    expect(abilityIncrease).toMatchObject({
+      kind: 'ability_increase',
+      source: 'ancestry',
+      status: 'structured',
+      choose: 2,
+    });
+    // "two other ability scores of your choice" excludes the fixed Charisma +2.
+    expect(abilityIncrease?.from).toEqual([
+      'Strength',
+      'Dexterity',
+      'Constitution',
+      'Intelligence',
+      'Wisdom',
+    ]);
+    expect(abilityIncrease?.blockingBead).toBeUndefined();
+    expect(abilityIncrease?.sourceText).toMatch(/two other ability scores/i);
   });
 
   it('omits ancestry/background choices when those records are not supplied', () => {
