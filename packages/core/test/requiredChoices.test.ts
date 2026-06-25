@@ -169,14 +169,69 @@ describe('enumerateLevel1RequiredChoices', () => {
     // values (eshyra-b69j.12.1) — it is not a prompt-worthy required choice.
     expect(byId(choices, 'ancestry.abilityIncrease')).toBeUndefined();
 
+    // Elf's languages (Common + Elvish) are fixed — granted automatically, not
+    // surfaced as a choice (overlay, eshyra-b69j.12.4).
+    expect(byId(choices, 'ancestry.languages')).toBeUndefined();
+
+    // Acolyte's "Two of your choice" is now a structured language choice.
     const languages = byId(choices, 'background.languages');
     expect(languages).toMatchObject({
       kind: 'languages',
       source: 'background',
-      status: 'unstructured',
-      blockingBead: 'eshyra-b69j.12.4',
+      status: 'structured',
+      choose: 2,
     });
-    expect(languages?.sourceText).toMatch(/choice/i);
+    expect(languages?.blockingBead).toBeUndefined();
+    expect(languages?.sourceText).toBe('Two of your choice');
+    // The choosable pool is the SRD standard languages minus the languages Elf
+    // already grants (Common + Elvish) — see the combined-exclusion test below.
+    expect(languages?.from).toContain('Dwarvish');
+    expect(languages?.from).not.toContain('Common');
+    expect(languages?.from).not.toContain('Elvish');
+  });
+
+  it('surfaces a free ancestry language pick as a structured choice', () => {
+    // Half-Elf grants Common + Elvish fixed plus one of the player's choice.
+    const choices = enumerateLevel1RequiredChoices({
+      classData: classData('Fighter'),
+      ancestry: ancestry('Half-Elf'),
+    });
+    const languages = byId(choices, 'ancestry.languages');
+    expect(languages).toMatchObject({
+      kind: 'languages',
+      source: 'ancestry',
+      status: 'structured',
+      choose: 1,
+    });
+    // The two fixed languages are excluded from the choosable pool.
+    expect(languages?.from).not.toContain('Common');
+    expect(languages?.from).not.toContain('Elvish');
+    expect(languages?.from).toContain('Dwarvish');
+    expect(languages?.sourceText).toMatch(/one extra language of your choice/i);
+  });
+
+  it('excludes the combined ancestry+background fixed languages from every free pick', () => {
+    // Half-Elf grants Common + Elvish (fixed) plus one choice; Acolyte grants
+    // two choices. A character with both already has Common + Elvish, so NEITHER
+    // free pick may offer them — the pool spans both sources, not just the same
+    // overlay entry's own fixed set.
+    const choices = enumerateLevel1RequiredChoices({
+      classData: classData('Fighter'),
+      ancestry: ancestry('Half-Elf'),
+      background: background('Acolyte'),
+    });
+
+    const ancestryLangs = byId(choices, 'ancestry.languages');
+    expect(ancestryLangs?.from).not.toContain('Common');
+    expect(ancestryLangs?.from).not.toContain('Elvish');
+
+    const backgroundLangs = byId(choices, 'background.languages');
+    expect(backgroundLangs?.choose).toBe(2);
+    // The key regression: Acolyte's pool must drop the Half-Elf's fixed grants.
+    expect(backgroundLangs?.from).not.toContain('Common');
+    expect(backgroundLangs?.from).not.toContain('Elvish');
+    // Other standard languages remain available.
+    expect(backgroundLangs?.from).toContain('Dwarvish');
   });
 
   it('surfaces the Half-Elf ability increase as a structured choice', () => {

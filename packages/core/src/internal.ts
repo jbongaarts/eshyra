@@ -256,6 +256,17 @@ export type {
   StartingEquipmentOption,
 } from './character/srdClassStartingEquipment.js';
 export { getClassStartingEquipment } from './character/srdClassStartingEquipment.js';
+// Source-cited language overlay (eshyra-b69j.12.4): a deterministic,
+// consumer-side layer keyed to the frozen ancestry/background record keys,
+// supplying the fixed granted languages and free-choice counts the frozen pack
+// carries only as prose.
+export type { LanguageGrant } from './character/srdLanguages.js';
+export {
+  chooseableLanguages,
+  getAncestryLanguages,
+  getBackgroundLanguages,
+  SRD_STANDARD_LANGUAGES,
+} from './character/srdLanguages.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {

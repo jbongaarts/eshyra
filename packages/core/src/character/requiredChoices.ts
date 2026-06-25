@@ -11,10 +11,10 @@
  * This module turns a resolved class (and optional ancestry/background) into a
  * flat list of {@link Level1RequiredChoice} descriptors, each tagged `structured`
  * (enumerable now from the generated pack or a source-cited overlay) or
- * `unstructured` (the option set or count lives only in prose; a follow-up bead
- * — eshyra-b69j.12.4 — tracks adding the metadata). It deliberately does NOT
- * parse the prose: an `unstructured` choice carries the verbatim `sourceText`
- * for display and the `blockingBead` that will make it structured, nothing more.
+ * `unstructured` (the option set or count lives only in prose; tracked by a
+ * `blockingBead` for any record an overlay does not yet cover). It deliberately
+ * does NOT parse the prose: an `unstructured` choice carries the verbatim
+ * `sourceText` for display and the `blockingBead`, nothing more.
  *
  * Spellcasting metadata is now structured via the source-cited overlay
  * (`srdClassSpellcasting.ts`, eshyra-b69j.12.1's sibling eshyra-b69j.12.2): the
@@ -28,6 +28,12 @@
  * (`srdClassStartingEquipment.ts`, eshyra-b69j.12.3): each SRD class's
  * choose-one groups become structured equipment choices (`choose: 1` with the
  * option texts in `from`), while fixed grants are auto-applied and not prompted.
+ *
+ * Languages are structured via a source-cited overlay (`srdLanguages.ts`,
+ * eshyra-b69j.12.4): an ancestry's/background's fixed languages are granted
+ * automatically, and only a free-choice component (Half-Elf/Human "one extra",
+ * Acolyte "two of your choice") is surfaced as a structured `choose`/`from`
+ * language choice drawn from the SRD standard languages.
  *
  * The inventory of what is structured vs prose-only today lives in
  * docs/design/character-creation-level1-metadata-inventory.md.
@@ -51,6 +57,11 @@ import {
   getClassStartingEquipment,
   type StartingEquipmentEntry,
 } from './srdClassStartingEquipment.js';
+import {
+  chooseableLanguages,
+  getAncestryLanguages,
+  getBackgroundLanguages,
+} from './srdLanguages.js';
 
 /** Whether a required choice can be enumerated from structured pack data yet. */
 export type Level1RequiredChoiceStatus = 'structured' | 'unstructured';
@@ -123,14 +134,33 @@ export function enumerateLevel1RequiredChoices(
   input: EnumerateRequiredChoicesInput,
 ): readonly Level1RequiredChoice[] {
   const choices: Level1RequiredChoice[] = [];
+  // Languages a free choice must exclude span BOTH sources: a character already
+  // has every fixed language from its ancestry and its background, so each
+  // free-choice `from` pool subtracts the combined set (not just the same
+  // entry's own fixed languages).
+  const grantedLanguages = combinedFixedLanguages(input);
   collectClassChoices(input.classData, input.abilityModifiers, choices);
   if (input.ancestry !== undefined) {
-    collectAncestryChoices(input.ancestry, choices);
+    collectAncestryChoices(input.ancestry, grantedLanguages, choices);
   }
   if (input.background !== undefined) {
-    collectBackgroundChoices(input.background, choices);
+    collectBackgroundChoices(input.background, grantedLanguages, choices);
   }
   return choices;
+}
+
+/** Every fixed language granted by the chosen ancestry and background overlays. */
+function combinedFixedLanguages(
+  input: EnumerateRequiredChoicesInput,
+): readonly string[] {
+  const fixed: string[] = [];
+  if (input.ancestry !== undefined) {
+    fixed.push(...(getAncestryLanguages(input.ancestry.key)?.fixed ?? []));
+  }
+  if (input.background !== undefined) {
+    fixed.push(...(getBackgroundLanguages(input.background.key)?.fixed ?? []));
+  }
+  return fixed;
 }
 
 function collectClassChoices(
@@ -330,14 +360,37 @@ function spellSelectionChoice(
 
 function collectAncestryChoices(
   ancestry: ResolvedAncestryData,
+  grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
   collectAncestryAbilityIncrease(ancestry, choices);
-  for (const trait of ancestry.traits ?? []) {
-    if (
-      /languages?/i.test(trait.name) &&
-      /\bchoice\b|choose/i.test(trait.text)
-    ) {
+  collectAncestryLanguages(ancestry, grantedLanguages, choices);
+}
+
+/**
+ * Ancestry languages come from the source-cited overlay (eshyra-b69j.12.4),
+ * keyed by the frozen ancestry record key — never parsed from the trait prose.
+ * Fixed languages (e.g. Elf's Common + Elvish) are granted automatically and
+ * need no prompt; only a free-choice component (Half-Elf / Human "one extra
+ * language of your choice") is a required choice, surfaced structured with
+ * `choose`/`from` (the SRD standard languages minus `grantedLanguages` — the
+ * combined fixed languages from this ancestry AND the background, so a pick
+ * never offers a language the character already has). An ancestry with no
+ * overlay falls back to the prose trait as a tracked unstructured gap, so a real
+ * language choice is never dropped.
+ */
+function collectAncestryLanguages(
+  ancestry: ResolvedAncestryData,
+  grantedLanguages: readonly string[],
+  choices: Level1RequiredChoice[],
+): void {
+  const overlay = getAncestryLanguages(ancestry.key);
+  if (overlay === undefined) {
+    const trait = (ancestry.traits ?? []).find(
+      (entry) =>
+        /languages?/i.test(entry.name) && /\bchoice\b|choose/i.test(entry.text),
+    );
+    if (trait !== undefined) {
       choices.push({
         id: 'ancestry.languages',
         kind: 'languages',
@@ -348,7 +401,21 @@ function collectAncestryChoices(
         blockingBead: BEAD_LANGUAGES,
       });
     }
+    return;
   }
+  if (overlay.choose === undefined) {
+    return; // fixed languages only — granted automatically, no prompt needed
+  }
+  choices.push({
+    id: 'ancestry.languages',
+    kind: 'languages',
+    source: 'ancestry',
+    status: 'structured',
+    label: `Choose ${overlay.choose} language(s)`,
+    choose: overlay.choose,
+    from: chooseableLanguages(grantedLanguages),
+    sourceText: overlay.sourceText,
+  });
 }
 
 /**
@@ -403,20 +470,38 @@ function collectAncestryAbilityIncrease(
 
 function collectBackgroundChoices(
   background: ResolvedBackgroundData,
+  grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
-  const languages = background.languages;
-  if (languages !== undefined && /\bchoice\b|choose/i.test(languages)) {
-    choices.push({
-      id: 'background.languages',
-      kind: 'languages',
-      source: 'background',
-      status: 'unstructured',
-      label: 'Choose background language(s)',
-      sourceText: languages,
-      blockingBead: BEAD_LANGUAGES,
-    });
+  const overlay = getBackgroundLanguages(background.key);
+  if (overlay === undefined) {
+    const languages = background.languages;
+    if (languages !== undefined && /\bchoice\b|choose/i.test(languages)) {
+      choices.push({
+        id: 'background.languages',
+        kind: 'languages',
+        source: 'background',
+        status: 'unstructured',
+        label: 'Choose background language(s)',
+        sourceText: languages,
+        blockingBead: BEAD_LANGUAGES,
+      });
+    }
+    return;
   }
+  if (overlay.choose === undefined) {
+    return; // fixed languages only — granted automatically, no prompt needed
+  }
+  choices.push({
+    id: 'background.languages',
+    kind: 'languages',
+    source: 'background',
+    status: 'structured',
+    label: `Choose ${overlay.choose} language(s)`,
+    choose: overlay.choose,
+    from: chooseableLanguages(grantedLanguages),
+    sourceText: overlay.sourceText,
+  });
 }
 
 /**
