@@ -643,6 +643,34 @@ export {
   updateClock,
 } from './state/domainMutations.js';
 export type {
+  ActorKind,
+  ActorSourceKind,
+  ActorStatus,
+  CampaignActor,
+  CloseCombatInstanceInput,
+  CombatantStatus,
+  CombatInstance,
+  CombatInstanceStatus,
+  EncounterCombatant,
+  StartEncounterInput,
+  StartEncounterResult,
+  UpdateCombatantInput,
+  UpdateCombatantResult,
+  UpsertCampaignActorInput,
+} from './state/encounterCombatants.js';
+export {
+  closeCombatInstance,
+  EncounterCombatantError,
+  getCampaignActor,
+  listCampaignActors,
+  listCombatants,
+  listCombatantsForInstance,
+  readCombatInstance,
+  startEncounter,
+  updateCombatant,
+  upsertCampaignActor,
+} from './state/encounterCombatants.js';
+export type {
   AbilityScoreName,
   AbilityScores,
   CharacterConditionEntry,

@@ -3,6 +3,7 @@
  * Individual tools live in their own modules; this module is the provider-neutral seam.
  */
 
+import type { AdventureModule } from '../adventure/types.js';
 import type {
   ModelToolDefinition,
   ToolInputSchema,
@@ -32,6 +33,8 @@ export interface ToolContext {
    * (where a tool supports one) overrides both.
    */
   actingCharacterId?: string;
+  /** Resolve active adventure module source for module-backed tools. */
+  resolveAdventureModule?: (moduleId: string) => AdventureModule | undefined;
 }
 
 export interface Tool {

@@ -13,6 +13,12 @@ import {
   CharacterResolutionError,
   resolveActingCharacterId,
 } from '../state/activeCharacter.js';
+import {
+  type CampaignActor,
+  type EncounterCombatant,
+  listCampaignActors,
+  listCombatants,
+} from '../state/encounterCombatants.js';
 import type {
   AbilityScores,
   CharacterConditionEntry,
@@ -122,6 +128,8 @@ export interface ClockSnapshot {
 export interface StateSnapshot {
   character: CharacterSnapshot;
   inventory: InventoryItem[];
+  combatants: EncounterCombatant[];
+  campaignActors: CampaignActor[];
   plotFlags: Record<string, unknown>;
   clock: ClockSnapshot;
 }
@@ -199,6 +207,7 @@ interface KeyedJsonRow {
 export function readStateSnapshot(
   db: Db,
   activeCharacterId?: string,
+  campaignId?: string,
 ): StateSnapshot {
   const charId = resolveActingCharacterId(db, activeCharacterId);
   const character = db
@@ -275,6 +284,9 @@ export function readStateSnapshot(
         ),
       };
     }),
+    combatants: campaignId === undefined ? [] : listCombatants(db, campaignId),
+    campaignActors:
+      campaignId === undefined ? [] : listCampaignActors(db, campaignId),
     plotFlags,
     clock: {
       inGameTime: clock.in_game_time,
@@ -327,7 +339,11 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
       : Math.max(0, countSceneLog(input.db, sceneKey) - sceneTranscript.length);
   const recentSceneEvidence = buildRecentSceneEvidence(sceneTranscript);
 
-  const state = readStateSnapshot(input.db, input.actingCharacterId);
+  const state = readStateSnapshot(
+    input.db,
+    input.actingCharacterId,
+    input.campaignId,
+  );
 
   const adventures = assembleAdventureContext(
     input.db,
@@ -452,6 +468,51 @@ function renderState(state: StateSnapshot): string {
     );
   } else {
     lines.push('Inventory: (empty)');
+  }
+  if (state.combatants.length > 0) {
+    lines.push('Active combatants:');
+    for (const combatant of state.combatants) {
+      const ac = combatant.ac === undefined ? '' : `, AC ${combatant.ac}`;
+      const conditions =
+        combatant.conditions.length === 0
+          ? ''
+          : `, conditions: ${combatant.conditions.map((entry) => entry.id).join(', ')}`;
+      const location =
+        combatant.locationId === undefined ? '' : ` @ ${combatant.locationId}`;
+      const placement =
+        combatant.placement === undefined
+          ? ''
+          : `, placement: ${combatant.placement}`;
+      const identity =
+        combatant.identityRef === undefined
+          ? ''
+          : `, identity: ${combatant.identityRef}`;
+      lines.push(
+        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}], ${combatant.side}, HP ${combatant.hpCurrent}/${combatant.hpMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
+      );
+    }
+  }
+  if (state.campaignActors.length > 0) {
+    lines.push('Persistent actors:');
+    for (const actor of state.campaignActors) {
+      const rules =
+        actor.rulesRef === undefined ? '' : `, rules: ${actor.rulesRef}`;
+      const hp =
+        actor.hpCurrent === undefined || actor.hpMax === undefined
+          ? ''
+          : `, HP ${actor.hpCurrent}/${actor.hpMax}`;
+      const conditions =
+        actor.conditions.length === 0
+          ? ''
+          : `, conditions: ${actor.conditions.map((entry) => entry.id).join(', ')}`;
+      const location =
+        actor.currentLocationId === undefined
+          ? ''
+          : ` @ ${actor.currentLocationId}`;
+      lines.push(
+        `- ${actor.actorId}: ${actor.displayName} [${actor.status}], ${actor.actorKind}${rules}${hp}${conditions}${location}`,
+      );
+    }
   }
   const flagKeys = Object.keys(state.plotFlags);
   if (flagKeys.length > 0) {

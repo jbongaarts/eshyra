@@ -462,6 +462,7 @@ export async function runTurn(
     sessionId: input.sessionId,
     turnId: input.turnId,
     at: input.at,
+    resolveAdventureModule: deps.resolveAdventureModule,
   };
 
   // Tracked here (not inside runModelLoop) so the failure path can still
