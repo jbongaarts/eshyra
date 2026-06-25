@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type {
+  RulesPack,
+  RulesPackLicense,
+  RulesRecord,
+} from '../src/internal.js';
 import {
   createRulesPackCharacterResolver,
   getBundledDnd5eCharacterResolver,
@@ -7,6 +12,54 @@ import {
 } from '../src/internal.js';
 
 const resolver = getBundledDnd5eCharacterResolver();
+
+function license(): RulesPackLicense {
+  return {
+    licenseClass: 'open',
+    licenseName: 'Creative Commons Attribution 4.0 International',
+    attributionText: 'Rules text derived from an open SRD fixture.',
+    requiresAttribution: true,
+    commercialUseAllowed: true,
+    hostedUseAllowed: true,
+    redistributionAllowed: true,
+    publicSharingAllowed: true,
+    derivativeAllowed: true,
+    containsUserSuppliedText: false,
+    containsTrademarkedSettingMaterial: false,
+    sourceMaterialDescription: 'Open fantasy rules reference.',
+    provenancePolicy: 'Every record includes source and license metadata.',
+    outputRestrictions: 'Preserve attribution on redistributed records.',
+  };
+}
+
+function record(overrides: Partial<RulesRecord>): RulesRecord {
+  return {
+    systemId: 'dnd5e-srd',
+    kind: 'class',
+    key: 'class:example',
+    name: 'Example',
+    data: {},
+    source: 'Example SRD p. 1',
+    license: license(),
+    ...overrides,
+  };
+}
+
+/** A minimal base pack carrying exactly the supplied records. */
+function packWith(records: readonly RulesRecord[]): RulesPack {
+  return {
+    meta: {
+      packId: 'rules:dnd5e-srd',
+      title: 'D&D 5e SRD',
+      description: 'Provider-neutral rules fixture.',
+      role: 'base',
+      systemId: 'dnd5e-srd',
+      version: '5.1',
+      license: license(),
+    },
+    records,
+  };
+}
 
 describe('rules-pack character resolver', () => {
   it('resolves every SRD class by display name with its hit die', () => {
@@ -129,5 +182,61 @@ describe('rules-pack character resolver', () => {
     const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
     const explicit = createRulesPackCharacterResolver(stack);
     expect(explicit.resolveClass('Rogue').ok).toBe(true);
+  });
+
+  describe('generated-data typed guards', () => {
+    it('reports a malformed result for a class missing required fields', () => {
+      const stack = resolveRulesStack({
+        base: packWith([
+          // hitDie is required by the class typed guard; omit it.
+          record({
+            key: 'class:brokenfighter',
+            name: 'Broken Fighter',
+            data: {
+              primaryAbilities: ['Strength'],
+              savingThrowProficiencies: ['Strength', 'Constitution'],
+            },
+          }),
+        ]),
+      });
+      const result =
+        createRulesPackCharacterResolver(stack).resolveClass('Broken Fighter');
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe('malformed');
+        expect(result.message).toMatch(/class:brokenfighter/);
+      }
+    });
+
+    it('reports a malformed result for a spell missing its level', () => {
+      const stack = resolveRulesStack({
+        base: packWith([
+          record({
+            kind: 'spell',
+            key: 'spell:brokenbolt',
+            name: 'Broken Bolt',
+            // level is required by the spell typed guard; omit it.
+            data: { classes: ['Wizard'] },
+          }),
+        ]),
+      });
+      const result =
+        createRulesPackCharacterResolver(stack).resolveSpell('Broken Bolt');
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe('malformed');
+        expect(result.message).toMatch(/spell:brokenbolt/);
+      }
+    });
+
+    it('distinguishes malformed from not_found', () => {
+      const stack = resolveRulesStack({ base: packWith([]) });
+      const result =
+        createRulesPackCharacterResolver(stack).resolveClass('Nonexistent');
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe('not_found');
+      }
+    });
   });
 });
