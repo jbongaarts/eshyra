@@ -390,11 +390,20 @@ export interface TurnAuditDebugEvent {
     readonly tool: string;
     readonly target?: string;
   }[];
+  /** Cumulative missing calls across rejected attempts so retry convergence is inspectable. */
+  readonly cumulativeMissingRequiredCalls: readonly {
+    readonly tool: string;
+    readonly target?: string;
+  }[];
+  /** Cumulative missing tool-name projection across rejected attempts. */
+  readonly cumulativeMissingRequiredTools: readonly string[];
   /**
    * Explicit-action-only tool names the candidate called without explicit player
    * action intent (eshyra-4ia4). Empty unless that gate fired.
    */
   readonly disallowedToolCalls: readonly string[];
+  /** Cumulative disallowed-tool classifications across rejected attempts. */
+  readonly cumulativeDisallowedToolCalls: readonly string[];
   /** Eshyra tool names the candidate turn actually executed. */
   readonly executedToolNames: readonly string[];
   /** Action the orchestrator took from this verdict. */

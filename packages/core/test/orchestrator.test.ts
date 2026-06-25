@@ -25,6 +25,7 @@ import {
   ModelRateLimitError,
   mutateState,
   openScene,
+  queryCampaignOverlayLore,
   runTurn,
 } from '../src/internal.js';
 import { freshDbWithSession } from './support/db.js';
@@ -78,6 +79,9 @@ function withOpenScene(db: Db): void {
 
 const toolCall = (tool: string, args: unknown): string =>
   ['```tool_call', JSON.stringify({ tool, args }), '```'].join('\n');
+
+const toolCalls = (calls: readonly { tool: string; args: unknown }[]): string =>
+  calls.map((call) => toolCall(call.tool, call.args)).join('\n');
 
 function baseInput(overrides: Record<string, unknown> = {}) {
   return {
@@ -1325,6 +1329,98 @@ describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
     expect(retryNote).toContain('lookup_rules (target: chain mail)');
     expect(retryNote).toContain('lookup_rules (target: shield)');
     expect(retryNote).toContain('lookup_rules (target: longsword)');
+    db.close();
+  });
+
+  it('makes one extra repair attempt when a retry exposes a new missing evidence class', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const loreArgs = {
+      id: 'sela-missing-scouts',
+      kind: 'threat_report',
+      subjectText: 'Warden Sela missing scouts',
+      fact: 'Warden Sela reports that two scouts went north and did not return.',
+      truthStatus: 'reported',
+      source: 'dm_improvised',
+      scope: 'campaign',
+      visibility: 'player_visible',
+      tags: ['sela', 'scouts', 'north-road'],
+    };
+    const model = new ScriptedModel([
+      'Sela lost two scouts north of Emberfall.',
+      toolCall('record_world_fact', loreArgs),
+      'Sela lost two scouts north of Emberfall.',
+      toolCalls([
+        { tool: 'world_query', args: { type: 'npc', query: 'Warden Sela' } },
+        { tool: 'record_world_fact', args: loreArgs },
+      ]),
+      'After checking Sela and recording the report, you know two scouts went north and did not return.',
+    ]);
+    const rejectRecordWorldFact: AuditVerdict = {
+      verdict: 'reject',
+      missingRequiredTools: ['record_world_fact'],
+      missingRequiredCalls: [
+        { tool: 'record_world_fact', target: 'Sela missing scouts report' },
+      ],
+      disallowedToolCalls: [],
+      reason: 'consequential report asserted without overlay lore',
+      repairInstruction: 'Record the missing scouts report first.',
+    };
+    const rejectWorldQuery: AuditVerdict = {
+      verdict: 'reject',
+      missingRequiredTools: ['world_query'],
+      missingRequiredCalls: [{ tool: 'world_query', target: 'Warden Sela' }],
+      disallowedToolCalls: [],
+      reason: 'module NPC asserted without world_query',
+      repairInstruction: 'Query Warden Sela before narrating her report.',
+    };
+    const auditor = new ScriptedAuditor([
+      rejectRecordWorldFact,
+      rejectWorldQuery,
+      accept,
+    ]);
+    const sink = collectingAuditSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        debug: sink,
+      },
+      baseInput({
+        playerInput: 'What should I expect if I investigate north?',
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(auditor.seen).toHaveLength(3);
+    expect(sink.audits.map((audit) => audit.action)).toEqual([
+      'retry',
+      'retry',
+      'accept',
+    ]);
+    expect(sink.audits[1].cumulativeMissingRequiredCalls).toEqual([
+      { tool: 'record_world_fact', target: 'Sela missing scouts report' },
+      { tool: 'world_query', target: 'Warden Sela' },
+    ]);
+    const secondRetryPrompt = model.seen[3].messages[0].content;
+    expect(secondRetryPrompt).toContain(
+      'record_world_fact (target: Sela missing scouts report)',
+    );
+    expect(secondRetryPrompt).toContain('world_query (target: Warden Sela)');
+    expect(secondRetryPrompt).toContain('This note is cumulative');
+
+    const records = queryCampaignOverlayLore(db, {
+      id: 'sela-missing-scouts',
+      includeInvalidated: true,
+    });
+    expect(records).toHaveLength(1);
+    expect(result.toolCalls.map((call) => call.tool)).toEqual([
+      'world_query',
+      'record_world_fact',
+    ]);
     db.close();
   });
 
