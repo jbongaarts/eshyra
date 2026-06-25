@@ -833,7 +833,12 @@ describe('orchestrator turn loop', () => {
           {
             id: 'toolu_roll',
             name: 'roll',
-            args: { dice: '1d20+5', reason: 'attack roll' },
+            args: {
+              dice: '1d20+5',
+              reason: 'attack roll',
+              visibility: 'player_visible',
+              category: 'attack',
+            },
           },
         ],
         stopReason: 'tool_use',
@@ -847,7 +852,9 @@ describe('orchestrator turn loop', () => {
     );
 
     expect(result.ok).toBe(true);
-    expect(result.narration).toBe('Your blade bites deep.');
+    expect(result.narration).toContain('Your blade bites deep.');
+    expect(result.narration).toContain('Rolls:');
+    expect(result.narration).toContain('Attack (attack roll)');
     // The deterministic dice tool ran and produced a numeric total.
     expect(result.toolCalls).toMatchObject([
       {

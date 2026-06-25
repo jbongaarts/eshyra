@@ -212,6 +212,19 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(prompt).toContain('disallowedToolCalls');
   });
 
+  it('system prompt directs the auditor to evaluate roll visibility metadata', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain('Player-affecting roll visibility');
+    expect(prompt).toContain('visibility');
+    expect(prompt).toContain('category');
+    expect(prompt).toContain('visibility:"dm_only"');
+    expect(prompt).toContain('death save');
+    expect(prompt).toContain(
+      'hand-written roll result contradicts tool output',
+    );
+    expect(prompt).toContain('enemy stealth/perception');
+  });
+
   it('user message lists the explicit-action-only tools for the turn', () => {
     const message = buildAuditUserMessage({
       playerInput: 'What am I equipped with?',

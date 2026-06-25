@@ -222,6 +222,50 @@ describe('roll tool', () => {
     }
   });
 
+  it('echoes player-visible roll metadata', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'roll',
+      {
+        dice: '1d20+5',
+        reason: 'Bob longsword attack',
+        visibility: 'player_visible',
+        category: 'attack',
+      },
+      ctx({ rng: createSeededRng(99) }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toMatchObject({
+        dice: '1d20+5',
+        reason: 'Bob longsword attack',
+        visibility: 'player_visible',
+        category: 'attack',
+      });
+    }
+  });
+
+  it('echoes dm-only roll metadata', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'roll',
+      {
+        dice: '1d20+6',
+        reason: 'hidden goblin stealth check',
+        visibility: 'dm_only',
+        category: 'ability_check',
+      },
+      ctx({ rng: createSeededRng(99) }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toMatchObject({
+        visibility: 'dm_only',
+        category: 'ability_check',
+      });
+    }
+  });
+
   it('returns a structured error for malformed dice', () => {
     const result = createDefaultToolRegistry().invoke(
       'roll',
@@ -916,6 +960,19 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     expect(def.inputSchema.required).toEqual(['dice', 'reason']);
     expect(def.inputSchema.properties.dice?.type).toBe('string');
     expect(def.inputSchema.properties.reason?.type).toBe('string');
+    expect(def.inputSchema.properties.visibility?.enum).toEqual([
+      'player_visible',
+      'dm_only',
+    ]);
+    expect(def.inputSchema.properties.category?.enum).toEqual([
+      'attack',
+      'damage',
+      'initiative',
+      'saving_throw',
+      'death_save',
+      'ability_check',
+      'other',
+    ]);
     expect(def.inputSchema.additionalProperties).toBe(false);
   });
 

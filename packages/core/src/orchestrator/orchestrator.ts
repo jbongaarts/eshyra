@@ -26,6 +26,7 @@ import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import type { AdventureModuleResolver } from './contextAssembler.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
+import { appendPlayerVisibleRollLedger } from './playerVisibleRollLedger.js';
 import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
 import type { ToolContext, ToolRegistry } from './tools.js';
@@ -564,6 +565,10 @@ export async function runTurn(
             }
           : {}),
       });
+      const candidateNarration = appendPlayerVisibleRollLedger(
+        candidate.narration,
+        candidate.toolCalls,
+      );
 
       if (deps.auditor === undefined) {
         db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
@@ -575,7 +580,7 @@ export async function runTurn(
           'accepted',
           candidate.toolCalls,
         );
-        narration = candidate.narration;
+        narration = candidateNarration;
         toolCalls = candidate.toolCalls;
         break;
       }
@@ -583,7 +588,7 @@ export async function runTurn(
       phase = 'mechanics_audit';
       const verdict = await deps.auditor.audit({
         playerInput: input.playerInput,
-        candidateResponse: candidate.narration,
+        candidateResponse: candidateNarration,
         providedToolNames: registry.list(),
         executedToolCalls: candidate.toolCalls,
         currentStateSnapshot: assembled.state,
@@ -643,7 +648,7 @@ export async function runTurn(
           'accepted',
           candidate.toolCalls,
         );
-        narration = candidate.narration;
+        narration = candidateNarration;
         toolCalls = candidate.toolCalls;
         break;
       }
