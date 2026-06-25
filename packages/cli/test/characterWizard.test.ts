@@ -1,5 +1,6 @@
 import {
   type CharacterDraft,
+  createSeededRng,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
 } from '@eshyra/core/internal';
@@ -55,6 +56,7 @@ function deps(answers: ReadonlyArray<string>): {
       engine: getDnd5eCharacterCreationEngine(),
       resolver: getBundledDnd5eCharacterResolver(),
       store,
+      rng: createSeededRng(42),
     },
   };
 }
@@ -267,5 +269,101 @@ describe('character wizard — save, quit, and resume', () => {
     });
     expect(result.saved).toBe(true);
     expect(store.saved.get('eof')?.identity.name).toBe('Mira');
+  });
+});
+
+describe('character wizard — ability-first flow', () => {
+  it('collects method and scores before class, then suggests fitting classes', async () => {
+    // Ability-first step order: identity, ability-method, ability-scores,
+    // class-recommendations, class, ancestry, background, class-choices,
+    // spells-equipment, review.
+    const {
+      deps: d,
+      lines,
+      store,
+    } = deps([
+      'Thalia', // identity
+      'point_buy', // ability-method step
+      // Wizard-leaning build (high INT): 0+7+7+9+2+2 = 27.
+      'str 8',
+      'dex 14',
+      'con 14',
+      'int 15',
+      'wis 10',
+      'cha 10',
+      'done', // scores complete
+      '', // class-recommendations: Enter to continue
+      'Wizard', // class
+      'High Elf', // ancestry
+      '', // background skip
+      '', // class-choices
+      '', // spells skip
+      '', // review finish
+    ]);
+
+    const result = await runCharacterWizard(d, {
+      mode: 'ability-first',
+      draftId: 'thalia',
+    });
+
+    expect(result.outcome).toBe('completed');
+    expect(result.draft.selections.className).toBe('Wizard');
+    expect(result.draft.selections.ancestry).toBe('High Elf');
+    const out = text(lines);
+    // Exact ability-first mode label.
+    expect(out).toContain('Ability-first — let the dice inspire me');
+    // Deterministic class-fit panel appears before class selection; the
+    // INT-heavy build surfaces Wizard as a suggestion.
+    expect(out).toContain('Classes that fit your scores');
+    expect(out).toMatch(/Wizard \(fit \+/);
+    expect(store.saved.has('thalia')).toBe(true);
+  });
+
+  it('rolls 4d6-drop-lowest deterministically under a seeded RNG', async () => {
+    // `roll` only offered for the rolled method; values come from the seeded RNG.
+    const { deps: d, lines } = deps([
+      'Dice', // identity
+      'rolled', // ability-method
+      'roll', // roll a pool
+      'quit', // stop (don't need to finish assignment)
+    ]);
+    await runCharacterWizard(d, { mode: 'ability-first', draftId: 'r' });
+    const rolledLine = lines.find((l) => l.startsWith('Rolled: '));
+    expect(rolledLine).toBeDefined();
+    // Six totals, each a valid 4d6-drop-lowest result (3–18), sorted desc.
+    const totals = (rolledLine as string)
+      .slice('Rolled: '.length)
+      .split(', ')
+      .map((n) => Number.parseInt(n, 10));
+    expect(totals).toHaveLength(6);
+    expect([...totals].sort((a, b) => b - a)).toEqual(totals);
+    for (const t of totals) {
+      expect(t).toBeGreaterThanOrEqual(3);
+      expect(t).toBeLessThanOrEqual(18);
+    }
+  });
+
+  it('lets the player choose a poor-fit class after seeing suggestions', async () => {
+    // A brawny build is shown Barbarian/Fighter etc., but the player insists on
+    // Wizard — the flow must allow it (suggestions are advisory).
+    const { deps: d } = deps([
+      'Brawn',
+      'point_buy',
+      'str 15',
+      'dex 14',
+      'con 14',
+      'int 8',
+      'wis 10',
+      'cha 10',
+      'done',
+      '', // recommendations
+      'Wizard', // deliberate poor fit
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'ability-first',
+      draftId: 'pf',
+    });
+    expect(result.draft.selections.className).toBe('Wizard');
   });
 });

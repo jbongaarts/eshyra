@@ -11,6 +11,7 @@
 
 import { randomBytes } from 'node:crypto';
 import {
+  createSeededRng,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
 } from '@eshyra/core/internal';
@@ -161,6 +162,8 @@ export async function runCreateCharacterSubcommand(
         engine: getDnd5eCharacterCreationEngine(),
         resolver: getBundledDnd5eCharacterResolver(),
         store,
+        // Seed the dice with process entropy so rolled scores differ per run.
+        rng: createSeededRng(randomBytes(4).readUInt32LE(0)),
       },
       argv,
     );

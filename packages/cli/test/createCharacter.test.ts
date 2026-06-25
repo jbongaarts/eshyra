@@ -1,5 +1,6 @@
 import {
   type CharacterDraft,
+  createSeededRng,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
 } from '@eshyra/core/internal';
@@ -53,6 +54,7 @@ function makeDeps(
       engine: getDnd5eCharacterCreationEngine(),
       resolver: getBundledDnd5eCharacterResolver(),
       store,
+      rng: createSeededRng(7),
     },
   };
 }
