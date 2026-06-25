@@ -85,6 +85,15 @@ export function debugDir(root: string): string {
   return join(root, 'debug');
 }
 
+/**
+ * `<root>/drafts/characters` — resumable guided-character-creation drafts, one
+ * JSON file per draft id (eshyra-b69j.10). Drafts are pre-finalization
+ * work-in-progress and live outside the campaign databases.
+ */
+export function characterDraftsDir(root: string): string {
+  return join(root, 'drafts', 'characters');
+}
+
 /** `<root>/diagnostics` — model usage and diagnostics store (eshyra-cuxm). */
 export function diagnosticsDir(root: string): string {
   return join(root, 'diagnostics');

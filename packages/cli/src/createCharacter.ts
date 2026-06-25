@@ -1,0 +1,160 @@
+/**
+ * `eshyra create-character` subcommand (eshyra-b69j.8 / eshyra-b69j.10).
+ *
+ * Thin wiring around {@link runCharacterWizard}: it resolves the data root,
+ * builds the on-disk draft store, the bundled D&D 5e engine and resolver, and a
+ * terminal {@link CliIO}, parses the mode/id/resume flags, then runs the guided
+ * flow. All rules logic lives in core; all interaction lives in the wizard. The
+ * dependency object is injectable so tests can drive the same command with
+ * scripted IO and an in-memory store.
+ */
+
+import {
+  getBundledDnd5eCharacterResolver,
+  getDnd5eCharacterCreationEngine,
+} from '@eshyra/core/internal';
+import {
+  type CharacterDraftStore,
+  createFileCharacterDraftStore,
+  draftFileStem,
+} from './characterDraftStore.js';
+import {
+  type CharacterWizardDeps,
+  runCharacterWizard,
+} from './characterWizard.js';
+import { characterDraftsDir, resolveDataRoot } from './dataRoot.js';
+import { nodeIO } from './play.js';
+import type { CliIO } from './playTypes.js';
+
+/** Parsed `create-character` invocation. */
+export interface CreateCharacterArgs {
+  readonly mode: string;
+  readonly draftId?: string;
+  readonly resumeId?: string;
+}
+
+const VALID_MODES = new Set(['concept-first', 'ability-first']);
+
+/**
+ * Parse `create-character` flags:
+ *   --mode <concept-first|ability-first>  (default concept-first)
+ *   --id <draft-id>                        (default derived from the name later)
+ *   --resume <draft-id>
+ */
+export function parseCreateCharacterArgs(
+  argv: readonly string[],
+): { ok: true; args: CreateCharacterArgs } | { ok: false; message: string } {
+  let mode = 'concept-first';
+  let draftId: string | undefined;
+  let resumeId: string | undefined;
+  for (let i = 0; i < argv.length; i += 1) {
+    const flag = argv[i];
+    const value = argv[i + 1];
+    switch (flag) {
+      case '--mode':
+        if (value === undefined) {
+          return { ok: false, message: '--mode requires a value.' };
+        }
+        mode = value;
+        i += 1;
+        break;
+      case '--id':
+        if (value === undefined) {
+          return { ok: false, message: '--id requires a value.' };
+        }
+        draftId = value;
+        i += 1;
+        break;
+      case '--resume':
+        if (value === undefined) {
+          return { ok: false, message: '--resume requires a value.' };
+        }
+        resumeId = value;
+        i += 1;
+        break;
+      default:
+        return { ok: false, message: `Unknown option: ${flag}` };
+    }
+  }
+  if (!VALID_MODES.has(mode)) {
+    return {
+      ok: false,
+      message: `Unknown mode "${mode}". Use concept-first or ability-first.`,
+    };
+  }
+  return { ok: true, args: { mode, draftId, resumeId } };
+}
+
+/**
+ * Run the guided creation flow with injected collaborators. Returns a process
+ * exit code. `deps.io` is closed by the caller (the terminal entrypoint).
+ */
+export async function runCreateCharacter(
+  deps: CharacterWizardDeps,
+  argv: readonly string[],
+): Promise<number> {
+  const parsed = parseCreateCharacterArgs(argv);
+  if (!parsed.ok) {
+    deps.io.write(parsed.message);
+    return 1;
+  }
+  const { mode, draftId, resumeId } = parsed.args;
+
+  if (resumeId !== undefined) {
+    const resume = deps.store.load(resumeId);
+    if (resume === undefined) {
+      deps.io.write(`No saved draft found for id "${resumeId}".`);
+      const ids = deps.store.list();
+      if (ids.length > 0) {
+        deps.io.write(`Available drafts: ${ids.join(', ')}`);
+      }
+      return 1;
+    }
+    await runCharacterWizard(deps, {
+      mode: resume.creationMode,
+      draftId: resume.id,
+      resume,
+    });
+    return 0;
+  }
+
+  const id = draftId ?? newDraftId();
+  await runCharacterWizard(deps, { mode, draftId: id });
+  return 0;
+}
+
+/**
+ * A fresh draft id. Deterministic-friendly: callers that need a stable id pass
+ * `--id`; otherwise we derive one from the draft stem of a short timestamp-free
+ * token so two unnamed drafts in a session do not collide.
+ */
+let draftCounter = 0;
+function newDraftId(): string {
+  draftCounter += 1;
+  return draftFileStem(`character-${draftCounter}`);
+}
+
+/** Terminal entrypoint: build real collaborators, run, and close IO. */
+export async function runCreateCharacterSubcommand(
+  argv: readonly string[],
+): Promise<number> {
+  const dataRoot = resolveDataRoot();
+  const store: CharacterDraftStore = createFileCharacterDraftStore(
+    characterDraftsDir(dataRoot),
+  );
+  const terminal = nodeIO();
+  const io: CliIO = terminal;
+  try {
+    return await runCreateCharacter(
+      {
+        io,
+        engine: getDnd5eCharacterCreationEngine(),
+        resolver: getBundledDnd5eCharacterResolver(),
+        store,
+      },
+      argv,
+    );
+  } finally {
+    terminal.close();
+  }
+}

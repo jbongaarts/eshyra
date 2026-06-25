@@ -48,6 +48,7 @@ import {
   installConfigDefaults,
   loadConfigFile,
 } from './configFile.js';
+import { runCreateCharacterSubcommand } from './createCharacter.js';
 import {
   adventureModulesDir,
   campaignsDir,
@@ -652,6 +653,13 @@ export function main(argv: string[] = process.argv): void {
 
   if (argv[2] === 'adventures') {
     process.exitCode = runAdventuresSubcommand(argv);
+    return;
+  }
+
+  if (argv[2] === 'create-character') {
+    void runCreateCharacterSubcommand(argv.slice(3)).then((code) => {
+      process.exitCode = code;
+    });
     return;
   }
 
