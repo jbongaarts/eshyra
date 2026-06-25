@@ -26,10 +26,14 @@
  * proficiency needs a class). Callers turn an absent value into a "waiting on
  * …" message; this module never invents nonsense numbers.
  *
+ * Spell save DC and spell attack modifier are computed once a level-1-casting
+ * class's spellcasting ability is supplied (the source-cited overlay in
+ * `srdClassSpellcasting.ts`, eshyra-b69j.12.2) and that ability has a score —
+ * closing the eshyra-b69j.6 deferral. The caller passes the ability only when
+ * the class actually casts at level 1, so a non-caster (or Paladin/Ranger, who
+ * begin casting at level 2) never gets a spurious DC.
+ *
  * Deferred derived values and why:
- *   - spell save DC / spell attack modifier — need each class's spellcasting
- *     ability, which the generated pack does not yet expose as structured data
- *     (it lives in class prose); modeled in eshyra-b69j.12.2, not parsed here;
  *   - passive Perception — needs the chosen skills (skill selection lands with
  *     eshyra-b69j.13);
  *   - armor class / attack bonuses — need equipment (eshyra-b69j.13).
@@ -75,6 +79,17 @@ export type CharacterDerivedValues = {
   readonly savingThrows: Partial<Record<AbilityScoreName, SavingThrowDerived>>;
   /** Level-1 max HP, present only once class hit die and Constitution exist. */
   readonly maxHitPoints?: number;
+  /**
+   * Spell save DC (8 + proficiency bonus + spellcasting ability modifier),
+   * present only when a level-1-casting class's spellcasting ability is supplied
+   * and that ability has a score (eshyra-b69j.12.2).
+   */
+  readonly spellSaveDc?: number;
+  /**
+   * Spell attack modifier (proficiency bonus + spellcasting ability modifier),
+   * present under the same conditions as {@link spellSaveDc}.
+   */
+  readonly spellAttackModifier?: number;
 };
 
 /** The class fields derived computation reads. */
@@ -100,6 +115,13 @@ export interface DeriveLevel1Input {
    * set are ignored until that score exists. Absent when no ancestry is chosen.
    */
   readonly abilityScoreIncreases?: readonly AbilityScoreIncrease[];
+  /**
+   * The class's spellcasting ability, supplied only when the chosen class casts
+   * at level 1 (from the `srdClassSpellcasting.ts` overlay, gated on the
+   * progression row). Drives spell save DC and spell attack modifier; absent for
+   * non-casters and for classes that begin casting after level 1.
+   */
+  readonly spellcastingAbility?: AbilityScoreName;
 }
 
 /** Compute every level-1 derived value the current inputs support. */
@@ -144,12 +166,30 @@ export function deriveLevel1Values(
       ? classRecord.hitDie + abilityModifier(finalConstitution)
       : undefined;
 
+  // Spell save DC / attack come online once the level-1 spellcasting ability is
+  // supplied and that ability has a (final) modifier. The caller only supplies
+  // the ability for classes that actually cast at level 1.
+  const spellcastingModifier =
+    input.spellcastingAbility !== undefined
+      ? abilityModifiers[input.spellcastingAbility]
+      : undefined;
+  const spellSaveDc =
+    spellcastingModifier !== undefined
+      ? 8 + LEVEL_1_PROFICIENCY_BONUS + spellcastingModifier
+      : undefined;
+  const spellAttackModifier =
+    spellcastingModifier !== undefined
+      ? LEVEL_1_PROFICIENCY_BONUS + spellcastingModifier
+      : undefined;
+
   return {
     proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
     abilityModifiers,
     finalAbilityScores,
     savingThrows,
     ...(maxHitPoints !== undefined ? { maxHitPoints } : {}),
+    ...(spellSaveDc !== undefined ? { spellSaveDc } : {}),
+    ...(spellAttackModifier !== undefined ? { spellAttackModifier } : {}),
   };
 }
 

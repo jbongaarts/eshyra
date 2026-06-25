@@ -10,17 +10,26 @@
  *
  * This module turns a resolved class (and optional ancestry/background) into a
  * flat list of {@link Level1RequiredChoice} descriptors, each tagged `structured`
- * (enumerable now from the generated pack) or `unstructured` (the option set or
- * count lives only in prose; a follow-up bead — eshyra-b69j.12.1..4 — tracks
- * adding the metadata). It deliberately does NOT parse the prose: an
- * `unstructured` choice carries the verbatim `sourceText` for display and the
- * `blockingBead` that will make it structured, nothing more.
+ * (enumerable now from the generated pack or a source-cited overlay) or
+ * `unstructured` (the option set or count lives only in prose; a follow-up bead
+ * — eshyra-b69j.12.3/.4 — tracks adding the metadata). It deliberately does NOT
+ * parse the prose: an `unstructured` choice carries the verbatim `sourceText`
+ * for display and the `blockingBead` that will make it structured, nothing more.
+ *
+ * Spellcasting metadata is now structured via the source-cited overlay
+ * (`srdClassSpellcasting.ts`, eshyra-b69j.12.1's sibling eshyra-b69j.12.2): the
+ * spellcasting ability is an auto-resolved fact (not a prompt, like a fixed
+ * ancestry increase), and the level-1 spell-selection count is structured for
+ * known casters (progression `spellsKnown`), Wizards (fixed spellbook size), and
+ * prepared full casters (ability modifier + level, exact when modifiers are
+ * supplied via {@link EnumerateRequiredChoicesInput.abilityModifiers}).
  *
  * The inventory of what is structured vs prose-only today lives in
  * docs/design/character-creation-level1-metadata-inventory.md.
  */
 
 import { ABILITY_FULL_NAMES } from './abilities.js';
+import type { AbilityScoreName } from './creation.js';
 import type {
   ResolvedAncestryData,
   ResolvedBackgroundData,
@@ -28,6 +37,11 @@ import type {
   ResolvedClassData,
 } from './rulesPackResolver.js';
 import { getAncestryAbilityScoreIncrease } from './srdAncestryAbilityScoreIncreases.js';
+import {
+  castsAtLevel1,
+  getClassSpellcasting,
+  level1PreparedSpellCount,
+} from './srdClassSpellcasting.js';
 
 /** Whether a required choice can be enumerated from structured pack data yet. */
 export type Level1RequiredChoiceStatus = 'structured' | 'unstructured';
@@ -75,6 +89,14 @@ export interface EnumerateRequiredChoicesInput {
   readonly classData: ResolvedClassData;
   readonly ancestry?: ResolvedAncestryData;
   readonly background?: ResolvedBackgroundData;
+  /**
+   * Final ability modifiers, when known. A prepared full caster's level-1 spell
+   * count is its spellcasting-ability modifier + level (eshyra-b69j.12.2), so
+   * supplying these lets the enumeration carry the exact `choose` count for
+   * Cleric/Druid. When absent, that choice stays structured but without a fixed
+   * count (the count is still derivable via `level1PreparedSpellCount`).
+   */
+  readonly abilityModifiers?: Partial<Record<AbilityScoreName, number>>;
 }
 
 const BEAD_ABILITY_INCREASE = 'eshyra-b69j.12.1';
@@ -92,7 +114,7 @@ export function enumerateLevel1RequiredChoices(
   input: EnumerateRequiredChoicesInput,
 ): readonly Level1RequiredChoice[] {
   const choices: Level1RequiredChoice[] = [];
-  collectClassChoices(input.classData, choices);
+  collectClassChoices(input.classData, input.abilityModifiers, choices);
   if (input.ancestry !== undefined) {
     collectAncestryChoices(input.ancestry, choices);
   }
@@ -104,6 +126,7 @@ export function enumerateLevel1RequiredChoices(
 
 function collectClassChoices(
   classData: ResolvedClassData,
+  abilityModifiers: Partial<Record<AbilityScoreName, number>> | undefined,
   choices: Level1RequiredChoice[],
 ): void {
   (classData.skillChoices ?? []).forEach((spec, index) => {
@@ -113,7 +136,7 @@ function collectClassChoices(
     choices.push(structuredProficiencyChoice('tools', spec, index));
   });
 
-  collectSpellcastingChoices(classData, choices);
+  collectSpellcastingChoices(classData, abilityModifiers, choices);
 
   (classData.startingEquipment?.entries ?? []).forEach((entry, index) => {
     if (!isEquipmentOption(entry)) {
@@ -150,11 +173,34 @@ function structuredProficiencyChoice(
 
 function collectSpellcastingChoices(
   classData: ResolvedClassData,
+  abilityModifiers: Partial<Record<AbilityScoreName, number>> | undefined,
   choices: Level1RequiredChoice[],
 ): void {
+  // A class casts at level 1 only when its progression row grants cantrips,
+  // spells, or slots there — this drops non-casters and the half-casters
+  // (Paladin, Ranger) whose spellcasting begins at level 2.
+  if (!castsAtLevel1(classData)) {
+    return;
+  }
   const spellcasting = classData.level1?.spellcasting;
   if (spellcasting === undefined) {
-    return; // non-caster at level 1
+    return; // unreachable once castsAtLevel1 is true; narrows the type
+  }
+
+  // The spellcasting ability (INT/WIS/CHA) used to be a prose-only gap; it is
+  // now the source-cited overlay (eshyra-b69j.12.2), keyed by the frozen class
+  // key. An unmodeled caster (a future non-SRD pack) still surfaces a tracked
+  // gap so a real spellcasting ability is never silently dropped.
+  const overlay = getClassSpellcasting(classData.key);
+  if (overlay === undefined) {
+    choices.push({
+      id: 'class.spellcastingAbility',
+      kind: 'spellcasting_ability',
+      source: 'class',
+      status: 'unstructured',
+      label: 'Spellcasting ability is not yet structured in the rules pack',
+      blockingBead: BEAD_SPELLCASTING,
+    });
   }
 
   // Cantrip count is structured; the eligible cantrip list is derivable from
@@ -170,41 +216,74 @@ function collectSpellcastingChoices(
     });
   }
 
-  // Known-casters (Bard, Sorcerer, ...) carry a structured spellsKnown count.
-  // Prepared-casters (Wizard, Cleric, ...) prepare a number derived from their
-  // spellcasting ability modifier — a prose formula, so it stays unstructured
-  // until eshyra-b69j.12.2 adds the metadata.
-  if (spellcasting.spellsKnown !== undefined) {
-    choices.push({
-      id: 'class.spells',
-      kind: 'spells',
-      source: 'class',
+  choices.push(spellSelectionChoice(spellcasting, overlay, abilityModifiers));
+}
+
+/**
+ * The level-1 spell-selection choice for a caster. Known casters (Bard,
+ * Sorcerer, Warlock) carry a fixed `spellsKnown` count on the progression row.
+ * Prepared casters use the spellcasting overlay (eshyra-b69j.12.2): a Wizard
+ * picks a fixed-size starting spellbook, while Cleric/Druid prepare a list whose
+ * size is their spellcasting-ability modifier + level — a count this fills in
+ * when the modifiers are known and otherwise leaves to `level1PreparedSpellCount`.
+ */
+function spellSelectionChoice(
+  spellcasting: NonNullable<ResolvedClassData['level1']>['spellcasting'],
+  overlay: ReturnType<typeof getClassSpellcasting>,
+  abilityModifiers: Partial<Record<AbilityScoreName, number>> | undefined,
+): Level1RequiredChoice {
+  const base = {
+    id: 'class.spells',
+    kind: 'spells',
+    source: 'class',
+  } as const;
+
+  // Known caster: a fixed number of spells from the progression row.
+  if (spellcasting?.spellsKnown !== undefined) {
+    return {
+      ...base,
       status: 'structured',
       label: `Choose ${spellcasting.spellsKnown} level-1 spells`,
       choose: spellcasting.spellsKnown,
-    });
-  } else {
-    choices.push({
-      id: 'class.spells',
-      kind: 'spells',
-      source: 'class',
+    };
+  }
+
+  // Prepared caster with no overlay (a future non-SRD pack): keep a tracked gap.
+  if (overlay === undefined || overlay.preparation !== 'prepared') {
+    return {
+      ...base,
       status: 'unstructured',
       label:
         'Choose your prepared/known level-1 spells (count derives from the spellcasting ability)',
       blockingBead: BEAD_SPELLCASTING,
-    });
+    };
   }
 
-  // The spellcasting ability itself (INT/WIS/CHA) is prose-only today and gates
-  // spell save DC / spell attack as well as prepared-spell counts.
-  choices.push({
-    id: 'class.spellcastingAbility',
-    kind: 'spellcasting_ability',
-    source: 'class',
-    status: 'unstructured',
-    label: 'Spellcasting ability is not yet structured in the rules pack',
-    blockingBead: BEAD_SPELLCASTING,
-  });
+  // Wizard: a fixed-size starting spellbook to prepare from.
+  if (overlay.spellbookStartingSpells !== undefined) {
+    return {
+      ...base,
+      status: 'structured',
+      label: `Choose ${overlay.spellbookStartingSpells} level-1 spells for your spellbook`,
+      choose: overlay.spellbookStartingSpells,
+    };
+  }
+
+  // Cleric/Druid: prepare (ability modifier + level) spells; the exact count
+  // needs the modifier, so it is filled only when modifiers are supplied.
+  const abilityName = ABILITY_FULL_NAMES[overlay.ability];
+  const modifier = abilityModifiers?.[overlay.ability];
+  const count =
+    modifier !== undefined ? level1PreparedSpellCount(modifier) : undefined;
+  return {
+    ...base,
+    status: 'structured',
+    label:
+      count !== undefined
+        ? `Prepare ${count} level-1 spells (${abilityName} modifier + level)`
+        : `Prepare level-1 spells (${abilityName} modifier + level)`,
+    ...(count !== undefined ? { choose: count } : {}),
+  };
 }
 
 function collectAncestryChoices(

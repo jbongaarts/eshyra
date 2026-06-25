@@ -227,6 +227,20 @@ export type {
   AncestryAbilityScoreIncrease,
 } from './character/srdAncestryAbilityScoreIncreases.js';
 export { getAncestryAbilityScoreIncrease } from './character/srdAncestryAbilityScoreIncreases.js';
+// Source-cited per-class spellcasting overlay (eshyra-b69j.12.2): a
+// deterministic, consumer-side layer keyed to the frozen class record keys,
+// supplying the spellcasting ability and prepared-count formulas the frozen pack
+// carries only as (truncated) prose.
+export type {
+  ClassSpellcasting,
+  SpellPreparation,
+} from './character/srdClassSpellcasting.js';
+export {
+  castsAtLevel1,
+  getClassSpellcasting,
+  level1PreparedSpellCount,
+  level1SpellcastingAbility,
+} from './character/srdClassSpellcasting.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {

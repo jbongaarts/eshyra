@@ -67,7 +67,7 @@ describe('enumerateLevel1RequiredChoices', () => {
     // grant like Wizard's "A spellbook" must not appear as a choice (see below).
   });
 
-  it('marks a prepared caster cantrips structured but spells/ability unstructured', () => {
+  it('marks a Wizard cantrips and spellbook structured, with no ability gap', () => {
     const choices = enumerateLevel1RequiredChoices({
       classData: classData('Wizard'),
     });
@@ -77,22 +77,47 @@ describe('enumerateLevel1RequiredChoices', () => {
       status: 'structured',
       choose: 3,
     });
-    // Wizard prepares from INT, a prose formula → unstructured.
+    // Wizard picks a fixed-size starting spellbook (six 1st-level spells) — now
+    // structured from the spellcasting overlay (eshyra-b69j.12.2).
     expect(byId(choices, 'class.spells')).toMatchObject({
-      status: 'unstructured',
-      blockingBead: 'eshyra-b69j.12.2',
+      kind: 'spells',
+      status: 'structured',
+      choose: 6,
     });
-    expect(byId(choices, 'class.spellcastingAbility')).toMatchObject({
-      kind: 'spellcasting_ability',
-      status: 'unstructured',
-      blockingBead: 'eshyra-b69j.12.2',
-    });
+    // The spellcasting ability is now an auto-resolved overlay fact, so it is no
+    // longer surfaced as a prose-only required choice.
+    expect(byId(choices, 'class.spellcastingAbility')).toBeUndefined();
+    expect(choices.some((c) => c.kind === 'spellcasting_ability')).toBe(false);
 
     // "A spellbook" is a fixed grant, not an option line, so it is not a choice.
     const equipment = choices.filter((c) => c.kind === 'equipment');
     expect(equipment.every((c) => /\(a\)/i.test(c.sourceText ?? ''))).toBe(
       true,
     );
+  });
+
+  it('structures a prepared full caster spell count from the ability modifier', () => {
+    // Cleric prepares (Wisdom modifier + level) spells. With WIS 16 (+3) at
+    // level 1 that is 4, supplied via abilityModifiers.
+    const choices = enumerateLevel1RequiredChoices({
+      classData: classData('Cleric'),
+      abilityModifiers: { wisdom: 3 },
+    });
+    expect(byId(choices, 'class.spells')).toMatchObject({
+      kind: 'spells',
+      status: 'structured',
+      choose: 4,
+    });
+    expect(byId(choices, 'class.spells')?.label).toMatch(/Wisdom modifier/i);
+
+    // Without modifiers the choice stays structured but carries no fixed count.
+    const noMods = enumerateLevel1RequiredChoices({
+      classData: classData('Cleric'),
+    });
+    const spells = byId(noMods, 'class.spells');
+    expect(spells?.status).toBe('structured');
+    expect(spells?.choose).toBeUndefined();
+    expect(spells?.label).toMatch(/Wisdom modifier \+ level/i);
   });
 
   it('marks a known caster cantrips and spells both structured', () => {
@@ -108,10 +133,19 @@ describe('enumerateLevel1RequiredChoices', () => {
       status: 'structured',
       choose: 4,
     });
-    // The spellcasting ability is still prose-only for every caster.
-    expect(byId(choices, 'class.spellcastingAbility')?.status).toBe(
-      'unstructured',
-    );
+    // The spellcasting ability is resolved from the overlay, not a prose gap.
+    expect(byId(choices, 'class.spellcastingAbility')).toBeUndefined();
+  });
+
+  it('emits no spellcasting choices for a class that casts only from level 2', () => {
+    // Ranger's level-1 progression carries an (empty) spellcasting row but no
+    // level-1 cantrips, spells, or slots, so it must not surface spell choices.
+    const choices = enumerateLevel1RequiredChoices({
+      classData: classData('Ranger'),
+    });
+    expect(choices.some((c) => c.kind === 'spells')).toBe(false);
+    expect(choices.some((c) => c.kind === 'cantrips')).toBe(false);
+    expect(choices.some((c) => c.kind === 'spellcasting_ability')).toBe(false);
   });
 
   it('does not surface a fixed ancestry ability increase as a choice', () => {

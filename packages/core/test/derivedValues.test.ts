@@ -147,4 +147,46 @@ describe('deriveLevel1Values', () => {
     });
     expect(derived.finalAbilityScores).toEqual({ strength: 17 });
   });
+
+  it('computes spell save DC and attack from the spellcasting ability', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { intelligence: 16 },
+      classRecord: WIZARD,
+      spellcastingAbility: 'intelligence',
+    });
+    // INT 16 (+3): save DC = 8 + prof 2 + 3 = 13; attack = 2 + 3 = 5.
+    expect(derived.spellSaveDc).toBe(13);
+    expect(derived.spellAttackModifier).toBe(5);
+  });
+
+  it('derives the spell DC from the post-increase ability score', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { intelligence: 15 },
+      classRecord: WIZARD,
+      spellcastingAbility: 'intelligence',
+      // High Elf: +1 INT pushes 15 → 16 (mod +3), raising the DC.
+      abilityScoreIncreases: [{ ability: 'intelligence', bonus: 1 }],
+    });
+    expect(derived.spellSaveDc).toBe(13);
+    expect(derived.spellAttackModifier).toBe(5);
+  });
+
+  it('omits spell DC when no spellcasting ability is supplied', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { intelligence: 16 },
+      classRecord: WIZARD,
+    });
+    expect(derived.spellSaveDc).toBeUndefined();
+    expect(derived.spellAttackModifier).toBeUndefined();
+  });
+
+  it('omits spell DC when the spellcasting ability has no score yet', () => {
+    const derived = deriveLevel1Values({
+      validAbilityScores: { strength: 12 },
+      classRecord: WIZARD,
+      spellcastingAbility: 'intelligence',
+    });
+    expect(derived.spellSaveDc).toBeUndefined();
+    expect(derived.spellAttackModifier).toBeUndefined();
+  });
 });

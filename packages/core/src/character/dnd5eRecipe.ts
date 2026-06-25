@@ -41,8 +41,10 @@ import type {
 } from './recipe.js';
 import {
   getBundledDnd5eCharacterResolver,
+  type ResolvedClassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import { level1SpellcastingAbility } from './srdClassSpellcasting.js';
 
 /** Canonical D&D 5e SRD creation modes (design: character-creation-cli.md). */
 export type Dnd5eCreationMode = 'concept-first' | 'ability-first';
@@ -108,7 +110,7 @@ function toSteps(stepIds: readonly string[]): readonly CharacterCreationStep[] {
 function resolveClassRecord(
   resolver: RulesPackCharacterResolver,
   className: string,
-): { hitDie: number; savingThrowProficiencies: readonly string[] } | undefined {
+): ResolvedClassData | undefined {
   const result = resolver.resolveClass(className);
   return result.ok ? result.record : undefined;
 }
@@ -160,9 +162,11 @@ export const DND5E_SRD_CHARACTER_RECIPE: CharacterCreationRecipe<
 
   computeDerivedValues(draft: CharacterCreationDraft): CharacterDerivedValues {
     const resolver = getBundledDnd5eCharacterResolver();
+    const classRecord = resolveClassRecord(resolver, draft.className);
     return deriveLevel1Values({
       validAbilityScores: draft.abilityScores,
-      classRecord: resolveClassRecord(resolver, draft.className),
+      classRecord,
+      spellcastingAbility: level1SpellcastingAbility(classRecord),
     });
   },
 
