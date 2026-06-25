@@ -2,10 +2,12 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { openDatabase } from '@eshyra/core';
 import type {
+  AuditRetryCause,
   Db,
   ModelUsageRecord,
   ModelUsageSink,
   ToolUsageRecord,
+  TurnAuditRecord,
   TurnDiagnosticsSink,
   TurnOutcome,
   TurnOutcomeRecord,
@@ -71,7 +73,34 @@ const CREATE_OUTCOME_TABLE = `
     attempts    INTEGER NOT NULL,
     model_rounds INTEGER NOT NULL,
     elapsed_ms  INTEGER NOT NULL,
-    reason      TEXT
+    reason      TEXT,
+    auditor_call_count INTEGER NOT NULL DEFAULT 0,
+    primary_dm_candidate_count INTEGER NOT NULL DEFAULT 0,
+    primary_dm_call_count INTEGER NOT NULL DEFAULT 0,
+    primary_dm_retry_count INTEGER NOT NULL DEFAULT 0,
+    retry_causes_json TEXT NOT NULL DEFAULT '[]',
+    retry_succeeded INTEGER,
+    tools_rerun_during_retry_json TEXT NOT NULL DEFAULT '[]'
+  )
+`;
+
+const CREATE_AUDIT_TABLE = `
+  CREATE TABLE IF NOT EXISTS turn_audit (
+    id          TEXT    PRIMARY KEY,
+    at          TEXT    NOT NULL,
+    campaign_id TEXT,
+    session_id  TEXT,
+    turn_id     TEXT,
+    attempt     INTEGER NOT NULL,
+    verdict     TEXT    NOT NULL,
+    action      TEXT    NOT NULL,
+    retry_cause TEXT,
+    missing_required_tools_json TEXT NOT NULL,
+    disallowed_tool_calls_json  TEXT NOT NULL,
+    executed_tool_names_json    TEXT NOT NULL,
+    failed_tool_names_json      TEXT NOT NULL,
+    mutating_tool_count INTEGER NOT NULL,
+    auditor_model TEXT
   )
 `;
 
@@ -99,8 +128,21 @@ const INSERT_TOOL_SQL = `
 const INSERT_OUTCOME_SQL = `
   INSERT OR IGNORE INTO turn_outcome (
     id, at, campaign_id, session_id, turn_id,
-    outcome, attempts, model_rounds, elapsed_ms, reason
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    outcome, attempts, model_rounds, elapsed_ms, reason,
+    auditor_call_count, primary_dm_candidate_count, primary_dm_call_count,
+    primary_dm_retry_count, retry_causes_json, retry_succeeded,
+    tools_rerun_during_retry_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
+
+const INSERT_AUDIT_SQL = `
+  INSERT OR IGNORE INTO turn_audit (
+    id, at, campaign_id, session_id, turn_id,
+    attempt, verdict, action, retry_cause,
+    missing_required_tools_json, disallowed_tool_calls_json,
+    executed_tool_names_json, failed_tool_names_json,
+    mutating_tool_count, auditor_model
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 export interface UsageSummaryByDimension {
@@ -156,6 +198,20 @@ export interface TimelineToolCall {
   readonly elapsedMs: number;
 }
 
+/** One audit verdict within a turn timeline (eshyra-d8ap.3). */
+export interface TimelineAuditCall {
+  readonly attempt: number;
+  readonly verdict: 'accept' | 'reject';
+  readonly action: 'accept' | 'retry' | 'fail';
+  readonly retryCause: AuditRetryCause | null;
+  readonly missingRequiredTools: readonly string[];
+  readonly disallowedToolCalls: readonly string[];
+  readonly executedToolNames: readonly string[];
+  readonly failedToolNames: readonly string[];
+  readonly mutatingToolCount: number;
+  readonly auditorModel: string | null;
+}
+
 /** Structural timeline for a single player turn (eshyra-17ng). */
 export interface TimelineTurn {
   readonly turnId: string;
@@ -164,8 +220,16 @@ export interface TimelineTurn {
   readonly outcome: TurnOutcome | null;
   readonly attempts: number | null;
   readonly modelRounds: number | null;
+  readonly auditorCallCount: number | null;
+  readonly primaryDmCandidateCount: number | null;
+  readonly primaryDmCallCount: number | null;
+  readonly primaryDmRetryCount: number | null;
+  readonly retryCauses: readonly AuditRetryCause[];
+  readonly retrySucceeded: boolean | null;
+  readonly toolsRerunDuringRetry: readonly string[];
   readonly totalElapsedMs: number | null;
   readonly modelCalls: readonly TimelineModelCall[];
+  readonly auditCalls: readonly TimelineAuditCall[];
   readonly toolCalls: readonly TimelineToolCall[];
 }
 
@@ -214,12 +278,33 @@ type TimelineToolRow = {
   elapsed_ms: number;
 };
 
+type TimelineAuditRow = {
+  turn_id: string | null;
+  attempt: number;
+  verdict: 'accept' | 'reject';
+  action: 'accept' | 'retry' | 'fail';
+  retry_cause: AuditRetryCause | null;
+  missing_required_tools_json: string;
+  disallowed_tool_calls_json: string;
+  executed_tool_names_json: string;
+  failed_tool_names_json: string;
+  mutating_tool_count: number;
+  auditor_model: string | null;
+};
+
 type TimelineOutcomeRow = {
   turn_id: string | null;
   outcome: TurnOutcome;
   attempts: number;
   model_rounds: number;
   elapsed_ms: number;
+  auditor_call_count: number | null;
+  primary_dm_candidate_count: number | null;
+  primary_dm_call_count: number | null;
+  primary_dm_retry_count: number | null;
+  retry_causes_json: string | null;
+  retry_succeeded: number | null;
+  tools_rerun_during_retry_json: string | null;
 };
 
 type MutableTimelineTurn = {
@@ -229,8 +314,16 @@ type MutableTimelineTurn = {
   outcome: TurnOutcome | null;
   attempts: number | null;
   modelRounds: number | null;
+  auditorCallCount: number | null;
+  primaryDmCandidateCount: number | null;
+  primaryDmCallCount: number | null;
+  primaryDmRetryCount: number | null;
+  retryCauses: AuditRetryCause[];
+  retrySucceeded: boolean | null;
+  toolsRerunDuringRetry: string[];
   totalElapsedMs: number | null;
   modelCalls: TimelineModelCall[];
+  auditCalls: TimelineAuditCall[];
   toolCalls: TimelineToolCall[];
 };
 
@@ -253,6 +346,7 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
     this.#db.exec(CREATE_TABLE);
     this.#db.exec(CREATE_TOOL_TABLE);
     this.#db.exec(CREATE_OUTCOME_TABLE);
+    this.#db.exec(CREATE_AUDIT_TABLE);
     // Migrate diagnostics DBs created before eshyra-17ng so older usage.db files
     // gain the new model_usage columns rather than failing every insert.
     this.#addColumnIfMissing('model_usage', 'attempt', 'INTEGER');
@@ -260,6 +354,37 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
     this.#addColumnIfMissing('model_usage', 'failure_kind', 'TEXT');
     // eshyra-f0hj: arc attribution for cross-session maintenance calls.
     this.#addColumnIfMissing('model_usage', 'arc_id', 'TEXT');
+    this.#addColumnIfMissing(
+      'turn_outcome',
+      'auditor_call_count',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+    this.#addColumnIfMissing(
+      'turn_outcome',
+      'primary_dm_candidate_count',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+    this.#addColumnIfMissing(
+      'turn_outcome',
+      'primary_dm_call_count',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+    this.#addColumnIfMissing(
+      'turn_outcome',
+      'primary_dm_retry_count',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+    this.#addColumnIfMissing(
+      'turn_outcome',
+      'retry_causes_json',
+      "TEXT NOT NULL DEFAULT '[]'",
+    );
+    this.#addColumnIfMissing('turn_outcome', 'retry_succeeded', 'INTEGER');
+    this.#addColumnIfMissing(
+      'turn_outcome',
+      'tools_rerun_during_retry_json',
+      "TEXT NOT NULL DEFAULT '[]'",
+    );
   }
 
   #addColumnIfMissing(table: string, column: string, decl: string): void {
@@ -322,6 +447,28 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
       );
   }
 
+  recordAudit(entry: TurnAuditRecord): void {
+    this.#db
+      .prepare(INSERT_AUDIT_SQL)
+      .run(
+        entry.id,
+        entry.at,
+        entry.campaignId,
+        entry.sessionId,
+        entry.turnId,
+        entry.attempt,
+        entry.verdict,
+        entry.action,
+        entry.retryCause,
+        JSON.stringify(entry.missingRequiredTools),
+        JSON.stringify(entry.disallowedToolCalls),
+        JSON.stringify(entry.executedToolNames),
+        JSON.stringify(entry.failedToolNames),
+        entry.mutatingToolCount,
+        entry.auditorModel,
+      );
+  }
+
   recordOutcome(entry: TurnOutcomeRecord): void {
     this.#db
       .prepare(INSERT_OUTCOME_SQL)
@@ -336,6 +483,13 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
         entry.modelRounds,
         entry.elapsedMs,
         entry.reason,
+        entry.auditorCallCount,
+        entry.primaryDmCandidateCount,
+        entry.primaryDmCallCount,
+        entry.primaryDmRetryCount,
+        JSON.stringify(entry.retryCauses),
+        entry.retrySucceeded === null ? null : entry.retrySucceeded ? 1 : 0,
+        JSON.stringify(entry.toolsRerunDuringRetry),
       );
   }
 
@@ -452,9 +606,24 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
       )
       .all(...params) as TimelineToolRow[];
 
+    const auditRows = this.#db
+      .prepare(
+        `SELECT turn_id, attempt, verdict, action, retry_cause,
+                missing_required_tools_json, disallowed_tool_calls_json,
+                executed_tool_names_json, failed_tool_names_json,
+                mutating_tool_count, auditor_model
+         FROM turn_audit${turnFilter}
+         ORDER BY rowid`,
+      )
+      .all(...params) as TimelineAuditRow[];
+
     const outcomeRows = this.#db
       .prepare(
-        `SELECT turn_id, outcome, attempts, model_rounds, elapsed_ms
+        `SELECT turn_id, outcome, attempts, model_rounds, elapsed_ms,
+                auditor_call_count, primary_dm_candidate_count,
+                primary_dm_call_count, primary_dm_retry_count,
+                retry_causes_json, retry_succeeded,
+                tools_rerun_during_retry_json
          FROM turn_outcome${turnFilter}
          ORDER BY rowid`,
       )
@@ -475,8 +644,16 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
           outcome: null,
           attempts: null,
           modelRounds: null,
+          auditorCallCount: null,
+          primaryDmCandidateCount: null,
+          primaryDmCallCount: null,
+          primaryDmRetryCount: null,
+          retryCauses: [],
+          retrySucceeded: null,
+          toolsRerunDuringRetry: [],
           totalElapsedMs: null,
           modelCalls: [],
+          auditCalls: [],
           toolCalls: [],
         };
         turns.set(turnId, t);
@@ -516,6 +693,27 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
         elapsedMs: r.elapsed_ms,
       });
     }
+    for (const r of auditRows) {
+      if (r.turn_id === null) {
+        continue;
+      }
+      const t = turns.get(r.turn_id);
+      if (t === undefined) {
+        continue;
+      }
+      t.auditCalls.push({
+        attempt: r.attempt,
+        verdict: r.verdict,
+        action: r.action,
+        retryCause: r.retry_cause,
+        missingRequiredTools: parseStringArray(r.missing_required_tools_json),
+        disallowedToolCalls: parseStringArray(r.disallowed_tool_calls_json),
+        executedToolNames: parseStringArray(r.executed_tool_names_json),
+        failedToolNames: parseStringArray(r.failed_tool_names_json),
+        mutatingToolCount: r.mutating_tool_count,
+        auditorModel: r.auditor_model,
+      });
+    }
     for (const r of outcomeRows) {
       if (r.turn_id === null) {
         continue;
@@ -527,6 +725,16 @@ export class ModelUsageStore implements ModelUsageSink, TurnDiagnosticsSink {
       t.outcome = r.outcome;
       t.attempts = r.attempts;
       t.modelRounds = r.model_rounds;
+      t.auditorCallCount = r.auditor_call_count ?? 0;
+      t.primaryDmCandidateCount = r.primary_dm_candidate_count ?? r.attempts;
+      t.primaryDmCallCount = r.primary_dm_call_count ?? r.model_rounds;
+      t.primaryDmRetryCount = r.primary_dm_retry_count ?? 0;
+      t.retryCauses = parseRetryCauseArray(r.retry_causes_json);
+      t.retrySucceeded =
+        r.retry_succeeded === null ? null : r.retry_succeeded === 1;
+      t.toolsRerunDuringRetry = parseStringArray(
+        r.tools_rerun_during_retry_json,
+      );
       t.totalElapsedMs = r.elapsed_ms;
     }
     return [...turns.values()];
@@ -578,6 +786,38 @@ function toSummaryRow(row: GroupRow): UsageSummaryByDimension {
   };
 }
 
+function parseStringArray(raw: string | null): string[] {
+  if (raw === null) {
+    return [];
+  }
+  try {
+    const value: unknown = JSON.parse(raw);
+    return Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseRetryCauseArray(raw: string | null): AuditRetryCause[] {
+  return parseStringArray(raw).filter((entry): entry is AuditRetryCause =>
+    isAuditRetryCause(entry),
+  );
+}
+
+function isAuditRetryCause(value: string): value is AuditRetryCause {
+  return (
+    value === 'missing_roll_visibility' ||
+    value === 'missing_state' ||
+    value === 'missing_world_evidence' ||
+    value === 'invalid_target' ||
+    value === 'disallowed_tool' ||
+    value === 'auditor_over_rejection' ||
+    value === 'unknown'
+  );
+}
+
 /**
  * A usage sink with a lifecycle `close()` method so callers can manage the
  * underlying resource without depending on the concrete {@link ModelUsageStore}.
@@ -609,6 +849,7 @@ export function createUsageSink(
     return {
       record: () => {},
       recordTool: () => {},
+      recordAudit: () => {},
       recordOutcome: () => {},
       close: () => {},
     };

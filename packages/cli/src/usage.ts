@@ -221,6 +221,15 @@ function formatTimeline(
     if (turn.attempts !== null) {
       head.push(`attempts=${turn.attempts}`);
     }
+    if (turn.primaryDmRetryCount !== null && turn.primaryDmRetryCount > 0) {
+      head.push(`dm_retries=${turn.primaryDmRetryCount}`);
+    }
+    if (turn.auditorCallCount !== null && turn.auditorCallCount > 0) {
+      head.push(`audits=${turn.auditorCallCount}`);
+    }
+    if (turn.retryCauses.length > 0) {
+      head.push(`retry_causes=${turn.retryCauses.join(',')}`);
+    }
     if (turn.totalElapsedMs !== null) {
       head.push(`total=${fmtMs(turn.totalElapsedMs)}`);
     }
@@ -247,6 +256,19 @@ function formatTimeline(
         lines.push(
           `    tool ${tool.tool}: ${fmtMs(tool.elapsedMs)} ${mut} ${ok}`,
         );
+      }
+      const audits =
+        call.purpose === 'turn_audit'
+          ? turn.auditCalls.filter((audit) => audit.attempt === call.attempt)
+          : [];
+      for (const audit of audits) {
+        const parts = [
+          `audit ${audit.verdict}`,
+          `action=${audit.action}`,
+          audit.retryCause === null ? null : `cause=${audit.retryCause}`,
+          audit.auditorModel === null ? null : `model=${audit.auditorModel}`,
+        ].filter((part): part is string => part !== null);
+        lines.push(`    ${parts.join(' ')}`);
       }
     }
   }

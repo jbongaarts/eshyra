@@ -5,6 +5,7 @@ import { openDatabase } from '@eshyra/core';
 import type {
   ModelUsageRecord,
   ToolUsageRecord,
+  TurnAuditRecord,
   TurnOutcomeRecord,
 } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -83,6 +84,34 @@ function outcomeRec(
     modelRounds: 1,
     elapsedMs: 5000,
     reason: null,
+    auditorCallCount: 1,
+    primaryDmCandidateCount: 1,
+    primaryDmCallCount: 1,
+    primaryDmRetryCount: 0,
+    retryCauses: [],
+    retrySucceeded: null,
+    toolsRerunDuringRetry: [],
+    ...overrides,
+  };
+}
+
+function auditRec(overrides: Partial<TurnAuditRecord> = {}): TurnAuditRecord {
+  return {
+    id: `aid-${Math.random().toString(36).slice(2)}`,
+    at: '2026-01-15T12:00:00.000Z',
+    campaignId: 'camp-1',
+    sessionId: 'sess-1',
+    turnId: 'turn-1',
+    attempt: 1,
+    verdict: 'reject',
+    action: 'retry',
+    retryCause: 'missing_roll_visibility',
+    missingRequiredTools: ['roll'],
+    disallowedToolCalls: [],
+    executedToolNames: ['roll'],
+    failedToolNames: [],
+    mutatingToolCount: 0,
+    auditorModel: 'claude-haiku-4-5',
     ...overrides,
   };
 }
@@ -383,6 +412,14 @@ describe('turn timing diagnostics (eshyra-17ng)', () => {
         elapsedMs: 1800,
       }),
     );
+    store.recordAudit(
+      auditRec({
+        verdict: 'accept',
+        action: 'accept',
+        retryCause: null,
+        missingRequiredTools: [],
+      }),
+    );
     store.recordOutcome(outcomeRec({ outcome: 'accepted', attempts: 1 }));
 
     const timeline = store.timeline();
@@ -401,6 +438,17 @@ describe('turn timing diagnostics (eshyra-17ng)', () => {
     // Each tool is timed individually with its name.
     expect(turn.toolCalls.map((t) => t.tool)).toEqual(['roll', 'give_item']);
     expect(turn.toolCalls.map((t) => t.mutates)).toEqual([false, true]);
+    expect(turn.auditCalls).toEqual([
+      expect.objectContaining({
+        attempt: 1,
+        verdict: 'accept',
+        action: 'accept',
+        retryCause: null,
+        executedToolNames: ['roll'],
+      }),
+    ]);
+    expect(turn.auditorCallCount).toBe(1);
+    expect(turn.primaryDmRetryCount).toBe(0);
   });
 
   it('keeps initial and retry attempts distinguishable in the timeline', () => {
@@ -417,14 +465,72 @@ describe('turn timing diagnostics (eshyra-17ng)', () => {
       }),
     );
     store.recordTool(toolRec({ tool: 'give_item', attempt: 2, round: 1 }));
-    store.recordOutcome(outcomeRec({ attempts: 2 }));
+    store.recordAudit(auditRec({ attempt: 1 }));
+    store.recordAudit(
+      auditRec({
+        attempt: 2,
+        verdict: 'accept',
+        action: 'accept',
+        retryCause: null,
+        missingRequiredTools: [],
+        executedToolNames: ['give_item'],
+      }),
+    );
+    store.recordOutcome(
+      outcomeRec({
+        attempts: 2,
+        auditorCallCount: 2,
+        primaryDmCandidateCount: 2,
+        primaryDmCallCount: 2,
+        primaryDmRetryCount: 1,
+        retryCauses: ['missing_roll_visibility'],
+        retrySucceeded: true,
+        toolsRerunDuringRetry: ['give_item'],
+      }),
+    );
 
     const turn = store.timeline()[0];
     store.close();
 
     expect(turn.modelCalls.map((c) => c.attempt)).toEqual([1, 2]);
     expect(turn.toolCalls.map((t) => t.attempt)).toEqual([1, 2]);
+    expect(turn.auditCalls.map((a) => `${a.attempt}:${a.action}`)).toEqual([
+      '1:retry',
+      '2:accept',
+    ]);
     expect(turn.attempts).toBe(2);
+    expect(turn.auditorCallCount).toBe(2);
+    expect(turn.primaryDmCandidateCount).toBe(2);
+    expect(turn.primaryDmCallCount).toBe(2);
+    expect(turn.primaryDmRetryCount).toBe(1);
+    expect(turn.retryCauses).toEqual(['missing_roll_visibility']);
+    expect(turn.retrySucceeded).toBe(true);
+    expect(turn.toolsRerunDuringRetry).toEqual(['give_item']);
+  });
+
+  it('persists audit retry diagnostics in a turn_audit table', () => {
+    const dir = workDir();
+    const store = new ModelUsageStore(join(dir, 'usage.db'));
+    store.record(rec({ purpose: 'turn_audit', round: null }));
+    store.recordAudit(
+      auditRec({
+        retryCause: 'invalid_target',
+        failedToolNames: ['update_combatant'],
+        mutatingToolCount: 1,
+      }),
+    );
+
+    const turn = store.timeline()[0];
+    store.close();
+
+    expect(turn.auditCalls).toEqual([
+      expect.objectContaining({
+        retryCause: 'invalid_target',
+        failedToolNames: ['update_combatant'],
+        mutatingToolCount: 1,
+        auditorModel: 'claude-haiku-4-5',
+      }),
+    ]);
   });
 
   it('records a provider_limit failure attempt with its elapsed time', () => {
@@ -495,6 +601,61 @@ describe('turn timing diagnostics (eshyra-17ng)', () => {
     expect(turn.modelCalls[0].attempt).toBe(3);
     expect(arcMatch.totalCalls).toBe(1);
   });
+
+  it('migrates pre-d8ap.3 turn_outcome rows by adding retry aggregate columns', () => {
+    const dir = workDir();
+    const dbPath = join(dir, 'usage.db');
+    const legacy = openDatabase(dbPath);
+    legacy.exec(`
+      CREATE TABLE turn_outcome (
+        id TEXT PRIMARY KEY, at TEXT NOT NULL, campaign_id TEXT,
+        session_id TEXT, turn_id TEXT, outcome TEXT NOT NULL,
+        attempts INTEGER NOT NULL, model_rounds INTEGER NOT NULL,
+        elapsed_ms INTEGER NOT NULL, reason TEXT
+      )`);
+    legacy.exec(`
+      INSERT INTO turn_outcome (
+        id, at, campaign_id, session_id, turn_id, outcome,
+        attempts, model_rounds, elapsed_ms, reason
+      ) VALUES (
+        'legacy-outcome', '2026-01-15T12:00:00.000Z', 'camp-1',
+        'sess-1', 'turn-1', 'accepted', 1, 1, 5000, NULL
+      )`);
+    legacy.close();
+
+    const store = new ModelUsageStore(dbPath);
+    store.record(rec({ turnId: 'turn-1' }));
+    store.record(rec({ turnId: 'turn-2' }));
+    expect(() =>
+      store.recordOutcome(
+        outcomeRec({
+          id: 'new-outcome',
+          turnId: 'turn-2',
+          primaryDmRetryCount: 1,
+          retryCauses: ['auditor_over_rejection'],
+          retrySucceeded: true,
+        }),
+      ),
+    ).not.toThrow();
+    const legacyTurn = store
+      .timeline()
+      .find((turn) => turn.turnId === 'turn-1');
+    const newTurn = store.timeline().find((turn) => turn.turnId === 'turn-2');
+    store.close();
+
+    expect(legacyTurn).toMatchObject({
+      auditorCallCount: 0,
+      primaryDmRetryCount: 0,
+      retryCauses: [],
+      retrySucceeded: null,
+      toolsRerunDuringRetry: [],
+    });
+    expect(newTurn).toMatchObject({
+      primaryDmRetryCount: 1,
+      retryCauses: ['auditor_over_rejection'],
+      retrySucceeded: true,
+    });
+  });
 });
 
 describe('createUsageSink', () => {
@@ -504,6 +665,7 @@ describe('createUsageSink', () => {
     const sink = createUsageSink(dataRoot, (msg) => warnings.push(msg));
     sink.record(rec());
     sink.recordTool(toolRec());
+    sink.recordAudit(auditRec());
     sink.recordOutcome(outcomeRec());
     sink.close();
     expect(warnings).toHaveLength(0);
@@ -521,6 +683,7 @@ describe('createUsageSink', () => {
     // The noop sink must accept every record method and close() without throwing.
     expect(() => sink.record(rec())).not.toThrow();
     expect(() => sink.recordTool(toolRec())).not.toThrow();
+    expect(() => sink.recordAudit(auditRec())).not.toThrow();
     expect(() => sink.recordOutcome(outcomeRec())).not.toThrow();
     expect(() => sink.close()).not.toThrow();
     // One warning must have been emitted.
