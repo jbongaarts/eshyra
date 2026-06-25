@@ -67,6 +67,9 @@ export function deriveTraceFields(
 
   const STATE_TOOLS = new Set([
     'adjust_hp',
+    'start_encounter',
+    'update_combatant',
+    'close_combat_instance',
     'add_condition',
     'remove_condition',
     'give_item',

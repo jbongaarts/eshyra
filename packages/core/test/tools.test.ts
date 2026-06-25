@@ -125,6 +125,7 @@ describe('ToolRegistry', () => {
       [
         'add_condition',
         'adjust_hp',
+        'close_combat_instance',
         'give_item',
         'lookup_rules',
         'mark_scene',
@@ -135,7 +136,9 @@ describe('ToolRegistry', () => {
         'roll',
         'set_plot_flag',
         'set_world_fact',
+        'start_encounter',
         'update_clock',
+        'update_combatant',
         'world_query',
       ].sort(),
     );
@@ -929,6 +932,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       [
         'add_condition',
         'adjust_hp',
+        'close_combat_instance',
         'give_item',
         'lookup_rules',
         'mark_scene',
@@ -939,7 +943,9 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'roll',
         'set_plot_flag',
         'set_world_fact',
+        'start_encounter',
         'update_clock',
+        'update_combatant',
         'world_query',
       ].sort(),
     );

@@ -194,6 +194,90 @@ describe('migrations', () => {
     db.close();
   });
 
+  it('current schema includes combat instances, campaign actors, and combatant identity fields', () => {
+    const db = openDatabase(':memory:');
+    initSchema(db);
+
+    const tables = db
+      .prepare(
+        `SELECT name FROM sqlite_master
+         WHERE type = 'table'
+           AND name IN ('combat_instance', 'campaign_actor', 'encounter_combatant')
+         ORDER BY name`,
+      )
+      .all() as { name: string }[];
+    const indexes = db
+      .prepare(
+        `SELECT name FROM sqlite_master
+         WHERE type = 'index'
+           AND name IN (
+             'combat_instance_one_active_per_campaign',
+             'combat_instance_source',
+             'campaign_actor_location',
+             'campaign_actor_source',
+             'encounter_combatant_instance',
+             'encounter_combatant_identity',
+             'encounter_combatant_status'
+           )
+         ORDER BY name`,
+      )
+      .all() as { name: string }[];
+    const combatantColumns = db
+      .prepare('PRAGMA table_info(encounter_combatant)')
+      .all() as { name: string }[];
+    const instanceSql = db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='combat_instance'",
+      )
+      .get() as { sql: string };
+    const actorSql = db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='campaign_actor'",
+      )
+      .get() as { sql: string };
+    const combatantSql = db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='encounter_combatant'",
+      )
+      .get() as { sql: string };
+    const version = db
+      .prepare("SELECT value FROM meta WHERE key = 'schema_version'")
+      .get() as { value: string };
+
+    expect(tables.map((row) => row.name)).toEqual([
+      'campaign_actor',
+      'combat_instance',
+      'encounter_combatant',
+    ]);
+    expect(indexes.map((row) => row.name)).toEqual([
+      'campaign_actor_location',
+      'campaign_actor_source',
+      'combat_instance_one_active_per_campaign',
+      'combat_instance_source',
+      'encounter_combatant_identity',
+      'encounter_combatant_instance',
+      'encounter_combatant_status',
+    ]);
+    expect(combatantColumns.map((row) => row.name)).toEqual(
+      expect.arrayContaining([
+        'combat_instance_id',
+        'source_encounter_id',
+        'identity_kind',
+        'identity_ref',
+        'placement',
+      ]),
+    );
+    expect(instanceSql.sql).toContain("'active'");
+    expect(instanceSql.sql).toContain("'interrupted'");
+    expect(actorSql.sql).toContain("'escaped'");
+    expect(actorSql.sql).toContain("'unknown'");
+    expect(combatantSql.sql).toContain("'escaped'");
+    expect(combatantSql.sql).toContain("'inactive'");
+    expect(version.value).toBe(String(SCHEMA_VERSION));
+    expect(SCHEMA_VERSION).toBe(15);
+    db.close();
+  });
+
   it('production MIGRATIONS registry contains a migration for SCHEMA_VERSION', () => {
     expect(MIGRATIONS[SCHEMA_VERSION]).toBeDefined();
     expect(typeof MIGRATIONS[SCHEMA_VERSION]).toBe('function');

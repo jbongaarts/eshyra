@@ -262,6 +262,119 @@ const v13_to_v14: Migration = (db) => {
   }
 };
 
+// v14 → v15: combat instances, persistent actors, and live combatant projections.
+const v14_to_v15: Migration = (db) => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS combat_instance (
+      campaign_id TEXT NOT NULL,
+      combat_instance_id TEXT NOT NULL,
+      source_encounter_id TEXT,
+      source_run_id TEXT,
+      status TEXT NOT NULL CHECK (status IN (
+        'active',
+        'completed',
+        'abandoned',
+        'fled',
+        'interrupted'
+      )),
+      location_id TEXT,
+      provenance TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      opened_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      closed_at TEXT,
+      PRIMARY KEY (campaign_id, combat_instance_id)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS combat_instance_one_active_per_campaign
+      ON combat_instance(campaign_id) WHERE status = 'active';
+    CREATE INDEX IF NOT EXISTS combat_instance_source
+      ON combat_instance(campaign_id, source_encounter_id);
+
+    CREATE TABLE IF NOT EXISTS campaign_actor (
+      campaign_id TEXT NOT NULL,
+      actor_id TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      actor_kind TEXT NOT NULL CHECK (actor_kind IN (
+        'npc',
+        'creature',
+        'monster',
+        'companion',
+        'other'
+      )),
+      source_kind TEXT NOT NULL CHECK (source_kind IN (
+        'module_npc',
+        'module_creature',
+        'encounter_instance',
+        'campaign_created'
+      )),
+      source_ref TEXT,
+      rules_ref TEXT,
+      hp_current INTEGER CHECK (hp_current IS NULL OR hp_current >= 0),
+      hp_max INTEGER CHECK (hp_max IS NULL OR hp_max >= 0),
+      conditions_json TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL CHECK (status IN (
+        'alive',
+        'dead',
+        'unconscious',
+        'escaped',
+        'inactive',
+        'unknown'
+      )),
+      current_location_id TEXT,
+      state_json TEXT NOT NULL DEFAULT '{}',
+      provenance TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (campaign_id, actor_id)
+    );
+    CREATE INDEX IF NOT EXISTS campaign_actor_location
+      ON campaign_actor(campaign_id, current_location_id);
+    CREATE INDEX IF NOT EXISTS campaign_actor_source
+      ON campaign_actor(campaign_id, source_kind, source_ref);
+
+    CREATE TABLE IF NOT EXISTS encounter_combatant (
+      campaign_id TEXT NOT NULL,
+      combat_instance_id TEXT NOT NULL,
+      source_encounter_id TEXT,
+      combatant_id TEXT NOT NULL,
+      identity_kind TEXT NOT NULL CHECK (identity_kind IN (
+        'encounter_instance',
+        'module_npc',
+        'module_creature',
+        'campaign_actor'
+      )),
+      identity_ref TEXT,
+      display_label TEXT NOT NULL,
+      rules_ref TEXT NOT NULL,
+      side TEXT NOT NULL,
+      faction TEXT,
+      hp_current INTEGER NOT NULL CHECK (hp_current >= 0),
+      hp_max INTEGER NOT NULL CHECK (hp_max >= 0),
+      ac INTEGER CHECK (ac IS NULL OR ac >= 0),
+      conditions_json TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL CHECK (status IN (
+        'alive',
+        'dead',
+        'unconscious',
+        'escaped',
+        'inactive'
+      )),
+      location_id TEXT,
+      placement TEXT,
+      provenance TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (campaign_id, combatant_id)
+    );
+    CREATE INDEX IF NOT EXISTS encounter_combatant_instance
+      ON encounter_combatant(campaign_id, combat_instance_id);
+    CREATE INDEX IF NOT EXISTS encounter_combatant_identity
+      ON encounter_combatant(campaign_id, identity_kind, identity_ref);
+    CREATE INDEX IF NOT EXISTS encounter_combatant_status
+      ON encounter_combatant(campaign_id, status);
+  `);
+};
+
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   8: v7_to_v8,
   9: v8_to_v9,
@@ -270,6 +383,7 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   12: v11_to_v12,
   13: v12_to_v13,
   14: v13_to_v14,
+  15: v14_to_v15,
 };
 
 /**

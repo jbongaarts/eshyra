@@ -22,6 +22,7 @@ export { ToolRegistry } from './toolRegistry.js';
 
 import { addConditionTool } from './toolAddCondition.js';
 import { adjustHpTool } from './toolAdjustHp.js';
+import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
@@ -34,13 +35,18 @@ import { removeItemTool } from './toolRemoveItem.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
 import { setWorldFactTool } from './toolSetWorldFact.js';
+import { startEncounterTool } from './toolStartEncounter.js';
 import { updateClockTool } from './toolUpdateClock.js';
+import { updateCombatantTool } from './toolUpdateCombatant.js';
 import { worldQueryTool } from './toolWorldQuery.js';
 
 export const DEFAULT_TOOLS: readonly Tool[] = [
   rollTool,
   markSceneTool,
   lookupRulesTool,
+  startEncounterTool,
+  updateCombatantTool,
+  closeCombatInstanceTool,
   adjustHpTool,
   addConditionTool,
   removeConditionTool,
