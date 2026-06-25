@@ -72,6 +72,7 @@ export { OrchestratorError };
 const TURN_SAVEPOINT = 'eshyra_turn';
 const ATTEMPT_SAVEPOINT = 'eshyra_turn_attempt';
 const DEFAULT_MAX_TOOL_ROUNDS = 8;
+const DEFAULT_MAX_AUDITED_ATTEMPTS = 3;
 
 export interface RunTurnDeps {
   db: Db;
@@ -174,6 +175,83 @@ function formatAuditFailure(verdict: AuditVerdict): string {
   return `turn rejected by mechanics audit after retry: missing required tool(s) [${missing}], disallowed tool call(s) [${disallowed}] — ${verdict.reason || 'no reason given'}`;
 }
 
+function auditRequirementKeys(verdict: AuditVerdict): string[] {
+  const keys = [
+    ...verdict.missingRequiredCalls.map(
+      (call) => `missing:${call.tool}:${call.target ?? ''}`,
+    ),
+    ...verdict.disallowedToolCalls.map((tool) => `disallowed:${tool}`),
+  ];
+  if (keys.length === 0 && verdict.reason.length > 0) {
+    keys.push(`reason:${verdict.reason}`);
+  }
+  return keys;
+}
+
+function mergeMissingCalls(
+  left: readonly AuditVerdict['missingRequiredCalls'][number][],
+  right: readonly AuditVerdict['missingRequiredCalls'][number][],
+): AuditVerdict['missingRequiredCalls'] {
+  const merged: AuditVerdict['missingRequiredCalls'][number][] = [];
+  const seen = new Set<string>();
+  for (const call of [...left, ...right]) {
+    const key = `${call.tool}:${call.target ?? ''}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push(call);
+  }
+  return merged;
+}
+
+function mergeAuditVerdicts(
+  left: AuditVerdict | undefined,
+  right: AuditVerdict,
+): AuditVerdict {
+  if (left === undefined) {
+    return right;
+  }
+  const missingRequiredCalls = mergeMissingCalls(
+    left.missingRequiredCalls,
+    right.missingRequiredCalls,
+  );
+  const missingRequiredTools = [
+    ...new Set(missingRequiredCalls.map((call) => call.tool)),
+  ];
+  const disallowedToolCalls = [
+    ...new Set([...left.disallowedToolCalls, ...right.disallowedToolCalls]),
+  ];
+  return {
+    verdict: 'reject',
+    missingRequiredTools,
+    missingRequiredCalls,
+    disallowedToolCalls,
+    reason: [left.reason, right.reason]
+      .filter((reason) => reason.length > 0)
+      .join(' | '),
+    repairInstruction: [left.repairInstruction, right.repairInstruction]
+      .filter((instruction) => instruction.length > 0)
+      .join('\n'),
+  };
+}
+
+function shouldRetryAuditRejection(input: {
+  attempt: number;
+  requirementKeys: readonly string[];
+  seenRequirementKeys: ReadonlySet<string>;
+}): boolean {
+  if (input.attempt >= DEFAULT_MAX_AUDITED_ATTEMPTS) {
+    return false;
+  }
+  if (input.attempt === 1) {
+    return true;
+  }
+  return input.requirementKeys.some(
+    (key) => !input.seenRequirementKeys.has(key),
+  );
+}
+
 /** Corrective note appended to the context for a single audited retry. */
 function formatCorrectiveNote(
   verdict: AuditVerdict,
@@ -189,6 +267,14 @@ function formatCorrectiveNote(
     'candidate were rolled back and did not apply. Recreate the full intended',
     'accepted outcome from scratch: replay every required tool call with the',
     'correct quantities and targets; do not merely patch the previous answer.',
+    'This note is cumulative across rejected attempts; satisfy every requirement',
+    'listed here, even if a later rejection exposed it after an earlier repair.',
+    'Query module canon with world_query before resolving existing NPCs,',
+    'locations, or lore. Record consequential new lore with record_world_fact',
+    'before asserting it as established. Use recent scene evidence only for',
+    'immediate same-scene continuity, and avoid unsupported exact numbers unless',
+    'they are sourced by module canon, campaign state, overlay lore, scene',
+    'evidence, or a successful current-turn tool call.',
   ];
   if (verdict.disallowedToolCalls.length > 0) {
     const disallowed = verdict.disallowedToolCalls.join(', ');
@@ -427,11 +513,15 @@ export async function runTurn(
     // mutations are rolled back before a retry — only the accepted candidate's
     // writes survive. The auditor gate (eshyra-oobh) sits between producing a
     // candidate and accepting it; with no auditor wired the first candidate is
-    // accepted unconditionally (the legacy/test path).
-    const maxAttempts = deps.auditor ? 2 : 1;
+    // accepted unconditionally (the legacy/test path). Audited turns get one
+    // normal repair and one bounded extra repair only when the retry exposes a
+    // new requirement class.
+    const maxAttempts = deps.auditor ? DEFAULT_MAX_AUDITED_ATTEMPTS : 1;
     let narration = '';
     let toolCalls: ExecutedToolCall[] = [];
     let correctiveNote: string | undefined;
+    let cumulativeVerdict: AuditVerdict | undefined;
+    const seenRequirementKeys = new Set<string>();
     for (let attempt = 1; ; attempt += 1) {
       dispositionAttempt = attempt;
       db.exec(`SAVEPOINT ${ATTEMPT_SAVEPOINT}`);
@@ -505,9 +595,23 @@ export async function runTurn(
         },
       });
       const accepted = verdict.verdict === 'accept';
+      const requirementKeys = auditRequirementKeys(verdict);
+      const retry = accepted
+        ? false
+        : shouldRetryAuditRejection({
+            attempt,
+            requirementKeys,
+            seenRequirementKeys,
+          });
+      if (!accepted) {
+        cumulativeVerdict = mergeAuditVerdicts(cumulativeVerdict, verdict);
+        for (const key of requirementKeys) {
+          seenRequirementKeys.add(key);
+        }
+      }
       const action: 'accept' | 'retry' | 'fail' = accepted
         ? 'accept'
-        : attempt < maxAttempts
+        : retry && attempt < maxAttempts
           ? 'retry'
           : 'fail';
       recordAuditDebug(deps.debug, {
@@ -517,7 +621,13 @@ export async function runTurn(
         verdict: verdict.verdict,
         missingRequiredTools: verdict.missingRequiredTools,
         missingRequiredCalls: verdict.missingRequiredCalls,
+        cumulativeMissingRequiredTools:
+          cumulativeVerdict?.missingRequiredTools ?? [],
+        cumulativeMissingRequiredCalls:
+          cumulativeVerdict?.missingRequiredCalls ?? [],
         disallowedToolCalls: verdict.disallowedToolCalls,
+        cumulativeDisallowedToolCalls:
+          cumulativeVerdict?.disallowedToolCalls ?? [],
         executedToolNames: candidate.toolCalls.map((c) => c.tool),
         action,
         auditorModel: deps.auditor.modelId ?? 'unknown',
@@ -551,10 +661,15 @@ export async function runTurn(
         candidate.toolCalls,
       );
       if (action === 'fail') {
-        throw new OrchestratorError(formatAuditFailure(verdict));
+        throw new OrchestratorError(
+          formatAuditFailure(cumulativeVerdict ?? verdict),
+        );
       }
       phase = 'model_loop';
-      correctiveNote = formatCorrectiveNote(verdict, registry.list());
+      correctiveNote = formatCorrectiveNote(
+        cumulativeVerdict ?? verdict,
+        registry.list(),
+      );
     }
 
     phase = 'scene_summary';
