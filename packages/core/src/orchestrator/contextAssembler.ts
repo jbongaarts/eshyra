@@ -126,6 +126,15 @@ export interface StateSnapshot {
   clock: ClockSnapshot;
 }
 
+export interface RecentSceneEvidence {
+  tier: 'scene_fact';
+  source: 'scene_log';
+  sceneId: string;
+  turnId: string;
+  seq: number;
+  summary: string;
+}
+
 export interface AssembledSceneRef {
   sceneId: string;
   title: string;
@@ -146,6 +155,7 @@ export interface AssembledContext {
   scene: AssembledSceneRef | undefined;
   sceneTranscript: SceneLogRecord[];
   sceneTranscriptOmittedCount: number;
+  recentSceneEvidence: RecentSceneEvidence[];
   /**
    * Bounded context slices for the campaign's active adventure runs. Empty when
    * no resolver was supplied, the campaign has no active runs, or none of those
@@ -315,6 +325,7 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     sceneKey === undefined
       ? 0
       : Math.max(0, countSceneLog(input.db, sceneKey) - sceneTranscript.length);
+  const recentSceneEvidence = buildRecentSceneEvidence(sceneTranscript);
 
   const state = readStateSnapshot(input.db, input.actingCharacterId);
 
@@ -344,9 +355,30 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
         : { sceneId: openScene.sceneId, title: openScene.title },
     sceneTranscript,
     sceneTranscriptOmittedCount,
+    recentSceneEvidence,
     adventures,
     playerInput: input.playerInput,
   };
+}
+
+function buildRecentSceneEvidence(
+  sceneTranscript: readonly SceneLogRecord[],
+): RecentSceneEvidence[] {
+  return sceneTranscript
+    .filter((entry) => entry.role === 'dm')
+    .map((entry) => ({
+      tier: 'scene_fact',
+      source: 'scene_log',
+      sceneId: entry.sceneId,
+      turnId: entry.turnId,
+      seq: entry.seq,
+      summary: compactSceneEvidence(entry.content),
+    }));
+}
+
+function compactSceneEvidence(content: string): string {
+  const compact = content.replace(/\s+/g, ' ').trim();
+  return compact.length <= 280 ? compact : `${compact.slice(0, 277)}...`;
 }
 
 /**

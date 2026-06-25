@@ -395,6 +395,52 @@ describe('audit prompt campaign overlay lore evidence', () => {
   });
 });
 
+describe('audit prompt recent scene evidence', () => {
+  it('instructs the auditor that recent scene evidence is weak same-scene support', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain('Recent Scene Evidence');
+    expect(prompt).toContain('accepted same-scene continuity evidence only');
+    expect(prompt).toContain('weaker than module canon');
+    expect(prompt).toContain('consequential long-term facts still require');
+  });
+
+  it('includes compact accepted scene facts in the audit evidence', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What should I expect if I investigate?',
+      candidateResponse:
+        'The missing scouts suggest trouble along the north road.',
+      providedToolNames: ['record_world_fact', 'world_query'],
+      executedToolCalls: [],
+      recentSceneEvidence: [
+        {
+          tier: 'scene_fact',
+          source: 'scene_log',
+          sceneId: 'scene-sela',
+          turnId: 'turn-1',
+          seq: 2,
+          summary: 'Warden Sela says two scouts went north and did not return.',
+        },
+      ],
+    });
+
+    expect(message).toContain('## Recent Scene Evidence');
+    expect(message).toContain('tier `scene_fact`');
+    expect(message).toContain('Warden Sela says two scouts');
+    expect(message).toContain('weaker than module canon');
+  });
+
+  it('marks recent scene evidence absent rather than inventing support', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'Remind me what Sela said last scene.',
+      candidateResponse: 'She said two scouts were missing.',
+      providedToolNames: ['record_world_fact', 'world_query'],
+      executedToolCalls: [],
+    });
+
+    expect(message).toContain('## Recent Scene Evidence\n(none)');
+  });
+});
+
 describe('ModelTurnAuditor', () => {
   it.each([
     { quantity: 10, expected: 'accept' },

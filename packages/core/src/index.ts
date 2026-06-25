@@ -206,6 +206,7 @@ export type {
   ModelToolDefinition,
   ToolInputSchema,
 } from './model/toolSchema.js';
+export type { RecentSceneEvidence } from './orchestrator/contextAssembler.js';
 export type {
   ExecutedToolCall,
   RunTurnDeps,

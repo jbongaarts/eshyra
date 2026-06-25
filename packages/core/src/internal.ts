@@ -416,6 +416,7 @@ export type {
   ClockSnapshot,
   ContextAssemblyInput,
   InventoryItem,
+  RecentSceneEvidence,
   StateSnapshot,
 } from './orchestrator/contextAssembler.js';
 // Context assembler + state-snapshot reader.
