@@ -37,7 +37,7 @@ Record counts in the bundled pack (for context): 12 `class`, 13 `ancestry`,
 | Spellcasting ability (INT/WIS/CHA) | **structured (overlay)** | source-cited overlay `srdClassSpellcasting.ts` keyed by frozen class key; gated to level-1 casters via the progression row; drives spell save DC / attack in `deriveLevel1Values` | **eshyra-b69j.12.2 (done)** |
 | Prepared-caster spell counts / Wizard spellbook size | **structured (overlay)** | same overlay: `preparation` (known/prepared) + `spellbookStartingSpells` (Wizard = 6); prepared count = ability mod + level via `level1PreparedSpellCount` | **eshyra-b69j.12.2 (done)** |
 | Starting equipment option groups | **structured (overlay)** | source-cited overlay `srdClassStartingEquipment.ts` keyed by frozen class key: choose-one groups (labelled options) + fixed grants; each entry's `sourceText` deep-equals the pack's `startingEquipment.entries` | **eshyra-b69j.12.3 (done)** |
-| **Languages (ancestry + background)** | **prose-only** | `background.data.languages` ("Two of your choice"); ancestry `traits[]` "Languages" `text` | **eshyra-b69j.12.4** |
+| Languages (ancestry + background) | **structured (overlay)** | source-cited overlay `srdLanguages.ts` keyed by frozen ancestry/background key: fixed granted languages + free-choice `choose` counts; choices draw from the SRD standard languages. `sourceText` is a faithful prefix of the ancestry trait / exact background `languages` | **eshyra-b69j.12.4 (done)** |
 
 ## What this means for the engine today
 
@@ -47,9 +47,10 @@ background) and returns one descriptor per required choice, each tagged
 
 - **Martial example — Fighter:** skill choice (structured, choose 2); starting
   equipment groups (structured, four choose-one groups via overlay, 12.3). With
-  ancestry/background: a fixed ancestry ability increase is applied
-  automatically (overlay, 12.1) and is not a prompt; only a Half-Elf-style
-  ability choice and the language choice (12.4) remain as prompts.
+  ancestry/background: a fixed ancestry ability increase and fixed ancestry
+  languages are applied automatically (overlays, 12.1/12.4) and are not prompts;
+  only a Half-Elf-style ability choice and a free language choice (Acolyte's
+  "two of your choice", structured via 12.4) remain as prompts.
 - **Prepared caster — Wizard:** skills (structured); cantrips (structured,
   choose 3); starting spellbook (structured, choose 6 via overlay, 12.2); the
   spellcasting ability is an auto-resolved overlay fact (12.2), not a prompt;
@@ -84,8 +85,16 @@ eshyra-b69j.12:
   choose-one groups become structured equipment choices and fixed grants are
   auto-applied; `enumerateLevel1RequiredChoices` emits them. Feeds the equipment
   flow (eshyra-b69j.13).
-- **eshyra-b69j.12.4** — structured language grants and choices on ancestry and
-  background.
+- **eshyra-b69j.12.4** — *done.* Structured language grants and choices via the
+  source-cited overlay (`srdLanguages.ts`): fixed ancestry/background languages
+  are auto-granted and free-choice picks (Half-Elf/Human, Acolyte) are surfaced
+  as structured `choose`/`from` choices drawn from the SRD standard languages.
+  `enumerateLevel1RequiredChoices` emits them.
+
+With 12.1–12.4 all landed, every level-1 required choice an SRD class +
+ancestry + background implies is now structured from source-cited overlays or
+the generated pack — no prose parsing remains. The guided equipment/proficiency
+flow (eshyra-b69j.13) can consume these directly.
 
 ## How the gaps get filled — a consumer-side overlay, not pack regeneration
 
