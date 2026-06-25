@@ -16,6 +16,7 @@ import type {
   TurnOutcomeRecord,
 } from '../src/internal.js';
 import {
+  appendSceneLog,
   createDefaultToolRegistry,
   ensureCharacterRow,
   getTurnFailureDiagnostic,
@@ -975,6 +976,34 @@ class ScriptedAuditor implements TurnAuditor {
   }
 }
 
+class SceneEvidenceAuditor implements TurnAuditor {
+  readonly modelId = 'scene-evidence-audit-test';
+  readonly seen: TurnAuditInput[] = [];
+
+  constructor(private readonly needle: string) {}
+
+  audit(input: TurnAuditInput): Promise<AuditVerdict> {
+    this.seen.push(input);
+    const supported = (input.recentSceneEvidence ?? []).some((entry) =>
+      entry.summary.includes(this.needle),
+    );
+    return Promise.resolve(
+      supported
+        ? accept
+        : {
+            verdict: 'reject',
+            missingRequiredTools: ['record_world_fact'],
+            missingRequiredCalls: [
+              { tool: 'record_world_fact', target: this.needle },
+            ],
+            disallowedToolCalls: [],
+            reason: 'missing recent scene evidence',
+            repairInstruction: 'record or query the fact before asserting it',
+          },
+    );
+  }
+}
+
 const accept: AuditVerdict = {
   verdict: 'accept',
   missingRequiredTools: [],
@@ -1057,6 +1086,93 @@ describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
 
     expect(result.ok).toBe(true);
     expect(auditor.seen).toHaveLength(1);
+    db.close();
+  });
+
+  it('lets recent accepted NPC statements support immediate same-scene follow-up', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    appendSceneLog(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-0',
+      turnId: 'turn-0',
+      role: 'player',
+      content: 'What did you send north?',
+      at: '2026-05-20T09:50:00.000Z',
+    });
+    appendSceneLog(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-0',
+      turnId: 'turn-0',
+      role: 'dm',
+      content: 'Warden Sela says two scouts went north and did not return.',
+      at: '2026-05-20T09:50:01.000Z',
+    });
+    const model = new ScriptedModel([
+      'Expect trouble on the north road: Sela already told you two scouts went north and did not return.',
+    ]);
+    const auditor = new SceneEvidenceAuditor('two scouts');
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput({
+        turnId: 'turn-1',
+        playerInput: 'What should I expect if I investigate?',
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(auditor.seen[0].recentSceneEvidence).toContainEqual(
+      expect.objectContaining({
+        tier: 'scene_fact',
+        source: 'scene_log',
+        summary: 'Warden Sela says two scouts went north and did not return.',
+      }),
+    );
+    db.close();
+  });
+
+  it('lets accepted exact visible details support same-scene follow-up', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    appendSceneLog(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-0',
+      turnId: 'turn-0',
+      role: 'player',
+      content: 'How bad was the fire?',
+      at: '2026-05-20T09:50:00.000Z',
+    });
+    appendSceneLog(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-0',
+      turnId: 'turn-0',
+      role: 'dm',
+      content: 'You count three houses burned around Emberfall Square.',
+      at: '2026-05-20T09:50:01.000Z',
+    });
+    const model = new ScriptedModel([
+      'The three burned houses narrow the search to the square.',
+    ]);
+    const auditor = new SceneEvidenceAuditor('three houses burned');
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry(), auditor },
+      baseInput({
+        turnId: 'turn-1',
+        playerInput: 'Where should I start looking?',
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(auditor.seen[0].recentSceneEvidence?.[0]).toMatchObject({
+      tier: 'scene_fact',
+      summary: 'You count three houses burned around Emberfall Square.',
+    });
     db.close();
   });
 

@@ -1,6 +1,6 @@
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { ModelClient, ModelTraceMetadata } from '../model/client.js';
-import type { StateSnapshot } from './contextAssembler.js';
+import type { RecentSceneEvidence, StateSnapshot } from './contextAssembler.js';
 import type { ExecutedToolCall } from './turnLoop.js';
 
 /**
@@ -97,6 +97,13 @@ export interface TurnAuditInput {
    */
   readonly currentStateSnapshot?: StateSnapshot;
   /**
+   * Compact evidence derived only from accepted DM scene-log entries in the
+   * current open scene. This is weaker than module canon, campaign state, and
+   * campaign overlay lore: it supports immediate same-scene continuity, but
+   * durable consequential recall still requires `record_world_fact`.
+   */
+  readonly recentSceneEvidence?: readonly RecentSceneEvidence[];
+  /**
    * Tool names that may only be called on explicit player action intent
    * (eshyra-4ia4) — from {@link import('./toolRegistry.js').ToolRegistry.listRequiresExplicitAction}.
    * The auditor must reject a candidate that executed one of these without the
@@ -149,6 +156,11 @@ const AUDIT_POLICY = [
   '  recorded campaign overlay lore. A successful `world_query` can support',
   '  module canon, campaign state overlays, and campaign overlay lore returned',
   '  in its result.',
+  '- Recent Scene Evidence is accepted same-scene continuity evidence only. It is',
+  '  weaker than module canon, campaign state, and campaign overlay lore, but it',
+  '  can support immediate follow-up dialogue and exact visible details from the',
+  '  current scene. Do NOT treat it as durable campaign memory after the scene',
+  '  changes; consequential long-term facts still require `record_world_fact`.',
   '- Truth status is binding: a rumor/reported/believed record supports claims',
   '  such as "NPCs say/believe/report X"; it does NOT support "X is true" unless',
   '  the evidence has true/confirmed/observed status or another tool result',
@@ -381,6 +393,15 @@ export function buildAuditUserMessage(input: TurnAuditInput): string {
     canonEvidence.length > 0
       ? JSON.stringify(canonEvidence)
       : '(no successful canon evidence)',
+    '',
+    '## Recent Scene Evidence',
+    input.recentSceneEvidence !== undefined &&
+    input.recentSceneEvidence.length > 0
+      ? [
+          'Accepted same-scene evidence only; tier `scene_fact`, weaker than module canon, campaign state, and campaign overlay lore. Use for immediate continuity, not durable recall.',
+          JSON.stringify(input.recentSceneEvidence),
+        ].join('\n')
+      : '(none)',
     '',
     '## Current State Snapshot',
     input.currentStateSnapshot === undefined

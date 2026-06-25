@@ -110,6 +110,113 @@ describe('Context Assembler', () => {
     db.close();
   });
 
+  it('derives recent scene evidence only from accepted DM lines in the open scene', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+
+    openScene(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-old',
+      title: 'Emberfall Square',
+      at: '2026-05-20T09:00:00.000Z',
+    });
+    logTurn(
+      db,
+      'scene-old',
+      'turn-1',
+      'I ask Sela what happened.',
+      'Warden Sela says two scouts went north and did not return.',
+    );
+    closeScene(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-old',
+      at: '2026-05-20T09:30:00.000Z',
+    });
+
+    openScene(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-now',
+      title: 'Burned Houses',
+      at: '2026-05-20T10:00:00.000Z',
+    });
+    logTurn(
+      db,
+      'scene-now',
+      'turn-2',
+      'I count the burned houses.',
+      'You count three houses burned around Emberfall Square.',
+    );
+
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'What should I expect if I investigate?',
+    });
+
+    expect(ctx.recentSceneEvidence).toEqual([
+      {
+        tier: 'scene_fact',
+        source: 'scene_log',
+        sceneId: 'scene-now',
+        turnId: 'turn-2',
+        seq: 2,
+        summary: 'You count three houses burned around Emberfall Square.',
+      },
+    ]);
+    expect(
+      ctx.recentSceneEvidence.some((entry) =>
+        entry.summary.includes('two scouts'),
+      ),
+    ).toBe(false);
+    db.close();
+  });
+
+  it('ages recent scene evidence out when the scene boundary changes', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+
+    openScene(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-sela',
+      title: 'Warden Sela',
+      at: '2026-05-20T09:00:00.000Z',
+    });
+    logTurn(
+      db,
+      'scene-sela',
+      'turn-1',
+      'What happened here?',
+      'Warden Sela says two scouts went north and did not return.',
+    );
+    closeScene(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-sela',
+      at: '2026-05-20T09:30:00.000Z',
+    });
+    openScene(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      sceneId: 'scene-road',
+      title: 'North Road',
+      at: '2026-05-20T10:00:00.000Z',
+    });
+
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'Remind me what Sela said.',
+    });
+
+    expect(ctx.recentSceneEvidence).toEqual([]);
+    expect(renderContextMessage(ctx)).not.toContain('two scouts');
+    db.close();
+  });
+
   it('bounds long current-scene transcripts and leaves omitted entries drillable', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     openScene(db, {
