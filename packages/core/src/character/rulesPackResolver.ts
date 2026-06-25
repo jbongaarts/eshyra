@@ -161,6 +161,15 @@ export interface RulesPackCharacterResolver {
    * Malformed records (failing the generated-data shape guard) are skipped.
    */
   listClasses(): readonly ResolvedClassData[];
+  /**
+   * Every well-formed `ancestry` record in the stack, in canonical-key order.
+   * Drives the guided-creation `list`/`search` commands (eshyra-b69j.10).
+   */
+  listAncestries(): readonly ResolvedAncestryData[];
+  /** Every well-formed `background` record, in canonical-key order. */
+  listBackgrounds(): readonly ResolvedBackgroundData[];
+  /** Every well-formed `spell` record, in canonical-key order. */
+  listSpells(): readonly ResolvedSpellData[];
 }
 
 /** Build a resolver over an already-resolved rules stack (e.g. for tests). */
@@ -173,7 +182,37 @@ export function createRulesPackCharacterResolver(
     resolveAncestry: (nameOrRef) => resolveAncestry(stack, nameOrRef),
     resolveBackground: (nameOrRef) => resolveBackground(stack, nameOrRef),
     listClasses: () => listClasses(stack),
+    listAncestries: () =>
+      listByKind(stack, 'ancestry', (key) => resolveAncestry(stack, key)),
+    listBackgrounds: () =>
+      listByKind(stack, 'background', (key) => resolveBackground(stack, key)),
+    listSpells: () =>
+      listByKind(stack, 'spell', (key) => resolveSpell(stack, key)),
   };
+}
+
+/**
+ * Every record of a kind that resolves cleanly (passing its generated-data
+ * guard), built through the same per-kind resolver used for single lookups so
+ * listing and resolving can never diverge, sorted by canonical key.
+ */
+function listByKind<T extends { readonly key: string }>(
+  stack: ResolvedRulesStack,
+  kind: RulesRecordKind,
+  resolveOne: (key: string) => CharacterResolution<T>,
+): readonly T[] {
+  const index = stack.recordsByKind.get(kind);
+  if (index === undefined) {
+    return [];
+  }
+  const records: T[] = [];
+  for (const { record } of index.byKey.values()) {
+    const result = resolveOne(record.key);
+    if (result.ok) {
+      records.push(result.record);
+    }
+  }
+  return records.sort((left, right) => left.key.localeCompare(right.key));
 }
 
 let cachedResolver: RulesPackCharacterResolver | undefined;

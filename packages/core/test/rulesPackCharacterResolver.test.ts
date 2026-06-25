@@ -184,6 +184,50 @@ describe('rules-pack character resolver', () => {
     expect(explicit.resolveClass('Rogue').ok).toBe(true);
   });
 
+  describe('list methods (guided-creation list/search)', () => {
+    it('lists ancestries in canonical-key order', () => {
+      const ancestries = resolver.listAncestries();
+      expect(ancestries.length).toBeGreaterThan(0);
+      const keys = ancestries.map((a) => a.key);
+      expect(keys).toEqual([...keys].sort((a, b) => a.localeCompare(b)));
+      expect(ancestries.map((a) => a.name)).toContain('High Elf');
+    });
+
+    it('lists backgrounds and spells through the same resolver as lookups', () => {
+      expect(resolver.listBackgrounds().map((b) => b.name)).toContain(
+        'Acolyte',
+      );
+      const fireBolt = resolver
+        .listSpells()
+        .find((s) => s.name === 'Fire Bolt');
+      expect(fireBolt?.level).toBe(0);
+      expect(fireBolt?.classes).toContain('Wizard');
+    });
+
+    it('only lists well-formed records (skips malformed)', () => {
+      const stack = resolveRulesStack({
+        base: packWith([
+          record({
+            kind: 'ancestry',
+            key: 'ancestry:good',
+            name: 'Good Folk',
+            data: { speed: 30, traits: [] },
+          }),
+          // Spell missing its level → fails the spell guard → skipped.
+          record({
+            kind: 'spell',
+            key: 'spell:bad',
+            name: 'Bad Spell',
+            data: { classes: ['Wizard'] },
+          }),
+        ]),
+      });
+      const built = createRulesPackCharacterResolver(stack);
+      expect(built.listAncestries().map((a) => a.name)).toEqual(['Good Folk']);
+      expect(built.listSpells()).toEqual([]);
+    });
+  });
+
   describe('generated-data typed guards', () => {
     it('reports a malformed result for a class missing required fields', () => {
       const stack = resolveRulesStack({

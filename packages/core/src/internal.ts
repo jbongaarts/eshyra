@@ -143,7 +143,10 @@ export {
   createCharacterCreationEngine,
   getDnd5eCharacterCreationEngine,
 } from './character/characterDraft.js';
-export type { CharacterCreationMutationMetadata } from './character/creation.js';
+export type {
+  AbilityScoreMethod,
+  CharacterCreationMutationMetadata,
+} from './character/creation.js';
 // Character-creation low-level helpers + Pathfinder-specific draft validator
 // (the high-level `completeCharacterCreation` is the stable entrypoint).
 export {
