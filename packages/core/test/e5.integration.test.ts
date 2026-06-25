@@ -174,6 +174,112 @@ describe('E5 epic verification', () => {
     expect(a).toMatchObject({ ok: true });
   });
 
+  it('surfaces player-visible attack rolls in final narration', async () => {
+    const db = freshDbWithSession({
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+    });
+    openCurrentScene(db);
+    const model = new ScriptedModel([
+      toolCall('roll', {
+        dice: '1d20+5',
+        reason: 'Bob longsword attack',
+        visibility: 'player_visible',
+        category: 'attack',
+      }),
+      'Your blade flashes wide of the goblin.',
+    ]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput({ seed: 9090 }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.narration).toContain('Rolls:');
+    expect(result.narration).toContain('Attack (Bob longsword attack)');
+    db.close();
+  });
+
+  it.each([
+    {
+      reason: 'Bob longsword damage',
+      category: 'damage',
+      expected: 'Damage (Bob longsword damage)',
+    },
+    {
+      reason: 'goblin scimitar attack against Bob',
+      category: 'attack',
+      expected: 'Attack (goblin scimitar attack against Bob)',
+    },
+    {
+      reason: 'goblin critical damage against Bob',
+      category: 'damage',
+      expected: 'Damage (goblin critical damage against Bob)',
+    },
+    {
+      reason: 'death save',
+      category: 'death_save',
+      expected: 'Death save (death save)',
+    },
+  ] as const)('surfaces $reason rolls in final narration', async ({
+    reason,
+    category,
+    expected,
+  }) => {
+    const db = freshDbWithSession({
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+    });
+    openCurrentScene(db);
+    const model = new ScriptedModel([
+      toolCall('roll', {
+        dice: '1d20+3',
+        reason,
+        visibility: 'player_visible',
+        category,
+      }),
+      'The exchange resolves.',
+    ]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput({ seed: 9090 }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.narration).toContain('Rolls:');
+    expect(result.narration).toContain(expected);
+    db.close();
+  });
+
+  it('does not surface hidden ambush checks in final narration', async () => {
+    const db = freshDbWithSession({
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+    });
+    openCurrentScene(db);
+    const model = new ScriptedModel([
+      toolCall('roll', {
+        dice: '1d20+6',
+        reason: 'hidden ambush stealth check',
+        visibility: 'dm_only',
+        category: 'ability_check',
+      }),
+      'The brush stirs somewhere ahead.',
+    ]);
+
+    const result = await runTurn(
+      { db, model, registry: createDefaultToolRegistry() },
+      baseInput({ seed: 9090 }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.narration).not.toContain('Rolls:');
+    expect(result.narration).not.toContain('hidden ambush stealth check');
+    db.close();
+  });
+
   it('AC4: prose-only state change does not mutate canon', async () => {
     const db = freshDbWithSession({
       campaignId: CAMPAIGN,

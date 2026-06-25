@@ -49,6 +49,18 @@ describe('DM system prompt', () => {
     expect(prompt).toContain('Truth status matters');
   });
 
+  it('teaches roll visibility metadata and engine-owned ledger rendering', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain('Roll visibility metadata');
+    expect(prompt).toContain('visibility:"player_visible"');
+    expect(prompt).toContain('visibility:"dm_only"');
+    expect(prompt).toContain('category');
+    expect(prompt).toContain('player attack rolls');
+    expect(prompt).toContain('attack rolls against a PC');
+    expect(prompt).toContain('hidden enemy stealth/perception');
+    expect(prompt).toContain('engine appends the authoritative');
+  });
+
   it('defaults to the native protocol with no fenced tool_call instructions (eshyra-qa9d)', () => {
     // Released gameplay runs on native tool transport (ADR 0010), so the
     // default prompt must describe the native interface and must NOT teach the
