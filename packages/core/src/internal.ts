@@ -396,6 +396,7 @@ export {
 // Model usage tracking: purpose enum, per-call record, sink contract, decorator.
 // Plus per-turn timing diagnostics: tool spans + turn outcomes (eshyra-17ng).
 export type {
+  AuditRetryCause,
   ModelFailureKind,
   ModelUsagePurpose,
   ModelUsageRecord,
@@ -404,6 +405,8 @@ export type {
   ToolUsageRecord,
   ToolUsageSink,
   ToolUsageSource,
+  TurnAuditRecord,
+  TurnAuditSink,
   TurnDiagnosticsSink,
   TurnOutcome,
   TurnOutcomeRecord,

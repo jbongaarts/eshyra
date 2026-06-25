@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type {
   ModelUsageRecord,
   ToolUsageRecord,
+  TurnAuditRecord,
   TurnOutcomeRecord,
 } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -83,6 +84,34 @@ function outcome(
     modelRounds: 1,
     elapsedMs: 57000,
     reason: null,
+    auditorCallCount: 1,
+    primaryDmCandidateCount: 1,
+    primaryDmCallCount: 1,
+    primaryDmRetryCount: 0,
+    retryCauses: [],
+    retrySucceeded: null,
+    toolsRerunDuringRetry: [],
+    ...overrides,
+  };
+}
+
+function audit(overrides: Partial<TurnAuditRecord> = {}): TurnAuditRecord {
+  return {
+    id: `a-${Math.random().toString(36).slice(2)}`,
+    at: '2026-01-15T12:00:00.000Z',
+    campaignId: 'camp-1',
+    sessionId: 'sess-1',
+    turnId: 'turn-1',
+    attempt: 1,
+    verdict: 'accept',
+    action: 'accept',
+    retryCause: null,
+    missingRequiredTools: [],
+    disallowedToolCalls: [],
+    executedToolNames: ['lookup_rules'],
+    failedToolNames: [],
+    mutatingToolCount: 0,
+    auditorModel: 'claude-haiku-4-5',
     ...overrides,
   };
 }
@@ -157,6 +186,7 @@ describe('runUsageCommand', () => {
         elapsedMs: 18300,
       }),
     );
+    sink.recordAudit(audit());
     sink.recordOutcome(outcome({ outcome: 'accepted', attempts: 1 }));
     sink.close();
 
@@ -172,6 +202,7 @@ describe('runUsageCommand', () => {
     expect(out).toContain('outcome=accepted');
     expect(out).toContain('attempt 1 gameplay_turn claude-opus-4-8');
     expect(out).toContain('turn_audit claude-haiku-4-5');
+    expect(out).toContain('audit accept action=accept');
     // Tools nest under the gameplay round, with read-only / mutating labels.
     expect(out).toContain('tool lookup_rules');
     expect(out).toContain('read-only');
@@ -199,5 +230,62 @@ describe('runUsageCommand', () => {
     const out = lines.join('\n');
     expect(out).toContain('outcome=provider_limit');
     expect(out).toContain('failed provider_limit');
+  });
+
+  it('--timeline reports retry-churn aggregate diagnostics', () => {
+    const dataRoot = workDir();
+    const sink = createUsageSink(dataRoot);
+    sink.record(model({ purpose: 'gameplay_turn', attempt: 1, round: 1 }));
+    sink.record(
+      model({
+        purpose: 'turn_audit',
+        model: 'claude-haiku-4-5',
+        round: null,
+        elapsedMs: 1800,
+      }),
+    );
+    sink.recordAudit(
+      audit({
+        verdict: 'reject',
+        action: 'retry',
+        retryCause: 'missing_roll_visibility',
+        missingRequiredTools: ['roll'],
+      }),
+    );
+    sink.record(model({ purpose: 'gameplay_turn', attempt: 2, round: 1 }));
+    sink.record(
+      model({
+        purpose: 'turn_audit',
+        model: 'claude-haiku-4-5',
+        attempt: 2,
+        round: null,
+        elapsedMs: 1800,
+      }),
+    );
+    sink.recordAudit(audit({ attempt: 2 }));
+    sink.recordOutcome(
+      outcome({
+        attempts: 2,
+        auditorCallCount: 2,
+        primaryDmCandidateCount: 2,
+        primaryDmCallCount: 2,
+        primaryDmRetryCount: 1,
+        retryCauses: ['missing_roll_visibility'],
+        retrySucceeded: true,
+        toolsRerunDuringRetry: ['roll'],
+      }),
+    );
+    sink.close();
+
+    const lines: string[] = [];
+    runUsageCommand(['--timeline'], { dataRoot, log: (m) => lines.push(m) });
+    const out = lines.join('\n');
+
+    expect(out).toContain('dm_retries=1');
+    expect(out).toContain('audits=2');
+    expect(out).toContain('retry_causes=missing_roll_visibility');
+    expect(out).toContain(
+      'audit reject action=retry cause=missing_roll_visibility',
+    );
   });
 });
