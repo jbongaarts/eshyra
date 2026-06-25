@@ -87,4 +87,28 @@ describe('character draft derived values (engine integration)', () => {
     expect(draft.derived.finalAbilityScores.strength).toBe(15);
     expect(draft.derived.finalAbilityScores.constitution).toBe(14);
   });
+
+  it('computes spell save DC for a level-1 caster and re-derives on ancestry', () => {
+    let draft = draftWithScores();
+    // No spell DC before a class is chosen.
+    expect(draft.derived.spellSaveDc).toBeUndefined();
+
+    draft = engine.setClass(draft, 'Wizard');
+    // Base INT 10 (+0): DC 8 + 2 + 0 = 10; attack 2 + 0 = 2.
+    expect(draft.derived.spellSaveDc).toBe(10);
+    expect(draft.derived.spellAttackModifier).toBe(2);
+
+    // Raise INT to 14 (+2, still a valid point-buy score) and the DC moves.
+    draft = engine.setAbilityScore(draft, 'intelligence', 14);
+    // INT 14 (+2): DC 8 + 2 + 2 = 12; attack 2 + 2 = 4.
+    expect(draft.derived.spellSaveDc).toBe(12);
+    expect(draft.derived.spellAttackModifier).toBe(4);
+  });
+
+  it('does not compute a spell save DC for a non-caster', () => {
+    let draft = draftWithScores();
+    draft = engine.setClass(draft, 'Fighter');
+    expect(draft.derived.spellSaveDc).toBeUndefined();
+    expect(draft.derived.spellAttackModifier).toBeUndefined();
+  });
 });

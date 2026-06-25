@@ -34,8 +34,8 @@ Record counts in the bundled pack (for context): 12 `class`, 13 `ancestry`,
 | Background tool proficiencies | **structured** | `background.data.toolProficiencies[]` | — |
 | Ancestry size / speed | **structured** | `ancestry.data.size`, `ancestry.data.speed` | — |
 | Ancestry ability-score increases | **structured (overlay)** | source-cited overlay `srdAncestryAbilityScoreIncreases.ts` keyed by frozen ancestry key (fixed `{ability,bonus}` plus the Half-Elf choice); applied in `deriveLevel1Values` | **eshyra-b69j.12.1 (done)** |
-| **Spellcasting ability (INT/WIS/CHA)** | **prose-only** | inside the `feature:<class>:spellcasting` description | **eshyra-b69j.12.2** |
-| **Prepared-caster spell counts / Wizard spellbook size** | **prose-only** | spellcasting feature prose (formula: ability mod + level); Wizard's "six 1st-level spells" in spellbook | **eshyra-b69j.12.2** |
+| Spellcasting ability (INT/WIS/CHA) | **structured (overlay)** | source-cited overlay `srdClassSpellcasting.ts` keyed by frozen class key; gated to level-1 casters via the progression row; drives spell save DC / attack in `deriveLevel1Values` | **eshyra-b69j.12.2 (done)** |
+| Prepared-caster spell counts / Wizard spellbook size | **structured (overlay)** | same overlay: `preparation` (known/prepared) + `spellbookStartingSpells` (Wizard = 6); prepared count = ability mod + level via `level1PreparedSpellCount` | **eshyra-b69j.12.2 (done)** |
 | **Starting equipment option groups** | **partial** | `class.data.startingEquipment.entries[]` are prose lines ("(a) … or (b) …"), not parsed option groups; fixed grants are mixed in | **eshyra-b69j.12.3** |
 | **Languages (ancestry + background)** | **prose-only** | `background.data.languages` ("Two of your choice"); ancestry `traits[]` "Languages" `text` | **eshyra-b69j.12.4** |
 
@@ -51,11 +51,13 @@ background) and returns one descriptor per required choice, each tagged
   a prompt; only a Half-Elf-style ability choice and the language choice (12.4)
   remain as prompts.
 - **Prepared caster — Wizard:** skills (structured); cantrips (structured,
-  choose 3); level-1 spells and spellcasting ability (unstructured → 12.2);
-  equipment (12.3).
+  choose 3); starting spellbook (structured, choose 6 via overlay, 12.2); the
+  spellcasting ability is an auto-resolved overlay fact (12.2), not a prompt;
+  equipment (12.3) remains unstructured.
 - **Known caster — Bard:** skills, tool choice, cantrips, **and** known spells
-  all structured (Bard's `spellsKnown` is on the progression row); only the
-  spellcasting ability (12.2) and equipment (12.3) remain unstructured.
+  all structured (Bard's `spellsKnown` is on the progression row); the
+  spellcasting ability is resolved from the overlay (12.2); only equipment
+  (12.3) remains unstructured.
 
 The engine therefore enumerates the **pending required choices** for both a
 martial and a spellcasting class today, marking every prose-only datum with the
@@ -70,9 +72,12 @@ eshyra-b69j.12:
 - **eshyra-b69j.12.1** — *done.* Structured ancestry ability-score increases via
   the source-cited overlay; `deriveLevel1Values` now applies ancestry bonuses to
   final scores (and the HP/saves derived from them), closing the b69j.6 deferral.
-- **eshyra-b69j.12.2** — structured per-class spellcasting ability and
-  prepared-spell counts (unblocks spell save DC / spell attack and prepared
-  counts).
+- **eshyra-b69j.12.2** — *done.* Structured per-class spellcasting ability and
+  prepared-spell counts via the source-cited overlay (`srdClassSpellcasting.ts`);
+  `deriveLevel1Values` now computes spell save DC / spell attack, and
+  `enumerateLevel1RequiredChoices` structures the level-1 spell-selection count
+  (known `spellsKnown`, Wizard spellbook, or prepared ability mod + level),
+  closing the remaining b69j.6 deferral.
 - **eshyra-b69j.12.3** — structured starting-equipment option groups (feeds the
   equipment flow, eshyra-b69j.13).
 - **eshyra-b69j.12.4** — structured language grants and choices on ancestry and

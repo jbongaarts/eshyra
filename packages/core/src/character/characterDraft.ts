@@ -54,6 +54,7 @@ import {
   type AbilityScoreIncrease,
   getAncestryAbilityScoreIncrease,
 } from './srdAncestryAbilityScoreIncreases.js';
+import { level1SpellcastingAbility } from './srdClassSpellcasting.js';
 
 /** Severity of an incremental draft diagnostic. */
 export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
@@ -279,6 +280,7 @@ export function createCharacterCreationEngine(
       validAbilityScores,
       classRecord,
       abilityScoreIncreases: ancestryAbilityScoreIncreases(ancestryRecord),
+      spellcastingAbility: level1SpellcastingAbility(classRecord),
     });
 
     emitHitPointsPending(
