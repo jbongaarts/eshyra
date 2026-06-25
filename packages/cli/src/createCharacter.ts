@@ -9,6 +9,7 @@
  * scripted IO and an in-memory store.
  */
 
+import { randomBytes } from 'node:crypto';
 import {
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
@@ -119,19 +120,28 @@ export async function runCreateCharacter(
   }
 
   const id = draftId ?? newDraftId();
+  if (draftId === undefined) {
+    // An auto-generated id is unmemorable, so surface it up front — it is the
+    // handle the player passes to `--resume`.
+    deps.io.write(`New draft id: ${id} (resume later with --resume ${id}).`);
+  }
   await runCharacterWizard(deps, { mode, draftId: id });
   return 0;
 }
 
 /**
- * A fresh draft id. Deterministic-friendly: callers that need a stable id pass
- * `--id`; otherwise we derive one from the draft stem of a short timestamp-free
- * token so two unnamed drafts in a session do not collide.
+ * A fresh, collision-resistant draft id. Callers that want a stable, memorable
+ * id pass `--id`; otherwise this generates `character-<timestamp>-<random>`. The
+ * random suffix is the load-bearing part: each `eshyra create-character` run is
+ * a fresh process, so a per-process counter would make every first unnamed
+ * draft `character-1` and silently overwrite the previous run's saved draft
+ * (`CharacterDraftStore.save` overwrites by stem). The timestamp only adds
+ * rough sortability.
  */
-let draftCounter = 0;
-function newDraftId(): string {
-  draftCounter += 1;
-  return draftFileStem(`character-${draftCounter}`);
+export function newDraftId(): string {
+  const stamp = Date.now().toString(36);
+  const random = randomBytes(4).toString('hex');
+  return draftFileStem(`character-${stamp}-${random}`);
 }
 
 /** Terminal entrypoint: build real collaborators, run, and close IO. */

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { CharacterDraftStore } from '../src/characterDraftStore.js';
 import type { CharacterWizardDeps } from '../src/characterWizard.js';
 import {
+  newDraftId,
   parseCreateCharacterArgs,
   runCreateCharacter,
 } from '../src/createCharacter.js';
@@ -124,5 +125,39 @@ describe('runCreateCharacter', () => {
     const code = await runCreateCharacter(deps, ['--id', 'aldric']);
     expect(code).toBe(0);
     expect(store.load('aldric')?.identity.name).toBe('Aldric');
+  });
+
+  it('gives each --id-less run a distinct draft id (no cross-run overwrite)', async () => {
+    // The real bug: each CLI run is a fresh process, so a per-process counter
+    // would reuse `character-1` and overwrite the prior run's saved draft. A
+    // shared store across two runs must end up with two separate drafts.
+    const store = memoryStore();
+
+    const first = makeDeps(['Aldric', 'quit'], store);
+    await runCreateCharacter(first.deps, []);
+    const second = makeDeps(['Brielle', 'quit'], store);
+    await runCreateCharacter(second.deps, []);
+
+    expect(store.list()).toHaveLength(2);
+    const names = store
+      .list()
+      .map((id) => store.load(id)?.identity.name)
+      .sort();
+    expect(names).toEqual(['Aldric', 'Brielle']);
+
+    // The generated id is surfaced so the player can resume it.
+    expect(first.lines.join('\n')).toMatch(
+      /New draft id: character-.*--resume/,
+    );
+  });
+});
+
+describe('newDraftId', () => {
+  it('is unique across calls and uses only path-safe characters', () => {
+    const ids = new Set(Array.from({ length: 50 }, () => newDraftId()));
+    expect(ids.size).toBe(50);
+    for (const id of ids) {
+      expect(id).toMatch(/^character-[a-z0-9-]+$/);
+    }
   });
 });
