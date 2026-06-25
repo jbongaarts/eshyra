@@ -11,7 +11,7 @@ export const worldQueryTool: Tool = {
     'Resolve or search a world target (module canon + campaign overlay lore). ' +
     'The result includes visibility annotations: fields marked DM-only ' +
     '(e.g. an NPC\'s "secret") must not be narrated to the player verbatim. ' +
-    'args: { type: "location"|"encounter"|"npc"|"lore"|"meta"|"overlay_lore"|"search", id?, query?, locationId?, npcId?, subject?, kind?, tags? }.',
+    'args: { type: "location"|"encounter"|"npc"|"lore"|"meta"|"overlay_lore"|"search", id?, query?, locationId?, npcId?, subject?, kind?, significance?, tags? }.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -64,6 +64,12 @@ export const worldQueryTool: Tool = {
           'player_created_detail',
           'other',
         ],
+      },
+      significance: {
+        type: 'string',
+        enum: ['atmosphere', 'continuity', 'clue', 'hook', 'consequence'],
+        description:
+          'Filter overlay lore by significance/weight; continuity is stable dressing, clue/hook are plot-significant.',
       },
       tags: {
         type: 'array',

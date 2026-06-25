@@ -394,6 +394,66 @@ describe('campaign fork + worldQuery', () => {
     db.close();
   });
 
+  it('returns continuity dressing for stable location details without clue weight', () => {
+    const db = freshCampaign();
+    recordCampaignOverlayLore(db, {
+      id: 'emberfall-square-tapestry',
+      kind: 'location_detail',
+      significance: 'continuity',
+      subjectText: 'Emberfall Square',
+      locationId: 'emberfall-square',
+      fact: 'An ornate tapestry hangs from the west market awning.',
+      truthStatus: 'observed',
+      source: 'dm_improvised',
+      scope: 'campaign',
+      visibility: 'player_visible',
+      introducedAtTurnId: 'turn-1',
+      introducedAtSessionId: 'session-1',
+      tags: ['tapestry'],
+      provenance: 'model:turn-1',
+      at: '2026-05-20T10:00:00.000Z',
+    });
+
+    const result = worldQuery(db, {
+      type: 'location',
+      id: 'emberfall-square',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok && result.type === 'location') {
+      expect(result.overlayLore).toContainEqual(
+        expect.objectContaining({
+          id: 'emberfall-square-tapestry',
+          tier: 'continuity_dressing',
+          truthStatus: 'observed',
+          visibility: 'player_visible',
+          summary: expect.stringContaining('ornate tapestry'),
+        }),
+      );
+      expect(
+        result.overlayLore.find(
+          (entry) => entry.id === 'emberfall-square-tapestry',
+        )?.tier,
+      ).not.toBe('campaign_overlay_lore');
+    }
+
+    const continuityOnly = worldQuery(db, {
+      type: 'overlay_lore',
+      significance: 'continuity',
+    });
+    expect(continuityOnly).toMatchObject({
+      ok: true,
+      type: 'overlay_lore',
+      records: [
+        expect.objectContaining({
+          id: 'emberfall-square-tapestry',
+          tier: 'continuity_dressing',
+        }),
+      ],
+    });
+    db.close();
+  });
+
   it('queries overlay lore by subject, tags, and specific id', () => {
     const db = freshCampaign();
     recordCampaignOverlayLore(db, {

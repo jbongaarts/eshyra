@@ -16,9 +16,10 @@ import { migrateSchema } from './migrations.js';
  *   - `overlay_facts.value_json`        (any JSON value)
  *
  * Typed live campaign canon:
- *   - `campaign_overlay_lore`           (consequential improvised lore promoted
- *                                        during play; append-friendly rows with
- *                                        truth status and visibility)
+ *   - `campaign_overlay_lore`           (improvised lore and continuity
+ *                                        dressing promoted during play;
+ *                                        append-friendly rows with truth status,
+ *                                        significance, and visibility)
  *
  * Archival / trace / generated — deliberately opaque, jsonColumn<TraceJsonValue[]>.
  * Do not add shape validation here; these blobs are owned by the memory subsystem:
@@ -41,7 +42,7 @@ import { migrateSchema } from './migrations.js';
  * Operational diagnostics are non-canon debugging records, not game history:
  *   - `turn_failure_diagnostic`
  */
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 
 export class SchemaCompatibilityError extends Error {
   constructor(message: string) {
@@ -153,6 +154,13 @@ export function initSchema(db: Db): void {
         'consequence'
       )),
       scope TEXT NOT NULL CHECK (scope IN ('scene', 'session', 'campaign')),
+      significance TEXT NOT NULL DEFAULT 'consequence' CHECK (significance IN (
+        'atmosphere',
+        'continuity',
+        'clue',
+        'hook',
+        'consequence'
+      )),
       visibility TEXT NOT NULL CHECK (visibility IN (
         'player_visible',
         'dm_only',

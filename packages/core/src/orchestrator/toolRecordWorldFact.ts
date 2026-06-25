@@ -41,16 +41,24 @@ const sourceValues = [
 ] as const;
 
 const scopeValues = ['scene', 'session', 'campaign'] as const;
+const significanceValues = [
+  'atmosphere',
+  'continuity',
+  'clue',
+  'hook',
+  'consequence',
+] as const;
 const visibilityValues = ['player_visible', 'dm_only', 'mixed'] as const;
 
 export const recordWorldFactTool: Tool = {
   name: 'record_world_fact',
   mutates: true,
   description:
-    'Promote a consequential improvised lore fact into campaign overlay canon. ' +
-    'Use for hooks, clues, NPC knowledge, reports, and player-action consequences ' +
-    'that may matter later. Do not use for decorative color such as ordinary ' +
-    'sensory detail, incidental props, or mood unless play made it consequential.',
+    'Promote improvised lore or stable continuity dressing into campaign overlay canon. ' +
+    'Use significance:"consequence" for hooks, clues, NPC knowledge, reports, and player-action consequences ' +
+    'that may matter later. Use significance:"continuity" for stable visible physical details ' +
+    'attached to a recurring location, NPC, or object when forgetting or contradicting them would confuse play. ' +
+    'Do not record transient atmosphere such as smells, wind, flickering light, dust motes, or mood.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -77,6 +85,12 @@ export const recordWorldFactTool: Tool = {
       truthStatus: { type: 'string', enum: [...truthStatusValues] },
       source: { type: 'string', enum: [...sourceValues] },
       scope: { type: 'string', enum: [...scopeValues] },
+      significance: {
+        type: 'string',
+        enum: [...significanceValues],
+        description:
+          'Weight of the fact: continuity for stable dressing, consequence for player-affecting lore, clue/hook for plot-significant evidence, atmosphere only for explicitly retained non-continuity color.',
+      },
       visibility: { type: 'string', enum: [...visibilityValues] },
       supersedes: { type: 'string' },
       invalidates: { type: 'string' },
@@ -115,6 +129,9 @@ export const recordWorldFactTool: Tool = {
         truthStatus: a.truthStatus as never,
         source: a.source as never,
         scope: a.scope as never,
+        ...(typeof a.significance === 'string'
+          ? { significance: a.significance as never }
+          : {}),
         visibility: a.visibility as never,
         ...(typeof a.supersedes === 'string'
           ? { supersedes: a.supersedes }
@@ -130,18 +147,17 @@ export const recordWorldFactTool: Tool = {
         provenance: `model:${ctx.turnId}`,
         at: ctx.at,
       });
+      const evidenceTier = overlayLoreToolTier(record);
+      const canonTier =
+        evidenceTier === 'continuity_dressing'
+          ? 'continuity_dressing'
+          : 'campaign_overlay_lore';
       return ok({
         applied: true,
-        canonTier: 'campaign_overlay_lore',
+        canonTier,
         record,
         evidence: {
-          tier:
-            record.kind === 'rumor' ||
-            record.truthStatus === 'rumored' ||
-            record.truthStatus === 'reported' ||
-            record.truthStatus === 'believed'
-              ? 'rumor_belief'
-              : 'campaign_overlay_lore',
+          tier: evidenceTier,
           id: record.id,
           truthStatus: record.truthStatus,
           visibility: record.visibility,
@@ -156,6 +172,24 @@ export const recordWorldFactTool: Tool = {
     }
   },
 };
+
+function overlayLoreToolTier(record: {
+  significance: string;
+  kind: string;
+  truthStatus: string;
+}): string {
+  if (record.significance === 'atmosphere') return 'decorative_color';
+  if (record.significance === 'continuity') return 'continuity_dressing';
+  if (
+    record.kind === 'rumor' ||
+    record.truthStatus === 'rumored' ||
+    record.truthStatus === 'reported' ||
+    record.truthStatus === 'believed'
+  ) {
+    return 'rumor_belief';
+  }
+  return 'campaign_overlay_lore';
+}
 
 function resolveLocationId(
   args: Record<string, unknown>,

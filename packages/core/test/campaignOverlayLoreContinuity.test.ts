@@ -155,10 +155,14 @@ describe('improvised hook continuity', () => {
     }
 
     const decorative = worldQuery(ctx.db, {
-      type: 'search',
-      query: 'damp wool chipped cup',
+      type: 'overlay_lore',
+      query: 'torchlight flickers cold ash smell dust motes',
     });
-    expect(decorative).toMatchObject({ ok: true, type: 'search', results: [] });
+    expect(decorative).toMatchObject({
+      ok: true,
+      type: 'overlay_lore',
+      records: [],
+    });
 
     const failedWorldQuery: ExecutedToolCall = {
       tool: 'world_query',

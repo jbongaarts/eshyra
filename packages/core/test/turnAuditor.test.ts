@@ -285,6 +285,9 @@ describe('audit prompt campaign overlay lore evidence', () => {
     expect(prompt).toContain('Overlay visibility is binding');
     expect(prompt).toContain('`dm_only` overlay lore');
     expect(prompt).toContain('must not be narrated as player-facing support');
+    expect(prompt).toContain('continuity_dressing');
+    expect(prompt).toContain('descriptive');
+    expect(prompt).toContain('not plot significance');
   });
 
   it('summarizes current-turn recorded overlay lore by canon tier', () => {
@@ -320,6 +323,43 @@ describe('audit prompt campaign overlay lore evidence', () => {
     expect(message).toContain('old-renn-rumor');
     expect(message).toContain('reported');
     expect(message).toContain('player_visible');
+  });
+
+  it('summarizes continuity dressing without upgrading it to plot proof', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'What do I see in the square?',
+      candidateResponse:
+        'The ornate tapestry still hangs from the west market awning.',
+      providedToolNames: ['world_query'],
+      executedToolCalls: [
+        {
+          tool: 'world_query',
+          args: { type: 'location', id: 'emberfall-square' },
+          result: {
+            ok: true,
+            data: {
+              ok: true,
+              type: 'location',
+              evidence: [
+                {
+                  tier: 'continuity_dressing',
+                  id: 'emberfall-square-tapestry',
+                  visibility: 'player_visible',
+                  summary:
+                    'Emberfall Square: An ornate tapestry hangs from the west market awning.',
+                },
+              ],
+            },
+          },
+          mutates: false,
+          source: 'native',
+        },
+      ],
+    });
+
+    expect(message).toContain('continuity_dressing');
+    expect(message).toContain('emberfall-square-tapestry');
+    expect(message).toContain('ornate tapestry');
   });
 
   it('exposes dm_only and mixed visibility in debug evidence summaries', () => {

@@ -43,7 +43,9 @@ describe('DM system prompt', () => {
       'Campaign overlay lore is for consequential facts',
     );
     expect(prompt).toContain('Old Renn');
-    expect(prompt).toContain('chipped cup');
+    expect(prompt).toContain('ornate tapestry');
+    expect(prompt).toContain('significance "continuity"');
+    expect(prompt).toContain('torchlight');
     expect(prompt).toContain('Truth status matters');
   });
 

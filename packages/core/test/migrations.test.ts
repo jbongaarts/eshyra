@@ -456,4 +456,70 @@ describe('migrations', () => {
     expect(canonicalize(serializeCampaign(db))).toContain('old-renn-hook');
     db.close();
   });
+
+  it('v13→v14 adds overlay lore significance with consequence as the legacy default', () => {
+    const db = openDatabase(':memory:');
+    db.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('schema_version', '12');
+      CREATE TABLE plot_flags (
+        key TEXT PRIMARY KEY,
+        value_json TEXT NOT NULL,
+        provenance TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE TABLE clock (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        in_game_time TEXT NOT NULL DEFAULT '',
+        current_location_id TEXT,
+        provenance TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `);
+
+    migrateSchema(db, 12, 13);
+    db.prepare(
+      `INSERT INTO campaign_overlay_lore(
+        id, kind, subject_id, subject_text, location_id, npc_id, faction_id,
+        fact, truth_status, source, scope, visibility,
+        introduced_at_turn_id, introduced_at_session_id, supersedes,
+        invalidates, tags_json, provenance, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'old-renn-hook',
+      'quest_hook',
+      null,
+      'Old Renn',
+      'emberfall-square',
+      null,
+      null,
+      'Old Renn and his charcoal cart are missing.',
+      'reported',
+      'dm_improvised',
+      'campaign',
+      'player_visible',
+      'turn-1',
+      'session-1',
+      null,
+      null,
+      '["missing-cart"]',
+      'model:turn-1',
+      '2026-05-20T10:00:00.000Z',
+    );
+
+    migrateSchema(db, 13, 14);
+
+    const versionRow = db
+      .prepare('SELECT value FROM meta WHERE key = ?')
+      .get('schema_version') as { value: string } | undefined;
+    expect(versionRow?.value).toBe('14');
+
+    const row = db
+      .prepare('SELECT significance FROM campaign_overlay_lore WHERE id = ?')
+      .get('old-renn-hook') as { significance: string } | undefined;
+    expect(row?.significance).toBe('consequence');
+    db.close();
+  });
 });

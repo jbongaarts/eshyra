@@ -581,6 +581,45 @@ describe('record_world_fact tool', () => {
     }
   });
 
+  it('records stable continuity dressing without promoting it as a clue', () => {
+    const c = ctx();
+    const result = createDefaultToolRegistry().invoke(
+      'record_world_fact',
+      {
+        id: 'emberfall-square-tapestry',
+        kind: 'location_detail',
+        significance: 'continuity',
+        subjectText: 'Emberfall Square',
+        locationId: 'emberfall-square',
+        fact: 'An ornate tapestry hangs from the west market awning.',
+        truthStatus: 'observed',
+        source: 'dm_improvised',
+        scope: 'campaign',
+        visibility: 'player_visible',
+      },
+      c,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toMatchObject({
+        applied: true,
+        canonTier: 'continuity_dressing',
+        record: {
+          id: 'emberfall-square-tapestry',
+          kind: 'location_detail',
+          significance: 'continuity',
+          truthStatus: 'observed',
+          visibility: 'player_visible',
+        },
+        evidence: {
+          tier: 'continuity_dressing',
+          truthStatus: 'observed',
+        },
+      });
+    }
+  });
+
   it('records observed evidence and NPC details', () => {
     const c = ctx();
     const registry = createDefaultToolRegistry();
