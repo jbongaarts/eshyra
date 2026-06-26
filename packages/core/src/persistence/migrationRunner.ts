@@ -22,10 +22,10 @@
  * exception to "only `.sql` files create schema": it is created and maintained
  * here and is never declared in a migration file.
  *
- * Scope (eshyra-4s0r.1.3 / .1.4): this module is the runner plus the
- * `0001_initial.sql` baseline. Wiring it into the live `initSchema` path and
- * removing the hand-maintained latest-schema DDL is eshyra-4s0r.1.6; legacy
- * `meta.schema_version` adoption/reset is eshyra-4s0r.1.5.
+ * Scope: this module now contains the migration runner, the `0001_initial.sql`
+ * baseline support, and the legacy adoption/reset entrypoint from
+ * eshyra-4s0r.1.3 through eshyra-4s0r.1.5. Wiring it into the live `initSchema`
+ * path and removing the hand-maintained latest-schema DDL is eshyra-4s0r.1.6.
  */
 
 import { createHash } from 'node:crypto';
@@ -33,7 +33,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Db } from './db.js';
-import { withTransaction } from './db.js';
+import { openDatabase, withTransaction } from './db.js';
 
 export class SchemaMigrationError extends Error {
   constructor(message: string) {
@@ -41,6 +41,29 @@ export class SchemaMigrationError extends Error {
     this.name = 'SchemaMigrationError';
   }
 }
+
+/**
+ * Raised when an existing database cannot be brought onto the migration-first
+ * system and must be recreated (ADR 0015 §5). Distinct from
+ * {@link SchemaMigrationError}, which signals a defect/tamper in the migration
+ * set itself: a reset is an expected pre-1.0 outcome the caller surfaces to the
+ * user, not a bug. The message is always actionable and the database is never
+ * modified before this is thrown.
+ */
+export class SchemaResetRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SchemaResetRequiredError';
+  }
+}
+
+/**
+ * The legacy `meta.schema_version` that the `0001_initial.sql` baseline encodes.
+ * A pre-migration-first database at exactly this version is structurally
+ * identical to a fresh baseline and can be adopted in place; any other version
+ * fails closed (ADR 0015 §5).
+ */
+export const LEGACY_BASELINE_SCHEMA_VERSION = 15;
 
 /** A migration file discovered on disk, with its normalized text and checksum. */
 export interface DiscoveredMigration {
@@ -76,6 +99,28 @@ export interface RunMigrationsOptions {
   dir?: string;
   /** Override the applied-at timestamp source (defaults to `new Date().toISOString()`). */
   now?: () => string;
+}
+
+/** What {@link prepareDatabaseForMigrations} did to the database. */
+export type LegacyDatabaseAction =
+  /** A truly empty DB; {@link runMigrations} will apply every migration. */
+  | 'empty'
+  /** Already a migration-first DB with a ledger; nothing to adopt. */
+  | 'ledger-present'
+  /** A legacy `meta.schema_version` DB adopted in place at the baseline. */
+  | 'adopted';
+
+export interface PrepareDatabaseResult {
+  action: LegacyDatabaseAction;
+  /** The legacy `meta.schema_version` adopted (only set when `action` is `adopted`). */
+  adoptedFromVersion?: number;
+}
+
+export interface MigrateDatabaseResult {
+  /** What the legacy preparation step decided. */
+  legacy: PrepareDatabaseResult;
+  /** The result of applying pending migrations afterward. */
+  migrations: RunMigrationsResult;
 }
 
 /** Bundled migrations directory, resolved relative to this module. */
@@ -272,4 +317,185 @@ export function runMigrations(
     currentVersion:
       pending.length > 0 ? pending[pending.length - 1].version : maxApplied,
   };
+}
+
+function hasTable(db: Db, name: string): boolean {
+  return (
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(name) !== undefined
+  );
+}
+
+function countUserTables(db: Db): number {
+  return (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+      )
+      .get() as { count: number }
+  ).count;
+}
+
+/**
+ * A normalized fingerprint of a database's table and index definitions, used to
+ * verify that a legacy database is structurally identical to the baseline before
+ * adopting it. Excludes the `schema_migrations` ledger and SQLite's internal
+ * objects, and normalizes whitespace and the no-op `IF NOT EXISTS` clause so it
+ * compares the resulting schema, not its DDL formatting.
+ */
+export function schemaFingerprint(db: Db): string[] {
+  const rows = db
+    .prepare(
+      `SELECT type, name, sql FROM sqlite_master
+       WHERE type IN ('table', 'index')
+         AND name <> 'schema_migrations'
+         AND name NOT LIKE 'sqlite_%'
+       ORDER BY type, name`,
+    )
+    .all() as { type: string; name: string; sql: string | null }[];
+  return rows.map((row) => {
+    const sql = (row.sql ?? '')
+      .replace(/\s+/g, ' ')
+      .replace(/\bIF NOT EXISTS\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return `${row.type} ${row.name}: ${sql}`;
+  });
+}
+
+/** The schema fingerprint a fresh `0001_initial.sql` baseline produces. */
+function baselineSchemaFingerprint(baselineSql: string): string[] {
+  const probe = openDatabase(':memory:');
+  try {
+    probe.exec(baselineSql);
+    return schemaFingerprint(probe);
+  } finally {
+    probe.close();
+  }
+}
+
+function fingerprintsEqual(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+/**
+ * Decide how an existing database joins the migration-first system, and adopt it
+ * in place if it is a legacy database at the baseline (ADR 0015 §5). Call this
+ * before {@link runMigrations}.
+ *
+ * - **`schema_migrations` present** → `ledger-present`; the ledger is
+ *   authoritative and `runMigrations` handles it.
+ * - **No user tables** → `empty`; `runMigrations` applies every migration.
+ * - **Legacy `meta.schema_version` exactly at {@link LEGACY_BASELINE_SCHEMA_VERSION}
+ *   and structurally identical to the baseline** → `adopted`: the ledger is
+ *   created and `0001_initial` is recorded as applied (with its real checksum)
+ *   **without re-running its DDL**, so `runMigrations` then applies only later
+ *   migrations.
+ * - **Anything else** (no `meta`/`schema_version`, a non-integer version, a
+ *   version other than the baseline, or a baseline-version DB whose structure
+ *   does not match) → throws {@link SchemaResetRequiredError} with an actionable
+ *   message. The database is **never** modified before throwing.
+ */
+export function prepareDatabaseForMigrations(
+  db: Db,
+  options: RunMigrationsOptions = {},
+): PrepareDatabaseResult {
+  const dir = options.dir ?? DEFAULT_MIGRATIONS_DIR;
+  const now = options.now ?? (() => new Date().toISOString());
+
+  if (hasTable(db, 'schema_migrations')) {
+    return { action: 'ledger-present' };
+  }
+
+  if (countUserTables(db) === 0) {
+    return { action: 'empty' };
+  }
+
+  // Has tables but no ledger: only a legacy DB at the exact baseline version is
+  // adoptable. Everything else fails closed without modifying the database.
+  if (!hasTable(db, 'meta')) {
+    throw new SchemaResetRequiredError(
+      'database has existing tables but no schema_migrations ledger and no meta table; ' +
+        'it is not a recognized Eshyra database and will not be modified. ' +
+        'Recreate the campaign (pre-1.0 databases are not migrated).',
+    );
+  }
+  const versionRow = db
+    .prepare('SELECT value FROM meta WHERE key = ?')
+    .get('schema_version') as { value: string } | undefined;
+  if (versionRow === undefined) {
+    throw new SchemaResetRequiredError(
+      'database has existing tables and a meta table but no meta.schema_version and ' +
+        'no schema_migrations ledger; it is not a recognized Eshyra database and will ' +
+        'not be modified. Recreate the campaign.',
+    );
+  }
+  const version = Number.parseInt(versionRow.value, 10);
+  if (!Number.isInteger(version) || String(version) !== versionRow.value) {
+    throw new SchemaResetRequiredError(
+      `database meta.schema_version is not a valid integer: "${versionRow.value}"; ` +
+        'refusing to modify the database. Recreate the campaign.',
+    );
+  }
+  if (version !== LEGACY_BASELINE_SCHEMA_VERSION) {
+    const relation =
+      version < LEGACY_BASELINE_SCHEMA_VERSION ? 'predates' : 'is newer than';
+    const advice =
+      version > LEGACY_BASELINE_SCHEMA_VERSION
+        ? 'Update your Eshyra installation, or recreate the campaign (delete the database file and start a new one).'
+        : 'Recreate the campaign (delete the database file and start a new one).';
+    throw new SchemaResetRequiredError(
+      `database schema_version ${version} ${relation} the migration-first baseline ` +
+        `(${LEGACY_BASELINE_SCHEMA_VERSION}); pre-1.0 databases at other versions are not migrated. ${advice}`,
+    );
+  }
+
+  // Baseline version: adopt only if the structure actually matches the baseline.
+  const migrations = discoverMigrations(dir);
+  const baseline = migrations.find((migration) => migration.version === 1);
+  if (baseline === undefined) {
+    throw new SchemaMigrationError(
+      'no baseline migration (version 1) found; cannot adopt a legacy database',
+    );
+  }
+  if (
+    !fingerprintsEqual(
+      baselineSchemaFingerprint(baseline.sql),
+      schemaFingerprint(db),
+    )
+  ) {
+    throw new SchemaResetRequiredError(
+      `database reports schema_version ${LEGACY_BASELINE_SCHEMA_VERSION} but its structure ` +
+        'does not match the 0001 baseline; refusing to adopt it. Recreate the campaign.',
+    );
+  }
+
+  withTransaction(db, (txn) => {
+    ensureMigrationLedger(txn);
+    txn
+      .prepare(
+        'INSERT INTO schema_migrations(version, name, checksum, applied_at) VALUES (?, ?, ?, ?)',
+      )
+      .run(baseline.version, baseline.name, baseline.checksum, now());
+  });
+  return { action: 'adopted', adoptedFromVersion: version };
+}
+
+/**
+ * Bring a database fully onto the latest schema: run legacy
+ * adoption/reset preparation ({@link prepareDatabaseForMigrations}) and then
+ * apply any pending migrations ({@link runMigrations}). This is the single entry
+ * point a caller should use for an arbitrary on-disk database.
+ *
+ * Throws {@link SchemaResetRequiredError} if the database must be recreated, or
+ * {@link SchemaMigrationError} on a defect in the migration set.
+ */
+export function migrateDatabase(
+  db: Db,
+  options: RunMigrationsOptions = {},
+): MigrateDatabaseResult {
+  const legacy = prepareDatabaseForMigrations(db, options);
+  const migrations = runMigrations(db, options);
+  return { legacy, migrations };
 }

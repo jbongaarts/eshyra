@@ -159,11 +159,15 @@ Pre-migration-first databases carry `meta.schema_version = N` and have **no**
 fresh `0001` DB.
 
 - **Adopt (baseline) when `meta.schema_version` equals the baseline version
-  (15).** The runner creates `schema_migrations` and inserts the `0001_initial`
-  ledger row (with the real computed checksum) marking it applied **without
-  re-running its DDL** — the tables already exist. Any later migrations
+  (15) *and* the DB structurally matches the baseline.** The runner verifies the
+  DB's normalized table/index fingerprint against a fresh `0001_initial` DB
+  before adopting; on a match it creates `schema_migrations` and inserts the
+  `0001_initial` ledger row (with the real computed checksum) marking it applied
+  **without re-running its DDL** — the tables already exist. Any later migrations
   (`0002+`) are then applied as normal pending migrations. The DB is now a
-  migration-first DB.
+  migration-first DB. If a DB reports version 15 but its structure does **not**
+  match the baseline, it is reset (below), not adopted — the version marker alone
+  is not trusted.
 - **Reset otherwise.** If `meta.schema_version` is **less than** the baseline
   (a genuinely older schema) or **greater than** the baseline (written by a
   newer build), the runner does **not** attempt to bring it forward. Consistent
