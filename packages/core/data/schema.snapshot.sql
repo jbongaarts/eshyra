@@ -1,0 +1,443 @@
+-- GENERATED FILE — DO NOT EDIT.
+--
+-- A review-only snapshot of the cumulative schema produced by applying every
+-- migration in packages/core/data/migrations/ to a fresh database (ADR 0015
+-- §7). It is never executed and is not schema authority — the migrations are.
+-- Regenerate with: npm run -w @eshyra/core schema:snapshot
+
+CREATE TABLE adventure_run (
+  campaign_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  module_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'abandoned')),
+  started_at_session_id TEXT,
+  completed_at_session_id TEXT,
+  progress_json TEXT NOT NULL DEFAULT '{}',
+  notes TEXT NOT NULL DEFAULT '',
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, run_id)
+);
+
+CREATE TABLE arc_summary (
+  campaign_id TEXT NOT NULL,
+  arc_id TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  source_session_ids_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, arc_id)
+);
+
+CREATE TABLE campaign_actor (
+  campaign_id TEXT NOT NULL,
+  actor_id TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  actor_kind TEXT NOT NULL CHECK (actor_kind IN (
+    'npc',
+    'creature',
+    'monster',
+    'companion',
+    'other'
+  )),
+  source_kind TEXT NOT NULL CHECK (source_kind IN (
+    'module_npc',
+    'module_creature',
+    'encounter_instance',
+    'campaign_created'
+  )),
+  source_ref TEXT,
+  rules_ref TEXT,
+  hp_current INTEGER CHECK (hp_current IS NULL OR hp_current >= 0),
+  hp_max INTEGER CHECK (hp_max IS NULL OR hp_max >= 0),
+  conditions_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL CHECK (status IN (
+    'alive',
+    'dead',
+    'unconscious',
+    'escaped',
+    'inactive',
+    'unknown'
+  )),
+  current_location_id TEXT,
+  state_json TEXT NOT NULL DEFAULT '{}',
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, actor_id)
+);
+
+CREATE TABLE campaign_arc (
+  campaign_id  TEXT NOT NULL,
+  arc_id       TEXT NOT NULL,
+  sequence_no  INTEGER NOT NULL,
+  status       TEXT NOT NULL CHECK (status IN ('open', 'closed')),
+  opened_at    TEXT NOT NULL,
+  closed_at    TEXT,
+  PRIMARY KEY (campaign_id, arc_id)
+);
+
+CREATE TABLE campaign_bible (
+  campaign_id TEXT PRIMARY KEY,
+  world_facts_json TEXT NOT NULL,
+  major_npcs_json TEXT NOT NULL,
+  factions_json TEXT NOT NULL,
+  open_threads_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE campaign_overlay_lore (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN (
+    'rumor',
+    'clue',
+    'npc_detail',
+    'location_detail',
+    'quest_hook',
+    'threat_report',
+    'scene_consequence',
+    'player_created_detail',
+    'other'
+  )),
+  subject_id TEXT,
+  subject_text TEXT NOT NULL,
+  location_id TEXT,
+  npc_id TEXT,
+  faction_id TEXT,
+  fact TEXT NOT NULL,
+  truth_status TEXT NOT NULL CHECK (truth_status IN (
+    'confirmed',
+    'true',
+    'false',
+    'disproven',
+    'unknown',
+    'rumored',
+    'reported',
+    'observed',
+    'believed',
+    'lie',
+    'exaggeration'
+  )),
+  source TEXT NOT NULL CHECK (source IN (
+    'dm_improvised',
+    'player_declared',
+    'module_derived',
+    'tool_result',
+    'consequence'
+  )),
+  scope TEXT NOT NULL CHECK (scope IN ('scene', 'session', 'campaign')),
+  significance TEXT NOT NULL DEFAULT 'consequence' CHECK (significance IN (
+    'atmosphere',
+    'continuity',
+    'clue',
+    'hook',
+    'consequence'
+  )),
+  visibility TEXT NOT NULL CHECK (visibility IN (
+    'player_visible',
+    'dm_only',
+    'mixed'
+  )),
+  introduced_at_turn_id TEXT NOT NULL,
+  introduced_at_session_id TEXT NOT NULL,
+  supersedes TEXT,
+  invalidates TEXT,
+  tags_json TEXT NOT NULL DEFAULT '[]',
+  provenance TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE campaign_rules_binding (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  base_system_id TEXT NOT NULL,
+  base_pack_id TEXT NOT NULL,
+  base_version TEXT NOT NULL,
+  addons_json TEXT NOT NULL DEFAULT '[]',
+  resolved_at TEXT NOT NULL
+);
+
+CREATE TABLE campaign_session (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('open', 'closed')),
+  started_at TEXT NOT NULL,
+  closed_at TEXT,
+  arc_id TEXT,
+  PRIMARY KEY (campaign_id, session_id)
+);
+
+CREATE TABLE character (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  ancestry TEXT,
+  class_name TEXT,
+  level INTEGER NOT NULL DEFAULT 1 CHECK (level >= 1),
+  hp_current INTEGER NOT NULL DEFAULT 0 CHECK (hp_current >= 0),
+  hp_max INTEGER NOT NULL DEFAULT 0 CHECK (hp_max >= 0),
+  ability_scores_json TEXT NOT NULL DEFAULT '{}',
+  conditions_json TEXT NOT NULL DEFAULT '[]',
+  role TEXT NOT NULL DEFAULT 'pc',
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE clock (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  in_game_time TEXT NOT NULL DEFAULT '',
+  current_location_id TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE combat_instance (
+  campaign_id TEXT NOT NULL,
+  combat_instance_id TEXT NOT NULL,
+  source_encounter_id TEXT,
+  source_run_id TEXT,
+  status TEXT NOT NULL CHECK (status IN (
+    'active',
+    'completed',
+    'abandoned',
+    'fled',
+    'interrupted'
+  )),
+  location_id TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  opened_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  closed_at TEXT,
+  PRIMARY KEY (campaign_id, combat_instance_id)
+);
+
+CREATE TABLE encounter_combatant (
+  campaign_id TEXT NOT NULL,
+  combat_instance_id TEXT NOT NULL,
+  source_encounter_id TEXT,
+  combatant_id TEXT NOT NULL,
+  identity_kind TEXT NOT NULL CHECK (identity_kind IN (
+    'encounter_instance',
+    'module_npc',
+    'module_creature',
+    'campaign_actor'
+  )),
+  identity_ref TEXT,
+  display_label TEXT NOT NULL,
+  rules_ref TEXT NOT NULL,
+  side TEXT NOT NULL,
+  faction TEXT,
+  hp_current INTEGER NOT NULL CHECK (hp_current >= 0),
+  hp_max INTEGER NOT NULL CHECK (hp_max >= 0),
+  ac INTEGER CHECK (ac IS NULL OR ac >= 0),
+  conditions_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL CHECK (status IN (
+    'alive',
+    'dead',
+    'unconscious',
+    'escaped',
+    'inactive'
+  )),
+  location_id TEXT,
+  placement TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, combatant_id)
+);
+
+CREATE TABLE inventory (
+  id TEXT PRIMARY KEY,
+  character_id TEXT REFERENCES character(id),
+  name TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 0),
+  location TEXT,
+  properties_json TEXT NOT NULL DEFAULT '{}',
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE module_encounter (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  location_id TEXT NOT NULL,
+  data_json TEXT NOT NULL
+);
+
+CREATE TABLE module_location (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  data_json TEXT NOT NULL
+);
+
+CREATE TABLE module_lore (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  scope TEXT NOT NULL,
+  data_json TEXT NOT NULL
+);
+
+CREATE TABLE module_meta (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  pack_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  pack_type TEXT NOT NULL,
+  description TEXT NOT NULL,
+  starting_location_id TEXT NOT NULL,
+  license_json TEXT NOT NULL,
+  data_json TEXT NOT NULL
+);
+
+CREATE TABLE module_npc (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  location_id TEXT NOT NULL,
+  data_json TEXT NOT NULL
+);
+
+CREATE TABLE module_trigger (
+  id TEXT PRIMARY KEY,
+  data_json TEXT NOT NULL
+);
+
+CREATE TABLE overlay_facts (
+  key TEXT PRIMARY KEY,
+  value_json TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE plot_flags (
+  key TEXT PRIMARY KEY,
+  value_json TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE scene (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  scene_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('open', 'closed')),
+  opened_at TEXT NOT NULL,
+  closed_at TEXT,
+  PRIMARY KEY (campaign_id, session_id, scene_id)
+);
+
+CREATE TABLE scene_log (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  scene_id TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  turn_id TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('player', 'dm')),
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, session_id, scene_id, seq)
+);
+
+CREATE TABLE scene_summary (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  scene_id TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  salient_refs_json TEXT NOT NULL,
+  source_turn_ids_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, session_id, scene_id)
+);
+
+CREATE TABLE session_recap (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  recap TEXT NOT NULL,
+  source_scene_ids_json TEXT NOT NULL,
+  state_delta_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, session_id)
+);
+
+CREATE TABLE turn_failure_diagnostic (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  turn_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  phase TEXT NOT NULL,
+  error_name TEXT NOT NULL,
+  error_message TEXT NOT NULL,
+  model_rounds INTEGER NOT NULL CHECK (model_rounds >= 0),
+  PRIMARY KEY (campaign_id, session_id, turn_id)
+);
+
+CREATE TABLE turn_trace (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  turn_id TEXT NOT NULL,
+  consent_scope TEXT NOT NULL,
+  player_input TEXT NOT NULL,
+  acting_character_id TEXT,
+  retrieved_context_json TEXT NOT NULL,
+  prompt_profile TEXT NOT NULL,
+  model_output TEXT NOT NULL,
+  tool_calls_json TEXT NOT NULL,
+  rules_resolution_json TEXT NOT NULL,
+  accepted_state_delta_json TEXT NOT NULL,
+  rejected_candidates_json TEXT NOT NULL,
+  final_narration TEXT NOT NULL,
+  memory_updates_json TEXT NOT NULL,
+  human_corrections_json TEXT NOT NULL,
+  quality_flags_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, session_id, turn_id)
+);
+
+CREATE INDEX campaign_actor_location
+  ON campaign_actor(campaign_id, current_location_id);
+
+CREATE INDEX campaign_actor_source
+  ON campaign_actor(campaign_id, source_kind, source_ref);
+
+CREATE UNIQUE INDEX campaign_arc_one_open
+  ON campaign_arc(campaign_id) WHERE status = 'open';
+
+CREATE INDEX campaign_overlay_lore_kind
+  ON campaign_overlay_lore(kind);
+
+CREATE INDEX campaign_overlay_lore_location
+  ON campaign_overlay_lore(location_id);
+
+CREATE INDEX campaign_overlay_lore_npc
+  ON campaign_overlay_lore(npc_id);
+
+CREATE UNIQUE INDEX campaign_session_one_open
+  ON campaign_session(campaign_id)
+  WHERE status = 'open';
+
+CREATE UNIQUE INDEX combat_instance_one_active_per_campaign
+  ON combat_instance(campaign_id) WHERE status = 'active';
+
+CREATE INDEX combat_instance_source
+  ON combat_instance(campaign_id, source_encounter_id);
+
+CREATE INDEX encounter_combatant_identity
+  ON encounter_combatant(campaign_id, identity_kind, identity_ref);
+
+CREATE INDEX encounter_combatant_instance
+  ON encounter_combatant(campaign_id, combat_instance_id);
+
+CREATE INDEX encounter_combatant_status
+  ON encounter_combatant(campaign_id, status);

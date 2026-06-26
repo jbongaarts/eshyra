@@ -250,11 +250,7 @@ export {
 export type { Db } from './persistence/db.js';
 // Live campaign database.
 export { openDatabase } from './persistence/db.js';
-export {
-  initSchema,
-  SCHEMA_VERSION,
-  SchemaCompatibilityError,
-} from './persistence/schema.js';
+export { initSchema } from './persistence/schema.js';
 export type {
   CampaignRulesBinding,
   CampaignRulesBindingPackRef,

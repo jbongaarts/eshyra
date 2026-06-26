@@ -9,14 +9,24 @@ import {
   runMigrations,
   SchemaResetRequiredError,
 } from '../src/persistence/migrationRunner.js';
-import { initSchema } from '../src/persistence/schema.js';
 
 const NOW = () => '2026-06-26T00:00:00.000Z';
 
-/** A legacy pre-migration-first DB at the current baseline (built by initSchema). */
+/**
+ * A legacy pre-migration-first DB at the current baseline: the baseline schema
+ * and seed rows, marked with `meta.schema_version = 15` and with NO
+ * `schema_migrations` ledger. (initSchema now produces a migration-first DB, so
+ * a genuine legacy DB is synthesized by building the baseline, dropping the
+ * ledger, and adding the legacy version marker.)
+ */
 function legacyBaselineDb(): Db {
   const db = openDatabase(':memory:');
-  initSchema(db);
+  runMigrations(db);
+  db.exec('DROP TABLE schema_migrations;');
+  db.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run(
+    'schema_version',
+    '15',
+  );
   return db;
 }
 
