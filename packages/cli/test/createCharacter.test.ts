@@ -29,6 +29,8 @@ function memoryCharacterStore(): FinalizedCharacterStore & {
       saved.set(id, character);
       return `mem://${id}`;
     },
+    load: (id) => saved.get(id),
+    list: () => [...saved.keys()].sort(),
   };
 }
 

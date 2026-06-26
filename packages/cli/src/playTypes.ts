@@ -1,9 +1,12 @@
 import type {
+  CharacterCreationEngine,
   Db,
   InstalledAdventureModule,
   MemoryConfig,
   ModelClient,
   ModulePack,
+  Rng,
+  RulesPackCharacterResolver,
   RunTurnDeps,
   RunTurnInput,
   RunTurnResult,
@@ -13,6 +16,10 @@ import type {
   TurnAuditor,
   TurnDiagnosticsSink,
 } from '@eshyra/core';
+import type {
+  CharacterDraftStore,
+  FinalizedCharacterStore,
+} from './characterDraftStore.js';
 
 /** Player-facing input/output seam. A terminal impl is {@link nodeIO}. */
 export interface CliIO {
@@ -73,6 +80,16 @@ export interface PlayDeps {
    * prompt.
    */
   listAdventureModules: () => InstalledAdventureModule[];
+  /** Store for resumable guided character-creation drafts. */
+  characterDraftStore: CharacterDraftStore;
+  /** Store for finalized, playable character records. */
+  finalizedCharacterStore: FinalizedCharacterStore;
+  /** D&D 5e guided character-creation engine used by play/session-zero. */
+  characterEngine: CharacterCreationEngine;
+  /** D&D 5e rules-pack resolver used by play/session-zero finalization. */
+  characterResolver: RulesPackCharacterResolver;
+  /** RNG source for the guided wizard's rolled-score commands. */
+  characterRng: Rng;
   /** ISO-8601 timestamp source. */
   now: () => string;
   /** Unique id source for new campaigns / sessions / turns. */

@@ -22,6 +22,7 @@ import {
   pointBuyCost,
   STANDARD_ARRAY,
 } from './abilities.js';
+import type { FinalizedCharacter } from './finalizeCharacter.js';
 import type {
   CreatedPathfinderCharacter,
   PathfinderCharacterDraft,
@@ -118,6 +119,14 @@ export type CompleteCharacterCreationResult =
       readonly errors: readonly string[];
       readonly prompt: string;
     };
+
+export interface ImportFinalizedCharacterInput {
+  readonly character: FinalizedCharacter;
+  readonly sessionId: string;
+  readonly at: string;
+  readonly provenance?: string;
+  readonly characterId?: string;
+}
 
 export class CharacterCreationError extends Error {
   readonly errors: readonly string[];
@@ -224,6 +233,52 @@ export function completeCharacterCreation(
 
     throw error;
   }
+}
+
+export function importFinalizedCharacter(
+  db: Db,
+  input: ImportFinalizedCharacterInput,
+): CompleteCharacterCreationResult {
+  const system = resolveCampaignSystem(db);
+
+  if (system !== 'dnd5e-srd') {
+    return correctionResult([
+      `finalized character import for rules system '${system}' is not yet implemented`,
+    ]);
+  }
+  if (input.character.system !== 'dnd5e-srd') {
+    return correctionResult([
+      `finalized character system '${input.character.system}' is not compatible with this campaign`,
+    ]);
+  }
+
+  const charId = input.characterId ?? 'pc-1';
+  const metadata = {
+    provenance: input.provenance ?? 'character_creation:import_finalized',
+    sessionId: input.sessionId,
+    at: input.at,
+  };
+  const character = finalizedCharacterProjection(input.character);
+  const mutations = characterMutations(character, metadata, charId);
+
+  withTransaction(db, (txnDb) => {
+    ensureCharacterRow(
+      txnDb,
+      charId,
+      metadata.provenance,
+      metadata.sessionId,
+      metadata.at,
+    );
+    mutateStateBatch(txnDb, mutations);
+    setActiveCharacterId(txnDb, charId);
+  });
+
+  return {
+    ok: true,
+    character,
+    mutationsApplied: mutations.length,
+    prompt: completionPrompt(character),
+  };
 }
 
 function completePathfinderCharacterCreation(
@@ -354,6 +409,27 @@ function correctionResult(
 
 function completionPrompt(character: CreatedCharacter): string {
   return `Character creation complete: ${character.name} is a level ${character.level} ${character.ancestry} ${character.className}.`;
+}
+
+function finalizedCharacterProjection(
+  character: FinalizedCharacter,
+): CreatedCharacter {
+  return {
+    name: character.identity.name,
+    ancestry: character.ancestry.name,
+    className: character.class.name,
+    level: character.level,
+    abilityScores: {
+      strength: character.abilityScores.strength.final,
+      dexterity: character.abilityScores.dexterity.final,
+      constitution: character.abilityScores.constitution.final,
+      intelligence: character.abilityScores.intelligence.final,
+      wisdom: character.abilityScores.wisdom.final,
+      charisma: character.abilityScores.charisma.final,
+    },
+    maxHitPoints: character.maxHitPoints,
+    spells: character.spells,
+  };
 }
 
 function characterMutations(

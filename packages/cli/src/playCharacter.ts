@@ -1,5 +1,18 @@
-import type { CharacterCreationDraft, Db } from '@eshyra/core';
-import { completeCharacterCreation, listParty } from '@eshyra/core';
+import type {
+  CharacterCreationDraft,
+  Db,
+  FinalizedCharacter,
+} from '@eshyra/core';
+import {
+  completeCharacterCreation,
+  DEFAULT_DND5E_SRD_BINDING,
+  finalizeCharacterDraft,
+  importFinalizedCharacter,
+  listParty,
+  readCampaignRulesBinding,
+} from '@eshyra/core';
+import { runCharacterWizard } from './characterWizard.js';
+import { newDraftId } from './createCharacter.js';
 import type { CliIO, PlayDeps } from './playTypes.js';
 
 interface CharacterCanonRow {
@@ -110,8 +123,182 @@ async function promptCharacterDraft(
   };
 }
 
-export async function ensureCharacterReady(
+function campaignSystem(db: Db): string {
+  return (readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING).base
+    .systemId;
+}
+
+async function importSelectedFinalizedCharacter(
+  deps: Pick<PlayDeps, 'finalizedCharacterStore' | 'io' | 'now'>,
+  db: Db,
+  characterId: string,
+): Promise<boolean> {
+  const ids = deps.finalizedCharacterStore.list();
+  if (ids.length === 0) {
+    deps.io.write('No finalized characters found in the character library.');
+    return false;
+  }
+
+  deps.io.write('Finalized characters:');
+  for (const id of ids) {
+    const character = deps.finalizedCharacterStore.load(id);
+    const label =
+      character === undefined
+        ? id
+        : `${id}: ${character.identity.name}, level ${character.level} ${character.ancestry.name} ${character.class.name}`;
+    deps.io.write(`  ${label}`);
+  }
+
+  const selected = await deps.io.prompt('Character id to import: ');
+  if (selected === undefined || selected.trim().length === 0) {
+    deps.io.write('Character import cancelled.');
+    return false;
+  }
+
+  const selectedId = selected.trim();
+  const character = deps.finalizedCharacterStore.load(selectedId);
+  if (character === undefined) {
+    deps.io.write(`No finalized character found for id "${selectedId}".`);
+    return false;
+  }
+
+  return importFinalizedIntoCampaign(deps, db, character, characterId);
+}
+
+async function runGuidedWizardAndImport(
+  deps: Pick<
+    PlayDeps,
+    | 'characterDraftStore'
+    | 'characterEngine'
+    | 'characterResolver'
+    | 'characterRng'
+    | 'finalizedCharacterStore'
+    | 'io'
+    | 'now'
+  >,
+  db: Db,
+  characterId: string,
+): Promise<boolean> {
+  const draftId = newDraftId();
+  deps.io.write(
+    `New draft id: ${draftId} (resume later with create-character --resume ${draftId}).`,
+  );
+  const result = await runCharacterWizard(
+    {
+      io: deps.io,
+      engine: deps.characterEngine,
+      resolver: deps.characterResolver,
+      store: deps.characterDraftStore,
+      rng: deps.characterRng,
+    },
+    { mode: 'concept-first', draftId },
+  );
+  if (result.outcome !== 'completed') {
+    deps.io.write('Character creation cancelled.');
+    return false;
+  }
+
+  const finalized = finalizeCharacterDraft(
+    result.draft,
+    { createdAt: deps.now(), source: 'play:guided-wizard' },
+    deps.characterResolver,
+    deps.characterEngine,
+  );
+  if (!finalized.ok) {
+    deps.io.write('Could not finalize the character:');
+    for (const choice of finalized.missing) {
+      deps.io.write(`  - ${choice.label}`);
+    }
+    for (const error of finalized.errors) {
+      deps.io.write(`  x ${error}`);
+    }
+    return false;
+  }
+
+  const path = deps.finalizedCharacterStore.save(draftId, finalized.character);
+  deps.io.write(`Saved finalized character to ${path}`);
+  return importFinalizedIntoCampaign(
+    deps,
+    db,
+    finalized.character,
+    characterId,
+  );
+}
+
+function importFinalizedIntoCampaign(
   deps: Pick<PlayDeps, 'io' | 'now'>,
+  db: Db,
+  character: FinalizedCharacter,
+  characterId: string,
+): boolean {
+  const result = importFinalizedCharacter(db, {
+    character,
+    sessionId: 'character-creation',
+    at: deps.now(),
+    characterId,
+  });
+  deps.io.write(result.prompt);
+  return result.ok;
+}
+
+async function setupDnd5eCharacter(
+  deps: Pick<
+    PlayDeps,
+    | 'characterDraftStore'
+    | 'characterEngine'
+    | 'characterResolver'
+    | 'characterRng'
+    | 'finalizedCharacterStore'
+    | 'io'
+    | 'now'
+  >,
+  db: Db,
+  characterId: string,
+  allowDefer: boolean,
+): Promise<'created' | 'defer' | 'cancelled'> {
+  for (;;) {
+    const prompt = allowDefer
+      ? 'Character setup [wizard/import/defer]: '
+      : 'Character setup [wizard/import]: ';
+    const choice = await deps.io.prompt(prompt);
+    if (choice === undefined) {
+      return 'cancelled';
+    }
+    const normalized = choice.trim().toLowerCase();
+    if (allowDefer && (normalized === '/defer' || normalized === 'defer')) {
+      return 'defer';
+    }
+    if (normalized === 'import') {
+      if (await importSelectedFinalizedCharacter(deps, db, characterId)) {
+        return 'created';
+      }
+      continue;
+    }
+    if (normalized === 'wizard' || normalized.length === 0) {
+      if (await runGuidedWizardAndImport(deps, db, characterId)) {
+        return 'created';
+      }
+      continue;
+    }
+    deps.io.write(
+      allowDefer
+        ? 'Choose wizard, import, or /defer.'
+        : 'Choose wizard or import.',
+    );
+  }
+}
+
+export async function ensureCharacterReady(
+  deps: Pick<
+    PlayDeps,
+    | 'characterDraftStore'
+    | 'characterEngine'
+    | 'characterResolver'
+    | 'characterRng'
+    | 'finalizedCharacterStore'
+    | 'io'
+    | 'now'
+  >,
   db: Db,
 ): Promise<boolean> {
   if (hasCanonicalCharacter(db)) {
@@ -121,6 +308,21 @@ export async function ensureCharacterReady(
   deps.io.write(
     'Character creation required before play. Type /defer to document a session-zero deferral.',
   );
+  if (campaignSystem(db) === 'dnd5e-srd') {
+    const result = await setupDnd5eCharacter(deps, db, 'pc-1', true);
+    if (result === 'created') {
+      return true;
+    }
+    if (result === 'defer') {
+      deps.io.write(
+        'Character creation deferred. Normal turns may begin, but canonical character creation is still required for this campaign.',
+      );
+      return true;
+    }
+    deps.io.write('Character creation required before normal turns can begin.');
+    return false;
+  }
+
   for (;;) {
     const draft = await promptCharacterDraft(deps.io);
     if (draft === 'defer') {
@@ -154,9 +356,31 @@ export async function ensureCharacterReady(
  * player can `/switch` back). Used by the `/addpc` session command.
  */
 export async function createAdditionalCharacter(
-  deps: Pick<PlayDeps, 'io' | 'now'>,
+  deps: Pick<
+    PlayDeps,
+    | 'characterDraftStore'
+    | 'characterEngine'
+    | 'characterResolver'
+    | 'characterRng'
+    | 'finalizedCharacterStore'
+    | 'io'
+    | 'now'
+  >,
   db: Db,
 ): Promise<void> {
+  if (campaignSystem(db) === 'dnd5e-srd') {
+    const result = await setupDnd5eCharacter(
+      deps,
+      db,
+      nextPlayerCharacterId(db),
+      false,
+    );
+    if (result !== 'created') {
+      deps.io.write('Character creation cancelled.');
+    }
+    return;
+  }
+
   const draft = await promptCharacterDraft(deps.io);
   if (draft === 'defer' || draft === undefined) {
     deps.io.write('Character creation cancelled.');

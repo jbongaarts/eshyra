@@ -87,5 +87,21 @@ describe('file finalized-character store', () => {
     ) as FinalizedCharacter;
     expect(written.identity.name).toBe('Mira');
     expect(written.class.name).toBe('Wizard');
+    expect(store.load('mira')?.identity.name).toBe('Mira');
+  });
+
+  it('lists finalized character ids in sorted order', () => {
+    const store = createFileFinalizedCharacterStore(tempDir());
+    const record = {
+      schemaVersion: 1,
+      system: 'dnd5e-srd',
+      identity: { name: 'Mira' },
+      class: { key: 'class:wizard', name: 'Wizard' },
+    } as unknown as FinalizedCharacter;
+    store.save('beta', record);
+    store.save('alpha', record);
+
+    expect(store.list()).toEqual(['alpha', 'beta']);
+    expect(store.load('missing')).toBeUndefined();
   });
 });
