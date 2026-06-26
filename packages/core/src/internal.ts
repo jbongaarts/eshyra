@@ -600,18 +600,26 @@ export { withTransaction } from './persistence/db.js';
 // Migration-first SQLite schema runner and ledger (ADR 0015).
 export type {
   DiscoveredMigration,
+  LegacyDatabaseAction,
+  MigrateDatabaseResult,
   MigrationLedgerRow,
+  PrepareDatabaseResult,
   RunMigrationsOptions,
   RunMigrationsResult,
 } from './persistence/migrationRunner.js';
 export {
   discoverMigrations,
   ensureMigrationLedger,
+  LEGACY_BASELINE_SCHEMA_VERSION,
+  migrateDatabase,
   migrationChecksum,
   normalizeMigrationSql,
+  prepareDatabaseForMigrations,
   readMigrationLedger,
   runMigrations,
   SchemaMigrationError,
+  SchemaResetRequiredError,
+  schemaFingerprint,
 } from './persistence/migrationRunner.js';
 // Built-in rules pack objects (pre-importer; superseded by 0m9 deterministic importer outputs).
 // Not on the stable public surface — use @eshyra/core for consumer-facing API.
