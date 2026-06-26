@@ -61,7 +61,11 @@ hand-maintained latest-schema DDL is retired as authority.
 ### 1. SQL migration files are the canonical executable schema source
 
 - Schema changes are expressed **only** as ordered SQL migration files under
-  `packages/core/src/persistence/migrations/`.
+  `packages/core/data/migrations/`. (The runner bead `eshyra-4s0r.1.3` settled
+  this load location: it mirrors the bundled SRD pack under `data/`, which is
+  listed in `package.json` `files` and ships in every edition. The provisional
+  `src/persistence/migrations/` location named in earlier drafts of this ADR was
+  not packageable — `tsc --build` does not copy non-TS assets into `dist`.)
 - Files are named `NNNN_snake_case_name.sql` with a **zero-padded 4-digit**
   version prefix: `0001_initial.sql`, `0002_add_party_index.sql`, …
 - Versions are **strictly contiguous from `0001`, monotonically increasing, with
@@ -231,7 +235,7 @@ as the schema-version authority is retired.)
 
 To change the schema:
 
-1. **Add a new file** `packages/core/src/persistence/migrations/NNNN_name.sql`,
+1. **Add a new file** `packages/core/data/migrations/NNNN_name.sql`,
    where `NNNN` is the next contiguous version after the current highest. Write
    plain SQLite DDL/DML. Remember SQLite has no `ALTER TABLE … ADD COLUMN
    IF NOT EXISTS`; a forward-only migration runs exactly once, so unguarded
