@@ -137,6 +137,7 @@ export type {
   Dnd5eDraftSelections,
   DraftDiagnosticSeverity,
   FinalizableDraftResult,
+  MechanicalChoiceState,
   RequiredChoice,
 } from './character/characterDraft.js';
 export {

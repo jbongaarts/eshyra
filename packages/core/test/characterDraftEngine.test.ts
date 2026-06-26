@@ -258,6 +258,105 @@ describe('character creation draft engine', () => {
   });
 });
 
+describe('character creation mechanical choices (eshyra-b69j.13)', () => {
+  it('enumerates skills and equipment choices once a class resolves', () => {
+    let draft = newDraft();
+    expect(engine.mechanicalChoices(draft)).toEqual([]); // no class yet
+
+    draft = engine.setClass(draft, 'Fighter');
+    const kinds = engine.mechanicalChoices(draft).map((m) => m.choice.kind);
+    expect(kinds).toContain('skills');
+    expect(kinds).toContain('equipment');
+    // All start unsatisfied.
+    expect(engine.mechanicalChoices(draft).every((m) => !m.satisfied)).toBe(
+      true,
+    );
+  });
+
+  it('marks a skill choice satisfied only at the exact count of valid options', () => {
+    let draft = engine.setClass(newDraft(), 'Fighter');
+    const skills = engine
+      .mechanicalChoices(draft)
+      .find((m) => m.choice.kind === 'skills');
+    expect(skills?.choice.choose).toBe(2);
+    const from = skills?.choice.from ?? [];
+
+    // One pick is not enough.
+    draft = engine.setChoice(draft, 'class.skills', [from[0] as string]);
+    expect(
+      engine
+        .mechanicalChoices(draft)
+        .find((m) => m.choice.id === 'class.skills')?.satisfied,
+    ).toBe(false);
+
+    // Two valid picks satisfy it.
+    draft = engine.setChoice(draft, 'class.skills', [
+      from[0] as string,
+      from[1] as string,
+    ]);
+    expect(
+      engine
+        .mechanicalChoices(draft)
+        .find((m) => m.choice.id === 'class.skills')?.satisfied,
+    ).toBe(true);
+
+    // An invalid option does not satisfy it.
+    draft = engine.setChoice(draft, 'class.skills', [
+      from[0] as string,
+      'Underwater Basketweaving',
+    ]);
+    expect(
+      engine
+        .mechanicalChoices(draft)
+        .find((m) => m.choice.id === 'class.skills')?.satisfied,
+    ).toBe(false);
+  });
+
+  it('satisfies an equipment choose-one group with a single valid option', () => {
+    let draft = engine.setClass(newDraft(), 'Wizard');
+    const group = engine
+      .mechanicalChoices(draft)
+      .find((m) => m.choice.kind === 'equipment');
+    const id = group?.choice.id as string;
+    const option = group?.choice.from?.[0] as string;
+
+    draft = engine.setChoice(draft, id, [option]);
+    expect(
+      engine.mechanicalChoices(draft).find((m) => m.choice.id === id)
+        ?.satisfied,
+    ).toBe(true);
+
+    // Clearing it returns to unsatisfied and drops the stored selection.
+    draft = engine.setChoice(draft, id, undefined);
+    expect(draft.selections.choices?.[id]).toBeUndefined();
+    expect(
+      engine.mechanicalChoices(draft).find((m) => m.choice.id === id)
+        ?.satisfied,
+    ).toBe(false);
+  });
+
+  it('includes a background language choice in the mechanical choices', () => {
+    let draft = engine.setClass(newDraft(), 'Fighter');
+    draft = engine.setBackground(draft, 'Acolyte');
+    const languages = engine
+      .mechanicalChoices(draft)
+      .find((m) => m.choice.id === 'background.languages');
+    expect(languages?.choice.choose).toBe(2);
+    expect(languages?.satisfied).toBe(false);
+
+    const pool = languages?.choice.from ?? [];
+    draft = engine.setChoice(draft, 'background.languages', [
+      pool[0] as string,
+      pool[1] as string,
+    ]);
+    expect(
+      engine
+        .mechanicalChoices(draft)
+        .find((m) => m.choice.id === 'background.languages')?.satisfied,
+    ).toBe(true);
+  });
+});
+
 /**
  * Generated-rules-pack-backed validation of class, ancestry, and spell choices,
  * exercised from the engine (eshyra-b69j.11). Class/ancestry/spell records are
