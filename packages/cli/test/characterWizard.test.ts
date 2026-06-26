@@ -515,4 +515,88 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
         .every((m) => m.satisfied),
     ).toBe(true);
   });
+
+  it('corrects a valid-but-wrong equipment pick on re-entry (clear + re-pick)', async () => {
+    // First pass picks equipment.0 option (b); the player wants (a). Re-enter
+    // the Class choices step (via review's jump) and fix it.
+    const { deps: d } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Perception',
+      '2', // equipment.0 → leather armor, longbow, and 20 arrows (the WRONG pick)
+      '1',
+      '1',
+      '1',
+      'Dwarvish',
+      '', // spells skip
+      // review: all satisfied → finishes. Re-open via a fresh resume below.
+      '',
+    ]);
+    const first = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'fix',
+    });
+    expect(first.draft.selections.choices?.['class.equipment.0']).toEqual([
+      'leather armor, longbow, and 20 arrows',
+    ]);
+
+    // Resume the saved draft: walk to the equipment.0 group (skills + nothing to
+    // change → keep with Enter), clear it, pick (a), keep the rest, finish.
+    const resumed = deps([
+      '', // identity keep
+      '', // class keep
+      '', // ancestry keep
+      '', // background keep
+      // ability-scores already complete → done
+      'done',
+      // class choices (all satisfied → edit mode): skills keep, equipment.0 fix
+      '', // skills keep
+      'clear', // equipment.0 → clear
+      '1', // equipment.0 → chain mail (corrected)
+      '', // equipment.1 keep
+      '', // equipment.2 keep
+      '', // equipment.3 keep
+      '', // ancestry languages keep
+      '', // spells keep
+      '', // review finish
+    ]);
+    const result = await runCharacterWizard(resumed.deps, {
+      mode: first.draft.creationMode,
+      draftId: 'fix',
+      resume: first.draft,
+    });
+    expect(result.draft.selections.choices?.['class.equipment.0']).toEqual([
+      'chain mail',
+    ]);
+    // The other choices survived the correction.
+    expect(result.draft.selections.choices?.['class.skills']).toEqual([
+      'Athletics',
+      'Perception',
+    ]);
+  });
+
+  it('supports `clear` mid-group to redo picks before the count is reached', async () => {
+    // Skills is choose-2: pick one, clear, then pick the two intended skills.
+    const { deps: d } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics', // first (unwanted) pick
+      'clear', // start the group over
+      'Acrobatics',
+      'Insight',
+      '1', // equipment.0..3
+      '1',
+      '1',
+      '1',
+      'Dwarvish',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'clear',
+    });
+    expect(result.draft.selections.choices?.['class.skills']).toEqual([
+      'Acrobatics',
+      'Insight',
+    ]);
+  });
 });

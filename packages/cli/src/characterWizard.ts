@@ -17,11 +17,12 @@
  * prefix; failures return actionable suggestions instead of failing the draft.
  * Drafts can be saved and resumed via the injected {@link CharacterDraftStore}.
  *
- * Finalizing a completed draft into a playable character record is deliberately
- * out of scope here (eshyra-b69j.14); the wizard ends at a saved, reviewable
- * draft. Skill/tool/equipment *selection* persistence is likewise future work
- * (eshyra-b69j.13) — those steps surface the required choices but only spells
- * (which the engine models) are collected today.
+ * The Class choices step collects the structured level-1 mechanical choices —
+ * skills, tools, starting equipment, and languages — group by group, storing
+ * each through the engine so they persist, resume, and can be corrected later
+ * (eshyra-b69j.13). Finalizing a completed draft into a playable character
+ * record is deliberately out of scope here (eshyra-b69j.14); the wizard ends at
+ * a saved, reviewable draft.
  */
 
 import {
@@ -85,7 +86,7 @@ export async function runCharacterWizard(
   return wizard.run();
 }
 
-type Nav = 'advance' | 'back' | 'stay' | 'quit' | 'eof';
+type Nav = 'advance' | 'back' | 'stay' | 'quit' | 'eof' | 'goto-choices';
 
 /** Per-step configuration for an enumerable, resolver-backed choice. */
 interface ChoiceConfig {
@@ -138,6 +139,14 @@ class Wizard {
       }
       if (nav === 'back') {
         index = Math.max(0, index - 1);
+        continue;
+      }
+      if (nav === 'goto-choices') {
+        // Jump straight to the Class choices step to fix a pending/incorrect
+        // mechanical choice (from review). Falls back to a step-back if the
+        // recipe somehow lacks the step.
+        const target = this.steps.findIndex((s) => s.id === 'class-choices');
+        index = target >= 0 ? target : Math.max(0, index - 1);
         continue;
       }
       index += 1;
@@ -438,9 +447,9 @@ class Wizard {
         .filter((m) => !m.satisfied);
       if (pending.length > 0) {
         this.write(
-          `Cannot finish: ${pending.length} choice(s) still pending. Use \`back\` to reach the Class choices step, or \`quit\` to save and exit.`,
+          `Cannot finish: ${pending.length} choice(s) still pending. Returning to the Class choices step (or \`quit\` to save and exit).`,
         );
-        return 'stay';
+        return 'goto-choices';
       }
       return 'advance';
     }
@@ -624,10 +633,11 @@ class Wizard {
       this.write('No additional level-1 choices for this character.');
       return 'advance';
     }
+    // Walk every group — including already-satisfied ones — so a returning or
+    // resuming player can review and correct a prior pick (a satisfied group
+    // opens in edit mode: keep or `clear`). Groups are addressed by id so the
+    // walk is stable across edits.
     for (const group of groups) {
-      if (group.satisfied) {
-        continue;
-      }
       const nav = await this.runChoiceGroup(group.choice);
       if (nav !== 'advance') {
         return nav; // back / quit / eof bubble up
@@ -639,8 +649,11 @@ class Wizard {
   /**
    * One multi-select choice group: pick `choose` distinct options from `from`.
    * Shows how many selections remain, rejects invalid/duplicate input without
-   * clearing prior valid picks, and auto-advances once the required count is
-   * reached. Selections are stored through the engine so they persist and resume.
+   * clearing prior valid picks, and supports `clear` to start the group over.
+   * A group entered already satisfied opens in edit mode (Enter to keep, `clear`
+   * to redo, or — for a single-pick group — pick a different option to replace).
+   * A group being filled for the first time auto-advances once complete.
+   * Selections are stored through the engine so they persist and resume.
    */
   private async runChoiceGroup(choice: {
     id: string;
@@ -650,17 +663,29 @@ class Wizard {
   }): Promise<Nav> {
     const need = choice.choose ?? 0;
     const options = choice.from ?? [];
+    const startedSatisfied =
+      need > 0 &&
+      (this.draft.selections.choices?.[choice.id] ?? []).length >= need;
+    // First-pass fills auto-advance for low friction; a group opened already
+    // satisfied waits for an explicit keep so it can be edited.
+    let autoAdvance = !startedSatisfied;
     this.write('');
     this.write(choice.label);
     for (;;) {
       const selected = [...(this.draft.selections.choices?.[choice.id] ?? [])];
       const remaining = need - selected.length;
-      if (remaining <= 0) {
+      if (remaining <= 0 && autoAdvance) {
         this.write(`Selected: ${selected.join(', ')}.`);
         return 'advance';
       }
-      this.write(`Choose ${need} — ${remaining} remaining:`);
-      this.printChoiceOptions(options, selected);
+      if (remaining <= 0) {
+        this.write(
+          `Selected: ${selected.join(', ')} — Enter to keep, or \`clear\` to choose again.`,
+        );
+      } else {
+        this.write(`Choose ${need} — ${remaining} remaining:`);
+        this.printChoiceOptions(options, selected);
+      }
       const input = await this.deps.io.prompt('> ');
       if (input === undefined) {
         return 'eof';
@@ -684,13 +709,46 @@ class Wizard {
       }
       if (command.name === '?' || command.name === 'help') {
         this.write(
-          `Pick ${need} by name or number; commands: review, save, back, quit.`,
+          `Pick ${need} by name or number; commands: clear, review, save, back, quit.`,
         );
+        continue;
+      }
+      if (command.name === 'clear' || command.name === 'reset') {
+        this.draft = this.deps.engine.setChoice(
+          this.draft,
+          choice.id,
+          undefined,
+        );
+        this.dirty = true;
+        autoAdvance = true; // a fresh re-pick advances on completion
+        this.write('Cleared.');
+        continue;
+      }
+      if (input.trim().length === 0) {
+        if (remaining <= 0) {
+          this.write(`Selected: ${selected.join(', ')}.`);
+          return 'advance'; // keep the existing selection
+        }
+        this.write(`Pick ${remaining} more, or \`clear\` to start over.`);
         continue;
       }
       const picked = resolveOption(options, input.trim());
       if (picked === undefined) {
         this.write(`"${input.trim()}" is not an option here.`);
+        continue;
+      }
+      if (remaining <= 0) {
+        // Full and in edit mode. A single-pick group replaces; a multi-pick
+        // group must be cleared first to avoid ambiguity.
+        if (need === 1) {
+          this.draft = this.deps.engine.setChoice(this.draft, choice.id, [
+            picked,
+          ]);
+          this.dirty = true;
+          autoAdvance = true;
+          continue;
+        }
+        this.write('This group is full — type `clear` to choose again.');
         continue;
       }
       if (selected.includes(picked)) {
