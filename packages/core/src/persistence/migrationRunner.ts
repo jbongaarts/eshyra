@@ -117,6 +117,12 @@ export function migrationChecksum(normalizedSql: string): string {
  * version order. Throws {@link SchemaMigrationError} on a malformed filename, a
  * duplicate version or name, or a non-contiguous sequence (versions must run
  * `1, 2, 3, …` with no gaps).
+ *
+ * Every `.sql` in `dir` is treated as a migration, so the migrations directory
+ * must hold **only** `NNNN_name.sql` files. A non-migration artifact such as the
+ * generated review snapshot is rejected here as malformed; it belongs on a
+ * non-migration path (`data/schema.snapshot.sql`), not in this directory
+ * (ADR 0015 §7).
  */
 export function discoverMigrations(
   dir: string = DEFAULT_MIGRATIONS_DIR,

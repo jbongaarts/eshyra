@@ -196,9 +196,13 @@ by adoption, so the chain can be retired.
 ### 7. Generated schema snapshot (review artifact, not authority)
 
 A human-readable schema snapshot **may** exist for review and diffing —
-`schema.snapshot.sql` adjacent to the migrations (or a clearly named generated
-file under the same directory).
+`packages/core/data/schema.snapshot.sql`.
 
+- It **must not** live inside `packages/core/data/migrations/`. That directory
+  contains **only** executable `NNNN_name.sql` migration files; the runner
+  discovers every `.sql` there and treats it as a migration (a non-migration
+  filename like `schema.snapshot.sql` placed there is rejected as malformed). The
+  snapshot is a sibling under `data/`, on a non-migration path.
 - It is **generated-only**: produced by applying all migrations to a fresh
   in-memory DB and dumping the resulting schema in a deterministic order. It
   carries a header comment marking it generated — *do not hand-edit*.
