@@ -22,10 +22,10 @@
  * exception to "only `.sql` files create schema": it is created and maintained
  * here and is never declared in a migration file.
  *
- * Scope (eshyra-4s0r.1.3 / .1.4): this module is the runner plus the
- * `0001_initial.sql` baseline. Wiring it into the live `initSchema` path and
- * removing the hand-maintained latest-schema DDL is eshyra-4s0r.1.6; legacy
- * `meta.schema_version` adoption/reset is eshyra-4s0r.1.5.
+ * Scope: this module now contains the migration runner, the `0001_initial.sql`
+ * baseline support, and the legacy adoption/reset entrypoint from
+ * eshyra-4s0r.1.3 through eshyra-4s0r.1.5. Wiring it into the live `initSchema`
+ * path and removing the hand-maintained latest-schema DDL is eshyra-4s0r.1.6.
  */
 
 import { createHash } from 'node:crypto';
