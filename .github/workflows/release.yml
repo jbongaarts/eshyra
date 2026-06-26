@@ -153,8 +153,18 @@ jobs:
     # throwaway install root) -> assert checksum verified + no-config run works.
     # This covers the real install.sh path, which the build/validate matrix does
     # not (validate runs the artifact directly, not through the installer).
-    name: Installer smoke (POSIX)
-    runs-on: ubuntu-latest
+    #
+    # Run on BOTH Linux (GNU userland) and macOS (BSD userland, Apple Silicon)
+    # so the generated POSIX launcher's symlink resolution is exercised on the
+    # exact userland users run, not just Ubuntu (eshyra-4s0r.3). The smoke builds
+    # the artifact on the runner, so each leg's artifact target matches its host.
+    name: Installer smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # ubuntu-latest -> linux-x64 (GNU); macos-14 -> darwin-arm64 (BSD).
+        os: [ubuntu-latest, macos-14]
     env:
       npm_config_build_from_source: "false"
     steps:
