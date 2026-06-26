@@ -12,21 +12,37 @@
 import { randomBytes } from 'node:crypto';
 import {
   createSeededRng,
+  finalizeCharacterDraft,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
 } from '@eshyra/core/internal';
 import {
   type CharacterDraftStore,
   createFileCharacterDraftStore,
+  createFileFinalizedCharacterStore,
   draftFileStem,
+  type FinalizedCharacterStore,
 } from './characterDraftStore.js';
 import {
   type CharacterWizardDeps,
+  type CharacterWizardResult,
   runCharacterWizard,
 } from './characterWizard.js';
-import { characterDraftsDir, resolveDataRoot } from './dataRoot.js';
+import {
+  characterDraftsDir,
+  charactersDir,
+  resolveDataRoot,
+} from './dataRoot.js';
 import { nodeIO } from './play.js';
 import type { CliIO } from './playTypes.js';
+
+/** Optional finalization collaborators (injectable for tests). */
+export interface CreateCharacterOptions {
+  /** Where a completed draft's finalized record is written. */
+  readonly characterStore?: FinalizedCharacterStore;
+  /** ISO-8601 clock for finalization provenance (defaults to wall clock). */
+  readonly now?: () => string;
+}
 
 /** Parsed `create-character` invocation. */
 export interface CreateCharacterArgs {
@@ -94,6 +110,7 @@ export function parseCreateCharacterArgs(
 export async function runCreateCharacter(
   deps: CharacterWizardDeps,
   argv: readonly string[],
+  options: CreateCharacterOptions = {},
 ): Promise<number> {
   const parsed = parseCreateCharacterArgs(argv);
   if (!parsed.ok) {
@@ -112,11 +129,12 @@ export async function runCreateCharacter(
       }
       return 1;
     }
-    await runCharacterWizard(deps, {
+    const result = await runCharacterWizard(deps, {
       mode: resume.creationMode,
       draftId: resume.id,
       resume,
     });
+    finalizeIfComplete(deps, result, options);
     return 0;
   }
 
@@ -126,8 +144,54 @@ export async function runCreateCharacter(
     // handle the player passes to `--resume`.
     deps.io.write(`New draft id: ${id} (resume later with --resume ${id}).`);
   }
-  await runCharacterWizard(deps, { mode, draftId: id });
+  const result = await runCharacterWizard(deps, { mode, draftId: id });
+  finalizeIfComplete(deps, result, options);
   return 0;
+}
+
+/**
+ * When the wizard completed (every required choice made), finalize the draft
+ * into a canonical {@link finalizeCharacterDraft} record and persist it
+ * (eshyra-b69j.14). A non-completed run (quit / end-of-input) leaves only the
+ * resumable draft. The completeness gate lives in core, so a defensive
+ * not-ok result is reported rather than written.
+ */
+function finalizeIfComplete(
+  deps: CharacterWizardDeps,
+  result: CharacterWizardResult,
+  options: CreateCharacterOptions,
+): void {
+  if (result.outcome !== 'completed') {
+    return;
+  }
+  const createdAt = (options.now ?? (() => new Date().toISOString()))();
+  const finalized = finalizeCharacterDraft(
+    result.draft,
+    { createdAt, source: `create-character:${result.draft.creationMode}` },
+    deps.resolver,
+    deps.engine,
+  );
+  if (!finalized.ok) {
+    deps.io.write('Could not finalize the character:');
+    for (const choice of finalized.missing) {
+      deps.io.write(`  • ${choice.label}`);
+    }
+    for (const error of finalized.errors) {
+      deps.io.write(`  ✗ ${error}`);
+    }
+    return;
+  }
+  const { character } = finalized;
+  if (options.characterStore !== undefined) {
+    const path = options.characterStore.save(result.draft.id, character);
+    deps.io.write(
+      `Finalized ${character.identity.name}, level ${character.level} ${character.ancestry.name} ${character.class.name} → ${path}`,
+    );
+  } else {
+    deps.io.write(
+      `Finalized ${character.identity.name}, level ${character.level} ${character.ancestry.name} ${character.class.name}.`,
+    );
+  }
 }
 
 /**
@@ -153,6 +217,8 @@ export async function runCreateCharacterSubcommand(
   const store: CharacterDraftStore = createFileCharacterDraftStore(
     characterDraftsDir(dataRoot),
   );
+  const characterStore: FinalizedCharacterStore =
+    createFileFinalizedCharacterStore(charactersDir(dataRoot));
   const terminal = nodeIO();
   const io: CliIO = terminal;
   try {
@@ -166,6 +232,7 @@ export async function runCreateCharacterSubcommand(
         rng: createSeededRng(randomBytes(4).readUInt32LE(0)),
       },
       argv,
+      { characterStore },
     );
   } finally {
     terminal.close();
