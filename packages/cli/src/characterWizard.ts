@@ -591,6 +591,14 @@ class Wizard {
           parsed.value,
         );
         this.dirty = true;
+        const fieldErrors = this.draft.diagnostics.filter(
+          (d) =>
+            d.field === `abilityScores.${parsed.ability}` &&
+            d.severity === 'error',
+        );
+        for (const error of fieldErrors) {
+          this.write(`  ✗ ${error.message}`);
+        }
         continue;
       }
       // done

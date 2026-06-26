@@ -674,6 +674,12 @@ The finished v1 should satisfy:
 ## ADR candidate
 
 This may eventually deserve an ADR, but the first PR can start as a design doc.
+ADR is deferred for the initial implementation: the current durable decisions are
+captured here, and the code has not introduced a broader architectural contract
+than the shared CLI shell plus rule-pack-specific recipe boundary described in
+this document. Revisit a formal ADR if additional rule systems, external recipe
+plugins, or addon-pack field-merge semantics make this a cross-cutting
+architecture policy rather than a character creation feature design.
 
 Potential ADR decisions:
 
