@@ -85,7 +85,12 @@ describe('character wizard — concept-first happy path', () => {
       'wis 10',
       'cha 10',
       'done', // ability scores complete
-      '', // class-choices: Enter to continue
+      // class-choices: Wizard skills (choose 2) + three equipment groups.
+      'Arcana',
+      'Investigation',
+      '1', // equipment.0 → a quarterstaff
+      '2', // equipment.1 → an arcane focus
+      'scholar', // equipment.2 → a scholar's pack (prefix)
       'Fire Bolt, Magic Missile', // spells
       '', // review: Enter to finish
     ]);
@@ -99,6 +104,14 @@ describe('character wizard — concept-first happy path', () => {
     expect(result.draft.identity.name).toBe('Mira');
     expect(result.draft.selections.className).toBe('Wizard');
     expect(result.draft.selections.ancestry).toBe('High Elf');
+    // Mechanical choices were captured on the draft.
+    expect(result.draft.selections.choices?.['class.skills']).toEqual([
+      'Arcana',
+      'Investigation',
+    ]);
+    expect(result.draft.selections.choices?.['class.equipment.0']).toEqual([
+      'a quarterstaff',
+    ]);
     expect(result.draft.selections.spells).toEqual([
       'Fire Bolt',
       'Magic Missile',
@@ -296,7 +309,12 @@ describe('character wizard — ability-first flow', () => {
       'Wizard', // class
       'High Elf', // ancestry
       '', // background skip
-      '', // class-choices
+      // class-choices: skills (choose 2) + three equipment groups.
+      'Arcana',
+      'Investigation',
+      '1', // a quarterstaff
+      '1', // a component pouch
+      '1', // a scholar's pack
       '', // spells skip
       '', // review finish
     ]);
@@ -365,5 +383,136 @@ describe('character wizard — ability-first flow', () => {
       draftId: 'pf',
     });
     expect(result.draft.selections.className).toBe('Wizard');
+  });
+});
+
+describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)', () => {
+  // Reach the Class choices step quickly: a Fighter with valid scores, no
+  // background. Fighter's mechanical choices are a skill group (choose 2) and
+  // four equipment choose-one groups.
+  const TO_CLASS_CHOICES = [
+    'Grok', // identity
+    'Fighter', // class
+    'Human', // ancestry (Human grants one free language choice too)
+    '', // background skip
+    'point_buy',
+    'str 15',
+    'dex 14',
+    'con 13',
+    'int 12',
+    'wis 10',
+    'cha 8',
+    'done',
+  ] as const;
+
+  it('collects a skill choice group and an equipment choice group', async () => {
+    const { deps: d } = deps([
+      ...TO_CLASS_CHOICES,
+      // Human language choice (one of your choice) comes first among ancestry
+      // choices? Order is class skills, class equipment, then ancestry. So:
+      'Athletics', // skills 1
+      'Perception', // skills 2
+      '1', // equipment.0
+      '1', // equipment.1
+      '1', // equipment.2
+      '1', // equipment.3
+      'Dwarvish', // Human ancestry language (choose 1)
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(result.draft.selections.choices?.['class.skills']).toEqual([
+      'Athletics',
+      'Perception',
+    ]);
+    expect(result.draft.selections.choices?.['class.equipment.0']).toHaveLength(
+      1,
+    );
+    expect(result.draft.selections.choices?.['ancestry.languages']).toEqual([
+      'Dwarvish',
+    ]);
+  });
+
+  it('rejects an invalid pick without resetting prior valid picks', async () => {
+    const { deps: d, lines } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics', // valid skill 1
+      'Underwater Basketweaving', // invalid — must not reset
+      'Perception', // valid skill 2
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(text(lines)).toMatch(/is not an option here/);
+    // Athletics survived the invalid entry; both valid picks are recorded.
+    expect(result.draft.selections.choices?.['class.skills']).toEqual([
+      'Athletics',
+      'Perception',
+    ]);
+  });
+
+  it('shows the remaining count and rejects a duplicate pick', async () => {
+    const { deps: d, lines } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Athletics', // duplicate — rejected
+      'Perception',
+      'quit',
+    ]);
+    await runCharacterWizard(d, { mode: 'concept-first', draftId: 'grok' });
+    const out = text(lines);
+    expect(out).toMatch(/Choose 2 — 2 remaining/);
+    expect(out).toMatch(/already selected/);
+  });
+
+  it('blocks finishing at review while choices are pending, then completes once made', async () => {
+    // Walk to review WITHOUT making the class choices: review must refuse to
+    // finish and point back to the Class choices step.
+    const blocked = deps([
+      ...TO_CLASS_CHOICES,
+      // class-choices step is interactive; `back` out of the first group to land
+      // before it, then jump to review is not possible — instead quit to inspect.
+      'quit',
+    ]);
+    const blockedResult = await runCharacterWizard(blocked.deps, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    // Quitting before completing leaves the draft non-finalizable with pending
+    // mechanical choices recorded as none.
+    expect(blockedResult.outcome).toBe('quit');
+    expect(
+      blocked.deps.engine
+        .mechanicalChoices(blockedResult.draft)
+        .some((m) => !m.satisfied),
+    ).toBe(true);
+
+    // Now a full run that makes every choice reaches completion.
+    const done = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'Dwarvish',
+      '', // spells skip
+      '', // review → all satisfied → finish
+    ]);
+    const doneResult = await runCharacterWizard(done.deps, {
+      mode: 'concept-first',
+      draftId: 'grok2',
+    });
+    expect(doneResult.outcome).toBe('completed');
+    expect(
+      done.deps.engine
+        .mechanicalChoices(doneResult.draft)
+        .every((m) => m.satisfied),
+    ).toBe(true);
   });
 });

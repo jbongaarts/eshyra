@@ -46,8 +46,14 @@ import {
   LEVEL_1_PROFICIENCY_BONUS,
 } from './derivedValues.js';
 import {
+  enumerateLevel1RequiredChoices,
+  type Level1RequiredChoice,
+  type Level1RequiredChoiceKind,
+} from './requiredChoices.js';
+import {
   getBundledDnd5eCharacterResolver,
   type ResolvedAncestryData,
+  type ResolvedBackgroundData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
 import {
@@ -107,6 +113,14 @@ export interface Dnd5eDraftSelections {
   readonly abilityScoreMethod?: AbilityScoreMethod;
   readonly baseAbilityScores?: Partial<Record<AbilityScoreName, number>>;
   readonly spells?: readonly string[];
+  /**
+   * Selected options for the structured level-1 mechanical choices (skills,
+   * tools, equipment, languages), keyed by the choice id from
+   * {@link enumerateLevel1RequiredChoices} (e.g. `class.skills`,
+   * `class.equipment.0`, `ancestry.languages`). Collected by the
+   * equipment/proficiency flow (eshyra-b69j.13).
+   */
+  readonly choices?: Readonly<Record<string, readonly string[]>>;
 }
 
 /**
@@ -149,6 +163,30 @@ export type FinalizableDraftResult =
     };
 
 /**
+ * A structured level-1 mechanical choice plus the draft's current answer to it.
+ * `selected` is the stored option set; `satisfied` is true once the selection
+ * matches the choice's required count and every value is a valid option.
+ */
+export interface MechanicalChoiceState {
+  readonly choice: Level1RequiredChoice;
+  readonly selected: readonly string[];
+  readonly satisfied: boolean;
+}
+
+/**
+ * The required-choice kinds the equipment/proficiency flow (eshyra-b69j.13)
+ * collects and gates on. Spellcasting choices (cantrips/spells/ability) are
+ * handled on their own draft fields and step, and `ability_increase` flows
+ * through the ability-score path, so they are intentionally excluded here.
+ */
+const MECHANICAL_CHOICE_KINDS: ReadonlySet<Level1RequiredChoiceKind> = new Set([
+  'skills',
+  'tools',
+  'equipment',
+  'languages',
+]);
+
+/**
  * Pure character-creation domain layer. Every setter returns a new, fully
  * recomputed draft; nothing here touches the terminal or the database.
  */
@@ -181,6 +219,22 @@ export interface CharacterCreationEngine {
     draft: CharacterDraft,
     spells: readonly string[] | undefined,
   ): CharacterDraft;
+  /**
+   * Set (or clear, with `undefined`) the selected options for a structured
+   * mechanical choice by its id (e.g. `class.skills`, `class.equipment.0`).
+   * Pure storage — membership/count are reported by {@link mechanicalChoices}.
+   */
+  setChoice(
+    draft: CharacterDraft,
+    choiceId: string,
+    values: readonly string[] | undefined,
+  ): CharacterDraft;
+  /**
+   * The structured level-1 mechanical choices (skills, tools, equipment,
+   * languages) implied by the chosen class/ancestry/background, each with its
+   * current selection and whether it is satisfied. Empty until a class resolves.
+   */
+  mechanicalChoices(draft: CharacterDraft): readonly MechanicalChoiceState[];
   /** Recompute and return the draft's diagnostics. */
   validate(draft: CharacterDraft): readonly CharacterCreationDiagnostic[];
   /** Recompute and return the draft's derived values. */
@@ -319,6 +373,48 @@ export function createCharacterCreationEngine(
     }
     const result = resolver.resolveAncestry(value);
     return result.ok ? result.record : undefined;
+  }
+
+  function resolveBackground(
+    value: string | undefined,
+  ): ResolvedBackgroundData | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    const result = resolver.resolveBackground(value);
+    return result.ok ? result.record : undefined;
+  }
+
+  /**
+   * The structured level-1 mechanical choices (skills, tools, equipment,
+   * languages) for the current class/ancestry/background, each paired with the
+   * draft's stored selection and whether it satisfies the choice. Returns an
+   * empty list until a class resolves (the choices derive from it).
+   */
+  function mechanicalChoices(
+    draft: CharacterDraft,
+  ): readonly MechanicalChoiceState[] {
+    const classRecord = resolveClass(draft.selections.className);
+    if (classRecord === undefined) {
+      return [];
+    }
+    const all = enumerateLevel1RequiredChoices({
+      classData: classRecord,
+      ancestry: resolveAncestry(draft.selections.ancestry),
+      background: resolveBackground(draft.selections.background),
+      abilityModifiers: draft.derived.abilityModifiers,
+    });
+    const stored = draft.selections.choices ?? {};
+    return all
+      .filter((choice) => MECHANICAL_CHOICE_KINDS.has(choice.kind))
+      .map((choice) => {
+        const selected = stored[choice.id] ?? [];
+        return {
+          choice,
+          selected,
+          satisfied: isChoiceSatisfied(choice, selected),
+        };
+      });
   }
 
   /**
@@ -682,6 +778,18 @@ export function createCharacterCreationEngine(
       });
     },
 
+    setChoice(draft, choiceId, values): CharacterDraft {
+      const choices = { ...(draft.selections.choices ?? {}) };
+      if (values === undefined || values.length === 0) {
+        delete choices[choiceId];
+      } else {
+        choices[choiceId] = [...values];
+      }
+      return withSelections(draft, { choices });
+    },
+
+    mechanicalChoices,
+
     validate(draft): readonly CharacterCreationDiagnostic[] {
       return recompute(draft).diagnostics;
     },
@@ -694,6 +802,30 @@ export function createCharacterCreationEngine(
     isFinalizable,
     toFinalizableDraft,
   };
+}
+
+/**
+ * Whether a stored selection satisfies a structured choice: the right number of
+ * distinct options, each a legal option of the choice. A choice without a known
+ * `choose` count (none of the mechanical kinds today) is treated as satisfied so
+ * it never blocks; an empty `from` (open pool) skips the membership check.
+ */
+function isChoiceSatisfied(
+  choice: Level1RequiredChoice,
+  selected: readonly string[],
+): boolean {
+  if (choice.choose === undefined) {
+    return true;
+  }
+  const distinct = new Set(selected);
+  if (distinct.size !== choice.choose) {
+    return false;
+  }
+  if (choice.from === undefined || choice.from.length === 0) {
+    return true;
+  }
+  const options = new Set(choice.from);
+  return [...distinct].every((value) => options.has(value));
 }
 
 let cachedEngine: CharacterCreationEngine | undefined;

@@ -162,6 +162,9 @@ class Wizard {
     if (step.id === 'ability-scores') {
       return this.runAbilityScores();
     }
+    if (step.id === 'class-choices') {
+      return this.runClassChoices();
+    }
     this.write('');
     this.write(`== ${step.label} ==`);
     this.write(this.stepIntro(step.id));
@@ -267,15 +270,6 @@ class Wizard {
         return this.applyChoiceStep(stepId, value);
       case 'spells-equipment':
         return this.applySpells(value);
-      case 'class-choices':
-        // No engine-modelled selections yet (eshyra-b69j.13); Enter advances.
-        if (value.length > 0) {
-          this.write(
-            'Class choices (skills, tools, equipment) are collected in a later step (eshyra-b69j.13). Press Enter to continue.',
-          );
-          return 'stay';
-        }
-        return 'advance';
       case 'review':
         return this.applyReview(value);
       default:
@@ -436,6 +430,18 @@ class Wizard {
   private applyReview(value: string): Nav {
     if (value.length === 0 || /^(done|finish)$/i.test(value)) {
       this.printReview();
+      // Missing mechanical choices block finishing, with a pointer to the step
+      // that fixes them (eshyra-b69j.13). `back` returns to the Class choices
+      // step; `quit` saves and exits.
+      const pending = this.deps.engine
+        .mechanicalChoices(this.draft)
+        .filter((m) => !m.satisfied);
+      if (pending.length > 0) {
+        this.write(
+          `Cannot finish: ${pending.length} choice(s) still pending. Use \`back\` to reach the Class choices step, or \`quit\` to save and exit.`,
+        );
+        return 'stay';
+      }
       return 'advance';
     }
     this.write(
@@ -600,6 +606,113 @@ class Wizard {
       }
       return 'advance';
     }
+  }
+
+  // --- Class-choices step (skills/tools/equipment/languages) -----------------
+
+  /**
+   * Walk every structured level-1 mechanical choice (skills, tools, equipment,
+   * languages) as its own group, in order. Each group is a separate multi-select
+   * prompt rather than one giant question; a group already satisfied (e.g. on
+   * resume) is skipped.
+   */
+  private async runClassChoices(): Promise<Nav> {
+    this.write('');
+    this.write('== Class choices ==');
+    const groups = this.deps.engine.mechanicalChoices(this.draft);
+    if (groups.length === 0) {
+      this.write('No additional level-1 choices for this character.');
+      return 'advance';
+    }
+    for (const group of groups) {
+      if (group.satisfied) {
+        continue;
+      }
+      const nav = await this.runChoiceGroup(group.choice);
+      if (nav !== 'advance') {
+        return nav; // back / quit / eof bubble up
+      }
+    }
+    return 'advance';
+  }
+
+  /**
+   * One multi-select choice group: pick `choose` distinct options from `from`.
+   * Shows how many selections remain, rejects invalid/duplicate input without
+   * clearing prior valid picks, and auto-advances once the required count is
+   * reached. Selections are stored through the engine so they persist and resume.
+   */
+  private async runChoiceGroup(choice: {
+    id: string;
+    label: string;
+    choose?: number;
+    from?: readonly string[];
+  }): Promise<Nav> {
+    const need = choice.choose ?? 0;
+    const options = choice.from ?? [];
+    this.write('');
+    this.write(choice.label);
+    for (;;) {
+      const selected = [...(this.draft.selections.choices?.[choice.id] ?? [])];
+      const remaining = need - selected.length;
+      if (remaining <= 0) {
+        this.write(`Selected: ${selected.join(', ')}.`);
+        return 'advance';
+      }
+      this.write(`Choose ${need} — ${remaining} remaining:`);
+      this.printChoiceOptions(options, selected);
+      const input = await this.deps.io.prompt('> ');
+      if (input === undefined) {
+        return 'eof';
+      }
+      const command = parseCommand(input);
+      if (command.name === 'back') {
+        return 'back';
+      }
+      if (command.name === 'quit' || command.name === 'exit') {
+        return this.confirmQuit();
+      }
+      if (command.name === 'review') {
+        this.printReview();
+        continue;
+      }
+      if (command.name === 'save') {
+        this.deps.store.save(this.draft);
+        this.dirty = false;
+        this.write('Draft saved.');
+        continue;
+      }
+      if (command.name === '?' || command.name === 'help') {
+        this.write(
+          `Pick ${need} by name or number; commands: review, save, back, quit.`,
+        );
+        continue;
+      }
+      const picked = resolveOption(options, input.trim());
+      if (picked === undefined) {
+        this.write(`"${input.trim()}" is not an option here.`);
+        continue;
+      }
+      if (selected.includes(picked)) {
+        this.write(`${picked} is already selected.`);
+        continue;
+      }
+      this.draft = this.deps.engine.setChoice(this.draft, choice.id, [
+        ...selected,
+        picked,
+      ]);
+      this.dirty = true;
+    }
+  }
+
+  private printChoiceOptions(
+    options: readonly string[],
+    selected: readonly string[],
+  ): void {
+    options.forEach((option, index) => {
+      const mark = selected.includes(option) ? '✓' : ' ';
+      this.write(`  [${mark}] ${index + 1}. ${option}`);
+    });
   }
 
   private async chooseAbilityMethod(): Promise<Nav> {
@@ -863,6 +976,21 @@ class Wizard {
     if (d.selections.spells && d.selections.spells.length > 0) {
       this.write(`Spells:    ${d.selections.spells.join(', ')}`);
     }
+
+    // Level-1 mechanical choices (skills/tools/equipment/languages): show each
+    // completed selection and what is still pending (eshyra-b69j.13).
+    const mechanical = engine.mechanicalChoices(d);
+    const pendingMechanical = mechanical.filter((m) => !m.satisfied);
+    if (mechanical.length > 0) {
+      this.write('Choices:');
+      for (const entry of mechanical) {
+        const value = entry.satisfied
+          ? entry.selected.join(', ')
+          : `(pending — ${this.choiceLabel(entry.choice)})`;
+        this.write(`  ${entry.satisfied ? '✓' : '•'} ${value}`);
+      }
+    }
+
     const errors = d.diagnostics.filter((x) => x.severity === 'error');
     if (errors.length > 0) {
       this.write('Errors:');
@@ -877,11 +1005,25 @@ class Wizard {
         this.write(`  • ${choice.label}`);
       }
     }
+    if (pendingMechanical.length > 0) {
+      this.write('Still needed (choices):');
+      for (const entry of pendingMechanical) {
+        this.write(
+          `  • ${this.choiceLabel(entry.choice)} → run the Class choices step`,
+        );
+      }
+    }
+    const ready = engine.isFinalizable(d) && pendingMechanical.length === 0;
     this.write(
-      engine.isFinalizable(d)
+      ready
         ? 'Draft is complete and ready to finalize (eshyra-b69j.14).'
         : 'Draft is not finalizable yet — resolve the items above.',
     );
+  }
+
+  /** A short label for a mechanical choice, falling back to its full prompt. */
+  private choiceLabel(choice: { kind: string; label: string }): string {
+    return choice.label;
   }
 
   private abilityLine(): string {
@@ -921,6 +1063,42 @@ function parseCommand(input: string): ParsedCommand {
     name: trimmed.slice(0, space).toLowerCase(),
     rest: trimmed.slice(space + 1).trim(),
   };
+}
+
+/**
+ * Resolve a multi-select option from raw input: a 1-based list number, an exact
+ * (case-insensitive) option, or a single unambiguous prefix. Returns the
+ * canonical option string, or undefined when nothing matches uniquely.
+ */
+function resolveOption(
+  options: readonly string[],
+  input: string,
+): string | undefined {
+  const trimmed = input.trim();
+  if (/^\d+$/.test(trimmed)) {
+    const index = Number.parseInt(trimmed, 10) - 1;
+    return options[index];
+  }
+  const lowered = trimmed.toLowerCase();
+  if (lowered.length === 0) {
+    return undefined;
+  }
+  const exact = options.find((option) => option.toLowerCase() === lowered);
+  if (exact !== undefined) {
+    return exact;
+  }
+  const prefixed = options.filter((option) =>
+    option.toLowerCase().startsWith(lowered),
+  );
+  if (prefixed.length === 1) {
+    return prefixed[0];
+  }
+  // Fall back to a unique substring match so a keyword like "scholar" resolves
+  // "a scholar's pack" (options often begin with an article, defeating prefix).
+  const contained = options.filter((option) =>
+    option.toLowerCase().includes(lowered),
+  );
+  return contained.length === 1 ? contained[0] : undefined;
 }
 
 type ChoiceResult =
