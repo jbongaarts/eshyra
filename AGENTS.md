@@ -11,8 +11,8 @@ below.
 Monorepo (npm workspaces): `@eshyra/core` + `@eshyra/cli`.
 
 ```bash
-npm ci             # clean install (CI)
-npm install        # local install
+npm ci             # CI or worktree install; never rewrites package-lock.json
+npm install        # Only when intentionally changing dependency metadata
 npm run build      # tsc --build (incremental)
 npm run clean      # tsc --build --clean (removes dist AND .tsbuildinfo)
 npm run typecheck  # tsc --build --force (deterministic full build; used by CI)
