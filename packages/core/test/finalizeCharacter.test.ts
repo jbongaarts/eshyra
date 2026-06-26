@@ -119,12 +119,63 @@ describe('finalizeCharacterDraft', () => {
     });
     // Mechanical choices folded in.
     expect(c.skillProficiencies).toHaveLength(2);
+    // Class fixed armor/weapon proficiencies are preserved.
+    expect(c.armorProficiencies).toEqual(['All armor', 'shields']);
+    expect(c.weaponProficiencies).toEqual([
+      'Simple weapons',
+      'martial weapons',
+    ]);
     // Equipment merges chosen options with the class's fixed grants (Fighter has
-    // none fixed, so just the four chosen options).
-    expect(c.equipment.length).toBeGreaterThanOrEqual(4);
+    // none fixed, so just the four chosen options; no background here).
+    expect(c.equipment.length).toBe(4);
     // Languages: Human's fixed Common plus the one chosen language.
     expect(c.languages).toContain('Common');
     expect(c.languages.length).toBe(2);
+  });
+
+  it('preserves background fixed skills/equipment and class fixed proficiencies', () => {
+    let draft = engine.createDraft({ id: 'cleric', mode: 'concept-first' });
+    draft = engine.setIdentity(draft, { name: 'Sister Vael' });
+    draft = engine.setClass(draft, 'Cleric');
+    draft = engine.setAncestry(draft, 'Hill Dwarf'); // fixed languages only
+    draft = engine.setBackground(draft, 'Acolyte');
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScores(draft, {
+      strength: 13,
+      dexterity: 12,
+      constitution: 14,
+      intelligence: 10,
+      wisdom: 15,
+      charisma: 8,
+    });
+    for (const entry of engine.mechanicalChoices(draft)) {
+      const need = entry.choice.choose ?? 0;
+      draft = engine.setChoice(
+        draft,
+        entry.choice.id,
+        (entry.choice.from ?? []).slice(0, need),
+      );
+    }
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    const c = result.character;
+    // Acolyte grants Insight + Religion as FIXED skills — must be present even
+    // though the player never "chose" them.
+    expect(c.skillProficiencies).toEqual(
+      expect.arrayContaining(['Insight', 'Religion']),
+    );
+    // Cleric fixed armor/weapon proficiencies are preserved.
+    expect(c.armorProficiencies.length).toBeGreaterThan(0);
+    expect(c.weaponProficiencies).toContain('Simple weapons');
+    // The background equipment package appears as a verbatim entry.
+    expect(c.equipment.some((e) => /holy symbol/i.test(e))).toBe(true);
+    expect(c.background).toEqual({
+      key: 'background:acolyte',
+      name: 'Acolyte',
+    });
   });
 
   it('merges fixed equipment grants (Wizard spellbook) into the record', () => {

@@ -36,6 +36,8 @@ import type { AbilityScoreName } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
 import {
   getBundledDnd5eCharacterResolver,
+  type ResolvedBackgroundData,
+  type ResolvedClassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
 import { getClassStartingEquipment } from './srdClassStartingEquipment.js';
@@ -89,8 +91,18 @@ export interface FinalizedCharacter {
   readonly savingThrows: Readonly<Record<AbilityScoreName, SavingThrowDerived>>;
   readonly spellSaveDc?: number;
   readonly spellAttackModifier?: number;
+  /** Background fixed skills + the player's chosen class skill proficiencies. */
   readonly skillProficiencies: readonly string[];
+  /** Class + background fixed tools + the player's chosen tool proficiencies. */
   readonly toolProficiencies: readonly string[];
+  /** Class fixed armor proficiencies. */
+  readonly armorProficiencies: readonly string[];
+  /** Class fixed weapon proficiencies. */
+  readonly weaponProficiencies: readonly string[];
+  /**
+   * Class starting equipment (fixed grants + chosen options) followed by the
+   * background's equipment package as a single verbatim entry, when present.
+   */
   readonly equipment: readonly string[];
   readonly languages: readonly string[];
   readonly spells: readonly string[];
@@ -148,16 +160,20 @@ function buildFinalizedCharacter(
   engine: CharacterCreationEngine,
 ): FinalizedCharacter {
   const selections = draft.selections;
-  const classRef = requireRef(
+  const classRecord = requireRecord(
     resolver.resolveClass(selections.className ?? ''),
   );
-  const ancestryRef = requireRef(
+  const ancestryRecord = requireRecord(
     resolver.resolveAncestry(selections.ancestry ?? ''),
   );
-  const backgroundRef =
-    selections.background !== undefined
-      ? optionalRef(resolver.resolveBackground(selections.background))
+  const backgroundRecord =
+    selections.background !== undefined && resolver.resolveBackground
+      ? optionalRecord(resolver.resolveBackground(selections.background))
       : undefined;
+  const classRef = toRef(classRecord);
+  const ancestryRef = toRef(ancestryRecord);
+  const backgroundRef =
+    backgroundRecord !== undefined ? toRef(backgroundRecord) : undefined;
 
   const base = selections.baseAbilityScores ?? {};
   const abilityScores = {} as Record<AbilityScoreName, FinalizedAbilityScore>;
@@ -200,9 +216,19 @@ function buildFinalizedCharacter(
     ...(draft.derived.spellAttackModifier !== undefined
       ? { spellAttackModifier: draft.derived.spellAttackModifier }
       : {}),
-    skillProficiencies: collectProficiencies(draft, engine, 'skills'),
-    toolProficiencies: collectProficiencies(draft, engine, 'tools'),
-    equipment: collectEquipment(draft, engine, classRef.key),
+    skillProficiencies: dedupe([
+      // Background grants fixed skills; the class grants skill *choices*.
+      ...(backgroundRecord?.skillProficiencies ?? []),
+      ...selectedOfKind(draft, engine, 'skills'),
+    ]),
+    toolProficiencies: dedupe([
+      ...(classRecord.toolProficiencies ?? []),
+      ...(backgroundRecord?.toolProficiencies ?? []),
+      ...selectedOfKind(draft, engine, 'tools'),
+    ]),
+    armorProficiencies: [...(classRecord.armorProficiencies ?? [])],
+    weaponProficiencies: [...(classRecord.weaponProficiencies ?? [])],
+    equipment: collectEquipment(draft, engine, classRecord, backgroundRecord),
     languages: collectLanguages(
       draft,
       engine,
@@ -215,8 +241,8 @@ function buildFinalizedCharacter(
   return finalized;
 }
 
-/** Chosen options across every mechanical choice of a kind, in choice order. */
-function collectProficiencies(
+/** Selected options across every mechanical choice of a kind, in choice order. */
+function selectedOfKind(
   draft: CharacterDraft,
   engine: CharacterCreationEngine,
   kind: 'skills' | 'tools',
@@ -227,11 +253,15 @@ function collectProficiencies(
     .flatMap((entry) => entry.selected);
 }
 
-/** Chosen equipment options merged with the class's fixed grants, in SRD order. */
+/**
+ * Class starting equipment (fixed grants + chosen options, in SRD order) plus
+ * the background's equipment package as a single verbatim entry when present.
+ */
 function collectEquipment(
   draft: CharacterDraft,
   engine: CharacterCreationEngine,
-  classKey: string,
+  classRecord: ResolvedClassData,
+  backgroundRecord: ResolvedBackgroundData | undefined,
 ): readonly string[] {
   const chosenById = new Map(
     engine
@@ -239,19 +269,28 @@ function collectEquipment(
       .filter((entry) => entry.choice.kind === 'equipment')
       .map((entry) => [entry.choice.id, entry.selected] as const),
   );
-  const overlay = getClassStartingEquipment(classKey);
-  if (overlay === undefined) {
-    return [...chosenById.values()].flat();
-  }
   const equipment: string[] = [];
-  overlay.entries.forEach((entry, index) => {
-    if (entry.kind === 'fixed') {
-      equipment.push(entry.text);
-      return;
-    }
-    equipment.push(...(chosenById.get(`class.equipment.${index}`) ?? []));
-  });
+  const overlay = getClassStartingEquipment(classRecord.key);
+  if (overlay === undefined) {
+    equipment.push(...[...chosenById.values()].flat());
+  } else {
+    overlay.entries.forEach((entry, index) => {
+      if (entry.kind === 'fixed') {
+        equipment.push(entry.text);
+        return;
+      }
+      equipment.push(...(chosenById.get(`class.equipment.${index}`) ?? []));
+    });
+  }
+  if (backgroundRecord?.equipment !== undefined) {
+    equipment.push(backgroundRecord.equipment);
+  }
   return equipment;
+}
+
+/** Order-preserving de-duplication. */
+function dedupe(values: readonly string[]): readonly string[] {
+  return [...new Set(values)];
 }
 
 /** Fixed ancestry + background languages merged with the player's chosen ones. */
@@ -280,22 +319,28 @@ function collectLanguages(
   return [...languages];
 }
 
-function requireRef(result: {
-  readonly ok: boolean;
-  readonly record?: { readonly key: string; readonly name: string };
+/** The canonical key+name reference for a resolved record. */
+function toRef(record: {
+  readonly key: string;
+  readonly name: string;
 }): FinalizedRecordRef {
+  return { key: record.key, name: record.name };
+}
+
+function requireRecord<T>(result: {
+  readonly ok: boolean;
+  readonly record?: T;
+}): T {
   if (!result.ok || result.record === undefined) {
     // Unreachable: the completeness gate already proved class/ancestry resolve.
     throw new Error('finalizeCharacterDraft: required record did not resolve');
   }
-  return { key: result.record.key, name: result.record.name };
+  return result.record;
 }
 
-function optionalRef(result: {
+function optionalRecord<T>(result: {
   readonly ok: boolean;
-  readonly record?: { readonly key: string; readonly name: string };
-}): FinalizedRecordRef | undefined {
-  return result.ok && result.record !== undefined
-    ? { key: result.record.key, name: result.record.name }
-    : undefined;
+  readonly record?: T;
+}): T | undefined {
+  return result.ok ? result.record : undefined;
 }
