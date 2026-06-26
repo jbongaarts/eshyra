@@ -1,29 +1,24 @@
-import type { Db } from '@eshyra/core';
-import { initSchema, openDatabase } from '@eshyra/core';
+import type { CharacterDraft, Db, FinalizedCharacter } from '@eshyra/core';
+import {
+  createSeededRng,
+  getBundledDnd5eCharacterResolver,
+  getDnd5eCharacterCreationEngine,
+  initSchema,
+  openDatabase,
+} from '@eshyra/core';
 import {
   ensureCharacterRow,
   mutateState,
   setActiveCharacterId,
 } from '@eshyra/core/internal';
 import { describe, expect, it } from 'vitest';
+import type {
+  CharacterDraftStore,
+  FinalizedCharacterStore,
+} from '../src/characterDraftStore.js';
 import { createAdditionalCharacter } from '../src/playCharacter.js';
 import { showParty, switchActiveCharacter } from '../src/playParty.js';
 import type { CliIO } from '../src/playTypes.js';
-
-const VALID_CHARACTER_ANSWERS = [
-  'Brielle',
-  'Human',
-  'Fighter',
-  'point_buy',
-  '15',
-  '14',
-  '14',
-  '10',
-  '10',
-  '8',
-  '12',
-  '',
-] as const;
 
 function scriptedIO(answers: ReadonlyArray<string>): {
   io: CliIO;
@@ -37,6 +32,85 @@ function scriptedIO(answers: ReadonlyArray<string>): {
       write: (l) => lines.push(l),
       prompt: async () => (next < answers.length ? answers[next++] : undefined),
     },
+  };
+}
+
+function finalizedCharacter(name: string): FinalizedCharacter {
+  return {
+    schemaVersion: 1,
+    system: 'dnd5e-srd',
+    rulesPackId: 'dnd5e-srd-5.1',
+    recipeId: 'dnd5e-srd-level-1',
+    creationMode: 'concept-first',
+    level: 1,
+    identity: { name },
+    class: { key: 'class:fighter', name: 'Fighter' },
+    ancestry: { key: 'ancestry:human', name: 'Human' },
+    abilityScores: {
+      strength: { base: 15, final: 16, modifier: 3 },
+      dexterity: { base: 14, final: 15, modifier: 2 },
+      constitution: { base: 14, final: 15, modifier: 2 },
+      intelligence: { base: 10, final: 11, modifier: 0 },
+      wisdom: { base: 10, final: 11, modifier: 0 },
+      charisma: { base: 8, final: 9, modifier: -1 },
+    },
+    proficiencyBonus: 2,
+    maxHitPoints: 12,
+    savingThrows: {
+      strength: { modifier: 5, proficient: true },
+      dexterity: { modifier: 2, proficient: false },
+      constitution: { modifier: 4, proficient: true },
+      intelligence: { modifier: 0, proficient: false },
+      wisdom: { modifier: 0, proficient: false },
+      charisma: { modifier: -1, proficient: false },
+    },
+    skillProficiencies: [],
+    toolProficiencies: [],
+    armorProficiencies: [],
+    weaponProficiencies: [],
+    equipment: [],
+    languages: ['Common'],
+    spells: [],
+    metadata: { createdAt: AT, source: 'test' },
+  };
+}
+
+function memoryDraftStore(): CharacterDraftStore {
+  const saved = new Map<string, CharacterDraft>();
+  return {
+    save: (draft) => {
+      saved.set(draft.id, draft);
+    },
+    load: (id) => saved.get(id),
+    list: () => [...saved.keys()].sort(),
+  };
+}
+
+function memoryFinalizedStore(): FinalizedCharacterStore {
+  const saved = new Map<string, FinalizedCharacter>([
+    ['brielle', finalizedCharacter('Brielle')],
+  ]);
+  return {
+    save: (id, character) => {
+      saved.set(id, character);
+      return `mem://${id}`;
+    },
+    load: (id) => saved.get(id),
+    list: () => [...saved.keys()].sort(),
+  };
+}
+
+function characterDeps(
+  io: CliIO,
+): Parameters<typeof createAdditionalCharacter>[0] {
+  return {
+    io,
+    now: () => AT,
+    characterDraftStore: memoryDraftStore(),
+    finalizedCharacterStore: memoryFinalizedStore(),
+    characterEngine: getDnd5eCharacterCreationEngine(),
+    characterResolver: getBundledDnd5eCharacterResolver(),
+    characterRng: createSeededRng(1),
   };
 }
 
@@ -177,8 +251,8 @@ describe('createAdditionalCharacter', () => {
   it('creates the next pc-<n> and makes it active', async () => {
     const db = freshDb();
     // pc-1 already exists from bootstrap; add a second PC.
-    const { io } = scriptedIO(VALID_CHARACTER_ANSWERS);
-    await createAdditionalCharacter({ io, now: () => AT }, db);
+    const { io } = scriptedIO(['import', 'brielle']);
+    await createAdditionalCharacter(characterDeps(io), db);
 
     const row = db
       .prepare('SELECT name, class_name FROM character WHERE id = ?')

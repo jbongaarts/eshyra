@@ -100,11 +100,13 @@ export type {
   CompleteCharacterCreationInput,
   CompleteCharacterCreationResult,
   CreatedCharacter,
+  ImportFinalizedCharacterInput,
 } from './character/creation.js';
 // Character creation (high-level, system-dispatching).
 export {
   CharacterCreationError,
   completeCharacterCreation,
+  importFinalizedCharacter,
 } from './character/creation.js';
 export { DND5E_SRD_CHARACTER_RECIPE } from './character/dnd5eRecipe.js';
 export type { FinalizedCharacter } from './character/finalizeCharacter.js';

@@ -2,14 +2,19 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  type CharacterDraft,
   createCampaign,
   createDefaultToolRegistry,
+  createSeededRng,
   type Db,
   DoltRepo,
   EMBERFALL_HOLLOW,
+  type FinalizedCharacter,
   getArcSummary,
+  getBundledDnd5eCharacterResolver,
   getCampaign,
   getCampaignBible,
+  getDnd5eCharacterCreationEngine,
   getOpenSession,
   getSession,
   getSessionRecap,
@@ -41,6 +46,10 @@ import {
   renderContextMessage,
 } from '@eshyra/core/internal';
 import { describe, expect, it, vi } from 'vitest';
+import type {
+  CharacterDraftStore,
+  FinalizedCharacterStore,
+} from '../src/characterDraftStore.js';
 import {
   type CliIO,
   doltCheckpointRunner,
@@ -134,20 +143,75 @@ function scriptedIO(answers: ReadonlyArray<string>): {
 const HOLLOW_MODULES = listBundledAdventureModules();
 const HOLLOW_MODULE_ID = 'eshyra:hollow-beneath-emberfall';
 
-const VALID_CHARACTER_ANSWERS = [
-  'Mira',
-  'Human',
-  'Fighter',
-  'point_buy',
-  '15',
-  '14',
-  '14',
-  '10',
-  '10',
-  '8',
-  '12',
-  '',
-] as const;
+function finalizedCharacter(
+  name = 'Mira',
+  className = 'Fighter',
+): FinalizedCharacter {
+  return {
+    schemaVersion: 1,
+    system: 'dnd5e-srd',
+    rulesPackId: DND5E_SRD_PACK_ID,
+    recipeId: 'dnd5e-srd-level-1',
+    creationMode: 'concept-first',
+    level: 1,
+    identity: { name },
+    class: { key: `class:${className.toLowerCase()}`, name: className },
+    ancestry: { key: 'ancestry:human', name: 'Human' },
+    abilityScores: {
+      strength: { base: 15, final: 16, modifier: 3 },
+      dexterity: { base: 14, final: 15, modifier: 2 },
+      constitution: { base: 14, final: 15, modifier: 2 },
+      intelligence: { base: 10, final: 11, modifier: 0 },
+      wisdom: { base: 10, final: 11, modifier: 0 },
+      charisma: { base: 8, final: 9, modifier: -1 },
+    },
+    proficiencyBonus: 2,
+    maxHitPoints: 12,
+    savingThrows: {
+      strength: { modifier: 5, proficient: true },
+      dexterity: { modifier: 2, proficient: false },
+      constitution: { modifier: 4, proficient: true },
+      intelligence: { modifier: 0, proficient: false },
+      wisdom: { modifier: 0, proficient: false },
+      charisma: { modifier: -1, proficient: false },
+    },
+    skillProficiencies: [],
+    toolProficiencies: [],
+    armorProficiencies: [],
+    weaponProficiencies: [],
+    equipment: [],
+    languages: ['Common'],
+    spells: [],
+    metadata: { createdAt: '2026-06-26T00:00:00.000Z', source: 'test' },
+  };
+}
+
+function memoryDraftStore(): CharacterDraftStore {
+  const saved = new Map<string, CharacterDraft>();
+  return {
+    save: (draft) => {
+      saved.set(draft.id, draft);
+    },
+    load: (id) => saved.get(id),
+    list: () => [...saved.keys()].sort(),
+  };
+}
+
+function memoryFinalizedStore(
+  seed: Readonly<Record<string, FinalizedCharacter>> = {
+    mira: finalizedCharacter(),
+  },
+): FinalizedCharacterStore {
+  const saved = new Map<string, FinalizedCharacter>(Object.entries(seed));
+  return {
+    save: (id, character) => {
+      saved.set(id, character);
+      return `mem://${id}`;
+    },
+    load: (id) => saved.get(id),
+    list: () => [...saved.keys()].sort(),
+  };
+}
 
 /**
  * A fake `runTurn` that exercises the orchestrator's observable contract
@@ -218,6 +282,11 @@ function baseDeps(
     runTurn,
     pack: EMBERFALL_HOLLOW,
     listAdventureModules,
+    characterDraftStore: memoryDraftStore(),
+    finalizedCharacterStore: memoryFinalizedStore(),
+    characterEngine: getDnd5eCharacterCreationEngine(),
+    characterResolver: getBundledDnd5eCharacterResolver(),
+    characterRng: createSeededRng(1),
     now: () => new Date(Date.UTC(2026, 4, 20, 0, 0, clock++)).toISOString(),
     nextId: (prefix) => `${prefix}-${++ids}`,
     seed: () => 1,
@@ -230,7 +299,8 @@ describe('runPlay', () => {
   it('creates a campaign, plays turns, and graceful-exits through the close pipeline', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO([
-      ...VALID_CHARACTER_ANSWERS,
+      'import',
+      'mira',
       'look around',
       'open the door',
       '/quit',
@@ -384,22 +454,11 @@ describe('runPlay', () => {
     dispose();
   });
 
-  it('rejects an invalid character draft and prompts again before starting turns', async () => {
+  it('uses finalized-character import for D&D session zero without the legacy HP prompt', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO([
-      'Mira',
-      'Human',
-      'Artificer',
-      'point_buy',
-      '15',
-      '14',
-      '14',
-      '10',
-      '10',
-      '8',
-      '12',
-      '',
-      ...VALID_CHARACTER_ANSWERS,
+      'import',
+      'mira',
       'look around',
       '/quit',
     ]);
@@ -408,14 +467,31 @@ describe('runPlay', () => {
 
     expect(code).toBe(0);
     const out = lines.join('\n');
-    expect(out).toContain('unsupported SRD class: Artificer');
+    expect(out).toContain('Finalized characters:');
     expect(out).toContain('Character creation complete');
+    expect(out).not.toContain('Level-1 max HP:');
     expect(out).toContain('DM: you said "look around"');
     expect(
       db
-        .prepare(`SELECT name, class_name FROM character WHERE id = 'pc-1'`)
+        .prepare(
+          `SELECT name, class_name, ancestry, hp_max, ability_scores_json
+           FROM character WHERE id = 'pc-1'`,
+        )
         .get(),
-    ).toEqual({ name: 'Mira', class_name: 'Fighter' });
+    ).toEqual({
+      name: 'Mira',
+      class_name: 'Fighter',
+      ancestry: 'Human',
+      hp_max: 12,
+      ability_scores_json: JSON.stringify({
+        strength: 16,
+        dexterity: 15,
+        constitution: 15,
+        intelligence: 11,
+        wisdom: 11,
+        charisma: 9,
+      }),
+    });
     dispose();
   });
 

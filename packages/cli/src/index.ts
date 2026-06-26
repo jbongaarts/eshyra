@@ -11,6 +11,7 @@ import {
   CodexSdkMcpModelClient,
   ConfigError,
   createDefaultToolRegistry,
+  createSeededRng,
   DEFAULT_MEMORY_CONFIG,
   DEMO_TURN_CAP,
   type DoltInstallPrompt,
@@ -18,6 +19,8 @@ import {
   type EnsureDoltOptions,
   type EshyraConfig,
   ensureDoltAvailable,
+  getBundledDnd5eCharacterResolver,
+  getDnd5eCharacterCreationEngine,
   type InstalledAdventureModule,
   listAdventureModulesInDir,
   listBundledAdventureModules,
@@ -39,6 +42,10 @@ import {
   runCampaignsCommand,
   runNewCommand,
 } from './campaigns.js';
+import {
+  createFileCharacterDraftStore,
+  createFileFinalizedCharacterStore,
+} from './characterDraftStore.js';
 import { runCheckpointCommand } from './checkpoints.js';
 import {
   type CliConfigFile,
@@ -50,6 +57,8 @@ import { runCreateCharacterSubcommand } from './createCharacter.js';
 import {
   adventureModulesDir,
   campaignsDir,
+  characterDraftsDir,
+  charactersDir,
   ensureDataRoot,
   resolveDataRoot,
 } from './dataRoot.js';
@@ -339,6 +348,15 @@ function buildPlayDeps(
     runTurn,
     pack: EMBERFALL_HOLLOW,
     listAdventureModules: () => availableAdventureModules(dataRoot),
+    characterDraftStore: createFileCharacterDraftStore(
+      characterDraftsDir(dataRoot),
+    ),
+    finalizedCharacterStore: createFileFinalizedCharacterStore(
+      charactersDir(dataRoot),
+    ),
+    characterEngine: getDnd5eCharacterCreationEngine(),
+    characterResolver: getBundledDnd5eCharacterResolver(),
+    characterRng: createSeededRng((Math.random() * 0x7fffffff) | 0),
     now: nowIso,
     nextId: makeId,
     seed: () => (Math.random() * 0x7fffffff) | 0,

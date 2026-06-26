@@ -5,7 +5,9 @@ import {
   completeCharacterCreation,
   createCampaign,
   EMBERFALL_HOLLOW,
+  type FinalizedCharacter,
   getActiveCharacterId,
+  importFinalizedCharacter,
   initSchema,
   openDatabase,
   PATHFINDER2E_REMASTER_RULES_PACK,
@@ -332,6 +334,84 @@ describe('character creation', () => {
       provenance: 'character_creation:complete',
       session_id: 'session-0',
       updated_at: '2026-05-20T22:47:00.000Z',
+    });
+
+    db.close();
+  });
+
+  it('imports a finalized character as the active canonical pc-1', () => {
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    const character: FinalizedCharacter = {
+      schemaVersion: 1,
+      system: 'dnd5e-srd',
+      rulesPackId: 'dnd5e-srd-5.1',
+      recipeId: 'dnd5e-srd-level-1',
+      creationMode: 'concept-first',
+      level: 1,
+      identity: { name: 'Tamsin' },
+      class: { key: 'class:rogue', name: 'Rogue' },
+      ancestry: { key: 'ancestry:halfling', name: 'Halfling' },
+      abilityScores: {
+        strength: { base: 8, final: 8, modifier: -1 },
+        dexterity: { base: 15, final: 17, modifier: 3 },
+        constitution: { base: 14, final: 14, modifier: 2 },
+        intelligence: { base: 10, final: 10, modifier: 0 },
+        wisdom: { base: 12, final: 12, modifier: 1 },
+        charisma: { base: 13, final: 14, modifier: 2 },
+      },
+      proficiencyBonus: 2,
+      maxHitPoints: 10,
+      savingThrows: {
+        strength: { modifier: -1, proficient: false },
+        dexterity: { modifier: 5, proficient: true },
+        constitution: { modifier: 2, proficient: false },
+        intelligence: { modifier: 2, proficient: true },
+        wisdom: { modifier: 1, proficient: false },
+        charisma: { modifier: 2, proficient: false },
+      },
+      skillProficiencies: ['Stealth'],
+      toolProficiencies: ['thieves tools'],
+      armorProficiencies: ['light armor'],
+      weaponProficiencies: ['simple weapons'],
+      equipment: ['shortsword'],
+      languages: ['Common', 'Halfling'],
+      spells: [],
+      metadata: { createdAt: '2026-06-26T00:00:00.000Z', source: 'test' },
+    };
+
+    const result = importFinalizedCharacter(db, {
+      character,
+      sessionId: 'session-0',
+      at: '2026-06-26T01:00:00.000Z',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(getActiveCharacterId(db)).toBe('pc-1');
+    expect(
+      db
+        .prepare(
+          `SELECT name, ancestry, class_name, hp_current, hp_max,
+                  ability_scores_json, provenance
+           FROM character
+           WHERE id = 'pc-1'`,
+        )
+        .get(),
+    ).toEqual({
+      name: 'Tamsin',
+      ancestry: 'Halfling',
+      class_name: 'Rogue',
+      hp_current: 10,
+      hp_max: 10,
+      ability_scores_json: JSON.stringify({
+        strength: 8,
+        dexterity: 17,
+        constitution: 14,
+        intelligence: 10,
+        wisdom: 12,
+        charisma: 14,
+      }),
+      provenance: 'character_creation:import_finalized',
     });
 
     db.close();

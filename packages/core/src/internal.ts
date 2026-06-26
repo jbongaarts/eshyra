@@ -152,6 +152,7 @@ export type {
 // (the high-level `completeCharacterCreation` is the stable entrypoint).
 export {
   buildCharacterCreationMutations,
+  importFinalizedCharacter,
   validateCharacterDraft,
 } from './character/creation.js';
 // Deterministic level-1 derived-value computation (eshyra-b69j.6): the single
