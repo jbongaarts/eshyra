@@ -45,6 +45,10 @@ export interface MissingRequiredCall {
   readonly target?: string;
 }
 
+export interface PresentationOnlyRepair {
+  readonly kind: 'roll_ledger';
+}
+
 /** Strict verdict an auditor returns for one candidate DM response. */
 export interface AuditVerdict {
   readonly verdict: 'accept' | 'reject';
@@ -76,6 +80,14 @@ export interface AuditVerdict {
   readonly reason: string;
   /** Corrective instruction fed back to the DM on a retry. */
   readonly repairInstruction: string;
+  /**
+   * Structured escape hatch for presentation-only defects that code can repair
+   * from already-valid tool evidence. Omit/null unless the auditor is rejecting
+   * only a model-authored roll ledger/presentation mismatch; state/tool/evidence
+   * failures and missing/incorrect roll visibility/category metadata must leave
+   * this unset so the orchestrator retries or fails closed.
+   */
+  readonly presentationOnlyRepair?: PresentationOnlyRepair;
 }
 
 /** Inputs the auditor judges. */
@@ -256,8 +268,8 @@ export function buildAuditSystemPrompt(): string {
     '',
     'Respond with ONLY a single JSON object, no prose and no code fences, of the',
     'exact shape:',
-    '{"verdict":"accept"|"reject","missingRequiredCalls":[{"tool":"<tool>","target":"<record/intent>"}],"disallowedToolCalls":["<tool>"],"reason":"<short>","repairInstruction":"<short>"}',
-    'On "accept", both missingRequiredCalls and disallowedToolCalls MUST be empty.',
+    '{"verdict":"accept"|"reject","missingRequiredCalls":[{"tool":"<tool>","target":"<record/intent>"}],"disallowedToolCalls":["<tool>"],"reason":"<short>","repairInstruction":"<short>","presentationOnlyRepair":null|{"kind":"roll_ledger"}}',
+    'On "accept", missingRequiredCalls and disallowedToolCalls MUST be empty and presentationOnlyRepair MUST be null.',
     'On "reject", populate missingRequiredCalls with the calls the candidate needed',
     'but did not make. Identify each missing call by tool AND, when you can recover',
     'it, the specific target/record the call should have addressed. A tool that was',
@@ -272,6 +284,13 @@ export function buildAuditSystemPrompt(): string {
     'intent. Write a repairInstruction telling the DM exactly what to fix before',
     're-narrating (which call(s) to make, including their targets, or that it must',
     'NOT mutate state to answer a query).',
+    'Set presentationOnlyRepair to {"kind":"roll_ledger"} ONLY when all executed',
+    'tools and state mutations are valid, every relevant roll already has correct',
+    'model-declared visibility and category metadata, and the only defect is a',
+    'model-authored roll ledger/presentation mismatch that the engine can replace',
+    'from structured roll results. Leave it null for missing tools, failed tools,',
+    'state errors, world-evidence errors, disallowed tools, unsupported prose roll',
+    'claims, or missing/incorrect roll visibility/category metadata.',
   ].join('\n');
 }
 
@@ -538,6 +557,12 @@ export function parseAuditVerdict(text: string): AuditVerdict {
     reason: typeof obj.reason === 'string' ? obj.reason : '',
     repairInstruction:
       typeof obj.repairInstruction === 'string' ? obj.repairInstruction : '',
+    ...(typeof obj.presentationOnlyRepair === 'object' &&
+    obj.presentationOnlyRepair !== null &&
+    (obj.presentationOnlyRepair as Record<string, unknown>).kind ===
+      'roll_ledger'
+      ? { presentationOnlyRepair: { kind: 'roll_ledger' as const } }
+      : {}),
   };
 }
 

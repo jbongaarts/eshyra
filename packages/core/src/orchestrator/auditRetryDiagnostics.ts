@@ -1,4 +1,10 @@
 import type { AuditRetryCause } from '../model/usage.js';
+import {
+  ROLL_CATEGORIES,
+  ROLL_VISIBILITIES,
+  type RollCategory,
+  type RollVisibility,
+} from './toolRoll.js';
 import type { AuditVerdict } from './turnAuditor.js';
 import type { ExecutedToolCall } from './turnLoop.js';
 
@@ -27,6 +33,71 @@ function missingTools(verdict: AuditVerdict): Set<string> {
     ...verdict.missingRequiredTools,
     ...verdict.missingRequiredCalls.map((call) => call.tool),
   ]);
+}
+
+function readField(value: unknown, key: string): unknown {
+  return typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)[key]
+    : undefined;
+}
+
+function hasExplicitRollPresentationMetadata(call: ExecutedToolCall): boolean {
+  if (call.tool !== 'roll' || !call.result.ok) {
+    return false;
+  }
+  const visibility = readField(call.result.data, 'visibility');
+  const category = readField(call.result.data, 'category');
+  return (
+    typeof visibility === 'string' &&
+    ROLL_VISIBILITIES.includes(visibility as RollVisibility) &&
+    typeof category === 'string' &&
+    ROLL_CATEGORIES.includes(category as RollCategory)
+  );
+}
+
+function isPlayerVisibleRoll(call: ExecutedToolCall): boolean {
+  return (
+    call.tool === 'roll' &&
+    call.result.ok &&
+    readField(call.result.data, 'visibility') === 'player_visible'
+  );
+}
+
+/**
+ * Classify a rejected audit verdict that can be handled without regenerating
+ * the primary-DM candidate. The verdict must opt into the repair explicitly and
+ * the deterministic evidence must be strong enough to render the code-owned
+ * player-visible roll ledger. Any failed tool, non-roll missing requirement, or
+ * absent roll visibility/category metadata fails closed into the normal retry
+ * path.
+ */
+export function classifyAuditPresentationRepair(
+  verdict: AuditVerdict,
+  toolCalls: readonly ExecutedToolCall[],
+): AuditRetryCause | null {
+  if (
+    verdict.verdict !== 'reject' ||
+    verdict.presentationOnlyRepair?.kind !== 'roll_ledger' ||
+    verdict.disallowedToolCalls.length > 0
+  ) {
+    return null;
+  }
+  const missing = missingTools(verdict);
+  if ([...missing].some((tool) => tool !== 'roll')) {
+    return null;
+  }
+  if (toolCalls.some((call) => !call.result.ok)) {
+    return null;
+  }
+  const rollCalls = toolCalls.filter((call) => call.tool === 'roll');
+  if (
+    rollCalls.length === 0 ||
+    !rollCalls.every(hasExplicitRollPresentationMetadata) ||
+    !rollCalls.some(isPlayerVisibleRoll)
+  ) {
+    return null;
+  }
+  return 'presentation_only_roll_ledger';
 }
 
 /**

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { AuditVerdict } from '../src/internal.js';
-import { classifyAuditRetryCause } from '../src/orchestrator/auditRetryDiagnostics.js';
+import {
+  classifyAuditPresentationRepair,
+  classifyAuditRetryCause,
+} from '../src/orchestrator/auditRetryDiagnostics.js';
 import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
 
 function reject(overrides: Partial<AuditVerdict>): AuditVerdict {
@@ -29,6 +32,84 @@ function toolCall(
 }
 
 describe('audit retry diagnostics', () => {
+  it('classifies explicit presentation-only roll ledger repair', () => {
+    expect(
+      classifyAuditPresentationRepair(
+        reject({
+          missingRequiredCalls: [{ tool: 'roll' }],
+          presentationOnlyRepair: { kind: 'roll_ledger' },
+        }),
+        [
+          toolCall('roll', {
+            ok: true,
+            data: {
+              dice: '1d20+5',
+              reason: 'attack',
+              visibility: 'player_visible',
+              category: 'attack',
+              rolls: [12],
+              modifier: 5,
+              total: 17,
+            },
+          }),
+        ],
+      ),
+    ).toBe('presentation_only_roll_ledger');
+  });
+
+  it('does not repair roll presentation when visibility or category metadata is missing', () => {
+    expect(
+      classifyAuditPresentationRepair(
+        reject({ presentationOnlyRepair: { kind: 'roll_ledger' } }),
+        [
+          toolCall('roll', {
+            ok: true,
+            data: {
+              dice: '1d20+5',
+              reason: 'attack',
+              rolls: [12],
+              modifier: 5,
+              total: 17,
+            },
+          }),
+        ],
+      ),
+    ).toBeNull();
+  });
+
+  it('does not repair presentation when state, evidence, disallowed-tool, or failed-tool issues remain', () => {
+    expect(
+      classifyAuditPresentationRepair(
+        reject({
+          missingRequiredCalls: [{ tool: 'update_combatant' }],
+          presentationOnlyRepair: { kind: 'roll_ledger' },
+        }),
+        [],
+      ),
+    ).toBeNull();
+    expect(
+      classifyAuditPresentationRepair(
+        reject({
+          disallowedToolCalls: ['give_item'],
+          presentationOnlyRepair: { kind: 'roll_ledger' },
+        }),
+        [],
+      ),
+    ).toBeNull();
+    expect(
+      classifyAuditPresentationRepair(
+        reject({ presentationOnlyRepair: { kind: 'roll_ledger' } }),
+        [
+          toolCall('roll', {
+            ok: false,
+            code: 'invalid_dice',
+            message: 'bad dice',
+          }),
+        ],
+      ),
+    ).toBeNull();
+  });
+
   it('classifies missing roll visibility from structured auditor requirements', () => {
     expect(
       classifyAuditRetryCause(

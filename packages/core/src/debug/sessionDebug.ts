@@ -407,7 +407,7 @@ export interface TurnAuditDebugEvent {
   /** Eshyra tool names the candidate turn actually executed. */
   readonly executedToolNames: readonly string[];
   /** Action the orchestrator took from this verdict. */
-  readonly action: 'accept' | 'retry' | 'fail';
+  readonly action: 'accept' | 'repair' | 'retry' | 'fail';
   /** Provider model id the auditor call targeted. */
   readonly auditorModel: string;
   /** Auth mode label (`api-key` / `oauth-token`) — never the credential. */
