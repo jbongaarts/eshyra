@@ -3,7 +3,7 @@ import {
   type InstalledAdventureModule,
   listAdventureRuns,
   startAdventureRun,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
 import type { PlayDeps } from './playTypes.js';
 
 /**

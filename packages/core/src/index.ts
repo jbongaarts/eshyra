@@ -29,6 +29,23 @@
 // Non-release builds (local dev, CI, tests) keep the `-dev` sentinel.
 export const CORE_VERSION = '0.0.0-dev';
 
+// Adventure modules (authored scenario source): discovery, loading, and the
+// module shape consumers list, render, and bind into campaigns.
+export type { InstalledAdventureModule } from './adventure/listModules.js';
+export {
+  listAdventureModulesInDir,
+  listBundledAdventureModules,
+} from './adventure/listModules.js';
+export {
+  adventureModuleDirName,
+  loadAdventureModuleFromDir,
+} from './adventure/loadModule.js';
+export type { AdventureModule } from './adventure/types.js';
+// Campaign-owned adventure runs (bind a module into a campaign + track runs).
+export {
+  listAdventureRuns,
+  startAdventureRun,
+} from './campaign/adventureRun.js';
 export type { CampaignInfo, CreateCampaignInput } from './campaign/campaign.js';
 // Campaign lifecycle.
 export {
@@ -52,6 +69,27 @@ export {
   DemoModeError,
   getDemoTurnBudget,
 } from './campaign/demoMode.js';
+// Guided character-creation building blocks (the wizard UI renders on these):
+// shared ability constants, ability-allocation helpers, the incremental draft
+// engine, the SRD recipe, level-1 required-choice enumeration, the rules-pack
+// resolver, and draft finalization.
+export {
+  ABILITY_FULL_NAMES,
+  ABILITY_SCORE_NAMES,
+} from './character/abilities.js';
+export {
+  parseAbilityScoreCommand,
+  recommendClasses,
+  rollAbilityScoreSet,
+  summarizePointBuy,
+  summarizeStandardArray,
+} from './character/abilityAllocation.js';
+export type {
+  CharacterCreationDiagnostic,
+  CharacterCreationEngine,
+  CharacterDraft,
+} from './character/characterDraft.js';
+export { getDnd5eCharacterCreationEngine } from './character/characterDraft.js';
 export type {
   AbilityScoreMethod,
   AbilityScoreName,
@@ -68,6 +106,12 @@ export {
   CharacterCreationError,
   completeCharacterCreation,
 } from './character/creation.js';
+export { DND5E_SRD_CHARACTER_RECIPE } from './character/dnd5eRecipe.js';
+export type { FinalizedCharacter } from './character/finalizeCharacter.js';
+export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
+export { enumerateLevel1RequiredChoices } from './character/requiredChoices.js';
+export type { RulesPackCharacterResolver } from './character/rulesPackResolver.js';
+export { getBundledDnd5eCharacterResolver } from './character/rulesPackResolver.js';
 export type {
   AdapterFamily as ConfigAdapterFamily,
   EshyraConfig,
@@ -85,10 +129,31 @@ export {
   GAMEPLAY_PROVIDERS,
   loadConfig,
 } from './config.js';
+// Opt-in session debug logging: the structural model-call diagnostic events and
+// the sink contract a consumer implements over its data root.
+export type {
+  ModelCallDebugEvent,
+  SessionDebugSink,
+  TurnAuditDebugEvent,
+  TurnCandidateDispositionEvent,
+} from './debug/sessionDebug.js';
 export type { ComposeArcSummaryInput } from './memory/arcSummary.js';
 export { composeArcSummary } from './memory/arcSummary.js';
+// Campaign arc lifecycle (read-side + idempotent open + atomic rollover).
+export {
+  closeOpenArcAndOpenNext,
+  getClosedSessionsInOpenArc,
+  listClosedArcSummaries,
+  openArcIfMissing,
+} from './memory/campaignArc.js';
 export type { ExtractCampaignBibleInput } from './memory/campaignBibleExtractor.js';
 export { extractCampaignBible } from './memory/campaignBibleExtractor.js';
+// Memory configuration (N/K knobs for arc rollover and recap window).
+export type { MemoryConfig } from './memory/config.js';
+export {
+  DEFAULT_MEMORY_CONFIG,
+  validateMemoryConfig,
+} from './memory/config.js';
 export type {
   ComposeSessionRecapInput,
   ComposeSessionRecapResult,
@@ -206,6 +271,23 @@ export type {
   ModelToolDefinition,
   ToolInputSchema,
 } from './model/toolSchema.js';
+// Model usage tracking: per-call/tool/turn records, sink contracts, decorator.
+export type {
+  AuditRetryCause,
+  ModelUsageRecord,
+  ModelUsageSink,
+  ToolUsageRecord,
+  TurnAuditRecord,
+  TurnDiagnosticsSink,
+  TurnOutcome,
+  TurnOutcomeRecord,
+} from './model/usage.js';
+export { ModelUsageTracker } from './model/usage.js';
+// Adventure module progress audit/debug output.
+export {
+  buildCampaignAdventureAudit,
+  formatCampaignAdventureAudit,
+} from './orchestrator/adventureAudit.js';
 export type { RecentSceneEvidence } from './orchestrator/contextAssembler.js';
 export type {
   ExecutedToolCall,
@@ -215,6 +297,9 @@ export type {
 } from './orchestrator/orchestrator.js';
 // Turn orchestrator.
 export { OrchestratorError, runTurn } from './orchestrator/orchestrator.js';
+export type { Rng } from './orchestrator/rng.js';
+// Deterministic RNG used by tools/dice.
+export { createSeededRng } from './orchestrator/rng.js';
 export type { Tool, ToolContext, ToolResult } from './orchestrator/tools.js';
 // Tool registry contract — the supported plug-in seam for custom tools.
 export {
@@ -305,6 +390,13 @@ export {
   SessionError,
   startSession,
 } from './session/session.js';
+// Active character resolution + party roster reads.
+export {
+  CharacterResolutionError,
+  resolveCharacterRef,
+  setActiveCharacterId,
+} from './state/activeCharacter.js';
+export { listParty } from './state/party.js';
 // Built-in sample world module and module-pack shape.
 export { EMBERFALL_HOLLOW } from './world/samples/emberfallHollow.js';
 export type {

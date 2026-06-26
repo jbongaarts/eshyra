@@ -20,14 +20,16 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { type Db, getCampaign, openDatabase } from '@eshyra/core';
 import {
   type AdventureModule,
   adventureModuleDirName,
   buildCampaignAdventureAudit,
+  type Db,
   formatCampaignAdventureAudit,
+  getCampaign,
   loadAdventureModuleFromDir,
-} from '@eshyra/core/internal';
+  openDatabase,
+} from '@eshyra/core';
 import { resolveCampaignDbPath } from './campaigns.js';
 import { adventureModulesDir } from './dataRoot.js';
 

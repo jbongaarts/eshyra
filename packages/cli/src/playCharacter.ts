@@ -1,6 +1,5 @@
 import type { CharacterCreationDraft, Db } from '@eshyra/core';
-import { completeCharacterCreation } from '@eshyra/core';
-import { listParty } from '@eshyra/core/internal';
+import { completeCharacterCreation, listParty } from '@eshyra/core';
 import type { CliIO, PlayDeps } from './playTypes.js';
 
 interface CharacterCanonRow {

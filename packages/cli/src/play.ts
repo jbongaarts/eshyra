@@ -8,8 +8,8 @@ import {
   getCampaign,
   initSchema,
   type SessionCheckpointRunner,
+  validateMemoryConfig,
 } from '@eshyra/core';
-import { validateMemoryConfig } from '@eshyra/core/internal';
 import { ensureCharacterReady } from './playCharacter.js';
 import { launch, resolveCampaign } from './playSession.js';
 import { turnLoop } from './playTurnLoop.js';

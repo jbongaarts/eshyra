@@ -21,7 +21,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import type { CharacterDraft, FinalizedCharacter } from '@eshyra/core/internal';
+import type { CharacterDraft, FinalizedCharacter } from '@eshyra/core';
 
 /** Read/write access to resumable character-creation drafts. */
 export interface CharacterDraftStore {

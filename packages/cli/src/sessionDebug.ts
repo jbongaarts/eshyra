@@ -5,7 +5,7 @@ import type {
   SessionDebugSink,
   TurnAuditDebugEvent,
   TurnCandidateDispositionEvent,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
 import { debugDir } from './dataRoot.js';
 
 /**
