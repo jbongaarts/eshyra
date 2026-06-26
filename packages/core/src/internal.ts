@@ -171,6 +171,16 @@ export {
   DND5E_SRD_CHARACTER_RECIPE,
   resolveCharacterCreationRecipe,
 } from './character/dnd5eRecipe.js';
+// Guided-creation finalization (eshyra-b69j.14): turn a complete draft into a
+// canonical, serializable FinalizedCharacter record (or report what is missing).
+export type {
+  FinalizeCharacterResult,
+  FinalizedAbilityScore,
+  FinalizedCharacter,
+  FinalizedRecordRef,
+  FinalizeMetadata,
+} from './character/finalizeCharacter.js';
+export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
 export type {
   CreatedPathfinderCharacter,
   PathfinderCharacterCreationResult,

@@ -1,18 +1,41 @@
 import {
   type CharacterDraft,
   createSeededRng,
+  type FinalizedCharacter,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
 } from '@eshyra/core/internal';
 import { describe, expect, it } from 'vitest';
-import type { CharacterDraftStore } from '../src/characterDraftStore.js';
+import type {
+  CharacterDraftStore,
+  FinalizedCharacterStore,
+} from '../src/characterDraftStore.js';
 import type { CharacterWizardDeps } from '../src/characterWizard.js';
 import {
+  type CreateCharacterOptions,
   newDraftId,
   parseCreateCharacterArgs,
   runCreateCharacter,
 } from '../src/createCharacter.js';
 import type { CliIO } from '../src/playTypes.js';
+
+function memoryCharacterStore(): FinalizedCharacterStore & {
+  readonly saved: Map<string, FinalizedCharacter>;
+} {
+  const saved = new Map<string, FinalizedCharacter>();
+  return {
+    saved,
+    save: (id, character) => {
+      saved.set(id, character);
+      return `mem://${id}`;
+    },
+  };
+}
+
+const FIXED_NOW = '2026-06-26T00:00:00.000Z';
+const finalizeOpts = (
+  characterStore: FinalizedCharacterStore,
+): CreateCharacterOptions => ({ characterStore, now: () => FIXED_NOW });
 
 function scriptedIO(answers: ReadonlyArray<string>): {
   io: CliIO;
@@ -151,6 +174,70 @@ describe('runCreateCharacter', () => {
     expect(first.lines.join('\n')).toMatch(
       /New draft id: character-.*--resume/,
     );
+  });
+});
+
+describe('runCreateCharacter — finalization (eshyra-b69j.14)', () => {
+  // A complete concept-first Fighter + Human run: identity, class, ancestry,
+  // skip background, point-buy scores, the class skill + four equipment groups,
+  // the Human language, skip spells, finish at review.
+  const COMPLETE_RUN = [
+    'Grok',
+    'Fighter',
+    'Human',
+    '', // background skip
+    'point_buy',
+    'str 15',
+    'dex 14',
+    'con 13',
+    'int 12',
+    'wis 10',
+    'cha 8',
+    'done',
+    'Athletics',
+    'Perception',
+    '1',
+    '1',
+    '1',
+    '1',
+    'Dwarvish',
+    '', // spells skip
+    '', // review → finish
+  ] as const;
+
+  it('writes a finalized record when the wizard completes', async () => {
+    const store = memoryStore();
+    const characters = memoryCharacterStore();
+    const { deps, lines } = makeDeps(COMPLETE_RUN, store);
+    const code = await runCreateCharacter(
+      deps,
+      ['--id', 'grok'],
+      finalizeOpts(characters),
+    );
+    expect(code).toBe(0);
+
+    const record = characters.saved.get('grok');
+    expect(record).toBeDefined();
+    expect(record?.identity.name).toBe('Grok');
+    expect(record?.class.name).toBe('Fighter');
+    expect(record?.ancestry.name).toBe('Human');
+    expect(record?.skillProficiencies).toEqual(['Athletics', 'Perception']);
+    expect(record?.metadata.createdAt).toBe(FIXED_NOW);
+    expect(lines.join('\n')).toMatch(/Finalized Grok/);
+  });
+
+  it('does not finalize when the player quits before finishing', async () => {
+    const store = memoryStore();
+    const characters = memoryCharacterStore();
+    const { deps } = makeDeps(['Grok', 'Fighter', 'quit'], store);
+    const code = await runCreateCharacter(
+      deps,
+      ['--id', 'grok'],
+      finalizeOpts(characters),
+    );
+    expect(code).toBe(0);
+    // Quitting leaves only the resumable draft — no finalized record.
+    expect(characters.saved.size).toBe(0);
   });
 });
 

@@ -94,6 +94,15 @@ export function characterDraftsDir(root: string): string {
   return join(root, 'drafts', 'characters');
 }
 
+/**
+ * `<root>/characters` — finalized, playable character records, one JSON file per
+ * character id (eshyra-b69j.14). These are the canonical artifacts produced when
+ * a complete draft is finalized; a campaign imports them for play.
+ */
+export function charactersDir(root: string): string {
+  return join(root, 'characters');
+}
+
 /** `<root>/diagnostics` — model usage and diagnostics store (eshyra-cuxm). */
 export function diagnosticsDir(root: string): string {
   return join(root, 'diagnostics');
