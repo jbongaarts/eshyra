@@ -128,12 +128,12 @@ export interface ToolUsageSink {
 }
 
 /**
- * Structural reason a rejected audit candidate caused an expensive primary-DM
- * retry (eshyra-d8ap.3). This deliberately classifies the auditor verdict and
- * deterministic failed-tool evidence; it does not try to replace auditor
- * reasoning with prose heuristics.
+ * Structural reason for an audit rejection (eshyra-d8ap.3). Most causes drive
+ * an expensive primary-DM retry; `presentation_only_roll_ledger` marks the
+ * code-owned repair path that avoids one.
  */
 export type AuditRetryCause =
+  | 'presentation_only_roll_ledger'
   | 'missing_roll_visibility'
   | 'missing_state'
   | 'missing_world_evidence'
@@ -156,7 +156,7 @@ export interface TurnAuditRecord {
   readonly turnId: string | null;
   readonly attempt: number;
   readonly verdict: 'accept' | 'reject';
-  readonly action: 'accept' | 'retry' | 'fail';
+  readonly action: 'accept' | 'repair' | 'retry' | 'fail';
   readonly retryCause: AuditRetryCause | null;
   readonly missingRequiredTools: readonly string[];
   readonly disallowedToolCalls: readonly string[];
@@ -212,7 +212,7 @@ export interface TurnOutcomeRecord {
   readonly primaryDmCallCount: number;
   /** Expensive primary-DM candidate regenerations caused by audit rejection. */
   readonly primaryDmRetryCount: number;
-  /** Retry causes observed before terminal accept/fail. */
+  /** Audit rejection causes observed before terminal accept/fail. */
   readonly retryCauses: readonly AuditRetryCause[];
   /** True when at least one audit retry happened and a later candidate passed. */
   readonly retrySucceeded: boolean | null;

@@ -26,7 +26,10 @@ import type {
 } from '../model/usage.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
-import { classifyAuditRetryCause } from './auditRetryDiagnostics.js';
+import {
+  classifyAuditPresentationRepair,
+  classifyAuditRetryCause,
+} from './auditRetryDiagnostics.js';
 import type { AdventureModuleResolver } from './contextAssembler.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
 import { appendPlayerVisibleRollLedger } from './playerVisibleRollLedger.js';
@@ -658,7 +661,12 @@ export async function runTurn(
           extra: { purpose: 'turn_audit', attempt: String(attempt) },
         },
       });
-      const accepted = verdict.verdict === 'accept';
+      const presentationRepairCause = classifyAuditPresentationRepair(
+        verdict,
+        candidate.toolCalls,
+      );
+      const accepted =
+        verdict.verdict === 'accept' || presentationRepairCause !== null;
       const requirementKeys = auditRequirementKeys(verdict);
       const retry = accepted
         ? false
@@ -673,12 +681,17 @@ export async function runTurn(
           seenRequirementKeys.add(key);
         }
       }
-      const action: 'accept' | 'retry' | 'fail' = accepted
-        ? 'accept'
-        : retry && attempt < maxAttempts
-          ? 'retry'
-          : 'fail';
-      const retryCause = classifyAuditRetryCause(verdict, candidate.toolCalls);
+      const action: 'accept' | 'repair' | 'retry' | 'fail' =
+        verdict.verdict === 'accept'
+          ? 'accept'
+          : presentationRepairCause !== null
+            ? 'repair'
+            : retry && attempt < maxAttempts
+              ? 'retry'
+              : 'fail';
+      const retryCause =
+        presentationRepairCause ??
+        classifyAuditRetryCause(verdict, candidate.toolCalls);
       if (retryCause !== null) {
         retryCauses.push(retryCause);
       }

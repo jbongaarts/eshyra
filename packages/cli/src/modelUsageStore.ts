@@ -202,7 +202,7 @@ export interface TimelineToolCall {
 export interface TimelineAuditCall {
   readonly attempt: number;
   readonly verdict: 'accept' | 'reject';
-  readonly action: 'accept' | 'retry' | 'fail';
+  readonly action: 'accept' | 'repair' | 'retry' | 'fail';
   readonly retryCause: AuditRetryCause | null;
   readonly missingRequiredTools: readonly string[];
   readonly disallowedToolCalls: readonly string[];
@@ -282,7 +282,7 @@ type TimelineAuditRow = {
   turn_id: string | null;
   attempt: number;
   verdict: 'accept' | 'reject';
-  action: 'accept' | 'retry' | 'fail';
+  action: 'accept' | 'repair' | 'retry' | 'fail';
   retry_cause: AuditRetryCause | null;
   missing_required_tools_json: string;
   disallowed_tool_calls_json: string;
@@ -808,6 +808,7 @@ function parseRetryCauseArray(raw: string | null): AuditRetryCause[] {
 
 function isAuditRetryCause(value: string): value is AuditRetryCause {
   return (
+    value === 'presentation_only_roll_ledger' ||
     value === 'missing_roll_visibility' ||
     value === 'missing_state' ||
     value === 'missing_world_evidence' ||

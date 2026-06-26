@@ -1032,6 +1032,15 @@ const rejectRoll: AuditVerdict = {
   reason: 'dice asserted without roll',
   repairInstruction: 'Call the roll tool before narrating the result.',
 };
+const repairRollLedger: AuditVerdict = {
+  verdict: 'reject',
+  missingRequiredTools: ['roll'],
+  missingRequiredCalls: [{ tool: 'roll', target: 'model-authored ledger' }],
+  disallowedToolCalls: [],
+  reason: 'only the model-authored roll ledger presentation is wrong',
+  repairInstruction: 'Replace the model-authored ledger from structured rolls.',
+  presentationOnlyRepair: { kind: 'roll_ledger' },
+};
 
 function collectingAuditSink(): SessionDebugSink & {
   audits: TurnAuditDebugEvent[];
@@ -1967,6 +1976,68 @@ describe('orchestrator per-turn timing diagnostics (eshyra-17ng)', () => {
     expect(diagnostics.outcomes[0]).toMatchObject({
       retryCauses: ['missing_roll_visibility'],
       retrySucceeded: true,
+    });
+    db.close();
+  });
+
+  it('repairs presentation-only roll ledger rejections without primary-DM regeneration', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const model = new BridgeMcpModel([
+      {
+        calls: [
+          {
+            name: 'roll',
+            args: {
+              dice: '1d20+5',
+              reason: 'bandit attack',
+              visibility: 'player_visible',
+              category: 'attack',
+            },
+          },
+        ],
+        text: [
+          'The bandit presses the attack.',
+          '',
+          'Rolls:',
+          '- Attack (bandit attack): 1d20+5 = 99 (99)',
+        ].join('\n'),
+      },
+    ]);
+    const auditor = new ScriptedAuditor([repairRollLedger]);
+    const diagnostics = collectingDiagnosticsSink();
+
+    const result = await runTurn(
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        diagnostics,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(model.seen).toHaveLength(1);
+    expect(result.narration).toContain('The bandit presses the attack.');
+    expect(result.narration).toContain('Rolls:');
+    expect(result.narration).not.toContain('= 99 (99)');
+    expect(diagnostics.audits).toHaveLength(1);
+    expect(diagnostics.audits[0]).toMatchObject({
+      verdict: 'reject',
+      action: 'repair',
+      retryCause: 'presentation_only_roll_ledger',
+      executedToolNames: ['roll'],
+    });
+    expect(diagnostics.outcomes[0]).toMatchObject({
+      outcome: 'accepted',
+      attempts: 1,
+      auditorCallCount: 1,
+      primaryDmCandidateCount: 1,
+      primaryDmRetryCount: 0,
+      retryCauses: ['presentation_only_roll_ledger'],
+      retrySucceeded: null,
     });
     db.close();
   });
