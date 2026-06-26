@@ -42,7 +42,7 @@ import {
   rollAbilityScoreSet,
   summarizePointBuy,
   summarizeStandardArray,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
 import type { CharacterDraftStore } from './characterDraftStore.js';
 import type { CliIO } from './playTypes.js';
 

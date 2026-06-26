@@ -15,7 +15,7 @@ import {
   finalizeCharacterDraft,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
 import {
   type CharacterDraftStore,
   createFileCharacterDraftStore,

@@ -1,6 +1,5 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { openDatabase } from '@eshyra/core';
 import type {
   AuditRetryCause,
   Db,
@@ -11,7 +10,8 @@ import type {
   TurnDiagnosticsSink,
   TurnOutcome,
   TurnOutcomeRecord,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
+import { openDatabase } from '@eshyra/core';
 import { diagnosticsDir } from './dataRoot.js';
 
 const CREATE_TABLE = `

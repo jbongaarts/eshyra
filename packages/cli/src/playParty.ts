@@ -4,7 +4,7 @@ import {
   listParty,
   resolveCharacterRef,
   setActiveCharacterId,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
 import type { CliIO } from './playTypes.js';
 
 /** Print the party roster: one line per member, active member flagged. */

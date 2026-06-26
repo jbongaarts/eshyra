@@ -8,19 +8,17 @@ import type {
   SessionRecapRecord,
 } from '@eshyra/core';
 import {
+  closeOpenArcAndOpenNext,
   closeSessionGracefully,
   composeArcSummary,
   composeSessionRecap,
   extractCampaignBible,
   getCampaignBible,
-  getSessionRecap,
-} from '@eshyra/core';
-import {
-  closeOpenArcAndOpenNext,
   getClosedSessionsInOpenArc,
+  getSessionRecap,
   listClosedArcSummaries,
   openArcIfMissing,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
 import type { PlayDeps } from './playTypes.js';
 
 /**

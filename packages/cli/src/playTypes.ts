@@ -1,20 +1,18 @@
 import type {
   Db,
+  InstalledAdventureModule,
+  MemoryConfig,
   ModelClient,
   ModulePack,
   RunTurnDeps,
   RunTurnInput,
   RunTurnResult,
   SessionCheckpointRunner,
+  SessionDebugSink,
   ToolRegistry,
   TurnAuditor,
-} from '@eshyra/core';
-import type {
-  InstalledAdventureModule,
-  MemoryConfig,
-  SessionDebugSink,
   TurnDiagnosticsSink,
-} from '@eshyra/core/internal';
+} from '@eshyra/core';
 
 /** Player-facing input/output seam. A terminal impl is {@link nodeIO}. */
 export interface CliIO {
