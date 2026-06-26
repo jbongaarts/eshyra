@@ -7,7 +7,10 @@ Date: 2026-05-22
 > **Superseded.** ADR 0004 replaces the explicit-only storage model below with
 > a managed per-user data root, a config file, and a campaign registry. The
 > `ESHYRA_DB_PATH` explicit path survives as a deliberate advanced option,
-> not as the only mechanism. There was no installed user base to migrate.
+> not as the only mechanism. There was no installed user base to migrate. Later
+> distribution work also moved the end-user CLI channel to self-contained
+> GitHub Release archives; npm-package wording below is historical context for
+> the superseded plan.
 
 ## Context
 
@@ -15,7 +18,7 @@ The local CLI MVP currently reads campaign and provider configuration from
 environment variables. `ESHYRA_DB_PATH` is required and names the active
 campaign SQLite file. Dolt checkpoints are optional and live beside that file.
 
-Before the first npm CLI release, distribution docs need a concrete storage
+Before the first CLI release, distribution docs need a concrete storage
 decision so users know where Eshyra writes data and release automation can
 smoke the installed command without waiting for a broader config-file or
 campaign-picker design.
@@ -35,7 +38,7 @@ There is no default per-user app-data root for campaign databases yet.
 - Provider secrets: local process environment for the CLI release.
 - Config/env templates: repository/package documentation such as
   `.env.example`; the CLI does not auto-load `.env` files.
-- Bundled static content: npm package build output, copied into campaign
+- Bundled static content: release/package build output, copied into campaign
   tables when a campaign is created.
 
 Platform app-data roots such as `%APPDATA%\Eshyra`,

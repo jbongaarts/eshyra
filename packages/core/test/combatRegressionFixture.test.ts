@@ -12,12 +12,14 @@ import type {
 } from '../src/internal.js';
 import {
   createDefaultToolRegistry,
+  DEFAULT_TOOLS,
   getTurnTrace,
   listCombatants,
   openScene,
   readStateSnapshot,
   runTurn,
   startAdventureRun,
+  ToolRegistry,
 } from '../src/internal.js';
 import { rollTool } from '../src/orchestrator/toolRoll.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
@@ -133,6 +135,18 @@ function plannedRollTool(plan: readonly PlannedRoll[]): Tool {
       };
     },
   };
+}
+
+function createCombatFixtureRegistry(
+  plan: readonly PlannedRoll[],
+): ToolRegistry {
+  const registry = new ToolRegistry();
+  for (const tool of DEFAULT_TOOLS) {
+    if (tool.name !== 'roll') {
+      registry.register(tool);
+    }
+  }
+  return registry.register(plannedRollTool(plan));
 }
 
 function toolCall(tool: string, args: unknown): string {
@@ -366,9 +380,7 @@ const ROLL_PLAN: readonly PlannedRoll[] = [
 describe('first combat playtest deterministic regression fixture', () => {
   it('forces the combat path while asserting mechanical invariants, not prose', async () => {
     const { db, module } = setupDb();
-    const registry = createDefaultToolRegistry().register(
-      plannedRollTool(ROLL_PLAN),
-    );
+    const registry = createCombatFixtureRegistry(ROLL_PLAN);
     const model = new ScriptedModel([
       toolCalls(deterministicCombatCalls()),
       'Steel flashes in the hollow. One goblin falls, but Bob is dropped and clings to life.',

@@ -23,9 +23,9 @@
  * all existing invariants (source xor identity, per-record provenance match,
  * per-kind shape checks) are enforced on every load.
  *
- * When this package is published, the `data/` directory is included in
- * `files` in `package.json` alongside `dist/`, so consumers that install
- * `@eshyra/core` from npm get the seed packs pre-populated.
+ * Release archives include this package's `data/` directory alongside `dist/`
+ * so bundled seed packs are pre-populated for the CLI. The package manifest
+ * also keeps `data/` in `files` for private/internal package artifacts.
  *
  * ## Loader guarantee
  *
@@ -34,9 +34,9 @@
  * same field values).  Stability is achieved by:
  *   1. Sorting records by `key` (lexicographic, UTF-16 code unit order) after
  *      parsing, before returning.
- *   2. `JSON.parse` preserves object-property insertion order in all V8
- *      versions that Node 22 uses, so per-field order within a record is
- *      stable across runs.
+ *   2. `JSON.parse` preserves object-property insertion order in the supported
+ *      Node 24 runtime, so per-field order within a record is stable across
+ *      runs.
  */
 
 import { readFileSync } from 'node:fs';

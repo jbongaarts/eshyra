@@ -126,6 +126,9 @@ export class ToolRegistry {
   private readonly tools = new Map<string, Tool>();
 
   register(tool: Tool): this {
+    if (this.tools.has(tool.name)) {
+      throw new Error(`duplicate tool registration: ${tool.name}`);
+    }
     this.tools.set(tool.name, tool);
     return this;
   }

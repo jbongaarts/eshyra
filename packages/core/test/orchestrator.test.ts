@@ -19,6 +19,7 @@ import type {
 import {
   appendSceneLog,
   createDefaultToolRegistry,
+  createSeededRng,
   ensureCharacterRow,
   getTurnFailureDiagnostic,
   getTurnTrace,
@@ -29,6 +30,7 @@ import {
   queryCampaignOverlayLore,
   runTurn,
 } from '../src/internal.js';
+import { runModelLoop } from '../src/orchestrator/turnLoop.js';
 import { freshDbWithSession } from './support/db.js';
 
 const CAMPAIGN = 'campaign-1';
@@ -1787,6 +1789,42 @@ class RateLimitModel implements ModelClient {
 }
 
 describe('orchestrator per-turn timing diagnostics (eshyra-17ng)', () => {
+  it('keeps the model loop successful when the tool-span callback throws', async () => {
+    const db = freshDbWithSession();
+    const registry = createDefaultToolRegistry();
+    const model = new ScriptedModel([
+      toolCall('roll', { dice: '1d20', reason: 'perception' }),
+      'You scan the room.',
+    ]);
+
+    const result = await runModelLoop({
+      model,
+      registry,
+      toolCtx: {
+        db,
+        rng: createSeededRng(42),
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        turnId: 'turn-1',
+        at: '2026-05-20T10:00:00.000Z',
+      },
+      system: 'test system',
+      initialUserMessage: 'test turn',
+      maxToolRounds: 4,
+      onToolSpan: () => {
+        throw new Error('diagnostics storage unavailable');
+      },
+    });
+
+    expect(result.narration).toBe('You scan the room.');
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls[0]).toMatchObject({
+      tool: 'roll',
+      result: { ok: true },
+    });
+    db.close();
+  });
+
   it('records per-tool spans and an accepted outcome for a successful audited turn', async () => {
     const db = freshDbWithSession();
     withOpenScene(db);
