@@ -67,14 +67,15 @@ the live local working copy, not as separate Eshyra stores.
 ## Schema Versions and Migration
 
 > **Direction:** this section describes the current TypeScript migration-chain
-> model. It is being replaced by migration-first SQLite schema management —
+> model, and some illustrative details below (e.g. the example migration map)
+> are stale. It is being replaced by migration-first SQLite schema management —
 > versioned `.sql` files as the single executable authority plus a
 > `schema_migrations` ledger — per
-> [ADR 0015](adr/0015-migration-first-sqlite-schema-management.md). This text is
-> rewritten when that work lands (`eshyra-4s0r.1`).
+> [ADR 0015](adr/0015-migration-first-sqlite-schema-management.md). This section
+> is rewritten when that work lands (`eshyra-4s0r.1.6`).
 
 Every campaign SQLite database records its schema version in the `meta` table
-(`key = 'schema_version'`). The current application schema version is `8`.
+(`key = 'schema_version'`). The current application schema version is `15`.
 
 ### Compatibility expectations (pre-release)
 

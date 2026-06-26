@@ -80,7 +80,11 @@ authority.** After `eshyra-4s0r.1.6`, `initSchema` no longer contains a
 `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS` latest-schema block,
 no longer carries a `SCHEMA_VERSION` constant as the schema authority, and the
 `MIGRATIONS` TypeScript chain in `migrations.ts` is removed. The only thing that
-creates or alters schema is the migration runner applying `.sql` files.
+creates or alters **application schema** is the migration runner applying `.sql`
+files. The `schema_migrations` ledger is the sole runner-owned infrastructure
+exception: the runner creates and maintains it before applying migrations (see
+§2). It is never declared in a migration file, and the runner never creates any
+other schema outside migrations.
 
 ### 2. `schema_migrations` ledger is the applied-state authority
 
