@@ -434,42 +434,79 @@ function buildReadme(version, target, edition) {
   ].join('\n')}\n`;
 }
 
-function writeLaunchers(stageDir, entryRel) {
-  // POSIX launcher: exec the bundled node by absolute path (works with an empty
-  // PATH), and prepend runtime/ to PATH so the Agent SDK's `node` subprocess
-  // also resolves to the bundled runtime rather than any system Node.
-  const sh = `#!/bin/sh
+/**
+ * Render the POSIX `eshyra` launcher.
+ *
+ * It execs the bundled node by absolute path (works with an empty PATH) and
+ * prepends runtime/ to PATH so the Agent SDK's `node` subprocess also resolves
+ * to the bundled runtime rather than any system Node.
+ *
+ * Portability (eshyra-4s0r.3): release artifacts target both Linux (GNU
+ * userland) and macOS (BSD userland), so the script must run identically under
+ * dash, bash-as-sh, and macOS's /bin/sh. We therefore avoid GNU-only argument
+ * forms — `dirname --` and `readlink --` are NOT portable to BSD `dirname`/
+ * `readlink`, which historically reject the `--` end-of-options operand. The
+ * symlink walk uses bare `readlink` (universally available, no flags) and
+ * computes the parent directory with POSIX parameter expansion instead of the
+ * external `dirname`. `cd --` is kept: `cd` is a POSIX shell built-in whose
+ * `--` is guaranteed, and it lets install paths that start with `-` still work.
+ */
+function renderPosixLauncher(entryRel) {
+  return `#!/bin/sh
 set -e
 # Resolve symlinks before computing our own location: the installer puts a
 # symlink on PATH (e.g. ~/.local/bin/eshyra -> .../app/<artifact>/bin/eshyra),
 # and "$0" is then the symlink path. Walk the symlink chain so runtime/ and the
 # app entry resolve relative to the REAL launcher, not the symlink's directory.
+#
+# Portable across GNU and BSD/macOS userland: bare \`readlink\` (no \`--\`) plus
+# parameter-expansion \`dirname\` (no external \`dirname --\`). A symlink target
+# may be relative to the symlink's OWN directory, so resolve it against that.
+dirname_of() {
+    case $1 in
+        */*)
+            d=\${1%/*}
+            # A single leading slash strips to empty; that means filesystem root.
+            [ -z "$d" ] && d=/
+            printf '%s\\n' "$d"
+            ;;
+        *) printf '%s\\n' "." ;;
+    esac
+}
 src=$0
 while [ -L "$src" ]; do
-    dir=$(CDPATH= cd -- "$(dirname -- "$src")" && pwd)
-    src=$(readlink -- "$src")
-    case $src in
-        /*) ;;
-        *) src=$dir/$src ;;
+    target=$(readlink "$src")
+    case $target in
+        /*) src=$target ;;
+        *) src=$(dirname_of "$src")/$target ;;
     esac
 done
-here=$(CDPATH= cd -- "$(dirname -- "$src")" && pwd)
+here=$(CDPATH= cd -- "$(dirname_of "$src")" && pwd)
 root=$(CDPATH= cd -- "$here/.." && pwd)
 PATH="$root/runtime:$PATH"
 export PATH
 exec "$root/runtime/node" "$root/${entryRel}" "$@"
 `;
-  const cmd = `@echo off\r
+}
+
+/** Render the Windows `eshyra.cmd` launcher (CRLF line endings). */
+function renderWindowsLauncher(entryRel) {
+  return `@echo off\r
 setlocal\r
 set "HERE=%~dp0"\r
 set "ROOT=%HERE%.."\r
 set "PATH=%ROOT%\\runtime;%PATH%"\r
 "%ROOT%\\runtime\\node.exe" "%ROOT%\\${entryRel.replaceAll('/', '\\')}" %*\r
 `;
+}
+
+function writeLaunchers(stageDir, entryRel) {
   const binDir = join(stageDir, 'bin');
   mkdirSync(binDir, { recursive: true });
-  writeFileSync(join(binDir, 'eshyra'), sh, { mode: 0o755 });
-  writeFileSync(join(binDir, 'eshyra.cmd'), cmd);
+  writeFileSync(join(binDir, 'eshyra'), renderPosixLauncher(entryRel), {
+    mode: 0o755,
+  });
+  writeFileSync(join(binDir, 'eshyra.cmd'), renderWindowsLauncher(entryRel));
 }
 
 function dirSize(dir) {
@@ -676,6 +713,8 @@ function packWorkspace(workspace, packDir, cache) {
 export {
   normalizeVersion,
   removeBinShimsFor,
+  renderPosixLauncher,
+  renderWindowsLauncher,
   resolveEdition,
   resolveVersion,
   VERSION_SENTINEL,
