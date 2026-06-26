@@ -61,7 +61,11 @@ hand-maintained latest-schema DDL is retired as authority.
 ### 1. SQL migration files are the canonical executable schema source
 
 - Schema changes are expressed **only** as ordered SQL migration files under
-  `packages/core/src/persistence/migrations/`.
+  `packages/core/data/migrations/`. (The runner bead `eshyra-4s0r.1.3` settled
+  this load location: it mirrors the bundled SRD pack under `data/`, which is
+  listed in `package.json` `files` and ships in every edition. The provisional
+  `src/persistence/migrations/` location named in earlier drafts of this ADR was
+  not packageable — `tsc --build` does not copy non-TS assets into `dist`.)
 - Files are named `NNNN_snake_case_name.sql` with a **zero-padded 4-digit**
   version prefix: `0001_initial.sql`, `0002_add_party_index.sql`, …
 - Versions are **strictly contiguous from `0001`, monotonically increasing, with
@@ -192,9 +196,13 @@ by adoption, so the chain can be retired.
 ### 7. Generated schema snapshot (review artifact, not authority)
 
 A human-readable schema snapshot **may** exist for review and diffing —
-`schema.snapshot.sql` adjacent to the migrations (or a clearly named generated
-file under the same directory).
+`packages/core/data/schema.snapshot.sql`.
 
+- It **must not** live inside `packages/core/data/migrations/`. That directory
+  contains **only** executable `NNNN_name.sql` migration files; the runner
+  discovers every `.sql` there and treats it as a migration (a non-migration
+  filename like `schema.snapshot.sql` placed there is rejected as malformed). The
+  snapshot is a sibling under `data/`, on a non-migration path.
 - It is **generated-only**: produced by applying all migrations to a fresh
   in-memory DB and dumping the resulting schema in a deterministic order. It
   carries a header comment marking it generated — *do not hand-edit*.
@@ -231,7 +239,7 @@ as the schema-version authority is retired.)
 
 To change the schema:
 
-1. **Add a new file** `packages/core/src/persistence/migrations/NNNN_name.sql`,
+1. **Add a new file** `packages/core/data/migrations/NNNN_name.sql`,
    where `NNNN` is the next contiguous version after the current highest. Write
    plain SQLite DDL/DML. Remember SQLite has no `ALTER TABLE … ADD COLUMN
    IF NOT EXISTS`; a forward-only migration runs exactly once, so unguarded

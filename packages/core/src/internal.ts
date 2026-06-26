@@ -597,6 +597,22 @@ export {
 // Database internals.
 export type { Db } from './persistence/db.js';
 export { withTransaction } from './persistence/db.js';
+// Migration-first SQLite schema runner and ledger (ADR 0015).
+export type {
+  DiscoveredMigration,
+  MigrationLedgerRow,
+  RunMigrationsOptions,
+  RunMigrationsResult,
+} from './persistence/migrationRunner.js';
+export {
+  discoverMigrations,
+  ensureMigrationLedger,
+  migrationChecksum,
+  normalizeMigrationSql,
+  readMigrationLedger,
+  runMigrations,
+  SchemaMigrationError,
+} from './persistence/migrationRunner.js';
 // Built-in rules pack objects (pre-importer; superseded by 0m9 deterministic importer outputs).
 // Not on the stable public surface — use @eshyra/core for consumer-facing API.
 export type {
