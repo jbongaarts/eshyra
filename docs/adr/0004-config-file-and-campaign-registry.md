@@ -133,8 +133,9 @@ CLI behavior, the default path:
 RPG rules/mechanics data is a distinct layer from module content and live
 campaign state, and is stored distinctly:
 
-- **Bundled packs** ship inside the `@eshyra/core` npm package build
-  output. Today that is the D&D SRD 5.1 catalog and its CC-BY license metadata
+- **Bundled packs** ship inside the self-contained CLI release archive, sourced
+  from the `@eshyra/core` private package build output. Today that is the D&D
+  SRD 5.1 catalog and its CC-BY license metadata
   (`packages/core/src/srd/data.ts` — a compiled-in `SRD_CATALOG` constant).
   Bundled packs are read-only, in-process, and identical for every user and
   campaign; they are never written to the per-user data root.
@@ -153,8 +154,9 @@ instead of being duplicated into every campaign database.
 The rules-pack schema, system/version/license/allowed-use metadata, load order,
 licensing enforcement, and lookup routing are designed by epic
 `loreweaver-x3w` (Support multiple RPG rules packs). ADR 0004 fixes only the
-storage boundary: bundled packs in the npm package, installed packs in
-`<root>/rules-packs/`, never mixed into `campaigns/` or campaign databases.
+storage boundary: bundled packs in the release archive/private package build,
+installed packs in `<root>/rules-packs/`, never mixed into `campaigns/` or
+campaign databases.
 
 ### Explicit-path campaigns
 
@@ -185,7 +187,7 @@ follow-up beads under epic `loreweaver-d4r`.
   back up, and delete.
 - `<root>/rules-packs/` is reserved now so epic `loreweaver-x3w` has a fixed
   storage boundary to design against; the bundled D&D SRD continues to ship in
-  the `@eshyra/core` package and is unaffected.
+  the CLI release archive and is unaffected.
 - When accepted and implemented this ADR supersedes ADR 0003: the explicit-only
   first-release model is replaced outright, with no migration step because no
   installations exist. ADR 0003 should be marked superseded at that point, and

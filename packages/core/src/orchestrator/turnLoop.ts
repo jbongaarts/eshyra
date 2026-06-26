@@ -162,8 +162,8 @@ export interface RunModelLoopInput {
    * Best-effort per-tool timing callback (eshyra-17ng). Invoked once for every
    * tool the loop executes — both the outer api-native/fenced path and the
    * provider-driven MCP path (via the `executeTool` bridge) — with the measured
-   * duration and structural metadata. Must never throw; the loop does not guard
-   * it, so the caller is responsible for swallowing sink failures.
+   * duration and structural metadata. Best-effort: callback failures are
+   * swallowed so telemetry cannot destabilize gameplay/model execution.
    */
   onToolSpan?: (span: ToolSpan) => void;
 }
@@ -196,6 +196,16 @@ export async function runModelLoop(
   const tools = registry.definitions();
   let rounds = 0;
   let narration: string | undefined;
+  const emitToolSpan = (span: ToolSpan): void => {
+    if (onToolSpan === undefined) {
+      return;
+    }
+    try {
+      onToolSpan(span);
+    } catch {
+      // Tool timing is diagnostics only; sink failures must not affect gameplay.
+    }
+  };
   // Time one deterministic tool invocation and emit a structural span. Shared by
   // the outer api-native/fenced path and the provider-driven MCP bridge below so
   // every executed tool is measured the same way (eshyra-17ng).
@@ -210,7 +220,7 @@ export async function runModelLoop(
       result = registry.invoke(tool, args, toolCtx);
       return result;
     } finally {
-      onToolSpan?.({
+      emitToolSpan({
         tool,
         source,
         mutates: registry.isMutating(tool),

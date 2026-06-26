@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  JsonSchema,
   MarkSceneToolData,
   ModelToolDefinition,
   ToolContext,
@@ -110,6 +111,18 @@ describe('rollDice', () => {
 });
 
 describe('ToolRegistry', () => {
+  const duplicateTool = {
+    name: 'duplicate',
+    mutates: false,
+    description: 'Duplicate registration fixture.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+    },
+    run: () => ({ ok: true, data: null }),
+  } as const;
+
   it('returns a structured error for an unknown tool', () => {
     const registry = new ToolRegistry();
     const result = registry.invoke('does_not_exist', {}, ctx());
@@ -117,6 +130,14 @@ describe('ToolRegistry', () => {
     if (!result.ok) {
       expect(result.code).toBe('unknown_tool');
     }
+  });
+
+  it('rejects duplicate tool registration with the tool name', () => {
+    const registry = new ToolRegistry().register(duplicateTool);
+
+    expect(() => registry.register(duplicateTool)).toThrow(
+      /duplicate tool registration: duplicate/,
+    );
   });
 
   it('lists the default tool set', () => {
@@ -914,6 +935,54 @@ describe('memory_drilldown tool', () => {
 });
 
 describe('tool schema metadata (eshyra-0jq.10)', () => {
+  const VALIDATED_SCHEMA_KEYWORDS = new Set([
+    'additionalProperties',
+    'anyOf',
+    'enum',
+    'items',
+    'maximum',
+    'maxItems',
+    'maxLength',
+    'minimum',
+    'minItems',
+    'minLength',
+    'oneOf',
+    'pattern',
+    'properties',
+    'required',
+    'type',
+  ]);
+  const DOCUMENTATION_ONLY_SCHEMA_KEYWORDS = new Set([
+    // Descriptions are provider-facing metadata, not runtime validation rules.
+    'description',
+  ]);
+
+  function collectSchemaKeywords(
+    schema: JsonSchema,
+    into = new Set<string>(),
+  ): Set<string> {
+    for (const key of Object.keys(schema)) {
+      into.add(key);
+    }
+    for (const child of Object.values(schema.properties ?? {})) {
+      collectSchemaKeywords(child, into);
+    }
+    const additionalProperties = schema.additionalProperties;
+    if (
+      typeof additionalProperties === 'object' &&
+      additionalProperties !== null
+    ) {
+      collectSchemaKeywords(additionalProperties, into);
+    }
+    if (schema.items) {
+      collectSchemaKeywords(schema.items, into);
+    }
+    for (const child of [...(schema.oneOf ?? []), ...(schema.anyOf ?? [])]) {
+      collectSchemaKeywords(child, into);
+    }
+    return into;
+  }
+
   it('every bundled tool publishes an object-typed input schema', () => {
     for (const tool of DEFAULT_TOOLS) {
       expect(tool.inputSchema.type).toBe('object');
@@ -923,6 +992,19 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       if (tool.name === 'add_condition') continue;
       expect(tool.inputSchema.additionalProperties).toBe(false);
     }
+  });
+
+  it('uses only validated or documented provider-only schema keywords', () => {
+    const observed = new Set<string>();
+    for (const tool of DEFAULT_TOOLS) {
+      collectSchemaKeywords(tool.inputSchema, observed);
+    }
+
+    const allowed = new Set([
+      ...VALIDATED_SCHEMA_KEYWORDS,
+      ...DOCUMENTATION_ONLY_SCHEMA_KEYWORDS,
+    ]);
+    expect([...observed].filter((key) => !allowed.has(key)).sort()).toEqual([]);
   });
 
   it('exposes provider-neutral definitions through ToolRegistry.definitions()', () => {
