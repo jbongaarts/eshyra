@@ -1,44 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { openDatabase, withTransaction } from '../src/persistence/db.js';
-import { SchemaMigrationError } from '../src/persistence/migrations.js';
 import {
-  initSchema,
-  SCHEMA_VERSION,
-  SchemaCompatibilityError,
-} from '../src/persistence/schema.js';
+  readMigrationLedger,
+  SchemaResetRequiredError,
+} from '../src/persistence/migrationRunner.js';
+import { initSchema } from '../src/persistence/schema.js';
 
 describe('persistence', () => {
-  it('initSchema records the schema version', () => {
+  it('initSchema applies the baseline migration and records the ledger', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
-    const row = db
-      .prepare('SELECT value FROM meta WHERE key = ?')
-      .get('schema_version') as { value: string } | undefined;
-    expect(row?.value).toBe(String(SCHEMA_VERSION));
+    const ledger = readMigrationLedger(db);
+    expect(ledger.map((row) => row.version)).toEqual([1]);
+    expect(ledger[0].name).toBe('initial');
     db.close();
   });
 
-  it('accepts a current schema without changing the version', () => {
+  it('initSchema is idempotent: a second call applies no further migrations', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
-
     initSchema(db);
-
-    const row = db
-      .prepare('SELECT value FROM meta WHERE key = ?')
-      .get('schema_version') as { value: string } | undefined;
-    expect(row?.value).toBe(String(SCHEMA_VERSION));
+    expect(readMigrationLedger(db).map((row) => row.version)).toEqual([1]);
     db.close();
   });
 
-  it('refuses newer schema versions before mutating the database', () => {
+  it('initSchema rejects a newer legacy schema_version before mutating the database', () => {
     const db = openDatabase(':memory:');
     db.exec(`
       CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-      INSERT INTO meta(key, value) VALUES ('schema_version', '${SCHEMA_VERSION + 1}');
+      INSERT INTO meta(key, value) VALUES ('schema_version', '16');
     `);
 
-    expect(() => initSchema(db)).toThrow(SchemaCompatibilityError);
+    expect(() => initSchema(db)).toThrow(SchemaResetRequiredError);
 
     const tables = db
       .prepare(
@@ -46,23 +39,17 @@ describe('persistence', () => {
       )
       .all() as Array<{ name: string }>;
     expect(tables.map((row) => row.name)).toEqual(['meta']);
-    const row = db
-      .prepare('SELECT value FROM meta WHERE key = ?')
-      .get('schema_version') as { value: string } | undefined;
-    expect(row?.value).toBe(String(SCHEMA_VERSION + 1));
     db.close();
   });
 
-  it('throws SchemaMigrationError without partial mutation when no migration covers the database version', () => {
-    // Version 1 has no registered migration path (MIGRATIONS starts at v8), so
-    // the pre-flight check must fail clearly without altering the database.
+  it('initSchema rejects a below-baseline legacy schema_version without mutation', () => {
     const db = openDatabase(':memory:');
     db.exec(`
       CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       INSERT INTO meta(key, value) VALUES ('schema_version', '1');
     `);
 
-    expect(() => initSchema(db)).toThrow(SchemaMigrationError);
+    expect(() => initSchema(db)).toThrow(SchemaResetRequiredError);
 
     const tables = db
       .prepare(
@@ -70,14 +57,10 @@ describe('persistence', () => {
       )
       .all() as Array<{ name: string }>;
     expect(tables.map((row) => row.name)).toEqual(['meta']);
-    const row = db
-      .prepare('SELECT value FROM meta WHERE key = ?')
-      .get('schema_version') as { value: string } | undefined;
-    expect(row?.value).toBe('1');
     db.close();
   });
 
-  it('fails clearly for legacy unversioned databases without partial mutation', () => {
+  it('initSchema fails closed for a legacy unversioned database without mutation', () => {
     const db = openDatabase(':memory:');
     db.exec(`
       CREATE TABLE character (
@@ -86,7 +69,7 @@ describe('persistence', () => {
       );
     `);
 
-    expect(() => initSchema(db)).toThrow(SchemaCompatibilityError);
+    expect(() => initSchema(db)).toThrow(SchemaResetRequiredError);
 
     const tables = db
       .prepare(
@@ -131,10 +114,6 @@ describe('persistence', () => {
     db.close();
   });
 
-  it('exports SCHEMA_VERSION 15', () => {
-    expect(SCHEMA_VERSION).toBe(15);
-  });
-
   it('creates the campaign_arc table with the one-open partial index', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
@@ -158,14 +137,12 @@ describe('persistence', () => {
     initSchema(db);
     const cols = db
       .prepare('PRAGMA table_info(campaign_session)')
-      .all() as Array<{
-      name: string;
-    }>;
+      .all() as Array<{ name: string }>;
     expect(cols.map((c) => c.name)).toContain('arc_id');
     db.close();
   });
 
-  it('initSchema creates canonical game-state tables with provenance columns', () => {
+  it('initSchema creates canonical game-state tables with provenance columns and seed rows', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
 
@@ -199,6 +176,11 @@ describe('persistence', () => {
 
     const clockRows = db.prepare('SELECT id FROM clock').all();
     expect(clockRows).toEqual([{ id: 1 }]);
+
+    const active = db
+      .prepare("SELECT value FROM meta WHERE key = 'active_character_id'")
+      .get() as { value: string } | undefined;
+    expect(active?.value).toBe('pc-1');
 
     db.close();
   });

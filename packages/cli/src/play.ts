@@ -43,8 +43,9 @@ export async function runPlay(
   validateMemoryConfig(deps.memoryConfig);
   const db = deps.openDb(options.dbPath);
   try {
-    // initSchema is idempotent (CREATE IF NOT EXISTS), so this is safe whether
-    // the database is brand-new or an existing campaign.
+    // initSchema is migration-first and idempotent: it applies pending
+    // migrations (all of them for a brand-new database) and is a no-op on an
+    // already up-to-date campaign.
     initSchema(db);
     const campaign = resolveCampaign(deps, db);
     const characterReady = await ensureCharacterReady(deps, db);

@@ -66,49 +66,48 @@ the live local working copy, not as separate Eshyra stores.
 
 ## Schema Versions and Migration
 
-> **Direction:** this section describes the current TypeScript migration-chain
-> model, and some illustrative details below (e.g. the example migration map)
-> are stale. It is being replaced by migration-first SQLite schema management —
-> versioned `.sql` files as the single executable authority plus a
-> `schema_migrations` ledger — per
-> [ADR 0015](adr/0015-migration-first-sqlite-schema-management.md). This section
-> is rewritten when that work lands (`eshyra-4s0r.1.6`).
+Schema management is **migration-first** (see
+[ADR 0015](adr/0015-migration-first-sqlite-schema-management.md)). Versioned SQL
+migration files under `packages/core/data/migrations/` are the single executable
+source of truth for the schema; there is no hand-maintained latest-schema DDL.
+Applied state is recorded in a `schema_migrations` ledger (`version`, `name`,
+`checksum`, `applied_at`), which replaces the old `meta.schema_version`
+authority. `initSchema(db)` delegates to the migration runner.
 
-Every campaign SQLite database records its schema version in the `meta` table
-(`key = 'schema_version'`). The current application schema version is `15`.
-
-### Compatibility expectations (pre-release)
-
-Eshyra is pre-release software. Campaign databases may not survive arbitrary
-schema changes, but the migration framework minimises breakage:
+### What happens on open
 
 | Situation | Outcome |
 |-----------|---------|
-| DB version == current | Opens normally; `initSchema` is idempotent. |
-| DB version > current (newer build wrote it) | Rejected with `SchemaCompatibilityError`. Update your `eshyra` installation. |
-| DB version < current, migration registered | `initSchema` runs all registered migrations in order before proceeding. Each migration step commits atomically; a partial failure leaves the DB at the last successfully migrated version. |
-| DB version < current, no migration registered | Fails with `SchemaMigrationError`. The DB is not touched. |
-| DB has tables but no `meta` table | Rejected with `SchemaCompatibilityError` (pre-migration legacy). |
+| Empty database | All migrations are applied in order from `0001_initial.sql`. |
+| Migration-first database (has `schema_migrations`) | Already-applied migration checksums are verified, then only pending migrations are applied; each runs in its own transaction with its ledger row. |
+| Already up to date | `initSchema` applies nothing (idempotent). |
+| Edited already-applied migration (checksum drift) | Fails closed with `SchemaMigrationError`; the DB is not touched. |
+| Legacy `meta.schema_version` DB at the baseline **and** structurally matching it | Adopted in place: the ledger is created and `0001_initial` is recorded as applied without re-running its DDL. |
+| Legacy DB at any other version, or unrecognized (no `meta`/`schema_version`, non-integer version, structure mismatch) | Fails closed with `SchemaResetRequiredError` and an actionable pre-1.0 recreate message; the DB is never modified. |
+
+The historical TypeScript migration chain (`migrations.ts`, `v7→v15`) has been
+removed; pre-1.0 databases that are not adoptable are recreated rather than
+migrated forward.
 
 ### Adding a schema migration
 
-When the schema changes (bump `SCHEMA_VERSION` in `schema.ts`), add an entry to
-`MIGRATIONS` in `packages/core/src/persistence/migrations.ts`:
-
-```typescript
-export const MIGRATIONS: Readonly<Record<number, Migration>> = {
-  8: v7_to_v8,   // existing
-  9: (db) => {   // new migration
-    db.exec('ALTER TABLE some_table ADD COLUMN new_col TEXT');
-  },
-};
-```
-
-Each migration function receives the database **inside a transaction** and must
-not open its own nested transaction. The framework commits the migration and
-advances `schema_version` together; a thrown error rolls back both. SQLite does
-not support `ALTER TABLE … ADD COLUMN IF NOT EXISTS`, so guard with
-`PRAGMA table_info(…)` when the column may already exist.
+1. Add `packages/core/data/migrations/NNNN_name.sql`, where `NNNN` is the next
+   contiguous four-digit version after the current highest. Write plain SQLite
+   DDL/DML. A migration runs exactly once (the ledger guarantees this), so use
+   plain `CREATE TABLE` / unguarded `ALTER TABLE … ADD COLUMN` — do **not** add
+   `IF NOT EXISTS`/`PRAGMA table_info` guards, which would re-mask
+   incompleteness. The runner owns the transaction boundary, so a migration file
+   must not open its own `BEGIN`/`COMMIT`.
+2. **Never edit or rename a committed migration file.** Its checksum is recorded
+   in every database that applied it; editing it is a checked hard error. Fix
+   mistakes with a new migration.
+3. Regenerate the review snapshot and commit it:
+   `npm run -w @eshyra/core schema:snapshot` (writes
+   `packages/core/data/schema.snapshot.sql`). A test fails closed if the
+   committed snapshot drifts from the migrations.
+4. Run the migration tests (`migrationRunner.test.ts`,
+   `migrationLegacyAdoption.test.ts`, `schemaSnapshot.test.ts`,
+   `persistence.test.ts`).
 
 ## Bundled Static Content
 

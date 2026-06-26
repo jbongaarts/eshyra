@@ -499,3 +499,35 @@ export function migrateDatabase(
   const migrations = runMigrations(db, options);
   return { legacy, migrations };
 }
+
+/** Header marking the generated snapshot as non-authoritative and non-editable. */
+export const SCHEMA_SNAPSHOT_HEADER =
+  '-- GENERATED FILE — DO NOT EDIT.\n' +
+  '--\n' +
+  '-- A review-only snapshot of the cumulative schema produced by applying every\n' +
+  '-- migration in packages/core/data/migrations/ to a fresh database (ADR 0015\n' +
+  '-- §7). It is never executed and is not schema authority — the migrations are.\n' +
+  '-- Regenerate with: npm run -w @eshyra/core schema:snapshot\n';
+
+/**
+ * Render a deterministic, human-readable snapshot of `db`'s migration-authored
+ * schema: every table and index DDL, tables then indexes, each ordered by name.
+ * Excludes the runner-owned `schema_migrations` ledger and SQLite's internal
+ * objects (including implicit autoindexes, whose `sql` is null). The result is
+ * the committed `data/schema.snapshot.sql` review artifact (ADR 0015 §7); a test
+ * regenerates it from the migrations and fails closed on drift.
+ */
+export function renderSchemaSnapshot(db: Db): string {
+  const objects = db
+    .prepare(
+      `SELECT sql FROM sqlite_master
+       WHERE type IN ('table', 'index')
+         AND name <> 'schema_migrations'
+         AND name NOT LIKE 'sqlite_%'
+         AND sql IS NOT NULL
+       ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END, name`,
+    )
+    .all() as { sql: string }[];
+  const body = objects.map((row) => `${row.sql.trim()};`).join('\n\n');
+  return `${SCHEMA_SNAPSHOT_HEADER}\n${body}\n`;
+}

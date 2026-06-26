@@ -30,7 +30,8 @@
     }
   },
   "scripts": {
-    "build": "tsc --build"
+    "build": "tsc --build",
+    "schema:snapshot": "tsx scripts/generate-schema-snapshot.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
