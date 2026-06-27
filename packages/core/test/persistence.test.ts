@@ -7,11 +7,14 @@ import {
 import { initSchema } from '../src/persistence/schema.js';
 
 describe('persistence', () => {
-  it('initSchema applies the baseline migration and records the ledger', () => {
+  it('initSchema applies the bundled migrations and records the ledger', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
     const ledger = readMigrationLedger(db);
-    expect(ledger.map((row) => row.version)).toEqual([1]);
+    // Contiguous 1..N baseline + post-baseline migrations, baseline first.
+    expect(ledger.map((row) => row.version)).toEqual(
+      ledger.map((_row, index) => index + 1),
+    );
     expect(ledger[0].name).toBe('initial');
     db.close();
   });
@@ -19,8 +22,11 @@ describe('persistence', () => {
   it('initSchema is idempotent: a second call applies no further migrations', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
+    const afterFirst = readMigrationLedger(db).map((row) => row.version);
     initSchema(db);
-    expect(readMigrationLedger(db).map((row) => row.version)).toEqual([1]);
+    expect(readMigrationLedger(db).map((row) => row.version)).toEqual(
+      afterFirst,
+    );
     db.close();
   });
 

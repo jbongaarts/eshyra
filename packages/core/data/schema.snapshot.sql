@@ -183,6 +183,15 @@ CREATE TABLE character (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE character_sheet (
+  character_id TEXT PRIMARY KEY,
+  schema_version INTEGER NOT NULL,
+  system TEXT NOT NULL,
+  rules_pack_id TEXT NOT NULL,
+  sheet_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE clock (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   in_game_time TEXT NOT NULL DEFAULT '',
