@@ -9,6 +9,7 @@ import {
   acquireCustodyOnResume,
   CharacterCustodyError,
   type CharacterRegistryStore,
+  checkCustodyResumable,
   checkoutCharacterIntoCampaign,
   createCharacterRegistryStore,
   createSqliteCharacterSheetStore,
@@ -484,6 +485,22 @@ describe('acquireCustodyOnResume', () => {
         at: 'a3',
       }),
     ).toThrow(CharacterCustodyError);
+    expect(registry.custody('mira')).toBeUndefined();
+  });
+
+  it('checkCustodyResumable reports the outcome without taking the lock', () => {
+    checkoutMira();
+    releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    // Would-acquire, but the preflight check must not mutate custody.
+    expect(
+      checkCustodyResumable(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+      }),
+    ).toBe('acquired');
     expect(registry.custody('mira')).toBeUndefined();
   });
 });

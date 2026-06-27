@@ -326,31 +326,30 @@ export type ResumeCustodyOutcome =
   /** Custody was idle and has been re-acquired for this campaign. */
   | 'acquired';
 
+/** Who is resuming a campaign character — checked against the custody lock. */
+export interface ResumeCustodyInput {
+  /** The campaign reclaiming custody. */
+  readonly campaignId: string;
+  /** The campaign-local character id being resumed (e.g. `pc-1`). */
+  readonly characterId: string;
+}
+
 /**
- * Re-establish the custody lock for an already-attached campaign character when
- * a campaign resumes (ADR 0012, eshyra-lupf.14.3).
+ * Decide what resuming `input.characterId` in `input.campaignId` would do —
+ * **without mutating** the registry. Returns the resume outcome
+ * (`not-linked` / `already-held` / `acquired`), throwing
+ * {@link CharacterCustodyError} on a conflict (held elsewhere, or the registry
+ * head has advanced past this campaign's copy). `acquired` means "idle and in
+ * sync — a real `acquireCustodyOnResume` call would take the lock".
  *
- * Because the CLI releases custody on `/quit`, a resumed campaign has a
- * registry-linked `character_sheet` but no lock. Resuming must reclaim it so the
- * "exactly one writer at a time" guard holds for the duration of the new
- * session — and must fail closed rather than silently steal or revert a
- * character that has moved on:
- *
- *   - **held by us** → `already-held` (a checkout earlier this run); no change.
- *   - **held by another campaign** → throw {@link CharacterCustodyError}: the
- *     character is in active play elsewhere and this campaign must not start.
- *   - **idle but the registry head is ahead of this campaign's copy** → throw:
- *     the character advanced in another campaign since this one last held it, so
- *     resuming from the stale local sheet would revert its timeline.
- *   - **idle and in sync** → re-acquire and return `acquired`.
- *
- * Unlike checkout this does not re-attach (which would re-project the live row
- * and discard per-turn HP/conditions); it only re-takes the lock.
+ * This is the preflight half of an all-or-nothing multi-character activation:
+ * callers check every character first, so one conflict aborts before any lock
+ * is taken.
  */
-export function acquireCustodyOnResume(
+export function checkCustodyResumable(
   registry: CharacterRegistryStore,
   campaignDb: Db,
-  input: { campaignId: string; characterId: string; at: string },
+  input: ResumeCustodyInput,
 ): ResumeCustodyOutcome {
   const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
     input.characterId,
@@ -389,7 +388,45 @@ export function acquireCustodyOnResume(
     );
   }
 
-  const revision = head ?? ensureRevisioned(registry, globalCharacterId) ?? 1;
+  return 'acquired';
+}
+
+/**
+ * Re-establish the custody lock for an already-attached campaign character when
+ * a campaign resumes (ADR 0012, eshyra-lupf.14.3).
+ *
+ * Because the CLI releases custody on `/quit`, a resumed campaign has a
+ * registry-linked `character_sheet` but no lock. Resuming must reclaim it so the
+ * "exactly one writer at a time" guard holds for the duration of the new
+ * session — and must fail closed rather than silently steal or revert a
+ * character that has moved on. The decision (and its fail-closed conflicts) is
+ * {@link checkCustodyResumable}; this function applies it, taking the lock when
+ * the outcome is `acquired`.
+ *
+ * Unlike checkout this does not re-attach (which would re-project the live row
+ * and discard per-turn HP/conditions); it only re-takes the lock. For a
+ * multi-character campaign, preflight every character with
+ * {@link checkCustodyResumable} before calling this so activation is
+ * all-or-nothing and a later conflict cannot leave partial locks behind.
+ */
+export function acquireCustodyOnResume(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
+  input: { campaignId: string; characterId: string; at: string },
+): ResumeCustodyOutcome {
+  const outcome = checkCustodyResumable(registry, campaignDb, input);
+  if (outcome !== 'acquired') {
+    return outcome;
+  }
+
+  // checkCustodyResumable proved the sheet is linked; re-read its global id.
+  const globalCharacterId = createSqliteCharacterSheetStore(campaignDb).load(
+    input.characterId,
+  )?.metadata.globalCharacterId as string;
+  const revision =
+    registry.headRevision(globalCharacterId) ??
+    ensureRevisioned(registry, globalCharacterId) ??
+    1;
   registry.setCustody({
     globalCharacterId,
     campaignId: input.campaignId,

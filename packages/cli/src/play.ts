@@ -121,6 +121,13 @@ export async function runDemo(
       );
       sessionId = await launch(deps, db, options.dbPath, existing);
     }
+    // A demo campaign can gain registry-linked characters via /addpc, so the
+    // same custody-on-resume guard applies before play (ADR 0012). On a
+    // brand-new demo the bundled character is not registry-linked and this is a
+    // no-op.
+    if (!activateCampaignCustody(deps, db, campaignId)) {
+      return 1;
+    }
     await turnLoop(deps, db, options.dbPath, campaignId, sessionId, cap);
     return 0;
   } finally {

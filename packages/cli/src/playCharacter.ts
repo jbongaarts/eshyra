@@ -2,6 +2,7 @@ import type { CharacterCreationDraft, Db } from '@eshyra/core';
 import {
   acquireCustodyOnResume,
   CharacterCustodyError,
+  checkCustodyResumable,
   checkoutCharacterIntoCampaign,
   completeCharacterCreation,
   createSqliteCharacterSheetStore,
@@ -401,6 +402,10 @@ export async function ensureCharacterReady(
  * its registry timeline has advanced past this campaign's copy. A freshly
  * checked-out character (custody just taken by `ensureCharacterReady`) reports
  * `already-held` and is left untouched.
+ *
+ * Activation is all-or-nothing: a non-mutating preflight validates every
+ * character first, so a conflict on any one aborts before any lock is taken and
+ * a failed activation never leaves partial locks behind.
  */
 export function activateCampaignCustody(
   deps: Pick<PlayDeps, 'characterRegistry' | 'io' | 'now'>,
@@ -408,17 +413,26 @@ export function activateCampaignCustody(
   campaignId: string,
 ): boolean {
   const at = deps.now();
-  for (const characterId of createSqliteCharacterSheetStore(db).list()) {
-    try {
-      acquireCustodyOnResume(deps.characterRegistry, db, {
+  const characterIds = createSqliteCharacterSheetStore(db).list();
+  // Preflight: validate every linked character without mutating the registry.
+  try {
+    for (const characterId of characterIds) {
+      checkCustodyResumable(deps.characterRegistry, db, {
         campaignId,
         characterId,
-        at,
       });
-    } catch (error) {
-      deps.io.write(error instanceof Error ? error.message : String(error));
-      return false;
     }
+  } catch (error) {
+    deps.io.write(error instanceof Error ? error.message : String(error));
+    return false;
+  }
+  // All clear: take the locks.
+  for (const characterId of characterIds) {
+    acquireCustodyOnResume(deps.characterRegistry, db, {
+      campaignId,
+      characterId,
+      at,
+    });
   }
   return true;
 }
