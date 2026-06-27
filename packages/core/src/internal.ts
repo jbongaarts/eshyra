@@ -132,15 +132,20 @@ export {
 // Cross-campaign character custody lifecycle (ADR 0012, eshyra-lupf.14.3).
 export {
   acquireCustodyOnResume,
+  type CatchUpToHeadInput,
+  type CatchUpToHeadResult,
   CharacterCustodyError,
   type CheckoutCharacterInput,
   type CheckoutCharacterResult,
   type CustodyHolderInput,
+  catchUpCharacterToHead,
   checkCustodyResumable,
   checkoutCharacterIntoCampaign,
+  classifyResumeConflict,
   type ForkCharacterInput,
   type ForkCharacterResult,
   forkCharacterTimeline,
+  type ResumeClassification,
   type ResumeCustodyInput,
   type ResumeCustodyOutcome,
   registerNewCharacter,
@@ -185,6 +190,11 @@ export {
   CharacterSheetStoreError,
   createSqliteCharacterSheetStore,
 } from './character/characterSheetStore.js';
+export {
+  type ContinuityBridgeInput,
+  composeContinuityBridge,
+  summarizeSheetForBridge,
+} from './character/continuityBridge.js';
 export type {
   AbilityScoreMethod,
   CharacterCreationMutationMetadata,
@@ -791,6 +801,7 @@ export type {
 export {
   closeCombatInstance,
   EncounterCombatantError,
+  getActiveCombatInstance,
   getCampaignActor,
   listCampaignActors,
   listCombatants,

@@ -9,8 +9,10 @@ import {
   acquireCustodyOnResume,
   CharacterCustodyError,
   type CharacterRegistryStore,
+  catchUpCharacterToHead,
   checkCustodyResumable,
   checkoutCharacterIntoCampaign,
+  classifyResumeConflict,
   createCharacterRegistryStore,
   createSqliteCharacterSheetStore,
   type Db,
@@ -502,6 +504,196 @@ describe('acquireCustodyOnResume', () => {
       }),
     ).toBe('acquired');
     expect(registry.custody('mira')).toBeUndefined();
+  });
+});
+
+describe('classifyResumeConflict', () => {
+  let registry: CharacterRegistryStore;
+  let campaign: Db;
+
+  beforeEach(() => {
+    registry = freshRegistry().registry;
+    campaign = freshCampaign();
+  });
+
+  /** Check mira out, then release so she is idle in camp-a. */
+  function checkoutAndRelease(): void {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet(),
+    });
+    checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+  }
+
+  it('reports not-linked for a directly-created campaign sheet', () => {
+    createSqliteCharacterSheetStore(campaign).save('pc-1', makeSheet());
+    expect(
+      classifyResumeConflict(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+      }),
+    ).toEqual({ kind: 'not-linked' });
+  });
+
+  it('reports resumable when idle and in sync', () => {
+    checkoutAndRelease();
+    expect(
+      classifyResumeConflict(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+      }),
+    ).toMatchObject({ kind: 'resumable', globalCharacterId: 'mira' });
+  });
+
+  it('reports held-elsewhere with the holder when another campaign owns it', () => {
+    checkoutAndRelease();
+    const campaignB = freshCampaign();
+    checkoutCharacterIntoCampaign(registry, campaignB, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-b',
+      characterId: 'pc-1',
+      sessionId: 'session-2',
+      at: 'b1',
+    });
+    const result = classifyResumeConflict(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    expect(result.kind).toBe('held-elsewhere');
+    if (result.kind === 'held-elsewhere') {
+      expect(result.heldBy.campaignId).toBe('camp-b');
+    }
+  });
+
+  it('reports stale-copy with head + local revisions when the head advanced', () => {
+    checkoutAndRelease();
+    // The character advances elsewhere: head moves to revision 2.
+    registry.appendRevision('mira', makeSheet({ level: 9 }), 'sync-back');
+    const result = classifyResumeConflict(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    expect(result).toMatchObject({
+      kind: 'stale-copy',
+      globalCharacterId: 'mira',
+      headRevision: 2,
+      localRevision: 1,
+    });
+  });
+});
+
+describe('catchUpCharacterToHead', () => {
+  let registry: CharacterRegistryStore;
+  let campaign: Db;
+
+  beforeEach(() => {
+    registry = freshRegistry().registry;
+    campaign = freshCampaign();
+  });
+
+  /** Make camp-a's copy of mira stale: idle at revision 1 while head is 2. */
+  function staleMira(): void {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    registry.appendRevision('mira', makeSheet({ level: 9 }), 'sync-back');
+  }
+
+  it('adopts the registry head into the campaign and takes custody', () => {
+    staleMira();
+    const result = catchUpCharacterToHead(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-2',
+      at: 'a2',
+    });
+
+    expect(result).toMatchObject({
+      globalCharacterId: 'mira',
+      fromRevision: 1,
+      toRevision: 2,
+    });
+    // The campaign-local sheet now holds the head revision's level.
+    expect(createSqliteCharacterSheetStore(campaign).load('pc-1')?.level).toBe(
+      9,
+    );
+    // Custody is taken at the adopted head revision.
+    expect(registry.custody('mira')).toMatchObject({
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      revision: 2,
+    });
+  });
+
+  it('appends NO new registry revision (it adopts head, does not advance it)', () => {
+    staleMira();
+    expect(registry.headRevision('mira')).toBe(2);
+    catchUpCharacterToHead(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-2',
+      at: 'a2',
+    });
+    expect(registry.headRevision('mira')).toBe(2);
+    expect(registry.listRevisions('mira').map((r) => r.revision)).toEqual([
+      1, 2,
+    ]);
+  });
+
+  it('refuses when the character is in active play in another campaign', () => {
+    staleMira();
+    const campaignB = freshCampaign();
+    checkoutCharacterIntoCampaign(registry, campaignB, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-b',
+      characterId: 'pc-1',
+      sessionId: 'session-3',
+      at: 'b1',
+    });
+    expect(() =>
+      catchUpCharacterToHead(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        sessionId: 'session-2',
+        at: 'a2',
+      }),
+    ).toThrow(CharacterCustodyError);
+    // B's custody is untouched.
+    expect(registry.custody('mira')?.campaignId).toBe('camp-b');
+  });
+
+  it('refuses an unlinked campaign sheet', () => {
+    createSqliteCharacterSheetStore(campaign).save('pc-1', makeSheet());
+    expect(() =>
+      catchUpCharacterToHead(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        sessionId: 'session-2',
+        at: 'a2',
+      }),
+    ).toThrow(CharacterCustodyError);
   });
 });
 

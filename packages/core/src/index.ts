@@ -92,15 +92,20 @@ export {
 // Cross-campaign character custody lifecycle (ADR 0012).
 export {
   acquireCustodyOnResume,
+  type CatchUpToHeadInput,
+  type CatchUpToHeadResult,
   CharacterCustodyError,
   type CheckoutCharacterInput,
   type CheckoutCharacterResult,
   type CustodyHolderInput,
+  catchUpCharacterToHead,
   checkCustodyResumable,
   checkoutCharacterIntoCampaign,
+  classifyResumeConflict,
   type ForkCharacterInput,
   type ForkCharacterResult,
   forkCharacterTimeline,
+  type ResumeClassification,
   type ResumeCustodyInput,
   type ResumeCustodyOutcome,
   registerNewCharacter,
@@ -131,6 +136,12 @@ export {
   CharacterSheetStoreError,
   createSqliteCharacterSheetStore,
 } from './character/characterSheetStore.js';
+// Catch-up continuity bridge narration (ADR 0012, eshyra-lupf.14.4.3).
+export {
+  type ContinuityBridgeInput,
+  composeContinuityBridge,
+  summarizeSheetForBridge,
+} from './character/continuityBridge.js';
 export type {
   AbilityScoreMethod,
   AbilityScoreName,
@@ -439,6 +450,10 @@ export {
   resolveCharacterRef,
   setActiveCharacterId,
 } from './state/activeCharacter.js';
+export type { CombatInstance } from './state/encounterCombatants.js';
+// Active-combat lookup (used by the resume conflict-resolution UX to warn
+// before catching a character up mid-combat — ADR 0012, eshyra-lupf.14.4).
+export { getActiveCombatInstance } from './state/encounterCombatants.js';
 export { listParty } from './state/party.js';
 // Built-in sample world module and module-pack shape.
 export { EMBERFALL_HOLLOW } from './world/samples/emberfallHollow.js';

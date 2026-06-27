@@ -38,6 +38,7 @@ import {
 import type {
   CharacterRegistryStore,
   CharacterRevision,
+  CustodyRecord,
 } from './characterRegistry.js';
 import { createSqliteCharacterSheetStore } from './characterSheetStore.js';
 import type { CompleteCharacterCreationResult } from './creation.js';
@@ -335,6 +336,101 @@ export interface ResumeCustodyInput {
 }
 
 /**
+ * A non-throwing classification of what resuming a campaign character would
+ * encounter (ADR 0012, eshyra-lupf.14.4). This is the structured form behind
+ * {@link checkCustodyResumable}'s throw/return contract: the conflict-resolution
+ * UX needs to *distinguish* the two failure modes (a hard `held-elsewhere` stop
+ * vs. a resolvable `stale-copy`) rather than collapse them into one error, so it
+ * branches on this discriminated union instead.
+ */
+export type ResumeClassification =
+  /** The campaign sheet is not linked to a registry character; nothing to lock. */
+  | { readonly kind: 'not-linked' }
+  /** This campaign already holds custody (e.g. a checkout earlier this run). */
+  | { readonly kind: 'already-held'; readonly globalCharacterId: string }
+  /** Idle and in sync — a real resume would take the lock at this revision. */
+  | {
+      readonly kind: 'resumable';
+      readonly globalCharacterId: string;
+      readonly revision: number;
+    }
+  /**
+   * Another campaign is the active writer. A hard stop — `.14.4` keeps this
+   * fail-closed; the resolution is to release it from that campaign.
+   */
+  | {
+      readonly kind: 'held-elsewhere';
+      readonly globalCharacterId: string;
+      readonly heldBy: CustodyRecord;
+    }
+  /**
+   * Idle, but the registry head has advanced past this campaign's copy (the
+   * character adventured elsewhere since this campaign last held it). The
+   * resolvable conflict: cancel, catch up to head, or fork an alternate
+   * timeline.
+   */
+  | {
+      readonly kind: 'stale-copy';
+      readonly globalCharacterId: string;
+      /** The registry head revision this campaign is behind. */
+      readonly headRevision: number;
+      /** The revision this campaign's copy was checked out at, if stamped. */
+      readonly localRevision: number | undefined;
+    };
+
+/**
+ * Classify, **without mutating** the registry, what resuming `input.characterId`
+ * in `input.campaignId` would encounter (ADR 0012, eshyra-lupf.14.4). Pure
+ * read-side decision used both by {@link checkCustodyResumable} (which turns
+ * conflicts into throws for the all-or-nothing preflight) and by the CLI
+ * conflict-resolution UX (which branches on the `kind`).
+ */
+export function classifyResumeConflict(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
+  input: ResumeCustodyInput,
+): ResumeClassification {
+  const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
+    input.characterId,
+  );
+  const globalCharacterId = campaignSheet?.metadata.globalCharacterId;
+  if (campaignSheet === undefined || globalCharacterId === undefined) {
+    return { kind: 'not-linked' };
+  }
+
+  const held = registry.custody(globalCharacterId);
+  if (held !== undefined) {
+    if (
+      held.campaignId === input.campaignId &&
+      held.characterId === input.characterId
+    ) {
+      return { kind: 'already-held', globalCharacterId };
+    }
+    return { kind: 'held-elsewhere', globalCharacterId, heldBy: held };
+  }
+
+  // Idle: detect a copy the character has since outgrown in another campaign
+  // (registry head moved past this campaign's stale sheet).
+  const head = registry.headRevision(globalCharacterId);
+  const headSheet =
+    head === undefined ? undefined : registry.load(globalCharacterId);
+  if (
+    head !== undefined &&
+    headSheet !== undefined &&
+    !sheetsEqual(headSheet, stripCampaignProvenance(campaignSheet))
+  ) {
+    return {
+      kind: 'stale-copy',
+      globalCharacterId,
+      headRevision: head,
+      localRevision: campaignSheet.metadata.sourceRevision,
+    };
+  }
+
+  return { kind: 'resumable', globalCharacterId, revision: head ?? 1 };
+}
+
+/**
  * Decide what resuming `input.characterId` in `input.campaignId` would do —
  * **without mutating** the registry. Returns the resume outcome
  * (`not-linked` / `already-held` / `acquired`), throwing
@@ -344,51 +440,33 @@ export interface ResumeCustodyInput {
  *
  * This is the preflight half of an all-or-nothing multi-character activation:
  * callers check every character first, so one conflict aborts before any lock
- * is taken.
+ * is taken. The conflict-resolution UX (eshyra-lupf.14.4) uses the structured
+ * {@link classifyResumeConflict} instead, to offer choices rather than throw.
  */
 export function checkCustodyResumable(
   registry: CharacterRegistryStore,
   campaignDb: Db,
   input: ResumeCustodyInput,
 ): ResumeCustodyOutcome {
-  const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
-    input.characterId,
-  );
-  const globalCharacterId = campaignSheet?.metadata.globalCharacterId;
-  if (campaignSheet === undefined || globalCharacterId === undefined) {
-    return 'not-linked';
-  }
-
-  const held = registry.custody(globalCharacterId);
-  if (held !== undefined) {
-    if (
-      held.campaignId === input.campaignId &&
-      held.characterId === input.characterId
-    ) {
+  const classification = classifyResumeConflict(registry, campaignDb, input);
+  switch (classification.kind) {
+    case 'not-linked':
+      return 'not-linked';
+    case 'already-held':
       return 'already-held';
-    }
-    throw new CharacterCustodyError(
-      `cannot resume: character "${globalCharacterId}" is currently in active play in campaign ` +
-        `"${held.campaignId}" (as ${held.characterId}); exit that campaign before resuming this one`,
-    );
+    case 'resumable':
+      return 'acquired';
+    case 'held-elsewhere':
+      throw new CharacterCustodyError(
+        `cannot resume: character "${classification.globalCharacterId}" is currently in active play in campaign ` +
+          `"${classification.heldBy.campaignId}" (as ${classification.heldBy.characterId}); exit that campaign before resuming this one`,
+      );
+    case 'stale-copy':
+      throw new CharacterCustodyError(
+        `cannot resume: character "${classification.globalCharacterId}" has advanced in another campaign since this one ` +
+          'last held it; its registry timeline is ahead of this campaign’s copy',
+      );
   }
-
-  // Idle: guard against resuming a copy the character has since outgrown in
-  // another campaign (registry head moved past this campaign's stale sheet).
-  const head = registry.headRevision(globalCharacterId);
-  const headSheet =
-    head === undefined ? undefined : registry.load(globalCharacterId);
-  if (
-    headSheet !== undefined &&
-    !sheetsEqual(headSheet, stripCampaignProvenance(campaignSheet))
-  ) {
-    throw new CharacterCustodyError(
-      `cannot resume: character "${globalCharacterId}" has advanced in another campaign since this one ` +
-        'last held it; its registry timeline is ahead of this campaign’s copy',
-    );
-  }
-
-  return 'acquired';
 }
 
 /**
@@ -435,6 +513,109 @@ export function acquireCustodyOnResume(
     attachedAt: input.at,
   });
   return 'acquired';
+}
+
+/** What a character catch-up needs and where it lands. */
+export interface CatchUpToHeadInput {
+  /** The campaign adopting the newer revision (its stable campaign id). */
+  readonly campaignId: string;
+  /** The campaign-local character id to catch up (e.g. `pc-1`). */
+  readonly characterId: string;
+  /** Session id recorded on the resulting state mutations. */
+  readonly sessionId: string;
+  /** ISO-8601 timestamp for custody + attach provenance. */
+  readonly at: string;
+}
+
+/** Outcome of {@link catchUpCharacterToHead}. */
+export interface CatchUpToHeadResult {
+  readonly globalCharacterId: string;
+  /** The revision the campaign's stale copy was at, if it was stamped. */
+  readonly fromRevision: number | undefined;
+  /** The registry head revision the campaign was caught up to. */
+  readonly toRevision: number;
+  /** The re-attach/import outcome (live-row projection, prompt). */
+  readonly attach: CompleteCharacterCreationResult;
+}
+
+/**
+ * Catch a campaign's stale character copy up to the registry head (ADR 0012,
+ * eshyra-lupf.14.4): the resolvable resume conflict's primary happy path. When
+ * the registry head has advanced past this campaign's copy (the character
+ * adventured elsewhere since), this **adopts head wholesale** — it replaces the
+ * campaign-local `character_sheet` with the registry head revision, re-stamps
+ * provenance (`globalCharacterId` / `sourceRevision = head` / `importedAt`),
+ * re-projects the live `character` row, and acquires custody.
+ *
+ * This is a checkout of the newer revision, **not a merge**: the campaign's own
+ * stale mechanical state for that character is discarded in favor of the
+ * registry's current truth. It appends **no** new registry revision (it is
+ * adopting head, not advancing it).
+ *
+ * Throws {@link CharacterCustodyError} when the character is not registry-linked,
+ * has no registry timeline, or is in active play in another campaign (catch-up
+ * cannot run while another campaign holds the write lock — that is the
+ * fail-closed `held-elsewhere` conflict, resolved by releasing it there).
+ */
+export function catchUpCharacterToHead(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
+  input: CatchUpToHeadInput,
+): CatchUpToHeadResult {
+  const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
+    input.characterId,
+  );
+  const globalCharacterId = campaignSheet?.metadata.globalCharacterId;
+  if (campaignSheet === undefined || globalCharacterId === undefined) {
+    throw new CharacterCustodyError(
+      `cannot catch up "${input.characterId}": it is not linked to a registry character`,
+    );
+  }
+
+  const held = registry.custody(globalCharacterId);
+  if (
+    held !== undefined &&
+    (held.campaignId !== input.campaignId ||
+      held.characterId !== input.characterId)
+  ) {
+    throw new CharacterCustodyError(
+      `cannot catch up character "${globalCharacterId}": it is currently in active play in campaign ` +
+        `"${held.campaignId}" (as ${held.characterId}); exit that campaign first`,
+    );
+  }
+
+  const head = registry.headRevision(globalCharacterId);
+  if (head === undefined) {
+    throw new CharacterCustodyError(
+      `cannot catch up character "${globalCharacterId}": it has no registry timeline`,
+    );
+  }
+  // `head` is the latest revision, so `load` returns that revision's sheet.
+  const headSheet = registry.load(globalCharacterId) as CharacterSheet;
+  const fromRevision = campaignSheet.metadata.sourceRevision;
+
+  // Re-attach the head sheet over the stale campaign copy: this overwrites the
+  // per-campaign sheet and re-projects the live row (adopting head wholesale).
+  const attach = attachCharacterSheetToCampaign(campaignDb, {
+    sheet: headSheet,
+    globalCharacterId,
+    sourceRevision: head,
+    characterId: input.characterId,
+    sessionId: input.sessionId,
+    at: input.at,
+  });
+
+  // Acquire custody at the adopted revision. No registry revision is appended —
+  // catch-up consumes the head, it does not advance it.
+  registry.setCustody({
+    globalCharacterId,
+    campaignId: input.campaignId,
+    characterId: input.characterId,
+    revision: head,
+    attachedAt: input.at,
+  });
+
+  return { globalCharacterId, fromRevision, toRevision: head, attach };
 }
 
 /** Where an alternate-timeline fork branches from and lands. */
