@@ -58,13 +58,18 @@ export interface ResolvedLevelSpellcasting {
   readonly slots?: Readonly<Record<string, number>>;
 }
 
-/** The structured slice of a class's level-1 progression row. */
-export interface ResolvedClassLevel1 {
-  /** Feature record refs granted at level 1 (e.g. `feature:wizard:spellcasting`). */
+/** The structured slice of a class progression row. */
+export interface ResolvedClassLevel {
+  readonly level: number;
+  readonly proficiencyBonus: number;
+  /** Feature record refs granted at this level (e.g. `feature:wizard:spellcasting`). */
   readonly featureRefs: readonly string[];
-  /** Level-1 spellcasting counts, present only for spellcasting classes. */
+  /** Spellcasting counts for this level, present only for spellcasting classes. */
   readonly spellcasting?: ResolvedLevelSpellcasting;
 }
+
+/** The structured slice of a class's level-1 progression row. */
+export type ResolvedClassLevel1 = Omit<ResolvedClassLevel, 'level'>;
 
 /** Class fields character creation reads from a generated `class` record. */
 export interface ResolvedClassData {
@@ -85,6 +90,8 @@ export interface ResolvedClassData {
   readonly toolProficiencyChoices?: readonly ResolvedChoiceSpec[];
   /** Starting equipment block (verbatim text + per-line entries). */
   readonly startingEquipment?: ResolvedStartingEquipment;
+  /** Structured class progression rows, when the pack record carries them. */
+  readonly progression?: readonly ResolvedClassLevel[];
   /** Structured level-1 progression slice (features + spellcasting counts). */
   readonly level1?: ResolvedClassLevel1;
 }
@@ -149,6 +156,10 @@ export type CharacterResolution<T> =
  */
 export interface RulesPackCharacterResolver {
   resolveClass(nameOrRef: string): CharacterResolution<ResolvedClassData>;
+  resolveClassLevel(
+    nameOrRef: string,
+    level: number,
+  ): CharacterResolution<ResolvedClassLevel>;
   resolveSpell(nameOrRef: string): CharacterResolution<ResolvedSpellData>;
   resolveAncestry(nameOrRef: string): CharacterResolution<ResolvedAncestryData>;
   resolveBackground(
@@ -178,6 +189,8 @@ export function createRulesPackCharacterResolver(
 ): RulesPackCharacterResolver {
   return {
     resolveClass: (nameOrRef) => resolveClass(stack, nameOrRef),
+    resolveClassLevel: (nameOrRef, level) =>
+      resolveClassLevel(stack, nameOrRef, level),
     resolveSpell: (nameOrRef) => resolveSpell(stack, nameOrRef),
     resolveAncestry: (nameOrRef) => resolveAncestry(stack, nameOrRef),
     resolveBackground: (nameOrRef) => resolveBackground(stack, nameOrRef),
@@ -246,6 +259,41 @@ function resolveClass(
   };
 }
 
+function resolveClassLevel(
+  stack: ResolvedRulesStack,
+  nameOrRef: string,
+  level: number,
+): CharacterResolution<ResolvedClassLevel> {
+  if (!Number.isInteger(level) || level < 1) {
+    return {
+      ok: false,
+      code: 'not_found',
+      message: `Class level must be a positive integer; got ${level}.`,
+    };
+  }
+  const result = lookup(stack, 'class', nameOrRef);
+  if (!result.ok) {
+    return lookupError(result);
+  }
+  const data = result.record.data;
+  if (!isGeneratedClassData(data)) {
+    return malformed('class', result.record.key);
+  }
+  const raw = data as unknown as Record<string, unknown>;
+  const row = parseClassProgressionLevel(raw.progression, level);
+  if (row === 'malformed') {
+    return malformed('class', result.record.key);
+  }
+  if (row === undefined) {
+    return {
+      ok: false,
+      code: 'not_found',
+      message: `Generated class record ${result.record.key} has no progression row for level ${level}.`,
+    };
+  }
+  return { ok: true, record: row };
+}
+
 function listClasses(stack: ResolvedRulesStack): readonly ResolvedClassData[] {
   const index = stack.recordsByKind.get('class');
   if (index === undefined) {
@@ -267,7 +315,8 @@ function listClasses(stack: ResolvedRulesStack): readonly ResolvedClassData[] {
  * optional structured progression/choice fields best-effort. A field that does
  * not match the expected shape is simply omitted (left `undefined`) rather than
  * failing the whole record — those minimum fields are guarded by
- * {@link isGeneratedClassData}; the rest is enrichment for level-1 creation.
+ * {@link isGeneratedClassData}; the rest is enrichment for character creation
+ * and the leveling read layer.
  */
 function toResolvedClassData(
   key: string,
@@ -275,6 +324,7 @@ function toResolvedClassData(
   data: GeneratedClassData,
 ): ResolvedClassData {
   const raw = data as unknown as Record<string, unknown>;
+  const progression = parseClassProgression(raw.progression);
   return {
     key,
     name,
@@ -287,6 +337,7 @@ function toResolvedClassData(
     skillChoices: parseChoiceSpecs(raw.skillChoices),
     toolProficiencyChoices: parseChoiceSpecs(raw.toolProficiencyChoices),
     startingEquipment: parseStartingEquipment(raw.startingEquipment),
+    progression: progression === 'malformed' ? undefined : progression,
     level1: parseLevel1(raw.progression),
   };
 }
@@ -339,6 +390,10 @@ function parseLevel1(progression: unknown): ResolvedClassLevel1 | undefined {
   if (row === undefined) {
     return undefined;
   }
+  const proficiencyBonus = parseProficiencyBonus(row.proficiencyBonus);
+  if (proficiencyBonus === undefined) {
+    return undefined;
+  }
   const featureRefs: string[] = [];
   if (Array.isArray(row.features)) {
     for (const feature of row.features) {
@@ -347,31 +402,140 @@ function parseLevel1(progression: unknown): ResolvedClassLevel1 | undefined {
       }
     }
   }
+  const spellcasting = parseLevelSpellcasting(row.spellcasting);
   return {
     featureRefs,
-    spellcasting: parseLevelSpellcasting(row.spellcasting),
+    spellcasting: spellcasting === 'malformed' ? undefined : spellcasting,
+    proficiencyBonus,
   };
+}
+
+function parseClassProgression(
+  progression: unknown,
+): readonly ResolvedClassLevel[] | 'malformed' | undefined {
+  if (progression === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(progression)) {
+    return 'malformed';
+  }
+  const rows: ResolvedClassLevel[] = [];
+  for (const entry of progression) {
+    const row = parseClassProgressionRow(entry);
+    if (row === undefined) {
+      return 'malformed';
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+function parseClassProgressionLevel(
+  progression: unknown,
+  level: number,
+): ResolvedClassLevel | 'malformed' | undefined {
+  if (progression === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(progression)) {
+    return 'malformed';
+  }
+  const entry = progression.find(
+    (row): row is Record<string, unknown> =>
+      isRecord(row) && row.level === level,
+  );
+  if (entry === undefined) {
+    return undefined;
+  }
+  return parseClassProgressionRow(entry) ?? 'malformed';
+}
+
+function parseClassProgressionRow(
+  entry: unknown,
+): ResolvedClassLevel | undefined {
+  if (!isRecord(entry) || !Number.isInteger(entry.level)) {
+    return undefined;
+  }
+  const level = entry.level as number;
+  const proficiencyBonus = parseProficiencyBonus(entry.proficiencyBonus);
+  if (proficiencyBonus === undefined) {
+    return undefined;
+  }
+  const featureRefs = parseFeatureRefs(entry.features);
+  if (featureRefs === undefined) {
+    return undefined;
+  }
+  const spellcasting = parseLevelSpellcasting(entry.spellcasting);
+  if (spellcasting === 'malformed') {
+    return undefined;
+  }
+  return {
+    level,
+    proficiencyBonus,
+    featureRefs,
+    spellcasting,
+  };
+}
+
+function parseProficiencyBonus(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isInteger(value)) {
+    return value;
+  }
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const match = /^\+?(\d+)$/.exec(value.trim());
+  return match === null ? undefined : Number.parseInt(match[1], 10);
+}
+
+function parseFeatureRefs(value: unknown): readonly string[] | undefined {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const featureRefs: string[] = [];
+  for (const feature of value) {
+    if (!isRecord(feature) || typeof feature.ref !== 'string') {
+      return undefined;
+    }
+    featureRefs.push(feature.ref);
+  }
+  return featureRefs;
 }
 
 function parseLevelSpellcasting(
   value: unknown,
-): ResolvedLevelSpellcasting | undefined {
-  if (!isRecord(value)) {
+): ResolvedLevelSpellcasting | 'malformed' | undefined {
+  if (value === undefined) {
     return undefined;
   }
+  if (!isRecord(value)) {
+    return 'malformed';
+  }
   const slots: Record<string, number> = {};
-  if (isRecord(value.slots)) {
+  if (value.slots !== undefined) {
+    if (!isRecord(value.slots)) {
+      return 'malformed';
+    }
     for (const [level, count] of Object.entries(value.slots)) {
-      if (typeof count === 'number') {
-        slots[level] = count;
+      if (typeof count !== 'number') {
+        return 'malformed';
       }
+      slots[level] = count;
     }
   }
+  if (
+    (value.cantripsKnown !== undefined &&
+      typeof value.cantripsKnown !== 'number') ||
+    (value.spellsKnown !== undefined && typeof value.spellsKnown !== 'number')
+  ) {
+    return 'malformed';
+  }
   return {
-    cantripsKnown:
-      typeof value.cantripsKnown === 'number' ? value.cantripsKnown : undefined,
-    spellsKnown:
-      typeof value.spellsKnown === 'number' ? value.spellsKnown : undefined,
+    cantripsKnown: value.cantripsKnown,
+    spellsKnown: value.spellsKnown,
     slots: Object.keys(slots).length > 0 ? slots : undefined,
   };
 }
