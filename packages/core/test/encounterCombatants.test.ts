@@ -366,6 +366,48 @@ describe('encounter combatants', () => {
     db.close();
   });
 
+  it('normalizes encounter and creature refs with repeated separators', () => {
+    const db = freshDbWithSession();
+    const module = makeTestAdventureModule();
+    const encounterId = `scene:${'-'.repeat(64)}ambush${'/'.repeat(64)}vault`;
+    const rulesRef = `creature:${'-'.repeat(64)}goblin${'/'.repeat(64)}boss`;
+    const encounterModule: AdventureModule = {
+      ...module,
+      encounters: [
+        {
+          id: encounterId,
+          name: 'Separator Ambush',
+          description: 'A combat id normalization regression fixture.',
+          creatures: [{ rulesRef, count: 1 }],
+        },
+      ],
+    };
+    startAdventureRun(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      runId: 'run-separators',
+      moduleId: encounterModule.id,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      updatedAt: NOW,
+    });
+
+    const result = startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      encounterId,
+      resolveAdventureModule: (moduleId) =>
+        moduleId === encounterModule.id ? encounterModule : undefined,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+
+    expect(result.combatInstance.combatInstanceId).toBe('ci-ambush-vault-1');
+    expect(result.combatants.map((c) => c.combatantId)).toEqual([
+      'ci-ambush-vault-1-goblin-boss-1',
+    ]);
+    db.close();
+  });
+
   it('rejects invalid target labels and suggests current campaign-unique ids', () => {
     const { db, registry, ctx } = setup();
     registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx);
