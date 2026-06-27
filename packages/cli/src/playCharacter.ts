@@ -1,8 +1,10 @@
 import type { CharacterCreationDraft, Db } from '@eshyra/core';
 import {
+  acquireCustodyOnResume,
   CharacterCustodyError,
   checkoutCharacterIntoCampaign,
   completeCharacterCreation,
+  createSqliteCharacterSheetStore,
   DEFAULT_DND5E_SRD_BINDING,
   finalizeCharacterDraft,
   listParty,
@@ -385,6 +387,40 @@ export async function ensureCharacterReady(
       return true;
     }
   }
+}
+
+/**
+ * Re-establish custody for every registry-linked character already in this
+ * campaign before a (resumed) session begins (ADR 0012, eshyra-lupf.14.3).
+ *
+ * `ensureCharacterReady` returns early once a campaign has a canonical PC, so a
+ * resumed campaign would otherwise start with no custody lock — the character
+ * was released on the previous `/quit`. This reclaims the lock so the
+ * "one active writer" guard holds for the whole session, and fails closed
+ * (returns `false`) when a character is in active play in another campaign or
+ * its registry timeline has advanced past this campaign's copy. A freshly
+ * checked-out character (custody just taken by `ensureCharacterReady`) reports
+ * `already-held` and is left untouched.
+ */
+export function activateCampaignCustody(
+  deps: Pick<PlayDeps, 'characterRegistry' | 'io' | 'now'>,
+  db: Db,
+  campaignId: string,
+): boolean {
+  const at = deps.now();
+  for (const characterId of createSqliteCharacterSheetStore(db).list()) {
+    try {
+      acquireCustodyOnResume(deps.characterRegistry, db, {
+        campaignId,
+        characterId,
+        at,
+      });
+    } catch (error) {
+      deps.io.write(error instanceof Error ? error.message : String(error));
+      return false;
+    }
+  }
+  return true;
 }
 
 /**

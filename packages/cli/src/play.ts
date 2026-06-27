@@ -10,7 +10,10 @@ import {
   type SessionCheckpointRunner,
   validateMemoryConfig,
 } from '@eshyra/core';
-import { ensureCharacterReady } from './playCharacter.js';
+import {
+  activateCampaignCustody,
+  ensureCharacterReady,
+} from './playCharacter.js';
 import { launch, resolveCampaign } from './playSession.js';
 import { turnLoop } from './playTurnLoop.js';
 import type { CliIO, PlayDeps, PlayOptions } from './playTypes.js';
@@ -54,6 +57,12 @@ export async function runPlay(
       campaign.campaignId,
     );
     if (!characterReady) {
+      return 1;
+    }
+    // Reclaim the custody lock for any character already in this (resumed)
+    // campaign before play begins; fail closed if it is held elsewhere or has
+    // advanced past this campaign's copy (ADR 0012).
+    if (!activateCampaignCustody(deps, db, campaign.campaignId)) {
       return 1;
     }
     const sessionId = await launch(deps, db, options.dbPath, campaign);

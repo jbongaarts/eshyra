@@ -118,12 +118,23 @@ tables to the registry database and a core orchestration layer
   idle sessions do not spam identical revisions.
 - **Double-attach is prevented; continuity is the way out.** Checking a
   character out while a *different* campaign holds custody fails closed
-  (`CharacterCustodyError`); re-checkout into the same campaign is idempotent
-  (resume). The resolution is to **release** the character from the first
-  campaign — its progress carries forward — not to fork. The CLI releases custody
-  on `/quit` (sync-back + drop the lock) and re-checks-out on resume, so the guard
-  holds for the duration of an open session and a character moves between
-  campaigns as one continuing identity.
+  (`CharacterCustodyError`). Re-checkout into the same campaign is idempotent
+  only for the **same party slot** — attaching one continuing identity as a
+  second `pc-<n>` in the same campaign is rejected, not silently duplicated. The
+  resolution to a cross-campaign clash is to **release** the character from the
+  first campaign — its progress carries forward — not to fork.
+- **Ownership is enforced on both ends of the lock.** Only the custody holder
+  may sync back or release: `syncBackCharacterFromCampaign` /
+  `releaseCharacterFromCampaign` take the `(campaignId, characterId)` of the
+  caller and no-op when it does not match the live custody record, so a stale
+  campaign database can never revert the timeline or drop a lock another campaign
+  now holds. The CLI releases custody on `/quit` and, on resume,
+  `acquireCustodyOnResume` re-takes the lock for each already-attached character
+  (without re-attaching, so per-turn HP/conditions survive). Resume fails closed
+  when the character is in active play elsewhere or the registry head has
+  advanced past this campaign's copy — so the "one active writer" guard holds for
+  the whole session and a character moves between campaigns as one continuing
+  identity.
 - **Fork is the discouraged escape hatch, not the movement mechanism.** The
   design goal is to *avoid* forking: a character is one continuing entity whose
   experiences carry forward, and moving it between campaigns is release →

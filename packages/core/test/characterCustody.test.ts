@@ -6,6 +6,7 @@ import type {
   FinalizedAbilityScore,
 } from '../src/character/finalizeCharacter.js';
 import {
+  acquireCustodyOnResume,
   CharacterCustodyError,
   type CharacterRegistryStore,
   checkoutCharacterIntoCampaign,
@@ -150,6 +151,7 @@ describe('character custody lifecycle', () => {
 
     // Exit campaign A: release commits a new registry revision + drops custody.
     const released = releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
       characterId: 'pc-1',
     });
     expect(released).toEqual({
@@ -195,6 +197,7 @@ describe('character custody lifecycle', () => {
     });
 
     const result = syncBackCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
       characterId: 'pc-1',
     });
     expect(result).toEqual({
@@ -295,9 +298,193 @@ describe('character custody lifecycle', () => {
     createSqliteCharacterSheetStore(campaign).save('pc-1', makeSheet());
     expect(
       syncBackCharacterFromCampaign(registry, campaign, {
+        campaignId: 'camp-a',
         characterId: 'pc-1',
       }),
     ).toBeUndefined();
+  });
+
+  it('rejects re-checkout into the same campaign under a different party slot', () => {
+    // /addpc allocates the next pc-<n>; importing the same registry character a
+    // second time must not create a duplicate playable copy of one identity.
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet(),
+    });
+    checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    expect(() =>
+      checkoutCharacterIntoCampaign(registry, campaign, {
+        globalCharacterId: 'mira',
+        campaignId: 'camp-a',
+        characterId: 'pc-2',
+        sessionId: 'session-1',
+        at: 'a2',
+      }),
+    ).toThrow(CharacterCustodyError);
+    expect(registry.custody('mira')?.characterId).toBe('pc-1');
+    expect(
+      createSqliteCharacterSheetStore(campaign).load('pc-2'),
+    ).toBeUndefined();
+  });
+
+  it('a stale campaign cannot clear or sync over a holder that took the character', () => {
+    // A checks mira out, then releases on /quit (custody idle).
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+
+    // B now checks mira out and holds custody.
+    const campaignB = freshCampaign();
+    checkoutCharacterIntoCampaign(registry, campaignB, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-b',
+      characterId: 'pc-1',
+      sessionId: 'session-2',
+      at: 'b1',
+    });
+    const headBefore = registry.headRevision('mira');
+
+    // A's stale campaign DB still has the mira sheet. A /quit there must NOT
+    // clear B's lock or append a stale (reverting) revision.
+    const released = releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    expect(released).toBeUndefined();
+    expect(registry.custody('mira')?.campaignId).toBe('camp-b');
+    expect(registry.headRevision('mira')).toBe(headBefore);
+  });
+});
+
+describe('acquireCustodyOnResume', () => {
+  let registry: CharacterRegistryStore;
+  let campaign: Db;
+
+  beforeEach(() => {
+    registry = freshRegistry().registry;
+    campaign = freshCampaign();
+  });
+
+  /** Check `globalCharacterId` out into `campaign` as `camp-a`/`pc-1`. */
+  function checkoutMira(): void {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet(),
+    });
+    checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+  }
+
+  it('reports already-held for a character custody was just taken of', () => {
+    checkoutMira();
+    expect(
+      acquireCustodyOnResume(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        at: 'a2',
+      }),
+    ).toBe('already-held');
+  });
+
+  it('re-acquires an idle lock on resume after a clean release', () => {
+    checkoutMira();
+    releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    expect(registry.custody('mira')).toBeUndefined();
+
+    expect(
+      acquireCustodyOnResume(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        at: 'a3',
+      }),
+    ).toBe('acquired');
+    expect(registry.custody('mira')).toMatchObject({
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+  });
+
+  it('returns not-linked for a directly-created (unlinked) campaign sheet', () => {
+    createSqliteCharacterSheetStore(campaign).save('pc-1', makeSheet());
+    expect(
+      acquireCustodyOnResume(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        at: 'a1',
+      }),
+    ).toBe('not-linked');
+  });
+
+  it('fails closed when another campaign holds the character', () => {
+    checkoutMira();
+    releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    const campaignB = freshCampaign();
+    checkoutCharacterIntoCampaign(registry, campaignB, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-b',
+      characterId: 'pc-1',
+      sessionId: 'session-2',
+      at: 'b1',
+    });
+
+    // Campaign A resuming must refuse rather than steal B's custody.
+    expect(() =>
+      acquireCustodyOnResume(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        at: 'a3',
+      }),
+    ).toThrow(CharacterCustodyError);
+    expect(registry.custody('mira')?.campaignId).toBe('camp-b');
+  });
+
+  it('fails closed when the registry head has advanced past this campaign copy', () => {
+    checkoutMira();
+    releaseCharacterFromCampaign(registry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+    // Simulate the character advancing in another campaign: the registry head
+    // moves ahead of campaign A's stale sheet.
+    registry.appendRevision('mira', makeSheet({ level: 9 }), 'sync-back');
+
+    expect(() =>
+      acquireCustodyOnResume(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        at: 'a3',
+      }),
+    ).toThrow(CharacterCustodyError);
+    expect(registry.custody('mira')).toBeUndefined();
   });
 });
 

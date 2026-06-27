@@ -91,13 +91,16 @@ export {
 } from './character/attachCharacter.js';
 // Cross-campaign character custody lifecycle (ADR 0012).
 export {
+  acquireCustodyOnResume,
   CharacterCustodyError,
   type CheckoutCharacterInput,
   type CheckoutCharacterResult,
+  type CustodyHolderInput,
   checkoutCharacterIntoCampaign,
   type ForkCharacterInput,
   type ForkCharacterResult,
   forkCharacterTimeline,
+  type ResumeCustodyOutcome,
   registerNewCharacter,
   releaseCharacterFromCampaign,
   type SyncBackResult,

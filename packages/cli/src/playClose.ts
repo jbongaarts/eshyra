@@ -31,13 +31,18 @@ import type { PlayDeps } from './playTypes.js';
  * `globalCharacterId`) are skipped. Best-effort: a release failure is reported
  * but never blocks a clean exit.
  */
-function releaseCampaignCharacters(deps: PlayDeps, db: Db): void {
+function releaseCampaignCharacters(
+  deps: PlayDeps,
+  db: Db,
+  campaignId: string,
+): void {
   for (const characterId of createSqliteCharacterSheetStore(db).list()) {
     try {
       const released = releaseCharacterFromCampaign(
         deps.characterRegistry,
         db,
         {
+          campaignId,
           characterId,
         },
       );
@@ -260,6 +265,6 @@ export async function gracefulClose(
 
   // Quitting the campaign returns custody to the registry: sync each held
   // character back and release the cross-DB write lock (ADR 0012). Resuming the
-  // campaign re-checks them out from the registry head.
-  releaseCampaignCharacters(deps, db);
+  // campaign re-acquires custody (see acquireCustodyOnResume).
+  releaseCampaignCharacters(deps, db, campaignId);
 }

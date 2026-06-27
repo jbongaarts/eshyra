@@ -157,6 +157,16 @@ export function checkoutCharacterIntoCampaign(
         `(as ${held.characterId}); exit that campaign to release it — its progress carries forward — before bringing it here`,
     );
   }
+  // Same campaign but a different party slot is NOT an idempotent resume: it
+  // would attach a second playable copy of one continuing identity inside the
+  // same campaign (e.g. via /addpc allocating the next pc-<n>). Only re-checkout
+  // into the very same character id is the idempotent resume case.
+  if (held !== undefined && held.characterId !== characterId) {
+    throw new CharacterCustodyError(
+      `character "${input.globalCharacterId}" is already in this campaign as ${held.characterId}; ` +
+        'one continuing character cannot occupy two party slots in the same campaign',
+    );
+  }
 
   const revision = ensureRevisioned(registry, input.globalCharacterId);
   if (revision === undefined) {
@@ -213,6 +223,14 @@ function sheetsEqual(a: CharacterSheet, b: CharacterSheet): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+/** Who is committing a sync-back / release — checked against the custody lock. */
+export interface CustodyHolderInput {
+  /** The campaign claiming to hold the character. */
+  readonly campaignId: string;
+  /** The campaign-local character id being synced (e.g. `pc-1`). */
+  readonly characterId: string;
+}
+
 /**
  * Commit a new registry revision from a campaign's current sheet, if it differs
  * from the registry head. Reads the campaign-local sheet, follows its stamped
@@ -220,23 +238,41 @@ function sheetsEqual(a: CharacterSheet, b: CharacterSheet): boolean {
  * (skipping the append when the sheet is unchanged, so idle sessions do not
  * spam identical revisions). Custody is left untouched — see
  * {@link releaseCharacterFromCampaign} to also drop the lock.
+ *
+ * Only the campaign that **holds custody** may sync back. A caller whose
+ * `(campaignId, characterId)` does not match the current custody record is not
+ * the authority — its campaign sheet is a stale copy — so it no-ops (returns
+ * `undefined`) rather than appending a reverting revision over whoever holds the
+ * character now. Returns `undefined` likewise when the sheet is not
+ * registry-linked.
  */
 export function syncBackCharacterFromCampaign(
   registry: CharacterRegistryStore,
   campaignDb: Db,
-  input: { characterId?: string },
+  input: CustodyHolderInput,
 ): SyncBackResult | undefined {
-  const characterId = input.characterId ?? DEFAULT_CHARACTER_ID;
-  const campaignSheet =
-    createSqliteCharacterSheetStore(campaignDb).load(characterId);
+  const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
+    input.characterId,
+  );
   const globalCharacterId = campaignSheet?.metadata.globalCharacterId;
   if (campaignSheet === undefined || globalCharacterId === undefined) {
     // The campaign character was never attached from the registry (e.g. created
     // directly in-campaign); there is nothing to sync back.
     return undefined;
   }
-  const sheet = stripCampaignProvenance(campaignSheet);
 
+  const held = registry.custody(globalCharacterId);
+  if (
+    held === undefined ||
+    held.campaignId !== input.campaignId ||
+    held.characterId !== input.characterId
+  ) {
+    // Not the custody holder: this campaign's sheet is stale. Do not commit a
+    // revision (it would clobber the actual holder's continuing timeline).
+    return undefined;
+  }
+
+  const sheet = stripCampaignProvenance(campaignSheet);
   const head = registry.headRevision(globalCharacterId);
   const headSheet =
     head === undefined ? undefined : registry.load(globalCharacterId);
@@ -260,19 +296,108 @@ export function syncBackCharacterFromCampaign(
  * Release a character from a campaign: sync its sheet back to the registry (per
  * {@link syncBackCharacterFromCampaign}) and drop custody so the character is
  * idle and free to be checked out again. The single "leave campaign" operation
- * the custody model needs. Returns the sync-back outcome, or `undefined` when
- * the campaign character is not registry-linked.
+ * the custody model needs.
+ *
+ * Custody is cleared **only** when this campaign is the holder (sync-back
+ * succeeded): a stale campaign releasing must never drop a lock that another
+ * campaign now holds. Returns the sync-back outcome, or `undefined` when this
+ * campaign is not the holder or the character is not registry-linked.
  */
 export function releaseCharacterFromCampaign(
   registry: CharacterRegistryStore,
   campaignDb: Db,
-  input: { characterId?: string },
+  input: CustodyHolderInput,
 ): SyncBackResult | undefined {
   const result = syncBackCharacterFromCampaign(registry, campaignDb, input);
   if (result !== undefined) {
+    // syncBack returned a result only because this campaign holds custody, so
+    // clearing the lock here is safe and targets our own hold.
     registry.clearCustody(result.globalCharacterId);
   }
   return result;
+}
+
+/** Outcome of {@link acquireCustodyOnResume} for one campaign character. */
+export type ResumeCustodyOutcome =
+  /** The campaign sheet is not linked to a registry character; nothing to lock. */
+  | 'not-linked'
+  /** This campaign already holds custody (e.g. a checkout earlier this run). */
+  | 'already-held'
+  /** Custody was idle and has been re-acquired for this campaign. */
+  | 'acquired';
+
+/**
+ * Re-establish the custody lock for an already-attached campaign character when
+ * a campaign resumes (ADR 0012, eshyra-lupf.14.3).
+ *
+ * Because the CLI releases custody on `/quit`, a resumed campaign has a
+ * registry-linked `character_sheet` but no lock. Resuming must reclaim it so the
+ * "exactly one writer at a time" guard holds for the duration of the new
+ * session — and must fail closed rather than silently steal or revert a
+ * character that has moved on:
+ *
+ *   - **held by us** → `already-held` (a checkout earlier this run); no change.
+ *   - **held by another campaign** → throw {@link CharacterCustodyError}: the
+ *     character is in active play elsewhere and this campaign must not start.
+ *   - **idle but the registry head is ahead of this campaign's copy** → throw:
+ *     the character advanced in another campaign since this one last held it, so
+ *     resuming from the stale local sheet would revert its timeline.
+ *   - **idle and in sync** → re-acquire and return `acquired`.
+ *
+ * Unlike checkout this does not re-attach (which would re-project the live row
+ * and discard per-turn HP/conditions); it only re-takes the lock.
+ */
+export function acquireCustodyOnResume(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
+  input: { campaignId: string; characterId: string; at: string },
+): ResumeCustodyOutcome {
+  const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
+    input.characterId,
+  );
+  const globalCharacterId = campaignSheet?.metadata.globalCharacterId;
+  if (campaignSheet === undefined || globalCharacterId === undefined) {
+    return 'not-linked';
+  }
+
+  const held = registry.custody(globalCharacterId);
+  if (held !== undefined) {
+    if (
+      held.campaignId === input.campaignId &&
+      held.characterId === input.characterId
+    ) {
+      return 'already-held';
+    }
+    throw new CharacterCustodyError(
+      `cannot resume: character "${globalCharacterId}" is currently in active play in campaign ` +
+        `"${held.campaignId}" (as ${held.characterId}); exit that campaign before resuming this one`,
+    );
+  }
+
+  // Idle: guard against resuming a copy the character has since outgrown in
+  // another campaign (registry head moved past this campaign's stale sheet).
+  const head = registry.headRevision(globalCharacterId);
+  const headSheet =
+    head === undefined ? undefined : registry.load(globalCharacterId);
+  if (
+    headSheet !== undefined &&
+    !sheetsEqual(headSheet, stripCampaignProvenance(campaignSheet))
+  ) {
+    throw new CharacterCustodyError(
+      `cannot resume: character "${globalCharacterId}" has advanced in another campaign since this one ` +
+        'last held it; its registry timeline is ahead of this campaign’s copy',
+    );
+  }
+
+  const revision = head ?? ensureRevisioned(registry, globalCharacterId) ?? 1;
+  registry.setCustody({
+    globalCharacterId,
+    campaignId: input.campaignId,
+    characterId: input.characterId,
+    revision,
+    attachedAt: input.at,
+  });
+  return 'acquired';
 }
 
 /** Where an alternate-timeline fork branches from and lands. */
