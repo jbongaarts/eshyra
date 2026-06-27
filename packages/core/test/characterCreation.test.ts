@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCharacterCreationMutations,
   CharacterCreationError,
+  type CharacterSheet,
   completeCharacterCreation,
   createCampaign,
   EMBERFALL_HOLLOW,
-  type FinalizedCharacter,
   getActiveCharacterId,
   importFinalizedCharacter,
   initSchema,
@@ -342,7 +342,7 @@ describe('character creation', () => {
   it('imports a finalized character as the active canonical pc-1', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
-    const character: FinalizedCharacter = {
+    const character: CharacterSheet = {
       schemaVersion: 1,
       system: 'dnd5e-srd',
       rulesPackId: 'dnd5e-srd-5.1',

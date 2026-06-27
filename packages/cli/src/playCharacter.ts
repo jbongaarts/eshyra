@@ -1,13 +1,9 @@
-import type {
-  CharacterCreationDraft,
-  Db,
-  FinalizedCharacter,
-} from '@eshyra/core';
+import type { CharacterCreationDraft, CharacterSheet, Db } from '@eshyra/core';
 import {
+  attachCharacterSheetToCampaign,
   completeCharacterCreation,
   DEFAULT_DND5E_SRD_BINDING,
   finalizeCharacterDraft,
-  importFinalizedCharacter,
   listParty,
   readCampaignRulesBinding,
 } from '@eshyra/core';
@@ -129,19 +125,19 @@ function campaignSystem(db: Db): string {
 }
 
 async function importSelectedFinalizedCharacter(
-  deps: Pick<PlayDeps, 'finalizedCharacterStore' | 'io' | 'now'>,
+  deps: Pick<PlayDeps, 'characterRegistry' | 'io' | 'now'>,
   db: Db,
   characterId: string,
 ): Promise<boolean> {
-  const ids = deps.finalizedCharacterStore.list();
+  const ids = deps.characterRegistry.list();
   if (ids.length === 0) {
-    deps.io.write('No finalized characters found in the character library.');
+    deps.io.write('No characters found in the character registry.');
     return false;
   }
 
-  deps.io.write('Finalized characters:');
+  deps.io.write('Registered characters:');
   for (const id of ids) {
-    const character = deps.finalizedCharacterStore.load(id);
+    const character = deps.characterRegistry.load(id);
     const label =
       character === undefined
         ? id
@@ -156,13 +152,19 @@ async function importSelectedFinalizedCharacter(
   }
 
   const selectedId = selected.trim();
-  const character = deps.finalizedCharacterStore.load(selectedId);
+  const character = deps.characterRegistry.load(selectedId);
   if (character === undefined) {
-    deps.io.write(`No finalized character found for id "${selectedId}".`);
+    deps.io.write(`No registered character found for id "${selectedId}".`);
     return false;
   }
 
-  return importFinalizedIntoCampaign(deps, db, character, characterId);
+  return importFinalizedIntoCampaign(
+    deps,
+    db,
+    character,
+    characterId,
+    selectedId,
+  );
 }
 
 async function runGuidedWizardAndImport(
@@ -172,7 +174,7 @@ async function runGuidedWizardAndImport(
     | 'characterEngine'
     | 'characterResolver'
     | 'characterRng'
-    | 'finalizedCharacterStore'
+    | 'characterRegistry'
     | 'io'
     | 'now'
   >,
@@ -215,28 +217,44 @@ async function runGuidedWizardAndImport(
     return false;
   }
 
-  const path = deps.finalizedCharacterStore.save(draftId, finalized.character);
-  deps.io.write(`Saved finalized character to ${path}`);
+  // Register the new character (its cross-campaign identity is the draft id),
+  // then attach it into this campaign (ADR 0012).
+  deps.characterRegistry.save(draftId, finalized.character);
+  deps.io.write(
+    `Registered character ${draftId} (${finalized.character.identity.name}).`,
+  );
   return importFinalizedIntoCampaign(
     deps,
     db,
     finalized.character,
     characterId,
+    draftId,
   );
 }
 
 function importFinalizedIntoCampaign(
   deps: Pick<PlayDeps, 'io' | 'now'>,
   db: Db,
-  character: FinalizedCharacter,
+  character: CharacterSheet,
   characterId: string,
+  globalCharacterId: string,
 ): boolean {
-  const result = importFinalizedCharacter(db, {
-    character,
-    sessionId: 'character-creation',
-    at: deps.now(),
-    characterId,
-  });
+  // Attach is copy-with-provenance, not a fork (ADR 0012): the core helper
+  // fails closed on a rules-pack mismatch, stamps the source registry identity,
+  // persists the per-campaign authority, and projects the live character row.
+  let result: ReturnType<typeof attachCharacterSheetToCampaign>;
+  try {
+    result = attachCharacterSheetToCampaign(db, {
+      sheet: character,
+      globalCharacterId,
+      characterId,
+      sessionId: 'character-creation',
+      at: deps.now(),
+    });
+  } catch (error) {
+    deps.io.write(error instanceof Error ? error.message : String(error));
+    return false;
+  }
   deps.io.write(result.prompt);
   return result.ok;
 }
@@ -248,7 +266,7 @@ async function setupDnd5eCharacter(
     | 'characterEngine'
     | 'characterResolver'
     | 'characterRng'
-    | 'finalizedCharacterStore'
+    | 'characterRegistry'
     | 'io'
     | 'now'
   >,
@@ -295,7 +313,7 @@ export async function ensureCharacterReady(
     | 'characterEngine'
     | 'characterResolver'
     | 'characterRng'
-    | 'finalizedCharacterStore'
+    | 'characterRegistry'
     | 'io'
     | 'now'
   >,
@@ -362,7 +380,7 @@ export async function createAdditionalCharacter(
     | 'characterEngine'
     | 'characterResolver'
     | 'characterRng'
-    | 'finalizedCharacterStore'
+    | 'characterRegistry'
     | 'io'
     | 'now'
   >,

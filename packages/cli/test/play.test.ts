@@ -3,13 +3,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   type CharacterDraft,
+  type CharacterRegistryStore,
+  type CharacterSheet,
   createCampaign,
   createDefaultToolRegistry,
   createSeededRng,
   type Db,
   DoltRepo,
   EMBERFALL_HOLLOW,
-  type FinalizedCharacter,
   getArcSummary,
   getBundledDnd5eCharacterResolver,
   getCampaign,
@@ -46,10 +47,7 @@ import {
   renderContextMessage,
 } from '@eshyra/core/internal';
 import { describe, expect, it, vi } from 'vitest';
-import type {
-  CharacterDraftStore,
-  FinalizedCharacterStore,
-} from '../src/characterDraftStore.js';
+import type { CharacterDraftStore } from '../src/characterDraftStore.js';
 import {
   type CliIO,
   doltCheckpointRunner,
@@ -146,7 +144,7 @@ const HOLLOW_MODULE_ID = 'eshyra:hollow-beneath-emberfall';
 function finalizedCharacter(
   name = 'Mira',
   className = 'Fighter',
-): FinalizedCharacter {
+): CharacterSheet {
   return {
     schemaVersion: 1,
     system: 'dnd5e-srd',
@@ -198,15 +196,14 @@ function memoryDraftStore(): CharacterDraftStore {
 }
 
 function memoryFinalizedStore(
-  seed: Readonly<Record<string, FinalizedCharacter>> = {
+  seed: Readonly<Record<string, CharacterSheet>> = {
     mira: finalizedCharacter(),
   },
-): FinalizedCharacterStore {
-  const saved = new Map<string, FinalizedCharacter>(Object.entries(seed));
+): CharacterRegistryStore {
+  const saved = new Map<string, CharacterSheet>(Object.entries(seed));
   return {
     save: (id, character) => {
       saved.set(id, character);
-      return `mem://${id}`;
     },
     load: (id) => saved.get(id),
     list: () => [...saved.keys()].sort(),
@@ -283,7 +280,7 @@ function baseDeps(
     pack: EMBERFALL_HOLLOW,
     listAdventureModules,
     characterDraftStore: memoryDraftStore(),
-    finalizedCharacterStore: memoryFinalizedStore(),
+    characterRegistry: memoryFinalizedStore(),
     characterEngine: getDnd5eCharacterCreationEngine(),
     characterResolver: getBundledDnd5eCharacterResolver(),
     characterRng: createSeededRng(1),
@@ -467,7 +464,7 @@ describe('runPlay', () => {
 
     expect(code).toBe(0);
     const out = lines.join('\n');
-    expect(out).toContain('Finalized characters:');
+    expect(out).toContain('Registered characters:');
     expect(out).toContain('Character creation complete');
     expect(out).not.toContain('Level-1 max HP:');
     expect(out).toContain('DM: you said "look around"');

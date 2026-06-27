@@ -1,15 +1,13 @@
 import {
   type CharacterDraft,
+  type CharacterRegistryStore,
+  type CharacterSheet,
   createSeededRng,
-  type FinalizedCharacter,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
 } from '@eshyra/core/internal';
 import { describe, expect, it } from 'vitest';
-import type {
-  CharacterDraftStore,
-  FinalizedCharacterStore,
-} from '../src/characterDraftStore.js';
+import type { CharacterDraftStore } from '../src/characterDraftStore.js';
 import type { CharacterWizardDeps } from '../src/characterWizard.js';
 import {
   type CreateCharacterOptions,
@@ -19,15 +17,14 @@ import {
 } from '../src/createCharacter.js';
 import type { CliIO } from '../src/playTypes.js';
 
-function memoryCharacterStore(): FinalizedCharacterStore & {
-  readonly saved: Map<string, FinalizedCharacter>;
+function memoryCharacterStore(): CharacterRegistryStore & {
+  readonly saved: Map<string, CharacterSheet>;
 } {
-  const saved = new Map<string, FinalizedCharacter>();
+  const saved = new Map<string, CharacterSheet>();
   return {
     saved,
     save: (id, character) => {
       saved.set(id, character);
-      return `mem://${id}`;
     },
     load: (id) => saved.get(id),
     list: () => [...saved.keys()].sort(),
@@ -36,7 +33,7 @@ function memoryCharacterStore(): FinalizedCharacterStore & {
 
 const FIXED_NOW = '2026-06-26T00:00:00.000Z';
 const finalizeOpts = (
-  characterStore: FinalizedCharacterStore,
+  characterStore: CharacterRegistryStore,
 ): CreateCharacterOptions => ({ characterStore, now: () => FIXED_NOW });
 
 function scriptedIO(answers: ReadonlyArray<string>): {

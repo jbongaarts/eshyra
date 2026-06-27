@@ -11,6 +11,7 @@
 
 import { randomBytes } from 'node:crypto';
 import {
+  type CharacterRegistryStore,
   createSeededRng,
   finalizeCharacterDraft,
   getBundledDnd5eCharacterResolver,
@@ -19,27 +20,26 @@ import {
 import {
   type CharacterDraftStore,
   createFileCharacterDraftStore,
-  createFileFinalizedCharacterStore,
   draftFileStem,
-  type FinalizedCharacterStore,
 } from './characterDraftStore.js';
+import { openCharacterRegistry } from './characterRegistry.js';
 import {
   type CharacterWizardDeps,
   type CharacterWizardResult,
   runCharacterWizard,
 } from './characterWizard.js';
-import {
-  characterDraftsDir,
-  charactersDir,
-  resolveDataRoot,
-} from './dataRoot.js';
+import { characterDraftsDir, resolveDataRoot } from './dataRoot.js';
 import { nodeIO } from './play.js';
 import type { CliIO } from './playTypes.js';
 
 /** Optional finalization collaborators (injectable for tests). */
 export interface CreateCharacterOptions {
-  /** Where a completed draft's finalized record is written. */
-  readonly characterStore?: FinalizedCharacterStore;
+  /**
+   * The cross-campaign character registry a completed draft is registered into
+   * (ADR 0012). Standalone `create-character` builds a character's continuing
+   * identity here; a campaign later attaches it for play.
+   */
+  readonly characterStore?: CharacterRegistryStore;
   /** ISO-8601 clock for finalization provenance (defaults to wall clock). */
   readonly now?: () => string;
 }
@@ -183,9 +183,9 @@ function finalizeIfComplete(
   }
   const { character } = finalized;
   if (options.characterStore !== undefined) {
-    const path = options.characterStore.save(result.draft.id, character);
+    options.characterStore.save(result.draft.id, character);
     deps.io.write(
-      `Finalized ${character.identity.name}, level ${character.level} ${character.ancestry.name} ${character.class.name} → ${path}`,
+      `Finalized ${character.identity.name}, level ${character.level} ${character.ancestry.name} ${character.class.name} → registered as ${result.draft.id}`,
     );
   } else {
     deps.io.write(
@@ -217,8 +217,8 @@ export async function runCreateCharacterSubcommand(
   const store: CharacterDraftStore = createFileCharacterDraftStore(
     characterDraftsDir(dataRoot),
   );
-  const characterStore: FinalizedCharacterStore =
-    createFileFinalizedCharacterStore(charactersDir(dataRoot));
+  const characterStore: CharacterRegistryStore =
+    openCharacterRegistry(dataRoot);
   const terminal = nodeIO();
   const io: CliIO = terminal;
   try {

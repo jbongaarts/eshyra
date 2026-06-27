@@ -95,12 +95,21 @@ export function characterDraftsDir(root: string): string {
 }
 
 /**
- * `<root>/characters` — finalized, playable character records, one JSON file per
- * character id (eshyra-b69j.14). These are the canonical artifacts produced when
- * a complete draft is finalized; a campaign imports them for play.
+ * `<root>/characters` — legacy finalized-character JSON library (eshyra-b69j.14),
+ * one file per character id. Superseded by the core-owned character registry
+ * (ADR 0012); retained only as the one-time migration source.
  */
 export function charactersDir(root: string): string {
   return join(root, 'characters');
+}
+
+/**
+ * `<root>/characters.db` — the core-owned cross-campaign character registry
+ * (ADR 0012): the authority for a character between campaigns. A campaign
+ * imports/attaches a registry character into its per-campaign sheet for play.
+ */
+export function characterRegistryDbPath(root: string): string {
+  return join(root, 'characters.db');
 }
 
 /** `<root>/diagnostics` — model usage and diagnostics store (eshyra-cuxm). */
