@@ -69,8 +69,11 @@ Two pieces of durable state, owned by core (the store boundary itself is
 `eshyra-lupf.13`):
 
 1. **Progression state** on the character: current XP (XP mode only), current
-   level, and advancement mode. Current level remains the authority used by the
-   resolver and derived-value computation.
+   level, and any outstanding per-character advancement eligibility (e.g. a
+   pending milestone). The effective advancement mode is resolved from the
+   campaign/rules binding, not stored as independent character authority.
+   Current level remains the authority used by the resolver and derived-value
+   computation.
 2. **A progression-event ledger**: an append-only, auditable record of every
    award and every applied level-up. Each row records, at minimum:
    - `kind` — `xp-award` | `milestone-award` | `level-up`
@@ -117,8 +120,10 @@ rows in `eshyra-lupf.3`).
   row.
 - **Class features** granted at the new level, by `ref`, as listed in the
   class's progression row.
-- **Spellcasting** progression where the class supports it: cantrips known and
-  spell slots per spell level, from the progression row's `spellcasting` block.
+- **Spellcasting capacity** where the class supports it: cantrip/spell-known
+  counts and spell slots per spell level, from the progression row's
+  `spellcasting` block. Specific spell/cantrip selections and preparation
+  changes are required choices, not automatic effects (see below).
 
 ## Required choices and the fail-closed boundary
 
@@ -133,7 +138,7 @@ guided flow (`eshyra-lupf.9`, `.10`):
 - Expertise and similar class-specific picks
 
 **Fail closed.** Where a granted level requires a choice the engine cannot yet
-apply deterministically — most importantly new cantrips/spells/slots and
+apply deterministically — most importantly specific cantrip/spell selections and
 preparation changes — the level-up is **blocked with an explicit reason**, not
 inferred or silently skipped. This deliberately diverges from the lenient
 creation-time seam, where the draft engine's mechanical-choice gate covers only
