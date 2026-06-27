@@ -351,6 +351,14 @@ function validateEventInput(input: RecordProgressionEventInput): void {
     requireNonEmpty('milestoneLabel', input.milestoneLabel);
   }
 
+  // Per-kind shape. Each branch declares every field as required or forbidden so
+  // the columns mean exactly what the migration/design comments promise:
+  //   - xp-award:        amount + resultingXp; no milestoneLabel/appliedChanges.
+  //   - milestone-award: milestoneLabel; no amount/resultingXp/appliedChanges
+  //                      (resulting_xp is null in milestone mode).
+  //   - level-up:        appliedChanges (the deterministic change set for
+  //                      replay/audit); no amount/milestoneLabel. resultingXp is
+  //                      optional (present in XP mode, absent in milestone mode).
   switch (input.kind) {
     case 'xp-award':
       if (input.amount === undefined) {
@@ -362,6 +370,9 @@ function validateEventInput(input: RecordProgressionEventInput): void {
       if (input.milestoneLabel !== undefined) {
         throw new ProgressionError('xp-award must not carry a milestoneLabel');
       }
+      if (input.appliedChanges !== undefined) {
+        throw new ProgressionError('xp-award must not carry appliedChanges');
+      }
       break;
     case 'milestone-award':
       if (input.milestoneLabel === undefined) {
@@ -370,8 +381,24 @@ function validateEventInput(input: RecordProgressionEventInput): void {
       if (input.amount !== undefined) {
         throw new ProgressionError('milestone-award must not carry an amount');
       }
+      if (input.resultingXp !== undefined) {
+        throw new ProgressionError(
+          'milestone-award must not carry resultingXp',
+        );
+      }
+      if (input.appliedChanges !== undefined) {
+        throw new ProgressionError(
+          'milestone-award must not carry appliedChanges',
+        );
+      }
       break;
     case 'level-up':
+      if (input.appliedChanges === undefined) {
+        throw new ProgressionError('level-up requires appliedChanges');
+      }
+      if (input.amount !== undefined) {
+        throw new ProgressionError('level-up must not carry an amount');
+      }
       if (input.milestoneLabel !== undefined) {
         throw new ProgressionError('level-up must not carry a milestoneLabel');
       }

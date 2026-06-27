@@ -330,5 +330,80 @@ describe('progression-event ledger', () => {
       ).toThrow(ProgressionError);
       db.close();
     });
+
+    it('rejects an xp-award carrying appliedChanges', () => {
+      const db = bareDb();
+      expect(() =>
+        recordProgressionEvent(db, xpAwardInput({ appliedChanges: { x: 1 } })),
+      ).toThrow(/xp-award must not carry appliedChanges/);
+      db.close();
+    });
+
+    it('rejects a milestone-award carrying resultingXp', () => {
+      const db = bareDb();
+      expect(() =>
+        recordProgressionEvent(db, {
+          kind: 'milestone-award',
+          milestoneLabel: 'done',
+          resultingXp: 300,
+          source: 'dm',
+          resultingLevel: 2,
+          occurredAt: AT,
+          provenance: 'dm:ruling',
+          sessionId: DEFAULT_TEST_SESSION_ID,
+        }),
+      ).toThrow(/milestone-award must not carry resultingXp/);
+      db.close();
+    });
+
+    it('rejects a milestone-award carrying appliedChanges', () => {
+      const db = bareDb();
+      expect(() =>
+        recordProgressionEvent(db, {
+          kind: 'milestone-award',
+          milestoneLabel: 'done',
+          appliedChanges: { level: 2 },
+          source: 'dm',
+          resultingLevel: 2,
+          occurredAt: AT,
+          provenance: 'dm:ruling',
+          sessionId: DEFAULT_TEST_SESSION_ID,
+        }),
+      ).toThrow(/milestone-award must not carry appliedChanges/);
+      db.close();
+    });
+
+    it('rejects a level-up without appliedChanges', () => {
+      const db = bareDb();
+      expect(() =>
+        recordProgressionEvent(db, {
+          kind: 'level-up',
+          source: 'level-up-engine',
+          resultingXp: 300,
+          resultingLevel: 2,
+          occurredAt: AT,
+          provenance: 'tool:apply_level_up',
+          sessionId: DEFAULT_TEST_SESSION_ID,
+        }),
+      ).toThrow(/level-up requires appliedChanges/);
+      db.close();
+    });
+
+    it('rejects a level-up carrying an amount', () => {
+      const db = bareDb();
+      expect(() =>
+        recordProgressionEvent(db, {
+          kind: 'level-up',
+          amount: 50,
+          appliedChanges: { level: 2 },
+          source: 'level-up-engine',
+          resultingLevel: 2,
+          occurredAt: AT,
+          provenance: 'tool:apply_level_up',
+          sessionId: DEFAULT_TEST_SESSION_ID,
+        }),
+      ).toThrow(/level-up must not carry an amount/);
+      db.close();
+    });
   });
 });
