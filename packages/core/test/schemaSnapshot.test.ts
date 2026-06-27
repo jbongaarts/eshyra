@@ -13,6 +13,10 @@ const SNAPSHOT_PATH = fileURLToPath(
   new URL('../data/schema.snapshot.sql', import.meta.url),
 );
 
+const BASELINE_MIGRATION_PATH = fileURLToPath(
+  new URL('../data/migrations/0001_initial.sql', import.meta.url),
+);
+
 describe('schema snapshot (ADR 0015 §7)', () => {
   it('committed data/schema.snapshot.sql matches the schema produced by the migrations', () => {
     const db = openDatabase(':memory:');
@@ -40,19 +44,18 @@ describe('schema snapshot (ADR 0015 §7)', () => {
 
 describe('migrated-vs-fresh schema parity (ADR 0015 §3/§7)', () => {
   it('a legacy-adopted database and a fresh migrated database have identical schema', () => {
-    // A legacy v15 database, as built by the (now migration-backed) initSchema's
-    // predecessor shape: simulate by adopting a database that already holds the
-    // baseline schema and a meta.schema_version marker.
+    // A real legacy v15 database holds exactly the 0001 baseline schema (the
+    // pre-migration-first state), with no later migrations and no ledger. Build
+    // it from the baseline migration directly rather than from the full
+    // migration set, then mark it with the legacy version so initSchema adopts
+    // it in place and applies the pending post-baseline migrations.
     const legacy = openDatabase(':memory:');
-    runMigrations(legacy); // build the baseline schema
-    // Make it look like a pre-migration-first DB: drop the ledger, add the
-    // legacy version marker.
-    legacy.exec('DROP TABLE schema_migrations;');
+    legacy.exec(readFileSync(BASELINE_MIGRATION_PATH, 'utf8'));
     legacy
       .prepare('INSERT INTO meta(key, value) VALUES (?, ?)')
       .run('schema_version', '15');
 
-    initSchema(legacy); // adopts in place
+    initSchema(legacy); // adopts in place, then applies 0002+
 
     const fresh = openDatabase(':memory:');
     initSchema(fresh);

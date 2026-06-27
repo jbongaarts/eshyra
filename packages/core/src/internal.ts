@@ -144,6 +144,14 @@ export {
   createCharacterCreationEngine,
   getDnd5eCharacterCreationEngine,
 } from './character/characterDraft.js';
+// Core-owned character sheet store (ADR 0011, eshyra-lupf.14.1).
+export {
+  assertSheetMatchesPack,
+  CharacterSheetPackMismatchError,
+  type CharacterSheetStore,
+  CharacterSheetStoreError,
+  createSqliteCharacterSheetStore,
+} from './character/characterSheetStore.js';
 export type {
   AbilityScoreMethod,
   CharacterCreationMutationMetadata,
@@ -173,10 +181,12 @@ export {
   resolveCharacterCreationRecipe,
 } from './character/dnd5eRecipe.js';
 // Guided-creation finalization (eshyra-b69j.14): turn a complete draft into a
-// canonical, serializable FinalizedCharacter record (or report what is missing).
+// canonical, serializable CharacterSheet record (or report what is missing).
 export type {
+  CharacterSheet,
   FinalizeCharacterResult,
   FinalizedAbilityScore,
+  /** @deprecated Use {@link CharacterSheet} (ADR 0011). */
   FinalizedCharacter,
   FinalizedRecordRef,
   FinalizeMetadata,

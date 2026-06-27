@@ -306,11 +306,13 @@ describe('0001_initial baseline (bundled)', () => {
     const result = runMigrations(db);
 
     const ledger: MigrationLedgerRow[] = readMigrationLedger(db);
-    expect(ledger).toHaveLength(1);
     expect(ledger[0].version).toBe(1);
     expect(ledger[0].name).toBe('initial');
     expect(ledger[0].checksum).toMatch(/^[0-9a-f]{64}$/);
-    expect(result.currentVersion).toBe(1);
+    // The baseline is followed by the bundled post-baseline migrations
+    // (0002_character_sheet, …); currentVersion tracks the latest applied.
+    expect(ledger.map((r) => r.version)).toEqual(ledger.map((_r, i) => i + 1));
+    expect(result.currentVersion).toBe(ledger.length);
 
     // meta.schema_version is retired as schema authority (ADR 0015) and is not
     // seeded by the baseline.
@@ -323,10 +325,10 @@ describe('0001_initial baseline (bundled)', () => {
 
   it('is idempotent against the bundled directory', () => {
     const db = openDatabase(':memory:');
-    runMigrations(db);
+    const first = runMigrations(db);
     const second = runMigrations(db);
     expect(second.applied).toEqual([]);
-    expect(second.alreadyApplied).toEqual([1]);
+    expect(second.alreadyApplied).toEqual(first.applied);
     db.close();
   });
 });

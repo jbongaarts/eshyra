@@ -68,11 +68,15 @@ export interface FinalizeMetadata {
 }
 
 /**
- * The canonical, serializable level-1 character record produced from a complete
- * draft. Self-contained: every rules reference carries its frozen key, and the
- * pack/recipe ids plus `metadata` capture provenance.
+ * The canonical, serializable character sheet produced from a complete draft —
+ * the core-owned, rules-pack-bound authority for a character's build-defining
+ * facts (ADR 0011). Self-contained: every rules reference carries its frozen
+ * key, and the `schemaVersion` / `system` / `rulesPackId` / `recipeId` fields
+ * plus `metadata` capture provenance and pack binding. Persisted by the
+ * core {@link CharacterSheetStore}; the live `character` row projects a few of
+ * its columns for the per-turn path.
  */
-export interface FinalizedCharacter {
+export interface CharacterSheet {
   readonly schemaVersion: 1;
   readonly system: string;
   readonly rulesPackId: string;
@@ -109,9 +113,16 @@ export interface FinalizedCharacter {
   readonly metadata: FinalizeMetadata;
 }
 
+/**
+ * @deprecated Use {@link CharacterSheet}. Retained as an alias while consumers
+ * migrate to the core-owned character-sheet authority (ADR 0011); removed when
+ * the CLI cuts over to the {@link CharacterSheetStore} (eshyra-lupf.14.2).
+ */
+export type FinalizedCharacter = CharacterSheet;
+
 /** Outcome of {@link finalizeCharacterDraft}. */
 export type FinalizeCharacterResult =
-  | { readonly ok: true; readonly character: FinalizedCharacter }
+  | { readonly ok: true; readonly character: CharacterSheet }
   | {
       readonly ok: false;
       readonly missing: readonly RequiredChoice[];
@@ -190,7 +201,7 @@ function buildFinalizedCharacter(
     savingThrows[name] = draft.derived.savingThrows[name] as SavingThrowDerived;
   }
 
-  const finalized: FinalizedCharacter = {
+  const finalized: CharacterSheet = {
     schemaVersion: 1,
     system: 'dnd5e-srd',
     rulesPackId: draft.rulesPackId,

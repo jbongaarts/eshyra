@@ -13,16 +13,16 @@ import {
 const NOW = () => '2026-06-26T00:00:00.000Z';
 
 /**
- * A legacy pre-migration-first DB at the current baseline: the baseline schema
- * and seed rows, marked with `meta.schema_version = 15` and with NO
- * `schema_migrations` ledger. (initSchema now produces a migration-first DB, so
- * a genuine legacy DB is synthesized by building the baseline, dropping the
- * ledger, and adding the legacy version marker.)
+ * A legacy pre-migration-first DB at the current baseline: a genuine legacy v15
+ * database holds exactly the `0001` baseline schema and seed rows — no later
+ * migrations and no `schema_migrations` ledger — marked with
+ * `meta.schema_version = 15`. Build it from the baseline migration directly
+ * (not the full migration set) so adoption, which compares against the 0001
+ * baseline, sees a faithful legacy DB.
  */
 function legacyBaselineDb(): Db {
   const db = openDatabase(':memory:');
-  runMigrations(db);
-  db.exec('DROP TABLE schema_migrations;');
+  db.exec(discoverMigrations()[0].sql);
   db.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run(
     'schema_version',
     '15',
@@ -179,17 +179,18 @@ describe('migrateDatabase (end to end)', () => {
     const db = openDatabase(':memory:');
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('empty');
-    expect(result.migrations.applied).toEqual([1]);
-    expect(readMigrationLedger(db).map((r) => r.version)).toEqual([1]);
+    expect(result.migrations.applied).toEqual([1, 2]);
+    expect(readMigrationLedger(db).map((r) => r.version)).toEqual([1, 2]);
     db.close();
   });
 
-  it('adopts a legacy baseline database and applies no further migrations', () => {
+  it('adopts a legacy baseline database and applies pending post-baseline migrations', () => {
     const db = legacyBaselineDb();
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('adopted');
     expect(result.legacy.adoptedFromVersion).toBe(15);
-    expect(result.migrations.applied).toEqual([]);
+    // 0001 is adopted (already applied); the post-baseline migrations apply.
+    expect(result.migrations.applied).toEqual([2]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     db.close();
   });

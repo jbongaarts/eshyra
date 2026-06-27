@@ -90,6 +90,14 @@ export type {
   CharacterDraft,
 } from './character/characterDraft.js';
 export { getDnd5eCharacterCreationEngine } from './character/characterDraft.js';
+// Canonical core-owned character sheet store (ADR 0011).
+export {
+  assertSheetMatchesPack,
+  CharacterSheetPackMismatchError,
+  type CharacterSheetStore,
+  CharacterSheetStoreError,
+  createSqliteCharacterSheetStore,
+} from './character/characterSheetStore.js';
 export type {
   AbilityScoreMethod,
   AbilityScoreName,
@@ -109,7 +117,11 @@ export {
   importFinalizedCharacter,
 } from './character/creation.js';
 export { DND5E_SRD_CHARACTER_RECIPE } from './character/dnd5eRecipe.js';
-export type { FinalizedCharacter } from './character/finalizeCharacter.js';
+export type {
+  CharacterSheet,
+  /** @deprecated Use {@link CharacterSheet} (ADR 0011). */
+  FinalizedCharacter,
+} from './character/finalizeCharacter.js';
 export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
 export { enumerateLevel1RequiredChoices } from './character/requiredChoices.js';
 export type { RulesPackCharacterResolver } from './character/rulesPackResolver.js';
