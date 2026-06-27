@@ -3,6 +3,8 @@
 **A text-first, persistent AI Dungeon Master for long-running fantasy
 campaigns.**
 
+[Website](https://eshyra.app)
+
 Eshyra is a local campaign engine for open-ended fantasy roleplaying through
 text. It preserves campaign canon across sessions, stores structured game
 state in SQLite, adjudicates dice and state changes through deterministic
