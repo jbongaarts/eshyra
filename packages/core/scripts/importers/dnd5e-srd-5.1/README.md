@@ -575,7 +575,7 @@ logical line by the extractor's heading-merge pass before slicing.
 | `treasureTables`     | `/^Treasure$/`                                 | `/^Using (a )?Magic Items?$/i`                          | `true` (best-effort) | false          |
 | `multiclassing`      | `/^Multiclassing$/`                            | `/^(Proficiencies\|...)/i`                                  | false (best-effort) | `true`         |
 | `beyondFirstLevel`   | `/^Beyond 1st Level$/`                         | `/^(Backgrounds\|Equipment\|Feats\|...\|Appendix)\b/`        | `true` (best-effort start) | `true`     |
-| `backgrounds`        | `/^Backgrounds$/`                              | `/^(Equipment|Feats|...)$\|^Appendix/`                    | `true` (best-effort start) | `true`     |
+| `backgrounds`        | `/^Backgrounds$/`                              | `/^(Equipment|Feats|...)$\|^Appendix\b/`                    | `true` (best-effort start) | `true`     |
 | `expenses`           | `/^Trade Goods$/`                              | `/^(Feats?\|Using Ability Scores\|...\|Appendix)\b/`         | `true` (best-effort start) | `true`     |
 
 Anchors are deliberately tight (`^...$`) so a body-prose mention of a chapter
