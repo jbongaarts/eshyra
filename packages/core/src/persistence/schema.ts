@@ -13,6 +13,13 @@ import { migrateDatabase } from './migrationRunner.js';
  * Opaque extension points — validated as plain JSON root-type only:
  *   - `plot_flags.value_json`           (any JSON value)
  *   - `overlay_facts.value_json`        (any JSON value)
+ *   - `progression_event.applied_changes_json`
+ *                                       (deterministic level-up change set on a
+ *                                        progression-event ledger row; validated
+ *                                        only as JSON-serializable at the
+ *                                        `state/progression.ts` write boundary,
+ *                                        with its internal shape owned by the
+ *                                        level-up engine, eshyra-lupf.8)
  *
  * Typed live campaign canon:
  *   - `campaign_overlay_lore`           (improvised lore and continuity
