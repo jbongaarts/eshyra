@@ -87,14 +87,16 @@ rather than two copies of the same data:
 
 - **`CharacterSheet` (slow / build-defining):** class/ancestry/background refs,
   rules-pack provenance, ability scores, proficiency bonus, **max HP**,
-  **level**, features, known/prepared spells, languages, equipment loadout,
-  saving throws, derived values, and the progression state/ledger. The sheet
-  owns everything that defines *who the character is and what they can do*.
-- **Live `character` row (fast / per-turn situation):** current HP
-  (`hp_current`), `conditions_json`, and the identity/class mirror columns
-  needed for prompt context. The live row owns *the character's current
-  situation in play* and remains the per-turn store (SQLite stays the hot path,
-  per ADR 0003 / the architecture principles).
+  **level**, features, known/prepared spells, languages, equipment-selection
+  provenance and equipment-derived build facts, saving throws, derived values,
+  and the progression state/ledger. The sheet owns everything that defines
+  *who the character is and what they can do*.
+- **Live game state (fast / per-turn situation):** current HP (`hp_current`),
+  `conditions_json`, carried inventory item stacks / unique objects, item
+  quantities, item locations, and the identity/class mirror columns needed for
+  prompt context. The live `character` row plus the `inventory` table own *the
+  character's current situation in play* and remain the per-turn store (SQLite
+  stays the hot path, per ADR 0003 / the architecture principles).
 
 The handful of overlapping columns — `level`, `hp_max`, and the
 identity/class mirrors — are **owned by the sheet and projected into the live
@@ -104,6 +106,14 @@ re-projects the affected live columns; per-turn damage writes only
 **projection/cache** of the sheet for the fields they share, and the source of
 truth for fast per-turn fields; it is rematerializable from the sheet plus
 current-situation state. No field has two authorities.
+
+Mutable inventory is **not** duplicated into `CharacterSheet`: creation-time
+starting-equipment choices may seed `inventory` rows, but after projection the
+`inventory` table is authoritative for carried objects, quantities, and
+locations. The sheet retains only equipment-selection provenance and the
+build facts those choices imply. Likewise, the progression-event ledger is part
+of the sheet's authority boundary, though it may be stored in a separate
+append-only table keyed to the sheet rather than embedded inside `sheet_json`.
 
 ### 5. Migration path off CLI JSON
 
