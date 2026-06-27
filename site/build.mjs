@@ -72,6 +72,18 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;');
 }
 
+function assetVersion() {
+  try {
+    return execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return buildDate;
+  }
+}
+
 // --- Read source data ------------------------------------------------------
 
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
@@ -197,6 +209,7 @@ const replacements = {
   SOURCE_DATE: sourceDate,
   SOURCE_HASH: sourceHash,
   BUILD_DATE: buildDate,
+  ASSET_VERSION: assetVersion(),
 };
 
 let html = readFileSync(join(srcDir, 'index.html.tmpl'), 'utf8');

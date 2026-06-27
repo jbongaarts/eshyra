@@ -5,6 +5,9 @@
   X-Frame-Options: DENY
   Content-Security-Policy: default-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'
 
+/styles.css
+  Cache-Control: public, max-age=0, must-revalidate
+
 /downloads/*
   Cache-Control: public, max-age=3600
   Content-Disposition: attachment
