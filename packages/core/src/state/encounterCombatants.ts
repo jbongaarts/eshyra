@@ -810,6 +810,20 @@ export function closeCombatInstance(
   return closed;
 }
 
+/**
+ * The campaign's currently active combat instance, or `undefined` when no
+ * combat is active. A read-only wrapper over the private active-instance lookup,
+ * exposed so callers outside the encounter engine (e.g. the resume
+ * conflict-resolution UX, eshyra-lupf.14.4) can warn before mutating a character
+ * mid-combat.
+ */
+export function getActiveCombatInstance(
+  db: Db,
+  campaignId: string,
+): CombatInstance | undefined {
+  return activeInstance(db, campaignId);
+}
+
 export function readCombatInstance(
   db: Db,
   campaignId: string,

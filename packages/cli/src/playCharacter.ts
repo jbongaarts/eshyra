@@ -1,20 +1,49 @@
-import type { CharacterCreationDraft, Db } from '@eshyra/core';
+import type {
+  CharacterCreationDraft,
+  Db,
+  ResumeClassification,
+} from '@eshyra/core';
 import {
   acquireCustodyOnResume,
   CharacterCustodyError,
-  checkCustodyResumable,
+  catchUpCharacterToHead,
   checkoutCharacterIntoCampaign,
+  classifyResumeConflict,
   completeCharacterCreation,
   createSqliteCharacterSheetStore,
   DEFAULT_DND5E_SRD_BINDING,
   finalizeCharacterDraft,
+  getActiveCombatInstance,
+  getSessionLaunchState,
   listParty,
   readCampaignRulesBinding,
   registerNewCharacter,
 } from '@eshyra/core';
 import { runCharacterWizard } from './characterWizard.js';
 import { newDraftId } from './createCharacter.js';
+import { offerContinuityBridge } from './playContinuity.js';
+import { forkConflictedCharacterIntoCampaign } from './playFork.js';
 import type { CliIO, PlayDeps } from './playTypes.js';
+
+/** A stale-copy resume conflict narrowed from {@link ResumeClassification}. */
+type StaleCopyConflict = Extract<ResumeClassification, { kind: 'stale-copy' }>;
+
+/** The player's chosen resolution for one stale-copy conflict. */
+type StaleResolution =
+  | { readonly kind: 'cancel' }
+  | { readonly kind: 'catchup'; readonly characterId: string }
+  | {
+      readonly kind: 'fork';
+      readonly characterId: string;
+      readonly globalCharacterId: string;
+      readonly fromRevision: number | undefined;
+    };
+
+/** Deps the resume conflict-resolution UX needs. */
+type ResumeDeps = Pick<
+  PlayDeps,
+  'characterRegistry' | 'io' | 'now' | 'model' | 'nextId'
+>;
 
 interface CharacterCanonRow {
   name: string | null;
@@ -391,43 +420,232 @@ export async function ensureCharacterReady(
 }
 
 /**
- * Re-establish custody for every registry-linked character already in this
- * campaign before a (resumed) session begins (ADR 0012, eshyra-lupf.14.3).
- *
- * `ensureCharacterReady` returns early once a campaign has a canonical PC, so a
- * resumed campaign would otherwise start with no custody lock — the character
- * was released on the previous `/quit`. This reclaims the lock so the
- * "one active writer" guard holds for the whole session, and fails closed
- * (returns `false`) when a character is in active play in another campaign or
- * its registry timeline has advanced past this campaign's copy. A freshly
- * checked-out character (custody just taken by `ensureCharacterReady`) reports
- * `already-held` and is left untouched.
- *
- * Activation is all-or-nothing: a non-mutating preflight validates every
- * character first, so a conflict on any one aborts before any lock is taken and
- * a failed activation never leaves partial locks behind.
+ * Warn and require confirmation before catching up / forking a character while a
+ * scene or combat is active (ADR 0012, eshyra-lupf.14.4). A scene-boundary
+ * resume (no open scene, no active combat) needs no warning and returns true
+ * silently. Returns false when the player declines (or input ends).
  */
-export function activateCampaignCustody(
-  deps: Pick<PlayDeps, 'characterRegistry' | 'io' | 'now'>,
+async function confirmDuringEncounter(
+  deps: Pick<ResumeDeps, 'io'>,
   db: Db,
   campaignId: string,
-): boolean {
-  const at = deps.now();
-  const characterIds = createSqliteCharacterSheetStore(db).list();
-  // Preflight: validate every linked character without mutating the registry.
+  action: string,
+): Promise<boolean> {
+  const combat = getActiveCombatInstance(db, campaignId);
+  const launch = getSessionLaunchState(db, { campaignId });
+  const openScene = launch.kind === 'resume' ? launch.openScene : undefined;
+  if (combat === undefined && openScene === undefined) {
+    return true;
+  }
+  const what =
+    combat !== undefined
+      ? `active combat (${combat.combatInstanceId})`
+      : `an open scene ("${openScene?.title}")`;
+  deps.io.write(
+    `Warning: there is ${what}. Choosing to ${action} now changes the ` +
+      'character’s stats (HP, level, gear) underneath the active encounter.',
+  );
+  const confirm = (await deps.io.prompt('Proceed anyway? [y/N]: '))
+    ?.trim()
+    .toLowerCase();
+  if (confirm === 'y' || confirm === 'yes') {
+    return true;
+  }
+  deps.io.write('Cancelled.');
+  return false;
+}
+
+/**
+ * Present the stale-copy conflict for one character and resolve it to a
+ * decision (ADR 0012, eshyra-lupf.14.4.2). Prompts only — no mutation — so a
+ * cancel anywhere leaves the registry untouched. EOF / unrecognized input
+ * defaults to cancel (fail-closed). Catch-up and fork both confirm through the
+ * mid-encounter warning before committing the player to that path.
+ */
+async function resolveStaleCopyConflict(
+  deps: Pick<ResumeDeps, 'io'>,
+  db: Db,
+  campaignId: string,
+  characterId: string,
+  conflict: StaleCopyConflict,
+): Promise<StaleResolution> {
+  deps.io.write(
+    `Character "${conflict.globalCharacterId}" (${characterId}) has advanced in another ` +
+      'campaign since this one last held it.',
+  );
+  deps.io.write(
+    `  This campaign is at revision ${conflict.localRevision ?? '?'}; the registry head ` +
+      `is revision ${conflict.headRevision}.`,
+  );
+  deps.io.write('  [cancel]  abort resume and change nothing');
+  deps.io.write(
+    '  [catchup] adopt the latest revision into this campaign (replaces this campaign’s copy)',
+  );
+  deps.io.write(
+    '  [fork]    keep this campaign’s version as a new, separate character (breaks continuity)',
+  );
+  const choice = (
+    await deps.io.prompt('Resolve conflict [cancel/catchup/fork]: ')
+  )
+    ?.trim()
+    .toLowerCase();
+
+  if (choice === 'catchup') {
+    if (!(await confirmDuringEncounter(deps, db, campaignId, 'catch up'))) {
+      return { kind: 'cancel' };
+    }
+    return { kind: 'catchup', characterId };
+  }
+  if (choice === 'fork') {
+    if (!(await confirmDuringEncounter(deps, db, campaignId, 'fork'))) {
+      return { kind: 'cancel' };
+    }
+    return {
+      kind: 'fork',
+      characterId,
+      globalCharacterId: conflict.globalCharacterId,
+      fromRevision: conflict.localRevision,
+    };
+  }
+  return { kind: 'cancel' };
+}
+
+/**
+ * Apply a resolved stale-copy decision (the only place mutations happen). For a
+ * catch-up it adopts the registry head and then offers an optional continuity
+ * bridge (eshyra-lupf.14.4.3); for a fork it branches a new identity and checks
+ * it into the slot (eshyra-lupf.14.4.4). Returns false on an unexpected failure.
+ */
+async function applyStaleResolution(
+  deps: ResumeDeps,
+  db: Db,
+  campaignId: string,
+  resolution: Exclude<StaleResolution, { kind: 'cancel' }>,
+  at: string,
+): Promise<boolean> {
+  if (resolution.kind === 'fork') {
+    return forkConflictedCharacterIntoCampaign(
+      deps,
+      db,
+      campaignId,
+      resolution.characterId,
+      {
+        globalCharacterId: resolution.globalCharacterId,
+        fromRevision: resolution.fromRevision,
+      },
+    );
+  }
+
+  const store = createSqliteCharacterSheetStore(db);
+  // Capture the stale sheet before catch-up overwrites it (continuity bridge).
+  const priorSheet = store.load(resolution.characterId);
+  const characterName = priorSheet?.identity.name ?? resolution.characterId;
   try {
-    for (const characterId of characterIds) {
-      checkCustodyResumable(deps.characterRegistry, db, {
-        campaignId,
-        characterId,
+    const result = catchUpCharacterToHead(deps.characterRegistry, db, {
+      campaignId,
+      characterId: resolution.characterId,
+      sessionId: 'resume-catchup',
+      at,
+    });
+    deps.io.write(
+      `Caught ${characterName} up: adopted ${result.globalCharacterId}@${result.toRevision}` +
+        `${result.fromRevision !== undefined ? ` (was at revision ${result.fromRevision})` : ''}.`,
+    );
+    const newSheet = store.load(resolution.characterId);
+    if (newSheet !== undefined) {
+      await offerContinuityBridge(deps, db, campaignId, {
+        characterName,
+        priorSheet,
+        newSheet,
       });
     }
+    return true;
   } catch (error) {
     deps.io.write(error instanceof Error ? error.message : String(error));
     return false;
   }
-  // All clear: take the locks.
-  for (const characterId of characterIds) {
+}
+
+/**
+ * Re-establish custody for every registry-linked character already in this
+ * campaign before a (resumed) session begins, surfacing timeline conflicts as
+ * explicit player choices (ADR 0012, eshyra-lupf.14.3 + eshyra-lupf.14.4).
+ *
+ * `ensureCharacterReady` returns early once a campaign has a canonical PC, so a
+ * resumed campaign would otherwise start with no custody lock — the character
+ * was released on the previous `/quit`. This reclaims the lock so the
+ * "one active writer" guard holds for the whole session. A character in active
+ * play in **another** campaign is a hard stop (release it there first). A
+ * **stale copy** (the registry head advanced past this campaign's copy) is no
+ * longer a dead end: the player chooses to cancel, catch this campaign up to the
+ * registry head, or fork an alternate timeline.
+ *
+ * Order matters for all-or-nothing safety: every linked character is classified
+ * first (no mutation); a held-elsewhere conflict or a cancelled choice aborts
+ * before any lock or sheet is touched, so a failed activation never leaves
+ * partial state behind. Caught-up / forked characters already hold custody and
+ * report `already-held` when the locks are taken at the end.
+ */
+export async function activateCampaignCustody(
+  deps: ResumeDeps,
+  db: Db,
+  campaignId: string,
+): Promise<boolean> {
+  const at = deps.now();
+  const characterIds = createSqliteCharacterSheetStore(db).list();
+  const classified = characterIds.map((characterId) => ({
+    characterId,
+    classification: classifyResumeConflict(deps.characterRegistry, db, {
+      campaignId,
+      characterId,
+    }),
+  }));
+
+  // 1. Held-elsewhere is a hard stop — no resume UX resolves it (release from
+  //    the other campaign). Check before any prompt or mutation.
+  for (const { characterId, classification } of classified) {
+    if (classification.kind === 'held-elsewhere') {
+      deps.io.write(
+        `Cannot resume: character "${classification.globalCharacterId}" (${characterId}) is in ` +
+          `active play in campaign "${classification.heldBy.campaignId}" (as ` +
+          `${classification.heldBy.characterId}). Exit that campaign to release it — its ` +
+          'progress carries forward — then resume this one.',
+      );
+      return false;
+    }
+  }
+
+  // 2. Resolve every stale-copy conflict to a decision (prompts only). A cancel
+  //    aborts the whole activation before any mutation.
+  const resolutions: Array<Exclude<StaleResolution, { kind: 'cancel' }>> = [];
+  for (const { characterId, classification } of classified) {
+    if (classification.kind !== 'stale-copy') {
+      continue;
+    }
+    const resolution = await resolveStaleCopyConflict(
+      deps,
+      db,
+      campaignId,
+      characterId,
+      classification,
+    );
+    if (resolution.kind === 'cancel') {
+      deps.io.write('Resume cancelled. Nothing was changed.');
+      return false;
+    }
+    resolutions.push(resolution);
+  }
+
+  // 3. Apply resolved decisions (mutations happen only now).
+  for (const resolution of resolutions) {
+    if (!(await applyStaleResolution(deps, db, campaignId, resolution, at))) {
+      return false;
+    }
+  }
+
+  // 4. Take the locks for every now-consistent character. Caught-up / forked
+  //    characters already hold custody and report already-held (a no-op).
+  for (const { characterId } of classified) {
     acquireCustodyOnResume(deps.characterRegistry, db, {
       campaignId,
       characterId,

@@ -60,9 +60,9 @@ export async function runPlay(
       return 1;
     }
     // Reclaim the custody lock for any character already in this (resumed)
-    // campaign before play begins; fail closed if it is held elsewhere or has
-    // advanced past this campaign's copy (ADR 0012).
-    if (!activateCampaignCustody(deps, db, campaign.campaignId)) {
+    // campaign before play begins; a held-elsewhere conflict fails closed, while
+    // a stale copy is surfaced as an explicit player choice (ADR 0012, .14.4).
+    if (!(await activateCampaignCustody(deps, db, campaign.campaignId))) {
       return 1;
     }
     const sessionId = await launch(deps, db, options.dbPath, campaign);
@@ -125,7 +125,7 @@ export async function runDemo(
     // same custody-on-resume guard applies before play (ADR 0012). On a
     // brand-new demo the bundled character is not registry-linked and this is a
     // no-op.
-    if (!activateCampaignCustody(deps, db, campaignId)) {
+    if (!(await activateCampaignCustody(deps, db, campaignId))) {
       return 1;
     }
     await turnLoop(deps, db, options.dbPath, campaignId, sessionId, cap);

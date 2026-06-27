@@ -71,6 +71,7 @@ import {
   runDemo,
   runPlay,
 } from './play.js';
+import { runForkCharacterSubcommand } from './playFork.js';
 import { resolveSessionDebug } from './sessionDebug.js';
 import { runUsageCommand } from './usage.js';
 
@@ -669,6 +670,13 @@ export function main(argv: string[] = process.argv): void {
 
   if (argv[2] === 'create-character') {
     void runCreateCharacterSubcommand(argv.slice(3)).then((code) => {
+      process.exitCode = code;
+    });
+    return;
+  }
+
+  if (argv[2] === 'fork-character') {
+    void runForkCharacterSubcommand().then((code) => {
       process.exitCode = code;
     });
     return;
