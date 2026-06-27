@@ -9,7 +9,10 @@ import {
 } from '@eshyra/core';
 import { DND5E_SRD_PACK_ID, DND5E_SRD_SYSTEM_ID } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
-import { migrateLegacyCharacterLibrary } from '../src/characterRegistry.js';
+import {
+  migrateLegacyCharacterLibrary,
+  openCharacterRegistry,
+} from '../src/characterRegistry.js';
 
 const dirs: string[] = [];
 
@@ -79,10 +82,14 @@ describe('migrateLegacyCharacterLibrary', () => {
     expect(registry.list()).toEqual(['mira']);
   });
 
-  it('skips unreadable/invalid JSON files (best-effort)', () => {
+  it('skips unparsable and structurally-invalid files (best-effort)', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'mira.json'), legacySheet('Mira'));
     writeFileSync(join(dir, 'broken.json'), '{ not valid json');
+    // Parses fine but is missing the binding columns the schema requires;
+    // must be skipped rather than aborting on a NOT NULL constraint.
+    writeFileSync(join(dir, 'empty.json'), '{}');
+    writeFileSync(join(dir, 'stale.json'), JSON.stringify({ level: 3 }));
     const registry = memoryRegistry();
 
     expect(migrateLegacyCharacterLibrary(dir, registry)).toBe(1);
@@ -94,5 +101,13 @@ describe('migrateLegacyCharacterLibrary', () => {
     expect(
       migrateLegacyCharacterLibrary(join(tempDir(), 'missing'), registry),
     ).toBe(0);
+  });
+});
+
+describe('openCharacterRegistry', () => {
+  it('opens the registry when the data root does not exist yet', () => {
+    const root = join(tempDir(), 'missing-root', 'nested');
+    const registry = openCharacterRegistry(root);
+    expect(registry.list()).toEqual([]);
   });
 });

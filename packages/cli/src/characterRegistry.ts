@@ -8,7 +8,7 @@
  * campaign's per-campaign sheet.
  */
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   type CharacterRegistryStore,
@@ -20,11 +20,29 @@ import {
 import { characterRegistryDbPath, charactersDir } from './dataRoot.js';
 
 /**
+ * A minimal structural guard for a legacy JSON file: it must carry the binding
+ * identity the registry schema requires as non-null columns. A stale/empty/
+ * malformed shape (e.g. `{}`) is rejected so migration skips it rather than the
+ * registry `save` throwing on a NOT NULL constraint and aborting startup.
+ */
+function looksLikeCharacterSheet(value: unknown): value is CharacterSheet {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.schemaVersion === 'number' &&
+    typeof record.system === 'string' &&
+    typeof record.rulesPackId === 'string'
+  );
+}
+
+/**
  * Best-effort one-time migration of the legacy `<dataRoot>/characters/*.json`
  * library into the registry. Files whose id is already registered are skipped
- * (idempotent), and unreadable/invalid files are skipped rather than aborting
- * the run. Returns the number of newly migrated characters. The legacy files
- * are left in place (non-destructive).
+ * (idempotent), and unreadable / unparsable / structurally-invalid files are
+ * skipped rather than aborting the run. Returns the number of newly migrated
+ * characters. The legacy files are left in place (non-destructive).
  */
 export function migrateLegacyCharacterLibrary(
   legacyDir: string,
@@ -46,27 +64,31 @@ export function migrateLegacyCharacterLibrary(
     if (existing.has(id)) {
       continue;
     }
-    let sheet: CharacterSheet;
+    let parsed: unknown;
     try {
-      sheet = JSON.parse(
-        readFileSync(join(legacyDir, name), 'utf8'),
-      ) as CharacterSheet;
+      parsed = JSON.parse(readFileSync(join(legacyDir, name), 'utf8'));
     } catch {
       continue;
     }
-    registry.save(id, sheet);
+    if (!looksLikeCharacterSheet(parsed)) {
+      continue;
+    }
+    registry.save(id, parsed);
     migrated += 1;
   }
   return migrated;
 }
 
 /**
- * Open the data-root character registry, ensuring its schema and migrating any
- * legacy JSON library on first open.
+ * Open the data-root character registry, ensuring the data root exists and the
+ * schema is created, and migrating any legacy JSON library on first open. The
+ * data-root directory is created here (SQLite will not create parent
+ * directories), so a first-run `create-character` on a fresh machine works.
  */
 export function openCharacterRegistry(
   dataRoot: string,
 ): CharacterRegistryStore {
+  mkdirSync(dataRoot, { recursive: true });
   const db = openDatabase(characterRegistryDbPath(dataRoot));
   ensureCharacterRegistrySchema(db);
   const registry = createCharacterRegistryStore(db);
