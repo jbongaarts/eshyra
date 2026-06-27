@@ -36,7 +36,10 @@ type StaleResolution =
       readonly kind: 'fork';
       readonly characterId: string;
       readonly globalCharacterId: string;
-      readonly fromRevision: number | undefined;
+      // Resolved (never undefined): fork is only offered/accepted when the stale
+      // copy has a recorded source revision, validated before any mutation so a
+      // fork can never fail in the apply phase and break all-or-nothing resume.
+      readonly fromRevision: number;
     };
 
 /** Deps the resume conflict-resolution UX needs. */
@@ -477,15 +480,27 @@ async function resolveStaleCopyConflict(
     `  This campaign is at revision ${conflict.localRevision ?? '?'}; the registry head ` +
       `is revision ${conflict.headRevision}.`,
   );
+  // Fork branches the campaign's recorded revision; without a stamped source
+  // revision there is nothing honest to branch from, so fork is unavailable for
+  // such legacy copies. Decide this up front (before any mutation) so a chosen
+  // fork can never fail in the apply phase and strand earlier mutations.
+  const forkRevision = conflict.localRevision;
+  const forkAvailable = forkRevision !== undefined;
   deps.io.write('  [cancel]  abort resume and change nothing');
   deps.io.write(
     '  [catchup] adopt the latest revision into this campaign (replaces this campaign’s copy)',
   );
-  deps.io.write(
-    '  [fork]    keep this campaign’s version as a new, separate character (breaks continuity)',
-  );
+  if (forkAvailable) {
+    deps.io.write(
+      '  [fork]    keep this campaign’s version as a new, separate character (breaks continuity)',
+    );
+  }
   const choice = (
-    await deps.io.prompt('Resolve conflict [cancel/catchup/fork]: ')
+    await deps.io.prompt(
+      forkAvailable
+        ? 'Resolve conflict [cancel/catchup/fork]: '
+        : 'Resolve conflict [cancel/catchup]: ',
+    )
   )
     ?.trim()
     .toLowerCase();
@@ -497,6 +512,15 @@ async function resolveStaleCopyConflict(
     return { kind: 'catchup', characterId };
   }
   if (choice === 'fork') {
+    if (forkRevision === undefined) {
+      // Fork is not offered for this legacy copy; abort rather than apply a
+      // partial resume that a later fork failure would leave behind.
+      deps.io.write(
+        'Fork is unavailable for this legacy copy (no recorded source revision). ' +
+          'Choose catchup or cancel.',
+      );
+      return { kind: 'cancel' };
+    }
     if (!(await confirmDuringEncounter(deps, db, campaignId, 'fork'))) {
       return { kind: 'cancel' };
     }
@@ -504,7 +528,7 @@ async function resolveStaleCopyConflict(
       kind: 'fork',
       characterId,
       globalCharacterId: conflict.globalCharacterId,
-      fromRevision: conflict.localRevision,
+      fromRevision: forkRevision,
     };
   }
   return { kind: 'cancel' };

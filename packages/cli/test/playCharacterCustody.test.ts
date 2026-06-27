@@ -346,6 +346,43 @@ describe('activateCampaignCustody — stale-copy conflict UX', () => {
     expect(createSqliteCharacterSheetStore(campA).load('pc-1')?.level).toBe(1);
   });
 
+  it('is all-or-nothing when a later fork is unsupported: nothing is mutated', async () => {
+    const registry = freshRegistry();
+    // pc-1: a normal stale copy (has a stamped source revision).
+    const campA = staleHeroInCampaign(registry);
+
+    // pc-2: a legacy stale copy linked to hero-2 with NO source revision, made
+    // stale by advancing the registry head. Fork is therefore unsupported.
+    registerNewCharacter(registry, {
+      globalCharacterId: 'hero-2',
+      sheet: sheet('Bryn', 1),
+    });
+    createSqliteCharacterSheetStore(campA).save('pc-2', {
+      ...sheet('Bryn', 1),
+      metadata: { createdAt: AT, source: 'test', globalCharacterId: 'hero-2' },
+    });
+    registry.appendRevision('hero-2', sheet('Bryn', 9), 'sync-back');
+
+    // pc-1 -> catchup (collected), pc-2 -> fork (unsupported -> aborts in the
+    // resolution phase, before pc-1's catchup is ever applied).
+    const { io, lines } = scriptedIO(['catchup', 'fork']);
+    const ok = await activateCampaignCustody(
+      resumeDeps(registry, io),
+      campA,
+      'camp-a',
+    );
+
+    expect(ok).toBe(false);
+    expect(lines.join('\n')).toContain('Fork is unavailable');
+    // pc-1 was NOT caught up — its earlier decision never reached the apply phase.
+    expect(createSqliteCharacterSheetStore(campA).load('pc-1')?.level).toBe(1);
+    // No fork identity was created.
+    expect(registry.list()).not.toContain('fork-test');
+    // No custody locks were acquired for either character.
+    expect(registry.custody('hero-1')).toBeUndefined();
+    expect(registry.custody('hero-2')).toBeUndefined();
+  });
+
   it('catches up mid-combat after explicit confirmation', async () => {
     const registry = freshRegistry();
     const campA = staleHeroInCampaign(registry);
