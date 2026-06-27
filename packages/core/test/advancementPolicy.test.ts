@@ -4,12 +4,26 @@ import {
   DEFAULT_ADVANCEMENT_MODE,
   getBundledDnd5eSrdPack,
   getEffectiveAdvancementMode,
+  PATHFINDER2E_REMASTER_RULES_PACK,
   ProgressionError,
   resolveCampaignAdvancementPolicy,
   resolveRulesStack,
   writeCampaignProgressionPolicy,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
+
+function bindPathfinder(db: ReturnType<typeof bareDb>) {
+  writeCampaignRulesBinding(db, {
+    base: {
+      systemId: PATHFINDER2E_REMASTER_RULES_PACK.meta.systemId,
+      packId: PATHFINDER2E_REMASTER_RULES_PACK.meta.packId,
+      version: PATHFINDER2E_REMASTER_RULES_PACK.meta.version,
+    },
+    addons: [],
+    resolvedAt: '2026-06-01T12:00:00.000Z',
+  });
+}
 
 const AT = '2026-06-01T10:00:00.000Z';
 
@@ -66,6 +80,46 @@ describe('resolveCampaignAdvancementPolicy', () => {
     selectMode(db, 'xp');
     const policy = resolveCampaignAdvancementPolicy(db);
     expect(policy.mode).toBe('xp');
+    db.close();
+  });
+});
+
+describe('resolveCampaignAdvancementPolicy honours the rules binding', () => {
+  it('resolves the D&D XP table for an explicit D&D SRD binding', () => {
+    const db = bareDb();
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: getBundledDnd5eSrdPack().meta.systemId,
+        packId: getBundledDnd5eSrdPack().meta.packId,
+        version: getBundledDnd5eSrdPack().meta.version,
+      },
+      addons: [],
+      resolvedAt: '2026-06-01T12:00:00.000Z',
+    });
+    const policy = resolveCampaignAdvancementPolicy(db);
+    expect(policy.mode).toBe('xp');
+    if (policy.mode === 'xp') {
+      expect(policy.table.thresholds).toHaveLength(20);
+    }
+    db.close();
+  });
+
+  it('fails closed for a Pathfinder binding in XP (default) mode rather than leaking D&D thresholds', () => {
+    const db = bareDb();
+    bindPathfinder(db);
+    // No mode persisted → default xp; must NOT silently return D&D thresholds.
+    expect(getEffectiveAdvancementMode(db)).toBe('xp');
+    expect(() => resolveCampaignAdvancementPolicy(db)).toThrow(
+      ProgressionError,
+    );
+    db.close();
+  });
+
+  it('returns a milestone policy for a Pathfinder binding without requiring an XP table', () => {
+    const db = bareDb();
+    bindPathfinder(db);
+    selectMode(db, 'milestone');
+    expect(resolveCampaignAdvancementPolicy(db)).toEqual({ mode: 'milestone' });
     db.close();
   });
 });
