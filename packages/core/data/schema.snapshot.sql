@@ -148,6 +148,14 @@ CREATE TABLE campaign_overlay_lore (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE campaign_progression_policy (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  advancement_mode TEXT NOT NULL CHECK (advancement_mode IN ('xp', 'milestone')),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE campaign_rules_binding (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   base_system_id TEXT NOT NULL,
@@ -181,7 +189,7 @@ CREATE TABLE character (
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL
-);
+, current_xp INTEGER NOT NULL DEFAULT 0 CHECK (current_xp >= 0));
 
 CREATE TABLE character_sheet (
   character_id TEXT PRIMARY KEY,
@@ -334,6 +342,21 @@ CREATE TABLE plot_flags (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE progression_event (
+  id TEXT PRIMARY KEY,
+  character_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('xp-award', 'milestone-award', 'level-up')),
+  amount INTEGER,
+  milestone_label TEXT,
+  source TEXT NOT NULL,
+  resulting_xp INTEGER CHECK (resulting_xp IS NULL OR resulting_xp >= 0),
+  resulting_level INTEGER NOT NULL CHECK (resulting_level >= 1),
+  applied_changes_json TEXT,
+  occurred_at TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL
+);
+
 CREATE TABLE scene (
   campaign_id TEXT NOT NULL,
   session_id TEXT NOT NULL,
@@ -450,3 +473,6 @@ CREATE INDEX encounter_combatant_instance
 
 CREATE INDEX encounter_combatant_status
   ON encounter_combatant(campaign_id, status);
+
+CREATE INDEX idx_progression_event_character
+  ON progression_event (character_id, occurred_at, id);

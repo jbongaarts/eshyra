@@ -97,6 +97,7 @@ const CHARACTER_FIELDS: Record<string, FieldDescriptor> = {
   ancestry: { kind: 'text', nullable: true },
   class_name: { kind: 'text', nullable: true },
   level: { kind: 'integer', min: 1 },
+  current_xp: { kind: 'integer', min: 0 },
   hp_current: { kind: 'integer', min: 0 },
   hp_max: { kind: 'integer', min: 0 },
   ability_scores_json: {

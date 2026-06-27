@@ -844,6 +844,25 @@ export {
 export type { PartyMember } from './state/party.js';
 // Party roster reads.
 export { listParty } from './state/party.js';
+// Durable progression state + append-only progression-event ledger.
+export type {
+  AdvancementMode,
+  CampaignProgressionPolicy,
+  ProgressionEventKind,
+  ProgressionEventRecord,
+  ProgressionState,
+  RecordProgressionEventInput,
+  WriteCampaignProgressionPolicyInput,
+} from './state/progression.js';
+export {
+  getProgressionEvent,
+  getProgressionState,
+  listProgressionEvents,
+  ProgressionError,
+  readCampaignProgressionPolicy,
+  recordProgressionEvent,
+  writeCampaignProgressionPolicy,
+} from './state/progression.js';
 export type {
   CampaignOverlayLoreQuery,
   CampaignOverlayLoreRecord,
