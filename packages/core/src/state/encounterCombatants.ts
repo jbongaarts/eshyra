@@ -299,13 +299,36 @@ function rowToCombatant(row: CombatantRow): EncounterCombatant {
 }
 
 function slug(value: string): string {
-  return (
-    value
-      .toLowerCase()
-      .replace(/^[a-z]+:/, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'combat'
-  );
+  const normalized = value.toLowerCase();
+  let start = 0;
+  let prefixEnd = 0;
+  while (prefixEnd < normalized.length) {
+    const code = normalized.charCodeAt(prefixEnd);
+    if (code < 97 || code > 122) break;
+    prefixEnd += 1;
+  }
+  if (prefixEnd > 0 && normalized[prefixEnd] === ':') {
+    start = prefixEnd + 1;
+  }
+
+  let result = '';
+  let pendingSeparator = false;
+  for (let i = start; i < normalized.length; i += 1) {
+    const code = normalized.charCodeAt(i);
+    const isDigit = code >= 48 && code <= 57;
+    const isAsciiLetter = code >= 97 && code <= 122;
+    if (isDigit || isAsciiLetter) {
+      if (pendingSeparator && result.length > 0) {
+        result += '-';
+      }
+      result += normalized[i];
+      pendingSeparator = false;
+    } else {
+      pendingSeparator = true;
+    }
+  }
+
+  return result || 'combat';
 }
 
 function displayNameFromRulesRef(rulesRef: string): string {
