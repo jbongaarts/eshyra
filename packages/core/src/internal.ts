@@ -129,6 +129,25 @@ export {
   type AttachCharacterSheetInput,
   attachCharacterSheetToCampaign,
 } from './character/attachCharacter.js';
+// Cross-campaign character custody lifecycle (ADR 0012, eshyra-lupf.14.3).
+export {
+  acquireCustodyOnResume,
+  CharacterCustodyError,
+  type CheckoutCharacterInput,
+  type CheckoutCharacterResult,
+  type CustodyHolderInput,
+  checkCustodyResumable,
+  checkoutCharacterIntoCampaign,
+  type ForkCharacterInput,
+  type ForkCharacterResult,
+  forkCharacterTimeline,
+  type ResumeCustodyInput,
+  type ResumeCustodyOutcome,
+  registerNewCharacter,
+  releaseCharacterFromCampaign,
+  type SyncBackResult,
+  syncBackCharacterFromCampaign,
+} from './character/characterCustody.js';
 // Incremental character-creation draft engine (eshyra-b69j.5): a serializable
 // work-in-progress draft plus a pure, dependency-aware engine that preserves
 // prior answers, validates incrementally, and avoids prerequisite cascades.
@@ -149,9 +168,12 @@ export {
   createCharacterCreationEngine,
   getDnd5eCharacterCreationEngine,
 } from './character/characterDraft.js';
-// Cross-campaign character registry (ADR 0012, eshyra-lupf.14.2).
+// Cross-campaign character registry (ADR 0012, eshyra-lupf.14.2/.14.3).
 export {
   type CharacterRegistryStore,
+  type CharacterRevision,
+  type CharacterRevisionSource,
+  type CustodyRecord,
   createCharacterRegistryStore,
   ensureCharacterRegistrySchema,
 } from './character/characterRegistry.js';

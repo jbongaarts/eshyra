@@ -93,9 +93,67 @@ for `eshyra-lupf.14.2`** but must not be precluded:
   sheet; their results are what a later exit/sync commits back to the registry.
 - `FinalizedCharacter` is removed in favor of `CharacterSheet`.
 
+## Custody lifecycle (eshyra-lupf.14.3)
+
+The lifecycle deferred above is now built on the `.14.2` registry. It adds two
+tables to the registry database and a core orchestration layer
+(`characterCustody.ts`) over the registry store and the per-campaign databases.
+
+- **Linear revision history.** `character_revision` is an append-only, 1-based
+  timeline per `globalCharacterId`. Revision 1 is the initial **register**; each
+  campaign **sync-back** appends the next revision built from the campaign sheet.
+  The `character_registry` head row mirrors the latest revision for fast loads.
+- **Custody is the cross-DB write lock.** `character_custody` holds at most one
+  row per character, present exactly while a campaign is its active writer.
+  SQLite cannot transact across the registry and per-campaign databases, so the
+  helpers never try to; they order writes (attach the durable campaign sheet
+  *before* recording custody; the campaign sheet is the source a later sync-back
+  commits from) so a crash leaves a recoverable state, and custody makes "exactly
+  one writer at a time" enforceable rather than relying on a shared transaction.
+- **Checkout records source revision + custody.** Attaching stamps the campaign
+  sheet with the checked-out revision (`metadata.sourceRevision`) and takes
+  custody. Sync-back strips the per-attachment provenance
+  (`globalCharacterId` / `importedAt` / `sourceRevision`) so the registry stores
+  clean canonical sheets, and skips the append when the sheet is unchanged so
+  idle sessions do not spam identical revisions.
+- **Double-attach is prevented; continuity is the way out.** Checking a
+  character out while a *different* campaign holds custody fails closed
+  (`CharacterCustodyError`). Re-checkout into the same campaign is idempotent
+  only for the **same party slot** — attaching one continuing identity as a
+  second `pc-<n>` in the same campaign is rejected, not silently duplicated. The
+  resolution to a cross-campaign clash is to **release** the character from the
+  first campaign — its progress carries forward — not to fork.
+- **Ownership is enforced on both ends of the lock.** Only the custody holder
+  may sync back or release: `syncBackCharacterFromCampaign` /
+  `releaseCharacterFromCampaign` take the `(campaignId, characterId)` of the
+  caller and no-op when it does not match the live custody record, so a stale
+  campaign database can never revert the timeline or drop a lock another campaign
+  now holds. The CLI releases custody on `/quit` and, on resume,
+  `acquireCustodyOnResume` re-takes the lock for each already-attached character
+  (without re-attaching, so per-turn HP/conditions survive). Resume fails closed
+  when the character is in active play elsewhere or the registry head has
+  advanced past this campaign's copy — so the "one active writer" guard holds for
+  the whole session and a character moves between campaigns as one continuing
+  identity.
+- **Fork is the discouraged escape hatch, not the movement mechanism.** The
+  design goal is to *avoid* forking: a character is one continuing entity whose
+  experiences carry forward, and moving it between campaigns is release →
+  re-checkout. `forkCharacterTimeline` copies a chosen revision into a brand-new
+  `globalCharacterId` (revision 1, with `parent` provenance) and explicitly
+  **breaks continuity**; it exists only for the unusual "parallel what-if copy"
+  case, satisfying the ADR requirement that an alternate timeline be *possible*
+  while never being the default path.
+
 ## Out of scope
 
-- Revision history, exit/sync-back, double-attach prevention, and alternate
-  timelines (the custody lifecycle bead).
 - Structured currency and the portable character chronicle (their own epics).
 - Cross-pack character conversion.
+- The user-facing **timeline conflict-resolution UX** (eshyra-lupf.14.4). `.14.3`
+  ships the lifecycle as core APIs wired into play/quit, and resume deliberately
+  **fails closed** when a character is held elsewhere or the registry head has
+  advanced past this campaign's copy. Turning that fail-closed into explicit user
+  choices — *cancel*, *catch this campaign up to the registry head*, or
+  *explicitly fork an alternate timeline* — plus the design-only "future detour"
+  (out-of-order continuity with **manual** mechanical reconciliation, never an
+  automatic merge) and a CLI for fork / non-head-revision checkout, is the
+  eshyra-lupf.14.4 epic. No future path silently merges or rewrites a timeline.

@@ -10,7 +10,10 @@ import {
   type SessionCheckpointRunner,
   validateMemoryConfig,
 } from '@eshyra/core';
-import { ensureCharacterReady } from './playCharacter.js';
+import {
+  activateCampaignCustody,
+  ensureCharacterReady,
+} from './playCharacter.js';
 import { launch, resolveCampaign } from './playSession.js';
 import { turnLoop } from './playTurnLoop.js';
 import type { CliIO, PlayDeps, PlayOptions } from './playTypes.js';
@@ -48,8 +51,18 @@ export async function runPlay(
     // already up-to-date campaign.
     initSchema(db);
     const campaign = resolveCampaign(deps, db);
-    const characterReady = await ensureCharacterReady(deps, db);
+    const characterReady = await ensureCharacterReady(
+      deps,
+      db,
+      campaign.campaignId,
+    );
     if (!characterReady) {
+      return 1;
+    }
+    // Reclaim the custody lock for any character already in this (resumed)
+    // campaign before play begins; fail closed if it is held elsewhere or has
+    // advanced past this campaign's copy (ADR 0012).
+    if (!activateCampaignCustody(deps, db, campaign.campaignId)) {
       return 1;
     }
     const sessionId = await launch(deps, db, options.dbPath, campaign);
@@ -107,6 +120,13 @@ export async function runDemo(
         `Demo campaign: ${existing.title} (${existing.campaignId}).`,
       );
       sessionId = await launch(deps, db, options.dbPath, existing);
+    }
+    // A demo campaign can gain registry-linked characters via /addpc, so the
+    // same custody-on-resume guard applies before play (ADR 0012). On a
+    // brand-new demo the bundled character is not registry-linked and this is a
+    // no-op.
+    if (!activateCampaignCustody(deps, db, campaignId)) {
+      return 1;
     }
     await turnLoop(deps, db, options.dbPath, campaignId, sessionId, cap);
     return 0;

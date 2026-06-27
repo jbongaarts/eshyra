@@ -16,6 +16,7 @@ const QUIT_COMMANDS = new Set(['/quit', '/exit']);
 async function handlePartyCommand(
   deps: PlayDeps,
   db: Db,
+  campaignId: string,
   input: string,
 ): Promise<boolean> {
   const spaceIndex = input.indexOf(' ');
@@ -32,7 +33,7 @@ async function handlePartyCommand(
       switchActiveCharacter(deps.io, db, arg);
       return true;
     case '/addpc':
-      await createAdditionalCharacter(deps, db);
+      await createAdditionalCharacter(deps, db, campaignId);
       return true;
     default:
       return false;
@@ -70,7 +71,10 @@ export async function turnLoop(
     if (input.length === 0) {
       continue;
     }
-    if (input.startsWith('/') && (await handlePartyCommand(deps, db, input))) {
+    if (
+      input.startsWith('/') &&
+      (await handlePartyCommand(deps, db, campaignId, input))
+    ) {
       continue;
     }
 
