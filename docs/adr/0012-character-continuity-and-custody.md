@@ -148,6 +148,12 @@ tables to the registry database and a core orchestration layer
 
 - Structured currency and the portable character chronicle (their own epics).
 - Cross-pack character conversion.
-- A CLI surface for fork and for choosing a non-head checkout revision; `.14.3`
-  ships these as core APIs with the lifecycle wired into play/quit, leaving the
-  richer "manage my characters" UX to a later bead.
+- The user-facing **timeline conflict-resolution UX** (eshyra-lupf.14.4). `.14.3`
+  ships the lifecycle as core APIs wired into play/quit, and resume deliberately
+  **fails closed** when a character is held elsewhere or the registry head has
+  advanced past this campaign's copy. Turning that fail-closed into explicit user
+  choices — *cancel*, *catch this campaign up to the registry head*, or
+  *explicitly fork an alternate timeline* — plus the design-only "future detour"
+  (out-of-order continuity with **manual** mechanical reconciliation, never an
+  automatic merge) and a CLI for fork / non-head-revision checkout, is the
+  eshyra-lupf.14.4 epic. No future path silently merges or rewrites a timeline.
