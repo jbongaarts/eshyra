@@ -144,16 +144,100 @@ tables to the registry database and a core orchestration layer
   case, satisfying the ADR requirement that an alternate timeline be *possible*
   while never being the default path.
 
+## Timeline conflict-resolution UX (eshyra-lupf.14.4)
+
+`.14.3` ships the custody lifecycle as core APIs wired into play/quit, and resume
+deliberately **fails closed** in two situations: the character is in active play
+in another campaign, or the registry head has advanced past this campaign's copy
+(the character adventured elsewhere since this campaign last held it). `.14.3`
+surfaces both only as a raw `CharacterCustodyError`. `.14.4` turns the second of
+those — the *stale-copy* conflict — into an explicit, user-facing choice, while
+keeping the first (held-elsewhere) a hard stop. The resolutions below are the
+policy this epic implements (`.4.2`/`.4.4`) and designs (`.4.5`); the load-bearing
+invariant is unchanged from `.14.3`: **no path silently merges or rewrites a
+character's timeline.**
+
+### The conflict
+
+On resume, for each registry-linked campaign character, `checkCustodyResumable`
+classifies the situation:
+
+- **held elsewhere** — another campaign currently holds custody. This is not a
+  timeline conflict; it is a live-writer conflict. It stays **fail-closed**: the
+  only resolution is to exit the other campaign (release carries progress
+  forward). `.14.4` does not add a "steal custody" choice.
+- **stale copy** — the character is idle, but the registry head sheet differs
+  from this campaign's copy because the character advanced in another campaign
+  after this one last released it. `.14.3` failed closed here too; `.14.4`
+  replaces that dead end with the choices below.
+- **in sync / not linked** — no conflict; resume proceeds as today.
+
+### Resolutions for a stale-copy conflict
+
+1. **Cancel (default, fail-closed).** Decline to resume. Nothing is mutated;
+   the campaign does not start. This is the safe default and what a non-
+   interactive / EOF resume does — `.14.4` never auto-picks a mutating option.
+2. **Catch up to head (primary happy path, `.4.2`).** Adopt the character's
+   latest registry revision into this campaign: replace the campaign-local
+   `character_sheet` with the registry head, re-stamp provenance
+   (`globalCharacterId`, `sourceRevision = head`, `importedAt`), re-project the
+   live `character` row, and acquire custody. This is a **checkout of the newer
+   revision**, not a merge: the campaign discards its own stale copy and takes
+   the registry's current truth. It appends **no** new registry revision (it is
+   adopting head, not advancing it). The campaign's prior local mechanical state
+   for that character (its stale sheet) is overwritten — the character's
+   experiences elsewhere are canonical and carry in wholesale.
+3. **Fork an alternate timeline (`.4.4`).** Branch the *campaign's* current
+   revision (or a chosen revision) into a brand-new `globalCharacterId` via
+   `forkCharacterTimeline`, attach the fork, and play on as an explicitly
+   separate character. This **breaks continuity** on purpose: the original
+   continuing identity is untouched and the fork is independent thereafter. It is
+   the escape hatch for "I want to keep playing this campaign's version of the
+   character as its own person," not a way to rejoin the main timeline.
+4. **Future detour / out-of-order continuity (design-only, `.4.5`).** Play this
+   campaign forward from its stale copy, explicitly understanding it as an
+   out-of-order branch whose mechanical outcome is **not** automatically applied
+   to the character's main timeline. Reconciliation, if any, is manual and
+   later. This is deliberately **not** called "rejoin": Eshyra cannot honestly
+   auto-merge XP, inventory, level, spells, HP, conditions, or campaign-local
+   consequences across divergent branches. See
+   `docs/design/character-future-detour.md`.
+
+### No automatic mechanical merge
+
+None of the resolutions merge mechanical state. Catch-up *replaces* with head;
+fork *branches* a new identity; future-detour *defers* reconciliation to a manual
+human decision. There is no code path that takes two divergent sheets and
+produces a single reconciled sheet automatically — that is an explicit non-goal,
+because any automatic rule (max of each stat? sum XP? union inventory?) would
+silently invent canon the player never chose.
+
+### Catch-up continuity narration
+
+A catch-up can leave a jarring gap: the party last saw the character at the stale
+revision, and they resume changed (higher level, new gear, scars). Bridging that
+in fiction is **optional** and **selectable** (`.4.3`), and never required for the
+mechanical catch-up to succeed:
+
+- **player-provided** — the player writes a one-line in-fiction explanation
+  ("Kael returns from the northern campaign hardened and re-equipped").
+- **DM-generated** — the model is asked for a short bridge given the prior local
+  revision, the new head, and the current scene; the player can accept or skip.
+- **none** — skip the bridge entirely; only the mechanical catch-up happens.
+
+### Mid-scene / combat resumes
+
+Catching a character up mid-scene — especially mid-combat — can change initiative,
+HP, and available actions underneath an active encounter. Catch-up at a scene
+boundary is normal; catch-up while a scene/combat is open requires an **explicit
+warning and confirmation** before proceeding (`.4.2`/`.4.3`). The warning is
+informational, not a hard block: the player may still choose to proceed, cancel,
+or fork instead.
+
 ## Out of scope
 
 - Structured currency and the portable character chronicle (their own epics).
 - Cross-pack character conversion.
-- The user-facing **timeline conflict-resolution UX** (eshyra-lupf.14.4). `.14.3`
-  ships the lifecycle as core APIs wired into play/quit, and resume deliberately
-  **fails closed** when a character is held elsewhere or the registry head has
-  advanced past this campaign's copy. Turning that fail-closed into explicit user
-  choices — *cancel*, *catch this campaign up to the registry head*, or
-  *explicitly fork an alternate timeline* — plus the design-only "future detour"
-  (out-of-order continuity with **manual** mechanical reconciliation, never an
-  automatic merge) and a CLI for fork / non-head-revision checkout, is the
-  eshyra-lupf.14.4 epic. No future path silently merges or rewrites a timeline.
+- **Automatic** timeline merge/rejoin in any form (an explicit non-goal above).
+- A custody-steal / force-resume path for the *held-elsewhere* conflict — it
+  stays fail-closed; release from the other campaign is the resolution.
