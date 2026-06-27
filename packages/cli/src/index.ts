@@ -42,10 +42,8 @@ import {
   runCampaignsCommand,
   runNewCommand,
 } from './campaigns.js';
-import {
-  createFileCharacterDraftStore,
-  createFileFinalizedCharacterStore,
-} from './characterDraftStore.js';
+import { createFileCharacterDraftStore } from './characterDraftStore.js';
+import { openCharacterRegistry } from './characterRegistry.js';
 import { runCheckpointCommand } from './checkpoints.js';
 import {
   type CliConfigFile,
@@ -58,7 +56,6 @@ import {
   adventureModulesDir,
   campaignsDir,
   characterDraftsDir,
-  charactersDir,
   ensureDataRoot,
   resolveDataRoot,
 } from './dataRoot.js';
@@ -351,9 +348,7 @@ function buildPlayDeps(
     characterDraftStore: createFileCharacterDraftStore(
       characterDraftsDir(dataRoot),
     ),
-    finalizedCharacterStore: createFileFinalizedCharacterStore(
-      charactersDir(dataRoot),
-    ),
+    characterRegistry: openCharacterRegistry(dataRoot),
     characterEngine: getDnd5eCharacterCreationEngine(),
     characterResolver: getBundledDnd5eCharacterResolver(),
     characterRng: createSeededRng((Math.random() * 0x7fffffff) | 0),

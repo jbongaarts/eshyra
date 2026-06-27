@@ -124,6 +124,11 @@ export {
   summarizePoolAssignment,
   summarizeStandardArray,
 } from './character/abilityAllocation.js';
+// Attach a registry character into a campaign for play (ADR 0012).
+export {
+  type AttachCharacterSheetInput,
+  attachCharacterSheetToCampaign,
+} from './character/attachCharacter.js';
 // Incremental character-creation draft engine (eshyra-b69j.5): a serializable
 // work-in-progress draft plus a pure, dependency-aware engine that preserves
 // prior answers, validates incrementally, and avoids prerequisite cascades.
@@ -144,6 +149,12 @@ export {
   createCharacterCreationEngine,
   getDnd5eCharacterCreationEngine,
 } from './character/characterDraft.js';
+// Cross-campaign character registry (ADR 0012, eshyra-lupf.14.2).
+export {
+  type CharacterRegistryStore,
+  createCharacterRegistryStore,
+  ensureCharacterRegistrySchema,
+} from './character/characterRegistry.js';
 // Core-owned character sheet store (ADR 0011, eshyra-lupf.14.1).
 export {
   assertSheetMatchesPack,
@@ -186,8 +197,6 @@ export type {
   CharacterSheet,
   FinalizeCharacterResult,
   FinalizedAbilityScore,
-  /** @deprecated Use {@link CharacterSheet} (ADR 0011). */
-  FinalizedCharacter,
   FinalizedRecordRef,
   FinalizeMetadata,
 } from './character/finalizeCharacter.js';

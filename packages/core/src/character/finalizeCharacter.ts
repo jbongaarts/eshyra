@@ -65,6 +65,15 @@ export interface FinalizeMetadata {
   readonly createdAt: string;
   /** Free-text origin (e.g. `create-character:concept-first`). */
   readonly source?: string;
+  /**
+   * The stable cross-campaign registry identity this sheet was attached from
+   * (ADR 0012). Set on a campaign-local sheet when a registry character is
+   * imported into a campaign, linking the playable instance back to the
+   * continuing character. Unset on a freshly created, not-yet-attached sheet.
+   */
+  readonly globalCharacterId?: string;
+  /** ISO-8601 timestamp the sheet was attached into a campaign (ADR 0012). */
+  readonly importedAt?: string;
 }
 
 /**
@@ -112,13 +121,6 @@ export interface CharacterSheet {
   readonly spells: readonly string[];
   readonly metadata: FinalizeMetadata;
 }
-
-/**
- * @deprecated Use {@link CharacterSheet}. Retained as an alias while consumers
- * migrate to the core-owned character-sheet authority (ADR 0011); removed when
- * the CLI cuts over to the {@link CharacterSheetStore} (eshyra-lupf.14.2).
- */
-export type FinalizedCharacter = CharacterSheet;
 
 /** Outcome of {@link finalizeCharacterDraft}. */
 export type FinalizeCharacterResult =
@@ -169,7 +171,7 @@ function buildFinalizedCharacter(
   metadata: FinalizeMetadata,
   resolver: RulesPackCharacterResolver,
   engine: CharacterCreationEngine,
-): FinalizedCharacter {
+): CharacterSheet {
   const selections = draft.selections;
   const classRecord = requireRecord(
     resolver.resolveClass(selections.className ?? ''),

@@ -22,7 +22,7 @@ import {
   pointBuyCost,
   STANDARD_ARRAY,
 } from './abilities.js';
-import type { FinalizedCharacter } from './finalizeCharacter.js';
+import type { CharacterSheet } from './finalizeCharacter.js';
 import type {
   CreatedPathfinderCharacter,
   PathfinderCharacterDraft,
@@ -121,7 +121,7 @@ export type CompleteCharacterCreationResult =
     };
 
 export interface ImportFinalizedCharacterInput {
-  readonly character: FinalizedCharacter;
+  readonly character: CharacterSheet;
   readonly sessionId: string;
   readonly at: string;
   readonly provenance?: string;
@@ -412,7 +412,7 @@ function completionPrompt(character: CreatedCharacter): string {
 }
 
 function finalizedCharacterProjection(
-  character: FinalizedCharacter,
+  character: CharacterSheet,
 ): CreatedCharacter {
   return {
     name: character.identity.name,

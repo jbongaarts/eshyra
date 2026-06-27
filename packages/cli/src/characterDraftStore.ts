@@ -21,7 +21,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import type { CharacterDraft, FinalizedCharacter } from '@eshyra/core';
+import type { CharacterDraft } from '@eshyra/core';
 
 /** Read/write access to resumable character-creation drafts. */
 export interface CharacterDraftStore {
@@ -73,62 +73,6 @@ export function createFileCharacterDraftStore(
         throw error;
       }
       return JSON.parse(raw) as CharacterDraft;
-    },
-
-    list(): readonly string[] {
-      let entries: string[];
-      try {
-        entries = readdirSync(dir);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-          return [];
-        }
-        throw error;
-      }
-      return entries
-        .filter((name) => name.endsWith('.json'))
-        .map((name) => name.slice(0, -'.json'.length))
-        .sort();
-    },
-  };
-}
-
-/** Persistence for finalized, playable character records (eshyra-b69j.14). */
-export interface FinalizedCharacterStore {
-  /** Persist a finalized character under an id; returns the written path. */
-  save(id: string, character: FinalizedCharacter): string;
-  /** Load a finalized character by id, or `undefined` when none is stored. */
-  load(id: string): FinalizedCharacter | undefined;
-  /** The ids of every stored finalized character, in stable (sorted) order. */
-  list(): readonly string[];
-}
-
-/** A finalized-character store backed by JSON files under `dir`. */
-export function createFileFinalizedCharacterStore(
-  dir: string,
-): FinalizedCharacterStore {
-  return {
-    save(id: string, character: FinalizedCharacter): string {
-      mkdirSync(dir, { recursive: true });
-      const path = join(dir, `${draftFileStem(id)}.json`);
-      const tmp = `${path}.${randomBytes(6).toString('hex')}.tmp`;
-      writeFileSync(tmp, `${JSON.stringify(character, null, 2)}\n`, 'utf8');
-      renameSync(tmp, path);
-      return path;
-    },
-
-    load(id: string): FinalizedCharacter | undefined {
-      const path = join(dir, `${draftFileStem(id)}.json`);
-      let raw: string;
-      try {
-        raw = readFileSync(path, 'utf8');
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-          return undefined;
-        }
-        throw error;
-      }
-      return JSON.parse(raw) as FinalizedCharacter;
     },
 
     list(): readonly string[] {

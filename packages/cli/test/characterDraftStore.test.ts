@@ -1,14 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
-  type FinalizedCharacter,
-  getDnd5eCharacterCreationEngine,
-} from '@eshyra/core/internal';
+import { getDnd5eCharacterCreationEngine } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   createFileCharacterDraftStore,
-  createFileFinalizedCharacterStore,
   draftFileStem,
 } from '../src/characterDraftStore.js';
 
@@ -66,42 +62,5 @@ describe('file character draft store', () => {
       join(tempDir(), 'does-not-exist-yet'),
     );
     expect(store.list()).toEqual([]);
-  });
-});
-
-describe('file finalized-character store', () => {
-  it('writes a finalized record to a stable per-id path', () => {
-    const dir = tempDir();
-    const store = createFileFinalizedCharacterStore(dir);
-    const record = {
-      schemaVersion: 1,
-      system: 'dnd5e-srd',
-      identity: { name: 'Mira' },
-      class: { key: 'class:wizard', name: 'Wizard' },
-    } as unknown as FinalizedCharacter;
-
-    const path = store.save('mira', record);
-    expect(path).toBe(join(dir, 'mira.json'));
-    const written = JSON.parse(
-      readFileSync(path, 'utf8'),
-    ) as FinalizedCharacter;
-    expect(written.identity.name).toBe('Mira');
-    expect(written.class.name).toBe('Wizard');
-    expect(store.load('mira')?.identity.name).toBe('Mira');
-  });
-
-  it('lists finalized character ids in sorted order', () => {
-    const store = createFileFinalizedCharacterStore(tempDir());
-    const record = {
-      schemaVersion: 1,
-      system: 'dnd5e-srd',
-      identity: { name: 'Mira' },
-      class: { key: 'class:wizard', name: 'Wizard' },
-    } as unknown as FinalizedCharacter;
-    store.save('beta', record);
-    store.save('alpha', record);
-
-    expect(store.list()).toEqual(['alpha', 'beta']);
-    expect(store.load('missing')).toBeUndefined();
   });
 });

@@ -1,5 +1,6 @@
 import type {
   CharacterCreationEngine,
+  CharacterRegistryStore,
   Db,
   InstalledAdventureModule,
   MemoryConfig,
@@ -16,10 +17,7 @@ import type {
   TurnAuditor,
   TurnDiagnosticsSink,
 } from '@eshyra/core';
-import type {
-  CharacterDraftStore,
-  FinalizedCharacterStore,
-} from './characterDraftStore.js';
+import type { CharacterDraftStore } from './characterDraftStore.js';
 
 /** Player-facing input/output seam. A terminal impl is {@link nodeIO}. */
 export interface CliIO {
@@ -82,8 +80,12 @@ export interface PlayDeps {
   listAdventureModules: () => InstalledAdventureModule[];
   /** Store for resumable guided character-creation drafts. */
   characterDraftStore: CharacterDraftStore;
-  /** Store for finalized, playable character records. */
-  finalizedCharacterStore: FinalizedCharacterStore;
+  /**
+   * Cross-campaign character registry: the authority for a character between
+   * campaigns (ADR 0012). Play imports/attaches a registry character into the
+   * campaign's per-campaign sheet.
+   */
+  characterRegistry: CharacterRegistryStore;
   /** D&D 5e guided character-creation engine used by play/session-zero. */
   characterEngine: CharacterCreationEngine;
   /** D&D 5e rules-pack resolver used by play/session-zero finalization. */

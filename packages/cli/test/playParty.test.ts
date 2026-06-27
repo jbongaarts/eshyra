@@ -1,4 +1,9 @@
-import type { CharacterDraft, Db, FinalizedCharacter } from '@eshyra/core';
+import type {
+  CharacterDraft,
+  CharacterRegistryStore,
+  CharacterSheet,
+  Db,
+} from '@eshyra/core';
 import {
   createSeededRng,
   getBundledDnd5eCharacterResolver,
@@ -12,10 +17,7 @@ import {
   setActiveCharacterId,
 } from '@eshyra/core/internal';
 import { describe, expect, it } from 'vitest';
-import type {
-  CharacterDraftStore,
-  FinalizedCharacterStore,
-} from '../src/characterDraftStore.js';
+import type { CharacterDraftStore } from '../src/characterDraftStore.js';
 import { createAdditionalCharacter } from '../src/playCharacter.js';
 import { showParty, switchActiveCharacter } from '../src/playParty.js';
 import type { CliIO } from '../src/playTypes.js';
@@ -35,11 +37,11 @@ function scriptedIO(answers: ReadonlyArray<string>): {
   };
 }
 
-function finalizedCharacter(name: string): FinalizedCharacter {
+function finalizedCharacter(name: string): CharacterSheet {
   return {
     schemaVersion: 1,
     system: 'dnd5e-srd',
-    rulesPackId: 'dnd5e-srd-5.1',
+    rulesPackId: 'rules:dnd5e-srd-5.1',
     recipeId: 'dnd5e-srd-level-1',
     creationMode: 'concept-first',
     level: 1,
@@ -86,14 +88,13 @@ function memoryDraftStore(): CharacterDraftStore {
   };
 }
 
-function memoryFinalizedStore(): FinalizedCharacterStore {
-  const saved = new Map<string, FinalizedCharacter>([
+function memoryRegistryStore(): CharacterRegistryStore {
+  const saved = new Map<string, CharacterSheet>([
     ['brielle', finalizedCharacter('Brielle')],
   ]);
   return {
     save: (id, character) => {
       saved.set(id, character);
-      return `mem://${id}`;
     },
     load: (id) => saved.get(id),
     list: () => [...saved.keys()].sort(),
@@ -107,7 +108,7 @@ function characterDeps(
     io,
     now: () => AT,
     characterDraftStore: memoryDraftStore(),
-    finalizedCharacterStore: memoryFinalizedStore(),
+    characterRegistry: memoryRegistryStore(),
     characterEngine: getDnd5eCharacterCreationEngine(),
     characterResolver: getBundledDnd5eCharacterResolver(),
     characterRng: createSeededRng(1),

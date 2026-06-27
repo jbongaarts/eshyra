@@ -84,12 +84,23 @@ export {
   summarizePointBuy,
   summarizeStandardArray,
 } from './character/abilityAllocation.js';
+// Attach a registry character into a campaign for play (ADR 0012).
+export {
+  type AttachCharacterSheetInput,
+  attachCharacterSheetToCampaign,
+} from './character/attachCharacter.js';
 export type {
   CharacterCreationDiagnostic,
   CharacterCreationEngine,
   CharacterDraft,
 } from './character/characterDraft.js';
 export { getDnd5eCharacterCreationEngine } from './character/characterDraft.js';
+// Cross-campaign character registry (ADR 0012).
+export {
+  type CharacterRegistryStore,
+  createCharacterRegistryStore,
+  ensureCharacterRegistrySchema,
+} from './character/characterRegistry.js';
 // Canonical core-owned character sheet store (ADR 0011).
 export {
   assertSheetMatchesPack,
@@ -117,11 +128,7 @@ export {
   importFinalizedCharacter,
 } from './character/creation.js';
 export { DND5E_SRD_CHARACTER_RECIPE } from './character/dnd5eRecipe.js';
-export type {
-  CharacterSheet,
-  /** @deprecated Use {@link CharacterSheet} (ADR 0011). */
-  FinalizedCharacter,
-} from './character/finalizeCharacter.js';
+export type { CharacterSheet } from './character/finalizeCharacter.js';
 export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
 export { enumerateLevel1RequiredChoices } from './character/requiredChoices.js';
 export type { RulesPackCharacterResolver } from './character/rulesPackResolver.js';
