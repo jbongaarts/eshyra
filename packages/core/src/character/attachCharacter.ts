@@ -29,6 +29,13 @@ export interface AttachCharacterSheetInput {
   readonly sheet: CharacterSheet;
   /** The cross-campaign identity this sheet came from (stamped as provenance). */
   readonly globalCharacterId: string;
+  /**
+   * The registry revision being checked out (ADR 0012, eshyra-lupf.14.3),
+   * stamped on the campaign sheet as `metadata.sourceRevision` so the playable
+   * instance records the point on the character's timeline it took custody
+   * from. Omitted by callers that do not (yet) track revisions.
+   */
+  readonly sourceRevision?: number;
   /** The campaign-local character id to attach as (defaults to `pc-1`). */
   readonly characterId?: string;
   /** Session id recorded on the resulting state mutations. */
@@ -57,6 +64,9 @@ export function attachCharacterSheetToCampaign(
       ...input.sheet.metadata,
       globalCharacterId: input.globalCharacterId,
       importedAt: input.at,
+      ...(input.sourceRevision !== undefined
+        ? { sourceRevision: input.sourceRevision }
+        : {}),
     },
   };
 

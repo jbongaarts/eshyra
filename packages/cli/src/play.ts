@@ -48,7 +48,11 @@ export async function runPlay(
     // already up-to-date campaign.
     initSchema(db);
     const campaign = resolveCampaign(deps, db);
-    const characterReady = await ensureCharacterReady(deps, db);
+    const characterReady = await ensureCharacterReady(
+      deps,
+      db,
+      campaign.campaignId,
+    );
     if (!characterReady) {
       return 1;
     }

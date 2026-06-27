@@ -1,11 +1,13 @@
-import type { CharacterCreationDraft, CharacterSheet, Db } from '@eshyra/core';
+import type { CharacterCreationDraft, Db } from '@eshyra/core';
 import {
-  attachCharacterSheetToCampaign,
+  CharacterCustodyError,
+  checkoutCharacterIntoCampaign,
   completeCharacterCreation,
   DEFAULT_DND5E_SRD_BINDING,
   finalizeCharacterDraft,
   listParty,
   readCampaignRulesBinding,
+  registerNewCharacter,
 } from '@eshyra/core';
 import { runCharacterWizard } from './characterWizard.js';
 import { newDraftId } from './createCharacter.js';
@@ -127,6 +129,7 @@ function campaignSystem(db: Db): string {
 async function importSelectedFinalizedCharacter(
   deps: Pick<PlayDeps, 'characterRegistry' | 'io' | 'now'>,
   db: Db,
+  campaignId: string,
   characterId: string,
 ): Promise<boolean> {
   const ids = deps.characterRegistry.list();
@@ -158,13 +161,7 @@ async function importSelectedFinalizedCharacter(
     return false;
   }
 
-  return importFinalizedIntoCampaign(
-    deps,
-    db,
-    character,
-    characterId,
-    selectedId,
-  );
+  return checkoutIntoCampaign(deps, db, campaignId, characterId, selectedId);
 }
 
 async function runGuidedWizardAndImport(
@@ -179,6 +176,7 @@ async function runGuidedWizardAndImport(
     | 'now'
   >,
   db: Db,
+  campaignId: string,
   characterId: string,
 ): Promise<boolean> {
   const draftId = newDraftId();
@@ -217,46 +215,50 @@ async function runGuidedWizardAndImport(
     return false;
   }
 
-  // Register the new character (its cross-campaign identity is the draft id),
-  // then attach it into this campaign (ADR 0012).
-  deps.characterRegistry.save(draftId, finalized.character);
+  // Register the new character as revision 1 (its cross-campaign identity is
+  // the draft id), then check it out into this campaign (ADR 0012).
+  registerNewCharacter(deps.characterRegistry, {
+    globalCharacterId: draftId,
+    sheet: finalized.character,
+  });
   deps.io.write(
     `Registered character ${draftId} (${finalized.character.identity.name}).`,
   );
-  return importFinalizedIntoCampaign(
-    deps,
-    db,
-    finalized.character,
-    characterId,
-    draftId,
-  );
+  return checkoutIntoCampaign(deps, db, campaignId, characterId, draftId);
 }
 
-function importFinalizedIntoCampaign(
-  deps: Pick<PlayDeps, 'io' | 'now'>,
+/**
+ * Check a registered character out of the registry into this campaign: take
+ * custody (the cross-DB write lock), attach the head revision as the campaign's
+ * authoritative sheet, and project the live row (ADR 0012, eshyra-lupf.14.3).
+ * The double-attach guard surfaces as a friendly message — the character is
+ * still held by another campaign and must be released or forked there first.
+ */
+function checkoutIntoCampaign(
+  deps: Pick<PlayDeps, 'characterRegistry' | 'io' | 'now'>,
   db: Db,
-  character: CharacterSheet,
+  campaignId: string,
   characterId: string,
   globalCharacterId: string,
 ): boolean {
-  // Attach is copy-with-provenance, not a fork (ADR 0012): the core helper
-  // fails closed on a rules-pack mismatch, stamps the source registry identity,
-  // persists the per-campaign authority, and projects the live character row.
-  let result: ReturnType<typeof attachCharacterSheetToCampaign>;
   try {
-    result = attachCharacterSheetToCampaign(db, {
-      sheet: character,
+    const result = checkoutCharacterIntoCampaign(deps.characterRegistry, db, {
       globalCharacterId,
+      campaignId,
       characterId,
       sessionId: 'character-creation',
       at: deps.now(),
     });
+    deps.io.write(result.attach.prompt);
+    return result.attach.ok;
   } catch (error) {
+    if (error instanceof CharacterCustodyError) {
+      deps.io.write(error.message);
+      return false;
+    }
     deps.io.write(error instanceof Error ? error.message : String(error));
     return false;
   }
-  deps.io.write(result.prompt);
-  return result.ok;
 }
 
 async function setupDnd5eCharacter(
@@ -271,6 +273,7 @@ async function setupDnd5eCharacter(
     | 'now'
   >,
   db: Db,
+  campaignId: string,
   characterId: string,
   allowDefer: boolean,
 ): Promise<'created' | 'defer' | 'cancelled'> {
@@ -287,13 +290,20 @@ async function setupDnd5eCharacter(
       return 'defer';
     }
     if (normalized === 'import') {
-      if (await importSelectedFinalizedCharacter(deps, db, characterId)) {
+      if (
+        await importSelectedFinalizedCharacter(
+          deps,
+          db,
+          campaignId,
+          characterId,
+        )
+      ) {
         return 'created';
       }
       continue;
     }
     if (normalized === 'wizard' || normalized.length === 0) {
-      if (await runGuidedWizardAndImport(deps, db, characterId)) {
+      if (await runGuidedWizardAndImport(deps, db, campaignId, characterId)) {
         return 'created';
       }
       continue;
@@ -318,6 +328,7 @@ export async function ensureCharacterReady(
     | 'now'
   >,
   db: Db,
+  campaignId: string,
 ): Promise<boolean> {
   if (hasCanonicalCharacter(db)) {
     return true;
@@ -327,7 +338,13 @@ export async function ensureCharacterReady(
     'Character creation required before play. Type /defer to document a session-zero deferral.',
   );
   if (campaignSystem(db) === 'dnd5e-srd') {
-    const result = await setupDnd5eCharacter(deps, db, 'pc-1', true);
+    const result = await setupDnd5eCharacter(
+      deps,
+      db,
+      campaignId,
+      'pc-1',
+      true,
+    );
     if (result === 'created') {
       return true;
     }
@@ -385,11 +402,13 @@ export async function createAdditionalCharacter(
     | 'now'
   >,
   db: Db,
+  campaignId: string,
 ): Promise<void> {
   if (campaignSystem(db) === 'dnd5e-srd') {
     const result = await setupDnd5eCharacter(
       deps,
       db,
+      campaignId,
       nextPlayerCharacterId(db),
       false,
     );

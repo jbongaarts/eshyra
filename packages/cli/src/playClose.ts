@@ -12,14 +12,48 @@ import {
   closeSessionGracefully,
   composeArcSummary,
   composeSessionRecap,
+  createSqliteCharacterSheetStore,
   extractCampaignBible,
   getCampaignBible,
   getClosedSessionsInOpenArc,
   getSessionRecap,
   listClosedArcSummaries,
   openArcIfMissing,
+  releaseCharacterFromCampaign,
 } from '@eshyra/core';
 import type { PlayDeps } from './playTypes.js';
+
+/**
+ * Release every registry-linked character this campaign holds (ADR 0012,
+ * eshyra-lupf.14.3): commit a sync-back revision from the campaign sheet and
+ * drop custody, so the character is idle and free to be checked out again on
+ * resume or in another campaign. Characters created directly in-campaign (no
+ * `globalCharacterId`) are skipped. Best-effort: a release failure is reported
+ * but never blocks a clean exit.
+ */
+function releaseCampaignCharacters(deps: PlayDeps, db: Db): void {
+  for (const characterId of createSqliteCharacterSheetStore(db).list()) {
+    try {
+      const released = releaseCharacterFromCampaign(
+        deps.characterRegistry,
+        db,
+        {
+          characterId,
+        },
+      );
+      if (released?.committed) {
+        deps.io.write(
+          `Synced ${characterId} back to the registry as ${released.globalCharacterId}@${released.revision}.`,
+        );
+      }
+    } catch (error) {
+      deps.io.write(
+        `Could not sync ${characterId} back to the registry: ` +
+          `${error instanceof Error ? error.message : String(error)}.`,
+      );
+    }
+  }
+}
 
 /**
  * Extract a campaign bible with one retry on failure. Retry policy lives in
@@ -223,4 +257,9 @@ export async function gracefulClose(
   // the closed session. The arc-stamp already happened atomically in close, so
   // rollupCampaignArcIfReady begins at the "check threshold" step.
   await rollupCampaignArcIfReady(deps, db, campaignId, openArc.arcId, now);
+
+  // Quitting the campaign returns custody to the registry: sync each held
+  // character back and release the cross-DB write lock (ADR 0012). Resuming the
+  // campaign re-checks them out from the registry head.
+  releaseCampaignCharacters(deps, db);
 }

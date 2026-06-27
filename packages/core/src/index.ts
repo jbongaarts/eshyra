@@ -89,6 +89,20 @@ export {
   type AttachCharacterSheetInput,
   attachCharacterSheetToCampaign,
 } from './character/attachCharacter.js';
+// Cross-campaign character custody lifecycle (ADR 0012).
+export {
+  CharacterCustodyError,
+  type CheckoutCharacterInput,
+  type CheckoutCharacterResult,
+  checkoutCharacterIntoCampaign,
+  type ForkCharacterInput,
+  type ForkCharacterResult,
+  forkCharacterTimeline,
+  registerNewCharacter,
+  releaseCharacterFromCampaign,
+  type SyncBackResult,
+  syncBackCharacterFromCampaign,
+} from './character/characterCustody.js';
 export type {
   CharacterCreationDiagnostic,
   CharacterCreationEngine,
@@ -98,6 +112,9 @@ export { getDnd5eCharacterCreationEngine } from './character/characterDraft.js';
 // Cross-campaign character registry (ADR 0012).
 export {
   type CharacterRegistryStore,
+  type CharacterRevision,
+  type CharacterRevisionSource,
+  type CustodyRecord,
   createCharacterRegistryStore,
   ensureCharacterRegistrySchema,
 } from './character/characterRegistry.js';

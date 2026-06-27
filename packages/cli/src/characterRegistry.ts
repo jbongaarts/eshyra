@@ -16,6 +16,7 @@ import {
   createCharacterRegistryStore,
   ensureCharacterRegistrySchema,
   openDatabase,
+  registerNewCharacter,
 } from '@eshyra/core';
 import { characterRegistryDbPath, charactersDir } from './dataRoot.js';
 
@@ -73,7 +74,10 @@ export function migrateLegacyCharacterLibrary(
     if (!looksLikeCharacterSheet(parsed)) {
       continue;
     }
-    registry.save(id, parsed);
+    // Seed the migrated character as revision 1 of its registry timeline
+    // (ADR 0012, eshyra-lupf.14.3) rather than a bare head write, so the
+    // custody lifecycle has a history to build on.
+    registerNewCharacter(registry, { globalCharacterId: id, sheet: parsed });
     migrated += 1;
   }
   return migrated;

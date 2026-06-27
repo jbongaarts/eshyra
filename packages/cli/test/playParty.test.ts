@@ -5,11 +5,14 @@ import type {
   Db,
 } from '@eshyra/core';
 import {
+  createCharacterRegistryStore,
   createSeededRng,
+  ensureCharacterRegistrySchema,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
   initSchema,
   openDatabase,
+  registerNewCharacter,
 } from '@eshyra/core';
 import {
   ensureCharacterRow,
@@ -89,16 +92,14 @@ function memoryDraftStore(): CharacterDraftStore {
 }
 
 function memoryRegistryStore(): CharacterRegistryStore {
-  const saved = new Map<string, CharacterSheet>([
-    ['brielle', finalizedCharacter('Brielle')],
-  ]);
-  return {
-    save: (id, character) => {
-      saved.set(id, character);
-    },
-    load: (id) => saved.get(id),
-    list: () => [...saved.keys()].sort(),
-  };
+  const db = openDatabase(':memory:');
+  ensureCharacterRegistrySchema(db);
+  const registry = createCharacterRegistryStore(db, () => AT);
+  registerNewCharacter(registry, {
+    globalCharacterId: 'brielle',
+    sheet: finalizedCharacter('Brielle'),
+  });
+  return registry;
 }
 
 function characterDeps(
@@ -253,7 +254,7 @@ describe('createAdditionalCharacter', () => {
     const db = freshDb();
     // pc-1 already exists from bootstrap; add a second PC.
     const { io } = scriptedIO(['import', 'brielle']);
-    await createAdditionalCharacter(characterDeps(io), db);
+    await createAdditionalCharacter(characterDeps(io), db, 'campaign-1');
 
     const row = db
       .prepare('SELECT name, class_name FROM character WHERE id = ?')

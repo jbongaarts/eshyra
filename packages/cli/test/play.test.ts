@@ -6,11 +6,13 @@ import {
   type CharacterRegistryStore,
   type CharacterSheet,
   createCampaign,
+  createCharacterRegistryStore,
   createDefaultToolRegistry,
   createSeededRng,
   type Db,
   DoltRepo,
   EMBERFALL_HOLLOW,
+  ensureCharacterRegistrySchema,
   getArcSummary,
   getBundledDnd5eCharacterResolver,
   getCampaign,
@@ -27,6 +29,7 @@ import {
   type RunTurnInput,
   type RunTurnResult,
   readCampaignRulesBinding,
+  registerNewCharacter,
   startSession,
 } from '@eshyra/core';
 import {
@@ -200,14 +203,13 @@ function memoryFinalizedStore(
     mira: finalizedCharacter(),
   },
 ): CharacterRegistryStore {
-  const saved = new Map<string, CharacterSheet>(Object.entries(seed));
-  return {
-    save: (id, character) => {
-      saved.set(id, character);
-    },
-    load: (id) => saved.get(id),
-    list: () => [...saved.keys()].sort(),
-  };
+  const db = openDatabase(':memory:');
+  ensureCharacterRegistrySchema(db);
+  const registry = createCharacterRegistryStore(db);
+  for (const [globalCharacterId, sheet] of Object.entries(seed)) {
+    registerNewCharacter(registry, { globalCharacterId, sheet });
+  }
+  return registry;
 }
 
 /**

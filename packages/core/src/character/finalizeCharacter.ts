@@ -74,6 +74,14 @@ export interface FinalizeMetadata {
   readonly globalCharacterId?: string;
   /** ISO-8601 timestamp the sheet was attached into a campaign (ADR 0012). */
   readonly importedAt?: string;
+  /**
+   * The registry revision number that was checked out when this sheet was
+   * attached (ADR 0012, eshyra-lupf.14.3). Records the point on the character's
+   * linear timeline the campaign took custody from; sync-back commits a *new*
+   * revision built from the campaign sheet regardless of this value. Unset on a
+   * freshly created, not-yet-attached sheet.
+   */
+  readonly sourceRevision?: number;
 }
 
 /**

@@ -93,9 +93,43 @@ for `eshyra-lupf.14.2`** but must not be precluded:
   sheet; their results are what a later exit/sync commits back to the registry.
 - `FinalizedCharacter` is removed in favor of `CharacterSheet`.
 
+## Custody lifecycle (eshyra-lupf.14.3)
+
+The lifecycle deferred above is now built on the `.14.2` registry. It adds two
+tables to the registry database and a core orchestration layer
+(`characterCustody.ts`) over the registry store and the per-campaign databases.
+
+- **Linear revision history.** `character_revision` is an append-only, 1-based
+  timeline per `globalCharacterId`. Revision 1 is the initial **register**; each
+  campaign **sync-back** appends the next revision built from the campaign sheet.
+  The `character_registry` head row mirrors the latest revision for fast loads.
+- **Custody is the cross-DB write lock.** `character_custody` holds at most one
+  row per character, present exactly while a campaign is its active writer.
+  SQLite cannot transact across the registry and per-campaign databases, so the
+  helpers never try to; they order writes (attach the durable campaign sheet
+  *before* recording custody; the campaign sheet is the source a later sync-back
+  commits from) so a crash leaves a recoverable state, and custody makes "exactly
+  one writer at a time" enforceable rather than relying on a shared transaction.
+- **Checkout records source revision + custody.** Attaching stamps the campaign
+  sheet with the checked-out revision (`metadata.sourceRevision`) and takes
+  custody. Sync-back strips the per-attachment provenance
+  (`globalCharacterId` / `importedAt` / `sourceRevision`) so the registry stores
+  clean canonical sheets, and skips the append when the sheet is unchanged so
+  idle sessions do not spam identical revisions.
+- **Double-attach is prevented.** Checking a character out into a campaign while
+  a *different* campaign holds custody fails closed (`CharacterCustodyError`);
+  re-checkout into the same campaign is idempotent (resume). The CLI releases
+  custody on `/quit` (sync-back + drop the lock) and re-checks-out on resume, so
+  the guard holds for the duration of an open session.
+- **Fork is an explicit, continuity-breaking branch.** `forkCharacterTimeline`
+  copies a chosen revision into a brand-new `globalCharacterId` (revision 1, with
+  `parent` provenance) — the deliberate way to play a copy elsewhere without two
+  diverging sheets silently claiming to be the same continuing identity.
+
 ## Out of scope
 
-- Revision history, exit/sync-back, double-attach prevention, and alternate
-  timelines (the custody lifecycle bead).
 - Structured currency and the portable character chronicle (their own epics).
 - Cross-pack character conversion.
+- A CLI surface for fork and for choosing a non-head checkout revision; `.14.3`
+  ships these as core APIs with the lifecycle wired into play/quit, leaving the
+  richer "manage my characters" UX to a later bead.
