@@ -11,7 +11,9 @@ more than one player character, and it sets the created PC as the active
 character. Character creation does not own a second sheet model. It emits
 `mutate_state`-compatible writes so the same persistence and provenance rules
 apply to created characters, DM-authored corrections, and future import output.
-See `docs/multi-pc-design.md` for the party model.
+See `docs/multi-pc-design.md` for the party model and
+`docs/design/character-progression.md` for the post-creation progression and
+leveling model.
 
 ## MVP Creation Contract
 
