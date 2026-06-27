@@ -13,8 +13,16 @@ hit points, ability scores, and conditions. The party-wide active character is
 tracked in `meta.active_character_id`; deterministic mutations resolve their
 target by id, defaulting to the acting/active character. Solo play is simply a
 one-member party. See `docs/character-creation.md` for the creation flow and
-`docs/multi-pc-design.md` for the multi-PC model. It is the convergence target
-for character creation and future import flows.
+`docs/multi-pc-design.md` for the multi-PC model.
+
+The `character` row owns fast-changing per-turn situation (current HP,
+conditions) and mirrors a few build-defining fields (identity, class, `level`,
+`hp_max`) that are authored by the core-owned canonical character sheet. Per
+ADR 0011 (`docs/adr/0011-core-owned-rules-pack-bound-character-sheet.md`), the
+canonical sheet — not this row — is the authority for build-defining facts
+(class refs, proficiencies, features, spells, ability scores, progression
+state); those mirror columns are projected from it. The per-turn store remains
+the authority for `hp_current` and `conditions_json`.
 
 `inventory` stores one row per item stack or unique carried object, owned by a
 party member via the `character_id` foreign key. Each row has an
