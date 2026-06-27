@@ -223,6 +223,7 @@ export type {
   ResolvedBackgroundData,
   ResolvedChoiceSpec,
   ResolvedClassData,
+  ResolvedClassLevel,
   ResolvedClassLevel1,
   ResolvedLevelSpellcasting,
   ResolvedSpellData,

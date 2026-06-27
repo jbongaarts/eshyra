@@ -137,6 +137,34 @@ describe('rules-pack character resolver', () => {
     }
   });
 
+  it('resolves martial class progression rows across levels', () => {
+    const fighter = resolver.resolveClassLevel('Fighter', 5);
+    expect(fighter.ok).toBe(true);
+    if (fighter.ok) {
+      expect(fighter.record).toMatchObject({
+        level: 5,
+        proficiencyBonus: 3,
+        featureRefs: expect.arrayContaining(['feature:fighter:extra-attack']),
+      });
+      expect(fighter.record.spellcasting).toBeUndefined();
+    }
+  });
+
+  it('resolves caster class progression rows with spellcasting slots', () => {
+    const wizard = resolver.resolveClassLevel('class:wizard', 3);
+    expect(wizard.ok).toBe(true);
+    if (wizard.ok) {
+      expect(wizard.record).toMatchObject({
+        level: 3,
+        proficiencyBonus: 2,
+        spellcasting: {
+          cantripsKnown: 3,
+          slots: { '1': 4, '2': 2 },
+        },
+      });
+    }
+  });
+
   it('exposes ancestry traits and resolves the background record', () => {
     const elf = resolver.resolveAncestry('Elf');
     expect(elf.ok).toBe(true);
@@ -280,6 +308,70 @@ describe('rules-pack character resolver', () => {
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.code).toBe('not_found');
+      }
+    });
+
+    it('reports a malformed result for an unusable class progression row', () => {
+      const stack = resolveRulesStack({
+        base: packWith([
+          record({
+            key: 'class:brokenprogression',
+            name: 'Broken Progression',
+            data: {
+              hitDie: 10,
+              primaryAbilities: ['Strength'],
+              savingThrowProficiencies: ['Strength', 'Constitution'],
+              progression: [
+                {
+                  level: 1,
+                  proficiencyBonus: 'two',
+                  features: [],
+                },
+              ],
+            },
+          }),
+        ]),
+      });
+      const result = createRulesPackCharacterResolver(stack).resolveClassLevel(
+        'Broken Progression',
+        1,
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe('malformed');
+        expect(result.message).toMatch(/class:brokenprogression/);
+      }
+    });
+
+    it('reports a not_found result for a missing class progression level', () => {
+      const stack = resolveRulesStack({
+        base: packWith([
+          record({
+            key: 'class:onelevel',
+            name: 'One Level',
+            data: {
+              hitDie: 10,
+              primaryAbilities: ['Strength'],
+              savingThrowProficiencies: ['Strength', 'Constitution'],
+              progression: [
+                {
+                  level: 1,
+                  proficiencyBonus: '+2',
+                  features: [],
+                },
+              ],
+            },
+          }),
+        ]),
+      });
+      const result = createRulesPackCharacterResolver(stack).resolveClassLevel(
+        'One Level',
+        2,
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe('not_found');
+        expect(result.message).toMatch(/level 2/);
       }
     });
   });
