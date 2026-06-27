@@ -343,6 +343,41 @@ describe('rules-pack character resolver', () => {
       }
     });
 
+    it('reports a malformed result for a class progression row with malformed feature entries', () => {
+      const stack = resolveRulesStack({
+        base: packWith([
+          record({
+            key: 'class:brokenfeatures',
+            name: 'Broken Features',
+            data: {
+              hitDie: 10,
+              primaryAbilities: ['Strength'],
+              savingThrowProficiencies: ['Strength', 'Constitution'],
+              progression: [
+                {
+                  level: 5,
+                  proficiencyBonus: '+3',
+                  features: [
+                    { ref: 'feature:fighter:extra-attack' },
+                    { name: 'Bad Feature' },
+                  ],
+                },
+              ],
+            },
+          }),
+        ]),
+      });
+      const result = createRulesPackCharacterResolver(stack).resolveClassLevel(
+        'Broken Features',
+        5,
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe('malformed');
+        expect(result.message).toMatch(/class:brokenfeatures/);
+      }
+    });
+
     it('reports a not_found result for a missing class progression level', () => {
       const stack = resolveRulesStack({
         base: packWith([

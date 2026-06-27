@@ -280,11 +280,10 @@ function resolveClassLevel(
     return malformed('class', result.record.key);
   }
   const raw = data as unknown as Record<string, unknown>;
-  const progression = parseClassProgression(raw.progression);
-  if (progression === undefined || progression === 'malformed') {
+  const row = parseClassProgressionLevel(raw.progression, level);
+  if (row === 'malformed') {
     return malformed('class', result.record.key);
   }
-  const row = progression.find((entry) => entry.level === level);
   if (row === undefined) {
     return {
       ok: false,
@@ -316,7 +315,8 @@ function listClasses(stack: ResolvedRulesStack): readonly ResolvedClassData[] {
  * optional structured progression/choice fields best-effort. A field that does
  * not match the expected shape is simply omitted (left `undefined`) rather than
  * failing the whole record — those minimum fields are guarded by
- * {@link isGeneratedClassData}; the rest is enrichment for level-1 creation.
+ * {@link isGeneratedClassData}; the rest is enrichment for character creation
+ * and the leveling read layer.
  */
 function toResolvedClassData(
   key: string,
@@ -325,10 +325,6 @@ function toResolvedClassData(
 ): ResolvedClassData {
   const raw = data as unknown as Record<string, unknown>;
   const progression = parseClassProgression(raw.progression);
-  const level1 =
-    progression !== undefined && progression !== 'malformed'
-      ? toLevel1(progression.find((row) => row.level === 1))
-      : undefined;
   return {
     key,
     name,
@@ -342,7 +338,7 @@ function toResolvedClassData(
     toolProficiencyChoices: parseChoiceSpecs(raw.toolProficiencyChoices),
     startingEquipment: parseStartingEquipment(raw.startingEquipment),
     progression: progression === 'malformed' ? undefined : progression,
-    level1,
+    level1: parseLevel1(raw.progression),
   };
 }
 
@@ -383,6 +379,37 @@ function parseStartingEquipment(
   };
 }
 
+function parseLevel1(progression: unknown): ResolvedClassLevel1 | undefined {
+  if (!Array.isArray(progression)) {
+    return undefined;
+  }
+  const row = progression.find(
+    (entry): entry is Record<string, unknown> =>
+      isRecord(entry) && entry.level === 1,
+  );
+  if (row === undefined) {
+    return undefined;
+  }
+  const proficiencyBonus = parseProficiencyBonus(row.proficiencyBonus);
+  if (proficiencyBonus === undefined) {
+    return undefined;
+  }
+  const featureRefs: string[] = [];
+  if (Array.isArray(row.features)) {
+    for (const feature of row.features) {
+      if (isRecord(feature) && typeof feature.ref === 'string') {
+        featureRefs.push(feature.ref);
+      }
+    }
+  }
+  const spellcasting = parseLevelSpellcasting(row.spellcasting);
+  return {
+    featureRefs,
+    spellcasting: spellcasting === 'malformed' ? undefined : spellcasting,
+    proficiencyBonus,
+  };
+}
+
 function parseClassProgression(
   progression: unknown,
 ): readonly ResolvedClassLevel[] | 'malformed' | undefined {
@@ -401,6 +428,26 @@ function parseClassProgression(
     rows.push(row);
   }
   return rows;
+}
+
+function parseClassProgressionLevel(
+  progression: unknown,
+  level: number,
+): ResolvedClassLevel | 'malformed' | undefined {
+  if (progression === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(progression)) {
+    return 'malformed';
+  }
+  const entry = progression.find(
+    (row): row is Record<string, unknown> =>
+      isRecord(row) && row.level === level,
+  );
+  if (entry === undefined) {
+    return undefined;
+  }
+  return parseClassProgressionRow(entry) ?? 'malformed';
 }
 
 function parseClassProgressionRow(
@@ -430,19 +477,6 @@ function parseClassProgressionRow(
   };
 }
 
-function toLevel1(
-  row: ResolvedClassLevel | undefined,
-): ResolvedClassLevel1 | undefined {
-  if (row === undefined) {
-    return undefined;
-  }
-  return {
-    featureRefs: row.featureRefs,
-    spellcasting: row.spellcasting,
-    proficiencyBonus: row.proficiencyBonus,
-  };
-}
-
 function parseProficiencyBonus(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isInteger(value)) {
     return value;
@@ -463,9 +497,10 @@ function parseFeatureRefs(value: unknown): readonly string[] | undefined {
   }
   const featureRefs: string[] = [];
   for (const feature of value) {
-    if (isRecord(feature) && typeof feature.ref === 'string') {
-      featureRefs.push(feature.ref);
+    if (!isRecord(feature) || typeof feature.ref !== 'string') {
+      return undefined;
     }
+    featureRefs.push(feature.ref);
   }
   return featureRefs;
 }
