@@ -102,6 +102,25 @@ describe('character sheet store', () => {
     expect(store.list()).toEqual(['pc-1']);
   });
 
+  it('updates the row in place on re-save (stable rowid, not delete+insert)', () => {
+    // A true upsert preserves the row identity so a future append-only ledger
+    // keyed to character_sheet(character_id) is never broken by a re-save.
+    const store = createSqliteCharacterSheetStore(db, () => 'now');
+    store.save('pc-1', makeSheet({ level: 1 }));
+    const rowidBefore = (
+      db
+        .prepare('SELECT rowid FROM character_sheet WHERE character_id = ?')
+        .get('pc-1') as { rowid: number }
+    ).rowid;
+    store.save('pc-1', makeSheet({ level: 2 }));
+    const rowidAfter = (
+      db
+        .prepare('SELECT rowid FROM character_sheet WHERE character_id = ?')
+        .get('pc-1') as { rowid: number }
+    ).rowid;
+    expect(rowidAfter).toBe(rowidBefore);
+  });
+
   it('returns undefined for a missing sheet', () => {
     const store = createSqliteCharacterSheetStore(db);
     expect(store.load('pc-9')).toBeUndefined();

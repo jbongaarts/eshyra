@@ -74,10 +74,20 @@ export function createSqliteCharacterSheetStore(
       if (id.length === 0) {
         throw new CharacterSheetStoreError('character id must be non-empty');
       }
+      // A true upsert (not INSERT OR REPLACE, which is delete-then-insert):
+      // re-saving a sheet must update the existing row in place so a future
+      // append-only ledger keyed to character_sheet(character_id) cannot be
+      // broken or cascade-deleted by a re-save (ADR 0011).
       db.prepare(
-        `INSERT OR REPLACE INTO character_sheet(
+        `INSERT INTO character_sheet(
            character_id, schema_version, system, rules_pack_id, sheet_json, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(character_id) DO UPDATE SET
+           schema_version = excluded.schema_version,
+           system = excluded.system,
+           rules_pack_id = excluded.rules_pack_id,
+           sheet_json = excluded.sheet_json,
+           updated_at = excluded.updated_at`,
       ).run(
         id,
         sheet.schemaVersion,
