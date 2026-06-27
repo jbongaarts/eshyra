@@ -232,7 +232,9 @@ async function runGuidedWizardAndImport(
  * custody (the cross-DB write lock), attach the head revision as the campaign's
  * authoritative sheet, and project the live row (ADR 0012, eshyra-lupf.14.3).
  * The double-attach guard surfaces as a friendly message — the character is
- * still held by another campaign and must be released or forked there first.
+ * still in active play in another campaign and must be released there first (its
+ * progress carries forward; forking is not the path for moving between
+ * campaigns).
  */
 function checkoutIntoCampaign(
   deps: Pick<PlayDeps, 'characterRegistry' | 'io' | 'now'>,

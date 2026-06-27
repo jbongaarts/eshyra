@@ -116,15 +116,22 @@ tables to the registry database and a core orchestration layer
   (`globalCharacterId` / `importedAt` / `sourceRevision`) so the registry stores
   clean canonical sheets, and skips the append when the sheet is unchanged so
   idle sessions do not spam identical revisions.
-- **Double-attach is prevented.** Checking a character out into a campaign while
-  a *different* campaign holds custody fails closed (`CharacterCustodyError`);
-  re-checkout into the same campaign is idempotent (resume). The CLI releases
-  custody on `/quit` (sync-back + drop the lock) and re-checks-out on resume, so
-  the guard holds for the duration of an open session.
-- **Fork is an explicit, continuity-breaking branch.** `forkCharacterTimeline`
-  copies a chosen revision into a brand-new `globalCharacterId` (revision 1, with
-  `parent` provenance) — the deliberate way to play a copy elsewhere without two
-  diverging sheets silently claiming to be the same continuing identity.
+- **Double-attach is prevented; continuity is the way out.** Checking a
+  character out while a *different* campaign holds custody fails closed
+  (`CharacterCustodyError`); re-checkout into the same campaign is idempotent
+  (resume). The resolution is to **release** the character from the first
+  campaign — its progress carries forward — not to fork. The CLI releases custody
+  on `/quit` (sync-back + drop the lock) and re-checks-out on resume, so the guard
+  holds for the duration of an open session and a character moves between
+  campaigns as one continuing identity.
+- **Fork is the discouraged escape hatch, not the movement mechanism.** The
+  design goal is to *avoid* forking: a character is one continuing entity whose
+  experiences carry forward, and moving it between campaigns is release →
+  re-checkout. `forkCharacterTimeline` copies a chosen revision into a brand-new
+  `globalCharacterId` (revision 1, with `parent` provenance) and explicitly
+  **breaks continuity**; it exists only for the unusual "parallel what-if copy"
+  case, satisfying the ADR requirement that an alternate timeline be *possible*
+  while never being the default path.
 
 ## Out of scope
 

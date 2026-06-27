@@ -9,13 +9,18 @@
  *   - **checkout** — attaching a registry character into a campaign records
  *     custody (the cross-DB write lock) and stamps the campaign sheet with the
  *     checked-out revision. Attaching a character a second campaign already
- *     holds is refused; the only way to play it elsewhere is an explicit fork.
+ *     holds is refused — release it from the first campaign and its progress
+ *     carries forward into the next one.
  *   - **sync-back** — committing a new registry revision from the campaign sheet
  *     when the campaign's copy has changed; the registry head moves forward.
  *   - **release** — sync-back plus dropping custody, so the character is idle
- *     and free to be checked out again.
+ *     and free to be checked out again. This is the normal way a character moves
+ *     between campaigns: one continuing identity whose experiences carry forward.
  *   - **fork** — a deliberate, rare alternate-timeline branch into a *new*
- *     `globalCharacterId`, explicitly breaking continuity with the source.
+ *     `globalCharacterId`. It is **not** how a character moves between campaigns
+ *     (that is release → re-checkout, which preserves continuity); it exists
+ *     only for the unusual "parallel what-if copy" case and explicitly breaks
+ *     continuity with the source. The model is designed to avoid forking.
  *
  * Custody (`character_custody`) is what makes "exactly one writer at a time"
  * enforceable across the registry database and the per-campaign databases: while
@@ -132,10 +137,12 @@ function ensureRevisioned(
  * checked-out revision), and project the live `character` row.
  *
  * Fails closed when another campaign already holds the character (the
- * double-attach guard) — the caller must fork to play an alternate timeline.
- * Re-checking-out into the *same* campaign is allowed and idempotent (resume).
- * A rules-pack mismatch still throws {@link CharacterSheetPackMismatchError}
- * from the underlying attach before any custody is recorded.
+ * double-attach guard). The fix is to release it from that campaign — its
+ * progress carries forward — not to fork; forking is reserved for a deliberate
+ * parallel timeline. Re-checking-out into the *same* campaign is allowed and
+ * idempotent (resume). A rules-pack mismatch still throws
+ * {@link CharacterSheetPackMismatchError} from the underlying attach before any
+ * custody is recorded.
  */
 export function checkoutCharacterIntoCampaign(
   registry: CharacterRegistryStore,
@@ -146,8 +153,8 @@ export function checkoutCharacterIntoCampaign(
   const held = registry.custody(input.globalCharacterId);
   if (held !== undefined && held.campaignId !== input.campaignId) {
     throw new CharacterCustodyError(
-      `character "${input.globalCharacterId}" is already attached to campaign "${held.campaignId}" ` +
-        `(as ${held.characterId}); release it there or fork an alternate timeline before attaching it elsewhere`,
+      `character "${input.globalCharacterId}" is already in active play in campaign "${held.campaignId}" ` +
+        `(as ${held.characterId}); exit that campaign to release it — its progress carries forward — before bringing it here`,
     );
   }
 
@@ -292,8 +299,10 @@ export interface ForkCharacterResult {
  * Fork an alternate timeline from a character into a brand-new
  * `globalCharacterId` — a deliberate, rare operation that **breaks continuity**:
  * the fork and its source are thereafter independent characters with separate
- * histories. Used to play a copy of a character in a second campaign without the
- * two diverging copies silently claiming to be the same continuing identity.
+ * histories. This is explicitly **not** the way to move a character between
+ * campaigns — that is release → re-checkout, which keeps one continuing identity
+ * whose experiences carry forward. Fork exists only for the unusual "parallel
+ * what-if copy" case, and the model is designed to make it rare.
  *
  * Throws {@link CharacterCustodyError} when the source revision does not exist
  * or the target id is already registered (a fork must never overwrite an
