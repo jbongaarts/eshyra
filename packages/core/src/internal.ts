@@ -837,6 +837,14 @@ export {
   updateCombatant,
   upsertCampaignActor,
 } from './state/encounterCombatants.js';
+// Read-only level-up eligibility detection.
+export type { LevelUpEligibility } from './state/levelUpEligibility.js';
+export {
+  computeMilestoneEligibility,
+  computeXpEligibility,
+  countOutstandingMilestones,
+  getLevelUpEligibility,
+} from './state/levelUpEligibility.js';
 export type {
   AbilityScoreName,
   AbilityScores,
