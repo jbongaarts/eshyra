@@ -571,6 +571,51 @@ describe('non-spell owner-table linkage (eshyra-o9bd.8)', () => {
   });
 });
 
+describe('table reachability completeness (eshyra-o9bd.8.3)', () => {
+  const orphan = record({
+    kind: 'table',
+    key: 'table:some-unowned-table',
+    name: 'Some Unowned Table',
+    data: { columns: ['A'], rows: [['x']] },
+  });
+  const standalone = record({
+    kind: 'table',
+    key: 'table:proficiency-bonus-by-challenge-rating',
+    name: 'Proficiency Bonus by Challenge Rating',
+    data: { columns: ['CR', 'Bonus'], rows: [['0', '+2']] },
+  });
+
+  it('flags an emitted table that is unreachable and not allow-listed', () => {
+    const findings = auditSrdStructure(pack([orphan])).filter(
+      (finding) => finding.category === 'table-reachability',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('not reachable from any owner');
+  });
+
+  it('is silent for a deliberately-standalone allow-listed table', () => {
+    expect(
+      auditSrdStructure(pack([standalone])).filter(
+        (finding) => finding.category === 'table-reachability',
+      ),
+    ).toEqual([]);
+  });
+
+  it('is silent when a table is reachable via a referring record', () => {
+    const referrer = record({
+      kind: 'rule',
+      key: 'rule:some-section',
+      name: 'Some Section',
+      data: { text: 'See the table.', tableRefs: ['table:some-unowned-table'] },
+    });
+    expect(
+      auditSrdStructure(pack([orphan, referrer])).filter(
+        (finding) => finding.category === 'table-reachability',
+      ),
+    ).toEqual([]);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Creature stat-block prose bleed (eshyra-76b7)
 // ---------------------------------------------------------------------------

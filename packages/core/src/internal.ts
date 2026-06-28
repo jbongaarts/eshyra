@@ -810,6 +810,8 @@ export {
   auditSrdCoverage,
   auditSrdStructure,
   formatSrdAuditReport,
+  SRD_5_1_STANDALONE_TABLES,
+  SRD_5_1_TABLE_OWNERS,
   srdAuditHasFindings,
 } from './rules/srdAudit.js';
 export type {

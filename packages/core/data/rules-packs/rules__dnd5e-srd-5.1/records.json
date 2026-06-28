@@ -54902,7 +54902,10 @@
     "key": "rule:ability-checks",
     "name": "Ability Checks",
     "data": {
-      "text": "An ability check tests a character’s or monster’s innate talent and training in an effort to overcome a challenge. The GM calls for an ability check when a character or monster attempts an action (other than an attack) that has a chance of failure. When the outcome is uncertain, the dice determine the results. For every ability check, the GM decides which of the six abilities is relevant to the task at hand and the difficulty of the task, represented by a Difficulty Class. The more difficult a task, the higher its DC. The Typical Difficulty Classes table shows the most common DCs.\n\nTo make an ability check, roll a d20 and add the relevant ability modifier. As with other d20 rolls, apply bonuses and penalties, and compare the total to the DC. If the total equals or exceeds the DC, the ability check is a success—the creature overcomes the challenge at hand. Otherwise, it’s a failure, which means the character or monster makes no progress toward the objective or makes progress combined with a setback determined by the GM."
+      "text": "An ability check tests a character’s or monster’s innate talent and training in an effort to overcome a challenge. The GM calls for an ability check when a character or monster attempts an action (other than an attack) that has a chance of failure. When the outcome is uncertain, the dice determine the results. For every ability check, the GM decides which of the six abilities is relevant to the task at hand and the difficulty of the task, represented by a Difficulty Class. The more difficult a task, the higher its DC. The Typical Difficulty Classes table shows the most common DCs.\n\nTo make an ability check, roll a d20 and add the relevant ability modifier. As with other d20 rolls, apply bonuses and penalties, and compare the total to the DC. If the total equals or exceeds the DC, the ability check is a success—the creature overcomes the challenge at hand. Otherwise, it’s a failure, which means the character or monster makes no progress toward the objective or makes progress combined with a setback determined by the GM.",
+      "tableRefs": [
+        "table:difficulty-classes"
+      ]
     },
     "source": "SRD 5.1 p. 77",
     "license": {
@@ -56345,7 +56348,10 @@
     "key": "rule:challenge-experience-points",
     "name": "Experience Points",
     "data": {
-      "text": "The number of experience points (XP) a monster is worth is based on its challenge rating. Typically, XP is awarded for defeating the monster, although the GM may also award XP for neutralizing the threat posed by the monster in some other manner. Unless something tells you otherwise, a monster summoned by a spell or other magical ability is worth the XP noted in its stat block."
+      "text": "The number of experience points (XP) a monster is worth is based on its challenge rating. Typically, XP is awarded for defeating the monster, although the GM may also award XP for neutralizing the threat posed by the monster in some other manner. Unless something tells you otherwise, a monster summoned by a spell or other magical ability is worth the XP noted in its stat block.",
+      "tableRefs": [
+        "table:experience-points-by-challenge-rating"
+      ]
     },
     "source": "SRD 5.1 p. 258",
     "license": {
@@ -56615,7 +56621,10 @@
     "key": "rule:coinage",
     "name": "Coinage",
     "data": {
-      "text": "Common coins come in several different denominations based on the relative worth of the metal from which they are made. The three most common coins are the gold piece (gp), the silver piece (sp), and the copper piece (cp). With one gold piece, a character can buy a bedroll, 50 feet of good rope, or a goat. A skilled (but not exceptional) artisan can earn one gold piece a day. The gold piece is the standard unit of measure for wealth, even if the coin itself is not commonly used. When merchants discuss deals that involve goods or services worth hundreds or thousands of gold pieces, the transactions don’t usually involve the exchange of individual coins. Rather, the gold piece is a standard measure of value, and the actual exchange is in gold bars, letters of credit, or valuable goods. One gold piece is worth ten silver pieces, the most prevalent coin among commoners. A silver piece buys a laborer’s work for half a day, a flask of lamp oil, or a night’s rest in a poor inn. One silver piece is worth ten copper pieces, which are common among laborers and beggars. A single copper piece buys a candle, a torch, or a piece of chalk. In addition, unusual coins made of other precious metals sometimes appear in treasure hoards. The electrum piece (ep) and the platinum piece (pp) originate from fallen empires and lost kingdoms, and they sometimes arouse suspicion and skepticism when used in transactions. An electrum piece is worth five silver pieces, and a platinum piece is worth ten gold pieces. A standard coin weighs about a third of an ounce, so fifty coins weigh a pound."
+      "text": "Common coins come in several different denominations based on the relative worth of the metal from which they are made. The three most common coins are the gold piece (gp), the silver piece (sp), and the copper piece (cp). With one gold piece, a character can buy a bedroll, 50 feet of good rope, or a goat. A skilled (but not exceptional) artisan can earn one gold piece a day. The gold piece is the standard unit of measure for wealth, even if the coin itself is not commonly used. When merchants discuss deals that involve goods or services worth hundreds or thousands of gold pieces, the transactions don’t usually involve the exchange of individual coins. Rather, the gold piece is a standard measure of value, and the actual exchange is in gold bars, letters of credit, or valuable goods. One gold piece is worth ten silver pieces, the most prevalent coin among commoners. A silver piece buys a laborer’s work for half a day, a flask of lamp oil, or a night’s rest in a poor inn. One silver piece is worth ten copper pieces, which are common among laborers and beggars. A single copper piece buys a candle, a torch, or a piece of chalk. In addition, unusual coins made of other precious metals sometimes appear in treasure hoards. The electrum piece (ep) and the platinum piece (pp) originate from fallen empires and lost kingdoms, and they sometimes arouse suspicion and skepticism when used in transactions. An electrum piece is worth five silver pieces, and a platinum piece is worth ten gold pieces. A standard coin weighs about a third of an ounce, so fifty coins weigh a pound.",
+      "tableRefs": [
+        "table:standard-exchange-rates"
+      ]
     },
     "source": "SRD 5.1 p. 62",
     "license": {
@@ -58670,7 +58679,10 @@
     "key": "rule:getting-into-and-out-of-armor",
     "name": "Getting Into and Out of Armor",
     "data": {
-      "text": "The time it takes to don or doff armor depends on the armor’s category. Don. This is the time it takes to put on armor. You benefit from the armor’s AC only if you take the full time to don the suit of armor. Doff. This is the time it takes to take off armor. If you have help, reduce this time by half."
+      "text": "The time it takes to don or doff armor depends on the armor’s category. Don. This is the time it takes to put on armor. You benefit from the armor’s AC only if you take the full time to don the suit of armor. Doff. This is the time it takes to take off armor. If you have help, reduce this time by half.",
+      "tableRefs": [
+        "table:donning-and-doffing-armor"
+      ]
     },
     "source": "SRD 5.1 p. 64",
     "license": {
@@ -59004,7 +59016,10 @@
     "key": "rule:hit-points",
     "name": "Hit Points",
     "data": {
-      "text": "A monster usually dies or is destroyed when it drops to 0 hit points. For more on hit points, see the Player’s Handbook. A monster’s hit points are presented both as a die expression and as an average number. For example, a monster with 2d8 hit points has 9 hit points on average (2 × 4½). A monster’s size determines the die used to calculate its hit points, as shown in the Hit Dice by Size table.\n\nA monster’s Constitution modifier also affects the number of hit points it has. Its Constitution modifier is multiplied by the number of Hit Dice it possesses, and the result is added to its hit points. For example, if a monster has a Constitution of 12 (+1 modifier) and 2d8 Hit Dice, it has 2d8 + 2 hit points (average 11)."
+      "text": "A monster usually dies or is destroyed when it drops to 0 hit points. For more on hit points, see the Player’s Handbook. A monster’s hit points are presented both as a die expression and as an average number. For example, a monster with 2d8 hit points has 9 hit points on average (2 × 4½). A monster’s size determines the die used to calculate its hit points, as shown in the Hit Dice by Size table.\n\nA monster’s Constitution modifier also affects the number of hit points it has. Its Constitution modifier is multiplied by the number of Hit Dice it possesses, and the result is added to its hit points. For example, if a monster has a Constitution of 12 (+1 modifier) and 2d8 Hit Dice, it has 2d8 + 2 hit points (average 11).",
+      "tableRefs": [
+        "table:hit-dice-by-size"
+      ]
     },
     "source": "SRD 5.1 p. 255",
     "license": {
@@ -59514,7 +59529,11 @@
     "key": "rule:languages",
     "name": "Languages",
     "data": {
-      "text": "Your race indicates the languages your character can speak by default, and your background might give you access to one or more additional languages of your choice. Note these languages on your character sheet. Choose your languages from the Standard Languages table, or choose one that is common in your campaign. With your GM’s permission, you can instead choose a language from the Exotic Languages table or a secret language, such as thieves’ cant or the tongue of druids. Some of these languages are actually families of languages with many dialects. For example, the Primordial language includes the Auran, Aquan, Ignan, and Terran dialects, one for each of the four elemental planes. Creatures that speak different dialects of the same language can communicate with one another."
+      "text": "Your race indicates the languages your character can speak by default, and your background might give you access to one or more additional languages of your choice. Note these languages on your character sheet. Choose your languages from the Standard Languages table, or choose one that is common in your campaign. With your GM’s permission, you can instead choose a language from the Exotic Languages table or a secret language, such as thieves’ cant or the tongue of druids. Some of these languages are actually families of languages with many dialects. For example, the Primordial language includes the Auran, Aquan, Ignan, and Terran dialects, one for each of the four elemental planes. Creatures that speak different dialects of the same language can communicate with one another.",
+      "tableRefs": [
+        "table:exotic-languages",
+        "table:standard-languages"
+      ]
     },
     "source": "SRD 5.1 p. 59",
     "license": {
@@ -62385,7 +62404,10 @@
     "key": "rule:size",
     "name": "Size",
     "data": {
-      "text": "A monster can be Tiny, Small, Medium, Large, Huge, or Gargantuan. The Size Categories table shows how much space a creature of a particular size controls in combat. See the Player’s Handbook for more information on creature size and space."
+      "text": "A monster can be Tiny, Small, Medium, Large, Huge, or Gargantuan. The Size Categories table shows how much space a creature of a particular size controls in combat. See the Player’s Handbook for more information on creature size and space.",
+      "tableRefs": [
+        "table:size-categories"
+      ]
     },
     "source": "SRD 5.1 p. 254",
     "license": {
@@ -62688,7 +62710,10 @@
     "key": "rule:speed",
     "name": "Speed",
     "data": {
-      "text": "Every character and monster has a speed, which is the distance in feet that the character or monster can walk in 1 round. This number assumes short bursts of energetic movement in the midst of a life- threatening situation. The following rules determine how far a character or monster can move in a minute, an hour, or a day.\n\nWhile traveling, a group of adventurers can move at a normal, fast, or slow pace, as shown on the Travel Pace table. The table states how far the party can move in a period of time and whether the pace has any effect. A fast pace makes characters less perceptive, while a slow pace makes it possible to sneak around and to search an area more carefully. Forced March. The Travel Pace table assumes that characters travel for 8 hours in day. They can push on beyond that limit, at the risk of exhaustion. For each additional hour of travel beyond 8 hours, the characters cover the distance shown in the Hour column for their pace, and each character must make a Constitution saving throw at the end of the hour. The DC is 10 + 1 for each hour past 8 hours. On a failed saving throw, a character suffers one level of exhaustion (see appendix PH-A). Mounts and Vehicles. For short spans of time (up to an hour), many animals move much faster than humanoids. A mounted character can ride at a gallop for about an hour, covering twice the usual distance for a fast pace. If fresh mounts are available every 8 to 10 miles, characters can cover larger distances at this pace, but this is very rare except in densely populated areas. Characters in wagons, carriages, or other land vehicles choose a pace as normal. Characters in a waterborne vessel are limited to the speed of the vessel, and they don’t suffer penalties for a fast pace or gain benefits from a slow pace. Depending on the vessel and the size of the crew, ships might be able to travel for up to 24 hours per day. Certain special mounts, such as a pegasus or griffon, or special vehicles, such as a carpet of flying, allow you to travel more swiftly."
+      "text": "Every character and monster has a speed, which is the distance in feet that the character or monster can walk in 1 round. This number assumes short bursts of energetic movement in the midst of a life- threatening situation. The following rules determine how far a character or monster can move in a minute, an hour, or a day.\n\nWhile traveling, a group of adventurers can move at a normal, fast, or slow pace, as shown on the Travel Pace table. The table states how far the party can move in a period of time and whether the pace has any effect. A fast pace makes characters less perceptive, while a slow pace makes it possible to sneak around and to search an area more carefully. Forced March. The Travel Pace table assumes that characters travel for 8 hours in day. They can push on beyond that limit, at the risk of exhaustion. For each additional hour of travel beyond 8 hours, the characters cover the distance shown in the Hour column for their pace, and each character must make a Constitution saving throw at the end of the hour. The DC is 10 + 1 for each hour past 8 hours. On a failed saving throw, a character suffers one level of exhaustion (see appendix PH-A). Mounts and Vehicles. For short spans of time (up to an hour), many animals move much faster than humanoids. A mounted character can ride at a gallop for about an hour, covering twice the usual distance for a fast pace. If fresh mounts are available every 8 to 10 miles, characters can cover larger distances at this pace, but this is very rare except in densely populated areas. Characters in wagons, carriages, or other land vehicles choose a pace as normal. Characters in a waterborne vessel are limited to the speed of the vessel, and they don’t suffer penalties for a fast pace or gain benefits from a slow pace. Depending on the vessel and the size of the crew, ships might be able to travel for up to 24 hours per day. Certain special mounts, such as a pegasus or griffon, or special vehicles, such as a carpet of flying, allow you to travel more swiftly.",
+      "tableRefs": [
+        "table:travel-pace"
+      ]
     },
     "source": "SRD 5.1 p. 84",
     "license": {
@@ -63411,7 +63436,10 @@
     "key": "rule:the-celtic-pantheon",
     "name": "The Celtic Pantheon",
     "data": {
-      "text": "It’s said that something wild lurks in the heart of every soul, a space that thrills to the sound of geese calling at night, to the whispering wind through the pines, to the unexpected red of mistletoe on an oak—and it is in this space that the Celtic gods dwell. They sprang from the brook and stream, their might heightened by the strength of the oak and the beauty of the woodlands and open moor. When the first forester dared put a name to the face seen in the bole of a tree or the voice babbling in a brook, these gods forced themselves into being. The Celtic gods are as often served by druids as by clerics, for they are closely aligned with the forces of nature that druids revere."
+      "text": "It’s said that something wild lurks in the heart of every soul, a space that thrills to the sound of geese calling at night, to the whispering wind through the pines, to the unexpected red of mistletoe on an oak—and it is in this space that the Celtic gods dwell. They sprang from the brook and stream, their might heightened by the strength of the oak and the beauty of the woodlands and open moor. When the first forester dared put a name to the face seen in the bole of a tree or the voice babbling in a brook, these gods forced themselves into being. The Celtic gods are as often served by druids as by clerics, for they are closely aligned with the forces of nature that druids revere.",
+      "tableRefs": [
+        "table:celtic-deities"
+      ]
     },
     "source": "SRD 5.1 p. 360",
     "license": {
@@ -63441,7 +63469,10 @@
     "key": "rule:the-egyptian-pantheon",
     "name": "The Egyptian Pantheon",
     "data": {
-      "text": "These gods are a young dynasty of an ancient divine family, heirs to the rulership of the cosmos and the maintenance of the divine principle of Ma’at—the fundamental order of truth, justice, law, and order that puts gods, mortal pharaohs, and ordinary men and women in their logical and rightful place in the universe. The Egyptian pantheon is unusual in having three gods responsible for death, each with different alignments. Anubis is the lawful neutral god of the afterlife, who judges the souls of the dead. Set is a chaotic evil god of murder, perhaps best known for killing his brother Osiris. And Nephthys is a chaotic good goddess of mourning."
+      "text": "These gods are a young dynasty of an ancient divine family, heirs to the rulership of the cosmos and the maintenance of the divine principle of Ma’at—the fundamental order of truth, justice, law, and order that puts gods, mortal pharaohs, and ordinary men and women in their logical and rightful place in the universe. The Egyptian pantheon is unusual in having three gods responsible for death, each with different alignments. Anubis is the lawful neutral god of the afterlife, who judges the souls of the dead. Set is a chaotic evil god of murder, perhaps best known for killing his brother Osiris. And Nephthys is a chaotic good goddess of mourning.",
+      "tableRefs": [
+        "table:egyptian-deities"
+      ]
     },
     "source": "SRD 5.1 p. 360",
     "license": {
@@ -63531,7 +63562,10 @@
     "key": "rule:the-greek-pantheon",
     "name": "The Greek Pantheon",
     "data": {
-      "text": "The gods of Olympus make themselves known with the gentle lap of waves against the shores and the crash of the thunder among the cloud-enshrouded peaks. The thick boar-infested woods and the sere, olive-covered hillsides hold evidence of their passing. Every aspect of nature echoes with their presence, and they’ve made a place for themselves inside the human heart, too."
+      "text": "The gods of Olympus make themselves known with the gentle lap of waves against the shores and the crash of the thunder among the cloud-enshrouded peaks. The thick boar-infested woods and the sere, olive-covered hillsides hold evidence of their passing. Every aspect of nature echoes with their presence, and they’ve made a place for themselves inside the human heart, too.",
+      "tableRefs": [
+        "table:greek-deities"
+      ]
     },
     "source": "SRD 5.1 p. 360",
     "license": {
@@ -63591,7 +63625,10 @@
     "key": "rule:the-norse-pantheon",
     "name": "The Norse Pantheon",
     "data": {
-      "text": "Where the land plummets from the snowy hills into the icy fjords below, where the longboats draw up on to the beach, where the glaciers flow forward and retreat with every fall and spring—this is the land of the Vikings, the home of the Norse pantheon. It’s a brutal clime, and one that calls for brutal living. The warriors of the land have had to adapt to the harsh conditions in order to survive, but they haven’t been too twisted by the needs of their environment. Given the necessity of raiding for food and wealth, it’s surprising the mortals turned out as well as they did. Their powers reflect the need these warriors had for strong leadership and decisive action. Thus, they see their deities in every bend of a river, hear them in the crash of the thunder and the booming of the glaciers, and smell them in the smoke of a burning longhouse. The Norse pantheon includes two main families, the Aesir (deities of war and destiny) and the Vanir (gods of fertility and prosperity). Once enemies, these two families are now closely allied against their common enemies, the giants (including the gods Surtur and Thrym)."
+      "text": "Where the land plummets from the snowy hills into the icy fjords below, where the longboats draw up on to the beach, where the glaciers flow forward and retreat with every fall and spring—this is the land of the Vikings, the home of the Norse pantheon. It’s a brutal clime, and one that calls for brutal living. The warriors of the land have had to adapt to the harsh conditions in order to survive, but they haven’t been too twisted by the needs of their environment. Given the necessity of raiding for food and wealth, it’s surprising the mortals turned out as well as they did. Their powers reflect the need these warriors had for strong leadership and decisive action. Thus, they see their deities in every bend of a river, hear them in the crash of the thunder and the booming of the glaciers, and smell them in the smoke of a burning longhouse. The Norse pantheon includes two main families, the Aesir (deities of war and destiny) and the Vanir (gods of fertility and prosperity). Once enemies, these two families are now closely allied against their common enemies, the giants (including the gods Surtur and Thrym).",
+      "tableRefs": [
+        "table:norse-deities"
+      ]
     },
     "source": "SRD 5.1 p. 360",
     "license": {
@@ -63894,7 +63931,11 @@
     "key": "rule:trap-effects",
     "name": "Trap Effects",
     "data": {
-      "text": "The effects of traps can range from inconvenient to deadly, making use of elements such as arrows, spikes, blades, poison, toxic gas, blasts of fire, and deep pits. The deadliest traps combine multiple elements to kill, injure, contain, or drive off any creature unfortunate enough to trigger them. A trap’s description specifies what happens when it is triggered. The attack bonus of a trap, the save DC to resist its effects, and the damage it deals can vary depending on the trap’s severity. Use the Trap Save DCs and Attack Bonuses table and the Damage Severity by Level table for suggestions based on three levels of trap severity. A trap intended to be a setback is unlikely to kill or seriously harm characters of the indicated levels, whereas a dangerous trap is likely to seriously injure (and potentially kill) characters of the indicated levels. A deadly trap is likely to kill characters of the indicated levels."
+      "text": "The effects of traps can range from inconvenient to deadly, making use of elements such as arrows, spikes, blades, poison, toxic gas, blasts of fire, and deep pits. The deadliest traps combine multiple elements to kill, injure, contain, or drive off any creature unfortunate enough to trigger them. A trap’s description specifies what happens when it is triggered. The attack bonus of a trap, the save DC to resist its effects, and the damage it deals can vary depending on the trap’s severity. Use the Trap Save DCs and Attack Bonuses table and the Damage Severity by Level table for suggestions based on three levels of trap severity. A trap intended to be a setback is unlikely to kill or seriously harm characters of the indicated levels, whereas a dangerous trap is likely to seriously injure (and potentially kill) characters of the indicated levels. A deadly trap is likely to kill characters of the indicated levels.",
+      "tableRefs": [
+        "table:damage-severity-by-level",
+        "table:trap-save-dcs-and-attack-bonuses"
+      ]
     },
     "source": "SRD 5.1 p. 196",
     "license": {

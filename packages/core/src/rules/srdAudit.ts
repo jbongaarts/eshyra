@@ -49,6 +49,7 @@ export type SrdAuditCategory =
   | 'ancestry-unlinked-table'
   | 'spell-table-link'
   | 'table-owner-link'
+  | 'table-reachability'
   | 'creature-stat-block-prose-bleed'
   | 'missing-coverage';
 
@@ -186,7 +187,35 @@ export const SRD_5_1_TABLE_OWNERS: Readonly<Record<string, string>> =
     // Dragon Ancestor feature that selects from it.
     'table:draconic-bloodline-draconic-ancestry':
       'feature:draconic-bloodline:dragon-ancestor',
+    // eshyra-o9bd.8.3 — remaining section-owned reference tables, each resolved
+    // by SRD page + prose to the single rule whose section prints it.
+    'table:celtic-deities': 'rule:the-celtic-pantheon', // p. 360
+    'table:egyptian-deities': 'rule:the-egyptian-pantheon', // p. 360
+    'table:greek-deities': 'rule:the-greek-pantheon', // p. 360
+    'table:norse-deities': 'rule:the-norse-pantheon', // p. 360
+    'table:standard-languages': 'rule:languages', // p. 59 Languages section
+    'table:exotic-languages': 'rule:languages', // p. 59 Languages section
+    'table:standard-exchange-rates': 'rule:coinage', // p. 62
+    'table:donning-and-doffing-armor': 'rule:getting-into-and-out-of-armor', // p. 64
+    'table:difficulty-classes': 'rule:ability-checks', // p. 77 Typical DCs
+    'table:travel-pace': 'rule:speed', // p. 84, names "the Travel Pace table"
+    'table:damage-severity-by-level': 'rule:trap-effects', // p. 196
+    'table:trap-save-dcs-and-attack-bonuses': 'rule:trap-effects', // p. 196
+    'table:hit-dice-by-size': 'rule:hit-points', // p. 255, names "Hit Dice by Size"
+    'table:size-categories': 'rule:size', // p. 254, names "the Size Categories table"
+    'table:experience-points-by-challenge-rating':
+      'rule:challenge-experience-points', // p. 258
   });
+
+// Tables that are deliberately ownerless: cross-cutting reference tables
+// consulted directly from multiple rules rather than belonging to one entry, so
+// the `table-reachability` completeness gate (eshyra-o9bd.8.3) does not require
+// an owner link. Keep this list minimal and justified.
+export const SRD_5_1_STANDALONE_TABLES: ReadonlySet<string> = new Set([
+  // CR -> proficiency bonus monster-statistics reference (p. 256). Consulted by
+  // both rule:monsters-saving-throws and rule:monsters-skills; no single owner.
+  'table:proficiency-bonus-by-challenge-rating',
+]);
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -657,6 +686,60 @@ function checkTableOwnerLinks(pack: RulesPack): SrdAuditFinding[] {
   return findings;
 }
 
+// Every emitted `table` record must be reachable: referenced by some record's
+// link field (`tableRefs` / `spellTableRefs` / `progressionTableRef`, including
+// ancestry-trait links) or explicitly allow-listed as a deliberately ownerless
+// reference table (`SRD_5_1_STANDALONE_TABLES`). A new orphan table — emitted
+// but unreachable and unclassified — is the failure this gate exists to catch
+// (eshyra-o9bd.8). The gate only inspects tables actually present, so reduced
+// fixtures and partial packs are unaffected; the committed-pack test separately
+// asserts every allow-list entry is still an emitted table so it cannot rot.
+function checkTableReachability(pack: RulesPack): SrdAuditFinding[] {
+  const findings: SrdAuditFinding[] = [];
+  const referenced = new Set<string>();
+  for (const record of pack.records) {
+    const data = dataObject(record);
+    if (data === null) continue;
+    for (const ref of tableRefsOf(record)) referenced.add(ref);
+    if (Array.isArray(data.spellTableRefs)) {
+      for (const ref of data.spellTableRefs) {
+        if (typeof ref === 'string') referenced.add(ref);
+      }
+    }
+    if (typeof data.progressionTableRef === 'string') {
+      referenced.add(data.progressionTableRef);
+    }
+    if (Array.isArray(data.traits)) {
+      for (const trait of data.traits) {
+        const traitRefs =
+          trait !== null &&
+          typeof trait === 'object' &&
+          Array.isArray((trait as { tableRefs?: unknown }).tableRefs)
+            ? (trait as { tableRefs: unknown[] }).tableRefs
+            : [];
+        for (const ref of traitRefs) {
+          if (typeof ref === 'string') referenced.add(ref);
+        }
+      }
+    }
+  }
+
+  for (const record of pack.records) {
+    if (record.kind !== 'table') continue;
+    if (referenced.has(record.key) || SRD_5_1_STANDALONE_TABLES.has(record.key))
+      continue;
+    findings.push({
+      category: 'table-reachability',
+      key: record.key,
+      kind: 'table',
+      name: record.name,
+      detail: `table ${record.key} is not reachable from any owner and is not in the deliberately-standalone allow-list`,
+    });
+  }
+
+  return findings;
+}
+
 // ---------------------------------------------------------------------------
 // Structure audit entry point
 // ---------------------------------------------------------------------------
@@ -784,6 +867,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
   }
   findings.push(...checkSpellTableLinks(pack));
   findings.push(...checkTableOwnerLinks(pack));
+  findings.push(...checkTableReachability(pack));
   return sortFindings(findings);
 }
 
