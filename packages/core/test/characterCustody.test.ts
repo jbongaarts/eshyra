@@ -398,6 +398,75 @@ describe('character custody lifecycle', () => {
     });
   });
 
+  it('reserves generated release chronicle ids before sync-back when custom ids occupy the sequence', () => {
+    const { db: registryDb, registry: localRegistry } = freshRegistry();
+    const chronicle = createCharacterChronicleStore(
+      registryDb,
+      () => '2026-06-27T00:00:00.000Z',
+    );
+    registerNewCharacter(localRegistry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    chronicle.appendRecord({
+      id: 'chronicle-2',
+      globalCharacterId: 'mira',
+      category: 'relationship',
+      text: 'Mira remembers an older custom-id memory.',
+      source: {
+        campaignId: 'camp-old',
+        sessionId: 'session-old',
+        at: '2026-06-26T00:00:00.000Z',
+      },
+      portability: 'portable',
+      visibility: 'player-visible',
+      truthStatus: 'remembered',
+      relatedRefs: [],
+    });
+    checkoutCharacterIntoCampaign(localRegistry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    const campaignSheets = createSqliteCharacterSheetStore(campaign);
+    const played = campaignSheets.load('pc-1') as CharacterSheet;
+    campaignSheets.save('pc-1', { ...played, level: 2 });
+
+    const released = releaseCharacterFromCampaign(localRegistry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      chronicleStore: chronicle,
+      chronicleRecords: [
+        {
+          category: 'vow',
+          text: 'Mira vowed to return the lantern.',
+          source: {
+            sessionId: 'session-1',
+            at: '2026-06-27T00:00:00.000Z',
+          },
+          portability: 'portable',
+          visibility: 'player-visible',
+          truthStatus: 'remembered',
+          relatedRefs: [],
+        },
+      ],
+    });
+
+    expect(released).toEqual({
+      globalCharacterId: 'mira',
+      revision: 2,
+      committed: true,
+    });
+    expect(chronicle.listRecords('mira').map((record) => record.id)).toEqual([
+      'chronicle-2',
+      'chronicle-3',
+    ]);
+    expect(localRegistry.custody('mira')).toBeUndefined();
+    expect(localRegistry.headRevision('mira')).toBe(2);
+  });
+
   it('does not append a revision when the campaign sheet is unchanged', () => {
     registerNewCharacter(registry, {
       globalCharacterId: 'mira',

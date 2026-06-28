@@ -143,7 +143,7 @@ interface ChronicleEventRow {
 }
 
 interface ValidatedChronicleInput {
-  readonly id?: string;
+  readonly id: string;
   readonly globalCharacterId: string;
   readonly category: CharacterChronicleCategory;
   readonly text: string;
@@ -257,7 +257,10 @@ export function createCharacterChronicleStore(
   db: Db,
   now: () => string = () => new Date().toISOString(),
 ): CharacterChronicleStore {
-  function nextRecordId(globalCharacterId: string): string {
+  function nextAvailableRecordId(
+    globalCharacterId: string,
+    reserved: (candidate: string) => boolean,
+  ): string {
     const row = db
       .prepare(
         `SELECT COUNT(*) AS count
@@ -265,7 +268,17 @@ export function createCharacterChronicleStore(
           WHERE global_character_id = ?`,
       )
       .get(globalCharacterId) as { count: number };
-    return `chronicle-${row.count + 1}`;
+    let next = row.count + 1;
+    while (true) {
+      const candidate = `chronicle-${next}`;
+      if (
+        !reserved(candidate) &&
+        getRecord(globalCharacterId, candidate) === undefined
+      ) {
+        return candidate;
+      }
+      next += 1;
+    }
   }
 
   function nextEventId(globalCharacterId: string): string {
@@ -375,7 +388,7 @@ export function createCharacterChronicleStore(
 
   function validateAppendInput(
     input: CreateCharacterChronicleRecordInput,
-  ): ValidatedChronicleInput {
+  ): Omit<ValidatedChronicleInput, 'id'> & { readonly id?: string } {
     const globalCharacterId = requireNonEmpty(
       'globalCharacterId',
       input.globalCharacterId,
@@ -406,31 +419,32 @@ export function createCharacterChronicleStore(
     inputs: readonly CreateCharacterChronicleRecordInput[],
   ): readonly ValidatedChronicleInput[] {
     const validated = inputs.map(validateAppendInput);
-    const seenCustomIds = new Set<string>();
-    for (const input of validated) {
-      if (input.id === undefined) {
-        continue;
-      }
-      const key = `${input.globalCharacterId}\0${input.id}`;
-      if (seenCustomIds.has(key)) {
+    const seenIds = new Set<string>();
+    return validated.map((input) => {
+      const id =
+        input.id ??
+        nextAvailableRecordId(input.globalCharacterId, (candidate) =>
+          seenIds.has(`${input.globalCharacterId}\0${candidate}`),
+        );
+      const idKey = `${input.globalCharacterId}\0${id}`;
+      if (seenIds.has(idKey)) {
         throw new CharacterChronicleStoreError(
-          `character chronicle record '${input.id}' is duplicated for '${input.globalCharacterId}'`,
+          `character chronicle record '${id}' is duplicated for '${input.globalCharacterId}'`,
         );
       }
-      seenCustomIds.add(key);
-      if (getRecord(input.globalCharacterId, input.id) !== undefined) {
+      seenIds.add(idKey);
+      if (getRecord(input.globalCharacterId, id) !== undefined) {
         throw new CharacterChronicleStoreError(
-          `character chronicle record '${input.id}' already exists for '${input.globalCharacterId}'`,
+          `character chronicle record '${id}' already exists for '${input.globalCharacterId}'`,
         );
       }
-    }
-    return validated;
+      return { ...input, id };
+    });
   }
 
   function insertRecord(
     input: ValidatedChronicleInput,
   ): CharacterChronicleRecord {
-    const id = input.id ?? nextRecordId(input.globalCharacterId);
     const at = now();
     db.prepare(
       `INSERT INTO character_chronicle_record(
@@ -440,7 +454,7 @@ export function createCharacterChronicleStore(
        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       input.globalCharacterId,
-      id,
+      input.id,
       input.category,
       input.text,
       sourceColumn.encode(input.source),
@@ -453,7 +467,7 @@ export function createCharacterChronicleStore(
     );
     insertEvent(
       input.globalCharacterId,
-      id,
+      input.id,
       'create',
       {
         category: input.category,
@@ -475,7 +489,7 @@ export function createCharacterChronicleStore(
              FROM character_chronicle_record
             WHERE global_character_id = ? AND record_id = ?`,
         )
-        .get(input.globalCharacterId, id) as ChronicleRow,
+        .get(input.globalCharacterId, input.id) as ChronicleRow,
     );
   }
 
