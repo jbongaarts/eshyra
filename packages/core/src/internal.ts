@@ -129,6 +129,24 @@ export {
   type AttachCharacterSheetInput,
   attachCharacterSheetToCampaign,
 } from './character/attachCharacter.js';
+export type {
+  CharacterChronicleCategory,
+  CharacterChronicleEventKind,
+  CharacterChronicleEventRecord,
+  CharacterChroniclePortability,
+  CharacterChronicleRecord,
+  CharacterChronicleRelatedRef,
+  CharacterChronicleSource,
+  CharacterChronicleStore,
+  CharacterChronicleTruthStatus,
+  CharacterChronicleVisibility,
+  CreateCharacterChronicleRecordInput,
+  UpdateCharacterChronicleRecordInput,
+} from './character/characterChronicle.js';
+export {
+  CharacterChronicleStoreError,
+  createCharacterChronicleStore,
+} from './character/characterChronicle.js';
 // Cross-campaign character custody lifecycle (ADR 0012, eshyra-lupf.14.3).
 export {
   acquireCustodyOnResume,

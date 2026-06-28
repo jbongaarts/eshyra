@@ -63,16 +63,16 @@ Each chronicle record should carry:
   source when campaign-local.
 - `createdAt` / `updatedAt`.
 
-The first storage implementation should be append/update friendly, likely two
+The first storage implementation is append/update friendly and uses two
 registry DB tables:
 
 - `character_chronicle_record`: current record text and curation flags.
-- `character_chronicle_event`: append-only audit of creation/curation changes,
-  if needed for reviewability.
+- `character_chronicle_event`: append-only audit of creation/curation changes.
 
-The exact table split is left to `eshyra-lupf.16.2`; the required invariant is
-that chronicle data lives in the registry DB, not campaign DBs, and references
-campaign data through provenance rather than copying campaign canon.
+`createCharacterChronicleStore` exposes the registry-backed append/list/get/update
+API. The required invariant is that chronicle data lives in the registry DB, not
+campaign DBs, and references campaign data through provenance rather than copying
+campaign canon.
 
 ## Context Semantics
 
