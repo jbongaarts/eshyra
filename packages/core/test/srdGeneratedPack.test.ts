@@ -45,6 +45,7 @@ import {
   auditPack,
   auditSrdStructure,
   loadRulesPackFromDirectory,
+  SRD_5_1_STANDALONE_TABLES,
   validateRulesPack,
 } from '../src/internal.js';
 
@@ -685,10 +686,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-o9bd.8.2 adds ten more rule owners (multiclassing prerequisites/
   // proficiencies/spellcasting, experience-points, objects, madness-effects,
   // and four sentient-magic-item rules): 329 -> 319.
+  // eshyra-o9bd.8.3 adds thirteen more section-owning rules (four pantheons,
+  // languages, coinage, getting-into-and-out-of-armor, ability-checks, speed,
+  // trap-effects, hit-points, size, challenge-experience-points): 319 -> 306.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 319,
+    missingCount: 306,
     totalInKind: 335,
   },
   {
@@ -3270,6 +3274,67 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:acolyte-ideals',
         'table:acolyte-personality-traits',
       ]);
+    });
+
+    it('links the remaining section-owned reference tables (eshyra-o9bd.8.3)', () => {
+      const owner = (key: string) => {
+        const record = pack.records.find((candidate) => candidate.key === key);
+        expect(record, `expected ${key} in the committed pack`).toBeDefined();
+        return (record?.data as { tableRefs?: string[] }).tableRefs;
+      };
+      // Each pantheon rule owns its deity table.
+      expect(owner('rule:the-celtic-pantheon')).toEqual([
+        'table:celtic-deities',
+      ]);
+      expect(owner('rule:the-norse-pantheon')).toEqual(['table:norse-deities']);
+      // The Languages section owns both language tables (sorted).
+      expect(owner('rule:languages')).toEqual([
+        'table:exotic-languages',
+        'table:standard-languages',
+      ]);
+      expect(owner('rule:coinage')).toEqual(['table:standard-exchange-rates']);
+      expect(owner('rule:speed')).toEqual(['table:travel-pace']);
+      expect(owner('rule:size')).toEqual(['table:size-categories']);
+      // Trap effects owns both trap reference tables.
+      expect(owner('rule:trap-effects')).toEqual([
+        'table:damage-severity-by-level',
+        'table:trap-save-dcs-and-attack-bonuses',
+      ]);
+    });
+
+    it('classifies every table as owned or deliberately standalone (eshyra-o9bd.8.3)', () => {
+      // Completeness gate: no emitted table is unreachable and unclassified.
+      expect(
+        auditSrdStructure(pack).filter(
+          (finding) => finding.category === 'table-reachability',
+        ),
+      ).toEqual([]);
+      // The single deliberately-ownerless reference table is the CR ->
+      // proficiency-bonus monster-stat table, which has no link.
+      const pb = pack.records.find(
+        (record) =>
+          record.key === 'table:proficiency-bonus-by-challenge-rating',
+      );
+      expect(pb).toBeDefined();
+      const referrers = pack.records.filter((record) => {
+        const refs = (record.data as { tableRefs?: string[] }).tableRefs;
+        return (
+          Array.isArray(refs) &&
+          refs.includes('table:proficiency-bonus-by-challenge-rating')
+        );
+      });
+      expect(referrers).toEqual([]);
+      // The standalone allow-list cannot rot: every entry is an emitted table.
+      const tableKeys = new Set(
+        pack.records
+          .filter((record) => record.kind === 'table')
+          .map((record) => record.key),
+      );
+      for (const standalone of SRD_5_1_STANDALONE_TABLES) {
+        expect(tableKeys.has(standalone), `${standalone} must be emitted`).toBe(
+          true,
+        );
+      }
     });
 
     it('contains exactly the reviewed table key set', () => {
