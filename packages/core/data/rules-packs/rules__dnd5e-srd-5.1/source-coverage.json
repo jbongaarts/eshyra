@@ -2275,7 +2275,7 @@
       "structure": "heading",
       "text": "Preparing and Casting Spells",
       "section": "Cleric",
-      "status": "child-of:feature:cleric:cantrips"
+      "status": "child-of:feature:cleric:spellcasting"
     },
     {
       "page": 16,
@@ -2293,7 +2293,7 @@
       "structure": "heading",
       "text": "Ritual Casting",
       "section": "Cleric",
-      "status": "child-of:feature:cleric:cantrips"
+      "status": "child-of:feature:cleric:spellcasting"
     },
     {
       "page": 16,
@@ -2302,7 +2302,7 @@
       "structure": "heading",
       "text": "Spellcasting Focus",
       "section": "Cleric",
-      "status": "child-of:feature:cleric:cantrips"
+      "status": "child-of:feature:cleric:spellcasting"
     },
     {
       "page": 16,
@@ -2545,7 +2545,7 @@
       "structure": "heading",
       "text": "Preparing and Casting Spells",
       "section": "Druid",
-      "status": "child-of:feature:druid:cantrips"
+      "status": "child-of:feature:druid:spellcasting"
     },
     {
       "page": 20,
@@ -2563,7 +2563,7 @@
       "structure": "heading",
       "text": "Ritual Casting",
       "section": "Druid",
-      "status": "child-of:feature:druid:cantrips"
+      "status": "child-of:feature:druid:spellcasting"
     },
     {
       "page": 20,
@@ -2572,7 +2572,7 @@
       "structure": "heading",
       "text": "Spellcasting Focus",
       "section": "Druid",
-      "status": "child-of:feature:druid:cantrips"
+      "status": "child-of:feature:druid:spellcasting"
     },
     {
       "page": 20,
@@ -4309,7 +4309,7 @@
       "structure": "heading",
       "text": "Spells Known of 1st Level and Higher",
       "section": "Sorcerer",
-      "status": "child-of:feature:sorcerer:cantrips"
+      "status": "child-of:feature:sorcerer:spellcasting"
     },
     {
       "page": 43,
@@ -4327,7 +4327,7 @@
       "structure": "heading",
       "text": "Spellcasting Focus",
       "section": "Sorcerer",
-      "status": "child-of:feature:sorcerer:cantrips"
+      "status": "child-of:feature:sorcerer:spellcasting"
     },
     {
       "page": 43,
@@ -5218,7 +5218,7 @@
       "structure": "heading",
       "text": "Preparing and Casting Spells",
       "section": "Wizard",
-      "status": "child-of:feature:wizard:spellbook"
+      "status": "child-of:feature:wizard:spellcasting"
     },
     {
       "page": 53,
@@ -5236,7 +5236,7 @@
       "structure": "heading",
       "text": "Ritual Casting",
       "section": "Wizard",
-      "status": "child-of:feature:wizard:spellbook"
+      "status": "child-of:feature:wizard:spellcasting"
     },
     {
       "page": 53,
@@ -5245,7 +5245,7 @@
       "structure": "heading",
       "text": "Spellcasting Focus",
       "section": "Wizard",
-      "status": "child-of:feature:wizard:spellbook"
+      "status": "child-of:feature:wizard:spellcasting"
     },
     {
       "page": 53,
@@ -5254,7 +5254,7 @@
       "structure": "heading",
       "text": "Learning Spells of 1st Level and Higher",
       "section": "Wizard",
-      "status": "child-of:feature:wizard:spellbook"
+      "status": "child-of:feature:wizard:spellcasting"
     },
     {
       "page": 53,

@@ -258,6 +258,23 @@ function swallowedHeadings(description: string): string[] {
   return headings;
 }
 
+const ALLOWED_SPELLCASTING_SUBSECTION_HEADINGS: ReadonlyMap<
+  string,
+  ReadonlySet<string>
+> = new Map([
+  ['feature:cleric:spellcasting', new Set(['Cantrips'])],
+  ['feature:druid:spellcasting', new Set(['Cantrips'])],
+  ['feature:sorcerer:spellcasting', new Set(['Cantrips'])],
+  ['feature:wizard:spellcasting', new Set(['Cantrips', 'Spellbook'])],
+]);
+
+function allowedSwallowedHeading(recordKey: string, heading: string): boolean {
+  return (
+    ALLOWED_SPELLCASTING_SUBSECTION_HEADINGS.get(recordKey)?.has(heading) ===
+    true
+  );
+}
+
 function countLeadIns(description: string): number {
   return [...description.matchAll(GRANT_LEAD_IN)].length;
 }
@@ -269,7 +286,9 @@ function checkSwallowedFeatures(record: RulesRecord): SrdAuditFinding[] {
   const description = asString(data.description);
   if (description === null) return [];
 
-  const headings = swallowedHeadings(description);
+  const headings = swallowedHeadings(description).filter(
+    (heading) => !allowedSwallowedHeading(record.key, heading),
+  );
   const leadIns = countLeadIns(description);
 
   // A subclass blurb should describe the archetype and grant nothing inline, so

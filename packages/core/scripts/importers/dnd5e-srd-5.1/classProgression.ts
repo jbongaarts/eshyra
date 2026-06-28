@@ -506,6 +506,121 @@ function withData(
   return { ...record, data: { ...asObj(record.data), ...extra } };
 }
 
+function descriptionOf(record: RulesRecord): string {
+  return String(asObj(record.data).description ?? '');
+}
+
+function prefixBeforeMarker(
+  key: string,
+  description: string,
+  marker: string,
+): string {
+  const idx = description.indexOf(marker);
+  if (idx < 0) {
+    throw new Error(
+      `Expected ${key} description to contain "${marker}" while canonicalizing spellcasting feature prose.`,
+    );
+  }
+  return description.slice(0, idx).trim();
+}
+
+function appendLabeledSection(
+  description: string,
+  label: string,
+  section: string,
+): string {
+  return `${description.trim()} ${label} ${section.trim()}`.trim();
+}
+
+interface SpellcastingSectionMove {
+  readonly ownerKey: string;
+  readonly sectionKey: string;
+  readonly sectionLabel: string;
+  readonly trimSectionAt?: string;
+}
+
+const SPELLCASTING_SECTION_MOVES: readonly SpellcastingSectionMove[] = [
+  {
+    ownerKey: 'feature:cleric:spellcasting',
+    sectionKey: 'feature:cleric:cantrips',
+    sectionLabel: 'Cantrips',
+    trimSectionAt: 'Preparing and Casting Spells',
+  },
+  {
+    ownerKey: 'feature:druid:spellcasting',
+    sectionKey: 'feature:druid:cantrips',
+    sectionLabel: 'Cantrips',
+    trimSectionAt: 'Preparing and Casting Spells',
+  },
+  {
+    ownerKey: 'feature:sorcerer:spellcasting',
+    sectionKey: 'feature:sorcerer:cantrips',
+    sectionLabel: 'Cantrips',
+    trimSectionAt: 'Spell Slots',
+  },
+  {
+    ownerKey: 'feature:wizard:spellcasting',
+    sectionKey: 'feature:wizard:cantrips',
+    sectionLabel: 'Cantrips',
+  },
+  {
+    ownerKey: 'feature:wizard:spellcasting',
+    sectionKey: 'feature:wizard:spellbook',
+    sectionLabel: 'Spellbook',
+    trimSectionAt: 'Preparing and Casting Spells',
+  },
+];
+
+/**
+ * Canonicalize class spellcasting prose ownership (eshyra-o9bd.4). The feature
+ * parser emits first-level spellcasting subsections as separate feature records
+ * when a class table grants "Cantrips" or "Spellbook" separately. For a
+ * playable model, `feature:<class>:spellcasting` is the canonical owner of the
+ * complete spellcasting mechanics; subordinate records keep only their own
+ * subsection text.
+ */
+function canonicalizeSpellcastingFeatureDescriptions(
+  featureRecords: readonly RulesRecord[],
+): RulesRecord[] {
+  const byKey = new Map(featureRecords.map((record) => [record.key, record]));
+  const extraByKey = new Map<string, Record<string, unknown>>();
+
+  for (const move of SPELLCASTING_SECTION_MOVES) {
+    const owner = byKey.get(move.ownerKey);
+    const section = byKey.get(move.sectionKey);
+    if (owner === undefined || section === undefined) {
+      continue;
+    }
+
+    const sectionDescription = descriptionOf(section);
+    const ownerDescription = String(
+      extraByKey.get(move.ownerKey)?.description ?? descriptionOf(owner),
+    );
+    extraByKey.set(move.ownerKey, {
+      description: appendLabeledSection(
+        ownerDescription,
+        move.sectionLabel,
+        sectionDescription,
+      ),
+    });
+
+    if (move.trimSectionAt !== undefined) {
+      extraByKey.set(move.sectionKey, {
+        description: prefixBeforeMarker(
+          move.sectionKey,
+          sectionDescription,
+          move.trimSectionAt,
+        ),
+      });
+    }
+  }
+
+  return featureRecords.map((record) => {
+    const extra = extraByKey.get(record.key);
+    return extra === undefined ? record : withData(record, extra);
+  });
+}
+
 const SNEAK_ATTACK_KEY = 'feature:rogue:sneak-attack';
 const THIEVES_CANT_KEY = 'feature:rogue:thieves-cant';
 const THIEVES_CANT_NAME = 'Thieves’ Cant';
@@ -586,7 +701,9 @@ export function enrichClassChapterRecords(input: {
   // Split Rogue's Thieves' Cant into its own feature first, so the expanded
   // feature list flows through name-indexing, the rogue class's data.features,
   // and the FEATURE_TABLE_REFS pass below.
-  const baseFeatureRecords = splitRogueThievesCant(input.featureRecords);
+  const baseFeatureRecords = canonicalizeSpellcastingFeatureDescriptions(
+    splitRogueThievesCant(input.featureRecords),
+  );
 
   // Per-class: feature keys (data.features) and a normalized-name -> key map for
   // progression ref resolution. Subclass features are grouped separately so the
