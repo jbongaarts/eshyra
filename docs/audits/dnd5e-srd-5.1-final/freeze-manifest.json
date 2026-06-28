@@ -1,6 +1,9 @@
 {
   "artifactName": "D&D 5e SRD 5.1 frozen audited artifact",
-  "status": "frozen",
+  "status": "thawed-reaudit",
+  "statusNote": "Reopened 2026-06-28 under the complete-accurate-playable re-audit (epic eshyra-o9bd). The freeze guard remains fully active: the hash pins below are unchanged and every protected-path change still requires its own dated thaw note. See thaw-notes/2026-06-28-reaudit-playable-bar-thaw.md. Re-freeze (status back to frozen with refreshed hashes) is eshyra-o9bd.14.",
+  "reauditEpic": "eshyra-o9bd",
+  "thawNote": "docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-06-28-reaudit-playable-bar-thaw.md",
   "auditedCommit": "0f5b3dcce1de96630e01532d138b1286c948b668",
   "createdBy": "eshyra-ixcd",
   "hashAlgorithm": "sha256",
