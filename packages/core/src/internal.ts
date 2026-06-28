@@ -233,6 +233,12 @@ export type {
   FinalizeMetadata,
 } from './character/finalizeCharacter.js';
 export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
+export type {
+  GuidedLevelUpInput,
+  GuidedLevelUpOutcome,
+  GuidedLevelUpResult,
+} from './character/guidedLevelUpFlow.js';
+export { runGuidedLevelUp } from './character/guidedLevelUpFlow.js';
 // Deterministic level-up application engine (eshyra-lupf.8).
 export type {
   ApplyLevelUpInput,
@@ -245,6 +251,8 @@ export type {
   LevelUpRequiredChoice,
   LevelUpRequiredChoiceKind,
   LevelUpRequiredChoiceStatus,
+  PreviewLevelUpInput,
+  PreviewLevelUpResult,
 } from './character/levelUpEngine.js';
 export {
   applyLevelUp,
@@ -252,6 +260,7 @@ export {
   detectLevelUpRequiredChoices,
   LevelUpEngineError,
   LevelUpRequiredChoicesError,
+  previewLevelUpChangeSet,
 } from './character/levelUpEngine.js';
 export type {
   CreatedPathfinderCharacter,
