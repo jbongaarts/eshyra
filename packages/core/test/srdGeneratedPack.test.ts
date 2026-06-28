@@ -650,6 +650,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 238,
     totalInKind: 240,
   },
+  // eshyra-o9bd.8.1: 29 magic items own a variant/effect table and now link it
+  // via tableRefs (Cube of Force and Bag of Tricks own multiple tables, so 29
+  // owners cover 31 table records). The other 211 items own no table.
+  {
+    kind: 'magic-item',
+    field: 'tableRefs',
+    missingCount: 211,
+    totalInKind: 240,
+  },
   {
     kind: 'magic-item',
     field: 'variants',
@@ -669,10 +678,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-lo1o adds the Spellcasting chapter intro without tableRefs:
   // 328 -> 329. The source-region-ledger follow-up adds six more prose rules:
   // 329 -> 335.
+  // eshyra-o9bd.8.1: five economy/reference rules now own their 1:1 table
+  // (ability-scores-and-modifiers, food-drink-and-lodging, lifestyle-expenses,
+  // services, trade-goods), joining rule:half-dragon-template: 334 -> 329.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 334,
+    missingCount: 329,
     totalInKind: 335,
   },
   {
@@ -3174,6 +3186,35 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(record, `expected ${key} in the committed pack`).toBeDefined();
       return record;
     }
+
+    it('links owned tables to their owner via tableRefs (eshyra-o9bd.8.1)', () => {
+      const owner = (key: string) => {
+        const record = pack.records.find((candidate) => candidate.key === key);
+        expect(record, `expected ${key} in the committed pack`).toBeDefined();
+        return (record?.data as { tableRefs?: string[] }).tableRefs;
+      };
+      // Single-table magic item and a 1:1 economy rule.
+      expect(owner('magic-item:wand-of-wonder')).toEqual([
+        'table:wand-of-wonder',
+      ]);
+      expect(owner('rule:trade-goods')).toEqual(['table:trade-goods']);
+      // Multi-table owners carry a sorted, complete ref list.
+      expect(owner('magic-item:cube-of-force')).toEqual([
+        'table:cube-of-force-charges-lost',
+        'table:cube-of-force-faces',
+      ]);
+      expect(owner('magic-item:bag-of-tricks')).toEqual([
+        'table:gray-bag-of-tricks',
+        'table:rust-bag-of-tricks',
+        'table:tan-bag-of-tricks',
+      ]);
+      // The structure audit's table-owner-link gate is clean for this pack.
+      expect(
+        auditSrdStructure(pack).filter(
+          (finding) => finding.category === 'table-owner-link',
+        ),
+      ).toEqual([]);
+    });
 
     it('contains exactly the reviewed table key set', () => {
       expect(tables.map((record) => record.key).sort()).toEqual([
