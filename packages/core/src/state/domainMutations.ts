@@ -1,6 +1,7 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import { resolveCampaignAdvancementPolicy } from './advancementPolicy.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import {
   MutateStateError,
@@ -9,6 +10,12 @@ import {
   mutateState,
   mutateStateBatch,
 } from './mutateState.js';
+import {
+  getProgressionState,
+  ProgressionError,
+  type ProgressionEventRecord,
+  recordProgressionEvent,
+} from './progression.js';
 
 export interface DomainMutationContext {
   provenance: string;
@@ -324,6 +331,159 @@ export function setWorldFact(
     op: 'set',
     value,
     ...ctx,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Progression awards (eshyra-lupf.6)
+// ---------------------------------------------------------------------------
+//
+// Higher-level, policy-aware wrappers that record an advancement award as one
+// atomic, auditable mutation: they update durable state (XP) and append the
+// matching `progression_event` ledger row in a single transaction, consulting
+// the campaign advancement policy so the two modes can't be mixed.
+//
+// Awards never change the character's *level*: crossing a threshold only makes
+// the character eligible (eshyra-lupf.7), and applying the level-up is a
+// separate deterministic step (eshyra-lupf.8). So every award row records the
+// current level as its `resultingLevel`.
+
+/** Result of an {@link awardXp} mutation. */
+export interface AwardXpResult {
+  readonly previousXp: number;
+  readonly newXp: number;
+  /** Character level after the award — unchanged; awards never level up. */
+  readonly level: number;
+  readonly event: ProgressionEventRecord;
+}
+
+/** Result of a {@link grantMilestone} mutation. */
+export interface GrantMilestoneResult {
+  /** Character level after the grant — unchanged; grants never level up. */
+  readonly level: number;
+  readonly event: ProgressionEventRecord;
+}
+
+/**
+ * Award experience points to a character. Valid only in XP mode: the campaign
+ * advancement policy is consulted and this **fails closed** under a
+ * milestone-mode (or otherwise non-XP) policy rather than silently writing an
+ * XP total that mode never consults.
+ *
+ * The new XP total is written through the validated `current_xp` mutateState
+ * seam and an `xp-award` ledger row is appended in the same transaction, so the
+ * persisted total and its audit row can never diverge.
+ *
+ * @param amount  XP to add; must be a positive integer.
+ * @param source  Who/what caused the award (encounter, quest, DM ruling, …).
+ * @throws {MutateStateError} if `amount` is not a positive integer.
+ * @throws {ProgressionError} if the campaign is not in XP mode.
+ */
+export function awardXp(
+  db: Db,
+  amount: number,
+  source: string,
+  ctx: DomainMutationContext,
+): AwardXpResult {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new MutateStateError('award_xp amount must be a positive integer');
+  }
+
+  return withTransaction(db, (txnDb) => {
+    const policy = resolveCampaignAdvancementPolicy(txnDb);
+    if (policy.mode !== 'xp') {
+      throw new ProgressionError(
+        `cannot award XP under '${policy.mode}' advancement mode; ` +
+          'use grantMilestone for milestone-mode campaigns',
+      );
+    }
+
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const before = getProgressionState(txnDb, charId);
+    const newXp = before.currentXp + amount;
+
+    mutateState(txnDb, {
+      target: 'character',
+      id: charId,
+      field: 'current_xp',
+      op: 'set',
+      value: newXp,
+      ...ctx,
+    });
+
+    const event = recordProgressionEvent(txnDb, {
+      characterId: charId,
+      kind: 'xp-award',
+      amount,
+      source,
+      resultingXp: newXp,
+      resultingLevel: before.level,
+      occurredAt: ctx.at,
+      provenance: ctx.provenance,
+      sessionId: ctx.sessionId,
+    });
+
+    return {
+      previousXp: before.currentXp,
+      newXp,
+      level: before.level,
+      event,
+    };
+  });
+}
+
+/**
+ * Grant a milestone to a character. Valid only in milestone mode: the campaign
+ * advancement policy is consulted and this **fails closed** under an XP-mode
+ * policy rather than recording a milestone the campaign never consults.
+ *
+ * A milestone has no XP total; the grant is recorded purely as an append-only
+ * `milestone-award` ledger row (the ledger is the milestone's durable state).
+ * Eligibility from an outstanding milestone is computed downstream
+ * (eshyra-lupf.7).
+ *
+ * @param milestoneLabel  Human-readable description of the milestone.
+ * @param source          Who/what granted it (DM ruling, quest, …).
+ * @throws {MutateStateError} if `milestoneLabel` is empty.
+ * @throws {ProgressionError} if the campaign is not in milestone mode.
+ */
+export function grantMilestone(
+  db: Db,
+  milestoneLabel: string,
+  source: string,
+  ctx: DomainMutationContext,
+): GrantMilestoneResult {
+  if (
+    typeof milestoneLabel !== 'string' ||
+    milestoneLabel.trim().length === 0
+  ) {
+    throw new MutateStateError('milestone label must be a non-empty string');
+  }
+
+  return withTransaction(db, (txnDb) => {
+    const policy = resolveCampaignAdvancementPolicy(txnDb);
+    if (policy.mode !== 'milestone') {
+      throw new ProgressionError(
+        `cannot grant a milestone under '${policy.mode}' advancement mode; ` +
+          'use awardXp for XP-mode campaigns',
+      );
+    }
+
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const before = getProgressionState(txnDb, charId);
+
+    const event = recordProgressionEvent(txnDb, {
+      characterId: charId,
+      kind: 'milestone-award',
+      milestoneLabel,
+      source,
+      resultingLevel: before.level,
+      occurredAt: ctx.at,
+      provenance: ctx.provenance,
+      sessionId: ctx.sessionId,
+    });
+
+    return { level: before.level, event };
   });
 }
 
