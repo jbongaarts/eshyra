@@ -43,6 +43,7 @@ import type {
   CharacterChronicleStore,
   CharacterChronicleTruthStatus,
   CharacterChronicleVisibility,
+  CreateCharacterChronicleRecordInput,
 } from './characterChronicle.js';
 import type {
   CharacterRegistryStore,
@@ -341,9 +342,14 @@ export function releaseCharacterFromCampaign(
   campaignDb: Db,
   input: CustodyHolderInput,
 ): SyncBackResult | undefined {
+  const chronicleRecords = prepareReleaseChronicleRecords(
+    registry,
+    campaignDb,
+    input,
+  );
   const result = syncBackCharacterFromCampaign(registry, campaignDb, input);
   if (result !== undefined) {
-    appendReleaseChronicleRecords(input, result.globalCharacterId);
+    input.chronicleStore?.appendRecords(chronicleRecords);
     // syncBack returned a result only because this campaign holds custody, so
     // clearing the lock here is safe and targets our own hold.
     registry.clearCustody(result.globalCharacterId);
@@ -351,25 +357,41 @@ export function releaseCharacterFromCampaign(
   return result;
 }
 
-function appendReleaseChronicleRecords(
+function prepareReleaseChronicleRecords(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
   input: CustodyHolderInput,
-  globalCharacterId: string,
-): void {
+): readonly CreateCharacterChronicleRecordInput[] {
   if (input.chronicleRecords === undefined) {
-    return;
+    return [];
   }
   if (input.chronicleStore === undefined) {
     throw new CharacterCustodyError(
       'release chronicle records require a chronicleStore',
     );
   }
-  for (const record of input.chronicleRecords) {
-    input.chronicleStore.appendRecord({
-      ...record,
-      globalCharacterId,
-      source: { ...record.source, campaignId: input.campaignId },
-    });
+  const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
+    input.characterId,
+  );
+  const globalCharacterId = campaignSheet?.metadata.globalCharacterId;
+  if (campaignSheet === undefined || globalCharacterId === undefined) {
+    return [];
   }
+  const held = registry.custody(globalCharacterId);
+  if (
+    held === undefined ||
+    held.campaignId !== input.campaignId ||
+    held.characterId !== input.characterId
+  ) {
+    return [];
+  }
+  const records = input.chronicleRecords.map((record) => ({
+    ...record,
+    globalCharacterId,
+    source: { ...record.source, campaignId: input.campaignId },
+  }));
+  input.chronicleStore.validateAppendRecords(records);
+  return records;
 }
 
 /** Outcome of {@link acquireCustodyOnResume} for one campaign character. */

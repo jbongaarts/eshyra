@@ -291,6 +291,113 @@ describe('character custody lifecycle', () => {
     ]);
   });
 
+  it('preflights release chronicle records before sync-back and leaves no partial record on failure', () => {
+    const { db: registryDb, registry: localRegistry } = freshRegistry();
+    const chronicle = createCharacterChronicleStore(
+      registryDb,
+      () => '2026-06-27T00:00:00.000Z',
+    );
+    registerNewCharacter(localRegistry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    checkoutCharacterIntoCampaign(localRegistry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    const campaignSheets = createSqliteCharacterSheetStore(campaign);
+    const played = campaignSheets.load('pc-1') as CharacterSheet;
+    campaignSheets.save('pc-1', { ...played, level: 2 });
+
+    expect(() =>
+      releaseCharacterFromCampaign(localRegistry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        chronicleStore: chronicle,
+        chronicleRecords: [
+          {
+            category: 'relationship',
+            text: 'Mira remembers owing Tamsin a life debt.',
+            source: {
+              sessionId: 'session-1',
+              at: '2026-06-27T00:00:00.000Z',
+            },
+            portability: 'portable',
+            visibility: 'player-visible',
+            truthStatus: 'remembered',
+            relatedRefs: [],
+          },
+          {
+            category: 'vow',
+            text: ' ',
+            source: {
+              sessionId: 'session-1',
+              at: '2026-06-27T00:00:00.000Z',
+            },
+            portability: 'portable',
+            visibility: 'player-visible',
+            truthStatus: 'remembered',
+            relatedRefs: [],
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(chronicle.listRecords('mira')).toEqual([]);
+    expect(localRegistry.headRevision('mira')).toBe(1);
+    expect(localRegistry.load('mira')?.level).toBe(1);
+    expect(localRegistry.custody('mira')).toMatchObject({
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+  });
+
+  it('rejects release chronicle records without a store before sync-back', () => {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    const campaignSheets = createSqliteCharacterSheetStore(campaign);
+    const played = campaignSheets.load('pc-1') as CharacterSheet;
+    campaignSheets.save('pc-1', { ...played, level: 2 });
+
+    expect(() =>
+      releaseCharacterFromCampaign(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        chronicleRecords: [
+          {
+            category: 'relationship',
+            text: 'Mira remembers owing Tamsin a life debt.',
+            source: {
+              sessionId: 'session-1',
+              at: '2026-06-27T00:00:00.000Z',
+            },
+            portability: 'portable',
+            visibility: 'player-visible',
+            truthStatus: 'remembered',
+            relatedRefs: [],
+          },
+        ],
+      }),
+    ).toThrow(CharacterCustodyError);
+    expect(registry.headRevision('mira')).toBe(1);
+    expect(registry.load('mira')?.level).toBe(1);
+    expect(registry.custody('mira')).toMatchObject({
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+    });
+  });
+
   it('does not append a revision when the campaign sheet is unchanged', () => {
     registerNewCharacter(registry, {
       globalCharacterId: 'mira',
