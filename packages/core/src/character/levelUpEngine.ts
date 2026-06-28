@@ -109,6 +109,23 @@ export interface ApplyLevelUpResult {
   readonly event: ProgressionEventRecord;
 }
 
+export type PreviewLevelUpResult =
+  | {
+      readonly ok: true;
+      readonly requiredChoices: readonly LevelUpRequiredChoice[];
+      readonly changeSet: LevelUpChangeSet;
+    }
+  | {
+      readonly ok: false;
+      readonly requiredChoices: readonly LevelUpRequiredChoice[];
+    };
+
+export interface PreviewLevelUpInput {
+  readonly resolver?: RulesPackCharacterResolver;
+  readonly binding?: CampaignRulesBinding;
+  readonly choices?: LevelUpChoiceSelections;
+}
+
 /** Inputs to {@link applyLevelUp}. */
 export interface ApplyLevelUpInput {
   /** The sheet store to read the authoritative sheet from and write it back to. */
@@ -290,29 +307,19 @@ export function applyLevelUp(
     // Fail closed before any computation if the sheet is not this pack's.
     assertSheetMatchesPack(sheet, binding);
 
-    // Fail closed on unresolved required choices: supported choices must be
-    // present and valid, while unsupported choices still block explicitly.
-    const choices = detectLevelUpRequiredChoices(sheet, resolver, binding);
-    const resolvedChoices = resolveLevelUpChoices(
-      choices,
-      input.choices ?? {},
-      sheet,
-      sheet.level + 1,
+    const preview = previewLevelUpChangeSet(sheet, {
       resolver,
-    );
-    if (resolvedChoices.blockers.length > 0) {
-      throw new LevelUpRequiredChoicesError(resolvedChoices.blockers);
+      binding,
+      choices: input.choices,
+    });
+    if (!preview.ok) {
+      throw new LevelUpRequiredChoicesError(preview.requiredChoices);
     }
-
-    const baseChangeSet = computeLevelUpChangeSet(sheet, resolver, binding);
-    const changeSet = applyResolvedChoicesToChangeSet(
-      baseChangeSet,
-      resolvedChoices.applied,
-    );
+    const changeSet = preview.changeSet;
     const updatedSheet = applyChangeSetToSheet(
       sheet,
       changeSet,
-      resolvedChoices.applied,
+      changeSet.choicesApplied ?? [],
     );
 
     input.store.save(characterId, updatedSheet);
@@ -330,6 +337,44 @@ export function applyLevelUp(
 
     return { characterId, changeSet, sheet: updatedSheet, event };
   });
+}
+
+/**
+ * Preview the exact deterministic change set a one-step level-up would commit
+ * for this sheet, including supported choice consequences. Unsupported or
+ * missing/invalid choices are returned as blockers instead of being guessed.
+ */
+export function previewLevelUpChangeSet(
+  sheet: CharacterSheet,
+  input: PreviewLevelUpInput = {},
+): PreviewLevelUpResult {
+  const resolver = input.resolver ?? getBundledDnd5eCharacterResolver();
+  const binding = input.binding ?? DEFAULT_DND5E_SRD_BINDING;
+  assertSheetMatchesPack(sheet, binding);
+  const requiredChoices = detectLevelUpRequiredChoices(
+    sheet,
+    resolver,
+    binding,
+  );
+  const resolvedChoices = resolveLevelUpChoices(
+    requiredChoices,
+    input.choices ?? {},
+    sheet,
+    sheet.level + 1,
+    resolver,
+  );
+  if (resolvedChoices.blockers.length > 0) {
+    return { ok: false, requiredChoices: resolvedChoices.blockers };
+  }
+  const baseChangeSet = computeLevelUpChangeSet(sheet, resolver, binding);
+  return {
+    ok: true,
+    requiredChoices,
+    changeSet: applyResolvedChoicesToChangeSet(
+      baseChangeSet,
+      resolvedChoices.applied,
+    ),
+  };
 }
 
 /**
