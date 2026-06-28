@@ -129,6 +129,99 @@ export class LevelUpEngineError extends Error {
 }
 
 /**
+ * The kinds of required level-up choice this engine can detect but not yet
+ * resolve. Each blocks a level-up until the structured required-choice layer
+ * (eshyra-lupf.9) collects and applies the player's decision.
+ */
+export type LevelUpRequiredChoiceKind =
+  | 'subclass'
+  | 'ability-score-improvement'
+  | 'fighting-style'
+  | 'expertise'
+  | 'class-feature-choice'
+  | 'spell-selection';
+
+/** A required level-up decision the engine surfaces instead of guessing. */
+export interface LevelUpRequiredChoice {
+  readonly kind: LevelUpRequiredChoiceKind;
+  /** Human-readable explanation of what must be decided. */
+  readonly reason: string;
+  /** The pack feature ref that triggered this choice, when applicable. */
+  readonly featureRef?: string;
+}
+
+/**
+ * Raised by {@link applyLevelUp} when the target level carries one or more
+ * decisions the engine cannot make deterministically (a subclass, an Ability
+ * Score Improvement / feat, a fighting style, expertise, or new spells to
+ * learn/prepare). The design requires these to fail closed — block with an
+ * explicit reason rather than advance the sheet with the choice unmade. The
+ * structured collection/apply of these choices is eshyra-lupf.9.
+ */
+export class LevelUpRequiredChoicesError extends Error {
+  readonly requiredChoices: readonly LevelUpRequiredChoice[];
+  constructor(requiredChoices: readonly LevelUpRequiredChoice[]) {
+    super(
+      `level-up blocked: ${requiredChoices.length} unresolved required ` +
+        `choice(s) (${requiredChoices.map((c) => c.kind).join(', ')}); ` +
+        'these are not yet supported (eshyra-lupf.9)',
+    );
+    this.name = 'LevelUpRequiredChoicesError';
+    this.requiredChoices = requiredChoices;
+  }
+}
+
+/**
+ * Subclass-selection features by their pack feature-ref suffix (the segment
+ * after the last `:`), keyed per the frozen SRD class records. Reaching the
+ * level that grants one of these requires the player to choose a subclass —
+ * Arcane Tradition, Martial Archetype, Divine Domain, and so on.
+ */
+const SUBCLASS_FEATURE_SUFFIXES: ReadonlySet<string> = new Set([
+  'primal-path',
+  'bard-college',
+  'divine-domain',
+  'druid-circle',
+  'martial-archetype',
+  'monastic-tradition',
+  'sacred-oath',
+  'ranger-archetype',
+  'roguish-archetype',
+  'sorcerous-origin',
+  'otherworldly-patron',
+  'arcane-tradition',
+]);
+
+/** Other choice-bearing class features that require a player pick. */
+const CLASS_FEATURE_CHOICE_SUFFIXES: ReadonlySet<string> = new Set([
+  'eldritch-invocations',
+  'pact-boon',
+  'metamagic',
+]);
+
+/** Classify a feature-ref suffix as a required-choice kind, or `undefined`. */
+function featureChoiceKind(
+  suffix: string,
+): LevelUpRequiredChoiceKind | undefined {
+  if (suffix === 'ability-score-improvement') {
+    return 'ability-score-improvement';
+  }
+  if (suffix === 'fighting-style') {
+    return 'fighting-style';
+  }
+  if (suffix === 'expertise') {
+    return 'expertise';
+  }
+  if (SUBCLASS_FEATURE_SUFFIXES.has(suffix)) {
+    return 'subclass';
+  }
+  if (CLASS_FEATURE_CHOICE_SUFFIXES.has(suffix)) {
+    return 'class-feature-choice';
+  }
+  return undefined;
+}
+
+/**
  * Apply one deterministic level-up step to a character's sheet and live state,
  * appending a `level-up` ledger row for the change set. Advances the character
  * exactly one level (current → current + 1).
@@ -145,6 +238,14 @@ export function applyLevelUp(
 ): ApplyLevelUpResult {
   const resolver = input.resolver ?? getBundledDnd5eCharacterResolver();
   const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
+  // Validate the ledger-required audit fields up front, before any write, so a
+  // missing one fails fast rather than after the sheet has been saved (the
+  // SQLite store shares this connection's transaction, but the store type does
+  // not prove that, so we do not rely on rollback to undo a partial apply).
+  requireNonEmpty('source', input.source);
+  requireNonEmpty('provenance', input.provenance);
+  requireNonEmpty('sessionId', input.sessionId);
+  requireNonEmpty('at', input.at);
 
   return withTransaction(db, (txnDb) => {
     const characterId = resolveCharacterId(txnDb, input.characterId);
@@ -156,6 +257,17 @@ export function applyLevelUp(
     }
     // Fail closed before any computation if the sheet is not this pack's.
     assertSheetMatchesPack(sheet, binding);
+
+    // Fail closed on unresolved required choices (subclass, ASI/feat, spells,
+    // …): advance nothing until eshyra-lupf.9 can collect and apply them.
+    const requiredChoices = detectLevelUpRequiredChoices(
+      sheet,
+      resolver,
+      binding,
+    );
+    if (requiredChoices.length > 0) {
+      throw new LevelUpRequiredChoicesError(requiredChoices);
+    }
 
     const changeSet = computeLevelUpChangeSet(sheet, resolver, binding);
     const updatedSheet = applyChangeSetToSheet(sheet, changeSet);
@@ -235,6 +347,128 @@ export function computeLevelUpChangeSet(
     ...spellcastingChanges(sheet, classKey, row, row.proficiencyBonus),
   };
   return changeSet;
+}
+
+/**
+ * Detect the required choices a single level-up step would impose but that the
+ * engine cannot yet resolve deterministically — the fail-closed boundary the
+ * progression design mandates. Read-only and pure over the sheet + resolved
+ * pack; the guided flow (eshyra-lupf.10) calls this to preview blockers, and
+ * {@link applyLevelUp} refuses to advance while any remain.
+ *
+ * Conservative by intent for now: it flags known generic choice signals on the
+ * target level — subclass-selection features, Ability Score Improvement / feat
+ * rows, fighting-style and expertise picks, other class-feature choices, and
+ * any new spell to learn/prepare (a caster gaining cantrips/known spells, a new
+ * spell level, or a Wizard's per-level spellbook growth). The structured
+ * descriptors and accepted choice inputs that will *replace* this block are
+ * eshyra-lupf.9.
+ *
+ * @throws {LevelUpEngineError} when the pack has no class/progression row for
+ *   the target level (same fail-closed condition as {@link computeLevelUpChangeSet}).
+ */
+export function detectLevelUpRequiredChoices(
+  sheet: CharacterSheet,
+  resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
+  binding: CampaignRulesBinding = DEFAULT_DND5E_SRD_BINDING,
+): readonly LevelUpRequiredChoice[] {
+  assertSheetMatchesPack(sheet, binding);
+
+  const classKey = sheet.class.key;
+  const toLevel = sheet.level + 1;
+  const toRowResult = resolver.resolveClassLevel(classKey, toLevel);
+  if (!toRowResult.ok) {
+    throw new LevelUpEngineError(
+      `cannot resolve level ${toLevel} of '${classKey}': ${toRowResult.message}`,
+    );
+  }
+  const toRow = toRowResult.record;
+  const fromRowResult = resolver.resolveClassLevel(classKey, sheet.level);
+  const fromRow = fromRowResult.ok ? fromRowResult.record : undefined;
+
+  const choices: LevelUpRequiredChoice[] = [];
+
+  for (const featureRef of toRow.featureRefs) {
+    const suffix = featureRef.slice(featureRef.lastIndexOf(':') + 1);
+    const kind = featureChoiceKind(suffix);
+    if (kind !== undefined) {
+      choices.push({
+        kind,
+        featureRef,
+        reason: `level ${toLevel} grants '${featureRef}', which requires a player choice`,
+      });
+    }
+  }
+
+  choices.push(
+    ...spellSelectionChoices(
+      classKey,
+      fromRow?.spellcasting,
+      toRow.spellcasting,
+      toLevel,
+    ),
+  );
+
+  return choices;
+}
+
+/**
+ * Spell-learning choices implied by the target level for a casting class: a new
+ * cantrip, a new known spell, access to a new spell level, or a Wizard's
+ * per-level spellbook additions. Empty for non-casters and for rows that add no
+ * new learnable/preparable spells.
+ */
+function spellSelectionChoices(
+  classKey: string,
+  fromSpellcasting: ResolvedLevelSpellcasting | undefined,
+  toSpellcasting: ResolvedLevelSpellcasting | undefined,
+  toLevel: number,
+): readonly LevelUpRequiredChoice[] {
+  const spellcasting = getClassSpellcasting(classKey);
+  if (spellcasting === undefined || toSpellcasting === undefined) {
+    return [];
+  }
+  const reasons: string[] = [];
+  if (
+    (toSpellcasting.cantripsKnown ?? 0) > (fromSpellcasting?.cantripsKnown ?? 0)
+  ) {
+    reasons.push('a new cantrip is learned');
+  }
+  if (
+    (toSpellcasting.spellsKnown ?? 0) > (fromSpellcasting?.spellsKnown ?? 0)
+  ) {
+    reasons.push('a new spell is learned');
+  }
+  if (gainsNewSpellLevel(fromSpellcasting?.slots, toSpellcasting.slots)) {
+    reasons.push('a new spell level becomes available');
+  }
+  // The Wizard adds spells to its spellbook every level (the overlay marks the
+  // class by its starting-spellbook size); that is a per-level learning choice
+  // even when the cantrip/known counts are unchanged.
+  if (spellcasting.spellbookStartingSpells !== undefined) {
+    reasons.push('spells are added to the spellbook');
+  }
+  if (reasons.length === 0) {
+    return [];
+  }
+  return [
+    {
+      kind: 'spell-selection',
+      reason: `level ${toLevel} spellcasting: ${reasons.join('; ')}`,
+    },
+  ];
+}
+
+/** Whether `to` grants a spell-slot level that `from` did not have. */
+function gainsNewSpellLevel(
+  from: Readonly<Record<string, number>> | undefined,
+  to: Readonly<Record<string, number>> | undefined,
+): boolean {
+  if (to === undefined) {
+    return false;
+  }
+  const had = new Set(Object.keys(from ?? {}));
+  return Object.keys(to).some((level) => !had.has(level));
 }
 
 /**
@@ -355,5 +589,11 @@ function projectToLiveCharacter(
       value: row.hp_current + changeSet.hitPoints.increment,
       ...ctx,
     });
+  }
+}
+
+function requireNonEmpty(field: string, value: string): void {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new LevelUpEngineError(`level-up ${field} is required`);
   }
 }

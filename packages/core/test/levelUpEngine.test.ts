@@ -10,8 +10,10 @@ import {
   CharacterSheetPackMismatchError,
   computeLevelUpChangeSet,
   createSqliteCharacterSheetStore,
+  detectLevelUpRequiredChoices,
   getProgressionState,
   LevelUpEngineError,
+  LevelUpRequiredChoicesError,
   listProgressionEvents,
   mutateState,
 } from '../src/internal.js';
@@ -192,13 +194,12 @@ describe('applyLevelUp — martial (Fighter)', () => {
   });
 });
 
-describe('applyLevelUp — caster (Wizard)', () => {
-  it('grants the new spell slots and keeps the DC steady when prof is unchanged', () => {
-    const db = bareDb();
-    const store = createSqliteCharacterSheetStore(db, () => AT);
+describe('computeLevelUpChangeSet — caster (Wizard) preview', () => {
+  // Wizard levels carry required choices (see the fail-closed block below), so
+  // these caster deltas are previews via the pure compute function, not applies.
+  it('previews the new spell slots, keeping the DC steady when prof is unchanged', () => {
     // Wizard d6, INT 16 (+3): DC 8+2+3=13, attack +5 at level 1.
-    store.save(
-      'pc-1',
+    const changeSet = computeLevelUpChangeSet(
       buildSheet({
         classKey: 'class:wizard',
         className: 'Wizard',
@@ -209,10 +210,7 @@ describe('applyLevelUp — caster (Wizard)', () => {
         spellAttackModifier: 5,
       }),
     );
-    seedLiveHp(db, 8, 8);
-
-    const result = applyLevelUp(db, { store, ...APPLY });
-    expect(result.changeSet).toMatchObject({
+    expect(changeSet).toMatchObject({
       level: { from: 1, to: 2 },
       proficiencyBonus: { from: 2, to: 2 },
       hitPoints: { hitDie: 6, increment: 5 },
@@ -221,14 +219,10 @@ describe('applyLevelUp — caster (Wizard)', () => {
       spellSaveDc: { from: 13, to: 13 },
       spellAttackModifier: { from: 5, to: 5 },
     });
-    db.close();
   });
 
-  it('recomputes the spell DC when level 5 raises the proficiency bonus', () => {
-    const db = bareDb();
-    const store = createSqliteCharacterSheetStore(db, () => AT);
-    store.save(
-      'pc-1',
+  it('previews the recomputed spell DC when level 5 raises the proficiency bonus', () => {
+    const changeSet = computeLevelUpChangeSet(
       buildSheet({
         classKey: 'class:wizard',
         className: 'Wizard',
@@ -240,18 +234,69 @@ describe('applyLevelUp — caster (Wizard)', () => {
         spellAttackModifier: 5,
       }),
     );
-    seedLiveHp(db, 22, 22);
-
-    const result = applyLevelUp(db, { store, ...APPLY });
-    expect(result.changeSet).toMatchObject({
+    expect(changeSet).toMatchObject({
       proficiencyBonus: { from: 2, to: 3 },
       spellcasting: { cantripsKnown: 4, slots: { '1': 4, '2': 3, '3': 2 } },
       spellSaveDc: { from: 13, to: 14 },
       spellAttackModifier: { from: 5, to: 6 },
     });
-    const saved = store.load('pc-1');
-    expect(saved?.spellSaveDc).toBe(14);
-    expect(saved?.spellAttackModifier).toBe(6);
+  });
+});
+
+describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
+  it('reports no required choices for a deterministic martial row (Fighter 1→2)', () => {
+    expect(detectLevelUpRequiredChoices(buildSheet({ level: 1 }))).toEqual([]);
+  });
+
+  it('blocks a subclass + spell level (Wizard 1→2) and applies nothing', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    const sheet = buildSheet({
+      classKey: 'class:wizard',
+      className: 'Wizard',
+      level: 1,
+      modifiers: { intelligence: 3 },
+    });
+    store.save('pc-1', sheet);
+
+    const choices = detectLevelUpRequiredChoices(sheet);
+    expect(choices.map((c) => c.kind)).toEqual(
+      expect.arrayContaining(['subclass', 'spell-selection']),
+    );
+    expect(choices.find((c) => c.kind === 'subclass')?.featureRef).toBe(
+      'feature:wizard:arcane-tradition',
+    );
+
+    let thrown: unknown;
+    try {
+      applyLevelUp(db, { store, ...APPLY });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(LevelUpRequiredChoicesError);
+    expect(
+      (thrown as LevelUpRequiredChoicesError).requiredChoices.length,
+    ).toBeGreaterThan(0);
+
+    // Nothing advanced: the stored sheet is untouched and no ledger row exists.
+    expect(store.load('pc-1')?.level).toBe(1);
+    expect(listProgressionEvents(db)).toHaveLength(0);
+    db.close();
+  });
+
+  it('blocks an Ability Score Improvement level (Fighter 3→4)', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    const sheet = buildSheet({ level: 3, proficiencyBonus: 2 });
+    store.save('pc-1', sheet);
+
+    expect(detectLevelUpRequiredChoices(sheet).map((c) => c.kind)).toContain(
+      'ability-score-improvement',
+    );
+    expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
+      LevelUpRequiredChoicesError,
+    );
+    expect(listProgressionEvents(db)).toHaveLength(0);
     db.close();
   });
 });

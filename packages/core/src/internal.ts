@@ -240,11 +240,15 @@ export type {
   LevelUpChangeSet,
   LevelUpDelta,
   LevelUpHitPoints,
+  LevelUpRequiredChoice,
+  LevelUpRequiredChoiceKind,
 } from './character/levelUpEngine.js';
 export {
   applyLevelUp,
   computeLevelUpChangeSet,
+  detectLevelUpRequiredChoices,
   LevelUpEngineError,
+  LevelUpRequiredChoicesError,
 } from './character/levelUpEngine.js';
 export type {
   CreatedPathfinderCharacter,
