@@ -254,15 +254,19 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // maps to the emitted Spellcasting chapter-intro rule.
     // 1445 -> 1452: armor category headings, Adventuring Gear, and subclass
     // spell-table intro headings now map to emitted source-bounded rules.
-    expect(coverage.summary.record).toBe(1452);
+    // 1452 -> 1453 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection, split
+    // out of feature:rogue:sneak-attack into its own feature:rogue:thieves-cant
+    // record, now maps to that record instead of riding in Sneak Attack's body.
+    expect(coverage.summary.record).toBe(1453);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
-    // plus the Rogue's "Thieves' Cant" subsection map child-of their owning
-    // feature/subclass records (the text rides in those bodies), verified
-    // present.
+    // map child-of their owning feature/subclass records (the text rides in
+    // those bodies), verified present.
     // 98 -> 99 (eshyra-citg): "Tenets of Devotion" heading now maps child-of
     // subclass:oath-of-devotion (its prose is a named section on that record).
-    expect(coverage.summary.childOf).toBe(456);
+    // 456 -> 455 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection no longer
+    // rides child-of Sneak Attack; it is its own feature record (see `record`).
+    expect(coverage.summary.childOf).toBe(455);
     expect(coverage.summary.ambiguous).toBe(187);
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.unaccounted).toBe(0);

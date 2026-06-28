@@ -173,7 +173,10 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // reuniting the cell as "Rage, Unarmored Defense"; both Rage and Unarmored
   // Defense emit at level 1 with source-bounded descriptions (Rage's body no
   // longer absorbs the Unarmored Defense heading/body).
-  feature: 183,
+  // 183 -> 184 (eshyra-o9bd.2/.3): Rogue's Thieves' Cant, previously swallowed
+  // into feature:rogue:sneak-attack's description, is split into its own
+  // feature:rogue:thieves-cant record so the level-1 progression grants both.
+  feature: 184,
   // 8 sample traps (loreweaver-hvp) + 3 sample diseases + 14 sample poisons
   // (loreweaver-6ra) all emit under the `hazard` kind; SRD 5.1 has no
   // environmental hazards. Traps carry a `trapType` discriminator; diseases and
@@ -610,9 +613,10 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   { kind: 'equipment', field: 'weight', missingCount: 44, totalInKind: 218 },
   // Only the two feature-owned class tables carry tableRefs (eshyra-4a7.6):
   // feature:cleric:destroy-undead -> table:destroy-undead and
-  // feature:druid:wild-shape -> table:beast-shapes; the other 181 features
-  // have no owned table.
-  { kind: 'feature', field: 'tableRefs', missingCount: 181, totalInKind: 183 },
+  // feature:druid:wild-shape -> table:beast-shapes; the other 182 features
+  // (now including feature:rogue:thieves-cant, eshyra-o9bd.2/.3) have no owned
+  // table.
+  { kind: 'feature', field: 'tableRefs', missingCount: 182, totalInKind: 184 },
   // hazard sub-families (loreweaver-6ra): of the 25 hazard records, the 8 traps
   // carry `trapType`; the 3 diseases + 14 poisons carry `category`; the 14
   // poisons additionally carry `poisonType` and `price`.
@@ -5054,30 +5058,35 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       return rec?.data as Record<string, unknown>;
     };
 
-    it('links the Barbarian class to its progression table and parses level 1 + resources', () => {
+    it('links the Barbarian class to its progression table and types level 1 + resources', () => {
       const barb = data('class:barbarian');
       expect(barb.progressionTableRef).toBe('table:the-barbarian');
       expect(barb.features).toContain('feature:barbarian:rage');
       const progression = barb.progression as Array<Record<string, unknown>>;
       expect(progression).toHaveLength(20);
-      // Level 1: Rage + Unarmored Defense, linked to their feature records.
-      expect(progression[0]).toMatchObject({
+      // Level 1: Rage + Unarmored Defense as feature grants, then typed resources.
+      expect(progression[0]).toEqual({
         level: 1,
         proficiencyBonus: '+2',
-        features: [
-          { name: 'Rage', ref: 'feature:barbarian:rage' },
+        advancement: [
+          { kind: 'featureGrant', ref: 'feature:barbarian:rage', name: 'Rage' },
           {
-            name: 'Unarmored Defense',
+            kind: 'featureGrant',
             ref: 'feature:barbarian:unarmored-defense',
+            name: 'Unarmored Defense',
           },
+          { kind: 'resourceProgression', resource: 'rages', value: 2 },
+          { kind: 'resourceProgression', resource: 'rageDamage', value: '+2' },
         ],
-        resources: { rages: 2, rageDamage: '+2' },
       });
       // Level 20 preserves the verbatim "Unlimited" rages token.
-      expect(progression[19].resources).toEqual({
-        rages: 'Unlimited',
-        rageDamage: '+4',
-      });
+      const l20Resources = (
+        progression[19].advancement as Array<Record<string, unknown>>
+      ).filter((e) => e.kind === 'resourceProgression');
+      expect(l20Resources).toEqual([
+        { kind: 'resourceProgression', resource: 'rages', value: 'Unlimited' },
+        { kind: 'resourceProgression', resource: 'rageDamage', value: '+4' },
+      ]);
     });
 
     it('represents a spellcaster spell-slot progression by level (Wizard)', () => {
@@ -5085,13 +5094,19 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         Record<string, unknown>
       >;
       expect(progression).toHaveLength(20);
+      const spellcasting = (row: Record<string, unknown>) =>
+        (row.advancement as Array<Record<string, unknown>>).find(
+          (e) => e.kind === 'spellcastingProgression',
+        );
       // L1: 3 cantrips known, two 1st-level slots, nothing higher.
-      expect(progression[0].spellcasting).toEqual({
+      expect(spellcasting(progression[0])).toEqual({
+        kind: 'spellcastingProgression',
         cantripsKnown: 3,
         slots: { '1': 2 },
       });
       // L20: full 4/3/3/3/3/2/2/1/1 slot progression keyed by spell level.
-      expect(progression[19].spellcasting).toEqual({
+      expect(spellcasting(progression[19])).toEqual({
+        kind: 'spellcastingProgression',
         cantripsKnown: 5,
         slots: {
           '1': 4,
@@ -5107,39 +5122,45 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       });
     });
 
-    it('exposes the Warlock Pact Magic columns and links Pact Magic as a feature ref', () => {
+    it('exposes the Warlock Pact Magic columns and links Pact Magic as a feature grant', () => {
       const progression = data('class:warlock').progression as Array<
         Record<string, unknown>
       >;
-      expect(progression[0]).toMatchObject({
-        level: 1,
-        features: [
-          {
-            name: 'Otherworldly Patron',
-            ref: 'feature:warlock:otherworldly-patron',
-          },
-          { name: 'Pact Magic', ref: 'feature:warlock:pact-magic' },
-        ],
-        spellcasting: {
+      // L1 grants Otherworldly Patron + Pact Magic and a typed Pact Magic slot.
+      expect(progression[0].advancement).toEqual([
+        {
+          kind: 'featureGrant',
+          ref: 'feature:warlock:otherworldly-patron',
+          name: 'Otherworldly Patron',
+        },
+        {
+          kind: 'featureGrant',
+          ref: 'feature:warlock:pact-magic',
+          name: 'Pact Magic',
+        },
+        {
+          kind: 'spellcastingProgression',
           cantripsKnown: 2,
           spellsKnown: 2,
-          spellSlots: 1,
-          slotLevel: '1st',
-          invocationsKnown: null,
+          pactSlots: { count: 1, level: 1 },
         },
+      ]);
+      const l20Spellcasting = (
+        progression[19].advancement as Array<Record<string, unknown>>
+      ).find((e) => e.kind === 'spellcastingProgression');
+      expect(l20Spellcasting).toMatchObject({
+        pactSlots: { count: 4, level: 5 },
+        invocationsKnown: 8,
       });
-      expect(
-        (progression[19].spellcasting as Record<string, unknown>)
-          .invocationsKnown,
-      ).toBe(8);
     });
 
     it('keeps Fighter repeated-use details as detail, not duplicate feature bodies', () => {
       const progression = data('class:fighter').progression as Array<
         Record<string, unknown>
       >;
-      expect(progression[1].features).toEqual([
+      expect(progression[1].advancement).toEqual([
         {
+          kind: 'featureGrant',
           name: 'Action Surge',
           ref: 'feature:fighter:action-surge',
           detail: 'one use',
@@ -5147,13 +5168,15 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       ]);
       // L17 references the SAME action-surge feature with the updated detail,
       // plus Indomitable — no second feature record is invented.
-      expect(progression[16].features).toEqual([
+      expect(progression[16].advancement).toEqual([
         {
+          kind: 'featureGrant',
           name: 'Action Surge',
           ref: 'feature:fighter:action-surge',
           detail: 'two uses',
         },
         {
+          kind: 'featureGrant',
           name: 'Indomitable',
           ref: 'feature:fighter:indomitable',
           detail: 'three uses',

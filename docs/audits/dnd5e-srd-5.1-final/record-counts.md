@@ -1,6 +1,6 @@
 # Record Counts — `rules:dnd5e-srd-5.1` (commit `0f5b3dc`)
 
-Authoritative `countsByKind` from `auditPack` (committed pack). Total: **1811**.
+Authoritative `countsByKind` from `auditPack` (committed pack). Total: **1812**. (eshyra-o9bd.2/.3 split Rogue's Thieves' Cant into its own feature: 1811 → 1812, feature 183 → 184.)
 
 ## By kind
 
@@ -14,7 +14,7 @@ Authoritative `countsByKind` from `auditPack` (committed pack). Total: **1811**.
 | creature | 317 | 296 monsters (p.261–357) + 21 NPCs (p.394–403). 30 carry legendary actions; 2 carry `variants` (Giant Rat, Swarm of Insects). |
 | equipment | 218 | gear 112, weapon 37, tool 35, armor 13, mount 8, pack 7, vehicle 6. |
 | feat | 1 | Grappler (only SRD feat). |
-| feature | 183 | Class/subclass features. |
+| feature | 184 | Class/subclass features. |
 | hazard | 25 | 8 traps + 14 poisons + 3 diseases (shared `hazard` kind). |
 | magic-item | 240 | 125 require attunement; includes the Orb of Dragonkind artifact. |
 | rule | 335 | Rules text, section intros, variants, stat-block-reading rules. |
@@ -31,7 +31,7 @@ The importer prints category counts that map onto final `kind` as follows:
 319 spells                          -> spell 319
 296 creatures + 21 NPCs             -> creature 317
 12 classes / 12 subclasses          -> class 12 / subclass 12
-183 features                        -> feature 183
+184 features                        -> feature 184
 15 conditions                       -> condition 15
 1 feat                              -> feat 1
 0 env-hazards + 8 traps + 3 diseases + 14 poisons -> hazard 25
@@ -43,7 +43,7 @@ The importer prints category counts that map onto final `kind` as follows:
 13 ancestries / 1 background        -> ancestry 13 / background 1
 (2 inline stat blocks)              -> stat-block 2
                                        ------------------------------
-                                       TOTAL 1811
+                                       TOTAL 1812
 ```
 
 ## Table coverage highlights (108 tables)

@@ -46,9 +46,10 @@ import {
 import type { CharacterSheet } from './finalizeCharacter.js';
 import {
   getBundledDnd5eCharacterResolver,
-  type ResolvedFeatureMarker,
+  type ResolvedFeatureImprovement,
   type ResolvedLevelSpellcasting,
   type ResolvedSubclassData,
+  type ResolvedSubclassFeatureSlot,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
 import { getClassSpellcasting } from './srdClassSpellcasting.js';
@@ -242,21 +243,6 @@ const SUBCLASS_FEATURE_SUFFIXES: ReadonlySet<string> = new Set([
   'arcane-tradition',
 ]);
 
-const SUBCLASS_FEATURE_MARKER_NAMES: ReadonlySet<string> = new Set([
-  'Path feature',
-  'Bard College feature',
-  'Divine Domain feature',
-  'Druid Circle feature',
-  'Martial Archetype feature',
-  'Monastic Tradition feature',
-  'Sacred Oath feature',
-  'Ranger Archetype feature',
-  'Roguish Archetype feature',
-  'Sorcerous Origin feature',
-  'Otherworldly Patron feature',
-  'Arcane Tradition feature',
-]);
-
 /** Other choice-bearing class features that require a player pick. */
 const CLASS_FEATURE_CHOICE_SUFFIXES: ReadonlySet<string> = new Set([
   'eldritch-invocations',
@@ -430,11 +416,10 @@ export function computeLevelUpChangeSet(
   const constitutionModifier = sheet.abilityScores.constitution.modifier;
   const increment = hitPointIncrement(hitDie, constitutionModifier);
 
-  const existingSubclassFeatureRefs = hasSubclassContextMarker(
-    row.unresolvedFeatureMarkers,
-  )
-    ? existingSubclassFeatureRefsForLevel(sheet, toLevel, resolver)
-    : [];
+  const existingSubclassFeatureRefs =
+    row.subclassFeatureSlots.length > 0
+      ? existingSubclassFeatureRefsForLevel(sheet, toLevel, resolver)
+      : [];
   const changeSet: LevelUpChangeSet = {
     classKey,
     level: { from: fromLevel, to: toLevel },
@@ -508,12 +493,13 @@ export function detectLevelUpRequiredChoices(
   }
 
   choices.push(
-    ...unresolvedFeatureMarkerChoices(
-      toRow.unresolvedFeatureMarkers,
+    ...subclassFeatureSlotChoices(
+      toRow.subclassFeatureSlots,
       sheet,
       toLevel,
       resolver,
     ),
+    ...featureImprovementChoices(toRow.featureImprovements, toLevel),
   );
 
   choices.push(
@@ -528,56 +514,51 @@ export function detectLevelUpRequiredChoices(
   return choices;
 }
 
-function unresolvedFeatureMarkerChoices(
-  markers: readonly ResolvedFeatureMarker[],
+function subclassFeatureSlotChoices(
+  slots: readonly ResolvedSubclassFeatureSlot[],
   sheet: CharacterSheet,
   toLevel: number,
   resolver: RulesPackCharacterResolver,
 ): readonly LevelUpRequiredChoice[] {
   const choices: LevelUpRequiredChoice[] = [];
-  for (const marker of markers) {
-    if (isSubclassContextMarker(marker)) {
-      const featureRefs =
-        sheet.subclass === undefined
-          ? []
-          : existingSubclassFeatureRefsForLevel(sheet, toLevel, resolver);
-      if (featureRefs.length > 0) {
-        continue;
-      }
-      choices.push({
-        id: `level.${toLevel}.subclass-feature.${slug(marker.name)}`,
-        kind: 'subclass',
-        status: 'unsupported',
-        label: marker.name,
-        reason:
-          `level ${toLevel} includes subclass marker '${marker.name}', ` +
-          'but no selected subclass feature can be mapped',
-        unsupportedReason:
-          'Subclass-context progression markers require an existing subclass with structured feature records at the target level.',
-      });
+  for (const slot of slots) {
+    const featureRefs =
+      sheet.subclass === undefined
+        ? []
+        : existingSubclassFeatureRefsForLevel(sheet, toLevel, resolver);
+    if (featureRefs.length > 0) {
       continue;
     }
     choices.push({
-      id: `level.${toLevel}.unresolved-feature.${slug(marker.name)}`,
-      kind: 'class-feature-choice',
+      id: `level.${toLevel}.subclass-feature.${slug(slot.slotName)}`,
+      kind: 'subclass',
       status: 'unsupported',
-      label: marker.name,
-      reason: `level ${toLevel} includes '${marker.name}' without a structured feature ref`,
+      label: slot.slotName,
+      reason:
+        `level ${toLevel} includes subclass slot '${slot.slotName}', ` +
+        'but no selected subclass feature can be mapped',
       unsupportedReason:
-        'This progression marker may represent an improvement, alias, or missing frozen feature record; deterministic application is not implemented yet.',
+        'Subclass-feature slots require an existing subclass with structured feature records at the target level.',
     });
   }
   return choices;
 }
 
-function hasSubclassContextMarker(
-  markers: readonly ResolvedFeatureMarker[],
-): boolean {
-  return markers.some((marker) => isSubclassContextMarker(marker));
-}
-
-function isSubclassContextMarker(marker: ResolvedFeatureMarker): boolean {
-  return SUBCLASS_FEATURE_MARKER_NAMES.has(marker.name);
+function featureImprovementChoices(
+  improvements: readonly ResolvedFeatureImprovement[],
+  toLevel: number,
+): readonly LevelUpRequiredChoice[] {
+  return improvements.map((improvement) => ({
+    id: `level.${toLevel}.feature-improvement.${slug(improvement.label)}`,
+    kind: 'class-feature-choice',
+    status: 'unsupported',
+    label: improvement.label,
+    reason:
+      `level ${toLevel} improves ${improvement.targetRefs.join(', ')} ` +
+      `('${improvement.label}')`,
+    unsupportedReason:
+      'Feature improvements change an existing feature; deterministic application of the level-specific change is not implemented yet.',
+  }));
 }
 
 function slug(value: string): string {

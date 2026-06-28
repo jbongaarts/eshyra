@@ -62,21 +62,82 @@ const SLOT_COLUMNS: ReadonlyMap<string, number> = new Map([
 
 type Scalar = string | number | null;
 
-interface ProgressionFeature {
-  readonly name: string;
-  readonly ref?: string;
-  readonly detail?: string;
-}
+/**
+ * Typed per-level advancement entry (eshyra-o9bd.2). A discriminated union so a
+ * level-up engine never has to infer from display names: every progression row
+ * is fully classified at generation time, source-backed and fail-closed (an
+ * unclassifiable marker throws rather than emitting a raw label).
+ */
+type AdvancementEntry =
+  | {
+      readonly kind: 'featureGrant';
+      readonly ref: string;
+      readonly name: string;
+      readonly detail?: string;
+    }
+  | {
+      readonly kind: 'subclassFeatureSlot';
+      readonly slotName: string;
+      readonly subclassLevel: number;
+    }
+  | {
+      readonly kind: 'featureImprovement';
+      readonly targetRefs: readonly string[];
+      readonly label: string;
+    }
+  | {
+      readonly kind: 'resourceProgression';
+      readonly resource: string;
+      readonly value: number | string;
+    }
+  | {
+      readonly kind: 'spellcastingProgression';
+      readonly cantripsKnown?: number;
+      readonly spellsKnown?: number;
+      readonly slots?: Readonly<Record<string, number>>;
+      readonly pactSlots?: { readonly count: number; readonly level: number };
+      readonly invocationsKnown?: number;
+    };
 
 interface ProgressionRow {
   readonly level: number;
   readonly proficiencyBonus: string;
-  readonly features?: readonly ProgressionFeature[];
-  readonly resources?: Readonly<Record<string, Scalar>>;
-  readonly spellcasting?: Readonly<
-    Record<string, Scalar | Record<string, Scalar>>
-  >;
+  readonly advancement: readonly AdvancementEntry[];
 }
+
+/**
+ * Source-backed classification of the frozen progression rows that carry no
+ * deterministic feature ref, from docs/design/srd-level-up-row-classification.md
+ * (eshyra-fxrs / PR #336). Improvement markers map to the base feature(s) they
+ * improve; aliases map to an existing feature record whose label differs.
+ * Subclass-feature-slot rows are detected structurally (an unresolved "… feature"
+ * marker) and need no map. Any other unresolved marker is a fail-closed error.
+ */
+const FEATURE_IMPROVEMENTS: ReadonlyMap<string, readonly string[]> = new Map([
+  ['divine intervention improvement', ['feature:cleric:divine-intervention']],
+  ['wild shape improvement', ['feature:druid:wild-shape']],
+  ['unarmored movement improvement', ['feature:monk:unarmored-movement']],
+  [
+    'aura improvements',
+    ['feature:paladin:aura-of-protection', 'feature:paladin:aura-of-courage'],
+  ],
+  [
+    'favored enemy and natural explorer improvements',
+    ['feature:ranger:favored-enemy', 'feature:ranger:natural-explorer'],
+  ],
+  ['natural explorer improvement', ['feature:ranger:natural-explorer']],
+  ['favored enemy improvement', ['feature:ranger:favored-enemy']],
+]);
+
+/**
+ * Stable label mismatches: a row label that names an existing feature record
+ * whose normalized name does not match. "Signature Spell" → the plural record;
+ * "Thieves Cant" → the apostrophe'd record split out by the folded eshyra-o9bd.3.
+ */
+const FEATURE_ALIASES: ReadonlyMap<string, string> = new Map([
+  ['signature spell', 'feature:wizard:signature-spells'],
+  ['thieves cant', 'feature:rogue:thieves-cant'],
+]);
 
 function camelCase(label: string): string {
   const words = label.trim().split(/\s+/);
@@ -116,12 +177,7 @@ function normalizeName(text: string): string {
  * parenthetical into `detail` and resolve `ref` against the class's feature
  * records by normalized name.
  */
-function parseFeatureCell(
-  cell: string,
-  featureKeyByName: ReadonlyMap<string, string>,
-): ProgressionFeature[] {
-  const text = cell.trim();
-  if (text.length === 0) return [];
+function splitTopLevelCommas(text: string): string[] {
   const parts: string[] = [];
   let depth = 0;
   let start = 0;
@@ -135,31 +191,164 @@ function parseFeatureCell(
     }
   }
   parts.push(text.slice(start));
-  const features: ProgressionFeature[] = [];
-  for (const raw of parts) {
+  return parts;
+}
+
+/**
+ * Classify a Features cell into typed advancement entries. Each comma-separated
+ * marker becomes a `featureGrant` (ref resolved by name or alias),
+ * `featureImprovement` (mapped base feature refs), or `subclassFeatureSlot` (an
+ * unresolved "… feature" marker). An unresolved marker that fits none of these
+ * is a fail-closed error — the importer refuses to emit a raw, untyped label.
+ */
+function parseFeatureAdvancement(
+  cell: string,
+  level: number,
+  classKey: string,
+  featureKeyByName: ReadonlyMap<string, string>,
+): AdvancementEntry[] {
+  const text = cell.trim();
+  if (text.length === 0) return [];
+  const entries: AdvancementEntry[] = [];
+  for (const raw of splitTopLevelCommas(text)) {
     const segment = raw.trim();
     if (segment.length === 0) continue;
     const paren = /^(.*\S)\s*\(([^()]+)\)$/.exec(segment);
     const name = (paren ? paren[1] : segment).trim();
     const detail = paren ? paren[2].trim() : undefined;
-    const ref = featureKeyByName.get(normalizeName(name));
-    features.push({
-      name,
-      ...(ref !== undefined ? { ref } : {}),
-      ...(detail !== undefined ? { detail } : {}),
-    });
+    const normalized = normalizeName(name);
+
+    const ref =
+      featureKeyByName.get(normalized) ?? FEATURE_ALIASES.get(normalized);
+    if (ref !== undefined) {
+      entries.push({
+        kind: 'featureGrant',
+        ref,
+        name,
+        ...(detail !== undefined ? { detail } : {}),
+      });
+      continue;
+    }
+
+    const improvementRefs = FEATURE_IMPROVEMENTS.get(normalized);
+    if (improvementRefs !== undefined) {
+      entries.push({
+        kind: 'featureImprovement',
+        targetRefs: [...improvementRefs],
+        label: name,
+      });
+      continue;
+    }
+
+    if (/\bfeature$/i.test(name)) {
+      entries.push({
+        kind: 'subclassFeatureSlot',
+        slotName: name,
+        subclassLevel: level,
+      });
+      continue;
+    }
+
+    throw new Error(
+      `Unclassified class progression marker "${name}" at ${classKey} level ${level}. ` +
+        'Add a feature ref, alias, or improvement mapping (see ' +
+        'docs/design/srd-typed-class-progression.md), or confirm it is a subclass slot.',
+    );
   }
-  return features;
+  return entries;
+}
+
+/** Coerce a progression cell to an integer, or throw if it is non-numeric. */
+function requireInt(value: Scalar, column: string, classKey: string): number {
+  if (typeof value === 'number') return value;
+  throw new Error(
+    `Expected an integer in column "${column}" for ${classKey}, got ${JSON.stringify(value)}.`,
+  );
+}
+
+/** "1st" -> 1 for the Warlock pact "Slot Level" column. */
+function parseSlotLevel(value: Scalar): number | undefined {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const match = /^(\d+)/.exec(value.trim());
+    if (match !== null) return Number.parseInt(match[1], 10);
+  }
+  return undefined;
 }
 
 /**
- * Map one class progression `TableExtraction` to `progression` rows. Columns
- * are classified by name: Level/Proficiency Bonus/Features are special;
- * everything else is a resource or a spellcasting column (named or per-level
- * slot). `featureKeyByName` resolves progression feature refs.
+ * Build a `spellcastingProgression` entry from a row's spellcasting/slot
+ * columns, or `undefined` when the row has no usable spellcasting data (so a
+ * non-caster level, or a caster's pre-spellcasting levels like Ranger 1, emits
+ * no entry rather than a `null` placeholder). Non-applicable (blank) cells are
+ * omitted, never emitted as null.
+ */
+function buildSpellcastingEntry(
+  named: Readonly<Record<string, Scalar>>,
+  slots: Readonly<Record<string, number>>,
+  classKey: string,
+): Extract<AdvancementEntry, { kind: 'spellcastingProgression' }> | undefined {
+  const cantripsKnown = named.cantripsKnown;
+  const spellsKnown = named.spellsKnown;
+  const pactCount = named.spellSlots;
+  const pactLevel = parseSlotLevel(named.slotLevel ?? null);
+  const invocations = named.invocationsKnown;
+
+  const entry: {
+    kind: 'spellcastingProgression';
+    cantripsKnown?: number;
+    spellsKnown?: number;
+    slots?: Record<string, number>;
+    pactSlots?: { count: number; level: number };
+    invocationsKnown?: number;
+  } = { kind: 'spellcastingProgression' };
+
+  if (cantripsKnown !== null && cantripsKnown !== undefined) {
+    entry.cantripsKnown = requireInt(cantripsKnown, 'Cantrips Known', classKey);
+  }
+  if (spellsKnown !== null && spellsKnown !== undefined) {
+    entry.spellsKnown = requireInt(spellsKnown, 'Spells Known', classKey);
+  }
+  if (Object.keys(slots).length > 0) {
+    entry.slots = slots;
+  }
+  if (
+    pactCount !== null &&
+    pactCount !== undefined &&
+    pactLevel !== undefined
+  ) {
+    entry.pactSlots = {
+      count: requireInt(pactCount, 'Spell Slots', classKey),
+      level: pactLevel,
+    };
+  }
+  if (invocations !== null && invocations !== undefined) {
+    entry.invocationsKnown = requireInt(
+      invocations,
+      'Invocations Known',
+      classKey,
+    );
+  }
+
+  const hasData =
+    entry.cantripsKnown !== undefined ||
+    entry.spellsKnown !== undefined ||
+    entry.slots !== undefined ||
+    entry.pactSlots !== undefined ||
+    entry.invocationsKnown !== undefined;
+  return hasData ? entry : undefined;
+}
+
+/**
+ * Map one class progression `TableExtraction` to typed `progression` rows. Each
+ * row is `{ level, proficiencyBonus, advancement[] }`, where `advancement` is a
+ * discriminated union of feature grants, subclass-feature slots, feature
+ * improvements, resource progressions, and a spellcasting progression — in a
+ * stable order (features, then resources in column order, then spellcasting).
  */
 export function deriveClassProgression(
   table: TableExtraction,
+  classKey: string,
   featureKeyByName: ReadonlyMap<string, string>,
 ): ProgressionRow[] {
   const cols = table.columns;
@@ -169,31 +358,49 @@ export function deriveClassProgression(
   const featuresIdx = idx('Features');
   return table.rows.map((row): ProgressionRow => {
     const cells = row.map((c) => String(c));
-    const resources: Record<string, Scalar> = {};
-    const spellcasting: Record<string, Scalar | Record<string, Scalar>> = {};
-    const slots: Record<string, Scalar> = {};
+    const level = levelNumber(cells[levelIdx] ?? '');
+    const resourceEntries: AdvancementEntry[] = [];
+    const named: Record<string, Scalar> = {};
+    const slots: Record<string, number> = {};
     cols.forEach((col, i) => {
       if (i === levelIdx || i === bonusIdx || i === featuresIdx) return;
       const value = normalizeCell(cells[i] ?? '');
       if (RESOURCE_COLUMNS.has(col)) {
-        resources[camelCase(col)] = value;
+        if (value !== null) {
+          resourceEntries.push({
+            kind: 'resourceProgression',
+            resource: camelCase(col),
+            value,
+          });
+        }
       } else if (SPELL_NAMED_COLUMNS.has(col)) {
-        spellcasting[camelCase(col)] = value;
+        named[camelCase(col)] = value;
       } else if (SLOT_COLUMNS.has(col)) {
-        if (value !== null) slots[String(SLOT_COLUMNS.get(col))] = value;
+        if (typeof value === 'number') {
+          slots[String(SLOT_COLUMNS.get(col))] = value;
+        }
       }
     });
-    if (Object.keys(slots).length > 0) spellcasting.slots = slots;
-    const features =
+
+    const featureEntries =
       featuresIdx >= 0
-        ? parseFeatureCell(cells[featuresIdx] ?? '', featureKeyByName)
+        ? parseFeatureAdvancement(
+            cells[featuresIdx] ?? '',
+            level,
+            classKey,
+            featureKeyByName,
+          )
         : [];
+    const spellcasting = buildSpellcastingEntry(named, slots, classKey);
+
     return {
-      level: levelNumber(cells[levelIdx] ?? ''),
+      level,
       proficiencyBonus: cells[bonusIdx] ?? '',
-      ...(features.length > 0 ? { features } : {}),
-      ...(Object.keys(resources).length > 0 ? { resources } : {}),
-      ...(Object.keys(spellcasting).length > 0 ? { spellcasting } : {}),
+      advancement: [
+        ...featureEntries,
+        ...resourceEntries,
+        ...(spellcasting !== undefined ? [spellcasting] : []),
+      ],
     };
   });
 }
@@ -295,6 +502,65 @@ function withData(
   return { ...record, data: { ...asObj(record.data), ...extra } };
 }
 
+const SNEAK_ATTACK_KEY = 'feature:rogue:sneak-attack';
+const THIEVES_CANT_KEY = 'feature:rogue:thieves-cant';
+const THIEVES_CANT_NAME = 'Thieves’ Cant';
+
+/**
+ * Split Rogue's Thieves' Cant into its own level-1 feature (eshyra-o9bd.3, folded
+ * into eshyra-o9bd.2). The SRD feature splitter swallows the "Thieves' Cant"
+ * heading into `feature:rogue:sneak-attack`; this lifts that prose into a
+ * standalone `feature:rogue:thieves-cant` record so Rogue's level-1 progression
+ * can grant both as feature refs. Fail-closed: throws if the embedded heading is
+ * not found, rather than silently leaving the progression's Thieves' Cant ref
+ * dangling. Returns a new list; inputs are not mutated.
+ */
+function splitRogueThievesCant(
+  featureRecords: readonly RulesRecord[],
+): RulesRecord[] {
+  const result: RulesRecord[] = [];
+  let foundSneakAttack = false;
+  let split = false;
+  for (const feature of featureRecords) {
+    if (feature.key !== SNEAK_ATTACK_KEY) {
+      result.push(feature);
+      continue;
+    }
+    foundSneakAttack = true;
+    const description = String(asObj(feature.data).description ?? '');
+    const markerIdx = description.indexOf(THIEVES_CANT_NAME);
+    if (markerIdx < 0) {
+      result.push(feature);
+      continue;
+    }
+    const sneakDescription = description
+      .slice(0, markerIdx)
+      .replace(/\s+([.,])/g, '$1')
+      .trim();
+    const cantDescription = description
+      .slice(markerIdx + THIEVES_CANT_NAME.length)
+      .trim();
+    result.push(withData(feature, { description: sneakDescription }));
+    result.push({
+      ...feature,
+      key: THIEVES_CANT_KEY,
+      name: THIEVES_CANT_NAME,
+      data: { source: 'class:rogue', level: 1, description: cantDescription },
+    });
+    split = true;
+  }
+  // Fail-closed only when Sneak Attack is present but the embedded heading is
+  // gone (the source changed) — a partial fixture without Rogue's Sneak Attack
+  // simply has nothing to split.
+  if (foundSneakAttack && !split) {
+    throw new Error(
+      `Expected ${SNEAK_ATTACK_KEY} to carry an embedded "${THIEVES_CANT_NAME}" ` +
+        'heading to split into its own feature (eshyra-o9bd.2/.3).',
+    );
+  }
+  return result;
+}
+
 /**
  * Enrich the class-chapter records (eshyra-4a7.6): add structured progression +
  * table/feature refs to classes, spell-table refs to subclasses, and table
@@ -313,6 +579,11 @@ export function enrichClassChapterRecords(input: {
 } {
   const tableByName = new Map(input.tables.map((t) => [t.name, t]));
 
+  // Split Rogue's Thieves' Cant into its own feature first, so the expanded
+  // feature list flows through name-indexing, the rogue class's data.features,
+  // and the FEATURE_TABLE_REFS pass below.
+  const baseFeatureRecords = splitRogueThievesCant(input.featureRecords);
+
   // Per-class: feature keys (data.features) and a normalized-name -> key map for
   // progression ref resolution. Subclass features are grouped separately so the
   // subclass feature list can be filled too.
@@ -324,7 +595,7 @@ export function enrichClassChapterRecords(input: {
     if (list === undefined) map.set(key, [value]);
     else list.push(value);
   };
-  for (const feature of input.featureRecords) {
+  for (const feature of baseFeatureRecords) {
     const source = String(asObj(feature.data).source ?? '');
     if (source.startsWith('class:')) {
       pushTo(classFeatureKeys, source, feature.key);
@@ -350,7 +621,7 @@ export function enrichClassChapterRecords(input: {
     const extra: Record<string, unknown> = {};
     if (table !== undefined) {
       extra.progressionTableRef = tableKey;
-      extra.progression = deriveClassProgression(table, byName);
+      extra.progression = deriveClassProgression(table, cls.key, byName);
     }
     if (features.length > 0) extra.features = features;
     return Object.keys(extra).length > 0 ? withData(cls, extra) : cls;
@@ -370,7 +641,7 @@ export function enrichClassChapterRecords(input: {
     return Object.keys(extra).length > 0 ? withData(sub, extra) : sub;
   });
 
-  const featureRecords = input.featureRecords.map((feature) => {
+  const featureRecords = baseFeatureRecords.map((feature) => {
     const spec = FEATURE_TABLE_REFS.get(feature.key);
     if (spec === undefined) return feature;
     const description = trimEmbeddedTable(

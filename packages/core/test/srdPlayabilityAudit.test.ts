@@ -93,12 +93,12 @@ const findingsByCategory = (
 // ---------------------------------------------------------------------------
 
 describe('untyped-progression-marker gate', () => {
-  it('fires on a no-ref feature marker', () => {
+  it('fires on an advancement entry with an unknown kind', () => {
     const cls = record({
       key: 'class:barbarian',
       name: 'Barbarian',
       data: {
-        progression: [{ level: 6, features: [{ name: 'Path feature' }] }],
+        progression: [{ level: 6, advancement: [{ kind: 'mysteryMarker' }] }],
       },
     });
     const findings = findingsByCategory(
@@ -106,11 +106,25 @@ describe('untyped-progression-marker gate', () => {
       'untyped-progression-marker',
     );
     expect(findings).toHaveLength(1);
-    expect(findings[0].detail).toContain('Path feature');
+    expect(findings[0].detail).toContain('unknown/missing kind');
     expect(findings[0].bead).toBe('eshyra-o9bd.2');
   });
 
-  it('is silent on a ref-typed entry and on a typed subclass slot', () => {
+  it('fires on a row missing the typed advancement[] array', () => {
+    const cls = record({
+      key: 'class:barbarian',
+      name: 'Barbarian',
+      data: { progression: [{ level: 3 }] },
+    });
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([cls])),
+      'untyped-progression-marker',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('no typed advancement[] array');
+  });
+
+  it('is silent on typed advancement entries (grant, subclass slot)', () => {
     const cls = record({
       key: 'class:barbarian',
       name: 'Barbarian',
@@ -118,11 +132,23 @@ describe('untyped-progression-marker gate', () => {
         progression: [
           {
             level: 1,
-            features: [{ name: 'Rage', ref: 'feature:barbarian:rage' }],
+            advancement: [
+              {
+                kind: 'featureGrant',
+                ref: 'feature:barbarian:rage',
+                name: 'Rage',
+              },
+            ],
           },
           {
             level: 6,
-            features: [{ name: 'Path feature', subclassFeatureSlot: true }],
+            advancement: [
+              {
+                kind: 'subclassFeatureSlot',
+                slotName: 'Path feature',
+                subclassLevel: 6,
+              },
+            ],
           },
         ],
       },
@@ -137,7 +163,7 @@ describe('untyped-progression-marker gate', () => {
 });
 
 describe('null-spellcasting-value gate', () => {
-  it('fires on spellcasting.spellsKnown === null', () => {
+  it('fires on a spellcastingProgression with a null numeric value', () => {
     const cls = record({
       key: 'class:ranger',
       name: 'Ranger',
@@ -145,10 +171,9 @@ describe('null-spellcasting-value gate', () => {
         progression: [
           {
             level: 1,
-            features: [
-              { name: 'Favored Enemy', ref: 'feature:ranger:favored-enemy' },
+            advancement: [
+              { kind: 'spellcastingProgression', spellsKnown: null },
             ],
-            spellcasting: { spellsKnown: null },
           },
         ],
       },
@@ -160,7 +185,7 @@ describe('null-spellcasting-value gate', () => {
     expect(findings).toHaveLength(1);
   });
 
-  it('is silent on a populated spellcasting row', () => {
+  it('is silent on a populated spellcastingProgression', () => {
     const cls = record({
       key: 'class:ranger',
       name: 'Ranger',
@@ -168,10 +193,13 @@ describe('null-spellcasting-value gate', () => {
         progression: [
           {
             level: 2,
-            features: [
-              { name: 'Spellcasting', ref: 'feature:ranger:spellcasting' },
+            advancement: [
+              {
+                kind: 'spellcastingProgression',
+                spellsKnown: 2,
+                slots: { '1': 2 },
+              },
             ],
-            spellcasting: { spellsKnown: 2, slots: { '1': 2 } },
           },
         ],
       },
@@ -186,12 +214,23 @@ describe('null-spellcasting-value gate', () => {
 });
 
 describe('missing-class-feature-record gate', () => {
-  it('fires on a marker with no owning feature record (Thieves’ Cant)', () => {
+  it('fires on a featureGrant whose ref owns no feature record (Thieves’ Cant)', () => {
     const cls = record({
       key: 'class:rogue',
       name: 'Rogue',
       data: {
-        progression: [{ level: 1, features: [{ name: 'Thieves Cant' }] }],
+        progression: [
+          {
+            level: 1,
+            advancement: [
+              {
+                kind: 'featureGrant',
+                ref: 'feature:rogue:thieves-cant',
+                name: 'Thieves Cant',
+              },
+            ],
+          },
+        ],
       },
     });
     const findings = findingsByCategory(
@@ -202,28 +241,46 @@ describe('missing-class-feature-record gate', () => {
     expect(findings[0].bead).toBe('eshyra-o9bd.3');
   });
 
-  it('is silent once a matching feature record exists, and never fires on subclass slots', () => {
+  it('is silent once the granted feature record exists, and never fires on subclass slots', () => {
     const cls = record({
       key: 'class:rogue',
       name: 'Rogue',
       data: {
         progression: [
-          { level: 1, features: [{ name: 'Thieves Cant' }] },
-          { level: 9, features: [{ name: 'Roguish Archetype feature' }] },
+          {
+            level: 1,
+            advancement: [
+              {
+                kind: 'featureGrant',
+                ref: 'feature:rogue:thieves-cant',
+                name: 'Thieves Cant',
+              },
+            ],
+          },
+          {
+            level: 9,
+            advancement: [
+              {
+                kind: 'subclassFeatureSlot',
+                slotName: 'Roguish Archetype feature',
+                subclassLevel: 9,
+              },
+            ],
+          },
         ],
       },
     });
     const thievesCant = record({
       kind: 'feature',
       key: 'feature:rogue:thieves-cant',
-      name: "Thieves' Cant",
+      name: 'Thieves’ Cant',
       data: { description: 'A secret cant.' },
     });
     const findings = findingsByCategory(
       auditSrdPlayability(pack([cls, thievesCant])),
       'missing-class-feature-record',
     );
-    // Thieves' Cant now owned; the "... feature" subclass slot is excluded.
+    // Thieves' Cant now owned; subclass slots reference no feature record.
     expect(findings).toHaveLength(0);
   });
 });
@@ -240,7 +297,14 @@ describe('overlay-dependence gate', () => {
       key: 'class:wizard',
       name: 'Wizard',
       data: {
-        progression: [{ level: 1, spellcasting: { cantripsKnown: 3 } }],
+        progression: [
+          {
+            level: 1,
+            advancement: [
+              { kind: 'spellcastingProgression', cantripsKnown: 3 },
+            ],
+          },
+        ],
         // Frozen pack shape: prose `text` plus prose-string `entries`.
         startingEquipment: {
           text: '(a) a quarterstaff or (b) a dagger',
@@ -275,7 +339,14 @@ describe('overlay-dependence gate', () => {
       name: 'Wizard',
       data: {
         spellcastingAbility: 'intelligence',
-        progression: [{ level: 1, spellcasting: { cantripsKnown: 3 } }],
+        progression: [
+          {
+            level: 1,
+            advancement: [
+              { kind: 'spellcastingProgression', cantripsKnown: 3 },
+            ],
+          },
+        ],
         // Overlay-compatible structured shape (srdClassStartingEquipment.ts):
         // an entries[] of typed choose-one groups and fixed grants.
         startingEquipment: {
@@ -347,19 +418,21 @@ describe('committed SRD pack playable-model baseline', () => {
   const findings = auditSrdPlayability(getBundledDnd5eSrdPack());
   const counts = countSrdPlayabilityByCategory(findings);
 
-  it('RED until eshyra-o9bd.2: untyped progression markers exist', () => {
-    // Flip to `toBe(0)` when eshyra-o9bd.2 types every progression row.
-    expect(counts['untyped-progression-marker']).toBeGreaterThan(0);
+  it('GREEN (eshyra-o9bd.2 landed): every progression row is typed', () => {
+    // eshyra-o9bd.2 replaced the untyped feature markers with a typed
+    // advancement[] union; the gate now passes against the committed pack.
+    expect(counts['untyped-progression-marker']).toBe(0);
   });
 
-  it('RED until eshyra-o9bd.2: null spellcasting placeholders exist', () => {
-    // Flip to `toBe(0)` when eshyra-o9bd.2 removes null spellcasting values.
-    expect(counts['null-spellcasting-value']).toBeGreaterThan(0);
+  it('GREEN (eshyra-o9bd.2 landed): no null spellcasting placeholders', () => {
+    // eshyra-o9bd.2 omits non-applicable spellcasting instead of emitting null.
+    expect(counts['null-spellcasting-value']).toBe(0);
   });
 
-  it('RED until eshyra-o9bd.3: a missing class feature record exists (Thieves’ Cant)', () => {
-    // Flip to `toBe(0)` when eshyra-o9bd.3 adds feature:rogue:thieves-cant.
-    expect(counts['missing-class-feature-record']).toBeGreaterThan(0);
+  it('GREEN (eshyra-o9bd.3 landed): every granted feature record exists', () => {
+    // eshyra-o9bd.3 (folded into .2) added feature:rogue:thieves-cant, so no
+    // progression grant/improvement ref dangles.
+    expect(counts['missing-class-feature-record']).toBe(0);
   });
 
   it('RED until eshyra-o9bd.5: overlay-dependence findings exist', () => {
@@ -377,17 +450,19 @@ describe('committed SRD pack playable-model baseline', () => {
     expect(findings.every((f) => /^eshyra-o9bd\.\d+$/.test(f.bead))).toBe(true);
   });
 
-  it('the report renders the punch list', () => {
+  it('the report renders the remaining punch list', () => {
     const report = formatSrdPlayabilityReport('rules:dnd5e-srd-5.1', findings);
     expect(report).toContain('SRD playable-model audit');
-    expect(report).toContain('untyped-progression-marker');
+    // overlay-dependence (eshyra-o9bd.5) is the remaining RED category.
+    expect(report).toContain('overlay-dependence');
   });
 
-  // Re-freeze readiness ratchet: currently the pack is NOT playable-clean, so
-  // this expectation fails and `it.fails` PASSES. When every gate above is
-  // green, the inner assertion starts passing, `it.fails` flips to FAILING, and
-  // eshyra-o9bd.14 must convert this to a plain green assertion before re-freeze.
-  it.fails('re-freeze readiness: pack has zero playable-model findings (RED until eshyra-o9bd.2-.9 land)', () => {
+  // Re-freeze readiness ratchet: the pack is not yet playable-clean (overlay
+  // dependence remains until eshyra-o9bd.5/.9), so this expectation fails and
+  // `it.fails` PASSES. When every gate goes green, the inner assertion starts
+  // passing, `it.fails` flips to FAILING, and eshyra-o9bd.14 must convert this
+  // to a plain green assertion before re-freeze.
+  it.fails('re-freeze readiness: pack has zero playable-model findings (RED until eshyra-o9bd.5/.9 land)', () => {
     expect(srdPlayabilityHasFindings(findings)).toBe(false);
   });
 });

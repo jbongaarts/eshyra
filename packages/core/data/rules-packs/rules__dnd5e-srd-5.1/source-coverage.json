@@ -1,7 +1,7 @@
 {
   "summary": {
-    "record": 1452,
-    "childOf": 456,
+    "record": 1453,
+    "childOf": 455,
     "ambiguous": 187,
     "taxonomy": 33,
     "ignored": {
@@ -4057,7 +4057,7 @@
       "structure": "heading",
       "text": "Thieves’ Cant",
       "section": "Rogue",
-      "status": "child-of:feature:rogue:sneak-attack"
+      "status": "record:feature:rogue:thieves-cant"
     },
     {
       "page": 40,

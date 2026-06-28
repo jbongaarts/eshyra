@@ -22,7 +22,7 @@
     "source-region-ledger.json": "7baf47c2fe3456e0e095b0bc70765ce6916574b8ef1398f38036af43d89d4540"
   },
   "recordCounts": {
-    "total": 1811,
+    "total": 1812,
     "byKind": {
       "action": 10,
       "ancestry": 13,
@@ -32,7 +32,7 @@
       "creature": 317,
       "equipment": 218,
       "feat": 1,
-      "feature": 183,
+      "feature": 184,
       "hazard": 25,
       "magic-item": 240,
       "rule": 335,
@@ -137,7 +137,7 @@
       "command": "npm run audit-bundle:dnd5e-srd",
       "exitCode": 0,
       "mode": "independent",
-      "summary": "fresh bundle at HEAD; 1811 records, 0 suspicious, 0 structure findings, 0 unicode, coverage 0 unaccounted / 0 known-gap, ledger 0 unrepresented / 0 broad ignores"
+      "summary": "fresh bundle at HEAD; 1812 records, 0 suspicious, 0 structure findings, 0 unicode, coverage 0 unaccounted / 0 known-gap, ledger 0 unrepresented / 0 broad ignores"
     },
     {
       "command": "npm run check",

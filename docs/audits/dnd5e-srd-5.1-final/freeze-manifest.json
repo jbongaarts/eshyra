@@ -18,7 +18,7 @@
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json",
-      "sha256": "497359e59e2e49722f6469ae323c5c12f917acdbf1c3550d782b4db1e7fde8bb"
+      "sha256": "b7b883450c950eaff48d66ea73d0895174875f8748b26be6f8ebdfbc946ef316"
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json",
@@ -30,11 +30,11 @@
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-coverage.json",
-      "sha256": "ead5779a66054b2647d947155c50136e406af145a62499e2f47863691e4c427f"
+      "sha256": "35cf6eba2da51233d62caaec0ba6b634fa7fdc8a00259a4ee4860a41cb095f68"
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-region-ledger.json",
-      "sha256": "7baf47c2fe3456e0e095b0bc70765ce6916574b8ef1398f38036af43d89d4540"
+      "sha256": "690be3616c05050b04460e20ce4d9d39b91defd7df4d7283ecee5f902a0e2ec3"
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/README.md",
@@ -46,11 +46,11 @@
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/evidence.json",
-      "sha256": "c219931187996867b02d78f76b04a7e7c054660b81e71b33d60e1963cc84a1c8"
+      "sha256": "b7eead0bcc2f8563ac640887bfd7faaf49b875a8c991e4080350f87a6301216f"
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/record-counts.md",
-      "sha256": "c4af62f4062a238ef557cc72aa99df75b08a8a3ac1d938037826a6557a10c76d"
+      "sha256": "24faadde752d6d13ea91196db948ab968ef24293a3343fdc8284f3e065fa4c42"
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/audit-methodology.md",

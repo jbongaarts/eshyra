@@ -89,13 +89,6 @@ function nonEmptyArray(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0;
 }
 
-function slug(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
 function sortFindings(
   findings: readonly SrdPlayabilityFinding[],
 ): readonly SrdPlayabilityFinding[] {
@@ -106,12 +99,30 @@ function sortFindings(
   });
 }
 
-// A class progression row, read defensively off the generated `data`.
+// A class progression row, read defensively off the generated `data`. Rows
+// carry a typed `advancement[]` discriminated union (eshyra-o9bd.2).
 interface ProgressionRow {
   readonly level?: unknown;
-  readonly features?: unknown;
-  readonly spellcasting?: unknown;
+  readonly advancement?: unknown;
 }
+
+/** The advancement-entry kinds the level-up engine knows how to apply. */
+const KNOWN_ADVANCEMENT_KINDS: ReadonlySet<string> = new Set([
+  'featureGrant',
+  'subclassFeatureSlot',
+  'featureImprovement',
+  'resourceProgression',
+  'spellcastingProgression',
+]);
+
+// Numeric spellcasting fields whose `null` placeholder a level-up engine
+// cannot apply (the Ranger level-1 `spellsKnown: null` class).
+const SPELLCASTING_NUMERIC_FIELDS = [
+  'cantripsKnown',
+  'spellsKnown',
+  'spellsPrepared',
+  'invocationsKnown',
+] as const;
 
 function classProgressionRows(record: RulesRecord): ProgressionRow[] | null {
   if (record.kind !== 'class') return null;
@@ -124,33 +135,12 @@ function rowLevelLabel(row: ProgressionRow): string {
   return typeof row.level === 'number' ? String(row.level) : '(unknown)';
 }
 
-function rowFeatures(row: ProgressionRow): Record<string, unknown>[] {
-  if (!Array.isArray(row.features)) return [];
-  return row.features
+function rowAdvancement(row: ProgressionRow): Record<string, unknown>[] {
+  if (!Array.isArray(row.advancement)) return [];
+  return row.advancement
     .map(asObject)
-    .filter((f): f is Record<string, unknown> => f !== null);
+    .filter((e): e is Record<string, unknown> => e !== null);
 }
-
-/**
- * A feature entry is "typed" when the level-up engine can apply it
- * deterministically: it either carries a feature `ref`, or it is an explicitly
- * typed subclass-feature slot (the structured shape eshyra-o9bd.2 introduces).
- */
-function isTypedFeatureEntry(entry: Record<string, unknown>): boolean {
-  if (asString(entry.ref) !== null) return true;
-  if (entry.subclassFeatureSlot === true) return true;
-  if (asString(entry.slotName) !== null) return true;
-  if (entry.slot === 'subclass') return true;
-  return false;
-}
-
-// Numeric spellcasting fields whose `null` placeholder a level-up engine
-// cannot apply (the Ranger level-1 `spellsKnown: null` class).
-const SPELLCASTING_NUMERIC_FIELDS = [
-  'cantripsKnown',
-  'spellsKnown',
-  'spellsPrepared',
-] as const;
 
 const PROFICIENCY_FIELDS = [
   'armorProficiencies',
@@ -196,16 +186,32 @@ function checkUntypedProgressionMarkers(
   if (rows === null) return [];
   const findings: SrdPlayabilityFinding[] = [];
   for (const row of rows) {
-    for (const entry of rowFeatures(row)) {
-      if (isTypedFeatureEntry(entry)) continue;
-      const name = asString(entry.name) ?? '(unnamed)';
+    // Every row must carry a typed advancement[] array (no row should fall back
+    // to an untyped feature list). A missing array is itself a finding so the
+    // gate cannot pass vacuously when the schema is wrong.
+    if (!Array.isArray(row.advancement)) {
       findings.push({
         category: 'untyped-progression-marker',
         key: record.key,
         kind: record.kind,
         name: record.name,
         bead: 'eshyra-o9bd.2',
-        detail: `level ${rowLevelLabel(row)} feature marker "${name}" has no feature ref and is not a typed subclass slot`,
+        detail: `level ${rowLevelLabel(row)} has no typed advancement[] array`,
+      });
+      continue;
+    }
+    for (const entry of rowAdvancement(row)) {
+      const entryKind = asString(entry.kind);
+      if (entryKind !== null && KNOWN_ADVANCEMENT_KINDS.has(entryKind)) {
+        continue;
+      }
+      findings.push({
+        category: 'untyped-progression-marker',
+        key: record.key,
+        kind: record.kind,
+        name: record.name,
+        bead: 'eshyra-o9bd.2',
+        detail: `level ${rowLevelLabel(row)} advancement entry has an unknown/missing kind ${JSON.stringify(entry.kind)}`,
       });
     }
   }
@@ -221,18 +227,19 @@ function checkNullSpellcasting(record: RulesRecord): SrdPlayabilityFinding[] {
   if (rows === null) return [];
   const findings: SrdPlayabilityFinding[] = [];
   for (const row of rows) {
-    const spellcasting = asObject(row.spellcasting);
-    if (spellcasting === null) continue;
-    for (const field of SPELLCASTING_NUMERIC_FIELDS) {
-      if (field in spellcasting && spellcasting[field] === null) {
-        findings.push({
-          category: 'null-spellcasting-value',
-          key: record.key,
-          kind: record.kind,
-          name: record.name,
-          bead: 'eshyra-o9bd.2',
-          detail: `level ${rowLevelLabel(row)} spellcasting.${field} is null (malformed placeholder a level-up engine cannot apply)`,
-        });
+    for (const entry of rowAdvancement(row)) {
+      if (entry.kind !== 'spellcastingProgression') continue;
+      for (const field of SPELLCASTING_NUMERIC_FIELDS) {
+        if (field in entry && entry[field] === null) {
+          findings.push({
+            category: 'null-spellcasting-value',
+            key: record.key,
+            kind: record.kind,
+            name: record.name,
+            bead: 'eshyra-o9bd.2',
+            detail: `level ${rowLevelLabel(row)} spellcastingProgression.${field} is null (malformed placeholder a level-up engine cannot apply)`,
+          });
+        }
       }
     }
   }
@@ -243,52 +250,48 @@ function checkNullSpellcasting(record: RulesRecord): SrdPlayabilityFinding[] {
 // Gate: missing class feature record (eshyra-o9bd.3)
 // ---------------------------------------------------------------------------
 
-// The last `:`-segment of every feature key, slugged — the set of feature
-// "headings" the pack actually owns as records.
-function featureHeadingSlugs(pack: RulesPack): ReadonlySet<string> {
-  const slugs = new Set<string>();
-  for (const record of pack.records) {
-    if (record.kind !== 'feature') continue;
-    const segment = record.key.slice(record.key.lastIndexOf(':') + 1);
-    slugs.add(slug(segment));
-    slugs.add(slug(record.name));
-  }
-  return slugs;
-}
-
 /**
- * A no-ref progression marker that is not a generic subclass slot
- * ("... feature"), not an improvement, and not spellcasting/alias-shaped, yet
- * names no feature record the pack owns — i.e. a missing feature heading
- * (Rogue's Thieves' Cant). Distinct from the broad untyped-marker gate because
- * its fix is a NEW record (eshyra-o9bd.3), not just typing the marker.
+ * Every feature granted or improved by a class progression row must resolve to
+ * a `feature:` record the pack owns. A dangling `featureGrant`/`featureImprovement`
+ * ref means a missing feature record — the Rogue Thieves' Cant class
+ * (eshyra-o9bd.3). Replaces the old name-heuristic with real ref reachability.
  */
 function checkMissingClassFeatureRecords(
   pack: RulesPack,
 ): SrdPlayabilityFinding[] {
-  const owned = featureHeadingSlugs(pack);
+  const featureKeys = new Set(
+    pack.records.filter((r) => r.kind === 'feature').map((r) => r.key),
+  );
   const findings: SrdPlayabilityFinding[] = [];
   for (const record of pack.records) {
     const rows = classProgressionRows(record);
     if (rows === null) continue;
     for (const row of rows) {
-      for (const entry of rowFeatures(row)) {
-        if (asString(entry.ref) !== null) continue;
-        const name = asString(entry.name);
-        if (name === null) continue;
-        const lower = name.toLowerCase();
-        if (lower.endsWith('feature')) continue; // subclass/archetype slot label
-        if (lower.includes('improvement')) continue; // feature improvement
-        if (lower.includes('spell')) continue; // spellcasting / Signature Spell alias
-        if (owned.has(slug(name))) continue; // a record already owns this heading
-        findings.push({
-          category: 'missing-class-feature-record',
-          key: record.key,
-          kind: record.kind,
-          name: record.name,
-          bead: 'eshyra-o9bd.3',
-          detail: `level ${rowLevelLabel(row)} marker "${name}" names no feature record (missing heading)`,
-        });
+      for (const entry of rowAdvancement(row)) {
+        const refs: string[] = [];
+        if (entry.kind === 'featureGrant') {
+          const ref = asString(entry.ref);
+          if (ref !== null) refs.push(ref);
+        } else if (
+          entry.kind === 'featureImprovement' &&
+          Array.isArray(entry.targetRefs)
+        ) {
+          for (const target of entry.targetRefs) {
+            const ref = asString(target);
+            if (ref !== null) refs.push(ref);
+          }
+        }
+        for (const ref of refs) {
+          if (featureKeys.has(ref)) continue;
+          findings.push({
+            category: 'missing-class-feature-record',
+            key: record.key,
+            kind: record.kind,
+            name: record.name,
+            bead: 'eshyra-o9bd.3',
+            detail: `level ${rowLevelLabel(row)} references '${ref}', but no feature record owns it`,
+          });
+        }
       }
     }
   }
@@ -300,7 +303,11 @@ function checkMissingClassFeatureRecords(
 // ---------------------------------------------------------------------------
 
 function isSpellcastingClass(rows: readonly ProgressionRow[]): boolean {
-  return rows.some((row) => asObject(row.spellcasting) !== null);
+  return rows.some((row) =>
+    rowAdvancement(row).some(
+      (entry) => entry.kind === 'spellcastingProgression',
+    ),
+  );
 }
 
 function hasStructuredStartingEquipment(value: unknown): boolean {
