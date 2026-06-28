@@ -241,7 +241,11 @@ describe('overlay-dependence gate', () => {
       name: 'Wizard',
       data: {
         progression: [{ level: 1, spellcasting: { cantripsKnown: 3 } }],
-        startingEquipment: { text: 'a quarterstaff or a dagger' },
+        // Frozen pack shape: prose `text` plus prose-string `entries`.
+        startingEquipment: {
+          text: '(a) a quarterstaff or (b) a dagger',
+          entries: ['(a) a quarterstaff or (b) a dagger', 'A spellbook'],
+        },
       },
     });
     const findings = findingsByCategory(
@@ -272,8 +276,17 @@ describe('overlay-dependence gate', () => {
       data: {
         spellcastingAbility: 'intelligence',
         progression: [{ level: 1, spellcasting: { cantripsKnown: 3 } }],
+        // Overlay-compatible structured shape (srdClassStartingEquipment.ts):
+        // an entries[] of typed choose-one groups and fixed grants.
         startingEquipment: {
-          choices: [{ choose: 1, from: ['a quarterstaff'] }],
+          entries: [
+            {
+              kind: 'choice',
+              options: [{ label: 'a', text: 'a quarterstaff' }],
+              sourceText: '(a) a quarterstaff',
+            },
+            { kind: 'fixed', text: 'A spellbook', sourceText: 'A spellbook' },
+          ],
         },
       },
     });

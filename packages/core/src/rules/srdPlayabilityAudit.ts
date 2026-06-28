@@ -286,9 +286,21 @@ function isSpellcastingClass(rows: readonly ProgressionRow[]): boolean {
 function hasStructuredStartingEquipment(value: unknown): boolean {
   const obj = asObject(value);
   if (obj === null) return false;
-  // Prose-only `{ text }` is not machine-readable; structured grants carry
-  // typed choices and/or fixed item refs.
-  return nonEmptyArray(obj.choices) || nonEmptyArray(obj.fixed);
+  // The frozen pack carries `startingEquipment.entries` as PROSE strings (e.g.
+  // "(a) a quarterstaff or (b) a dagger") plus a `text` blob — neither is
+  // machine-readable. Structured equipment is the existing overlay's shape
+  // (srdClassStartingEquipment.ts): an `entries[]` of typed objects, each a
+  // choose-one group `{ kind: 'choice', options[] }` or a fixed grant
+  // `{ kind: 'fixed', text }`. eshyra-o9bd.5 absorbs the overlay into this
+  // field, so the gate goes green exactly when the pack adopts that shape.
+  if (!Array.isArray(obj.entries) || obj.entries.length === 0) return false;
+  return obj.entries.every((entry) => {
+    const e = asObject(entry);
+    if (e === null) return false;
+    if (e.kind === 'choice') return nonEmptyArray(e.options);
+    if (e.kind === 'fixed') return asString(e.text) !== null;
+    return false;
+  });
 }
 
 /**
@@ -353,7 +365,7 @@ function checkOverlayDependence(record: RulesRecord): SrdPlayabilityFinding[] {
     }
     if (!hasStructuredStartingEquipment(data.startingEquipment)) {
       push(
-        'startingEquipment is prose-only (no structured choices/fixed item grants)',
+        'startingEquipment is prose-only (entries are not typed choice/fixed grants)',
       );
     }
     return findings;
