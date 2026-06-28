@@ -13,6 +13,7 @@ import {
   checkCustodyResumable,
   checkoutCharacterIntoCampaign,
   classifyResumeConflict,
+  createCharacterChronicleStore,
   createCharacterRegistryStore,
   createSqliteCharacterSheetStore,
   type Db,
@@ -20,6 +21,7 @@ import {
   DND5E_SRD_SYSTEM_ID,
   ensureCharacterRegistrySchema,
   forkCharacterTimeline,
+  getCampaignBible,
   initSchema,
   openDatabase,
   registerNewCharacter,
@@ -75,6 +77,32 @@ function freshCampaign(): Db {
   const db = openDatabase(':memory:');
   initSchema(db);
   return db;
+}
+
+function seedCampaignBible(db: Db): void {
+  db.prepare(
+    `INSERT INTO campaign_bible(
+       campaign_id,
+       world_facts_json,
+       major_npcs_json,
+       factions_json,
+       open_threads_json,
+       updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(
+    'camp-a',
+    JSON.stringify([
+      {
+        text: 'King Aldren secretly commands the Ashen Court.',
+        sourceArcIds: ['arc-1'],
+        sourceSessionIds: ['session-1'],
+      },
+    ]),
+    JSON.stringify([]),
+    JSON.stringify([]),
+    JSON.stringify([]),
+    '2026-06-27T00:00:00.000Z',
+  );
 }
 
 describe('registerNewCharacter', () => {
@@ -184,6 +212,83 @@ describe('character custody lifecycle', () => {
     expect(createSqliteCharacterSheetStore(campaignB).load('pc-1')?.level).toBe(
       2,
     );
+  });
+
+  it('captures selected character chronicle records on release without copying campaign canon', () => {
+    const { db: registryDb, registry: localRegistry } = freshRegistry();
+    const chronicle = createCharacterChronicleStore(
+      registryDb,
+      () => '2026-06-27T00:00:00.000Z',
+    );
+    registerNewCharacter(localRegistry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    checkoutCharacterIntoCampaign(localRegistry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+    seedCampaignBible(campaign);
+
+    const released = releaseCharacterFromCampaign(localRegistry, campaign, {
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      chronicleStore: chronicle,
+      chronicleRecords: [
+        {
+          category: 'relationship',
+          text: 'Mira remembers owing Tamsin a life debt after the lantern vault.',
+          source: {
+            sessionId: 'session-1',
+            sceneId: 'scene-lantern',
+            at: '2026-06-27T00:00:00.000Z',
+          },
+          portability: 'portable',
+          visibility: 'player-visible',
+          truthStatus: 'remembered',
+          relatedRefs: [
+            {
+              ref: 'npc:tamsin',
+              scope: 'campaign',
+              campaignId: 'camp-a',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(released).toMatchObject({
+      globalCharacterId: 'mira',
+      committed: false,
+    });
+    expect(chronicle.listRecords('mira')).toEqual([
+      expect.objectContaining({
+        category: 'relationship',
+        text: 'Mira remembers owing Tamsin a life debt after the lantern vault.',
+        source: {
+          campaignId: 'camp-a',
+          sessionId: 'session-1',
+          sceneId: 'scene-lantern',
+          at: '2026-06-27T00:00:00.000Z',
+        },
+        portability: 'portable',
+        visibility: 'player-visible',
+        truthStatus: 'remembered',
+      }),
+    ]);
+    expect(chronicle.listRecords('mira')[0]?.text).not.toContain('King Aldren');
+    expect(
+      getCampaignBible(campaign, { campaignId: 'camp-a' })?.worldFacts,
+    ).toEqual([
+      {
+        text: 'King Aldren secretly commands the Ashen Court.',
+        sourceArcIds: ['arc-1'],
+        sourceSessionIds: ['session-1'],
+      },
+    ]);
   });
 
   it('does not append a revision when the campaign sheet is unchanged', () => {

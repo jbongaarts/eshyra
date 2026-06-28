@@ -36,6 +36,15 @@ import {
   attachCharacterSheetToCampaign,
 } from './attachCharacter.js';
 import type {
+  CharacterChronicleCategory,
+  CharacterChroniclePortability,
+  CharacterChronicleRelatedRef,
+  CharacterChronicleSource,
+  CharacterChronicleStore,
+  CharacterChronicleTruthStatus,
+  CharacterChronicleVisibility,
+} from './characterChronicle.js';
+import type {
   CharacterRegistryStore,
   CharacterRevision,
   CustodyRecord,
@@ -230,6 +239,29 @@ export interface CustodyHolderInput {
   readonly campaignId: string;
   /** The campaign-local character id being synced (e.g. `pc-1`). */
   readonly characterId: string;
+  /**
+   * Optional registry-backed chronicle store. When present with
+   * `chronicleRecords`, release appends the selected character-scoped memories
+   * after sync-back succeeds and before custody is cleared.
+   */
+  readonly chronicleStore?: CharacterChronicleStore;
+  /**
+   * Explicitly selected character-scoped memories to carry forward. Campaign
+   * bible/world facts are never read or transformed here; callers must pass only
+   * facts/events that belong to this character's own memory.
+   */
+  readonly chronicleRecords?: readonly ReleaseChronicleRecordInput[];
+}
+
+export interface ReleaseChronicleRecordInput {
+  readonly id?: string;
+  readonly category: CharacterChronicleCategory;
+  readonly text: string;
+  readonly source: Omit<CharacterChronicleSource, 'campaignId'>;
+  readonly portability: CharacterChroniclePortability;
+  readonly visibility: CharacterChronicleVisibility;
+  readonly truthStatus: CharacterChronicleTruthStatus;
+  readonly relatedRefs: readonly CharacterChronicleRelatedRef[];
 }
 
 /**
@@ -311,11 +343,33 @@ export function releaseCharacterFromCampaign(
 ): SyncBackResult | undefined {
   const result = syncBackCharacterFromCampaign(registry, campaignDb, input);
   if (result !== undefined) {
+    appendReleaseChronicleRecords(input, result.globalCharacterId);
     // syncBack returned a result only because this campaign holds custody, so
     // clearing the lock here is safe and targets our own hold.
     registry.clearCustody(result.globalCharacterId);
   }
   return result;
+}
+
+function appendReleaseChronicleRecords(
+  input: CustodyHolderInput,
+  globalCharacterId: string,
+): void {
+  if (input.chronicleRecords === undefined) {
+    return;
+  }
+  if (input.chronicleStore === undefined) {
+    throw new CharacterCustodyError(
+      'release chronicle records require a chronicleStore',
+    );
+  }
+  for (const record of input.chronicleRecords) {
+    input.chronicleStore.appendRecord({
+      ...record,
+      globalCharacterId,
+      source: { ...record.source, campaignId: input.campaignId },
+    });
+  }
 }
 
 /** Outcome of {@link acquireCustodyOnResume} for one campaign character. */
