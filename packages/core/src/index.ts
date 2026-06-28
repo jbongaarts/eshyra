@@ -163,6 +163,17 @@ export {
 export { DND5E_SRD_CHARACTER_RECIPE } from './character/dnd5eRecipe.js';
 export type { CharacterSheet } from './character/finalizeCharacter.js';
 export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
+export type {
+  GuidedLevelUpInput,
+  GuidedLevelUpOutcome,
+  GuidedLevelUpResult,
+} from './character/guidedLevelUpFlow.js';
+export { runGuidedLevelUp } from './character/guidedLevelUpFlow.js';
+export type {
+  LevelUpChangeSet,
+  LevelUpChoiceSelections,
+  LevelUpRequiredChoice,
+} from './character/levelUpEngine.js';
 export { enumerateLevel1RequiredChoices } from './character/requiredChoices.js';
 export type { RulesPackCharacterResolver } from './character/rulesPackResolver.js';
 export { getBundledDnd5eCharacterResolver } from './character/rulesPackResolver.js';
@@ -454,7 +465,18 @@ export type { CombatInstance } from './state/encounterCombatants.js';
 // Active-combat lookup (used by the resume conflict-resolution UX to warn
 // before catching a character up mid-combat — ADR 0012, eshyra-lupf.14.4).
 export { getActiveCombatInstance } from './state/encounterCombatants.js';
+export type { LevelUpEligibility } from './state/levelUpEligibility.js';
+export { getLevelUpEligibility } from './state/levelUpEligibility.js';
 export { listParty } from './state/party.js';
+export type {
+  ProgressionEventKind,
+  ProgressionEventRecord,
+  ProgressionState,
+} from './state/progression.js';
+export {
+  getProgressionState,
+  listProgressionEvents,
+} from './state/progression.js';
 // Built-in sample world module and module-pack shape.
 export { EMBERFALL_HOLLOW } from './world/samples/emberfallHollow.js';
 export type {

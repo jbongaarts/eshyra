@@ -3,6 +3,7 @@ import { getDemoTurnBudget } from '@eshyra/core';
 import { createAdditionalCharacter } from './playCharacter.js';
 import { gracefulClose } from './playClose.js';
 import { showParty, switchActiveCharacter } from './playParty.js';
+import { runLevelUpCommand, showProgression } from './playProgression.js';
 import type { PlayDeps } from './playTypes.js';
 
 /** Inputs that end the turn loop and trigger a graceful close. */
@@ -17,6 +18,7 @@ async function handlePartyCommand(
   deps: PlayDeps,
   db: Db,
   campaignId: string,
+  sessionId: string,
   input: string,
 ): Promise<boolean> {
   const spaceIndex = input.indexOf(' ');
@@ -34,6 +36,12 @@ async function handlePartyCommand(
       return true;
     case '/addpc':
       await createAdditionalCharacter(deps, db, campaignId);
+      return true;
+    case '/progression':
+      showProgression(deps.io, db);
+      return true;
+    case '/levelup':
+      await runLevelUpCommand(deps, db, sessionId);
       return true;
     default:
       return false;
@@ -73,7 +81,7 @@ export async function turnLoop(
     }
     if (
       input.startsWith('/') &&
-      (await handlePartyCommand(deps, db, campaignId, input))
+      (await handlePartyCommand(deps, db, campaignId, sessionId, input))
     ) {
       continue;
     }
