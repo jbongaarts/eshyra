@@ -233,6 +233,19 @@ export type {
   FinalizeMetadata,
 } from './character/finalizeCharacter.js';
 export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
+// Deterministic level-up application engine (eshyra-lupf.8).
+export type {
+  ApplyLevelUpInput,
+  ApplyLevelUpResult,
+  LevelUpChangeSet,
+  LevelUpDelta,
+  LevelUpHitPoints,
+} from './character/levelUpEngine.js';
+export {
+  applyLevelUp,
+  computeLevelUpChangeSet,
+  LevelUpEngineError,
+} from './character/levelUpEngine.js';
 export type {
   CreatedPathfinderCharacter,
   PathfinderCharacterCreationResult,
