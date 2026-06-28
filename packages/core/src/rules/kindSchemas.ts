@@ -432,6 +432,80 @@ function baseObjectKind(record: RulesRecord, path: string): void {
   optStr(data, 'description', `${path}.data`);
 }
 
+function projectionRows(projection: Obj, path: string): readonly Obj[] {
+  const rows = projection.rows;
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new RulesPackError(`${path}.rows must be a non-empty array`);
+  }
+  rows.forEach((row, index) => {
+    if (typeof row !== 'object' || row === null || Array.isArray(row)) {
+      throw new RulesPackError(`${path}.rows[${index}] must be an object`);
+    }
+  });
+  return rows as readonly Obj[];
+}
+
+function validateDestroyUndeadProjection(projection: Obj, path: string): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqInt(row, 'clericLevel', rowPath, 1);
+    reqStr(row, 'maxChallengeRating', rowPath);
+    reqNum(row, 'maxChallengeRatingValue', rowPath);
+  });
+}
+
+function validateBeastShapeProjection(projection: Obj, path: string): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqInt(row, 'druidLevel', rowPath, 1);
+    reqStr(row, 'maxChallengeRating', rowPath);
+    reqNum(row, 'maxChallengeRatingValue', rowPath);
+    reqStr(row, 'limitations', rowPath);
+    reqStr(row, 'example', rowPath);
+  });
+}
+
+function validateDraconicAncestryProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'dragon', rowPath);
+    reqStr(row, 'damageType', rowPath);
+    reqStr(row, 'breathWeapon', rowPath);
+    reqStr(row, 'breathWeaponShape', rowPath);
+    reqStr(row, 'breathWeaponSaveAbility', rowPath);
+  });
+}
+
+function optDnd5eTableProjection(parent: Obj, path: string): void {
+  const value = parent.projection;
+  if (value === undefined) return;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(
+      `${path}.projection must be an object when present`,
+    );
+  }
+  const projection = value as Obj;
+  const kind = reqStr(projection, 'kind', `${path}.projection`);
+  switch (kind) {
+    case 'destroyUndeadThresholds':
+      validateDestroyUndeadProjection(projection, `${path}.projection`);
+      return;
+    case 'beastShapeOptions':
+      validateBeastShapeProjection(projection, `${path}.projection`);
+      return;
+    case 'draconicAncestryOptions':
+      validateDraconicAncestryProjection(projection, `${path}.projection`);
+      return;
+    default:
+      throw new RulesPackError(
+        `${path}.projection.kind has unsupported table projection kind "${kind}"`,
+      );
+  }
+}
+
 const BASE_KIND_VALIDATORS: Record<RulesRecordKind, Validator> = {
   ability: baseObjectKind,
   action: baseObjectKind,
@@ -494,6 +568,11 @@ const BASE_KIND_VALIDATORS: Record<RulesRecordKind, Validator> = {
 };
 
 // System-specific deeper validators. These run AFTER the baseline check.
+
+function validateDnd5eTable(record: RulesRecord, path: string): void {
+  const data = dataObj(record, path);
+  optDnd5eTableProjection(data, `${path}.data`);
+}
 
 function validateDnd5eSpell(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
@@ -887,6 +966,7 @@ const SYSTEM_KIND_VALIDATORS: Record<
     action: validateDnd5eAction,
     'magic-item': validateDnd5eMagicItem,
     'stat-block': validateDnd5eStatBlock,
+    table: validateDnd5eTable,
   },
   'pathfinder2e-remaster': {
     ancestry: validatePf2eAncestry,

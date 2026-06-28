@@ -101,6 +101,7 @@ import {
   assertSourceRegionLedger,
   buildSourceRegionLedger,
 } from './sourceRegionLedger.js';
+import { addSemanticTableProjections } from './tableProjections.js';
 import type {
   AncestryExtraction,
   BackgroundExtraction,
@@ -2990,7 +2991,7 @@ export async function runImporter(
   // anchor heading + exact cell-tier header line) against the FULL document
   // rather than a section slice, per reviewed spec with an exact row count.
   // Uniform-font fixtures never satisfy the tier requirement and yield none.
-  const tables = [
+  const tables = addSemanticTableProjections([
     ...parseTables([
       ...coreRulePages,
       ...treasureTablePages,
@@ -3007,7 +3008,7 @@ export async function runImporter(
     // Appendix PH-B deity tables (eshyra-4a7.10.5): four cross-page
     // interleaved-column tables reconstructed by `parseDeityTables`.
     ...deityTables,
-  ];
+  ]);
   validateTableCoverage(tables, input.expectedTableNames);
   // Sliced after the other sections so the existing fail-closed tests trip on
   // their own anchor first. Throws SectionNotFoundError if the races anchor

@@ -80389,7 +80389,33 @@
           "—",
           "Giant eagle"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "beastShapeOptions",
+        "rows": [
+          {
+            "druidLevel": 2,
+            "maxChallengeRating": "1/4",
+            "maxChallengeRatingValue": 0.25,
+            "limitations": "No flying or swimming speed",
+            "example": "Wolf"
+          },
+          {
+            "druidLevel": 4,
+            "maxChallengeRating": "1/2",
+            "maxChallengeRatingValue": 0.5,
+            "limitations": "No flying speed",
+            "example": "Crocodile"
+          },
+          {
+            "druidLevel": 8,
+            "maxChallengeRating": "1",
+            "maxChallengeRatingValue": 1,
+            "limitations": "—",
+            "example": "Giant eagle"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 20",
     "license": {
@@ -81884,7 +81910,37 @@
           "17th",
           "4 or lower"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "destroyUndeadThresholds",
+        "rows": [
+          {
+            "clericLevel": 5,
+            "maxChallengeRating": "1/2 or lower",
+            "maxChallengeRatingValue": 0.5
+          },
+          {
+            "clericLevel": 8,
+            "maxChallengeRating": "1 or lower",
+            "maxChallengeRatingValue": 1
+          },
+          {
+            "clericLevel": 11,
+            "maxChallengeRating": "2 or lower",
+            "maxChallengeRatingValue": 2
+          },
+          {
+            "clericLevel": 14,
+            "maxChallengeRating": "3 or lower",
+            "maxChallengeRatingValue": 3
+          },
+          {
+            "clericLevel": 17,
+            "maxChallengeRating": "4 or lower",
+            "maxChallengeRatingValue": 4
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -82085,7 +82141,82 @@
           "Cold",
           "15 ft. cone (Con. save)"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "draconicAncestryOptions",
+        "rows": [
+          {
+            "dragon": "Black",
+            "damageType": "acid",
+            "breathWeapon": "5 by 30 ft. line (Dex. save)",
+            "breathWeaponShape": "line",
+            "breathWeaponSaveAbility": "dexterity"
+          },
+          {
+            "dragon": "Blue",
+            "damageType": "lightning",
+            "breathWeapon": "5 by 30 ft. line (Dex. save)",
+            "breathWeaponShape": "line",
+            "breathWeaponSaveAbility": "dexterity"
+          },
+          {
+            "dragon": "Brass",
+            "damageType": "fire",
+            "breathWeapon": "5 by 30 ft. line (Dex. save)",
+            "breathWeaponShape": "line",
+            "breathWeaponSaveAbility": "dexterity"
+          },
+          {
+            "dragon": "Bronze",
+            "damageType": "lightning",
+            "breathWeapon": "5 by 30 ft. line (Dex. save)",
+            "breathWeaponShape": "line",
+            "breathWeaponSaveAbility": "dexterity"
+          },
+          {
+            "dragon": "Copper",
+            "damageType": "acid",
+            "breathWeapon": "5 by 30 ft. line (Dex. save)",
+            "breathWeaponShape": "line",
+            "breathWeaponSaveAbility": "dexterity"
+          },
+          {
+            "dragon": "Gold",
+            "damageType": "fire",
+            "breathWeapon": "15 ft. cone (Dex. save)",
+            "breathWeaponShape": "cone",
+            "breathWeaponSaveAbility": "dexterity"
+          },
+          {
+            "dragon": "Green",
+            "damageType": "poison",
+            "breathWeapon": "15 ft. cone (Con. save)",
+            "breathWeaponShape": "cone",
+            "breathWeaponSaveAbility": "constitution"
+          },
+          {
+            "dragon": "Red",
+            "damageType": "fire",
+            "breathWeapon": "15 ft. cone (Dex. save)",
+            "breathWeaponShape": "cone",
+            "breathWeaponSaveAbility": "dexterity"
+          },
+          {
+            "dragon": "Silver",
+            "damageType": "cold",
+            "breathWeapon": "15 ft. cone (Con. save)",
+            "breathWeaponShape": "cone",
+            "breathWeaponSaveAbility": "constitution"
+          },
+          {
+            "dragon": "White",
+            "damageType": "cold",
+            "breathWeapon": "15 ft. cone (Con. save)",
+            "breathWeaponShape": "cone",
+            "breathWeaponSaveAbility": "constitution"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 5",
     "license": {

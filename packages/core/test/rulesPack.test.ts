@@ -629,6 +629,56 @@ describe('rules pack validation', () => {
     expect(pack.records[0].kind).toBe('table');
   });
 
+  it('accepts D&D table records with semantic projections', () => {
+    const pack = validateRulesPack(
+      validRulesPack({
+        records: [
+          record('table:beast-shapes', {
+            kind: 'table',
+            name: 'Beast Shapes',
+            data: {
+              columns: ['Level', 'Max. CR', 'Limitations', 'Example'],
+              rows: [['2nd', '1/4', 'No flying or swimming speed', 'Wolf']],
+              projection: {
+                kind: 'beastShapeOptions',
+                rows: [
+                  {
+                    druidLevel: 2,
+                    maxChallengeRating: '1/4',
+                    maxChallengeRatingValue: 0.25,
+                    limitations: 'No flying or swimming speed',
+                    example: 'Wolf',
+                  },
+                ],
+              },
+            },
+          }),
+        ],
+      }),
+    );
+    expect(pack.records[0].kind).toBe('table');
+  });
+
+  it('rejects D&D table records with unsupported semantic projection kinds', () => {
+    const pack = validRulesPack({
+      records: [
+        record('table:unknown-projection', {
+          kind: 'table',
+          name: 'Unknown Projection',
+          data: {
+            columns: ['Name'],
+            rows: [['Value']],
+            projection: { kind: 'mysteryProjection', rows: [] },
+          },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+    expect(() => validateRulesPack(pack)).toThrow(
+      /unsupported table projection kind/,
+    );
+  });
+
   it('rejects table records with empty columns', () => {
     const pack = validRulesPack({
       records: [

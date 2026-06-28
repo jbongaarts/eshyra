@@ -265,6 +265,12 @@ export interface TableExtraction {
   readonly name: string;
   readonly columns: readonly string[];
   readonly rows: readonly (readonly unknown[])[];
+  /**
+   * Optional semantic projection of reviewed table rows. The source-preserving
+   * `columns`/`rows` stay authoritative; projections expose a narrow typed view
+   * for gameplay systems that need to apply the table mechanically.
+   */
+  readonly projection?: Record<string, unknown>;
   /** 1-based page in the source PDF where the table anchor appears. */
   readonly sourcePage: number;
   /**
