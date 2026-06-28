@@ -90,6 +90,12 @@ export interface CharacterChronicleStore {
   appendRecord(
     input: CreateCharacterChronicleRecordInput,
   ): CharacterChronicleRecord;
+  appendRecords(
+    inputs: readonly CreateCharacterChronicleRecordInput[],
+  ): readonly CharacterChronicleRecord[];
+  validateAppendRecords(
+    inputs: readonly CreateCharacterChronicleRecordInput[],
+  ): void;
   getRecord(
     globalCharacterId: string,
     recordId: string,
@@ -134,6 +140,18 @@ interface ChronicleEventRow {
   readonly kind: CharacterChronicleEventKind;
   readonly changes_json: string;
   readonly occurred_at: string;
+}
+
+interface ValidatedChronicleInput {
+  readonly id: string;
+  readonly globalCharacterId: string;
+  readonly category: CharacterChronicleCategory;
+  readonly text: string;
+  readonly source: CharacterChronicleSource;
+  readonly portability: CharacterChroniclePortability;
+  readonly visibility: CharacterChronicleVisibility;
+  readonly truthStatus: CharacterChronicleTruthStatus;
+  readonly relatedRefs: readonly CharacterChronicleRelatedRef[];
 }
 
 const sourceColumn = jsonColumn<CharacterChronicleSource>(
@@ -239,7 +257,10 @@ export function createCharacterChronicleStore(
   db: Db,
   now: () => string = () => new Date().toISOString(),
 ): CharacterChronicleStore {
-  function nextRecordId(globalCharacterId: string): string {
+  function nextAvailableRecordId(
+    globalCharacterId: string,
+    reserved: (candidate: string) => boolean,
+  ): string {
     const row = db
       .prepare(
         `SELECT COUNT(*) AS count
@@ -247,7 +268,17 @@ export function createCharacterChronicleStore(
           WHERE global_character_id = ?`,
       )
       .get(globalCharacterId) as { count: number };
-    return `chronicle-${row.count + 1}`;
+    let next = row.count + 1;
+    while (true) {
+      const candidate = `chronicle-${next}`;
+      if (
+        !reserved(candidate) &&
+        getRecord(globalCharacterId, candidate) === undefined
+      ) {
+        return candidate;
+      }
+      next += 1;
+    }
   }
 
   function nextEventId(globalCharacterId: string): string {
@@ -355,73 +386,134 @@ export function createCharacterChronicleStore(
     return rows.map(rowToEvent);
   }
 
+  function validateAppendInput(
+    input: CreateCharacterChronicleRecordInput,
+  ): Omit<ValidatedChronicleInput, 'id'> & { readonly id?: string } {
+    const globalCharacterId = requireNonEmpty(
+      'globalCharacterId',
+      input.globalCharacterId,
+    );
+    const text = requireNonEmpty('text', input.text);
+    const source = validateSource(input.source);
+    validateEnum('category', input.category, CATEGORIES);
+    validateEnum('portability', input.portability, PORTABILITY);
+    validateEnum('visibility', input.visibility, VISIBILITY);
+    validateEnum('truthStatus', input.truthStatus, TRUTH_STATUS);
+    const relatedRefs = validateRelatedRefs(input.relatedRefs);
+    const id =
+      input.id === undefined ? undefined : requireNonEmpty('id', input.id);
+    return {
+      id,
+      globalCharacterId,
+      category: input.category,
+      text,
+      source,
+      portability: input.portability,
+      visibility: input.visibility,
+      truthStatus: input.truthStatus,
+      relatedRefs,
+    };
+  }
+
+  function validateAppendInputs(
+    inputs: readonly CreateCharacterChronicleRecordInput[],
+  ): readonly ValidatedChronicleInput[] {
+    const validated = inputs.map(validateAppendInput);
+    const seenIds = new Set<string>();
+    return validated.map((input) => {
+      const id =
+        input.id ??
+        nextAvailableRecordId(input.globalCharacterId, (candidate) =>
+          seenIds.has(`${input.globalCharacterId}\0${candidate}`),
+        );
+      const idKey = `${input.globalCharacterId}\0${id}`;
+      if (seenIds.has(idKey)) {
+        throw new CharacterChronicleStoreError(
+          `character chronicle record '${id}' is duplicated for '${input.globalCharacterId}'`,
+        );
+      }
+      seenIds.add(idKey);
+      if (getRecord(input.globalCharacterId, id) !== undefined) {
+        throw new CharacterChronicleStoreError(
+          `character chronicle record '${id}' already exists for '${input.globalCharacterId}'`,
+        );
+      }
+      return { ...input, id };
+    });
+  }
+
+  function insertRecord(
+    input: ValidatedChronicleInput,
+  ): CharacterChronicleRecord {
+    const at = now();
+    db.prepare(
+      `INSERT INTO character_chronicle_record(
+         global_character_id, record_id, category, text, source_json,
+         portability, visibility, truth_status, related_refs_json,
+         created_at, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      input.globalCharacterId,
+      input.id,
+      input.category,
+      input.text,
+      sourceColumn.encode(input.source),
+      input.portability,
+      input.visibility,
+      input.truthStatus,
+      relatedRefsColumn.encode(input.relatedRefs),
+      at,
+      at,
+    );
+    insertEvent(
+      input.globalCharacterId,
+      input.id,
+      'create',
+      {
+        category: input.category,
+        text: input.text,
+        source: input.source,
+        portability: input.portability,
+        visibility: input.visibility,
+        truthStatus: input.truthStatus,
+        relatedRefs: input.relatedRefs,
+      },
+      at,
+    );
+    return rowToRecord(
+      db
+        .prepare(
+          `SELECT global_character_id, record_id, category, text, source_json,
+                  portability, visibility, truth_status, related_refs_json,
+                  created_at, updated_at
+             FROM character_chronicle_record
+            WHERE global_character_id = ? AND record_id = ?`,
+        )
+        .get(input.globalCharacterId, input.id) as ChronicleRow,
+    );
+  }
+
   return {
     appendRecord(input): CharacterChronicleRecord {
-      const globalCharacterId = requireNonEmpty(
-        'globalCharacterId',
-        input.globalCharacterId,
-      );
-      const text = requireNonEmpty('text', input.text);
-      const source = validateSource(input.source);
-      validateEnum('category', input.category, CATEGORIES);
-      validateEnum('portability', input.portability, PORTABILITY);
-      validateEnum('visibility', input.visibility, VISIBILITY);
-      validateEnum('truthStatus', input.truthStatus, TRUTH_STATUS);
-      const relatedRefs = validateRelatedRefs(input.relatedRefs);
-      const id =
-        input.id === undefined
-          ? nextRecordId(globalCharacterId)
-          : requireNonEmpty('id', input.id);
-      const at = now();
-
+      const validated = validateAppendInputs([
+        input,
+      ])[0] as ValidatedChronicleInput;
       const append = db.transaction((): CharacterChronicleRecord => {
-        db.prepare(
-          `INSERT INTO character_chronicle_record(
-             global_character_id, record_id, category, text, source_json,
-             portability, visibility, truth_status, related_refs_json,
-             created_at, updated_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).run(
-          globalCharacterId,
-          id,
-          input.category,
-          text,
-          sourceColumn.encode(source),
-          input.portability,
-          input.visibility,
-          input.truthStatus,
-          relatedRefsColumn.encode(relatedRefs),
-          at,
-          at,
-        );
-        insertEvent(
-          globalCharacterId,
-          id,
-          'create',
-          {
-            category: input.category,
-            text,
-            source,
-            portability: input.portability,
-            visibility: input.visibility,
-            truthStatus: input.truthStatus,
-            relatedRefs,
-          },
-          at,
-        );
-        return rowToRecord(
-          db
-            .prepare(
-              `SELECT global_character_id, record_id, category, text, source_json,
-                      portability, visibility, truth_status, related_refs_json,
-                      created_at, updated_at
-                 FROM character_chronicle_record
-                WHERE global_character_id = ? AND record_id = ?`,
-            )
-            .get(globalCharacterId, id) as ChronicleRow,
-        );
+        return insertRecord(validated);
       });
       return append();
+    },
+
+    appendRecords(inputs): readonly CharacterChronicleRecord[] {
+      const validated = validateAppendInputs(inputs);
+      const append = db.transaction((): readonly CharacterChronicleRecord[] =>
+        validated.map(insertRecord),
+      );
+      return append();
+    },
+
+    validateAppendRecords(inputs): void {
+      validateAppendInputs(inputs);
     },
 
     getRecord,

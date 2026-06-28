@@ -113,6 +113,12 @@ overlay lore into chronicle records. Objective campaign facts remain in the
 campaign. Chronicle capture should either be explicitly player-authored/curated
 or derived from character-attributed evidence with provenance.
 
+The first release-time capture hook follows that boundary: `releaseCharacterFromCampaign`
+can accept explicitly selected chronicle records and append them to the linked
+registry character after sync-back succeeds. The hook stamps the release
+campaign as provenance, but it does not read `campaign_bible`, overlay lore, arc
+summaries, or world state to invent records automatically.
+
 ## Implementation Breakdown
 
 The epic is decomposed into these child beads:

@@ -192,6 +192,70 @@ describe('character chronicle store', () => {
     });
   });
 
+  it('appends record batches atomically', () => {
+    const chronicle = createCharacterChronicleStore(db, () => clock);
+
+    expect(() =>
+      chronicle.appendRecords([
+        {
+          id: 'shared-id',
+          globalCharacterId: 'char-mira',
+          category: 'relationship',
+          text: 'Mira owes Tamsin a life debt.',
+          source: source(),
+          portability: 'portable',
+          visibility: 'player-visible',
+          truthStatus: 'remembered',
+          relatedRefs: [],
+        },
+        {
+          id: 'shared-id',
+          globalCharacterId: 'char-mira',
+          category: 'vow',
+          text: 'Mira vowed to return the lantern.',
+          source: source(),
+          portability: 'portable',
+          visibility: 'player-visible',
+          truthStatus: 'remembered',
+          relatedRefs: [],
+        },
+      ]),
+    ).toThrow(CharacterChronicleStoreError);
+    expect(chronicle.listRecords('char-mira')).toEqual([]);
+    expect(chronicle.listEvents('char-mira')).toEqual([]);
+  });
+
+  it('generates record ids that skip existing caller-supplied sequence ids', () => {
+    const chronicle = createCharacterChronicleStore(db, () => clock);
+    chronicle.appendRecord({
+      id: 'chronicle-2',
+      globalCharacterId: 'char-mira',
+      category: 'relationship',
+      text: 'Mira owes Tamsin a life debt.',
+      source: source(),
+      portability: 'portable',
+      visibility: 'player-visible',
+      truthStatus: 'remembered',
+      relatedRefs: [],
+    });
+
+    const generated = chronicle.appendRecord({
+      globalCharacterId: 'char-mira',
+      category: 'vow',
+      text: 'Mira vowed to return the lantern.',
+      source: source(),
+      portability: 'portable',
+      visibility: 'player-visible',
+      truthStatus: 'remembered',
+      relatedRefs: [],
+    });
+
+    expect(generated.id).toBe('chronicle-3');
+    expect(
+      chronicle.listRecords('char-mira').map((record) => record.id),
+    ).toEqual(['chronicle-2', 'chronicle-3']);
+  });
+
   it('validates required fields and constrained vocabularies', () => {
     const chronicle = createCharacterChronicleStore(db, () => clock);
     expect(() =>

@@ -163,6 +163,7 @@ export {
   type ForkCharacterInput,
   type ForkCharacterResult,
   forkCharacterTimeline,
+  type ReleaseChronicleRecordInput,
   type ResumeClassification,
   type ResumeCustodyInput,
   type ResumeCustodyOutcome,
