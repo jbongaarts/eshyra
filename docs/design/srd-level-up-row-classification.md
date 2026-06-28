@@ -1,10 +1,10 @@
-# Frozen SRD Strict Level-Up Row Classification
+# Frozen SRD Level-Up Row Classification
 
 This note classifies the frozen D&D 5e SRD 5.1 class-progression rows that do
-not resolve under `resolveClassLevel`'s strict level-up read shape. The frozen
-pack rows use feature entries shaped like `{ "name": "..." }` with no `ref`;
-strict level-up parsing intentionally treats those rows as malformed rather
-than guessing.
+not carry deterministic feature refs. The frozen pack rows use feature entries
+shaped like `{ "name": "..." }` with no `ref`; the resolver preserves those as
+`unresolvedFeatureMarkers` metadata, and the level-up engine must classify each
+marker before applying a level.
 
 Scope for `eshyra-fxrs`: classify the rows and preserve fail-closed behavior.
 Do not modify generated pack data, change importer output, regenerate pack
@@ -13,9 +13,10 @@ data, implement the level-up engine, or relax parser behavior.
 ## Categories
 
 - **Subclass-context mapping candidate:** the row names a subclass feature slot.
-  A future compatibility layer can map it only after the character sheet has a
+  The compatibility layer may map it only after the character sheet has a
   selected subclass and can choose the frozen subclass feature record at the
-  same level. The class-only resolver must keep failing closed.
+  same level. Without that concrete subclass feature ref, level-up application
+  must keep failing closed.
 - **Improvement semantics required:** the row names an improvement to an
   existing feature, not a new feature record. Mapping it to the original feature
   ref would look resolved while losing the level-specific mechanical change, so
@@ -89,8 +90,10 @@ data, implement the level-up engine, or relax parser behavior.
 ## Test Boundary
 
 `packages/core/test/rulesPackCharacterResolver.test.ts` locks this unsupported
-set with an expected-failure fixture derived from the frozen pack. The test
-walks every committed class progression row through strict `resolveClassLevel`
-and compares the malformed rows to the explicit 48-row list above. Future work
-that intentionally adds a compatibility layer must update both the test fixture
-and this classification, with separate tests for any newly supported mappings.
+set with a marker fixture derived from the frozen pack. The test walks every
+committed class progression row through `resolveClassLevel` and compares
+`unresolvedFeatureMarkers` to the explicit no-ref row list above; the Ranger 1
+spellcasting placeholder remains a separate malformed-row fixture. Level-up
+engine tests then pin the compatibility layer: subclass-context markers may
+apply only when a selected subclass maps to concrete target-level feature refs,
+while improvement/alias/no-record markers remain unsupported blockers.

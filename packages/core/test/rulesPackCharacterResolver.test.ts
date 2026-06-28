@@ -13,7 +13,7 @@ import {
 
 const resolver = getBundledDnd5eCharacterResolver();
 
-const EXPECTED_STRICT_LEVEL_UP_UNSUPPORTED_ROWS = [
+const EXPECTED_LEVEL_UP_UNRESOLVED_MARKER_ROWS = [
   { className: 'Barbarian', level: 6, featureNames: ['Path feature'] },
   { className: 'Barbarian', level: 10, featureNames: ['Path feature'] },
   { className: 'Barbarian', level: 14, featureNames: ['Path feature'] },
@@ -77,11 +77,6 @@ const EXPECTED_STRICT_LEVEL_UP_UNSUPPORTED_ROWS = [
   { className: 'Paladin', level: 15, featureNames: ['Sacred Oath feature'] },
   { className: 'Paladin', level: 18, featureNames: ['Aura improvements'] },
   { className: 'Paladin', level: 20, featureNames: ['Sacred Oath feature'] },
-  {
-    className: 'Ranger',
-    level: 1,
-    featureNames: [],
-  },
   {
     className: 'Ranger',
     level: 6,
@@ -174,6 +169,10 @@ const EXPECTED_STRICT_LEVEL_UP_UNSUPPORTED_ROWS = [
     featureNames: ['Arcane Tradition feature'],
   },
   { className: 'Wizard', level: 20, featureNames: ['Signature Spell'] },
+] as const;
+
+const EXPECTED_MALFORMED_LEVEL_UP_ROWS = [
+  { className: 'Ranger', level: 1, featureNames: [] },
 ] as const;
 
 function license(): RulesPackLicense {
@@ -345,8 +344,13 @@ describe('rules-pack character resolver', () => {
     }
   });
 
-  it('keeps the frozen SRD strict level-up unsupported row set explicit', () => {
-    const actualUnsupportedRows: Array<{
+  it('preserves the frozen SRD no-ref level-up markers as explicit metadata', () => {
+    const actualMarkerRows: Array<{
+      className: string;
+      level: number;
+      featureNames: string[];
+    }> = [];
+    const actualMalformedRows: Array<{
       className: string;
       level: number;
       featureNames: string[];
@@ -364,19 +368,32 @@ describe('rules-pack character resolver', () => {
         if (!isRecordValue(row) || typeof row.level !== 'number') {
           continue;
         }
+        const featureNames = Array.isArray(row.features)
+          ? row.features
+              .filter(
+                (feature): feature is { readonly name: string } =>
+                  isRecordValue(feature) &&
+                  typeof feature.name === 'string' &&
+                  typeof feature.ref !== 'string',
+              )
+              .map((feature) => feature.name)
+          : [];
         const result = resolver.resolveClassLevel(record.name, row.level);
-        if (!result.ok && result.code === 'malformed') {
-          const featureNames = Array.isArray(row.features)
-            ? row.features
-                .filter(
-                  (feature): feature is { readonly name: string } =>
-                    isRecordValue(feature) &&
-                    typeof feature.name === 'string' &&
-                    typeof feature.ref !== 'string',
-                )
-                .map((feature) => feature.name)
-            : [];
-          actualUnsupportedRows.push({
+        if (result.ok) {
+          const markerNames = result.record.unresolvedFeatureMarkers.map(
+            (marker) => marker.name,
+          );
+          if (markerNames.length > 0) {
+            actualMarkerRows.push({
+              className: record.name,
+              level: row.level,
+              featureNames: markerNames,
+            });
+          }
+          continue;
+        }
+        if (result.code === 'malformed') {
+          actualMalformedRows.push({
             className: record.name,
             level: row.level,
             featureNames,
@@ -385,8 +402,11 @@ describe('rules-pack character resolver', () => {
       }
     }
 
-    expect(sortedUnsupportedRows(actualUnsupportedRows)).toEqual(
-      sortedUnsupportedRows(EXPECTED_STRICT_LEVEL_UP_UNSUPPORTED_ROWS),
+    expect(sortedUnsupportedRows(actualMarkerRows)).toEqual(
+      sortedUnsupportedRows(EXPECTED_LEVEL_UP_UNRESOLVED_MARKER_ROWS),
+    );
+    expect(sortedUnsupportedRows(actualMalformedRows)).toEqual(
+      sortedUnsupportedRows(EXPECTED_MALFORMED_LEVEL_UP_ROWS),
     );
   });
 
@@ -584,7 +604,7 @@ describe('rules-pack character resolver', () => {
                   proficiencyBonus: '+3',
                   features: [
                     { ref: 'feature:fighter:extra-attack' },
-                    { name: 'Bad Feature' },
+                    'Bad Feature',
                   ],
                 },
               ],

@@ -58,12 +58,22 @@ export interface ResolvedLevelSpellcasting {
   readonly slots?: Readonly<Record<string, number>>;
 }
 
+/** A class progression feature entry that names a row marker but has no feature ref. */
+export interface ResolvedFeatureMarker {
+  readonly name: string;
+}
+
 /** The structured slice of a class progression row. */
 export interface ResolvedClassLevel {
   readonly level: number;
   readonly proficiencyBonus: number;
   /** Feature record refs granted at this level (e.g. `feature:wizard:spellcasting`). */
   readonly featureRefs: readonly string[];
+  /**
+   * Prose-only/generated row markers that are not deterministic feature refs.
+   * Callers must classify these explicitly; they are not safe to silently apply.
+   */
+  readonly unresolvedFeatureMarkers: readonly ResolvedFeatureMarker[];
   /** Spellcasting counts for this level, present only for spellcasting classes. */
   readonly spellcasting?: ResolvedLevelSpellcasting;
 }
@@ -418,17 +428,14 @@ function parseLevel1(progression: unknown): ResolvedClassLevel1 | undefined {
   if (proficiencyBonus === undefined) {
     return undefined;
   }
-  const featureRefs: string[] = [];
-  if (Array.isArray(row.features)) {
-    for (const feature of row.features) {
-      if (isRecord(feature) && typeof feature.ref === 'string') {
-        featureRefs.push(feature.ref);
-      }
-    }
+  const features = parseFeatureEntries(row.features);
+  if (features === undefined) {
+    return undefined;
   }
   const spellcasting = parseLevelSpellcasting(row.spellcasting);
   return {
-    featureRefs,
+    featureRefs: features.refs,
+    unresolvedFeatureMarkers: features.markers,
     spellcasting: spellcasting === 'malformed' ? undefined : spellcasting,
     proficiencyBonus,
   };
@@ -485,8 +492,8 @@ function parseClassProgressionRow(
   if (proficiencyBonus === undefined) {
     return undefined;
   }
-  const featureRefs = parseFeatureRefs(entry.features);
-  if (featureRefs === undefined) {
+  const features = parseFeatureEntries(entry.features);
+  if (features === undefined) {
     return undefined;
   }
   const spellcasting = parseLevelSpellcasting(entry.spellcasting);
@@ -496,7 +503,8 @@ function parseClassProgressionRow(
   return {
     level,
     proficiencyBonus,
-    featureRefs,
+    featureRefs: features.refs,
+    unresolvedFeatureMarkers: features.markers,
     spellcasting,
   };
 }
@@ -512,21 +520,35 @@ function parseProficiencyBonus(value: unknown): number | undefined {
   return match === null ? undefined : Number.parseInt(match[1], 10);
 }
 
-function parseFeatureRefs(value: unknown): readonly string[] | undefined {
+interface ParsedFeatureEntries {
+  readonly refs: readonly string[];
+  readonly markers: readonly ResolvedFeatureMarker[];
+}
+
+function parseFeatureEntries(value: unknown): ParsedFeatureEntries | undefined {
   if (value === undefined) {
-    return [];
+    return { refs: [], markers: [] };
   }
   if (!Array.isArray(value)) {
     return undefined;
   }
-  const featureRefs: string[] = [];
+  const refs: string[] = [];
+  const markers: ResolvedFeatureMarker[] = [];
   for (const feature of value) {
-    if (!isRecord(feature) || typeof feature.ref !== 'string') {
+    if (!isRecord(feature)) {
       return undefined;
     }
-    featureRefs.push(feature.ref);
+    if (typeof feature.ref === 'string') {
+      refs.push(feature.ref);
+      continue;
+    }
+    if (typeof feature.name === 'string') {
+      markers.push({ name: feature.name });
+      continue;
+    }
+    return undefined;
   }
-  return featureRefs;
+  return { refs, markers };
 }
 
 function parseLevelSpellcasting(
