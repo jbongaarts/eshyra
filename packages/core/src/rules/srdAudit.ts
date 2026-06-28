@@ -148,6 +148,44 @@ export const SRD_5_1_TABLE_OWNERS: Readonly<Record<string, string>> =
     'table:lifestyle-expenses': 'rule:lifestyle-expenses',
     'table:services': 'rule:services',
     'table:trade-goods': 'rule:trade-goods',
+    // eshyra-o9bd.8.2 — rule / background / feature owners resolved by SRD page
+    // + prose. Multiclassing (p. 56-58): the prerequisites/proficiencies rules
+    // name their table verbatim ("as shown in the Multiclassing … table").
+    'table:multiclassing-prerequisites': 'rule:prerequisites',
+    'table:multiclassing-proficiencies': 'rule:proficiencies',
+    'table:multiclass-spellcaster-spell-slots-per-spell-level':
+      'rule:spellcasting',
+    // Character Advancement (p. 56) is named verbatim by the Experience Points
+    // rule ("as shown in the Character Advancement table"); that rule owns it.
+    'table:character-advancement': 'rule:experience-points',
+    // Creating Spell Slots (p. 43) is the Sorcerer Font of Magic conversion
+    // table.
+    'table:creating-spell-slots': 'feature:sorcerer:font-of-magic',
+    // Objects (p. 203): both object tables belong to the Objects rule.
+    'table:object-armor-class': 'rule:objects',
+    'table:object-hit-points': 'rule:objects',
+    // Madness (p. 201-202): the Madness Effects rule introduces all three.
+    'table:short-term-madness': 'rule:madness-effects',
+    'table:long-term-madness': 'rule:madness-effects',
+    'table:indefinite-madness': 'rule:madness-effects',
+    // Sentient magic items (p. 251-252): each "roll on the following table"
+    // rule owns its table.
+    'table:sentient-magic-item-alignment':
+      'rule:creating-sentient-magic-items-alignment',
+    'table:sentient-magic-item-senses':
+      'rule:creating-sentient-magic-items-senses',
+    'table:sentient-magic-item-communication': 'rule:communication',
+    'table:sentient-magic-item-special-purpose': 'rule:special-purpose',
+    // Acolyte suggested-characteristics roll tables (p. 61) belong to the
+    // Acolyte background.
+    'table:acolyte-bonds': 'background:acolyte',
+    'table:acolyte-flaws': 'background:acolyte',
+    'table:acolyte-ideals': 'background:acolyte',
+    'table:acolyte-personality-traits': 'background:acolyte',
+    // Sorcerer Draconic Bloodline dragon-type table (p. 44) belongs to the
+    // Dragon Ancestor feature that selects from it.
+    'table:draconic-bloodline-draconic-ancestry':
+      'feature:draconic-bloodline:dragon-ancestor',
   });
 
 // ---------------------------------------------------------------------------
