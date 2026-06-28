@@ -368,7 +368,10 @@ export function createCharacterChronicleStore(
       validateEnum('visibility', input.visibility, VISIBILITY);
       validateEnum('truthStatus', input.truthStatus, TRUTH_STATUS);
       const relatedRefs = validateRelatedRefs(input.relatedRefs);
-      const id = input.id ?? nextRecordId(globalCharacterId);
+      const id =
+        input.id === undefined
+          ? nextRecordId(globalCharacterId)
+          : requireNonEmpty('id', input.id);
       const at = now();
 
       const append = db.transaction((): CharacterChronicleRecord => {

@@ -109,6 +109,37 @@ describe('character chronicle store', () => {
     expect(chronicle.listRecords('char-other')).toEqual([]);
   });
 
+  it('normalizes caller-supplied chronicle record ids', () => {
+    const chronicle = createCharacterChronicleStore(db, () => clock);
+
+    const record = chronicle.appendRecord({
+      id: ' custom-id ',
+      globalCharacterId: 'char-mira',
+      category: 'relationship',
+      text: 'Mira owes Tamsin a life debt.',
+      source: source(),
+      portability: 'portable',
+      visibility: 'player-visible',
+      truthStatus: 'remembered',
+      relatedRefs: [],
+    });
+    const fetched = chronicle.getRecord('char-mira', ' custom-id ');
+    clock = AT_2;
+    const updated = chronicle.updateRecord('char-mira', ' custom-id ', {
+      portability: 'archived',
+      at: AT_2,
+    });
+
+    expect(record.id).toBe('custom-id');
+    expect(fetched).toEqual(record);
+    expect(updated).toMatchObject({
+      id: 'custom-id',
+      portability: 'archived',
+      updatedAt: AT_2,
+    });
+    expect(chronicle.listEvents('char-mira', ' custom-id ')).toHaveLength(2);
+  });
+
   it('records create/update events and keeps records ordered', () => {
     const chronicle = createCharacterChronicleStore(db, () => clock);
     const first = chronicle.appendRecord({
@@ -168,6 +199,19 @@ describe('character chronicle store', () => {
         globalCharacterId: ' ',
         category: 'relationship',
         text: 'Known by nobody.',
+        source: source(),
+        portability: 'portable',
+        visibility: 'player-visible',
+        truthStatus: 'remembered',
+        relatedRefs: [],
+      }),
+    ).toThrow(CharacterChronicleStoreError);
+    expect(() =>
+      chronicle.appendRecord({
+        globalCharacterId: 'char-mira',
+        id: ' ',
+        category: 'relationship',
+        text: 'Invalid id.',
         source: source(),
         portability: 'portable',
         visibility: 'player-visible',
