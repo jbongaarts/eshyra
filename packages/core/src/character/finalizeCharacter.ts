@@ -46,6 +46,15 @@ import {
   getBackgroundLanguages,
 } from './srdLanguages.js';
 
+/** D&D 5e coin denominations carried by a character, not inventory rows. */
+export interface CharacterWallet {
+  readonly cp: number;
+  readonly sp: number;
+  readonly ep: number;
+  readonly gp: number;
+  readonly pp: number;
+}
+
 /** A resolved rules record reference: canonical key plus display name. */
 export interface FinalizedRecordRef {
   readonly key: string;
@@ -126,6 +135,13 @@ export interface CharacterSheet {
    * background's equipment package as a single verbatim entry, when present.
    */
   readonly equipment: readonly string[];
+  /**
+   * Structured coin carried by the character. This is continuity state on the
+   * sheet, distinct from inventory item rows and prose starting equipment.
+   * Legacy sheets with no wallet are treated as an empty wallet by currency
+   * helpers until the first wallet mutation persists the field.
+   */
+  readonly wallet?: CharacterWallet;
   readonly languages: readonly string[];
   readonly spells: readonly string[];
   readonly metadata: FinalizeMetadata;
@@ -251,6 +267,7 @@ function buildFinalizedCharacter(
     armorProficiencies: [...(classRecord.armorProficiencies ?? [])],
     weaponProficiencies: [...(classRecord.weaponProficiencies ?? [])],
     equipment: collectEquipment(draft, engine, classRecord, backgroundRecord),
+    wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
     languages: collectLanguages(
       draft,
       engine,

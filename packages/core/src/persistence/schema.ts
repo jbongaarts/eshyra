@@ -20,6 +20,11 @@ import { migrateDatabase } from './migrationRunner.js';
  *                                        `state/progression.ts` write boundary,
  *                                        with its internal shape owned by the
  *                                        level-up engine, eshyra-lupf.8)
+ *   - `character_wallet_event.amounts_json`
+ *   - `character_wallet_event.resulting_wallet_json`
+ *                                       (deterministic wallet deltas and the
+ *                                        resulting sheet wallet snapshot;
+ *                                        validated by `character/currency.ts`)
  *
  * Typed live campaign canon:
  *   - `campaign_overlay_lore`           (improvised lore and continuity
