@@ -272,6 +272,21 @@ describe('swallowed adjacent features', () => {
     expect(auditSrdStructure(pack([pactMagic]))).toEqual([]);
   });
 
+  it('does not flag canonical spellcasting child subsection headings (eshyra-o9bd.4)', () => {
+    const spellcasting = record({
+      kind: 'feature',
+      key: 'feature:wizard:spellcasting',
+      name: 'Spellcasting',
+      data: {
+        source: 'class:wizard',
+        level: 1,
+        description:
+          'As a student of arcane magic, you have a spellbook containing spells. Cantrips At 1st level, you know three cantrips of your choice from the wizard spell list. Spellbook At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice.',
+      },
+    });
+    expect(auditSrdStructure(pack([spellcasting]))).toEqual([]);
+  });
+
   it('does not flag a standalone feature that contains only its own lead-in', () => {
     const standalone = record({
       kind: 'feature',

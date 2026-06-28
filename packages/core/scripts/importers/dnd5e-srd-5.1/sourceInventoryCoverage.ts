@@ -690,23 +690,20 @@ const SPELLCASTING_BOILERPLATE: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * The emitted feature whose body actually carries each class's spellcasting
- * boilerplate subsections (Preparing and Casting Spells, Ritual Casting,
- * Spellcasting Focus, …). The owner is parser-determined and varies: classes
- * with a separate Cantrips feature fold the trailing boilerplate into it
- * (Cleric/Druid/Sorcerer), the Wizard folds it into Spellbook, the Warlock has
- * no Spellcasting feature so it rides in Pact Magic, and the rest keep it in
- * the Spellcasting feature. Verified against the emitted descriptions.
+ * The emitted feature whose body carries each class's spellcasting boilerplate
+ * subsections (Preparing and Casting Spells, Ritual Casting, Spellcasting
+ * Focus, …). `feature:<class>:spellcasting` is the canonical owner for
+ * spellcasting classes; Warlock uses the SRD's `Pact Magic` feature name.
  */
 const SPELLCASTING_BOILERPLATE_OWNER: ReadonlyMap<string, string> = new Map([
   ['Bard', 'feature:bard:spellcasting'],
-  ['Cleric', 'feature:cleric:cantrips'],
-  ['Druid', 'feature:druid:cantrips'],
+  ['Cleric', 'feature:cleric:spellcasting'],
+  ['Druid', 'feature:druid:spellcasting'],
   ['Paladin', 'feature:paladin:spellcasting'],
   ['Ranger', 'feature:ranger:spellcasting'],
-  ['Sorcerer', 'feature:sorcerer:cantrips'],
+  ['Sorcerer', 'feature:sorcerer:spellcasting'],
   ['Warlock', 'feature:warlock:pact-magic'],
-  ['Wizard', 'feature:wizard:spellbook'],
+  ['Wizard', 'feature:wizard:spellcasting'],
 ]);
 
 /**

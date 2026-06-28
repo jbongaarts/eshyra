@@ -1812,8 +1812,8 @@
       "firstPhrase": "The Cleric table shows how many spell slots you have to cast your spells",
       "lastPhrase": "meditation: at least 1 minute per spell level for each spell on your list.",
       "normalizedCharCount": 1147,
-      "classification": "record:feature:cleric:cantrips",
-      "targetKey": "feature:cleric:cantrips",
+      "classification": "record:feature:cleric:spellcasting",
+      "targetKey": "feature:cleric:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -1833,8 +1833,8 @@
       "firstPhrase": "Wisdom is your spellcasting ability for your cleric spells. The power of your spells",
       "lastPhrase": "your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier",
       "normalizedCharCount": 485,
-      "classification": "record:feature:cleric:cantrips",
-      "targetKey": "feature:cleric:cantrips",
+      "classification": "record:feature:cleric:spellcasting",
+      "targetKey": "feature:cleric:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -1854,8 +1854,8 @@
       "firstPhrase": "You can cast a cleric spell as a ritual if that spell has the",
       "lastPhrase": "ritual if that spell has the ritual tag and you have the spell prepared.",
       "normalizedCharCount": 105,
-      "classification": "record:feature:cleric:cantrips",
-      "targetKey": "feature:cleric:cantrips",
+      "classification": "record:feature:cleric:spellcasting",
+      "targetKey": "feature:cleric:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -1875,8 +1875,8 @@
       "firstPhrase": "You can use a holy symbol (see “Equipment”) as a spellcasting focus for your",
       "lastPhrase": "use a holy symbol (see “Equipment”) as a spellcasting focus for your cleric spells.",
       "normalizedCharCount": 91,
-      "classification": "record:feature:cleric:cantrips",
-      "targetKey": "feature:cleric:cantrips",
+      "classification": "record:feature:cleric:spellcasting",
+      "targetKey": "feature:cleric:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -2426,8 +2426,8 @@
       "firstPhrase": "The Druid table shows how many spell slots you have to cast your spells",
       "lastPhrase": "meditation: at least 1 minute per spell level for each spell on your list.",
       "normalizedCharCount": 1151,
-      "classification": "record:feature:druid:cantrips",
-      "targetKey": "feature:druid:cantrips",
+      "classification": "record:feature:druid:spellcasting",
+      "targetKey": "feature:druid:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -2447,8 +2447,8 @@
       "firstPhrase": "Wisdom is your spellcasting ability for your druid spells, since your magic draws upon",
       "lastPhrase": "your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier",
       "normalizedCharCount": 479,
-      "classification": "record:feature:druid:cantrips",
-      "targetKey": "feature:druid:cantrips",
+      "classification": "record:feature:druid:spellcasting",
+      "targetKey": "feature:druid:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -2468,8 +2468,8 @@
       "firstPhrase": "You can cast a druid spell as a ritual if that spell has the",
       "lastPhrase": "ritual if that spell has the ritual tag and you have the spell prepared.",
       "normalizedCharCount": 104,
-      "classification": "record:feature:druid:cantrips",
-      "targetKey": "feature:druid:cantrips",
+      "classification": "record:feature:druid:spellcasting",
+      "targetKey": "feature:druid:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -2489,8 +2489,8 @@
       "firstPhrase": "You can use a druidic focus (see “Equipment”) as a spellcasting focus for your",
       "lastPhrase": "use a druidic focus (see “Equipment”) as a spellcasting focus for your druid spells.",
       "normalizedCharCount": 92,
-      "classification": "record:feature:druid:cantrips",
-      "targetKey": "feature:druid:cantrips",
+      "classification": "record:feature:druid:spellcasting",
+      "targetKey": "feature:druid:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -6269,8 +6269,8 @@
       "firstPhrase": "The Sorcerer table shows how many spell slots you have to cast your spells",
       "lastPhrase": "and a 2nd-level spell slot available, you can cast burning hands using either slot.",
       "normalizedCharCount": 421,
-      "classification": "record:feature:sorcerer:cantrips",
-      "targetKey": "feature:sorcerer:cantrips",
+      "classification": "record:feature:sorcerer:spellcasting",
+      "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -6290,8 +6290,8 @@
       "firstPhrase": "You know two 1st-level spells of your choice from the sorcerer spell list. The",
       "lastPhrase": "list, which also must be of a level for which you have spell slots.",
       "normalizedCharCount": 581,
-      "classification": "record:feature:sorcerer:cantrips",
-      "targetKey": "feature:sorcerer:cantrips",
+      "classification": "record:feature:sorcerer:spellcasting",
+      "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -6311,8 +6311,8 @@
       "firstPhrase": "Charisma is your spellcasting ability for your sorcerer spells, since the power of your",
       "lastPhrase": "one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier",
       "normalizedCharCount": 445,
-      "classification": "record:feature:sorcerer:cantrips",
-      "targetKey": "feature:sorcerer:cantrips",
+      "classification": "record:feature:sorcerer:spellcasting",
+      "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -6332,8 +6332,8 @@
       "firstPhrase": "Spell attack modifier = your proficiency bonus + your Charisma modifier",
       "lastPhrase": "Spell attack modifier = your proficiency bonus + your Charisma modifier",
       "normalizedCharCount": 71,
-      "classification": "record:feature:sorcerer:cantrips",
-      "targetKey": "feature:sorcerer:cantrips",
+      "classification": "record:feature:sorcerer:spellcasting",
+      "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -6353,8 +6353,8 @@
       "firstPhrase": "You can use an arcane focus as a spellcasting focus for your sorcerer spells.",
       "lastPhrase": "You can use an arcane focus as a spellcasting focus for your sorcerer spells.",
       "normalizedCharCount": 77,
-      "classification": "record:feature:sorcerer:cantrips",
-      "targetKey": "feature:sorcerer:cantrips",
+      "classification": "record:feature:sorcerer:spellcasting",
+      "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -8441,8 +8441,8 @@
       "firstPhrase": "The Wizard table shows how many spell slots you have to cast your spells",
       "lastPhrase": "spell: at least 1 minute per spell level for each spell on your list.",
       "normalizedCharCount": 1244,
-      "classification": "record:feature:wizard:spellbook",
-      "targetKey": "feature:wizard:spellbook",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -8462,8 +8462,8 @@
       "firstPhrase": "Intelligence is your spellcasting ability for your wizard spells, since you learn your spells",
       "lastPhrase": "your Intelligence modifier Spell attack modifier = your proficiency bonus + your Intelligence modifier",
       "normalizedCharCount": 513,
-      "classification": "record:feature:wizard:spellbook",
-      "targetKey": "feature:wizard:spellbook",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -8483,8 +8483,8 @@
       "firstPhrase": "You can cast a wizard spell as a ritual if that spell has the",
       "lastPhrase": "have the spell in your spellbook. You don’t need to have the spell prepared.",
       "normalizedCharCount": 157,
-      "classification": "record:feature:wizard:spellbook",
-      "targetKey": "feature:wizard:spellbook",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -8504,8 +8504,8 @@
       "firstPhrase": "You can use an arcane focus as a spellcasting focus for your wizard spells.",
       "lastPhrase": "You can use an arcane focus as a spellcasting focus for your wizard spells.",
       "normalizedCharCount": 75,
-      "classification": "record:feature:wizard:spellbook",
-      "targetKey": "feature:wizard:spellbook",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -8525,8 +8525,8 @@
       "firstPhrase": "Each time you gain a wizard level, you can add two wizard spells of",
       "lastPhrase": "other spells that you can add to your spellbook (see the “Your Spellbook” sidebar).",
       "normalizedCharCount": 328,
-      "classification": "record:feature:wizard:spellbook",
-      "targetKey": "feature:wizard:spellbook",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {

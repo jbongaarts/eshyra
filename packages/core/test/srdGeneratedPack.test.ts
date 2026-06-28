@@ -1359,6 +1359,68 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(body).toContain('Spell Slots');
     });
 
+    it('keeps spellcasting mechanics on the canonical spellcasting feature', () => {
+      const expected: ReadonlyArray<
+        readonly [
+          ownerKey: string,
+          trimmedKeys: readonly string[],
+          phrases: readonly string[],
+        ]
+      > = [
+        [
+          'feature:cleric:spellcasting',
+          ['feature:cleric:cantrips'],
+          [
+            'Preparing and Casting Spells',
+            'Wisdom is your spellcasting ability for your cleric spells',
+          ],
+        ],
+        [
+          'feature:druid:spellcasting',
+          ['feature:druid:cantrips'],
+          [
+            'Preparing and Casting Spells',
+            'Wisdom is your spellcasting ability for your druid spells',
+          ],
+        ],
+        [
+          'feature:sorcerer:spellcasting',
+          ['feature:sorcerer:cantrips'],
+          [
+            'Spell Slots',
+            'Charisma is your spellcasting ability for your sorcerer spells',
+          ],
+        ],
+        [
+          'feature:wizard:spellcasting',
+          ['feature:wizard:spellbook'],
+          [
+            'At 1st level, you know three cantrips',
+            'At 1st level, you have a spellbook containing six',
+            'Preparing and Casting Spells',
+            'Intelligence is your spellcasting ability for your wizard spells',
+          ],
+        ],
+      ];
+
+      for (const [ownerKey, trimmedKeys, phrases] of expected) {
+        const owner = descOf(ownerKey);
+        for (const phrase of phrases) {
+          expect(owner, `${ownerKey} missing ${phrase}`).toContain(phrase);
+        }
+        for (const trimmedKey of trimmedKeys) {
+          expect(
+            descOf(trimmedKey),
+            `${trimmedKey} still owns prep text`,
+          ).not.toContain('Preparing and Casting Spells');
+          expect(
+            descOf(trimmedKey),
+            `${trimmedKey} still owns slot text`,
+          ).not.toContain('Spell Slots');
+        }
+      }
+    });
+
     // Previously-swallowed headings now stand as their own records at their SRD
     // grant levels (curly apostrophe, colon, and "Also"/"By"/enumerated lead-ins).
     const RECOVERED: ReadonlyArray<readonly [key: string, level: number]> = [
