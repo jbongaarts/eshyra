@@ -31,6 +31,12 @@
 
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import {
+  CHARACTER_CHRONICLE_EVENT_INDEX_SCHEMA,
+  CHARACTER_CHRONICLE_EVENT_SCHEMA,
+  CHARACTER_CHRONICLE_INDEX_SCHEMA,
+  CHARACTER_CHRONICLE_RECORD_SCHEMA,
+} from './characterChronicle.js';
 import { CharacterSheetStoreError } from './characterSheetStore.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
 
@@ -186,6 +192,10 @@ export function ensureCharacterRegistrySchema(db: Db): void {
   db.exec(REGISTRY_SCHEMA);
   db.exec(REVISION_SCHEMA);
   db.exec(CUSTODY_SCHEMA);
+  db.exec(CHARACTER_CHRONICLE_RECORD_SCHEMA);
+  db.exec(CHARACTER_CHRONICLE_EVENT_SCHEMA);
+  db.exec(CHARACTER_CHRONICLE_INDEX_SCHEMA);
+  db.exec(CHARACTER_CHRONICLE_EVENT_INDEX_SCHEMA);
 }
 
 function rowToRevision(row: CharacterRevisionRow): CharacterRevision {
