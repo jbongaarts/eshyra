@@ -1,5 +1,10 @@
 import type { AdventureModule } from '../adventure/types.js';
 import { listAdventureRuns } from '../campaign/adventureRun.js';
+import type {
+  CharacterChronicleRecord,
+  CharacterChronicleStore,
+} from '../character/characterChronicle.js';
+import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
 import { listClosedArcSummaries } from '../memory/campaignArc.js';
 import type {
   ArcSummaryRecord,
@@ -53,6 +58,7 @@ import { countSceneLog, getOpenScene, listSceneLogWindow } from './scene.js';
 
 const DEFAULT_RECENT_SESSION_LIMIT = 5;
 const DEFAULT_SCENE_TRANSCRIPT_LIMIT = 12;
+const DEFAULT_CHARACTER_CHRONICLE_LIMIT = 8;
 
 /** JSON codecs for the JSON-backed state columns the assembler reads. */
 const plotFlagValueColumn = jsonColumn<unknown>('plot_flags.value_json');
@@ -85,6 +91,8 @@ export interface ContextAssemblyInput {
   recentSessionLimit?: number;
   /** How many current-scene transcript entries to inline. Default 12. */
   sceneTranscriptLimit?: number;
+  /** How many portable chronicle records to inline. Default 8. */
+  characterChronicleLimit?: number;
   /**
    * PC whose sheet is rendered as the turn subject. Defaults to the active
    * character (`meta.active_character_id`) when omitted.
@@ -97,6 +105,13 @@ export interface ContextAssemblyInput {
    * assembled and campaigns without adventure runs are unaffected.
    */
   resolveAdventureModule?: AdventureModuleResolver;
+  /**
+   * Optional registry-backed character chronicle source. When present and the
+   * acting campaign sheet is linked to a global character, portable
+   * player-visible/dm-only records are rendered as character memory, separate
+   * from campaign canon.
+   */
+  characterChronicle?: CharacterChronicleStore;
 }
 
 export interface CharacterSnapshot {
@@ -164,6 +179,7 @@ export interface AssembledContext {
   sceneTranscript: SceneLogRecord[];
   sceneTranscriptOmittedCount: number;
   recentSceneEvidence: RecentSceneEvidence[];
+  characterChronicle: CharacterChronicleRecord[];
   /**
    * Bounded context slices for the campaign's active adventure runs. Empty when
    * no resolver was supplied, the campaign has no active runs, or none of those
@@ -300,8 +316,13 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     input.recentSessionLimit ?? DEFAULT_RECENT_SESSION_LIMIT;
   const sceneTranscriptLimit =
     input.sceneTranscriptLimit ?? DEFAULT_SCENE_TRANSCRIPT_LIMIT;
+  const characterChronicleLimit =
+    input.characterChronicleLimit ?? DEFAULT_CHARACTER_CHRONICLE_LIMIT;
   if (sceneTranscriptLimit < 0) {
     throw new Error('sceneTranscriptLimit must be non-negative');
+  }
+  if (characterChronicleLimit < 0) {
+    throw new Error('characterChronicleLimit must be non-negative');
   }
 
   const alwaysOn = selectAlwaysOnMemory(input.db, {
@@ -351,6 +372,12 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     state.clock.currentLocationId,
     input.resolveAdventureModule,
   );
+  const characterChronicle = assembleCharacterChronicle(
+    input.db,
+    state.character.id,
+    input.characterChronicle,
+    characterChronicleLimit,
+  );
 
   return {
     campaignId: input.campaignId,
@@ -372,9 +399,34 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     sceneTranscript,
     sceneTranscriptOmittedCount,
     recentSceneEvidence,
+    characterChronicle,
     adventures,
     playerInput: input.playerInput,
   };
+}
+
+function assembleCharacterChronicle(
+  db: Db,
+  characterId: string,
+  chronicle: CharacterChronicleStore | undefined,
+  limit: number,
+): CharacterChronicleRecord[] {
+  if (chronicle === undefined) {
+    return [];
+  }
+  const globalCharacterId =
+    createSqliteCharacterSheetStore(db).load(characterId)?.metadata
+      .globalCharacterId;
+  if (globalCharacterId === undefined) {
+    return [];
+  }
+  return chronicle
+    .listRecords(globalCharacterId)
+    .filter(
+      (record) =>
+        record.portability === 'portable' && record.visibility !== 'private',
+    )
+    .slice(0, limit);
 }
 
 function buildRecentSceneEvidence(
@@ -571,6 +623,14 @@ export function renderContextMessage(ctx: AssembledContext): string {
     );
   }
 
+  if (ctx.characterChronicle.length > 0) {
+    sections.push(
+      `## Character Chronicle\nThese are the acting character's memories or attachments from prior play, not objective campaign canon. Player-visible entries may be surfaced naturally. DM-only entries are for DM continuity only; do not reveal them verbatim unless play makes them discoverable.\n${ctx.characterChronicle
+        .map(renderChronicleRecord)
+        .join('\n')}`,
+    );
+  }
+
   sections.push(`## Game State\n${renderState(ctx.state)}`);
 
   if (ctx.adventures.length > 0) {
@@ -608,4 +668,11 @@ export function renderContextMessage(ctx: AssembledContext): string {
   sections.push(`## Player Input\n${ctx.playerInput}`);
 
   return sections.join('\n\n');
+}
+
+function renderChronicleRecord(record: CharacterChronicleRecord): string {
+  const source = `source campaign ${record.source.campaignId}${
+    record.source.sessionId ? `, session ${record.source.sessionId}` : ''
+  }`;
+  return `- [${record.visibility}] ${record.truthStatus}: ${record.text} (${source})`;
 }

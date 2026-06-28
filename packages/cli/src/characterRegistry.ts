@@ -11,8 +11,10 @@
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  type CharacterChronicleStore,
   type CharacterRegistryStore,
   type CharacterSheet,
+  createCharacterChronicleStore,
   createCharacterRegistryStore,
   ensureCharacterRegistrySchema,
   openDatabase,
@@ -92,10 +94,20 @@ export function migrateLegacyCharacterLibrary(
 export function openCharacterRegistry(
   dataRoot: string,
 ): CharacterRegistryStore {
+  return openCharacterRegistryStores(dataRoot).registry;
+}
+
+export function openCharacterRegistryStores(dataRoot: string): {
+  registry: CharacterRegistryStore;
+  chronicle: CharacterChronicleStore;
+} {
   mkdirSync(dataRoot, { recursive: true });
   const db = openDatabase(characterRegistryDbPath(dataRoot));
   ensureCharacterRegistrySchema(db);
   const registry = createCharacterRegistryStore(db);
   migrateLegacyCharacterLibrary(charactersDir(dataRoot), registry);
-  return registry;
+  return {
+    registry,
+    chronicle: createCharacterChronicleStore(db),
+  };
 }

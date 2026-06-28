@@ -1,4 +1,5 @@
 import type {
+  CharacterChronicleStore,
   CharacterCreationEngine,
   CharacterRegistryStore,
   Db,
@@ -86,6 +87,8 @@ export interface PlayDeps {
    * campaign's per-campaign sheet.
    */
   characterRegistry: CharacterRegistryStore;
+  /** Registry-backed character memories rendered into context as non-canon. */
+  characterChronicle: CharacterChronicleStore;
   /** D&D 5e guided character-creation engine used by play/session-zero. */
   characterEngine: CharacterCreationEngine;
   /** D&D 5e rules-pack resolver used by play/session-zero finalization. */
