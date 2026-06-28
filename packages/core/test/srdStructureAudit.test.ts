@@ -503,6 +503,74 @@ describe('spell-embedded table linkage (eshyra-o4j7)', () => {
   });
 });
 
+describe('non-spell owner-table linkage (eshyra-o9bd.8)', () => {
+  const wand = record({
+    kind: 'magic-item',
+    key: 'magic-item:wand-of-wonder',
+    name: 'Wand of Wonder',
+    data: {
+      itemType: 'wand',
+      rarity: 'rare',
+      requiresAttunement: true,
+      description: 'A capricious wand.',
+      tableRefs: ['table:wand-of-wonder'],
+    },
+  });
+  const wandTable = record({
+    kind: 'table',
+    key: 'table:wand-of-wonder',
+    name: 'Wand of Wonder',
+    data: { columns: ['d100', 'Effect'], rows: [['01–05', 'Slow.']] },
+  });
+
+  it('is silent when an owned table is linked exactly once by its owner', () => {
+    expect(
+      auditSrdStructure(pack([wand, wandTable])).filter(
+        (finding) => finding.category === 'table-owner-link',
+      ),
+    ).toEqual([]);
+  });
+
+  it('flags an owned table that its owner does not link', () => {
+    const unlinked = {
+      ...wand,
+      data: { ...(wand.data as Record<string, unknown>), tableRefs: [] },
+    };
+    const findings = auditSrdStructure(pack([unlinked, wandTable])).filter(
+      (finding) => finding.category === 'table-owner-link',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('must be referenced exactly once');
+  });
+
+  it('flags an owned table claimed by an unexpected record', () => {
+    const wrongOwner = record({
+      kind: 'rule',
+      key: 'rule:some-other-rule',
+      name: 'Some Other Rule',
+      data: { text: 'Unrelated.', tableRefs: ['table:wand-of-wonder'] },
+    });
+    const unlinked = {
+      ...wand,
+      data: { ...(wand.data as Record<string, unknown>), tableRefs: [] },
+    };
+    const findings = auditSrdStructure(
+      pack([unlinked, wandTable, wrongOwner]),
+    ).filter((finding) => finding.category === 'table-owner-link');
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('rule:some-other-rule');
+  });
+
+  it('flags when the owned table record is missing', () => {
+    const findings = auditSrdStructure(pack([wand])).filter(
+      (finding) => finding.category === 'table-owner-link',
+    );
+    expect(
+      findings.some((finding) => finding.detail.includes('is missing')),
+    ).toBe(true);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Creature stat-block prose bleed (eshyra-76b7)
 // ---------------------------------------------------------------------------

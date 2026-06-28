@@ -30,6 +30,7 @@ import {
   enrichAncestryCreationFacts,
   enrichBackgroundCreationFacts,
 } from './creationFacts.js';
+import { linkOwnedTables } from './linkOwnedTables.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
 import type { SourceRegionLedger } from './sourceRegionLedger.js';
@@ -1292,7 +1293,11 @@ export function buildPack(input: BuildPackInput): RulesPack {
     records: stripped,
     tables: input.tables ?? [],
   });
-  const records = stripped.sort((a, b) =>
+  // Link owner records (magic items, economy/reference rules) to the `table`
+  // records that belong to their entry (eshyra-o9bd.8). Adds `data.tableRefs`
+  // only; the de-flattened prose above is untouched.
+  const linked = linkOwnedTables(stripped);
+  const records = linked.sort((a, b) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
   );
   const includedKinds = uniqueKindsOf(records);

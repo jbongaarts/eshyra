@@ -48,6 +48,7 @@ export type SrdAuditCategory =
   | 'ancestry-bogus-trait'
   | 'ancestry-unlinked-table'
   | 'spell-table-link'
+  | 'table-owner-link'
   | 'creature-stat-block-prose-bleed'
   | 'missing-coverage';
 
@@ -94,6 +95,59 @@ export const SRD_5_1_SPELL_TABLE_OWNERS: Readonly<Record<string, string>> =
     'table:teleport-familiarity': 'spell:teleport',
     'table:temperature': 'spell:control-weather',
     'table:wind': 'spell:control-weather',
+  });
+
+// Non-spell table ownership (eshyra-o9bd.8). Each entry links a `table` record
+// to the single record whose entry the table belongs to, so an option/variant
+// table is reachable from its owner via `owner.data.tableRefs`. Reviewed map,
+// grown one slice per child bead:
+//   - eshyra-o9bd.8.1: magic-item variant/effect tables and the clean 1:1
+//     `rule:*` economy/reference tables (this map).
+//   - eshyra-o9bd.8.2/.8.3 extend it (rule/background/subclass owners) and add
+//     the standalone-allowlist completeness gate.
+// A table appears at most once; one owner may own several tables (Cube of Force,
+// Bag of Tricks). The `table-owner-link` audit enforces the relationship.
+export const SRD_5_1_TABLE_OWNERS: Readonly<Record<string, string>> =
+  Object.freeze({
+    // Magic-item variant / effect tables.
+    'table:apparatus-of-the-crab-levers': 'magic-item:apparatus-of-the-crab',
+    'table:armor-of-resistance': 'magic-item:armor-of-resistance',
+    'table:bag-of-beans': 'magic-item:bag-of-beans',
+    'table:belt-of-giant-strength': 'magic-item:belt-of-giant-strength',
+    'table:candle-of-invocation': 'magic-item:candle-of-invocation',
+    'table:carpet-of-flying': 'magic-item:carpet-of-flying',
+    'table:cube-of-force-charges-lost': 'magic-item:cube-of-force',
+    'table:cube-of-force-faces': 'magic-item:cube-of-force',
+    'table:deck-of-illusions': 'magic-item:deck-of-illusions',
+    'table:deck-of-many-things': 'magic-item:deck-of-many-things',
+    'table:dragon-scale-mail': 'magic-item:dragon-scale-mail',
+    'table:efreeti-bottle': 'magic-item:efreeti-bottle',
+    'table:elemental-gem': 'magic-item:elemental-gem',
+    'table:feather-token': 'magic-item:feather-token',
+    'table:gray-bag-of-tricks': 'magic-item:bag-of-tricks',
+    'table:rust-bag-of-tricks': 'magic-item:bag-of-tricks',
+    'table:tan-bag-of-tricks': 'magic-item:bag-of-tricks',
+    'table:horn-of-valhalla': 'magic-item:horn-of-valhalla',
+    'table:iron-flask': 'magic-item:iron-flask',
+    'table:manual-of-golems': 'magic-item:manual-of-golems',
+    'table:necklace-of-prayer-beads': 'magic-item:necklace-of-prayer-beads',
+    'table:potion-of-giant-strength': 'magic-item:potion-of-giant-strength',
+    'table:potion-of-resistance': 'magic-item:potion-of-resistance',
+    'table:potions-of-healing': 'magic-item:potion-of-healing',
+    'table:ring-of-resistance': 'magic-item:ring-of-resistance',
+    'table:ring-of-shooting-stars': 'magic-item:ring-of-shooting-stars',
+    'table:robe-of-useful-items': 'magic-item:robe-of-useful-items',
+    'table:spell-scroll': 'magic-item:spell-scroll',
+    'table:sphere-of-annihilation': 'magic-item:sphere-of-annihilation',
+    'table:staff-of-power': 'magic-item:staff-of-power',
+    'table:staff-of-the-magi': 'magic-item:staff-of-the-magi',
+    'table:wand-of-wonder': 'magic-item:wand-of-wonder',
+    // Clean 1:1 economy / reference rule owners.
+    'table:ability-scores-and-modifiers': 'rule:ability-scores-and-modifiers',
+    'table:food-drink-and-lodging': 'rule:food-drink-and-lodging',
+    'table:lifestyle-expenses': 'rule:lifestyle-expenses',
+    'table:services': 'rule:services',
+    'table:trade-goods': 'rule:trade-goods',
   });
 
 // ---------------------------------------------------------------------------
@@ -490,6 +544,82 @@ function checkSpellTableLinks(pack: RulesPack): SrdAuditFinding[] {
 }
 
 // ---------------------------------------------------------------------------
+// Non-spell owner-table linkage (eshyra-o9bd.8)
+// ---------------------------------------------------------------------------
+
+function tableRefsOf(record: RulesRecord): readonly string[] {
+  const data = dataObject(record);
+  if (data === null || !Array.isArray(data.tableRefs)) return [];
+  return data.tableRefs.filter(
+    (entry): entry is string => typeof entry === 'string',
+  );
+}
+
+// Enforce the reviewed SRD_5_1_TABLE_OWNERS map: every owned table is reachable
+// from exactly its mapped owner via `owner.data.tableRefs`, and no other record
+// claims it. Mirrors `checkSpellTableLinks`; tolerates reduced fixtures that
+// omit both sides of a relationship.
+function checkTableOwnerLinks(pack: RulesPack): SrdAuditFinding[] {
+  const findings: SrdAuditFinding[] = [];
+  const recordsByKey = new Map(
+    pack.records.map((record) => [record.key, record]),
+  );
+
+  // Which records reference each table (across every kind that carries
+  // tableRefs), so we can detect a table owned by an unexpected record.
+  const referrers = new Map<string, string[]>();
+  for (const record of pack.records) {
+    for (const ref of tableRefsOf(record)) {
+      const owners = referrers.get(ref) ?? [];
+      owners.push(record.key);
+      referrers.set(ref, owners);
+    }
+  }
+
+  for (const [tableKey, expectedOwnerKey] of Object.entries(
+    SRD_5_1_TABLE_OWNERS,
+  )) {
+    const table = recordsByKey.get(tableKey);
+    const owner = recordsByKey.get(expectedOwnerKey);
+    // Reduced fixtures may omit this whole source region; once either side is
+    // present, enforce the complete reviewed relationship.
+    if (table === undefined && owner === undefined) continue;
+    if (table === undefined || table.kind !== 'table') {
+      findings.push({
+        category: 'table-owner-link',
+        key: expectedOwnerKey,
+        kind: 'table',
+        name: tableKey,
+        detail: `expected owned table record ${tableKey} is missing`,
+      });
+      continue;
+    }
+    if (owner === undefined) {
+      findings.push({
+        category: 'table-owner-link',
+        key: expectedOwnerKey,
+        kind: 'table',
+        name: tableKey,
+        detail: `expected owner ${expectedOwnerKey} for ${tableKey} is missing`,
+      });
+      continue;
+    }
+    const actualOwners = referrers.get(tableKey) ?? [];
+    if (actualOwners.length !== 1 || actualOwners[0] !== expectedOwnerKey) {
+      findings.push({
+        category: 'table-owner-link',
+        key: expectedOwnerKey,
+        kind: owner.kind,
+        name: owner.name,
+        detail: `${tableKey} must be referenced exactly once by ${expectedOwnerKey}; actual owners: ${actualOwners.join(', ') || 'none'}`,
+      });
+    }
+  }
+
+  return findings;
+}
+
+// ---------------------------------------------------------------------------
 // Structure audit entry point
 // ---------------------------------------------------------------------------
 
@@ -615,6 +745,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
     findings.push(...checkCreatureStatBlockProseBleed(record));
   }
   findings.push(...checkSpellTableLinks(pack));
+  findings.push(...checkTableOwnerLinks(pack));
   return sortFindings(findings);
 }
 
