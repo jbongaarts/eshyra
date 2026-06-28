@@ -676,6 +676,20 @@ export {
   SchemaResetRequiredError,
   schemaFingerprint,
 } from './persistence/migrationRunner.js';
+export type {
+  AdvancementTableResolution,
+  AdvancementThreshold,
+  ResolvedAdvancementTable,
+} from './rules/advancementTable.js';
+export {
+  ADVANCEMENT_TABLE_REF,
+  AdvancementTableError,
+  getBundledAdvancementTable,
+  levelForXp,
+  maxAdvancementLevel,
+  resolveAdvancementTable,
+  xpThresholdForLevel,
+} from './rules/advancementTable.js';
 // Built-in rules pack objects (pre-importer; superseded by 0m9 deterministic importer outputs).
 // Not on the stable public surface — use @eshyra/core for consumer-facing API.
 export type {
@@ -761,6 +775,14 @@ export {
   setActiveCharacterId,
   tryGetActiveCharacterId,
 } from './state/activeCharacter.js';
+// Campaign advancement policy (mode + resolved XP threshold table).
+export type { AdvancementPolicy } from './state/advancementPolicy.js';
+export {
+  buildAdvancementPolicy,
+  DEFAULT_ADVANCEMENT_MODE,
+  getEffectiveAdvancementMode,
+  resolveCampaignAdvancementPolicy,
+} from './state/advancementPolicy.js';
 export type {
   AddConditionInput,
   AddConditionResult,

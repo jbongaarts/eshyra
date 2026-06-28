@@ -1,0 +1,146 @@
+// Campaign advancement policy: the resolved, ready-to-consume combination of a
+// campaign's advancement *mode* (xp vs milestone) and — in XP mode — the XP
+// threshold table from the rules pack (eshyra-lupf.4). Design:
+// docs/design/character-progression.md.
+//
+// The mode is persisted at campaign scope (`campaign_progression_policy`, from
+// eshyra-lupf.2). This module layers the rules-pack binding on top: it reads the
+// persisted mode (applying a documented default when unset) and, in XP mode,
+// resolves the Character Advancement table for the campaign's *bound* rules pack
+// (`campaign_rules_binding`) so eligibility (.7), award (.6), and the level-up
+// engine (.8) get one object carrying everything they need. XP mode fails closed
+// when the bound pack ships no advancement table (e.g. a Pathfinder-bound
+// campaign), rather than leaking another system's thresholds.
+//
+// Layering: state -> rules (this module reads the pack-table resolver in
+// `rules/advancementTable.ts`); the pure table resolver itself knows nothing
+// about the database.
+
+import type { Db } from '../persistence/db.js';
+import {
+  getBundledAdvancementTable,
+  type ResolvedAdvancementTable,
+  resolveAdvancementTable,
+} from '../rules/advancementTable.js';
+import {
+  DEFAULT_DND5E_SRD_BINDING,
+  readCampaignRulesBinding,
+} from '../rules/binding.js';
+import {
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
+  DND5E_SRD_VERSION,
+} from '../rules/bundledSrdPack.js';
+import type { ResolvedRulesStack } from '../rules/stack.js';
+import {
+  type AdvancementMode,
+  ProgressionError,
+  readCampaignProgressionPolicy,
+} from './progression.js';
+
+/**
+ * Bundled packs that ship an XP advancement table, keyed by their rules-binding
+ * base ref (systemId/packId/version). XP-mode resolution looks the campaign's
+ * binding up here and fails closed when the bound pack is absent, so a
+ * cross-system campaign (e.g. Pathfinder-bound) never silently receives the D&D
+ * thresholds. Adding a future pack with its own advancement table is a one-line
+ * registration here.
+ */
+const BUNDLED_XP_TABLES: ReadonlyMap<string, () => ResolvedAdvancementTable> =
+  new Map([
+    [
+      bindingKey(DND5E_SRD_SYSTEM_ID, DND5E_SRD_PACK_ID, DND5E_SRD_VERSION),
+      getBundledAdvancementTable,
+    ],
+  ]);
+
+function bindingKey(systemId: string, packId: string, version: string): string {
+  return JSON.stringify([systemId, packId, version]);
+}
+
+/**
+ * The effective advancement mode when a campaign has not explicitly selected
+ * one. XP is the SRD-canonical default: the pack ships the Character Advancement
+ * (XP threshold) table, so advancement is deterministic from pack data out of
+ * the box. A campaign switches to milestone via
+ * {@link writeCampaignProgressionPolicy}.
+ */
+export const DEFAULT_ADVANCEMENT_MODE: AdvancementMode = 'xp';
+
+/**
+ * A resolved, ready-to-consume advancement policy. In milestone mode there is
+ * no XP table to carry; in XP mode the resolved threshold table travels with it.
+ */
+export type AdvancementPolicy =
+  | { readonly mode: 'milestone' }
+  | { readonly mode: 'xp'; readonly table: ResolvedAdvancementTable };
+
+/**
+ * The campaign's effective advancement mode: the persisted selection, or
+ * {@link DEFAULT_ADVANCEMENT_MODE} when none has been set.
+ */
+export function getEffectiveAdvancementMode(db: Db): AdvancementMode {
+  return (
+    readCampaignProgressionPolicy(db)?.advancementMode ??
+    DEFAULT_ADVANCEMENT_MODE
+  );
+}
+
+/**
+ * Build an advancement policy from an explicit mode and rules stack. Pure over
+ * its inputs (no database); use this when you already hold a resolved stack
+ * (e.g. tests, or a future multi-pack binding resolver).
+ *
+ * @throws {ProgressionError} in XP mode if the stack has no usable advancement
+ *   table — a fail-closed pack/binding defect, not silent degradation.
+ */
+export function buildAdvancementPolicy(
+  mode: AdvancementMode,
+  stack: ResolvedRulesStack,
+): AdvancementPolicy {
+  if (mode === 'milestone') {
+    return { mode };
+  }
+  const resolution = resolveAdvancementTable(stack);
+  if (!resolution.ok) {
+    throw new ProgressionError(
+      `cannot resolve XP advancement table: ${resolution.message}`,
+    );
+  }
+  return { mode, table: resolution.table };
+}
+
+/**
+ * Resolve the campaign's advancement policy: read the effective mode and, in XP
+ * mode, attach the XP threshold table for the campaign's bound rules pack.
+ *
+ * Milestone mode is system-agnostic (no XP table is read) and always resolves.
+ * XP mode is bound to the campaign rules binding ({@link readCampaignRulesBinding},
+ * defaulting to {@link DEFAULT_DND5E_SRD_BINDING}): the binding's base pack must
+ * ship a Character Advancement table ({@link BUNDLED_XP_TABLES}). When it does
+ * not — e.g. a Pathfinder-bound campaign — this **fails closed** rather than
+ * leaking the D&D thresholds into another system, per the design note's
+ * rules-pack-binding requirement.
+ *
+ * @throws {ProgressionError} in XP mode when the bound pack has no advancement
+ *   table.
+ */
+export function resolveCampaignAdvancementPolicy(db: Db): AdvancementPolicy {
+  const mode = getEffectiveAdvancementMode(db);
+  if (mode === 'milestone') {
+    return { mode };
+  }
+  const base = (readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING).base;
+  const loadTable = BUNDLED_XP_TABLES.get(
+    bindingKey(base.systemId, base.packId, base.version),
+  );
+  if (loadTable === undefined) {
+    throw new ProgressionError(
+      'XP advancement is not supported for rules binding ' +
+        `'${base.systemId}' / '${base.packId}' @ '${base.version}': ` +
+        'no bundled Character Advancement table for that pack. ' +
+        'Use milestone mode for this campaign.',
+    );
+  }
+  return { mode, table: loadTable() };
+}

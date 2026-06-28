@@ -9,6 +9,13 @@
 // en dash (–), arrows (→), curly quotes (“ ”), degree sign (°), etc. — is
 // allowed and never flagged.
 //
+// It also forbids raw ASCII/C0 control bytes (U+0000..U+001F) and U+007F
+// DELETE, with the only exceptions being TAB (U+0009), LINE FEED (U+000A), and
+// CARRIAGE RETURN (U+000D). A stray NUL in a source file makes GitHub treat the
+// whole file as binary and suppress its diff; an embedded ESC can smuggle a
+// terminal escape sequence. Neither is legitimate in tracked text, so both are
+// blocked here even though they are outside the Unicode hidden/bidi set.
+//
 // It scans only git-tracked text files (by extension) so build output,
 // node_modules, and other ignored/vendored paths are never considered.
 //
@@ -47,6 +54,63 @@ export const FORBIDDEN_CODE_POINTS = new Map([
   [0x00ad, 'SOFT HYPHEN'],
   [0x034f, 'COMBINING GRAPHEME JOINER'],
 ]);
+
+// C0 controls (U+0000..U+001F) and U+007F DELETE are forbidden as raw bytes in
+// tracked text, EXCEPT the three whitespace controls that legitimately appear in
+// source. A NUL flips a file to "binary" in diffs; an embedded ESC can carry a
+// terminal escape sequence — neither belongs in tracked text.
+export const ALLOWED_CONTROL_CODE_POINTS = new Set([
+  0x09, // TAB
+  0x0a, // LINE FEED
+  0x0d, // CARRIAGE RETURN
+]);
+
+// Code point -> name for the C0 controls and DELETE, for clear diagnostics.
+export const CONTROL_CODE_POINT_NAMES = new Map([
+  [0x00, 'NULL'],
+  [0x01, 'START OF HEADING'],
+  [0x02, 'START OF TEXT'],
+  [0x03, 'END OF TEXT'],
+  [0x04, 'END OF TRANSMISSION'],
+  [0x05, 'ENQUIRY'],
+  [0x06, 'ACKNOWLEDGE'],
+  [0x07, 'BELL'],
+  [0x08, 'BACKSPACE'],
+  [0x0b, 'LINE TABULATION'],
+  [0x0c, 'FORM FEED'],
+  [0x0e, 'SHIFT OUT'],
+  [0x0f, 'SHIFT IN'],
+  [0x10, 'DATA LINK ESCAPE'],
+  [0x11, 'DEVICE CONTROL ONE'],
+  [0x12, 'DEVICE CONTROL TWO'],
+  [0x13, 'DEVICE CONTROL THREE'],
+  [0x14, 'DEVICE CONTROL FOUR'],
+  [0x15, 'NEGATIVE ACKNOWLEDGE'],
+  [0x16, 'SYNCHRONOUS IDLE'],
+  [0x17, 'END OF TRANSMISSION BLOCK'],
+  [0x18, 'CANCEL'],
+  [0x19, 'END OF MEDIUM'],
+  [0x1a, 'SUBSTITUTE'],
+  [0x1b, 'ESCAPE'],
+  [0x1c, 'INFORMATION SEPARATOR FOUR'],
+  [0x1d, 'INFORMATION SEPARATOR THREE'],
+  [0x1e, 'INFORMATION SEPARATOR TWO'],
+  [0x1f, 'INFORMATION SEPARATOR ONE'],
+  [0x7f, 'DELETE'],
+]);
+
+// Name of a forbidden control code point, or undefined when the code point is
+// not a forbidden control (i.e. it is ordinary text or an allowed whitespace
+// control). Used by both the scanner and the diagnostic formatter.
+export function forbiddenControlName(codePoint) {
+  if (ALLOWED_CONTROL_CODE_POINTS.has(codePoint)) {
+    return undefined;
+  }
+  if ((codePoint >= 0x00 && codePoint <= 0x1f) || codePoint === 0x7f) {
+    return CONTROL_CODE_POINT_NAMES.get(codePoint) ?? 'CONTROL CHARACTER';
+  }
+  return undefined;
+}
 
 // Text file extensions to scan. Anything else (binaries, fonts, PDFs, images)
 // is skipped so we never decode non-text content as UTF-8.
@@ -108,7 +172,8 @@ export function scanContent(content) {
     let column = 1;
     for (const ch of lines[i]) {
       const codePoint = ch.codePointAt(0);
-      const name = FORBIDDEN_CODE_POINTS.get(codePoint);
+      const name =
+        FORBIDDEN_CODE_POINTS.get(codePoint) ?? forbiddenControlName(codePoint);
       if (name !== undefined) {
         findings.push({ line: i + 1, column, codePoint, name });
       }
@@ -119,7 +184,11 @@ export function scanContent(content) {
 }
 
 export function formatFinding(path, finding) {
-  return `${path}:${finding.line}:${finding.column}: forbidden hidden/bidi Unicode ${formatCodePoint(
+  const label =
+    forbiddenControlName(finding.codePoint) !== undefined
+      ? 'forbidden control character'
+      : 'forbidden hidden/bidi Unicode';
+  return `${path}:${finding.line}:${finding.column}: ${label} ${formatCodePoint(
     finding.codePoint,
   )} ${finding.name}`;
 }
@@ -152,8 +221,8 @@ function main() {
   if (diagnostics.length > 0) {
     process.stdout.write(`${diagnostics.join('\n')}\n`);
     process.stderr.write(
-      `\nFound ${diagnostics.length} forbidden hidden/bidi Unicode character(s) in ${files.length} scanned file(s).\n` +
-        'Visible Unicode punctuation (em dash, arrows, curly quotes, degree, etc.) is allowed; only invisible/bidirectional controls are blocked.\n',
+      `\nFound ${diagnostics.length} forbidden hidden/bidi Unicode or control character(s) in ${files.length} scanned file(s).\n` +
+        'Visible Unicode punctuation (em dash, arrows, curly quotes, degree, etc.) is allowed; invisible/bidirectional Unicode controls and raw C0/DELETE control bytes (except TAB/LF/CR) are blocked.\n',
     );
     process.exit(1);
   }

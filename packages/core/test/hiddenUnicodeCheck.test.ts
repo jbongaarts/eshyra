@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 // its pure exports.
 import {
   FORBIDDEN_CODE_POINTS,
+  forbiddenControlName,
   formatCodePoint,
   formatFinding,
   scanContent,
@@ -17,6 +18,9 @@ import {
 // of the very characters it asserts on (it is itself scanned by the gate).
 const RLO = String.fromCodePoint(0x202e);
 const ZWSP = String.fromCodePoint(0x200b);
+const NUL = String.fromCodePoint(0x00);
+const ESC = String.fromCodePoint(0x1b);
+const DEL = String.fromCodePoint(0x7f);
 
 function readJson(path: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(process.cwd(), path), 'utf8'));
@@ -58,6 +62,55 @@ describe('hidden/bidi Unicode guard', () => {
         { line: 1, column: 2, codePoint, name },
       ]);
     }
+  });
+
+  it('finds nothing in ordinary text', () => {
+    expect(scanContent('ok\ntext')).toEqual([]);
+  });
+
+  it('rejects a raw NUL byte', () => {
+    expect(scanContent(`a${NUL}b`)).toEqual([
+      { line: 1, column: 2, codePoint: 0x00, name: 'NULL' },
+    ]);
+  });
+
+  it('rejects another C0 control (ESC)', () => {
+    expect(scanContent(`a${ESC}b`)).toEqual([
+      { line: 1, column: 2, codePoint: 0x1b, name: 'ESCAPE' },
+    ]);
+  });
+
+  it('rejects U+007F DELETE', () => {
+    expect(scanContent(`a${DEL}b`)).toEqual([
+      { line: 1, column: 2, codePoint: 0x7f, name: 'DELETE' },
+    ]);
+  });
+
+  it('allows TAB, LF, and CR', () => {
+    // LF is the line delimiter; TAB and CR must pass through as ordinary text.
+    expect(scanContent('a\tb\r')).toEqual([]);
+    expect(scanContent('line\nnext')).toEqual([]);
+  });
+
+  it('classifies allowed vs forbidden controls via forbiddenControlName', () => {
+    expect(forbiddenControlName(0x00)).toBe('NULL');
+    expect(forbiddenControlName(0x1b)).toBe('ESCAPE');
+    expect(forbiddenControlName(0x7f)).toBe('DELETE');
+    expect(forbiddenControlName(0x09)).toBeUndefined(); // TAB
+    expect(forbiddenControlName(0x0a)).toBeUndefined(); // LF
+    expect(forbiddenControlName(0x0d)).toBeUndefined(); // CR
+    expect(forbiddenControlName(0x41)).toBeUndefined(); // 'A'
+  });
+
+  it('labels control characters distinctly from hidden/bidi Unicode', () => {
+    expect(
+      formatFinding('path/to/file.ts', {
+        line: 1,
+        column: 2,
+        codePoint: 0x00,
+        name: 'NULL',
+      }),
+    ).toBe('path/to/file.ts:1:2: forbidden control character U+0000 NULL');
   });
 
   it('formats code points and diagnostics in the documented shape', () => {
