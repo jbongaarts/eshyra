@@ -330,6 +330,10 @@ function hasStructuredStartingEquipment(value: unknown): boolean {
   });
 }
 
+function hasStructuredSpellPreparation(value: unknown): boolean {
+  return asObject(value) !== null;
+}
+
 /**
  * Required machine-readable character-creation facts that today live only in
  * the consumer-side overlays (srdAncestryAbilityScoreIncreases / srdLanguages /
@@ -382,13 +386,17 @@ function checkOverlayDependence(record: RulesRecord): SrdPlayabilityFinding[] {
     const rows = Array.isArray(data.progression)
       ? (data.progression as ProgressionRow[])
       : [];
-    if (
-      isSpellcastingClass(rows) &&
-      asString(data.spellcastingAbility) === null
-    ) {
-      push(
-        'spellcasting class has no spellcastingAbility (ability/prep formula is overlay-only)',
-      );
+    if (isSpellcastingClass(rows)) {
+      if (asString(data.spellcastingAbility) === null) {
+        push(
+          'spellcasting class has no spellcastingAbility (ability/prep formula is overlay-only)',
+        );
+      }
+      if (!hasStructuredSpellPreparation(data.spellPreparation)) {
+        push(
+          'spellcasting class has no structured spellPreparation (prepared/known/spellbook metadata is overlay-only)',
+        );
+      }
     }
     if (!hasStructuredStartingEquipment(data.startingEquipment)) {
       push(

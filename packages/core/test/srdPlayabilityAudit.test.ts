@@ -318,8 +318,43 @@ describe('overlay-dependence gate', () => {
     expect(details).toContain('abilityScoreIncreases');
     expect(details).toContain('languages');
     expect(details).toContain('spellcastingAbility');
+    expect(details).toContain('spellPreparation');
     expect(details).toContain('startingEquipment is prose-only');
     expect(findings.every((f) => f.bead === 'eshyra-o9bd.5')).toBe(true);
+  });
+
+  it('fires when a spellcasting class has ability metadata but no preparation metadata', () => {
+    const cls = record({
+      key: 'class:wizard',
+      name: 'Wizard',
+      data: {
+        spellcastingAbility: 'intelligence',
+        progression: [
+          {
+            level: 1,
+            advancement: [
+              { kind: 'spellcastingProgression', cantripsKnown: 3 },
+            ],
+          },
+        ],
+        startingEquipment: {
+          entries: [
+            {
+              kind: 'choice',
+              options: [{ label: 'a', text: 'a quarterstaff' }],
+              sourceText: '(a) a quarterstaff',
+            },
+          ],
+        },
+      },
+    });
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([cls])),
+      'overlay-dependence',
+    );
+    expect(findings.map((finding) => finding.detail)).toEqual([
+      'spellcasting class has no structured spellPreparation (prepared/known/spellbook metadata is overlay-only)',
+    ]);
   });
 
   it('is silent when the facts are structured in the pack', () => {
@@ -337,6 +372,11 @@ describe('overlay-dependence gate', () => {
       name: 'Wizard',
       data: {
         spellcastingAbility: 'intelligence',
+        spellPreparation: {
+          kind: 'prepared',
+          spellbookStartingSpells: 6,
+          sourceText: 'Wizard preparation text.',
+        },
         progression: [
           {
             level: 1,
