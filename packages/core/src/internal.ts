@@ -237,11 +237,14 @@ export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
 export type {
   ApplyLevelUpInput,
   ApplyLevelUpResult,
+  LevelUpAppliedChoice,
   LevelUpChangeSet,
+  LevelUpChoiceSelections,
   LevelUpDelta,
   LevelUpHitPoints,
   LevelUpRequiredChoice,
   LevelUpRequiredChoiceKind,
+  LevelUpRequiredChoiceStatus,
 } from './character/levelUpEngine.js';
 export {
   applyLevelUp,

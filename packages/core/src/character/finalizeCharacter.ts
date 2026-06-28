@@ -102,6 +102,7 @@ export interface CharacterSheet {
   readonly level: number;
   readonly identity: { readonly name: string; readonly concept?: string };
   readonly class: FinalizedRecordRef;
+  readonly subclass?: FinalizedRecordRef;
   readonly ancestry: FinalizedRecordRef;
   readonly background?: FinalizedRecordRef;
   readonly abilityScores: Readonly<

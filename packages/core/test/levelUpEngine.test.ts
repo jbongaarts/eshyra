@@ -248,6 +248,55 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     expect(detectLevelUpRequiredChoices(buildSheet({ level: 1 }))).toEqual([]);
   });
 
+  it('applies a supported subclass choice from structured pack options (Fighter 2→3)', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    const sheet = buildSheet({
+      level: 2,
+      maxHitPoints: 20,
+      modifiers: { constitution: 2 },
+    });
+    store.save('pc-1', sheet);
+    seedLiveHp(db, 20, 14);
+
+    const choices = detectLevelUpRequiredChoices(sheet);
+    expect(choices).toEqual([
+      expect.objectContaining({
+        id: 'level.3.subclass',
+        kind: 'subclass',
+        status: 'supported',
+        choose: 1,
+        from: ['Champion'],
+      }),
+    ]);
+
+    const result = applyLevelUp(db, {
+      store,
+      choices: { 'level.3.subclass': ['Champion'] },
+      ...APPLY,
+    });
+
+    expect(result.sheet.subclass).toEqual({
+      key: 'subclass:champion',
+      name: 'Champion',
+    });
+    expect(result.changeSet).toMatchObject({
+      level: { from: 2, to: 3 },
+      featuresGained: ['feature:fighter:martial-archetype'],
+      choicesApplied: [
+        {
+          id: 'level.3.subclass',
+          kind: 'subclass',
+          value: 'subclass:champion',
+          label: 'Champion',
+        },
+      ],
+    });
+    expect(store.load('pc-1')?.level).toBe(3);
+    expect(listProgressionEvents(db)).toHaveLength(1);
+    db.close();
+  });
+
   it('blocks a subclass + spell level (Wizard 1→2) and applies nothing', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
@@ -263,20 +312,40 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     expect(choices.map((c) => c.kind)).toEqual(
       expect.arrayContaining(['subclass', 'spell-selection']),
     );
-    expect(choices.find((c) => c.kind === 'subclass')?.featureRef).toBe(
-      'feature:wizard:arcane-tradition',
-    );
+    expect(choices.find((c) => c.kind === 'subclass')).toMatchObject({
+      id: 'level.2.subclass',
+      status: 'supported',
+      featureRef: 'feature:wizard:arcane-tradition',
+      from: ['School of Evocation'],
+    });
+    expect(choices.find((c) => c.kind === 'spell-selection')).toMatchObject({
+      id: 'level.2.spell-selection',
+      status: 'unsupported',
+      unsupportedReason: expect.stringContaining(
+        'deterministic spell application is not implemented yet',
+      ),
+    });
 
     let thrown: unknown;
     try {
-      applyLevelUp(db, { store, ...APPLY });
+      applyLevelUp(db, {
+        store,
+        choices: { 'level.2.subclass': ['School of Evocation'] },
+        ...APPLY,
+      });
     } catch (error) {
       thrown = error;
     }
     expect(thrown).toBeInstanceOf(LevelUpRequiredChoicesError);
+    expect((thrown as LevelUpRequiredChoicesError).requiredChoices.length).toBe(
+      1,
+    );
     expect(
-      (thrown as LevelUpRequiredChoicesError).requiredChoices.length,
-    ).toBeGreaterThan(0);
+      (thrown as LevelUpRequiredChoicesError).requiredChoices[0],
+    ).toMatchObject({
+      id: 'level.2.spell-selection',
+      status: 'unsupported',
+    });
 
     // Nothing advanced: the stored sheet is untouched and no ledger row exists.
     expect(store.load('pc-1')?.level).toBe(1);
