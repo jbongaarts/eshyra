@@ -548,6 +548,8 @@ describe('runPlay', () => {
     const out = lines.join('\n');
     expect(out).toContain('Wallet: 0 cp, 0 sp, 0 ep, 0 gp, 0 pp.');
     expect(out).toContain('Wallet: 0 cp, 0 sp, 0 ep, 7 gp, 0 pp.');
+    expect(out).toContain('gain: +12 gp ->');
+    expect(out).toContain('spend: -5 gp ->');
     expect(out).toContain(
       'Money command failed: 7 gp cannot convert exactly to pp',
     );
@@ -1729,6 +1731,22 @@ describe('runPlay', () => {
 });
 
 describe('runDemo', () => {
+  it('reports /wallet as unavailable in a fresh sheetless demo instead of crashing', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO(['/wallet', '/quit']);
+
+    const code = await runDemo(baseDeps(db, io), {
+      dbPath: 'demo.db',
+      turnCap: 5,
+    });
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain('Wallet unavailable: no character sheet stored');
+    expect(out).toContain('closed and recapped');
+    dispose();
+  });
+
   it('creates a bounded demo campaign and stops at the turn cap', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO([

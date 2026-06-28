@@ -1,5 +1,6 @@
 import {
   adjustCharacterCurrency,
+  type CharacterWalletEventKind,
   type CurrencyDenomination,
   convertCharacterCurrency,
   type Db,
@@ -12,11 +13,16 @@ import type { CliIO, PlayDeps } from './playTypes.js';
 const RECENT_WALLET_EVENT_LIMIT = 5;
 
 export function showWallet(io: CliIO, db: Db): void {
-  const wallet = getCharacterWallet(db);
+  let wallet: ReturnType<typeof getCharacterWallet>;
+  let recent: ReturnType<typeof listCharacterWalletEvents>;
+  try {
+    wallet = getCharacterWallet(db);
+    recent = listCharacterWalletEvents(db).slice(-RECENT_WALLET_EVENT_LIMIT);
+  } catch (error) {
+    io.write(`Wallet unavailable: ${(error as Error).message}`);
+    return;
+  }
   io.write(`Wallet: ${formatWallet(wallet)}.`);
-  const recent = listCharacterWalletEvents(db).slice(
-    -RECENT_WALLET_EVENT_LIMIT,
-  );
   if (recent.length === 0) {
     io.write('Recent wallet events: none.');
     return;
@@ -24,7 +30,7 @@ export function showWallet(io: CliIO, db: Db): void {
   io.write('Recent wallet events:');
   for (const event of recent) {
     io.write(
-      `  - ${event.kind}: ${formatWalletDelta(event.amounts)} -> ${formatWallet(event.resultingWallet)} (${event.occurredAt})`,
+      `  - ${event.kind}: ${formatWalletDelta(event.amounts, event.kind)} -> ${formatWallet(event.resultingWallet)} (${event.occurredAt})`,
     );
   }
 }
@@ -134,18 +140,22 @@ function formatWallet(wallet: {
   ).join(', ');
 }
 
-function formatWalletDelta(amounts: {
-  readonly cp?: number;
-  readonly sp?: number;
-  readonly ep?: number;
-  readonly gp?: number;
-  readonly pp?: number;
-}): string {
+function formatWalletDelta(
+  amounts: {
+    readonly cp?: number;
+    readonly sp?: number;
+    readonly ep?: number;
+    readonly gp?: number;
+    readonly pp?: number;
+  },
+  kind: CharacterWalletEventKind,
+): string {
   return DND5E_CURRENCY_DENOMINATIONS.filter(
     (denomination) => (amounts[denomination] ?? 0) !== 0,
   )
     .map((denomination) => {
-      const amount = amounts[denomination] ?? 0;
+      const raw = amounts[denomination] ?? 0;
+      const amount = kind === 'spend' ? -raw : raw;
       return `${amount > 0 ? '+' : ''}${amount} ${denomination}`;
     })
     .join(', ');
