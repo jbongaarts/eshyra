@@ -159,11 +159,31 @@ const PROFICIENCY_FIELDS = [
   'savingThrowProficiencies',
 ] as const;
 
-// A parenthetical that carries a mechanical caveat (Druid metal restriction
-// style) rather than a benign clarifier. Kept conservative to avoid flagging
-// ordinary parentheticals like "(a) a shield".
-const MECHANICAL_PAREN_NOTE =
-  /\([^)]*\b(?:will not|won't|cannot|can't|made of|except|but not|unless|instead of|in place of)\b[^)]*\)/i;
+// A mechanical caveat keyword (Druid metal restriction style), distinct from a
+// benign clarifier like "(a) a shield". The bare alternation of literals with
+// word boundaries has no quantifier ambiguity, so it scans linearly.
+const MECHANICAL_NOTE_KEYWORD =
+  /\b(?:will not|won't|cannot|can't|made of|except|but not|unless|instead of|in place of)\b/i;
+
+/**
+ * True when `token` contains a parenthetical group carrying a mechanical
+ * caveat. Parentheticals are extracted with linear `indexOf` scans rather than
+ * a `\(...\)` regex, which avoids the polynomial backtracking CodeQL flags on
+ * inputs with many unmatched '(' characters.
+ */
+function hasMechanicalParenNote(token: string): boolean {
+  let from = 0;
+  while (true) {
+    const open = token.indexOf('(', from);
+    if (open === -1) return false;
+    const close = token.indexOf(')', open + 1);
+    if (close === -1) return false;
+    if (MECHANICAL_NOTE_KEYWORD.test(token.slice(open + 1, close))) {
+      return true;
+    }
+    from = close + 1;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Gate: untyped progression markers (eshyra-o9bd.2)
@@ -389,7 +409,7 @@ function checkProficiencyNoteBleed(
     const tokens = data[field];
     if (!Array.isArray(tokens)) continue;
     for (const token of tokens) {
-      if (typeof token === 'string' && MECHANICAL_PAREN_NOTE.test(token)) {
+      if (typeof token === 'string' && hasMechanicalParenNote(token)) {
         findings.push({
           category: 'proficiency-note-bleed',
           key: record.key,
