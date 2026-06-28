@@ -750,6 +750,16 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 8,
     totalInKind: 12,
   },
+  // First semantic table projection slice (eshyra-o9bd.7): the feature-owned
+  // Destroy Undead / Beast Shapes tables and the Races Draconic Ancestry table
+  // carry typed projections. The remaining table categories stay generic until
+  // their child beads land.
+  {
+    kind: 'table',
+    field: 'projection',
+    missingCount: 105,
+    totalInKind: 108,
+  },
 ];
 
 // `<kind>:<kebab-slug>` with one or more colon-separated slug segments. Kinds
@@ -3792,7 +3802,30 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Silver', 'Cold', '15 ft. cone (Con. save)'],
           ['White', 'Cold', '15 ft. cone (Con. save)'],
         ],
+        projection: {
+          kind: 'draconicAncestryOptions',
+          rows: expect.arrayContaining([
+            {
+              dragon: 'Black',
+              damageType: 'acid',
+              breathWeapon: '5 by 30 ft. line (Dex. save)',
+              breathWeaponShape: 'line',
+              breathWeaponSaveAbility: 'dexterity',
+            },
+            {
+              dragon: 'Green',
+              damageType: 'poison',
+              breathWeapon: '15 ft. cone (Con. save)',
+              breathWeaponShape: 'cone',
+              breathWeaponSaveAbility: 'constitution',
+            },
+          ]),
+        },
       });
+      expect(
+        (ancestry?.data as { projection?: { rows?: unknown[] } }).projection
+          ?.rows,
+      ).toHaveLength(10);
       expect(ancestry?.provenance.locator).toBe('p. 5');
 
       const bloodline = table('table:draconic-bloodline-draconic-ancestry');
@@ -3803,6 +3836,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['White', 'Cold'],
         ]),
       });
+      expect((bloodline?.data as { projection?: unknown }).projection).toBe(
+        undefined,
+      );
       expect((bloodline?.data as { rows: unknown[] }).rows).toHaveLength(10);
       expect(bloodline?.provenance.locator).toBe('p. 44');
     });
@@ -4015,6 +4051,32 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['4th', '1/2', 'No flying speed', 'Crocodile'],
           ['8th', '1', '—', 'Giant eagle'],
         ],
+        projection: {
+          kind: 'beastShapeOptions',
+          rows: [
+            {
+              druidLevel: 2,
+              maxChallengeRating: '1/4',
+              maxChallengeRatingValue: 0.25,
+              limitations: 'No flying or swimming speed',
+              example: 'Wolf',
+            },
+            {
+              druidLevel: 4,
+              maxChallengeRating: '1/2',
+              maxChallengeRatingValue: 0.5,
+              limitations: 'No flying speed',
+              example: 'Crocodile',
+            },
+            {
+              druidLevel: 8,
+              maxChallengeRating: '1',
+              maxChallengeRatingValue: 1,
+              limitations: '—',
+              example: 'Giant eagle',
+            },
+          ],
+        },
       });
       expect(beast?.provenance.locator).toBe('p. 20');
 
@@ -4028,6 +4090,36 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['14th', '3 or lower'],
           ['17th', '4 or lower'],
         ],
+        projection: {
+          kind: 'destroyUndeadThresholds',
+          rows: [
+            {
+              clericLevel: 5,
+              maxChallengeRating: '1/2 or lower',
+              maxChallengeRatingValue: 0.5,
+            },
+            {
+              clericLevel: 8,
+              maxChallengeRating: '1 or lower',
+              maxChallengeRatingValue: 1,
+            },
+            {
+              clericLevel: 11,
+              maxChallengeRating: '2 or lower',
+              maxChallengeRatingValue: 2,
+            },
+            {
+              clericLevel: 14,
+              maxChallengeRating: '3 or lower',
+              maxChallengeRatingValue: 3,
+            },
+            {
+              clericLevel: 17,
+              maxChallengeRating: '4 or lower',
+              maxChallengeRatingValue: 4,
+            },
+          ],
+        },
       });
       expect(destroy?.provenance.locator).toBe('p. 17');
     });

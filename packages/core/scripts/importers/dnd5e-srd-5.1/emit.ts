@@ -890,6 +890,9 @@ export function tableExtractionsToRecords(
       columns: [...table.columns],
       rows: table.rows.map((row) => [...row]),
     };
+    if (table.projection !== undefined) {
+      data.projection = table.projection;
+    }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'table',
