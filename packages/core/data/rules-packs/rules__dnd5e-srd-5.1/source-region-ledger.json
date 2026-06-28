@@ -3,11 +3,11 @@
     "entries": 2655,
     "proseRegions": 2628,
     "pureStructure": 27,
-    "record": 2101,
+    "record": 2102,
     "childOf": 443,
     "intentionallyIgnored": {
       "front-matter": 2,
-      "spell-list-header": 82
+      "spell-list-header": 81
     },
     "pureDocumentStructure": 27,
     "unrepresented": 0,
@@ -16342,8 +16342,9 @@
       "firstPhrase": "Commune with Nature Tree Stride",
       "lastPhrase": "Commune with Nature Tree Stride",
       "normalizedCharCount": 31,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "record:table:circle-of-the-land-forest",
+      "targetKey": "table:circle-of-the-land-forest",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p109-l53-prose",

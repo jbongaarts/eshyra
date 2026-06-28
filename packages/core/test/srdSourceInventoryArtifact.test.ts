@@ -336,9 +336,15 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     expect(sourceRegionLedger.summary.proseRegions).toBeGreaterThan(2000);
     expect(sourceRegionLedger.summary.unrepresented).toBe(0);
     expect(sourceRegionLedger.summary.broadStructuralIgnores).toBe(0);
+    // eshyra-o9bd.7.3: projecting table:circle-of-the-land-forest puts its
+    // spell names into generated record data, so the PDF region previously
+    // ignored as a spell-list-header ("Commune with Nature Tree Stride") is now
+    // attributed to that table record. Ignored spell-list headers drop 82 -> 81
+    // and represented records rise by one — a source coverage improvement, not a
+    // regression.
     expect(sourceRegionLedger.summary.intentionallyIgnored).toEqual({
       'front-matter': 2,
-      'spell-list-header': 82,
+      'spell-list-header': 81,
     });
   });
 

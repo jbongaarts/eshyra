@@ -479,6 +479,142 @@ function validateDraconicAncestryProjection(
   });
 }
 
+function reqBoolField(parent: Obj, key: string, path: string): void {
+  if (typeof parent[key] !== 'boolean') {
+    throw new RulesPackError(`${path}.${key} must be a boolean`);
+  }
+}
+
+function reqNullableInt(
+  parent: Obj,
+  key: string,
+  path: string,
+  min?: number,
+): void {
+  if (parent[key] === null) return;
+  reqInt(parent, key, path, min);
+}
+
+function reqNullableStr(parent: Obj, key: string, path: string): void {
+  if (parent[key] === null) return;
+  reqStr(parent, key, path);
+}
+
+function validateCoinExchangeRatesProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'coin', rowPath);
+    reqInt(row, 'valueInCopper', rowPath, 1);
+  });
+}
+
+function validateTradeGoodsProjection(projection: Obj, path: string): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'cost', rowPath);
+    reqInt(row, 'costCopper', rowPath, 0);
+    reqStr(row, 'goods', rowPath);
+  });
+}
+
+function validateFoodDrinkLodgingProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'item', rowPath);
+    reqStr(row, 'cost', rowPath);
+    reqInt(row, 'costCopper', rowPath, 0);
+  });
+}
+
+function validateServicePricesProjection(projection: Obj, path: string): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'service', rowPath);
+    reqStr(row, 'pay', rowPath);
+    reqInt(row, 'payCopper', rowPath, 0);
+    reqStr(row, 'payUnit', rowPath);
+  });
+}
+
+function validateLifestyleExpensesProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'lifestyle', rowPath);
+    reqStr(row, 'pricePerDay', rowPath);
+    reqNullableInt(row, 'pricePerDayCopper', rowPath, 0);
+    reqBoolField(row, 'isMinimum', rowPath);
+  });
+}
+
+function validateLanguageOptionsProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'language', rowPath);
+    reqStr(row, 'typicalSpeakers', rowPath);
+    reqNullableStr(row, 'script', rowPath);
+    reqStr(row, 'category', rowPath);
+  });
+}
+
+function validateSubclassSpellGrantsProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqInt(row, 'level', rowPath, 1);
+    reqStrArray(row, 'spells', rowPath);
+  });
+}
+
+function validateObjectArmorClassProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'substance', rowPath);
+    reqStrArray(row, 'materials', rowPath);
+    reqInt(row, 'armorClass', rowPath, 0);
+  });
+}
+
+function validateObjectHitPointsRoll(
+  parent: Obj,
+  key: string,
+  path: string,
+): void {
+  const roll = reqObj(parent, key, path);
+  const rollPath = `${path}.${key}`;
+  reqInt(roll, 'average', rollPath, 1);
+  reqStr(roll, 'dice', rollPath);
+}
+
+function validateObjectHitPointsProjection(
+  projection: Obj,
+  path: string,
+): void {
+  projectionRows(projection, path).forEach((row, index) => {
+    const rowPath = `${path}.rows[${index}]`;
+    reqStr(row, 'size', rowPath);
+    reqStr(row, 'sizeCategory', rowPath);
+    validateObjectHitPointsRoll(row, 'fragile', rowPath);
+    validateObjectHitPointsRoll(row, 'resilient', rowPath);
+  });
+}
+
 function optDnd5eTableProjection(parent: Obj, path: string): void {
   const value = parent.projection;
   if (value === undefined) return;
@@ -498,6 +634,33 @@ function optDnd5eTableProjection(parent: Obj, path: string): void {
       return;
     case 'draconicAncestryOptions':
       validateDraconicAncestryProjection(projection, `${path}.projection`);
+      return;
+    case 'coinExchangeRates':
+      validateCoinExchangeRatesProjection(projection, `${path}.projection`);
+      return;
+    case 'tradeGoodsPrices':
+      validateTradeGoodsProjection(projection, `${path}.projection`);
+      return;
+    case 'foodDrinkLodgingPrices':
+      validateFoodDrinkLodgingProjection(projection, `${path}.projection`);
+      return;
+    case 'servicePrices':
+      validateServicePricesProjection(projection, `${path}.projection`);
+      return;
+    case 'lifestyleExpenses':
+      validateLifestyleExpensesProjection(projection, `${path}.projection`);
+      return;
+    case 'languageOptions':
+      validateLanguageOptionsProjection(projection, `${path}.projection`);
+      return;
+    case 'subclassSpellGrants':
+      validateSubclassSpellGrantsProjection(projection, `${path}.projection`);
+      return;
+    case 'objectArmorClass':
+      validateObjectArmorClassProjection(projection, `${path}.projection`);
+      return;
+    case 'objectHitPoints':
+      validateObjectHitPointsProjection(projection, `${path}.projection`);
       return;
     default:
       throw new RulesPackError(

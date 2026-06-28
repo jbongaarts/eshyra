@@ -80916,7 +80916,40 @@
           "9th",
           "commune with nature, cone of cold"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "hold person",
+              "spike growth"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "sleet storm",
+              "slow"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "freedom of movement",
+              "ice storm"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "commune with nature",
+              "cone of cold"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -80967,7 +81000,40 @@
           "9th",
           "conjure elemental, scrying"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "mirror image",
+              "misty step"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "water breathing",
+              "water walk"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "control water",
+              "freedom of movement"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "conjure elemental",
+              "scrying"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -81018,7 +81084,40 @@
           "9th",
           "insect plague, wall of stone"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "blur",
+              "silence"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "create food and water",
+              "protection from energy"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "blight",
+              "hallucinatory terrain"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "insect plague",
+              "wall of stone"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -81069,7 +81168,40 @@
           "9th",
           "commune with nature, tree stride"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "barkskin",
+              "spider climb"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "call lightning",
+              "plant growth"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "divination",
+              "freedom of movement"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "commune with nature",
+              "tree stride"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -81120,7 +81252,40 @@
           "9th",
           "dream, insect plague"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "invisibility",
+              "pass without trace"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "daylight",
+              "haste"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "divination",
+              "freedom of movement"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "dream",
+              "insect plague"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -81171,7 +81336,40 @@
           "9th",
           "passwall, wall of stone"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "spider climb",
+              "spike growth"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "lightning bolt",
+              "meld into stone"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "stone shape",
+              "stoneskin"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "passwall",
+              "wall of stone"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -81222,7 +81420,40 @@
           "9th",
           "insect plague, scrying"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "acid arrow",
+              "darkness"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "water walk",
+              "stinking cloud"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "freedom of movement",
+              "locate creature"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "insect plague",
+              "scrying"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -82661,7 +82892,60 @@
           "Underworld traders",
           "Elvish"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "languageOptions",
+        "rows": [
+          {
+            "language": "Abyssal",
+            "typicalSpeakers": "Demons",
+            "script": "Infernal",
+            "category": "exotic"
+          },
+          {
+            "language": "Celestial",
+            "typicalSpeakers": "Celestials",
+            "script": "Celestial",
+            "category": "exotic"
+          },
+          {
+            "language": "Draconic",
+            "typicalSpeakers": "Dragons, dragonborn",
+            "script": "Draconic",
+            "category": "exotic"
+          },
+          {
+            "language": "Deep Speech",
+            "typicalSpeakers": "Aboleths, cloakers",
+            "script": null,
+            "category": "exotic"
+          },
+          {
+            "language": "Infernal",
+            "typicalSpeakers": "Devils",
+            "script": "Infernal",
+            "category": "exotic"
+          },
+          {
+            "language": "Primordial",
+            "typicalSpeakers": "Elementals",
+            "script": "Dwarvish",
+            "category": "exotic"
+          },
+          {
+            "language": "Sylvan",
+            "typicalSpeakers": "Fey creatures",
+            "script": "Elvish",
+            "category": "exotic"
+          },
+          {
+            "language": "Undercommon",
+            "typicalSpeakers": "Underworld traders",
+            "script": "Elvish",
+            "category": "exotic"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 59",
     "license": {
@@ -82946,7 +83230,47 @@
           "5th",
           "flame strike, hallow"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 1,
+            "spells": [
+              "burning hands",
+              "command"
+            ]
+          },
+          {
+            "level": 2,
+            "spells": [
+              "blindness/deafness",
+              "scorching ray"
+            ]
+          },
+          {
+            "level": 3,
+            "spells": [
+              "fireball",
+              "stinking cloud"
+            ]
+          },
+          {
+            "level": 4,
+            "spells": [
+              "fire shield",
+              "wall of fire"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "flame strike",
+              "hallow"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 50",
     "license": {
@@ -83061,7 +83385,112 @@
           "Wine, fine (bottle)",
           "10 gp"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "foodDrinkLodgingPrices",
+        "rows": [
+          {
+            "item": "Ale, gallon",
+            "cost": "2 sp",
+            "costCopper": 20
+          },
+          {
+            "item": "Ale, mug",
+            "cost": "4 cp",
+            "costCopper": 4
+          },
+          {
+            "item": "Banquet (per person)",
+            "cost": "10 gp",
+            "costCopper": 1000
+          },
+          {
+            "item": "Bread, loaf",
+            "cost": "2 cp",
+            "costCopper": 2
+          },
+          {
+            "item": "Cheese, hunk",
+            "cost": "1 sp",
+            "costCopper": 10
+          },
+          {
+            "item": "Inn stay, squalid (per day)",
+            "cost": "7 cp",
+            "costCopper": 7
+          },
+          {
+            "item": "Inn stay, poor (per day)",
+            "cost": "1 sp",
+            "costCopper": 10
+          },
+          {
+            "item": "Inn stay, modest (per day)",
+            "cost": "5 sp",
+            "costCopper": 50
+          },
+          {
+            "item": "Inn stay, comfortable (per day)",
+            "cost": "8 sp",
+            "costCopper": 80
+          },
+          {
+            "item": "Inn stay, wealthy (per day)",
+            "cost": "2 gp",
+            "costCopper": 200
+          },
+          {
+            "item": "Inn stay, aristocratic (per day)",
+            "cost": "4 gp",
+            "costCopper": 400
+          },
+          {
+            "item": "Meals, squalid (per day)",
+            "cost": "3 cp",
+            "costCopper": 3
+          },
+          {
+            "item": "Meals, poor (per day)",
+            "cost": "6 cp",
+            "costCopper": 6
+          },
+          {
+            "item": "Meals, modest (per day)",
+            "cost": "3 sp",
+            "costCopper": 30
+          },
+          {
+            "item": "Meals, comfortable (per day)",
+            "cost": "5 sp",
+            "costCopper": 50
+          },
+          {
+            "item": "Meals, wealthy (per day)",
+            "cost": "8 sp",
+            "costCopper": 80
+          },
+          {
+            "item": "Meals, aristocratic (per day)",
+            "cost": "2 gp",
+            "costCopper": 200
+          },
+          {
+            "item": "Meat, chunk",
+            "cost": "3 sp",
+            "costCopper": 30
+          },
+          {
+            "item": "Wine, common (pitcher)",
+            "cost": "2 sp",
+            "costCopper": 20
+          },
+          {
+            "item": "Wine, fine (bottle)",
+            "cost": "10 gp",
+            "costCopper": 1000
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 73",
     "license": {
@@ -83765,7 +84194,47 @@
           "9th",
           "mass cure wounds, raise dead"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 1,
+            "spells": [
+              "bless",
+              "cure wounds"
+            ]
+          },
+          {
+            "level": 3,
+            "spells": [
+              "lesser restoration",
+              "spiritual weapon"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "beacon of hope",
+              "revivify"
+            ]
+          },
+          {
+            "level": 7,
+            "spells": [
+              "death ward",
+              "guardian of faith"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "mass cure wounds",
+              "raise dead"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -83828,7 +84297,54 @@
           "Aristocratic",
           "10 gp minimum"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "lifestyleExpenses",
+        "rows": [
+          {
+            "lifestyle": "Wretched",
+            "pricePerDay": "—",
+            "pricePerDayCopper": null,
+            "isMinimum": false
+          },
+          {
+            "lifestyle": "Squalid",
+            "pricePerDay": "1 sp",
+            "pricePerDayCopper": 10,
+            "isMinimum": false
+          },
+          {
+            "lifestyle": "Poor",
+            "pricePerDay": "2 sp",
+            "pricePerDayCopper": 20,
+            "isMinimum": false
+          },
+          {
+            "lifestyle": "Modest",
+            "pricePerDay": "1 gp",
+            "pricePerDayCopper": 100,
+            "isMinimum": false
+          },
+          {
+            "lifestyle": "Comfortable",
+            "pricePerDay": "2 gp",
+            "pricePerDayCopper": 200,
+            "isMinimum": false
+          },
+          {
+            "lifestyle": "Wealthy",
+            "pricePerDay": "4 gp",
+            "pricePerDayCopper": 400,
+            "isMinimum": false
+          },
+          {
+            "lifestyle": "Aristocratic",
+            "pricePerDay": "10 gp minimum",
+            "pricePerDayCopper": 1000,
+            "isMinimum": true
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -84699,7 +85215,47 @@
           "17th",
           "commune, flame strike"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "subclassSpellGrants",
+        "rows": [
+          {
+            "level": 3,
+            "spells": [
+              "protection from evil and good",
+              "sanctuary"
+            ]
+          },
+          {
+            "level": 5,
+            "spells": [
+              "lesser restoration",
+              "zone of truth"
+            ]
+          },
+          {
+            "level": 9,
+            "spells": [
+              "beacon of hope",
+              "dispel magic"
+            ]
+          },
+          {
+            "level": 13,
+            "spells": [
+              "freedom of movement",
+              "guardian of faith"
+            ]
+          },
+          {
+            "level": 17,
+            "spells": [
+              "commune",
+              "flame strike"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 33",
     "license": {
@@ -84762,7 +85318,67 @@
           "Adamantine",
           23
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "objectArmorClass",
+        "rows": [
+          {
+            "substance": "Cloth, paper, rope",
+            "materials": [
+              "Cloth",
+              "paper",
+              "rope"
+            ],
+            "armorClass": 11
+          },
+          {
+            "substance": "Crystal, glass, ice",
+            "materials": [
+              "Crystal",
+              "glass",
+              "ice"
+            ],
+            "armorClass": 13
+          },
+          {
+            "substance": "Wood, bone",
+            "materials": [
+              "Wood",
+              "bone"
+            ],
+            "armorClass": 15
+          },
+          {
+            "substance": "Stone",
+            "materials": [
+              "Stone"
+            ],
+            "armorClass": 17
+          },
+          {
+            "substance": "Iron, steel",
+            "materials": [
+              "Iron",
+              "steel"
+            ],
+            "armorClass": 19
+          },
+          {
+            "substance": "Mithral",
+            "materials": [
+              "Mithral"
+            ],
+            "armorClass": 21
+          },
+          {
+            "substance": "Adamantine",
+            "materials": [
+              "Adamantine"
+            ],
+            "armorClass": 23
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 203",
     "license": {
@@ -84818,7 +85434,60 @@
           "5 (1d10)",
           "27 (5d10)"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "objectHitPoints",
+        "rows": [
+          {
+            "size": "Tiny (bottle, lock)",
+            "sizeCategory": "Tiny",
+            "fragile": {
+              "average": 2,
+              "dice": "1d4"
+            },
+            "resilient": {
+              "average": 5,
+              "dice": "2d4"
+            }
+          },
+          {
+            "size": "Small (chest, lute)",
+            "sizeCategory": "Small",
+            "fragile": {
+              "average": 3,
+              "dice": "1d6"
+            },
+            "resilient": {
+              "average": 10,
+              "dice": "3d6"
+            }
+          },
+          {
+            "size": "Medium (barrel, chandelier)",
+            "sizeCategory": "Medium",
+            "fragile": {
+              "average": 4,
+              "dice": "1d8"
+            },
+            "resilient": {
+              "average": 18,
+              "dice": "4d8"
+            }
+          },
+          {
+            "size": "Large (cart, 10-ft.-by-10-ft. window)",
+            "sizeCategory": "Large",
+            "fragile": {
+              "average": 5,
+              "dice": "1d10"
+            },
+            "resilient": {
+              "average": 27,
+              "dice": "5d10"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 203",
     "license": {
@@ -85991,7 +86660,54 @@
           "Ship’s passage",
           "1 sp per mile"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "servicePrices",
+        "rows": [
+          {
+            "service": "Coach cab, between towns",
+            "pay": "3 cp per mile",
+            "payCopper": 3,
+            "payUnit": "per mile"
+          },
+          {
+            "service": "Coach cab, within a city",
+            "pay": "1 cp",
+            "payCopper": 1,
+            "payUnit": "flat"
+          },
+          {
+            "service": "Hireling, skilled",
+            "pay": "2 gp per day",
+            "payCopper": 200,
+            "payUnit": "per day"
+          },
+          {
+            "service": "Hireling, untrained",
+            "pay": "2 sp per day",
+            "payCopper": 20,
+            "payUnit": "per day"
+          },
+          {
+            "service": "Messenger",
+            "pay": "2 cp per mile",
+            "payCopper": 2,
+            "payUnit": "per mile"
+          },
+          {
+            "service": "Road or gate toll",
+            "pay": "1 cp",
+            "payCopper": 1,
+            "payUnit": "flat"
+          },
+          {
+            "service": "Ship’s passage",
+            "pay": "1 sp per mile",
+            "payCopper": 10,
+            "payUnit": "per mile"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 74",
     "license": {
@@ -86449,7 +87165,32 @@
           "10",
           "1"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "coinExchangeRates",
+        "rows": [
+          {
+            "coin": "cp",
+            "valueInCopper": 1
+          },
+          {
+            "coin": "sp",
+            "valueInCopper": 10
+          },
+          {
+            "coin": "ep",
+            "valueInCopper": 50
+          },
+          {
+            "coin": "gp",
+            "valueInCopper": 100
+          },
+          {
+            "coin": "pp",
+            "valueInCopper": 1000
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 62",
     "license": {
@@ -86525,7 +87266,60 @@
           "Orcs",
           "Dwarvish"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "languageOptions",
+        "rows": [
+          {
+            "language": "Common",
+            "typicalSpeakers": "Humans",
+            "script": "Common",
+            "category": "standard"
+          },
+          {
+            "language": "Dwarvish",
+            "typicalSpeakers": "Dwarves",
+            "script": "Dwarvish",
+            "category": "standard"
+          },
+          {
+            "language": "Elvish",
+            "typicalSpeakers": "Elves",
+            "script": "Elvish",
+            "category": "standard"
+          },
+          {
+            "language": "Giant",
+            "typicalSpeakers": "Ogres, giants",
+            "script": "Dwarvish",
+            "category": "standard"
+          },
+          {
+            "language": "Gnomish",
+            "typicalSpeakers": "Gnomes",
+            "script": "Dwarvish",
+            "category": "standard"
+          },
+          {
+            "language": "Goblin",
+            "typicalSpeakers": "Goblinoids",
+            "script": "Dwarvish",
+            "category": "standard"
+          },
+          {
+            "language": "Halfling",
+            "typicalSpeakers": "Halflings",
+            "script": "Common",
+            "category": "standard"
+          },
+          {
+            "language": "Orc",
+            "typicalSpeakers": "Orcs",
+            "script": "Dwarvish",
+            "category": "standard"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 59",
     "license": {
@@ -90032,7 +90826,77 @@
           "500 gp",
           "1 lb. of platinum"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "tradeGoodsPrices",
+        "rows": [
+          {
+            "cost": "1 cp",
+            "costCopper": 1,
+            "goods": "1 lb. of wheat"
+          },
+          {
+            "cost": "2 cp",
+            "costCopper": 2,
+            "goods": "1 lb. of flour or one chicken"
+          },
+          {
+            "cost": "5 cp",
+            "costCopper": 5,
+            "goods": "1 lb. of salt"
+          },
+          {
+            "cost": "1 sp",
+            "costCopper": 10,
+            "goods": "1 lb. of iron or 1 sq. yd. of canvas"
+          },
+          {
+            "cost": "5 sp",
+            "costCopper": 50,
+            "goods": "1 lb. of copper or 1 sq. yd. of cotton cloth"
+          },
+          {
+            "cost": "1 gp",
+            "costCopper": 100,
+            "goods": "1 lb. of ginger or one goat"
+          },
+          {
+            "cost": "2 gp",
+            "costCopper": 200,
+            "goods": "1 lb. of cinnamon or pepper, or one sheep"
+          },
+          {
+            "cost": "3 gp",
+            "costCopper": 300,
+            "goods": "1 lb. of cloves or one pig"
+          },
+          {
+            "cost": "5 gp",
+            "costCopper": 500,
+            "goods": "1 lb. of silver or 1 sq. yd. of linen"
+          },
+          {
+            "cost": "10 gp",
+            "costCopper": 1000,
+            "goods": "1 sq. yd. of silk or one cow"
+          },
+          {
+            "cost": "15 gp",
+            "costCopper": 1500,
+            "goods": "1 lb. of saffron or one ox"
+          },
+          {
+            "cost": "50 gp",
+            "costCopper": 5000,
+            "goods": "1 lb. of gold"
+          },
+          {
+            "cost": "500 gp",
+            "costCopper": 50000,
+            "goods": "1 lb. of platinum"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 72",
     "license": {

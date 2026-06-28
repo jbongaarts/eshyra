@@ -659,6 +659,104 @@ describe('rules pack validation', () => {
     expect(pack.records[0].kind).toBe('table');
   });
 
+  it('accepts the eshyra-o9bd.7.1-.7.4 projection kinds and nullable fields', () => {
+    const pack = validateRulesPack(
+      validRulesPack({
+        records: [
+          record('table:lifestyle-expenses', {
+            kind: 'table',
+            name: 'Lifestyle Expenses',
+            data: {
+              columns: ['Lifestyle', 'Price/Day'],
+              rows: [['Wretched', '—']],
+              // A null pricePerDayCopper (free) must be accepted.
+              projection: {
+                kind: 'lifestyleExpenses',
+                rows: [
+                  {
+                    lifestyle: 'Wretched',
+                    pricePerDay: '—',
+                    pricePerDayCopper: null,
+                    isMinimum: false,
+                  },
+                ],
+              },
+            },
+          }),
+          record('table:exotic-languages', {
+            kind: 'table',
+            name: 'Exotic Languages',
+            data: {
+              columns: ['Language', 'Typical Speakers', 'Script'],
+              rows: [['Deep Speech', 'Aboleths, cloakers', '—']],
+              // A null script must be accepted.
+              projection: {
+                kind: 'languageOptions',
+                rows: [
+                  {
+                    language: 'Deep Speech',
+                    typicalSpeakers: 'Aboleths, cloakers',
+                    script: null,
+                    category: 'exotic',
+                  },
+                ],
+              },
+            },
+          }),
+          record('table:object-hit-points', {
+            kind: 'table',
+            name: 'Object Hit Points',
+            data: {
+              columns: ['Size', 'Fragile', 'Resilient'],
+              rows: [['Tiny (bottle, lock)', '2 (1d4)', '5 (2d4)']],
+              projection: {
+                kind: 'objectHitPoints',
+                rows: [
+                  {
+                    size: 'Tiny (bottle, lock)',
+                    sizeCategory: 'Tiny',
+                    fragile: { average: 2, dice: '1d4' },
+                    resilient: { average: 5, dice: '2d4' },
+                  },
+                ],
+              },
+            },
+          }),
+        ],
+      }),
+    );
+    expect(pack.records).toHaveLength(3);
+  });
+
+  it('rejects a projection row missing a required typed field', () => {
+    const pack = validRulesPack({
+      records: [
+        record('table:object-hit-points', {
+          kind: 'table',
+          name: 'Object Hit Points',
+          data: {
+            columns: ['Size', 'Fragile', 'Resilient'],
+            rows: [['Tiny (bottle, lock)', '2 (1d4)', '5 (2d4)']],
+            projection: {
+              kind: 'objectHitPoints',
+              rows: [
+                {
+                  size: 'Tiny (bottle, lock)',
+                  sizeCategory: 'Tiny',
+                  // `dice` is missing from the resilient roll.
+                  fragile: { average: 2, dice: '1d4' },
+                  resilient: { average: 5 },
+                },
+              ],
+            },
+          },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+    expect(() => validateRulesPack(pack)).toThrow(/resilient\.dice/);
+  });
+
   it('rejects D&D table records with unsupported semantic projection kinds', () => {
     const pack = validRulesPack({
       records: [
