@@ -9,6 +9,12 @@
  * new campaign. They are deliberately read/curate only: they never assert or
  * mutate any campaign's world canon — they touch the character's own record
  * fields exclusively.
+ *
+ * Every subcommand is keyed by a registered global character id and verifies
+ * registry membership first, so the CLI cannot inspect or mutate orphan
+ * chronicle rows for a non-registered character. `dm-only` records are hidden
+ * from the default view (spoiler-free); `--include-dm-only` reveals them for
+ * player troubleshooting.
  */
 
 import type {
@@ -34,10 +40,12 @@ const VISIBILITY_VALUES: readonly CharacterChronicleVisibility[] = [
   'private',
 ];
 
+const DM_ONLY_FLAG = '--include-dm-only';
+
 const USAGE = [
   'Usage:',
-  '  eshyra chronicle list <character-id>',
-  '  eshyra chronicle show <character-id> <record-id>',
+  '  eshyra chronicle list <character-id> [--include-dm-only]',
+  '  eshyra chronicle show <character-id> <record-id> [--include-dm-only]',
   '  eshyra chronicle set <character-id> <record-id>' +
     ' [--portability <portable|campaign-local|archived>]' +
     ' [--visibility <player-visible|dm-only|private>]',
@@ -82,8 +90,9 @@ export function runChronicleCommand(
 }
 
 function runList(argv: readonly string[], deps: ChronicleDeps): number {
-  const characterId = argv[0];
-  if (characterId === undefined || argv.length > 1) {
+  const { includeDmOnly, rest } = extractDmOnlyFlag(argv);
+  const characterId = rest[0];
+  if (characterId === undefined || rest.length > 1) {
     deps.log(USAGE);
     return 1;
   }
@@ -91,28 +100,51 @@ function runList(argv: readonly string[], deps: ChronicleDeps): number {
     return 1;
   }
   const records = deps.chronicle.listRecords(characterId);
-  if (records.length === 0) {
-    deps.log(`No chronicle records for '${characterId}'.`);
+  const visible = includeDmOnly
+    ? records
+    : records.filter((record) => record.visibility !== 'dm-only');
+  const hidden = records.length - visible.length;
+  if (visible.length === 0) {
+    deps.log(
+      hidden > 0
+        ? `No player-visible chronicle records for '${characterId}' (${hidden} dm-only hidden; pass ${DM_ONLY_FLAG} to show).`
+        : `No chronicle records for '${characterId}'.`,
+    );
     return 0;
   }
-  deps.log(`Chronicle for '${characterId}' (${records.length}):`);
-  for (const record of records) {
+  deps.log(`Chronicle for '${characterId}' (${visible.length}):`);
+  for (const record of visible) {
     deps.log(`  - ${formatRecordSummary(record)}`);
+  }
+  if (hidden > 0) {
+    deps.log(
+      `  (${hidden} dm-only record(s) hidden; pass ${DM_ONLY_FLAG} to show.)`,
+    );
   }
   return 0;
 }
 
 function runShow(argv: readonly string[], deps: ChronicleDeps): number {
-  const characterId = argv[0];
-  const recordId = argv[1];
-  if (characterId === undefined || recordId === undefined || argv.length > 2) {
+  const { includeDmOnly, rest } = extractDmOnlyFlag(argv);
+  const characterId = rest[0];
+  const recordId = rest[1];
+  if (characterId === undefined || recordId === undefined || rest.length > 2) {
     deps.log(USAGE);
+    return 1;
+  }
+  if (!ensureKnownCharacter(characterId, deps)) {
     return 1;
   }
   const record = deps.chronicle.getRecord(characterId, recordId);
   if (record === undefined) {
     deps.log(`No chronicle record '${recordId}' for '${characterId}'.`);
     return 1;
+  }
+  if (record.visibility === 'dm-only' && !includeDmOnly) {
+    deps.log(
+      `Chronicle record '${recordId}' is dm-only; pass ${DM_ONLY_FLAG} to view.`,
+    );
+    return 0;
   }
   for (const line of formatRecordDetail(record)) {
     deps.log(line);
@@ -121,13 +153,17 @@ function runShow(argv: readonly string[], deps: ChronicleDeps): number {
 }
 
 function runSet(argv: readonly string[], deps: ChronicleDeps): number {
-  const characterId = argv[0];
-  const recordId = argv[1];
+  const { includeDmOnly, rest } = extractDmOnlyFlag(argv);
+  const characterId = rest[0];
+  const recordId = rest[1];
   if (characterId === undefined || recordId === undefined) {
     deps.log(USAGE);
     return 1;
   }
-  const parsed = parseSetFlags(argv.slice(2));
+  if (!ensureKnownCharacter(characterId, deps)) {
+    return 1;
+  }
+  const parsed = parseSetFlags(rest.slice(2));
   if (!parsed.ok) {
     deps.log(`${parsed.message}\n${USAGE}`);
     return 1;
@@ -136,23 +172,34 @@ function runSet(argv: readonly string[], deps: ChronicleDeps): number {
     deps.log('Nothing to update: pass --portability and/or --visibility.');
     return 1;
   }
-  return applyUpdate(characterId, recordId, parsed.patch, deps);
+  return applyUpdate(characterId, recordId, parsed.patch, includeDmOnly, deps);
 }
 
 function runArchive(argv: readonly string[], deps: ChronicleDeps): number {
-  const characterId = argv[0];
-  const recordId = argv[1];
-  if (characterId === undefined || recordId === undefined || argv.length > 2) {
+  const { includeDmOnly, rest } = extractDmOnlyFlag(argv);
+  const characterId = rest[0];
+  const recordId = rest[1];
+  if (characterId === undefined || recordId === undefined || rest.length > 2) {
     deps.log(USAGE);
     return 1;
   }
-  return applyUpdate(characterId, recordId, { portability: 'archived' }, deps);
+  if (!ensureKnownCharacter(characterId, deps)) {
+    return 1;
+  }
+  return applyUpdate(
+    characterId,
+    recordId,
+    { portability: 'archived' },
+    includeDmOnly,
+    deps,
+  );
 }
 
 function applyUpdate(
   characterId: string,
   recordId: string,
   patch: UpdateCharacterChronicleRecordInput,
+  revealDmOnly: boolean,
   deps: ChronicleDeps,
 ): number {
   if (deps.chronicle.getRecord(characterId, recordId) === undefined) {
@@ -164,7 +211,7 @@ function applyUpdate(
       ...patch,
       at: deps.now(),
     });
-    deps.log(`Updated ${formatRecordSummary(updated)}`);
+    deps.log(`Updated ${formatRecordSummary(updated, revealDmOnly)}`);
     return 0;
   } catch (error) {
     deps.log(`Chronicle update failed: ${(error as Error).message}`);
@@ -231,30 +278,64 @@ function parseSetFlags(argv: readonly string[]): ParsedSetFlags | ParseError {
 }
 
 /**
+ * Split a leading/trailing `--include-dm-only` flag out of the positional
+ * arguments so each subcommand can opt into revealing dm-only records. The flag
+ * is order-independent; the remaining tokens keep their order.
+ */
+function extractDmOnlyFlag(argv: readonly string[]): {
+  includeDmOnly: boolean;
+  rest: string[];
+} {
+  const rest: string[] = [];
+  let includeDmOnly = false;
+  for (const token of argv) {
+    if (token === DM_ONLY_FLAG) {
+      includeDmOnly = true;
+    } else {
+      rest.push(token);
+    }
+  }
+  return { includeDmOnly, rest };
+}
+
+/**
  * Report a clear error (and the available ids) when the character is not in the
- * registry, so `list` of an unknown id is not silently mistaken for "no
- * records". Returns true when the character is known.
+ * registry, so a chronicle command on an unknown id is not silently mistaken
+ * for "no records" and cannot reach orphan chronicle rows. Returns true when
+ * the character is known.
  */
 function ensureKnownCharacter(
   characterId: string,
   deps: ChronicleDeps,
 ): boolean {
-  if (deps.registry.list().includes(characterId)) {
+  const ids = deps.registry.list();
+  if (ids.includes(characterId)) {
     return true;
   }
   deps.log(`Unknown character '${characterId}'.`);
-  const ids = deps.registry.list();
   if (ids.length > 0) {
     deps.log(`Registered characters: ${ids.join(', ')}`);
   }
   return false;
 }
 
-function formatRecordSummary(record: CharacterChronicleRecord): string {
+/**
+ * One-line summary. The text of a `dm-only` record is redacted unless the
+ * caller explicitly reveals it, so curation confirmations stay spoiler-free by
+ * default.
+ */
+function formatRecordSummary(
+  record: CharacterChronicleRecord,
+  revealDmOnly = true,
+): string {
+  const text =
+    record.visibility === 'dm-only' && !revealDmOnly
+      ? '[dm-only]'
+      : record.text;
   return (
     `${record.id} [${record.category}] ` +
     `${record.portability}/${record.visibility}/${record.truthStatus}: ` +
-    record.text
+    text
   );
 }
 

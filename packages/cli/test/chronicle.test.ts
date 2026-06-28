@@ -50,6 +50,17 @@ describe('runChronicleCommand', () => {
       truthStatus: 'remembered',
       relatedRefs: [],
     });
+    // A dm-only record (chronicle-2) that must be spoiler-hidden by default.
+    chronicle.appendRecord({
+      globalCharacterId: 'mira',
+      category: 'subjective-knowledge',
+      text: 'The amulet is a forgery',
+      source: { campaignId: 'camp-a', sessionId: 's1', at: AT },
+      portability: 'portable',
+      visibility: 'dm-only',
+      truthStatus: 'believed',
+      relatedRefs: [],
+    });
     output = [];
     deps = {
       chronicle,
@@ -63,12 +74,29 @@ describe('runChronicleCommand', () => {
     db.close();
   });
 
-  it('lists chronicle records for a registry character', () => {
+  it('lists player-visible records and hides dm-only by default', () => {
     const code = runChronicleCommand(['list', 'mira'], deps);
     expect(code).toBe(0);
-    expect(output.join('\n')).toContain('chronicle-1');
-    expect(output.join('\n')).toContain('Remembers King Aldren');
-    expect(output.join('\n')).toContain('portable/player-visible/remembered');
+    const text = output.join('\n');
+    expect(text).toContain('chronicle-1');
+    expect(text).toContain('Remembers King Aldren');
+    expect(text).toContain('portable/player-visible/remembered');
+    // The dm-only record and its text must not leak into the default view.
+    expect(text).not.toContain('chronicle-2');
+    expect(text).not.toContain('The amulet is a forgery');
+    expect(text).toContain('1 dm-only record(s) hidden');
+  });
+
+  it('reveals dm-only records with --include-dm-only', () => {
+    const code = runChronicleCommand(
+      ['list', 'mira', '--include-dm-only'],
+      deps,
+    );
+    expect(code).toBe(0);
+    const text = output.join('\n');
+    expect(text).toContain('chronicle-2');
+    expect(text).toContain('The amulet is a forgery');
+    expect(text).not.toContain('hidden');
   });
 
   it('reports unknown characters instead of an empty list', () => {
@@ -153,5 +181,61 @@ describe('runChronicleCommand', () => {
     const code = runChronicleCommand(['frobnicate'], deps);
     expect(code).toBe(1);
     expect(output.join('\n')).toContain('Unknown chronicle command');
+  });
+
+  it('rejects show for an unknown character', () => {
+    const code = runChronicleCommand(['show', 'nobody', 'chronicle-1'], deps);
+    expect(code).toBe(1);
+    expect(output.join('\n')).toContain("Unknown character 'nobody'");
+  });
+
+  it('rejects set for an unknown character', () => {
+    const code = runChronicleCommand(
+      ['set', 'nobody', 'chronicle-1', '--visibility', 'private'],
+      deps,
+    );
+    expect(code).toBe(1);
+    expect(output.join('\n')).toContain("Unknown character 'nobody'");
+    // The orphan id must not have been mutated into existence.
+    expect(chronicle.getRecord('nobody', 'chronicle-1')).toBeUndefined();
+  });
+
+  it('rejects archive for an unknown character', () => {
+    const code = runChronicleCommand(
+      ['archive', 'nobody', 'chronicle-1'],
+      deps,
+    );
+    expect(code).toBe(1);
+    expect(output.join('\n')).toContain("Unknown character 'nobody'");
+  });
+
+  it('withholds a dm-only record from show by default', () => {
+    const code = runChronicleCommand(['show', 'mira', 'chronicle-2'], deps);
+    expect(code).toBe(0);
+    const text = output.join('\n');
+    expect(text).toContain('is dm-only');
+    expect(text).not.toContain('The amulet is a forgery');
+  });
+
+  it('shows a dm-only record with --include-dm-only', () => {
+    const code = runChronicleCommand(
+      ['show', 'mira', 'chronicle-2', '--include-dm-only'],
+      deps,
+    );
+    expect(code).toBe(0);
+    expect(output.join('\n')).toContain('The amulet is a forgery');
+  });
+
+  it('redacts dm-only text in the archive confirmation by default', () => {
+    const code = runChronicleCommand(['archive', 'mira', 'chronicle-2'], deps);
+    expect(code).toBe(0);
+    const text = output.join('\n');
+    expect(text).toContain('Updated chronicle-2');
+    expect(text).toContain('[dm-only]');
+    expect(text).not.toContain('The amulet is a forgery');
+    // The mutation still landed despite the redacted echo.
+    expect(chronicle.getRecord('mira', 'chronicle-2')?.portability).toBe(
+      'archived',
+    );
   });
 });
