@@ -2,6 +2,7 @@ import type { Db } from '@eshyra/core';
 import { getDemoTurnBudget } from '@eshyra/core';
 import { createAdditionalCharacter } from './playCharacter.js';
 import { gracefulClose } from './playClose.js';
+import { runMoneyCommand, showWallet } from './playCurrency.js';
 import { showParty, switchActiveCharacter } from './playParty.js';
 import { runLevelUpCommand, showProgression } from './playProgression.js';
 import type { PlayDeps } from './playTypes.js';
@@ -42,6 +43,12 @@ async function handlePartyCommand(
       return true;
     case '/levelup':
       await runLevelUpCommand(deps, db, sessionId);
+      return true;
+    case '/wallet':
+      showWallet(deps.io, db);
+      return true;
+    case '/money':
+      runMoneyCommand(deps, db, sessionId, arg);
       return true;
     default:
       return false;

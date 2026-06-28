@@ -206,6 +206,23 @@ export {
   importFinalizedCharacter,
   validateCharacterDraft,
 } from './character/creation.js';
+export type {
+  AdjustCurrencyInput,
+  CharacterWalletEventKind,
+  CharacterWalletEventRecord,
+  CharacterWalletMutationResult,
+  ConvertCurrencyInput,
+  CurrencyDenomination,
+  CurrencyMutationContext,
+} from './character/currency.js';
+export {
+  adjustCharacterCurrency,
+  convertCharacterCurrency,
+  DND5E_CURRENCY_DENOMINATIONS,
+  EMPTY_WALLET,
+  getCharacterWallet,
+  listCharacterWalletEvents,
+} from './character/currency.js';
 // Deterministic level-1 derived-value computation (eshyra-b69j.6): the single
 // pure source the draft engine and the recipe both derive from.
 export type {
@@ -227,6 +244,7 @@ export {
 // canonical, serializable CharacterSheet record (or report what is missing).
 export type {
   CharacterSheet,
+  CharacterWallet,
   FinalizeCharacterResult,
   FinalizedAbilityScore,
   FinalizedRecordRef,

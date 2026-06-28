@@ -9,6 +9,7 @@ import {
   createCharacterRegistryStore,
   createDefaultToolRegistry,
   createSeededRng,
+  createSqliteCharacterSheetStore,
   type Db,
   DoltRepo,
   EMBERFALL_HOLLOW,
@@ -525,6 +526,42 @@ describe('runPlay', () => {
     expect(out).toContain('Progression for pc-1: level 1, 0 XP.');
     expect(out).toContain('Advancement: xp; not eligible to level up.');
     expect(out).toContain('Recent progression events: none.');
+    dispose();
+  });
+
+  it('handles /wallet and /money inside the play session', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO([
+      'import',
+      'mira',
+      '/wallet',
+      '/money gain gp 12',
+      '/money spend gp 5',
+      '/money convert 7 gp pp',
+      '/wallet',
+      '/quit',
+    ]);
+
+    const code = await runPlay(baseDeps(db, io), { dbPath: 'demo.db' });
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain('Wallet: 0 cp, 0 sp, 0 ep, 0 gp, 0 pp.');
+    expect(out).toContain('Wallet: 0 cp, 0 sp, 0 ep, 7 gp, 0 pp.');
+    expect(out).toContain(
+      'Money command failed: 7 gp cannot convert exactly to pp',
+    );
+    expect(createSqliteCharacterSheetStore(db).load('pc-1')?.wallet).toEqual({
+      cp: 0,
+      sp: 0,
+      ep: 0,
+      gp: 7,
+      pp: 0,
+    });
+    const walletEvents = db
+      .prepare('SELECT kind FROM character_wallet_event ORDER BY id')
+      .all() as Array<{ kind: string }>;
+    expect(walletEvents.map((event) => event.kind)).toEqual(['gain', 'spend']);
     dispose();
   });
 

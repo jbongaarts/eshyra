@@ -160,8 +160,27 @@ export {
   completeCharacterCreation,
   importFinalizedCharacter,
 } from './character/creation.js';
+export type {
+  CharacterWalletEventKind,
+  CharacterWalletEventRecord,
+  CharacterWalletMutationResult,
+  ConvertCurrencyInput,
+  CurrencyDenomination,
+  CurrencyMutationContext,
+} from './character/currency.js';
+export {
+  adjustCharacterCurrency,
+  convertCharacterCurrency,
+  DND5E_CURRENCY_DENOMINATIONS,
+  EMPTY_WALLET,
+  getCharacterWallet,
+  listCharacterWalletEvents,
+} from './character/currency.js';
 export { DND5E_SRD_CHARACTER_RECIPE } from './character/dnd5eRecipe.js';
-export type { CharacterSheet } from './character/finalizeCharacter.js';
+export type {
+  CharacterSheet,
+  CharacterWallet,
+} from './character/finalizeCharacter.js';
 export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
 export type {
   GuidedLevelUpInput,

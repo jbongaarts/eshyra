@@ -200,6 +200,18 @@ CREATE TABLE character_sheet (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE character_wallet_event (
+  id TEXT PRIMARY KEY,
+  character_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('gain', 'spend', 'convert')),
+  amounts_json TEXT NOT NULL,
+  resulting_wallet_json TEXT NOT NULL,
+  source TEXT NOT NULL,
+  occurred_at TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL
+);
+
 CREATE TABLE clock (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   in_game_time TEXT NOT NULL DEFAULT '',
@@ -473,6 +485,9 @@ CREATE INDEX encounter_combatant_instance
 
 CREATE INDEX encounter_combatant_status
   ON encounter_combatant(campaign_id, status);
+
+CREATE INDEX idx_character_wallet_event_character
+  ON character_wallet_event (character_id, occurred_at, id);
 
 CREATE INDEX idx_progression_event_character
   ON progression_event (character_id, occurred_at, id);
