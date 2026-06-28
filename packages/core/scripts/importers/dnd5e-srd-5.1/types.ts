@@ -779,6 +779,25 @@ export interface SubclassExtraction {
  * without a table anchor is not emitted, because silently defaulting to level 1
  * would corrupt the canonical record. Scope (ADR 0009 / loreweaver-0m9.5.18).
  */
+/**
+ * A structured player choice a feature requires at creation/level-up
+ * (eshyra-o9bd.9) — Fighting Style, subclass selection, Metamagic, favored
+ * enemy, ASI-vs-feat, etc. Mirrors the core `FeatureChoice` shape
+ * (packages/core/src/rules/featureChoices.ts) that `emit.ts` writes to the
+ * `feature.data.choices[]` field and the `choice-coverage` audit gate reads.
+ * Each entry is EITHER structured (`choose` + optional `from`) OR a named
+ * out-of-scope marker (`unsupported.reason`).
+ */
+export interface FeatureChoiceEntry {
+  readonly id: string;
+  readonly category: string;
+  readonly prompt: string;
+  readonly level: number;
+  readonly choose?: number;
+  readonly from?: readonly string[] | string;
+  readonly unsupported?: { readonly reason: string };
+}
+
 export interface FeatureExtraction {
   readonly name: string;
   /** Whether the feature is granted by a base class or a subclass. */
@@ -789,6 +808,11 @@ export interface FeatureExtraction {
   readonly level: number;
   /** Feature body prose, re-flowed into paragraphs. */
   readonly description: string;
+  /**
+   * Structured player choices this feature requires (eshyra-o9bd.9). Absent
+   * until a choice-derivation pass populates it; emitted to `data.choices`.
+   */
+  readonly choices?: readonly FeatureChoiceEntry[];
   /** 1-based page in the source PDF where the feature heading begins. */
   readonly sourcePage: number;
 }

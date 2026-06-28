@@ -448,6 +448,205 @@ describe('proficiency-note-bleed gate', () => {
   });
 });
 
+// A class that grants `featureKey` at `level` via a typed featureGrant row, so
+// the feature is in the choice-coverage gate's in-scope universe.
+function classGranting(
+  classKey: string,
+  featureKey: string,
+  level: number,
+): RulesRecord {
+  return record({
+    kind: 'class',
+    key: classKey,
+    name: classKey,
+    data: {
+      progression: [
+        {
+          level,
+          advancement: [{ kind: 'featureGrant', ref: featureKey }],
+        },
+      ],
+    },
+  });
+}
+
+function feature(
+  key: string,
+  description: string,
+  source: string,
+  extra: Record<string, unknown> = {},
+): RulesRecord {
+  return record({
+    kind: 'feature',
+    key,
+    name: key,
+    data: { source, level: 1, description, ...extra },
+  });
+}
+
+describe('choice-coverage gate (eshyra-o9bd.9)', () => {
+  it('fires on a granted feature whose build choice is prose-only', () => {
+    const cls = classGranting('class:fighter', 'feature:fighter:fs', 1);
+    const fs = feature(
+      'feature:fighter:fs',
+      'Choose a Fighting Style of your choice.',
+      'class:fighter',
+    );
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([cls, fs])),
+      'choice-coverage',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].key).toBe('feature:fighter:fs');
+    expect(findings[0].bead).toBe('eshyra-o9bd.9.5');
+    expect(findings[0].detail).toContain('fightingStyle');
+  });
+
+  it('is silent once the feature carries a structured choices[] entry', () => {
+    const cls = classGranting('class:fighter', 'feature:fighter:fs', 1);
+    const fs = feature(
+      'feature:fighter:fs',
+      'Choose a Fighting Style of your choice.',
+      'class:fighter',
+      {
+        choices: [
+          {
+            id: 'fighting-style',
+            category: 'fightingStyle',
+            prompt: 'Choose a Fighting Style.',
+            level: 1,
+            choose: 1,
+            from: ['Archery', 'Defense', 'Dueling'],
+          },
+        ],
+      },
+    );
+    expect(
+      findingsByCategory(
+        auditSrdPlayability(pack([cls, fs])),
+        'choice-coverage',
+      ),
+    ).toHaveLength(0);
+  });
+
+  it('is silent once the choice carries a named out-of-scope marker', () => {
+    const cls = classGranting('class:fighter', 'feature:fighter:fs', 1);
+    const fs = feature(
+      'feature:fighter:fs',
+      'Choose a Fighting Style of your choice.',
+      'class:fighter',
+      {
+        choices: [
+          {
+            id: 'fighting-style',
+            category: 'fightingStyle',
+            prompt: 'Choose a Fighting Style.',
+            level: 1,
+            unsupported: { reason: 'Fighting Style options not modeled yet.' },
+          },
+        ],
+      },
+    );
+    expect(
+      findingsByCategory(
+        auditSrdPlayability(pack([cls, fs])),
+        'choice-coverage',
+      ),
+    ).toHaveLength(0);
+  });
+
+  it('ignores a feature not granted by any class progression row', () => {
+    // An orphan feature (no featureGrant references it) is out of the
+    // creation/level-up universe, so its prose is not a player choice.
+    const fs = feature(
+      'feature:homebrew:fs',
+      'Choose a Fighting Style of your choice.',
+      'class:fighter',
+    );
+    expect(
+      findingsByCategory(auditSrdPlayability(pack([fs])), 'choice-coverage'),
+    ).toHaveLength(0);
+  });
+
+  it('does not mistake a reference to an already-chosen favored enemy for a choice', () => {
+    // Foe Slayer / Primeval Awareness mention the favored enemy/terrain the
+    // player already picked; only the act of choosing is a build choice.
+    const cls = classGranting('class:ranger', 'feature:ranger:foe-slayer', 20);
+    const foeSlayer = feature(
+      'feature:ranger:foe-slayer',
+      'You can add your Wisdom modifier to the attack roll against a favored enemy.',
+      'class:ranger',
+    );
+    expect(
+      findingsByCategory(
+        auditSrdPlayability(pack([cls, foeSlayer])),
+        'choice-coverage',
+      ),
+    ).toHaveLength(0);
+  });
+});
+
+describe('subclass choice-coverage gate (eshyra-o9bd.9.2)', () => {
+  const subclassRecord = record({
+    kind: 'subclass',
+    key: 'subclass:champion',
+    name: 'Champion',
+    data: { parentClass: 'class:fighter', description: 'A champion.' },
+  });
+
+  it('fires when no granted feature of a subclassed class carries a subclass choice', () => {
+    const cls = classGranting(
+      'class:fighter',
+      'feature:fighter:martial-archetype',
+      3,
+    );
+    const sel = feature(
+      'feature:fighter:martial-archetype',
+      'At 3rd level, you choose an archetype such as Champion.',
+      'class:fighter',
+    );
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([cls, sel, subclassRecord])),
+      'choice-coverage',
+    );
+    const subclassFindings = findings.filter(
+      (f) => f.bead === 'eshyra-o9bd.9.2',
+    );
+    expect(subclassFindings).toHaveLength(1);
+    expect(subclassFindings[0].key).toBe('class:fighter');
+  });
+
+  it('is silent once a granted feature carries a structured subclass choice', () => {
+    const cls = classGranting(
+      'class:fighter',
+      'feature:fighter:martial-archetype',
+      3,
+    );
+    const sel = feature(
+      'feature:fighter:martial-archetype',
+      'At 3rd level, you choose an archetype such as Champion.',
+      'class:fighter',
+      {
+        choices: [
+          {
+            id: 'martial-archetype',
+            category: 'subclass',
+            prompt: 'Choose a Martial Archetype.',
+            level: 3,
+            choose: 1,
+            from: ['subclass:champion'],
+          },
+        ],
+      },
+    );
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([cls, sel, subclassRecord])),
+      'choice-coverage',
+    ).filter((f) => f.bead === 'eshyra-o9bd.9.2');
+    expect(findings).toHaveLength(0);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Real committed-pack baselines (the RED/GREEN state the modeling beads move)
 // ---------------------------------------------------------------------------
@@ -484,17 +683,42 @@ describe('committed SRD pack playable-model baseline', () => {
     expect(counts['proficiency-note-bleed']).toBe(0);
   });
 
+  it('RED (eshyra-o9bd.9): every level-1/level-up player choice is structured', () => {
+    // The choice-coverage gate (eshyra-o9bd.9.1) lands the schema + detector;
+    // the committed pack still carries every feature build choice as prose.
+    // Each modeling slice below flips its bucket to 0; update these counts as
+    // they land, and remove the RED assertion when the total reaches 0.
+    const choiceFindings = findingsByCategory(findings, 'choice-coverage');
+    const byBead = new Map<string, number>();
+    for (const f of choiceFindings) {
+      byBead.set(f.bead, (byBead.get(f.bead) ?? 0) + 1);
+    }
+    expect(counts['choice-coverage']).toBe(48);
+    // Per-slice punch list (the done-marker each modeling bead must drive to 0).
+    expect(byBead.get('eshyra-o9bd.9.2')).toBe(12); // subclass selection (per class)
+    expect(byBead.get('eshyra-o9bd.9.3')).toBe(12); // spell/cantrip choices
+    expect(byBead.get('eshyra-o9bd.9.4')).toBe(12); // ASI-vs-feat
+    expect(byBead.get('eshyra-o9bd.9.5')).toBe(7); // fighting-style/metamagic/invocation/terrain-enemy
+    expect(byBead.get('eshyra-o9bd.9.6')).toBe(5); // channel-divinity / expertise
+  });
+
   it('every finding names an owning modeling bead', () => {
-    expect(findings.every((f) => /^eshyra-o9bd\.\d+$/.test(f.bead))).toBe(true);
+    expect(
+      findings.every((f) => /^eshyra-o9bd\.\d+(?:\.\d+)?$/.test(f.bead)),
+    ).toBe(true);
   });
 
   it('the report renders the remaining punch list', () => {
     const report = formatSrdPlayabilityReport('rules:dnd5e-srd-5.1', findings);
     expect(report).toContain('SRD playable-model audit');
-    expect(report).toContain('(no findings');
+    expect(report).toContain('choice-coverage');
   });
 
-  it('re-freeze readiness: pack has zero implemented playable-model findings', () => {
-    expect(srdPlayabilityHasFindings(findings)).toBe(false);
+  it('re-freeze readiness: only choice-coverage (eshyra-o9bd.9) is still RED', () => {
+    // Every other implemented playable-model gate is green; choice coverage is
+    // the remaining work before the pack is re-freeze-ready (epic bar #9).
+    expect(srdPlayabilityHasFindings(findings)).toBe(true);
+    const nonChoice = findings.filter((f) => f.category !== 'choice-coverage');
+    expect(nonChoice).toHaveLength(0);
   });
 });

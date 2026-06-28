@@ -24,11 +24,20 @@
  *   - missing-class-feature-record— GREEN (Thieves' Cant owned) → eshyra-o9bd.3
  *   - overlay-dependence          — GREEN (creation facts emitted) → eshyra-o9bd.5
  *   - proficiency-note-bleed      — GREEN (already lifted to proficiencyNotes) → eshyra-o9bd.6 regression guard
+ *   - choice-coverage             — RED (framework only; modeling slices flip it) → eshyra-o9bd.9
  *
- * Deferred to their owning modeling beads (their gate is that bead's own
+ * The choice-coverage gate (eshyra-o9bd.9.1) lands the schema (`feature.data.choices[]`),
+ * the named out-of-scope marker convention, and the detector. It is RED against
+ * the committed pack: every level-1/level-up player choice still carried as
+ * prose on a granted class feature is a finding, bucketed to the modeling slice
+ * (eshyra-o9bd.9.2 subclass · .9.3 spells/cantrips · .9.4 ASI-vs-feat ·
+ * .9.5 fighting-style/metamagic/invocations/terrain-enemy · .9.6 subclass-feature
+ * options) that owns flipping it GREEN. The pack is not re-freeze-ready until it
+ * reaches zero (epic bar #9).
+ *
+ * Deferred to its owning modeling beads (their gate is that bead's own
  * acceptance check and needs its modeling decisions):
  *   - feature/table de-flatten + tableRefs completeness → eshyra-o9bd.8
- *   - choice-coverage (every level-1/level-up choice structured) → eshyra-o9bd.9
  *
  * Everything is pure and deterministic; findings are sorted for diffable output.
  */
@@ -44,7 +53,8 @@ export type SrdPlayabilityCategory =
   | 'null-spellcasting-value'
   | 'missing-class-feature-record'
   | 'overlay-dependence'
-  | 'proficiency-note-bleed';
+  | 'proficiency-note-bleed'
+  | 'choice-coverage';
 
 export interface SrdPlayabilityFinding {
   readonly category: SrdPlayabilityCategory;
@@ -440,6 +450,220 @@ function checkProficiencyNoteBleed(
 }
 
 // ---------------------------------------------------------------------------
+// Gate: choice coverage (eshyra-o9bd.9)
+// ---------------------------------------------------------------------------
+
+/**
+ * A prose signal that a class feature requires a player build choice at
+ * creation/level-up, with the choice `category` it implies and the modeling
+ * bead that owns making it structured. The gate is RED while a matched feature
+ * carries no `choices` entry of that category (structured or a named
+ * `unsupported` marker); the owning slice flips it GREEN.
+ *
+ * Detection is intentionally generous: a false positive is resolved the same
+ * way as a true one — model the choice or mark it out of scope — so over-
+ * detection only lengthens the punch list, never hides a gap. Known
+ * choice-bearing features are pinned in the audit tests so the important cases
+ * cannot be silently under-detected.
+ */
+interface ChoiceSignal {
+  readonly category: string;
+  readonly bead: string;
+  readonly test: RegExp;
+}
+
+// Subclass selection is detected STRUCTURALLY (checkSubclassChoiceCoverage),
+// not by prose keyword: the SRD selector features word the choice too
+// inconsistently ("choose a path", "Choose one domain", "such as Champion") to
+// match reliably, and a missed class would let the slice pass with a gap. The
+// signals below are description heuristics tuned to the actual SRD phrasing of
+// each choice so the known choice-bearing features cannot be under-detected.
+const CHOICE_SIGNALS: readonly ChoiceSignal[] = [
+  // Cantrip / spell selection on a caster feature ("cantrips of your choice",
+  // "spells of your choice"). Clerics/Druids/Paladins PREPARE from the full
+  // list (no spells-known choice), so their Spellcasting prose matches `cantrip`
+  // but not `spell` — which is the correct distinction.
+  {
+    category: 'cantrip',
+    bead: 'eshyra-o9bd.9.3',
+    test: /\bcantrips?\b[^.]*\bof your choice\b/i,
+  },
+  {
+    category: 'spell',
+    bead: 'eshyra-o9bd.9.3',
+    test: /\bspells?\b[^.]*\bof your choice\b/i,
+  },
+  // Ability Score Improvement vs feat.
+  {
+    category: 'asiOrFeat',
+    bead: 'eshyra-o9bd.9.4',
+    test: /increase (?:one ability score|two ability scores)|ability scores? of your choice/i,
+  },
+  // Fighting Style / Metamagic / Eldritch Invocations / Ranger terrain-enemy.
+  {
+    category: 'fightingStyle',
+    bead: 'eshyra-o9bd.9.5',
+    test: /\bfighting style\b/i,
+  },
+  {
+    category: 'metamagic',
+    bead: 'eshyra-o9bd.9.5',
+    test: /\bmetamagic\b/i,
+  },
+  {
+    category: 'invocation',
+    bead: 'eshyra-o9bd.9.5',
+    test: /\beldritch invocations?\b/i,
+  },
+  // Tightened to the ACT of choosing the enemy/terrain so foe-slayer /
+  // primeval-awareness (which only reference an already-chosen favored
+  // enemy/terrain) are not mistaken for choices.
+  {
+    category: 'favoredEnemy',
+    bead: 'eshyra-o9bd.9.5',
+    test: /choose [^.]*\bfavored enem(?:y|ies)\b|select two races/i,
+  },
+  {
+    category: 'naturalExplorer',
+    bead: 'eshyra-o9bd.9.5',
+    test: /choose [^.]*\bfavored terrain\b/i,
+  },
+  // Subclass-feature options. Channel Divinity menus are matched by name;
+  // Expertise is matched by its prose ("choose two of your skill
+  // proficiencies") because the feature body never says "expertise".
+  {
+    category: 'channelDivinity',
+    bead: 'eshyra-o9bd.9.6',
+    test: /\bchannel divinity\b/i,
+  },
+  {
+    category: 'expertise',
+    bead: 'eshyra-o9bd.9.6',
+    test: /choose [^.]*\bskill proficiencies\b/i,
+  },
+];
+
+/** Class-feature keys granted by any class progression row, with the earliest
+ * grant level — the in-scope universe for choice coverage (a feature the player
+ * actually gains at creation or level-up). */
+function grantedClassFeatureLevels(pack: RulesPack): Map<string, number> {
+  const levels = new Map<string, number>();
+  for (const record of pack.records) {
+    const rows = classProgressionRows(record);
+    if (rows === null) continue;
+    for (const row of rows) {
+      const level = typeof row.level === 'number' ? row.level : null;
+      for (const entry of rowAdvancement(row)) {
+        if (entry.kind !== 'featureGrant') continue;
+        const ref = asString(entry.ref);
+        if (ref === null || level === null) continue;
+        const prior = levels.get(ref);
+        if (prior === undefined || level < prior) levels.set(ref, level);
+      }
+    }
+  }
+  return levels;
+}
+
+/** The set of choice categories a feature record already addresses (structured
+ * or via an `unsupported` marker). */
+function modeledChoiceCategories(record: RulesRecord): ReadonlySet<string> {
+  const data = dataObject(record);
+  const out = new Set<string>();
+  if (data === null || !Array.isArray(data.choices)) return out;
+  for (const entry of data.choices) {
+    const obj = asObject(entry);
+    const category = obj === null ? null : asString(obj.category);
+    if (category !== null) out.add(category);
+  }
+  return out;
+}
+
+/**
+ * Subclass selection is a player choice at the level the class first picks its
+ * archetype/domain/path. It is checked per class rather than by feature prose:
+ * a class that owns subclass records (by `parentClass`) must have at least one
+ * GRANTED feature carrying a structured `subclass` choice (or an out-of-scope
+ * marker). This is robust where the selector feature's prose varies
+ * ("Primal Path", "Divine Domain", "such as Champion"). The owning slice
+ * (eshyra-o9bd.9.2) attaches the choice to the selector feature; the gate only
+ * verifies the class collectively covers it.
+ */
+function checkSubclassChoiceCoverage(pack: RulesPack): SrdPlayabilityFinding[] {
+  const subclassParents = new Set<string>();
+  for (const record of pack.records) {
+    if (record.kind !== 'subclass') continue;
+    const data = dataObject(record);
+    const parent = data === null ? null : asString(data.parentClass);
+    if (parent !== null) subclassParents.add(parent);
+  }
+  const granted = grantedClassFeatureLevels(pack);
+  // Granted feature keys grouped by their grantor class key.
+  const grantedByClass = new Map<string, RulesRecord[]>();
+  for (const record of pack.records) {
+    if (record.kind !== 'feature' || !granted.has(record.key)) continue;
+    const data = dataObject(record);
+    const source = data === null ? null : asString(data.source);
+    if (source === null) continue;
+    const bucket = grantedByClass.get(source) ?? [];
+    bucket.push(record);
+    grantedByClass.set(source, bucket);
+  }
+  const findings: SrdPlayabilityFinding[] = [];
+  for (const record of pack.records) {
+    if (record.kind !== 'class' || !subclassParents.has(record.key)) continue;
+    const features = grantedByClass.get(record.key) ?? [];
+    const covered = features.some((feature) =>
+      modeledChoiceCategories(feature).has('subclass'),
+    );
+    if (covered) continue;
+    findings.push({
+      category: 'choice-coverage',
+      key: record.key,
+      kind: record.kind,
+      name: record.name,
+      bead: 'eshyra-o9bd.9.2',
+      detail:
+        "subclass selection is prose-only (no granted feature carries a structured 'subclass' choice or named unsupported marker)",
+    });
+  }
+  return findings;
+}
+
+/**
+ * Every player build choice a class feature confers at creation/level-up must
+ * be machine-readable: a structured `choices[]` entry of the matching category,
+ * or a named out-of-scope marker. A feature still carrying the choice only in
+ * its prose `description` is a finding (eshyra-o9bd.9). Findings are bucketed to
+ * the owning modeling slice so the report reads as a punch list.
+ */
+function checkChoiceCoverage(pack: RulesPack): SrdPlayabilityFinding[] {
+  const granted = grantedClassFeatureLevels(pack);
+  const findings: SrdPlayabilityFinding[] = [];
+  for (const record of pack.records) {
+    if (record.kind !== 'feature') continue;
+    if (!granted.has(record.key)) continue;
+    const data = dataObject(record);
+    const description = data === null ? null : asString(data.description);
+    if (description === null) continue;
+    const modeled = modeledChoiceCategories(record);
+    for (const signal of CHOICE_SIGNALS) {
+      if (!signal.test.test(description)) continue;
+      if (modeled.has(signal.category)) continue;
+      findings.push({
+        category: 'choice-coverage',
+        key: record.key,
+        kind: record.kind,
+        name: record.name,
+        bead: signal.bead,
+        detail: `level ${granted.get(record.key)} '${signal.category}' choice is prose-only (no structured choices[] entry or named unsupported marker)`,
+      });
+    }
+  }
+  return findings;
+}
+
+// ---------------------------------------------------------------------------
 // Aggregate + reporting
 // ---------------------------------------------------------------------------
 
@@ -459,6 +683,8 @@ export function auditSrdPlayability(
     findings.push(...checkProficiencyNoteBleed(record));
   }
   findings.push(...checkMissingClassFeatureRecords(pack));
+  findings.push(...checkChoiceCoverage(pack));
+  findings.push(...checkSubclassChoiceCoverage(pack));
   return sortFindings(findings);
 }
 
@@ -479,6 +705,7 @@ export function countSrdPlayabilityByCategory(
     'missing-class-feature-record': 0,
     'overlay-dependence': 0,
     'proficiency-note-bleed': 0,
+    'choice-coverage': 0,
   };
   for (const finding of findings) {
     counts[finding.category] += 1;

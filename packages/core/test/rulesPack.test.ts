@@ -498,6 +498,141 @@ describe('rules pack validation', () => {
     expect(() => validateRulesPack(pack)).toThrow(/data\.level/);
   });
 
+  it('accepts a feature record with a structured choices[] entry (eshyra-o9bd.9)', () => {
+    const pack = validateRulesPack(
+      validRulesPack({
+        records: [
+          record('feature:fighting-style', {
+            kind: 'feature',
+            name: 'Fighting Style',
+            data: {
+              description: 'You adopt a particular style of fighting.',
+              source: 'class:fighter',
+              level: 1,
+              choices: [
+                {
+                  id: 'fighting-style',
+                  category: 'fightingStyle',
+                  prompt: 'Choose a Fighting Style.',
+                  level: 1,
+                  choose: 1,
+                  from: ['Archery', 'Defense', 'Dueling'],
+                },
+              ],
+            },
+          }),
+        ],
+      }),
+    );
+    expect(pack.records[0].kind).toBe('feature');
+  });
+
+  it('accepts a feature choice with a named out-of-scope marker (eshyra-o9bd.9)', () => {
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            record('feature:metamagic', {
+              kind: 'feature',
+              name: 'Metamagic',
+              data: {
+                description: 'You gain two Metamagic options of your choice.',
+                source: 'class:sorcerer',
+                level: 3,
+                choices: [
+                  {
+                    id: 'metamagic',
+                    category: 'metamagic',
+                    prompt: 'Choose two Metamagic options.',
+                    level: 3,
+                    unsupported: { reason: 'Metamagic options not modeled.' },
+                  },
+                ],
+              },
+            }),
+          ],
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('rejects a feature choice with an unknown category (eshyra-o9bd.9)', () => {
+    const pack = validRulesPack({
+      records: [
+        record('feature:bad-choice', {
+          kind: 'feature',
+          name: 'Bad Choice',
+          data: {
+            description: 'A choice.',
+            source: 'class:fighter',
+            level: 1,
+            choices: [
+              {
+                id: 'x',
+                category: 'wibble',
+                prompt: 'Pick.',
+                level: 1,
+                choose: 1,
+              },
+            ],
+          },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).toThrow(/category must be one of/);
+  });
+
+  it('rejects a feature choice that is neither structured nor unsupported (eshyra-o9bd.9)', () => {
+    const pack = validRulesPack({
+      records: [
+        record('feature:bad-choice', {
+          kind: 'feature',
+          name: 'Bad Choice',
+          data: {
+            description: 'A choice.',
+            source: 'class:fighter',
+            level: 1,
+            choices: [
+              { id: 'x', category: 'subclass', prompt: 'Pick.', level: 1 },
+            ],
+          },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).toThrow(
+      /exactly one of 'choose'.*or 'unsupported'/,
+    );
+  });
+
+  it('rejects a feature choice that is both structured and unsupported (eshyra-o9bd.9)', () => {
+    const pack = validRulesPack({
+      records: [
+        record('feature:bad-choice', {
+          kind: 'feature',
+          name: 'Bad Choice',
+          data: {
+            description: 'A choice.',
+            source: 'class:fighter',
+            level: 1,
+            choices: [
+              {
+                id: 'x',
+                category: 'subclass',
+                prompt: 'Pick.',
+                level: 1,
+                choose: 1,
+                unsupported: { reason: 'no' },
+              },
+            ],
+          },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).toThrow(
+      /exactly one of 'choose'.*or 'unsupported'/,
+    );
+  });
+
   it('accepts dnd5e subclass records linked to a parent class', () => {
     const pack = validateRulesPack(
       validRulesPack({

@@ -7,6 +7,10 @@
 // baseline check, so a new importer can ship records before its deeper schemas
 // exist.
 
+import {
+  FEATURE_CHOICE_CATEGORIES,
+  isFeatureChoiceCategory,
+} from './featureChoices.js';
 import type { RulesRecord, RulesRecordKind } from './types.js';
 import { RulesPackError } from './types.js';
 
@@ -216,6 +220,55 @@ function optChoiceArray(parent: Obj, key: string, path: string): void {
     }
     if (Array.isArray(from)) {
       optStrArray(entry, 'from', `${path}.${key}[${i}]`);
+    }
+  });
+}
+
+// Optional array of structured player-choice entries on a feature record
+// (eshyra-o9bd.9). Each entry names a closed `category`, a player-facing
+// `prompt`, and the `level` the choice is made. It is EITHER a structured
+// choice (a `choose` count plus optional `from` option list/restriction) OR a
+// named out-of-scope marker (`unsupported.reason`) — exactly one, never both,
+// so an unmodeled choice is always explicit rather than silently missing. The
+// category vocabulary and entry shape are shared with the `choice-coverage`
+// audit gate via `./featureChoices`.
+function optFeatureChoiceArray(parent: Obj, key: string, path: string): void {
+  const entries = objArray(parent, key, path);
+  if (entries === undefined) return;
+  entries.forEach((entry, i) => {
+    const at = `${path}.${key}[${i}]`;
+    reqStr(entry, 'id', at);
+    const category = reqStr(entry, 'category', at);
+    if (!isFeatureChoiceCategory(category)) {
+      throw new RulesPackError(
+        `${at}.category must be one of: ${FEATURE_CHOICE_CATEGORIES.join(', ')}`,
+      );
+    }
+    reqStr(entry, 'prompt', at);
+    reqInt(entry, 'level', at, 1);
+    const hasChoose = entry.choose !== undefined;
+    const hasUnsupported = entry.unsupported !== undefined;
+    if (hasChoose === hasUnsupported) {
+      throw new RulesPackError(
+        `${at} must carry exactly one of 'choose' (structured choice) or 'unsupported' (out-of-scope marker)`,
+      );
+    }
+    if (hasChoose) {
+      reqInt(entry, 'choose', at, 1);
+      const from = entry.from;
+      if (
+        from !== undefined &&
+        typeof from !== 'string' &&
+        !Array.isArray(from)
+      ) {
+        throw new RulesPackError(
+          `${at}.from must be a string or string array when present`,
+        );
+      }
+      if (Array.isArray(from)) optStrArray(entry, 'from', at);
+    } else {
+      const unsupported = reqObj(entry, 'unsupported', at);
+      reqStr(unsupported, 'reason', `${at}.unsupported`);
     }
   });
 }
@@ -926,6 +979,9 @@ function validateDnd5eFeature(record: RulesRecord, path: string): void {
   // feature:druid:wild-shape -> table:beast-shapes — so the table rows live in
   // one reviewed `table` record instead of flattened into the feature prose.
   optStrArray(data, 'tableRefs', `${path}.data`);
+  // Optional structured player choices the feature requires at creation/level-up
+  // (eshyra-o9bd.9): Fighting Style, subclass selection, Metamagic, etc.
+  optFeatureChoiceArray(data, 'choices', `${path}.data`);
 }
 
 // An `ancestry` (race/subrace per ADR 0005) carries its racial traits as a
