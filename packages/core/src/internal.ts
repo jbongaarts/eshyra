@@ -813,6 +813,17 @@ export {
   srdAuditHasFindings,
 } from './rules/srdAudit.js';
 export type {
+  SrdPlayabilityAudit,
+  SrdPlayabilityCategory,
+  SrdPlayabilityFinding,
+} from './rules/srdPlayabilityAudit.js';
+export {
+  auditSrdPlayability,
+  countSrdPlayabilityByCategory,
+  formatSrdPlayabilityReport,
+  srdPlayabilityHasFindings,
+} from './rules/srdPlayabilityAudit.js';
+export type {
   ResolvedRulesStack,
   ResolveRulesStackInput,
   RulesStackKindIndex,
