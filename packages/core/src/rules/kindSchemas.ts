@@ -230,7 +230,138 @@ function optStartingEquipment(parent: Obj, key: string, path: string): void {
   }
   const obj = value as Obj;
   reqStr(obj, 'text', `${path}.${key}`);
-  optStrArray(obj, 'entries', `${path}.${key}`);
+  const entries = obj.entries;
+  if (entries === undefined) return;
+  if (!Array.isArray(entries)) {
+    throw new RulesPackError(`${path}.${key}.entries must be an array`);
+  }
+  entries.forEach((item, i) => {
+    if (typeof item === 'string' && item.length > 0) return;
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      throw new RulesPackError(
+        `${path}.${key}.entries[${i}] must be an object`,
+      );
+    }
+    const entry = item as Obj;
+    const kind = entry.kind;
+    if (kind === 'choice') {
+      reqStr(entry, 'sourceText', `${path}.${key}.entries[${i}]`);
+      const options = objArray(
+        entry,
+        'options',
+        `${path}.${key}.entries[${i}]`,
+      );
+      if (options === undefined || options.length === 0) {
+        throw new RulesPackError(
+          `${path}.${key}.entries[${i}].options must be a non-empty array`,
+        );
+      }
+      options.forEach((option, optionIndex) => {
+        reqStr(
+          option,
+          'label',
+          `${path}.${key}.entries[${i}].options[${optionIndex}]`,
+        );
+        reqStr(
+          option,
+          'text',
+          `${path}.${key}.entries[${i}].options[${optionIndex}]`,
+        );
+      });
+      return;
+    }
+    if (kind === 'fixed') {
+      reqStr(entry, 'text', `${path}.${key}.entries[${i}]`);
+      reqStr(entry, 'sourceText', `${path}.${key}.entries[${i}]`);
+      return;
+    }
+    throw new RulesPackError(
+      `${path}.${key}.entries[${i}].kind must be "choice" or "fixed"`,
+    );
+  });
+}
+
+function optLanguageGrantArray(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  if (typeof value === 'string' && value.length > 0) return;
+  const entries = objArray(parent, key, path);
+  if (entries === undefined) return;
+  if (entries.length === 0) {
+    throw new RulesPackError(`${path}.${key} must be non-empty when present`);
+  }
+  entries.forEach((entry, i) => {
+    reqStrArray(entry, 'fixed', `${path}.${key}[${i}]`);
+    optInt(entry, 'choose', `${path}.${key}[${i}]`, 1);
+    reqStr(entry, 'sourceText', `${path}.${key}[${i}]`);
+  });
+}
+
+function optAbilityScoreIncreaseArray(
+  parent: Obj,
+  key: string,
+  path: string,
+): void {
+  const entries = objArray(parent, key, path);
+  if (entries === undefined) return;
+  if (entries.length === 0) {
+    throw new RulesPackError(`${path}.${key} must be non-empty when present`);
+  }
+  entries.forEach((entry, i) => {
+    const fixed = objArray(entry, 'fixed', `${path}.${key}[${i}]`);
+    if (fixed === undefined || fixed.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}[${i}].fixed must be a non-empty array`,
+      );
+    }
+    fixed.forEach((increase, increaseIndex) => {
+      reqStr(
+        increase,
+        'ability',
+        `${path}.${key}[${i}].fixed[${increaseIndex}]`,
+      );
+      reqInt(
+        increase,
+        'bonus',
+        `${path}.${key}[${i}].fixed[${increaseIndex}]`,
+        1,
+      );
+    });
+    const choice = entry.choice;
+    if (choice !== undefined) {
+      if (
+        typeof choice !== 'object' ||
+        choice === null ||
+        Array.isArray(choice)
+      ) {
+        throw new RulesPackError(
+          `${path}.${key}[${i}].choice must be an object`,
+        );
+      }
+      const choiceObj = choice as Obj;
+      reqInt(choiceObj, 'choose', `${path}.${key}[${i}].choice`, 1);
+      reqInt(choiceObj, 'bonus', `${path}.${key}[${i}].choice`, 1);
+      reqStrArray(choiceObj, 'from', `${path}.${key}[${i}].choice`);
+    }
+    reqStr(entry, 'sourceText', `${path}.${key}[${i}]`);
+  });
+}
+
+function optSpellPreparation(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(`${path}.${key} must be an object when present`);
+  }
+  const obj = value as Obj;
+  const kind = reqStr(obj, 'kind', `${path}.${key}`);
+  if (kind !== 'known' && kind !== 'prepared') {
+    throw new RulesPackError(
+      `${path}.${key}.kind must be "known" or "prepared"`,
+    );
+  }
+  optInt(obj, 'spellbookStartingSpells', `${path}.${key}`, 1);
+  reqStr(obj, 'sourceText', `${path}.${key}`);
 }
 
 // Optional proficiency-restriction notes ({ field, text }) — e.g. the Druid's
@@ -522,6 +653,8 @@ function validateDnd5eClass(record: RulesRecord, path: string): void {
   optStr(data, 'progressionTableRef', `${path}.data`);
   optStrArray(data, 'features', `${path}.data`);
   optProgression(data, 'progression', `${path}.data`);
+  optStr(data, 'spellcastingAbility', `${path}.data`);
+  optSpellPreparation(data, 'spellPreparation', `${path}.data`);
 }
 
 function validateDnd5eCondition(record: RulesRecord, path: string): void {
@@ -561,6 +694,8 @@ function validateDnd5eFeature(record: RulesRecord, path: string): void {
 // `feature.data.tableRefs`).
 function validateDnd5eAncestry(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
+  optAbilityScoreIncreaseArray(data, 'abilityScoreIncreases', `${path}.data`);
+  optLanguageGrantArray(data, 'languages', `${path}.data`);
   const traits = objArray(data, 'traits', `${path}.data`);
   if (traits !== undefined) {
     traits.forEach((trait, i) => {
@@ -608,7 +743,7 @@ function validateDnd5eBackground(record: RulesRecord, path: string): void {
   reqStr(data, 'description', `${path}.data`);
   reqStrArray(data, 'skillProficiencies', `${path}.data`);
   optStrArray(data, 'toolProficiencies', `${path}.data`);
-  optStr(data, 'languages', `${path}.data`);
+  optLanguageGrantArray(data, 'languages', `${path}.data`);
   optStr(data, 'equipment', `${path}.data`);
   const feature = reqObj(data, 'feature', `${path}.data`);
   reqStr(feature, 'name', `${path}.data.feature`);

@@ -11,10 +11,8 @@
  *     when eshyra-o9bd.N lands" note (so the modeling bead is forced to update
  *     this test as its done-marker); the already-GREEN gate asserts zero.
  *
- * The aggregate `re-freeze readiness` test uses `it.fails`: it currently passes
- * because the pack is not yet playable-clean, and will START FAILING (alarming)
- * once every gate is green — forcing eshyra-o9bd.14 to convert it to a hard
- * green assertion before re-freeze.
+ * The aggregate `re-freeze readiness` test is a hard green assertion: all
+ * implemented playable-model gates are clean against the committed pack.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -320,8 +318,43 @@ describe('overlay-dependence gate', () => {
     expect(details).toContain('abilityScoreIncreases');
     expect(details).toContain('languages');
     expect(details).toContain('spellcastingAbility');
+    expect(details).toContain('spellPreparation');
     expect(details).toContain('startingEquipment is prose-only');
     expect(findings.every((f) => f.bead === 'eshyra-o9bd.5')).toBe(true);
+  });
+
+  it('fires when a spellcasting class has ability metadata but no preparation metadata', () => {
+    const cls = record({
+      key: 'class:wizard',
+      name: 'Wizard',
+      data: {
+        spellcastingAbility: 'intelligence',
+        progression: [
+          {
+            level: 1,
+            advancement: [
+              { kind: 'spellcastingProgression', cantripsKnown: 3 },
+            ],
+          },
+        ],
+        startingEquipment: {
+          entries: [
+            {
+              kind: 'choice',
+              options: [{ label: 'a', text: 'a quarterstaff' }],
+              sourceText: '(a) a quarterstaff',
+            },
+          ],
+        },
+      },
+    });
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([cls])),
+      'overlay-dependence',
+    );
+    expect(findings.map((finding) => finding.detail)).toEqual([
+      'spellcasting class has no structured spellPreparation (prepared/known/spellbook metadata is overlay-only)',
+    ]);
   });
 
   it('is silent when the facts are structured in the pack', () => {
@@ -339,6 +372,11 @@ describe('overlay-dependence gate', () => {
       name: 'Wizard',
       data: {
         spellcastingAbility: 'intelligence',
+        spellPreparation: {
+          kind: 'prepared',
+          spellbookStartingSpells: 6,
+          sourceText: 'Wizard preparation text.',
+        },
         progression: [
           {
             level: 1,
@@ -435,9 +473,9 @@ describe('committed SRD pack playable-model baseline', () => {
     expect(counts['missing-class-feature-record']).toBe(0);
   });
 
-  it('RED until eshyra-o9bd.5: overlay-dependence findings exist', () => {
-    // Flip to `toBe(0)` when eshyra-o9bd.5 absorbs the creation overlays.
-    expect(counts['overlay-dependence']).toBeGreaterThan(0);
+  it('GREEN (eshyra-o9bd.5 landed): no overlay-dependence findings remain', () => {
+    // Creation facts now live in generated pack data; overlay retirement is .15.
+    expect(counts['overlay-dependence']).toBe(0);
   });
 
   it('GREEN (regression guard, eshyra-o9bd.6): no proficiency-note bleed', () => {
@@ -453,16 +491,10 @@ describe('committed SRD pack playable-model baseline', () => {
   it('the report renders the remaining punch list', () => {
     const report = formatSrdPlayabilityReport('rules:dnd5e-srd-5.1', findings);
     expect(report).toContain('SRD playable-model audit');
-    // overlay-dependence (eshyra-o9bd.5) is the remaining RED category.
-    expect(report).toContain('overlay-dependence');
+    expect(report).toContain('(no findings');
   });
 
-  // Re-freeze readiness ratchet: the pack is not yet playable-clean (overlay
-  // dependence remains until eshyra-o9bd.5/.9), so this expectation fails and
-  // `it.fails` PASSES. When every gate goes green, the inner assertion starts
-  // passing, `it.fails` flips to FAILING, and eshyra-o9bd.14 must convert this
-  // to a plain green assertion before re-freeze.
-  it.fails('re-freeze readiness: pack has zero playable-model findings (RED until eshyra-o9bd.5/.9 land)', () => {
+  it('re-freeze readiness: pack has zero implemented playable-model findings', () => {
     expect(srdPlayabilityHasFindings(findings)).toBe(false);
   });
 });

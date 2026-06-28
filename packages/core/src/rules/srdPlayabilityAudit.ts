@@ -19,10 +19,10 @@
  * green assertions. This module is the additive, re-audit-only surface.
  *
  * Gate coverage status (2026-06-28, verified against the committed pack):
- *   - untyped-progression-marker  — RED  (~47 rows)  → eshyra-o9bd.2
- *   - null-spellcasting-value     — RED  (Ranger L1) → eshyra-o9bd.2
- *   - missing-class-feature-record— RED  (Thieves' Cant) → eshyra-o9bd.3
- *   - overlay-dependence          — RED  (ASIs/languages/spellcasting/equipment) → eshyra-o9bd.5
+ *   - untyped-progression-marker  — GREEN (typed advancement[]) → eshyra-o9bd.2
+ *   - null-spellcasting-value     — GREEN (non-applicable values omitted) → eshyra-o9bd.2
+ *   - missing-class-feature-record— GREEN (Thieves' Cant owned) → eshyra-o9bd.3
+ *   - overlay-dependence          — GREEN (creation facts emitted) → eshyra-o9bd.5
  *   - proficiency-note-bleed      — GREEN (already lifted to proficiencyNotes) → eshyra-o9bd.6 regression guard
  *
  * Deferred to their owning modeling beads (their gate is that bead's own
@@ -330,6 +330,10 @@ function hasStructuredStartingEquipment(value: unknown): boolean {
   });
 }
 
+function hasStructuredSpellPreparation(value: unknown): boolean {
+  return asObject(value) !== null;
+}
+
 /**
  * Required machine-readable character-creation facts that today live only in
  * the consumer-side overlays (srdAncestryAbilityScoreIncreases / srdLanguages /
@@ -382,13 +386,17 @@ function checkOverlayDependence(record: RulesRecord): SrdPlayabilityFinding[] {
     const rows = Array.isArray(data.progression)
       ? (data.progression as ProgressionRow[])
       : [];
-    if (
-      isSpellcastingClass(rows) &&
-      asString(data.spellcastingAbility) === null
-    ) {
-      push(
-        'spellcasting class has no spellcastingAbility (ability/prep formula is overlay-only)',
-      );
+    if (isSpellcastingClass(rows)) {
+      if (asString(data.spellcastingAbility) === null) {
+        push(
+          'spellcasting class has no spellcastingAbility (ability/prep formula is overlay-only)',
+        );
+      }
+      if (!hasStructuredSpellPreparation(data.spellPreparation)) {
+        push(
+          'spellcasting class has no structured spellPreparation (prepared/known/spellbook metadata is overlay-only)',
+        );
+      }
     }
     if (!hasStructuredStartingEquipment(data.startingEquipment)) {
       push(

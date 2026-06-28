@@ -26,6 +26,10 @@ import type {
 import { validateRulesPack } from '../../../src/rules/validate.js';
 import { linkAncestryOptionTables } from './ancestryOptions.js';
 import { enrichClassChapterRecords } from './classProgression.js';
+import {
+  enrichAncestryCreationFacts,
+  enrichBackgroundCreationFacts,
+} from './creationFacts.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
 import type { SourceRegionLedger } from './sourceRegionLedger.js';
@@ -1238,12 +1242,14 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // trait whose prose names "the <Name> table" (the Dragonborn Draconic
   // Ancestry table) to the emitted `table` record on the same SRD page, so the
   // option rows are reachable as structured data rather than prose-only.
-  const ancestryRecords = linkAncestryOptionTables(
-    ancestryExtractionsToRecords(input.ancestries ?? []),
-    tableRecords,
+  const ancestryRecords = enrichAncestryCreationFacts(
+    linkAncestryOptionTables(
+      ancestryExtractionsToRecords(input.ancestries ?? []),
+      tableRecords,
+    ),
   );
-  const backgroundRecords = backgroundExtractionsToRecords(
-    input.backgrounds ?? [],
+  const backgroundRecords = enrichBackgroundCreationFacts(
+    backgroundExtractionsToRecords(input.backgrounds ?? []),
   );
   // Enrich the class-chapter records with structured progression and the
   // class/subclass/feature cross-references (eshyra-4a7.6). Derived from the

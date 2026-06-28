@@ -438,7 +438,9 @@ describe('rules-pack character resolver', () => {
       expect(acolyte.record.skillProficiencies).toEqual(
         expect.arrayContaining(['Insight', 'Religion']),
       );
-      expect(acolyte.record.languages).toMatch(/choice/i);
+      expect(acolyte.record.languages).toEqual([
+        { fixed: [], choose: 2, sourceText: 'Two of your choice' },
+      ]);
     }
     expect(resolver.resolveBackground('Noble').ok).toBe(false);
   });

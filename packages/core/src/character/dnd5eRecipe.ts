@@ -41,9 +41,14 @@ import type {
 } from './recipe.js';
 import {
   getBundledDnd5eCharacterResolver,
+  type ResolvedAncestryData,
   type ResolvedClassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import {
+  type AbilityScoreIncrease,
+  getAncestryAbilityScoreIncrease,
+} from './srdAncestryAbilityScoreIncreases.js';
 import { level1SpellcastingAbility } from './srdClassSpellcasting.js';
 
 /** Canonical D&D 5e SRD creation modes (design: character-creation-cli.md). */
@@ -115,6 +120,26 @@ function resolveClassRecord(
   return result.ok ? result.record : undefined;
 }
 
+function resolveAncestryRecord(
+  resolver: RulesPackCharacterResolver,
+  ancestry: string,
+): ResolvedAncestryData | undefined {
+  const result = resolver.resolveAncestry(ancestry);
+  return result.ok ? result.record : undefined;
+}
+
+function ancestryAbilityScoreIncreases(
+  ancestry: ResolvedAncestryData | undefined,
+): readonly AbilityScoreIncrease[] {
+  if (ancestry === undefined) {
+    return [];
+  }
+  if (ancestry.abilityScoreIncreases !== undefined) {
+    return ancestry.abilityScoreIncreases.flatMap((entry) => entry.fixed);
+  }
+  return getAncestryAbilityScoreIncrease(ancestry.key)?.fixed ?? [];
+}
+
 function completionPrompt(character: CreatedCharacter): string {
   return `Character creation complete: ${character.name} is a level ${character.level} ${character.ancestry} ${character.className}.`;
 }
@@ -163,9 +188,11 @@ export const DND5E_SRD_CHARACTER_RECIPE: CharacterCreationRecipe<
   computeDerivedValues(draft: CharacterCreationDraft): CharacterDerivedValues {
     const resolver = getBundledDnd5eCharacterResolver();
     const classRecord = resolveClassRecord(resolver, draft.className);
+    const ancestryRecord = resolveAncestryRecord(resolver, draft.ancestry);
     return deriveLevel1Values({
       validAbilityScores: draft.abilityScores,
       classRecord,
+      abilityScoreIncreases: ancestryAbilityScoreIncreases(ancestryRecord),
       spellcastingAbility: level1SpellcastingAbility(classRecord),
     });
   },
