@@ -35,6 +35,7 @@ import {
 import {
   appendSceneLog,
   assembleContext,
+  awardXp,
   DEFAULT_MEMORY_CONFIG,
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
@@ -294,6 +295,20 @@ function baseDeps(
   };
 }
 
+async function xpAwardingTurn(
+  deps: { db: Db },
+  input: RunTurnInput,
+): Promise<RunTurnResult> {
+  if (/gain xp/i.test(input.playerInput)) {
+    awardXp(deps.db, 300, 'test award', {
+      provenance: 'test:award-xp',
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+  }
+  return fakeRunTurn(deps, input);
+}
+
 describe('runPlay', () => {
   it('creates a campaign, plays turns, and graceful-exits through the close pipeline', async () => {
     const { db, dispose } = makeDb();
@@ -491,6 +506,89 @@ describe('runPlay', () => {
         charisma: 9,
       }),
     });
+    dispose();
+  });
+
+  it('handles /progression inside the play session', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO([
+      'import',
+      'mira',
+      '/progression',
+      '/quit',
+    ]);
+
+    const code = await runPlay(baseDeps(db, io), { dbPath: 'demo.db' });
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain('Progression for pc-1: level 1, 0 XP.');
+    expect(out).toContain('Advancement: xp; not eligible to level up.');
+    expect(out).toContain('Recent progression events: none.');
+    dispose();
+  });
+
+  it('applies /levelup from the play session after an XP award', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO([
+      'import',
+      'mira',
+      'gain xp',
+      '/levelup',
+      'y',
+      '/quit',
+    ]);
+
+    const code = await runPlay(baseDeps(db, io, xpAwardingTurn), {
+      dbPath: 'demo.db',
+    });
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain('Level-up preview: level 1 -> 2.');
+    expect(out).toContain('Level-up applied: level 1 -> 2.');
+    expect(
+      db.prepare(`SELECT level, hp_max FROM character WHERE id = 'pc-1'`).get(),
+    ).toEqual({ level: 2, hp_max: 20 });
+    const levelUpEvents = db
+      .prepare(
+        `SELECT kind, resulting_level FROM progression_event WHERE kind = 'level-up'`,
+      )
+      .all() as Array<{ kind: string; resulting_level: number }>;
+    expect(levelUpEvents).toEqual([{ kind: 'level-up', resulting_level: 2 }]);
+    dispose();
+  });
+
+  it('surfaces unsupported /levelup blockers clearly', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO([
+      'import',
+      'ezra',
+      'gain xp',
+      '/levelup',
+      '/quit',
+    ]);
+    const deps = baseDeps(db, io, xpAwardingTurn);
+
+    const code = await runPlay(
+      {
+        ...deps,
+        characterRegistry: memoryFinalizedStore({
+          ezra: finalizedCharacter('Ezra', 'Wizard'),
+        }),
+      },
+      { dbPath: 'demo.db' },
+    );
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain('Level-up blocked:');
+    expect(out).toContain(
+      'deterministic spell application is not implemented yet',
+    );
+    expect(
+      db.prepare(`SELECT level FROM character WHERE id = 'pc-1'`).get(),
+    ).toEqual({ level: 1 });
     dispose();
   });
 
