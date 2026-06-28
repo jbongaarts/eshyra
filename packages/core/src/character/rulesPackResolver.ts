@@ -104,6 +104,22 @@ export interface ResolvedSpellData {
   readonly classes: readonly string[];
 }
 
+/** Subclass fields level-up reads from a generated `subclass` record. */
+export interface ResolvedSubclassData {
+  readonly key: string;
+  readonly name: string;
+  readonly parentClass: string;
+  readonly features: readonly string[];
+}
+
+/** Feature fields level-up reads from generated `feature` records. */
+export interface ResolvedFeatureData {
+  readonly key: string;
+  readonly name: string;
+  readonly source: string;
+  readonly level: number;
+}
+
 /** A racial trait as stored on an ancestry record: a name and verbatim prose. */
 export interface ResolvedAncestryTrait {
   readonly name: string;
@@ -181,6 +197,10 @@ export interface RulesPackCharacterResolver {
   listBackgrounds(): readonly ResolvedBackgroundData[];
   /** Every well-formed `spell` record, in canonical-key order. */
   listSpells(): readonly ResolvedSpellData[];
+  /** Every well-formed `subclass` record, in canonical-key order. */
+  listSubclasses(): readonly ResolvedSubclassData[];
+  /** Every well-formed `feature` record, in canonical-key order. */
+  listFeatures(): readonly ResolvedFeatureData[];
 }
 
 /** Build a resolver over an already-resolved rules stack (e.g. for tests). */
@@ -201,6 +221,10 @@ export function createRulesPackCharacterResolver(
       listByKind(stack, 'background', (key) => resolveBackground(stack, key)),
     listSpells: () =>
       listByKind(stack, 'spell', (key) => resolveSpell(stack, key)),
+    listSubclasses: () =>
+      listByKind(stack, 'subclass', (key) => resolveSubclass(stack, key)),
+    listFeatures: () =>
+      listByKind(stack, 'feature', (key) => resolveFeature(stack, key)),
   };
 }
 
@@ -563,6 +587,52 @@ function resolveSpell(
   };
 }
 
+function resolveSubclass(
+  stack: ResolvedRulesStack,
+  nameOrRef: string,
+): CharacterResolution<ResolvedSubclassData> {
+  const result = lookup(stack, 'subclass', nameOrRef);
+  if (!result.ok) {
+    return lookupError(result);
+  }
+  const data = result.record.data;
+  if (!isGeneratedSubclassData(data)) {
+    return malformed('subclass', result.record.key);
+  }
+  return {
+    ok: true,
+    record: {
+      key: result.record.key,
+      name: result.record.name,
+      parentClass: data.parentClass,
+      features: data.features,
+    },
+  };
+}
+
+function resolveFeature(
+  stack: ResolvedRulesStack,
+  nameOrRef: string,
+): CharacterResolution<ResolvedFeatureData> {
+  const result = lookup(stack, 'feature', nameOrRef);
+  if (!result.ok) {
+    return lookupError(result);
+  }
+  const data = result.record.data;
+  if (!isGeneratedFeatureData(data)) {
+    return malformed('feature', result.record.key);
+  }
+  return {
+    ok: true,
+    record: {
+      key: result.record.key,
+      name: result.record.name,
+      source: data.source,
+      level: data.level,
+    },
+  };
+}
+
 function resolveAncestry(
   stack: ResolvedRulesStack,
   nameOrRef: string,
@@ -694,6 +764,32 @@ function isGeneratedSpellData(data: unknown): data is GeneratedSpellData {
     isRecord(data) &&
     typeof data.level === 'number' &&
     isStringArray(data.classes)
+  );
+}
+
+interface GeneratedSubclassData {
+  readonly parentClass: string;
+  readonly features: readonly string[];
+}
+
+function isGeneratedSubclassData(data: unknown): data is GeneratedSubclassData {
+  return (
+    isRecord(data) &&
+    typeof data.parentClass === 'string' &&
+    isStringArray(data.features)
+  );
+}
+
+interface GeneratedFeatureData {
+  readonly source: string;
+  readonly level: number;
+}
+
+function isGeneratedFeatureData(data: unknown): data is GeneratedFeatureData {
+  return (
+    isRecord(data) &&
+    typeof data.source === 'string' &&
+    typeof data.level === 'number'
   );
 }
 

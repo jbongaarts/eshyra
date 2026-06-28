@@ -47,6 +47,7 @@ import type { CharacterSheet } from './finalizeCharacter.js';
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedLevelSpellcasting,
+  type ResolvedSubclassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
 import { getClassSpellcasting } from './srdClassSpellcasting.js';
@@ -96,6 +97,8 @@ export interface LevelUpChangeSet {
   readonly spellSaveDc?: LevelUpDelta<number | undefined>;
   /** Recomputed spell attack modifier, under the same condition as {@link spellSaveDc}. */
   readonly spellAttackModifier?: LevelUpDelta<number | undefined>;
+  /** Supported level-up choices applied as part of this step. */
+  readonly choicesApplied?: readonly LevelUpAppliedChoice[];
 }
 
 /** Result of {@link applyLevelUp}: the updated sheet, change set, and ledger row. */
@@ -116,6 +119,11 @@ export interface ApplyLevelUpInput {
   readonly resolver?: RulesPackCharacterResolver;
   /** Narrative cause recorded on the ledger row (guided flow, manual, …). */
   readonly source: string;
+  /**
+   * Structured level-up decisions keyed by {@link LevelUpRequiredChoice.id}.
+   * Unsupported choices still block even when present.
+   */
+  readonly choices?: LevelUpChoiceSelections;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -141,13 +149,38 @@ export type LevelUpRequiredChoiceKind =
   | 'class-feature-choice'
   | 'spell-selection';
 
+export type LevelUpRequiredChoiceStatus = 'supported' | 'unsupported';
+
 /** A required level-up decision the engine surfaces instead of guessing. */
 export interface LevelUpRequiredChoice {
+  /** Stable identifier used as the key in {@link ApplyLevelUpInput.choices}. */
+  readonly id: string;
   readonly kind: LevelUpRequiredChoiceKind;
+  readonly status: LevelUpRequiredChoiceStatus;
+  /** Human-readable prompt. */
+  readonly label: string;
+  /** Number to choose, when a structured count is known. */
+  readonly choose?: number;
+  /** The option set, when structured. */
+  readonly from?: readonly string[];
   /** Human-readable explanation of what must be decided. */
   readonly reason: string;
   /** The pack feature ref that triggered this choice, when applicable. */
   readonly featureRef?: string;
+  /** Why this choice is detected but cannot yet be applied deterministically. */
+  readonly unsupportedReason?: string;
+}
+
+export type LevelUpChoiceSelections = Readonly<
+  Record<string, readonly string[]>
+>;
+
+export interface LevelUpAppliedChoice {
+  readonly id: string;
+  readonly kind: Extract<LevelUpRequiredChoiceKind, 'subclass'>;
+  readonly value: string;
+  readonly label: string;
+  readonly featureRefs: readonly string[];
 }
 
 /**
@@ -163,8 +196,7 @@ export class LevelUpRequiredChoicesError extends Error {
   constructor(requiredChoices: readonly LevelUpRequiredChoice[]) {
     super(
       `level-up blocked: ${requiredChoices.length} unresolved required ` +
-        `choice(s) (${requiredChoices.map((c) => c.kind).join(', ')}); ` +
-        'these are not yet supported (eshyra-lupf.9)',
+        `choice(s) (${requiredChoices.map((c) => c.id).join(', ')})`,
     );
     this.name = 'LevelUpRequiredChoicesError';
     this.requiredChoices = requiredChoices;
@@ -258,19 +290,30 @@ export function applyLevelUp(
     // Fail closed before any computation if the sheet is not this pack's.
     assertSheetMatchesPack(sheet, binding);
 
-    // Fail closed on unresolved required choices (subclass, ASI/feat, spells,
-    // …): advance nothing until eshyra-lupf.9 can collect and apply them.
-    const requiredChoices = detectLevelUpRequiredChoices(
+    // Fail closed on unresolved required choices: supported choices must be
+    // present and valid, while unsupported choices still block explicitly.
+    const choices = detectLevelUpRequiredChoices(sheet, resolver, binding);
+    const resolvedChoices = resolveLevelUpChoices(
+      choices,
+      input.choices ?? {},
       sheet,
+      sheet.level + 1,
       resolver,
-      binding,
     );
-    if (requiredChoices.length > 0) {
-      throw new LevelUpRequiredChoicesError(requiredChoices);
+    if (resolvedChoices.blockers.length > 0) {
+      throw new LevelUpRequiredChoicesError(resolvedChoices.blockers);
     }
 
-    const changeSet = computeLevelUpChangeSet(sheet, resolver, binding);
-    const updatedSheet = applyChangeSetToSheet(sheet, changeSet);
+    const baseChangeSet = computeLevelUpChangeSet(sheet, resolver, binding);
+    const changeSet = applyResolvedChoicesToChangeSet(
+      baseChangeSet,
+      resolvedChoices.applied,
+    );
+    const updatedSheet = applyChangeSetToSheet(
+      sheet,
+      changeSet,
+      resolvedChoices.applied,
+    );
 
     input.store.save(characterId, updatedSheet);
     projectToLiveCharacter(txnDb, characterId, changeSet, input);
@@ -392,11 +435,9 @@ export function detectLevelUpRequiredChoices(
     const suffix = featureRef.slice(featureRef.lastIndexOf(':') + 1);
     const kind = featureChoiceKind(suffix);
     if (kind !== undefined) {
-      choices.push({
-        kind,
-        featureRef,
-        reason: `level ${toLevel} grants '${featureRef}', which requires a player choice`,
-      });
+      choices.push(
+        featureRequiredChoice(kind, featureRef, classKey, toLevel, resolver),
+      );
     }
   }
 
@@ -410,6 +451,56 @@ export function detectLevelUpRequiredChoices(
   );
 
   return choices;
+}
+
+function featureRequiredChoice(
+  kind: LevelUpRequiredChoiceKind,
+  featureRef: string,
+  classKey: string,
+  toLevel: number,
+  resolver: RulesPackCharacterResolver,
+): LevelUpRequiredChoice {
+  const base = {
+    id: `level.${toLevel}.${kind}`,
+    kind,
+    featureRef,
+    reason: `level ${toLevel} grants '${featureRef}', which requires a player choice`,
+  } as const;
+  if (kind === 'subclass') {
+    const subclasses = resolver
+      .listSubclasses()
+      .filter((subclass) => subclass.parentClass === classKey);
+    return {
+      ...base,
+      status: 'supported',
+      label: 'Choose a subclass',
+      choose: 1,
+      from: subclasses.map((subclass) => subclass.name),
+    };
+  }
+  return {
+    ...base,
+    status: 'unsupported',
+    label: levelUpChoiceLabel(kind),
+    unsupportedReason: `${levelUpChoiceLabel(kind)} is detected from the rules pack but deterministic application is not implemented yet.`,
+  };
+}
+
+function levelUpChoiceLabel(kind: LevelUpRequiredChoiceKind): string {
+  switch (kind) {
+    case 'ability-score-improvement':
+      return 'Choose an Ability Score Improvement or feat';
+    case 'fighting-style':
+      return 'Choose a fighting style';
+    case 'expertise':
+      return 'Choose expertise proficiencies';
+    case 'class-feature-choice':
+      return 'Choose class feature options';
+    case 'spell-selection':
+      return 'Choose spells';
+    case 'subclass':
+      return 'Choose a subclass';
+  }
 }
 
 /**
@@ -453,8 +544,13 @@ function spellSelectionChoices(
   }
   return [
     {
+      id: `level.${toLevel}.spell-selection`,
       kind: 'spell-selection',
+      status: 'unsupported',
+      label: 'Choose spells for this level',
       reason: `level ${toLevel} spellcasting: ${reasons.join('; ')}`,
+      unsupportedReason:
+        'Level-up spell selection changes cantrips/spells known, spellbook contents, or preparation state, but deterministic spell application is not implemented yet.',
     },
   ];
 }
@@ -469,6 +565,118 @@ function gainsNewSpellLevel(
   }
   const had = new Set(Object.keys(from ?? {}));
   return Object.keys(to).some((level) => !had.has(level));
+}
+
+interface ResolvedLevelUpChoices {
+  readonly blockers: readonly LevelUpRequiredChoice[];
+  readonly applied: readonly LevelUpAppliedChoice[];
+}
+
+function resolveLevelUpChoices(
+  requiredChoices: readonly LevelUpRequiredChoice[],
+  selections: LevelUpChoiceSelections,
+  sheet: CharacterSheet,
+  targetLevel: number,
+  resolver: RulesPackCharacterResolver,
+): ResolvedLevelUpChoices {
+  const blockers: LevelUpRequiredChoice[] = [];
+  const applied: LevelUpAppliedChoice[] = [];
+  for (const choice of requiredChoices) {
+    if (choice.status === 'unsupported') {
+      blockers.push(choice);
+      continue;
+    }
+    const selected = selections[choice.id] ?? [];
+    if (selected.length !== (choice.choose ?? 1)) {
+      blockers.push(choice);
+      continue;
+    }
+    if (choice.kind === 'subclass') {
+      const subclass = resolveSubclassSelection(
+        selected[0],
+        sheet.class.key,
+        resolver,
+      );
+      if (subclass === undefined) {
+        blockers.push({
+          ...choice,
+          reason: `${choice.reason}; selected subclass '${selected[0]}' is not valid for ${sheet.class.name}`,
+        });
+        continue;
+      }
+      const featureRefs = subclassFeatureRefsForLevel(
+        subclass,
+        targetLevel,
+        resolver,
+      );
+      if (featureRefs.length === 0) {
+        blockers.push({
+          ...choice,
+          status: 'unsupported',
+          unsupportedReason: `Selected subclass '${subclass.name}' has no structured feature records for level ${targetLevel}; deterministic subclass application is incomplete.`,
+        });
+        continue;
+      }
+      applied.push({
+        id: choice.id,
+        kind: 'subclass',
+        value: subclass.key,
+        label: subclass.name,
+        featureRefs,
+      });
+      continue;
+    }
+    blockers.push(choice);
+  }
+  return { blockers, applied };
+}
+
+function resolveSubclassSelection(
+  selection: string,
+  classKey: string,
+  resolver: RulesPackCharacterResolver,
+): ResolvedSubclassData | undefined {
+  const normalized = selection.trim().toLowerCase();
+  return resolver
+    .listSubclasses()
+    .filter((subclass) => subclass.parentClass === classKey)
+    .find(
+      (subclass) =>
+        subclass.key.toLowerCase() === normalized ||
+        subclass.name.toLowerCase() === normalized,
+    );
+}
+
+function subclassFeatureRefsForLevel(
+  subclass: ResolvedSubclassData,
+  targetLevel: number,
+  resolver: RulesPackCharacterResolver,
+): readonly string[] {
+  const subclassFeatureSet = new Set(subclass.features);
+  return resolver
+    .listFeatures()
+    .filter(
+      (feature) =>
+        feature.source === subclass.key &&
+        feature.level === targetLevel &&
+        subclassFeatureSet.has(feature.key),
+    )
+    .map((feature) => feature.key);
+}
+
+function applyResolvedChoicesToChangeSet(
+  changeSet: LevelUpChangeSet,
+  applied: readonly LevelUpAppliedChoice[],
+): LevelUpChangeSet {
+  if (applied.length === 0) {
+    return changeSet;
+  }
+  const selectedFeatureRefs = applied.flatMap((choice) => choice.featureRefs);
+  return {
+    ...changeSet,
+    featuresGained: [...changeSet.featuresGained, ...selectedFeatureRefs],
+    choicesApplied: applied,
+  };
 }
 
 /**
@@ -527,12 +735,17 @@ function spellcastingChanges(
 function applyChangeSetToSheet(
   sheet: CharacterSheet,
   changeSet: LevelUpChangeSet,
+  appliedChoices: readonly LevelUpAppliedChoice[] = [],
 ): CharacterSheet {
+  const subclass = appliedChoices.find((choice) => choice.kind === 'subclass');
   const next: CharacterSheet = {
     ...sheet,
     level: changeSet.level.to,
     proficiencyBonus: changeSet.proficiencyBonus.to,
     maxHitPoints: changeSet.hitPoints.maxHitPoints.to,
+    ...(subclass !== undefined
+      ? { subclass: { key: subclass.value, name: subclass.label } }
+      : {}),
     ...(changeSet.spellSaveDc?.to !== undefined
       ? { spellSaveDc: changeSet.spellSaveDc.to }
       : {}),
