@@ -991,6 +991,9 @@ function validateDnd5eBackground(record: RulesRecord, path: string): void {
   reqStr(feature, 'name', `${path}.data.feature`);
   reqStr(feature, 'text', `${path}.data.feature`);
   optStr(data, 'suggestedCharacteristics', `${path}.data`);
+  // Optional links to the background's suggested-characteristics roll tables
+  // (eshyra-o9bd.8.2); most backgrounds have none.
+  optStrArray(data, 'tableRefs', `${path}.data`);
 }
 
 function validateDnd5eHazard(record: RulesRecord, path: string): void {

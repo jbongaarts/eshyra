@@ -623,12 +623,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 218,
   },
   { kind: 'equipment', field: 'weight', missingCount: 44, totalInKind: 218 },
-  // Only the two feature-owned class tables carry tableRefs (eshyra-4a7.6):
-  // feature:cleric:destroy-undead -> table:destroy-undead and
-  // feature:druid:wild-shape -> table:beast-shapes; the other 182 features
-  // (now including feature:rogue:thieves-cant, eshyra-o9bd.2/.3) have no owned
-  // table.
-  { kind: 'feature', field: 'tableRefs', missingCount: 182, totalInKind: 184 },
+  // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
+  // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
+  // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic
+  // -> table:creating-spell-slots and feature:draconic-bloodline:dragon-ancestor
+  // -> table:draconic-bloodline-draconic-ancestry): 182 -> 180 of 184 features
+  // own no table.
+  { kind: 'feature', field: 'tableRefs', missingCount: 180, totalInKind: 184 },
   // hazard sub-families (loreweaver-6ra): of the 25 hazard records, the 8 traps
   // carry `trapType`; the 3 diseases + 14 poisons carry `category`; the 14
   // poisons additionally carry `poisonType` and `price`.
@@ -651,8 +652,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 240,
   },
   // eshyra-o9bd.8.1: 29 magic items own a variant/effect table and now link it
-  // via tableRefs (Cube of Force and Bag of Tricks own multiple tables, so 29
-  // owners cover 31 table records). The other 211 items own no table.
+  // via tableRefs (Cube of Force owns 2 and Bag of Tricks owns 3, so 29 owners
+  // cover 32 table records). The other 211 items own no table.
   {
     kind: 'magic-item',
     field: 'tableRefs',
@@ -681,10 +682,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-o9bd.8.1: five economy/reference rules now own their 1:1 table
   // (ability-scores-and-modifiers, food-drink-and-lodging, lifestyle-expenses,
   // services, trade-goods), joining rule:half-dragon-template: 334 -> 329.
+  // eshyra-o9bd.8.2 adds ten more rule owners (multiclassing prerequisites/
+  // proficiencies/spellcasting, experience-points, objects, madness-effects,
+  // and four sentient-magic-item rules): 329 -> 319.
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 329,
+    missingCount: 319,
     totalInKind: 335,
   },
   {
@@ -3214,6 +3218,58 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           (finding) => finding.category === 'table-owner-link',
         ),
       ).toEqual([]);
+    });
+
+    it('links rule/background/feature-owned tables (eshyra-o9bd.8.2)', () => {
+      const owner = (key: string) => {
+        const record = pack.records.find((candidate) => candidate.key === key);
+        expect(record, `expected ${key} in the committed pack`).toBeDefined();
+        return (record?.data as { tableRefs?: string[] }).tableRefs;
+      };
+      // Multiclassing rules name their table verbatim in prose.
+      expect(owner('rule:prerequisites')).toEqual([
+        'table:multiclassing-prerequisites',
+      ]);
+      expect(owner('rule:proficiencies')).toEqual([
+        'table:multiclassing-proficiencies',
+      ]);
+      expect(owner('rule:spellcasting')).toEqual([
+        'table:multiclass-spellcaster-spell-slots-per-spell-level',
+      ]);
+      // Character Advancement is owned by the Experience Points rule that names
+      // it, even though other rules also mention it in prose.
+      expect(owner('rule:experience-points')).toEqual([
+        'table:character-advancement',
+      ]);
+      // The Objects rule owns both object tables (sorted).
+      expect(owner('rule:objects')).toEqual([
+        'table:object-armor-class',
+        'table:object-hit-points',
+      ]);
+      // Madness Effects owns all three madness tables.
+      expect(owner('rule:madness-effects')).toEqual([
+        'table:indefinite-madness',
+        'table:long-term-madness',
+        'table:short-term-madness',
+      ]);
+      // Sentient-magic-item rules each own their roll table.
+      expect(owner('rule:special-purpose')).toEqual([
+        'table:sentient-magic-item-special-purpose',
+      ]);
+      // Feature owners.
+      expect(owner('feature:sorcerer:font-of-magic')).toEqual([
+        'table:creating-spell-slots',
+      ]);
+      expect(owner('feature:draconic-bloodline:dragon-ancestor')).toEqual([
+        'table:draconic-bloodline-draconic-ancestry',
+      ]);
+      // Background owner: all four Acolyte roll tables.
+      expect(owner('background:acolyte')).toEqual([
+        'table:acolyte-bonds',
+        'table:acolyte-flaws',
+        'table:acolyte-ideals',
+        'table:acolyte-personality-traits',
+      ]);
     });
 
     it('contains exactly the reviewed table key set', () => {

@@ -42,19 +42,22 @@ No. The source PDF remains SHA-256
 
 Yes. Regenerated through the importer (not hand-edited). Record count is
 unchanged at 1812; no records are added or removed. 34 owner records gain a
-`data.tableRefs` array (29 magic items covering 31 tables — Cube of Force owns
+`data.tableRefs` array (29 magic items covering 32 tables — Cube of Force owns
 2, Bag of Tricks owns 3 — plus 5 economy rules: ability-scores-and-modifiers,
-food-drink-and-lodging, lifestyle-expenses, services, trade-goods). Records with
-a `tableRefs` link rise from 10 to 44. `manifest.json`,
-`source-coverage.json`, and `source-region-ledger.json` are unchanged.
+food-drink-and-lodging, lifestyle-expenses, services, trade-goods; the reviewed
+map is 32 magic-item + 5 rule = 37 mappings). Records with a `tableRefs` link
+rise from 10 to 44. `manifest.json`, `source-coverage.json`, and
+`source-region-ledger.json` are unchanged.
 
 ## Importer changed?
 
 Yes. `linkOwnedTables.ts` adds `data.tableRefs` to each owner named in the
-reviewed `SRD_5_1_TABLE_OWNERS` map, fail-closed if any mapped table or owner is
-missing. The `table-owner-link` audit (`srdAudit.ts`) independently enforces
-that each owned table is referenced exactly once, by its expected owner and no
-other record.
+reviewed `SRD_5_1_TABLE_OWNERS` map. It wires only mappings whose table and
+owner are both present, so reduced fixtures skip absent pairs (a key that
+resolves to a non-`table` record is still a hard error). Full-pack completeness
+— every owned table actually reachable from its expected owner — is enforced
+separately by the `table-owner-link` audit (`srdAudit.ts`), which also rejects a
+table referenced by any record other than its expected owner.
 
 The remaining eshyra-o9bd.8 scope is deferred to sibling beads:
 

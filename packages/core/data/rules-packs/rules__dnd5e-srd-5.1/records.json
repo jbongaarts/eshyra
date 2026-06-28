@@ -1628,7 +1628,13 @@
         "name": "Shelter of the Faithful",
         "text": "As an acolyte, you command the respect of those who share your faith, and you can perform the religious ceremonies of your deity. You and your adventuring companions can expect to receive free healing and care at a temple, shrine, or other established presence of your faith, though you must provide any material components needed for spells. Those who share your religion will support you (but only you) at a modest lifestyle. You might also have ties to a specific temple dedicated to your chosen deity or pantheon, and you have a residence there. This could be the temple where you used to serve, if you remain on good terms with it, or a temple where you have found a new home. While near your temple, you can call upon the priests for assistance, provided the assistance you ask for is not hazardous and you remain in good standing with your temple."
       },
-      "suggestedCharacteristics": "Acolytes are shaped by their experience in temples or other religious communities. Their study of the history and tenets of their faith and their relationships to temples, shrines, or hierarchies affect their mannerisms and ideals. Their flaws might be some hidden hypocrisy or heretical idea, or an ideal or bond taken to an extreme."
+      "suggestedCharacteristics": "Acolytes are shaped by their experience in temples or other religious communities. Their study of the history and tenets of their faith and their relationships to temples, shrines, or hierarchies affect their mannerisms and ideals. Their flaws might be some hidden hypocrisy or heretical idea, or an ideal or bond taken to an extreme.",
+      "tableRefs": [
+        "table:acolyte-bonds",
+        "table:acolyte-flaws",
+        "table:acolyte-ideals",
+        "table:acolyte-personality-traits"
+      ]
     },
     "source": "SRD 5.1 p. 60",
     "license": {
@@ -41587,7 +41593,10 @@
     "data": {
       "source": "subclass:draconic-bloodline",
       "level": 1,
-      "description": "At 1st level, you choose one type of dragon as your ancestor. The damage type associated with each dragon is used by features you gain later. You can speak, read, and write Draconic. Additionally, whenever you make a Charisma check when interacting with dragons, your proficiency bonus is doubled if it applies to the check."
+      "description": "At 1st level, you choose one type of dragon as your ancestor. The damage type associated with each dragon is used by features you gain later. You can speak, read, and write Draconic. Additionally, whenever you make a Charisma check when interacting with dragons, your proficiency bonus is doubled if it applies to the check.",
+      "tableRefs": [
+        "table:draconic-bloodline-draconic-ancestry"
+      ]
     },
     "source": "SRD 5.1 p. 44",
     "license": {
@@ -44854,7 +44863,10 @@
     "data": {
       "source": "class:sorcerer",
       "level": 2,
-      "description": "At 2nd level, you tap into a deep wellspring of magic within yourself. This wellspring is represented by sorcery points, which allow you to create a variety of magical effects. Sorcery Points You have 2 sorcery points, and you gain more as you reach higher levels, as shown in the Sorcery Points column of the Sorcerer table. You can never have more sorcery points than shown on the table for your level. You regain all spent sorcery points when you finish a long rest. Flexible Casting You can use your sorcery points to gain additional spell slots, or sacrifice spell slots to gain additional sorcery points. You learn other ways to use your sorcery points as you reach higher levels. Creating Spell Slots. You can transform unexpended sorcery points into one spell slot as a bonus action on your turn. The Creating Spell Slots table shows the cost of creating a spell slot of a given level. You can create spell slots no higher in level than 5th. Any spell slot you create with this feature vanishes when you finish a long rest. Converting a Spell Slot to Sorcery Points. As a bonus action on your turn, you can expend one spell slot and gain a number of sorcery points equal to the slot’s level."
+      "description": "At 2nd level, you tap into a deep wellspring of magic within yourself. This wellspring is represented by sorcery points, which allow you to create a variety of magical effects. Sorcery Points You have 2 sorcery points, and you gain more as you reach higher levels, as shown in the Sorcery Points column of the Sorcerer table. You can never have more sorcery points than shown on the table for your level. You regain all spent sorcery points when you finish a long rest. Flexible Casting You can use your sorcery points to gain additional spell slots, or sacrifice spell slots to gain additional sorcery points. You learn other ways to use your sorcery points as you reach higher levels. Creating Spell Slots. You can transform unexpended sorcery points into one spell slot as a bonus action on your turn. The Creating Spell Slots table shows the cost of creating a spell slot of a given level. You can create spell slots no higher in level than 5th. Any spell slot you create with this feature vanishes when you finish a long rest. Converting a Spell Slot to Sorcery Points. As a bonus action on your turn, you can expend one spell slot and gain a number of sorcery points equal to the slot’s level.",
+      "tableRefs": [
+        "table:creating-spell-slots"
+      ]
     },
     "source": "SRD 5.1 p. 43",
     "license": {
@@ -56723,7 +56735,10 @@
     "key": "rule:communication",
     "name": "Communication",
     "data": {
-      "text": "A sentient item has some ability to communicate, either by sharing its emotions, broadcasting its thoughts telepathically, or speaking aloud. You can choose how it communicates or roll on the following table."
+      "text": "A sentient item has some ability to communicate, either by sharing its emotions, broadcasting its thoughts telepathically, or speaking aloud. You can choose how it communicates or roll on the following table.",
+      "tableRefs": [
+        "table:sentient-magic-item-communication"
+      ]
     },
     "source": "SRD 5.1 p. 251",
     "license": {
@@ -57233,7 +57248,10 @@
     "key": "rule:creating-sentient-magic-items-alignment",
     "name": "Alignment",
     "data": {
-      "text": "A sentient magic item has an alignment. Its creator or nature might suggest an alignment. If not, you can pick an alignment or roll on the following table."
+      "text": "A sentient magic item has an alignment. Its creator or nature might suggest an alignment. If not, you can pick an alignment or roll on the following table.",
+      "tableRefs": [
+        "table:sentient-magic-item-alignment"
+      ]
     },
     "source": "SRD 5.1 p. 251",
     "license": {
@@ -57263,7 +57281,10 @@
     "key": "rule:creating-sentient-magic-items-senses",
     "name": "Senses",
     "data": {
-      "text": "With sentience comes awareness. A sentient item can perceive its surroundings out to a limited range. You can choose its senses or roll on the following table."
+      "text": "With sentience comes awareness. A sentient item can perceive its surroundings out to a limited range. You can choose its senses or roll on the following table.",
+      "tableRefs": [
+        "table:sentient-magic-item-senses"
+      ]
     },
     "source": "SRD 5.1 p. 251",
     "license": {
@@ -58283,7 +58304,10 @@
     "key": "rule:experience-points",
     "name": "Experience Points",
     "data": {
-      "text": "The experience point cost to gain a level is always based on your total character level, as shown in the Character Advancement table, not your level in a particular class. So, if you are a cleric 6/fighter 1, you must gain enough XP to reach 8th level before you can take your second level as a fighter or your seventh level as a cleric."
+      "text": "The experience point cost to gain a level is always based on your total character level, as shown in the Character Advancement table, not your level in a particular class. So, if you are a cleric 6/fighter 1, you must gain enough XP to reach 8th level before you can take your second level as a fighter or your seventh level as a cleric.",
+      "tableRefs": [
+        "table:character-advancement"
+      ]
     },
     "source": "SRD 5.1 p. 57",
     "license": {
@@ -59823,7 +59847,12 @@
     "key": "rule:madness-effects",
     "name": "Madness Effects",
     "data": {
-      "text": "Madness can be short-term, long-term, or indefinite. Most relatively mundane effects impose short-term madness, which lasts for just a few minutes. More horrific effects or cumulative effects can result in long-term or indefinite madness. A character afflicted with short-term madness is subjected to an effect from the Short-Term Madness table for 1d10 minutes. A character afflicted with long-term madness is subjected to an effect from the Long-Term Madness table for 1d10 × 10 hours. A character afflicted with indefinite madness gains a new character flaw from the Indefinite Madness table that lasts until cured."
+      "text": "Madness can be short-term, long-term, or indefinite. Most relatively mundane effects impose short-term madness, which lasts for just a few minutes. More horrific effects or cumulative effects can result in long-term or indefinite madness. A character afflicted with short-term madness is subjected to an effect from the Short-Term Madness table for 1d10 minutes. A character afflicted with long-term madness is subjected to an effect from the Long-Term Madness table for 1d10 × 10 hours. A character afflicted with indefinite madness gains a new character flaw from the Indefinite Madness table that lasts until cured.",
+      "tableRefs": [
+        "table:indefinite-madness",
+        "table:long-term-madness",
+        "table:short-term-madness"
+      ]
     },
     "source": "SRD 5.1 p. 201",
     "license": {
@@ -60843,7 +60872,11 @@
     "key": "rule:objects",
     "name": "Objects",
     "data": {
-      "text": "When characters need to saw through ropes, shatter a window, or smash a vampire’s coffin, the only hard and fast rule is this: given enough time and the right tools, characters can destroy any destructible object. Use common sense when determining a character’s success at damaging an object. Can a fighter cut through a section of a stone wall with a sword? No, the sword is likely to break before the wall does. For the purpose of these rules, an object is a discrete, inanimate item like a window, door, sword, book, table, chair, or stone, not a building or a vehicle that is composed of many other objects. Statistics for Objects When time is a factor, you can assign an Armor Class and hit points to a destructible object. You can also give it immunities, resistances, and vulnerabilities to specific types of damage. Armor Class. An object’s Armor Class is a measure of how difficult it is to deal damage to the object when striking it (because the object has no chance of dodging out of the way). The Object Armor Class table provides suggested AC values for various substances. Hit Points. An object’s hit points measure how much damage it can take before losing its structural integrity. Resilient objects have more hit points than fragile ones. Large objects also tend to have more hit points than small ones, unless breaking a small part of the object is just as effective as breaking the whole thing. The Object Hit Points table provides suggested hit points for fragile and resilient objects that are Large or smaller. Huge and Gargantuan Objects. Normal weapons are of little use against many Huge and Gargantuan objects, such as a colossal statue, towering column of stone, or massive boulder. That said, one torch can burn a Huge tapestry, and an earthquake spell can reduce a colossus to rubble. You can track a Huge or Gargantuan object’s hit points if you like, or you can simply decide how long the object can withstand whatever weapon or force is acting against it. If you track hit points for the object, divide it into Large or smaller sections, and track each section’s hit points separately. Destroying one of those sections could ruin the entire object. For example, a Gargantuan statue of a human might topple over when one of its Large legs is reduced to 0 hit points. Objects and Damage Types. Objects are immune to poison and psychic damage. You might decide that some damage types are more effective against a particular object or substance than others. For example, bludgeoning damage works well for smashing things but not for cutting through rope or leather. Paper or cloth objects might be vulnerable to fire and lightning damage. A pick can chip away stone but can’t effectively cut down a tree. As always, use your best judgment. Damage Threshold. Big objects such as castle walls often have extra resilience represented by a damage threshold. An object with a damage threshold has immunity to all damage unless it takes an amount of damage from a single attack or effect equal to or greater than its damage threshold, in which case it takes damage as normal. Any damage that fails to meet or exceed the object’s damage threshold is considered superficial and doesn’t reduce the object’s hit points."
+      "text": "When characters need to saw through ropes, shatter a window, or smash a vampire’s coffin, the only hard and fast rule is this: given enough time and the right tools, characters can destroy any destructible object. Use common sense when determining a character’s success at damaging an object. Can a fighter cut through a section of a stone wall with a sword? No, the sword is likely to break before the wall does. For the purpose of these rules, an object is a discrete, inanimate item like a window, door, sword, book, table, chair, or stone, not a building or a vehicle that is composed of many other objects. Statistics for Objects When time is a factor, you can assign an Armor Class and hit points to a destructible object. You can also give it immunities, resistances, and vulnerabilities to specific types of damage. Armor Class. An object’s Armor Class is a measure of how difficult it is to deal damage to the object when striking it (because the object has no chance of dodging out of the way). The Object Armor Class table provides suggested AC values for various substances. Hit Points. An object’s hit points measure how much damage it can take before losing its structural integrity. Resilient objects have more hit points than fragile ones. Large objects also tend to have more hit points than small ones, unless breaking a small part of the object is just as effective as breaking the whole thing. The Object Hit Points table provides suggested hit points for fragile and resilient objects that are Large or smaller. Huge and Gargantuan Objects. Normal weapons are of little use against many Huge and Gargantuan objects, such as a colossal statue, towering column of stone, or massive boulder. That said, one torch can burn a Huge tapestry, and an earthquake spell can reduce a colossus to rubble. You can track a Huge or Gargantuan object’s hit points if you like, or you can simply decide how long the object can withstand whatever weapon or force is acting against it. If you track hit points for the object, divide it into Large or smaller sections, and track each section’s hit points separately. Destroying one of those sections could ruin the entire object. For example, a Gargantuan statue of a human might topple over when one of its Large legs is reduced to 0 hit points. Objects and Damage Types. Objects are immune to poison and psychic damage. You might decide that some damage types are more effective against a particular object or substance than others. For example, bludgeoning damage works well for smashing things but not for cutting through rope or leather. Paper or cloth objects might be vulnerable to fire and lightning damage. A pick can chip away stone but can’t effectively cut down a tree. As always, use your best judgment. Damage Threshold. Big objects such as castle walls often have extra resilience represented by a damage threshold. An object with a damage threshold has immunity to all damage unless it takes an amount of damage from a single attack or effect equal to or greater than its damage threshold, in which case it takes damage as normal. Any damage that fails to meet or exceed the object’s damage threshold is considered superficial and doesn’t reduce the object’s hit points.",
+      "tableRefs": [
+        "table:object-armor-class",
+        "table:object-hit-points"
+      ]
     },
     "source": "SRD 5.1 p. 203",
     "license": {
@@ -61173,7 +61206,10 @@
     "key": "rule:prerequisites",
     "name": "Prerequisites",
     "data": {
-      "text": "To qualify for a new class, you must meet the ability score prerequisites for both your current class and your new one, as shown in the Multiclassing Prerequisites table. For example, a barbarian who decides to multiclass into the druid class must have both Strength and Wisdom scores of 13 or higher. Without the full training that a beginning character receives, you must be a quick study in your new class, having a natural aptitude that is reflected by higher- than-average ability scores."
+      "text": "To qualify for a new class, you must meet the ability score prerequisites for both your current class and your new one, as shown in the Multiclassing Prerequisites table. For example, a barbarian who decides to multiclass into the druid class must have both Strength and Wisdom scores of 13 or higher. Without the full training that a beginning character receives, you must be a quick study in your new class, having a natural aptitude that is reflected by higher- than-average ability scores.",
+      "tableRefs": [
+        "table:multiclassing-prerequisites"
+      ]
     },
     "source": "SRD 5.1 p. 56",
     "license": {
@@ -61203,7 +61239,10 @@
     "key": "rule:proficiencies",
     "name": "Proficiencies",
     "data": {
-      "text": "When you gain your first level in a class other than your initial class, you gain only some of new class’s starting proficiencies, as shown in the Multiclassing Proficiencies table."
+      "text": "When you gain your first level in a class other than your initial class, you gain only some of new class’s starting proficiencies, as shown in the Multiclassing Proficiencies table.",
+      "tableRefs": [
+        "table:multiclassing-proficiencies"
+      ]
     },
     "source": "SRD 5.1 p. 57",
     "license": {
@@ -62496,7 +62535,10 @@
     "key": "rule:special-purpose",
     "name": "Special Purpose",
     "data": {
-      "text": "You can give a sentient item an objective it pursues, perhaps to the exclusion of all else. As long as the wielder’s use of the item aligns with that special purpose, the item remains cooperative. Deviating from this course might cause conflict between the wielder and the item, and could even cause the item to prevent the use of its activated properties. You can pick a special purpose or roll on the following table."
+      "text": "You can give a sentient item an objective it pursues, perhaps to the exclusion of all else. As long as the wielder’s use of the item aligns with that special purpose, the item remains cooperative. Deviating from this course might cause conflict between the wielder and the item, and could even cause the item to prevent the use of its activated properties. You can pick a special purpose or roll on the following table.",
+      "tableRefs": [
+        "table:sentient-magic-item-special-purpose"
+      ]
     },
     "source": "SRD 5.1 p. 251",
     "license": {
@@ -62766,7 +62808,10 @@
     "key": "rule:spellcasting",
     "name": "Spellcasting",
     "data": {
-      "text": "Your capacity for spellcasting depends partly on your combined levels in all your spellcasting classes and partly on your individual levels in those classes. Once you have the Spellcasting feature from more than one class, use the rules below. If you multiclass but have the Spellcasting feature from only one class, you follow the rules as described in that class. Spells Known and Prepared. You determine what spells you know and can prepare for each class individually, as if you were a single-classed member of that class. If you are a ranger 4/wizard 3, for example, you know three 1st-level ranger spells based on your levels in the ranger class. As 3rd-level wizard, you know three wizard cantrips, and your spellbook contains ten wizard spells, two of which (the two you gained when you reached 3rd level as a wizard) can be 2nd-level spells. If your Intelligence is 16, you can prepare six wizard spells from your spellbook. Each spell you know and prepare is associated with one of your classes, and you use the spellcasting ability of that class when you cast the spell. Similarly, a spellcasting focus, such as a holy symbol, can be used only for the spells from the class associated with that focus. Spell Slots. You determine your available spell slots by adding together all your levels in the bard, cleric, druid, sorcerer, and wizard classes, and half your levels (rounded down) in the paladin and ranger classes. Use this total to determine your spell slots by consulting the Multiclass Spellcaster table. If you have more than one spellcasting class, this table might give you spell slots of a level that is higher than the spells you know or can prepare. You can use those slots, but only to cast your lower-level spells. If a lower-level spell that you cast, like burning hands, has an enhanced effect when cast using a higher-level slot, you can use the enhanced effect, even though you don’t have any spells of that higher level. For example, if you are the aforementioned ranger 4/wizard 3, you count as a 5th-level character when determining your spell slots: you have four 1st-level slots, three 2nd-level slots, and two 3rd-level slots. However, you don’t know any 3rd-level spells, nor do you know any 2nd-level ranger spells. You can use the spell slots of those levels to cast the spells you do know—and potentially enhance their effects. Pact Magic. If you have both the Spellcasting class feature and the Pact Magic class feature from the warlock class, you can use the spell slots you gain from the Pact Magic feature to cast spells you know or have prepared from classes with the Spellcasting class feature, and you can use the spell slots you gain from the Spellcasting class feature to cast warlock spells you know."
+      "text": "Your capacity for spellcasting depends partly on your combined levels in all your spellcasting classes and partly on your individual levels in those classes. Once you have the Spellcasting feature from more than one class, use the rules below. If you multiclass but have the Spellcasting feature from only one class, you follow the rules as described in that class. Spells Known and Prepared. You determine what spells you know and can prepare for each class individually, as if you were a single-classed member of that class. If you are a ranger 4/wizard 3, for example, you know three 1st-level ranger spells based on your levels in the ranger class. As 3rd-level wizard, you know three wizard cantrips, and your spellbook contains ten wizard spells, two of which (the two you gained when you reached 3rd level as a wizard) can be 2nd-level spells. If your Intelligence is 16, you can prepare six wizard spells from your spellbook. Each spell you know and prepare is associated with one of your classes, and you use the spellcasting ability of that class when you cast the spell. Similarly, a spellcasting focus, such as a holy symbol, can be used only for the spells from the class associated with that focus. Spell Slots. You determine your available spell slots by adding together all your levels in the bard, cleric, druid, sorcerer, and wizard classes, and half your levels (rounded down) in the paladin and ranger classes. Use this total to determine your spell slots by consulting the Multiclass Spellcaster table. If you have more than one spellcasting class, this table might give you spell slots of a level that is higher than the spells you know or can prepare. You can use those slots, but only to cast your lower-level spells. If a lower-level spell that you cast, like burning hands, has an enhanced effect when cast using a higher-level slot, you can use the enhanced effect, even though you don’t have any spells of that higher level. For example, if you are the aforementioned ranger 4/wizard 3, you count as a 5th-level character when determining your spell slots: you have four 1st-level slots, three 2nd-level slots, and two 3rd-level slots. However, you don’t know any 3rd-level spells, nor do you know any 2nd-level ranger spells. You can use the spell slots of those levels to cast the spells you do know—and potentially enhance their effects. Pact Magic. If you have both the Spellcasting class feature and the Pact Magic class feature from the warlock class, you can use the spell slots you gain from the Pact Magic feature to cast spells you know or have prepared from classes with the Spellcasting class feature, and you can use the spell slots you gain from the Spellcasting class feature to cast warlock spells you know.",
+      "tableRefs": [
+        "table:multiclass-spellcaster-spell-slots-per-spell-level"
+      ]
     },
     "source": "SRD 5.1 p. 57",
     "license": {
