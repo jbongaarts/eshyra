@@ -414,6 +414,11 @@ export function computeLevelUpChangeSet(
   const constitutionModifier = sheet.abilityScores.constitution.modifier;
   const increment = hitPointIncrement(hitDie, constitutionModifier);
 
+  const existingSubclassFeatureRefs = existingSubclassFeatureRefsForLevel(
+    sheet,
+    toLevel,
+    resolver,
+  );
   const changeSet: LevelUpChangeSet = {
     classKey,
     level: { from: fromLevel, to: toLevel },
@@ -431,7 +436,7 @@ export function computeLevelUpChangeSet(
         to: sheet.maxHitPoints + increment,
       },
     },
-    featuresGained: row.featureRefs,
+    featuresGained: [...row.featureRefs, ...existingSubclassFeatureRefs],
     ...spellcastingChanges(sheet, classKey, row, row.proficiencyBonus),
   };
   return changeSet;
@@ -707,6 +712,30 @@ function subclassFeatureRefsForLevel(
         subclassFeatureSet.has(feature.key),
     )
     .map((feature) => feature.key);
+}
+
+function existingSubclassFeatureRefsForLevel(
+  sheet: CharacterSheet,
+  targetLevel: number,
+  resolver: RulesPackCharacterResolver,
+): readonly string[] {
+  if (sheet.subclass === undefined) {
+    return [];
+  }
+  const subclass = resolver
+    .listSubclasses()
+    .find((entry) => entry.key === sheet.subclass?.key);
+  if (subclass === undefined) {
+    throw new LevelUpEngineError(
+      `cannot resolve subclass '${sheet.subclass.key}' for level-up`,
+    );
+  }
+  if (subclass.parentClass !== sheet.class.key) {
+    throw new LevelUpEngineError(
+      `subclass '${subclass.key}' does not belong to class '${sheet.class.key}'`,
+    );
+  }
+  return subclassFeatureRefsForLevel(subclass, targetLevel, resolver);
 }
 
 function applyResolvedChoicesToChangeSet(

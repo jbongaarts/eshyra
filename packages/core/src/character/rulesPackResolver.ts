@@ -521,10 +521,12 @@ function parseFeatureRefs(value: unknown): readonly string[] | undefined {
   }
   const featureRefs: string[] = [];
   for (const feature of value) {
-    if (!isRecord(feature) || typeof feature.ref !== 'string') {
+    if (!isRecord(feature)) {
       return undefined;
     }
-    featureRefs.push(feature.ref);
+    if (typeof feature.ref === 'string') {
+      featureRefs.push(feature.ref);
+    }
   }
   return featureRefs;
 }

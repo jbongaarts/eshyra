@@ -13,167 +13,8 @@ import {
 
 const resolver = getBundledDnd5eCharacterResolver();
 
-const EXPECTED_STRICT_LEVEL_UP_UNSUPPORTED_ROWS = [
-  { className: 'Barbarian', level: 6, featureNames: ['Path feature'] },
-  { className: 'Barbarian', level: 10, featureNames: ['Path feature'] },
-  { className: 'Barbarian', level: 14, featureNames: ['Path feature'] },
-  { className: 'Bard', level: 6, featureNames: ['Bard College feature'] },
-  { className: 'Bard', level: 14, featureNames: ['Bard College feature'] },
-  { className: 'Cleric', level: 2, featureNames: ['Divine Domain feature'] },
-  { className: 'Cleric', level: 6, featureNames: ['Divine Domain feature'] },
-  { className: 'Cleric', level: 8, featureNames: ['Divine Domain feature'] },
-  { className: 'Cleric', level: 17, featureNames: ['Divine Domain feature'] },
-  {
-    className: 'Cleric',
-    level: 20,
-    featureNames: ['Divine Intervention improvement'],
-  },
-  { className: 'Druid', level: 4, featureNames: ['Wild Shape improvement'] },
-  { className: 'Druid', level: 6, featureNames: ['Druid Circle feature'] },
-  { className: 'Druid', level: 8, featureNames: ['Wild Shape improvement'] },
-  { className: 'Druid', level: 10, featureNames: ['Druid Circle feature'] },
-  { className: 'Druid', level: 14, featureNames: ['Druid Circle feature'] },
-  {
-    className: 'Fighter',
-    level: 7,
-    featureNames: ['Martial Archetype feature'],
-  },
-  {
-    className: 'Fighter',
-    level: 10,
-    featureNames: ['Martial Archetype feature'],
-  },
-  {
-    className: 'Fighter',
-    level: 15,
-    featureNames: ['Martial Archetype feature'],
-  },
-  {
-    className: 'Fighter',
-    level: 18,
-    featureNames: ['Martial Archetype feature'],
-  },
-  {
-    className: 'Monk',
-    level: 6,
-    featureNames: ['Monastic Tradition feature'],
-  },
-  {
-    className: 'Monk',
-    level: 9,
-    featureNames: ['Unarmored Movement improvement'],
-  },
-  {
-    className: 'Monk',
-    level: 11,
-    featureNames: ['Monastic Tradition feature'],
-  },
-  {
-    className: 'Monk',
-    level: 17,
-    featureNames: ['Monastic Tradition feature'],
-  },
-  { className: 'Paladin', level: 7, featureNames: ['Sacred Oath feature'] },
-  { className: 'Paladin', level: 15, featureNames: ['Sacred Oath feature'] },
-  { className: 'Paladin', level: 18, featureNames: ['Aura improvements'] },
-  { className: 'Paladin', level: 20, featureNames: ['Sacred Oath feature'] },
-  {
-    className: 'Ranger',
-    level: 1,
-    featureNames: [],
-  },
-  {
-    className: 'Ranger',
-    level: 6,
-    featureNames: ['Favored Enemy and Natural Explorer improvements'],
-  },
-  {
-    className: 'Ranger',
-    level: 7,
-    featureNames: ['Ranger Archetype feature'],
-  },
-  {
-    className: 'Ranger',
-    level: 10,
-    featureNames: ['Natural Explorer improvement'],
-  },
-  {
-    className: 'Ranger',
-    level: 11,
-    featureNames: ['Ranger Archetype feature'],
-  },
-  {
-    className: 'Ranger',
-    level: 14,
-    featureNames: ['Favored Enemy improvement'],
-  },
-  {
-    className: 'Ranger',
-    level: 15,
-    featureNames: ['Ranger Archetype feature'],
-  },
-  { className: 'Rogue', level: 1, featureNames: ['Thieves Cant'] },
-  {
-    className: 'Rogue',
-    level: 9,
-    featureNames: ['Roguish Archetype feature'],
-  },
-  {
-    className: 'Rogue',
-    level: 13,
-    featureNames: ['Roguish Archetype feature'],
-  },
-  {
-    className: 'Rogue',
-    level: 17,
-    featureNames: ['Roguish Archetype feature'],
-  },
-  {
-    className: 'Sorcerer',
-    level: 6,
-    featureNames: ['Sorcerous Origin feature'],
-  },
-  {
-    className: 'Sorcerer',
-    level: 14,
-    featureNames: ['Sorcerous Origin feature'],
-  },
-  {
-    className: 'Sorcerer',
-    level: 18,
-    featureNames: ['Sorcerous Origin feature'],
-  },
-  {
-    className: 'Warlock',
-    level: 6,
-    featureNames: ['Otherworldly Patron feature'],
-  },
-  {
-    className: 'Warlock',
-    level: 10,
-    featureNames: ['Otherworldly Patron feature'],
-  },
-  {
-    className: 'Warlock',
-    level: 14,
-    featureNames: ['Otherworldly Patron feature'],
-  },
-  {
-    className: 'Wizard',
-    level: 6,
-    featureNames: ['Arcane Tradition feature'],
-  },
-  {
-    className: 'Wizard',
-    level: 10,
-    featureNames: ['Arcane Tradition feature'],
-  },
-  {
-    className: 'Wizard',
-    level: 14,
-    featureNames: ['Arcane Tradition feature'],
-  },
-  { className: 'Wizard', level: 20, featureNames: ['Signature Spell'] },
+const EXPECTED_MALFORMED_LEVEL_UP_ROWS = [
+  { className: 'Ranger', level: 1, featureNames: [] },
 ] as const;
 
 function license(): RulesPackLicense {
@@ -345,7 +186,7 @@ describe('rules-pack character resolver', () => {
     }
   });
 
-  it('keeps the frozen SRD strict level-up unsupported row set explicit', () => {
+  it('keeps the frozen SRD malformed level-up row set explicit', () => {
     const actualUnsupportedRows: Array<{
       className: string;
       level: number;
@@ -386,7 +227,7 @@ describe('rules-pack character resolver', () => {
     }
 
     expect(sortedUnsupportedRows(actualUnsupportedRows)).toEqual(
-      sortedUnsupportedRows(EXPECTED_STRICT_LEVEL_UP_UNSUPPORTED_ROWS),
+      sortedUnsupportedRows(EXPECTED_MALFORMED_LEVEL_UP_ROWS),
     );
   });
 
@@ -584,7 +425,7 @@ describe('rules-pack character resolver', () => {
                   proficiencyBonus: '+3',
                   features: [
                     { ref: 'feature:fighter:extra-attack' },
-                    { name: 'Bad Feature' },
+                    'Bad Feature',
                   ],
                 },
               ],
