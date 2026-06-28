@@ -598,7 +598,7 @@ describe('runPlay', () => {
     dispose();
   });
 
-  it('surfaces unsupported /levelup blockers clearly', async () => {
+  it('surfaces /levelup blockers clearly', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO([
       'import',
@@ -622,6 +622,7 @@ describe('runPlay', () => {
     expect(code).toBe(0);
     const out = lines.join('\n');
     expect(out).toContain('Level-up blocked:');
+    expect(out).toContain('Choose a subclass');
     expect(out).toContain(
       'deterministic spell application is not implemented yet',
     );

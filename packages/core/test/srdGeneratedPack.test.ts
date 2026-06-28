@@ -471,6 +471,18 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   },
   {
     kind: 'class',
+    field: 'spellPreparation',
+    missingCount: 4,
+    totalInKind: 12,
+  },
+  {
+    kind: 'class',
+    field: 'spellcastingAbility',
+    missingCount: 4,
+    totalInKind: 12,
+  },
+  {
+    kind: 'class',
     field: 'toolProficiencies',
     missingCount: 2,
     totalInKind: 12,
@@ -4858,7 +4870,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
     it('carries the structured grant fields verbatim from the source', () => {
       expect(acolyteData.skillProficiencies).toEqual(['Insight', 'Religion']);
-      expect(acolyteData.languages).toBe('Two of your choice');
+      expect(acolyteData.languages).toEqual([
+        { fixed: [], choose: 2, sourceText: 'Two of your choice' },
+      ]);
       expect(acolyteData.equipment).toBe(
         'A holy symbol (a gift to you when you entered the priesthood), a prayer book or prayer wheel, 5 sticks of incense, vestments, a set of common clothes, and a pouch containing 15 gp',
       );

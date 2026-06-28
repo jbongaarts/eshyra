@@ -19,10 +19,10 @@
  * green assertions. This module is the additive, re-audit-only surface.
  *
  * Gate coverage status (2026-06-28, verified against the committed pack):
- *   - untyped-progression-marker  — RED  (~47 rows)  → eshyra-o9bd.2
- *   - null-spellcasting-value     — RED  (Ranger L1) → eshyra-o9bd.2
- *   - missing-class-feature-record— RED  (Thieves' Cant) → eshyra-o9bd.3
- *   - overlay-dependence          — RED  (ASIs/languages/spellcasting/equipment) → eshyra-o9bd.5
+ *   - untyped-progression-marker  — GREEN (typed advancement[]) → eshyra-o9bd.2
+ *   - null-spellcasting-value     — GREEN (non-applicable values omitted) → eshyra-o9bd.2
+ *   - missing-class-feature-record— GREEN (Thieves' Cant owned) → eshyra-o9bd.3
+ *   - overlay-dependence          — GREEN (creation facts emitted) → eshyra-o9bd.5
  *   - proficiency-note-bleed      — GREEN (already lifted to proficiencyNotes) → eshyra-o9bd.6 regression guard
  *
  * Deferred to their owning modeling beads (their gate is that bead's own

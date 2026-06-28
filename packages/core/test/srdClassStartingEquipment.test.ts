@@ -16,7 +16,7 @@ import {
 const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
 
 interface PackStartingEquipment {
-  readonly entries?: readonly string[];
+  readonly entries?: readonly (string | { readonly sourceText?: string })[];
 }
 
 function classEntries(): { key: string; entries: readonly string[] }[] {
@@ -31,7 +31,9 @@ function classEntries(): { key: string; entries: readonly string[] }[] {
     };
     out.push({
       key: record.key,
-      entries: data.startingEquipment?.entries ?? [],
+      entries: (data.startingEquipment?.entries ?? []).map((entry) =>
+        typeof entry === 'string' ? entry : (entry.sourceText ?? ''),
+      ),
     });
   }
   return out;

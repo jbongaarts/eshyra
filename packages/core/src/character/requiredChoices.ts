@@ -194,7 +194,7 @@ function collectEquipmentChoices(
   const overlay = getClassStartingEquipment(classData.key);
   if (overlay === undefined) {
     (classData.startingEquipment?.entries ?? []).forEach((entry, index) => {
-      if (!isEquipmentOption(entry)) {
+      if (typeof entry !== 'string' || !isEquipmentOption(entry)) {
         return; // a fixed grant (e.g. "A spellbook"), not a choice
       }
       choices.push({
@@ -476,7 +476,7 @@ function collectBackgroundChoices(
   const overlay = getBackgroundLanguages(background.key);
   if (overlay === undefined) {
     const languages = background.languages;
-    if (languages !== undefined && /\bchoice\b|choose/i.test(languages)) {
+    if (typeof languages === 'string' && /\bchoice\b|choose/i.test(languages)) {
       choices.push({
         id: 'background.languages',
         kind: 'languages',

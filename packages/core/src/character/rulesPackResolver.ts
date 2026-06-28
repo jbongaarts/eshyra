@@ -26,6 +26,7 @@ import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
 import { lookupRulesRecord, type RulesLookupResult } from '../rules/lookup.js';
 import { type ResolvedRulesStack, resolveRulesStack } from '../rules/stack.js';
 import type { RulesRecordKind } from '../rules/types.js';
+import type { AbilityScoreName } from './creation.js';
 
 /**
  * A source-backed choice from a generated record: the verbatim `text` plus the
@@ -47,7 +48,47 @@ export interface ResolvedChoiceSpec {
  */
 export interface ResolvedStartingEquipment {
   readonly text: string;
-  readonly entries: readonly string[];
+  readonly entries: readonly (string | ResolvedStartingEquipmentEntry)[];
+}
+
+export interface ResolvedStartingEquipmentOption {
+  readonly label: string;
+  readonly text: string;
+}
+
+export type ResolvedStartingEquipmentEntry =
+  | {
+      readonly kind: 'choice';
+      readonly options: readonly ResolvedStartingEquipmentOption[];
+      readonly sourceText: string;
+    }
+  | {
+      readonly kind: 'fixed';
+      readonly text: string;
+      readonly sourceText: string;
+    };
+
+export interface ResolvedAbilityScoreIncrease {
+  readonly ability: AbilityScoreName;
+  readonly bonus: number;
+}
+
+export interface ResolvedAbilityScoreIncreaseChoice {
+  readonly choose: number;
+  readonly bonus: number;
+  readonly from: readonly AbilityScoreName[];
+}
+
+export interface ResolvedAncestryAbilityScoreIncrease {
+  readonly fixed: readonly ResolvedAbilityScoreIncrease[];
+  readonly choice?: ResolvedAbilityScoreIncreaseChoice;
+  readonly sourceText: string;
+}
+
+export interface ResolvedLanguageGrant {
+  readonly fixed: readonly string[];
+  readonly choose?: number;
+  readonly sourceText: string;
 }
 
 /** Structured spellcasting counts on a class's level row (from the progression table). */
@@ -118,6 +159,8 @@ export interface ResolvedClassData {
   readonly toolProficiencyChoices?: readonly ResolvedChoiceSpec[];
   /** Starting equipment block (verbatim text + per-line entries). */
   readonly startingEquipment?: ResolvedStartingEquipment;
+  /** Spellcasting ability for classes with spellcasting/Pact Magic. */
+  readonly spellcastingAbility?: AbilityScoreName;
   /** Structured class progression rows, when the pack record carries them. */
   readonly progression?: readonly ResolvedClassLevel[];
   /** Structured level-1 progression slice (features + spellcasting counts). */
@@ -161,10 +204,13 @@ export interface ResolvedAncestryData {
   readonly size?: string;
   readonly speed?: number;
   /**
-   * Racial traits as `{ name, text }`. The "Ability Score Increase" trait's
-   * bonus is currently prose only (e.g. "Your Dexterity score increases by 2");
-   * structured ability increases are tracked in eshyra-b69j.12's follow-up.
+   * Structured ability score increases emitted from source-backed ancestry
+   * traits.
    */
+  readonly abilityScoreIncreases?: readonly ResolvedAncestryAbilityScoreIncrease[];
+  /** Structured ancestry language grants. */
+  readonly languages?: readonly ResolvedLanguageGrant[];
+  /** Racial traits as `{ name, text }`. */
   readonly traits?: readonly ResolvedAncestryTrait[];
 }
 
@@ -174,8 +220,8 @@ export interface ResolvedBackgroundData {
   readonly name: string;
   readonly skillProficiencies: readonly string[];
   readonly toolProficiencies?: readonly string[];
-  /** Verbatim language grant (e.g. "Two of your choice"); not yet structured. */
-  readonly languages?: string;
+  /** Structured language grants when generated; legacy packs may expose prose. */
+  readonly languages?: string | readonly ResolvedLanguageGrant[];
   /** Verbatim equipment package prose; not yet structured into items. */
   readonly equipment?: string;
 }
@@ -389,6 +435,7 @@ function toResolvedClassData(
     skillChoices: parseChoiceSpecs(raw.skillChoices),
     toolProficiencyChoices: parseChoiceSpecs(raw.toolProficiencyChoices),
     startingEquipment: parseStartingEquipment(raw.startingEquipment),
+    spellcastingAbility: parseAbility(raw.spellcastingAbility),
     progression: progression === 'malformed' ? undefined : progression,
     level1: parseLevel1(raw.progression),
   };
@@ -396,6 +443,21 @@ function toResolvedClassData(
 
 function optStringArray(value: unknown): readonly string[] | undefined {
   return isStringArray(value) ? value : undefined;
+}
+
+const ABILITY_SCORE_NAMES: ReadonlySet<string> = new Set([
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+]);
+
+function parseAbility(value: unknown): AbilityScoreName | undefined {
+  return typeof value === 'string' && ABILITY_SCORE_NAMES.has(value)
+    ? (value as AbilityScoreName)
+    : undefined;
 }
 
 function parseChoiceSpecs(
@@ -427,8 +489,55 @@ function parseStartingEquipment(
   }
   return {
     text: value.text,
-    entries: isStringArray(value.entries) ? value.entries : [],
+    entries: parseStartingEquipmentEntries(value.entries),
   };
+}
+
+function parseStartingEquipmentEntries(
+  value: unknown,
+): readonly (string | ResolvedStartingEquipmentEntry)[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const entries: (string | ResolvedStartingEquipmentEntry)[] = [];
+  for (const entry of value) {
+    if (typeof entry === 'string') {
+      entries.push(entry);
+      continue;
+    }
+    const parsed = parseStartingEquipmentEntry(entry);
+    if (parsed !== undefined) {
+      entries.push(parsed);
+    }
+  }
+  return entries;
+}
+
+function parseStartingEquipmentEntry(
+  value: unknown,
+): ResolvedStartingEquipmentEntry | undefined {
+  if (!isRecord(value) || typeof value.sourceText !== 'string') {
+    return undefined;
+  }
+  if (value.kind === 'fixed' && typeof value.text === 'string') {
+    return { kind: 'fixed', text: value.text, sourceText: value.sourceText };
+  }
+  if (value.kind !== 'choice' || !Array.isArray(value.options)) {
+    return undefined;
+  }
+  const options: ResolvedStartingEquipmentOption[] = [];
+  for (const option of value.options) {
+    if (
+      isRecord(option) &&
+      typeof option.label === 'string' &&
+      typeof option.text === 'string'
+    ) {
+      options.push({ label: option.label, text: option.text });
+    }
+  }
+  return options.length > 0
+    ? { kind: 'choice', options, sourceText: value.sourceText }
+    : undefined;
 }
 
 function parseLevel1(progression: unknown): ResolvedClassLevel1 | undefined {
@@ -753,6 +862,10 @@ function resolveAncestry(
       name: result.record.name,
       size: typeof raw.size === 'string' ? raw.size : undefined,
       speed: typeof raw.speed === 'number' ? raw.speed : undefined,
+      abilityScoreIncreases: parseAbilityScoreIncreases(
+        raw.abilityScoreIncreases,
+      ),
+      languages: parseLanguageGrants(raw.languages),
       traits: parseAncestryTraits(raw.traits),
     },
   };
@@ -777,6 +890,100 @@ function parseAncestryTraits(
   return traits.length > 0 ? traits : undefined;
 }
 
+function parseAbilityScoreIncreases(
+  value: unknown,
+): readonly ResolvedAncestryAbilityScoreIncrease[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const entries: ResolvedAncestryAbilityScoreIncrease[] = [];
+  for (const entry of value) {
+    if (!isRecord(entry) || typeof entry.sourceText !== 'string') {
+      continue;
+    }
+    const fixed = parseFixedAbilityScoreIncreases(entry.fixed);
+    if (fixed === undefined) {
+      continue;
+    }
+    const choice = parseAbilityScoreIncreaseChoice(entry.choice);
+    entries.push({
+      fixed,
+      ...(choice !== undefined ? { choice } : {}),
+      sourceText: entry.sourceText,
+    });
+  }
+  return entries.length > 0 ? entries : undefined;
+}
+
+function parseFixedAbilityScoreIncreases(
+  value: unknown,
+): readonly ResolvedAbilityScoreIncrease[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const increases: ResolvedAbilityScoreIncrease[] = [];
+  for (const entry of value) {
+    if (!isRecord(entry) || typeof entry.bonus !== 'number') {
+      return undefined;
+    }
+    const ability = parseAbility(entry.ability);
+    if (ability === undefined) {
+      return undefined;
+    }
+    increases.push({ ability, bonus: entry.bonus });
+  }
+  return increases.length > 0 ? increases : undefined;
+}
+
+function parseAbilityScoreIncreaseChoice(
+  value: unknown,
+): ResolvedAbilityScoreIncreaseChoice | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (
+    !isRecord(value) ||
+    typeof value.choose !== 'number' ||
+    typeof value.bonus !== 'number' ||
+    !Array.isArray(value.from)
+  ) {
+    return undefined;
+  }
+  const from: AbilityScoreName[] = [];
+  for (const ability of value.from) {
+    const parsed = parseAbility(ability);
+    if (parsed === undefined) {
+      return undefined;
+    }
+    from.push(parsed);
+  }
+  return { choose: value.choose, bonus: value.bonus, from };
+}
+
+function parseLanguageGrants(
+  value: unknown,
+): readonly ResolvedLanguageGrant[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const grants: ResolvedLanguageGrant[] = [];
+  for (const entry of value) {
+    if (
+      !isRecord(entry) ||
+      !isStringArray(entry.fixed) ||
+      typeof entry.sourceText !== 'string'
+    ) {
+      continue;
+    }
+    grants.push({
+      fixed: entry.fixed,
+      ...(typeof entry.choose === 'number' ? { choose: entry.choose } : {}),
+      sourceText: entry.sourceText,
+    });
+  }
+  return grants.length > 0 ? grants : undefined;
+}
+
 function resolveBackground(
   stack: ResolvedRulesStack,
   nameOrRef: string,
@@ -797,7 +1004,10 @@ function resolveBackground(
       name: result.record.name,
       skillProficiencies: data.skillProficiencies,
       toolProficiencies: optStringArray(raw.toolProficiencies),
-      languages: typeof raw.languages === 'string' ? raw.languages : undefined,
+      languages:
+        typeof raw.languages === 'string'
+          ? raw.languages
+          : parseLanguageGrants(raw.languages),
       equipment: typeof raw.equipment === 'string' ? raw.equipment : undefined,
     },
   };

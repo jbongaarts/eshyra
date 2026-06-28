@@ -293,6 +293,9 @@ function ancestryAbilityScoreIncreases(
   if (ancestry === undefined) {
     return [];
   }
+  if (ancestry.abilityScoreIncreases !== undefined) {
+    return ancestry.abilityScoreIncreases.flatMap((entry) => entry.fixed);
+  }
   return getAncestryAbilityScoreIncrease(ancestry.key)?.fixed ?? [];
 }
 

@@ -1230,7 +1230,9 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     expect(acolyte?.name).toBe('Acolyte');
     const acolyteData = acolyte?.data as Record<string, unknown>;
     expect(acolyteData.skillProficiencies).toEqual(['Insight', 'Religion']);
-    expect(acolyteData.languages).toBe('Two of your choice');
+    expect(acolyteData.languages).toEqual([
+      { fixed: [], choose: 2, sourceText: 'Two of your choice' },
+    ]);
     expect(acolyteData.equipment).toBe(
       'A holy symbol (a gift to you when you entered the priesthood), a prayer book or prayer wheel, 5 sticks of incense, vestments, a set of common clothes, and a pouch containing 15 gp',
     );

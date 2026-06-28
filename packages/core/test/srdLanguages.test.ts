@@ -97,9 +97,9 @@ describe('language overlay', () => {
     const data = stack.recordsByKind
       .get('background')
       ?.byKey.get('background:acolyte')?.record.data as {
-      languages?: string;
+      languages?: readonly { readonly sourceText: string }[];
     };
-    expect(acolyte?.sourceText).toBe(data.languages);
+    expect(acolyte?.sourceText).toBe(data.languages?.[0]?.sourceText);
   });
 
   it('chooseableLanguages excludes already-granted languages', () => {

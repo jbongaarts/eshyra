@@ -349,6 +349,30 @@
           "name": "Languages",
           "text": "You can speak, read, and write Common and Draconic. Draconic is thought to be one of the oldest languages and is often used in the study of magic. The language sounds harsh to most other creatures and includes numerous hard consonants and sibilants."
         }
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "strength",
+              "bonus": 2
+            },
+            {
+              "ability": "charisma",
+              "bonus": 1
+            }
+          ],
+          "sourceText": "Your Strength score increases by 2, and your Charisma score increases by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Draconic"
+          ],
+          "sourceText": "You can speak, read, and write Common and Draconic."
+        }
       ]
     },
     "source": "SRD 5.1 p. 5",
@@ -431,6 +455,26 @@
       ],
       "subraces": [
         "ancestry:hill-dwarf"
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "constitution",
+              "bonus": 2
+            }
+          ],
+          "sourceText": "Your Constitution score increases by 2."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Dwarvish"
+          ],
+          "sourceText": "You can speak, read, and write Common and Dwarvish."
+        }
       ]
     },
     "source": "SRD 5.1 p. 3",
@@ -509,6 +553,26 @@
       ],
       "subraces": [
         "ancestry:high-elf"
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "dexterity",
+              "bonus": 2
+            }
+          ],
+          "sourceText": "Your Dexterity score increases by 2."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Elvish"
+          ],
+          "sourceText": "You can speak, read, and write Common and Elvish."
+        }
       ]
     },
     "source": "SRD 5.1 p. 4",
@@ -579,6 +643,26 @@
       ],
       "subraces": [
         "ancestry:rock-gnome"
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "intelligence",
+              "bonus": 2
+            }
+          ],
+          "sourceText": "Your Intelligence score increases by 2."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Gnomish"
+          ],
+          "sourceText": "You can speak, read, and write Common and Gnomish."
+        }
       ]
     },
     "source": "SRD 5.1 p. 6",
@@ -649,6 +733,38 @@
         {
           "name": "Languages",
           "text": "You can speak, read, and write Common, Elvish, and one extra language of your choice."
+        }
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "charisma",
+              "bonus": 2
+            }
+          ],
+          "choice": {
+            "choose": 2,
+            "bonus": 1,
+            "from": [
+              "strength",
+              "dexterity",
+              "constitution",
+              "intelligence",
+              "wisdom"
+            ]
+          },
+          "sourceText": "Your Charisma score increases by 2, and two other ability scores of your choice increase by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Elvish"
+          ],
+          "choose": 1,
+          "sourceText": "You can speak, read, and write Common, Elvish, and one extra language of your choice."
         }
       ]
     },
@@ -725,6 +841,30 @@
           "name": "Languages",
           "text": "You can speak, read, and write Common and Orc. Orc is a harsh, grating language with hard consonants. It has no script of its own but is written in the Dwarvish script."
         }
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "strength",
+              "bonus": 2
+            },
+            {
+              "ability": "constitution",
+              "bonus": 1
+            }
+          ],
+          "sourceText": "Your Strength score increases by 2, and your Constitution score increases by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Orc"
+          ],
+          "sourceText": "You can speak, read, and write Common and Orc."
+        }
       ]
     },
     "source": "SRD 5.1 p. 7",
@@ -799,6 +939,26 @@
       ],
       "subraces": [
         "ancestry:lightfoot-halfling"
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "dexterity",
+              "bonus": 2
+            }
+          ],
+          "sourceText": "Your Dexterity score increases by 2."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Halfling"
+          ],
+          "sourceText": "You can speak, read, and write Common and Halfling."
+        }
       ]
     },
     "source": "SRD 5.1 p. 4",
@@ -887,7 +1047,31 @@
           "text": "You can speak, read, and write one extra language of your choice."
         }
       ],
-      "subraceOf": "ancestry:elf"
+      "subraceOf": "ancestry:elf",
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "dexterity",
+              "bonus": 2
+            },
+            {
+              "ability": "intelligence",
+              "bonus": 1
+            }
+          ],
+          "sourceText": "Your Dexterity score increases by 2. Your Intelligence score increases by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Elvish"
+          ],
+          "sourceText": "You can speak, read, and write Common and Elvish."
+        }
+      ]
     },
     "source": "SRD 5.1 p. 4",
     "license": {
@@ -971,7 +1155,31 @@
           "text": "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level."
         }
       ],
-      "subraceOf": "ancestry:dwarf"
+      "subraceOf": "ancestry:dwarf",
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "constitution",
+              "bonus": 2
+            },
+            {
+              "ability": "wisdom",
+              "bonus": 1
+            }
+          ],
+          "sourceText": "Your Constitution score increases by 2. Your Wisdom score increases by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Dwarvish"
+          ],
+          "sourceText": "You can speak, read, and write Common and Dwarvish."
+        }
+      ]
     },
     "source": "SRD 5.1 p. 4",
     "license": {
@@ -1029,6 +1237,46 @@
         {
           "name": "Languages",
           "text": "You can speak, read, and write Common and one extra language of your choice. Humans typically learn the languages of other peoples they deal with, including obscure dialects. They are fond of sprinkling their speech with words borrowed from other tongues: Orc curses, Elvish musical expressions, Dwarvish military phrases, and so on."
+        }
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "strength",
+              "bonus": 1
+            },
+            {
+              "ability": "dexterity",
+              "bonus": 1
+            },
+            {
+              "ability": "constitution",
+              "bonus": 1
+            },
+            {
+              "ability": "intelligence",
+              "bonus": 1
+            },
+            {
+              "ability": "wisdom",
+              "bonus": 1
+            },
+            {
+              "ability": "charisma",
+              "bonus": 1
+            }
+          ],
+          "sourceText": "Your ability scores each increase by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common"
+          ],
+          "choose": 1,
+          "sourceText": "You can speak, read, and write Common and one extra language of your choice."
         }
       ]
     },
@@ -1106,7 +1354,31 @@
           "text": "You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you."
         }
       ],
-      "subraceOf": "ancestry:halfling"
+      "subraceOf": "ancestry:halfling",
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "dexterity",
+              "bonus": 2
+            },
+            {
+              "ability": "charisma",
+              "bonus": 1
+            }
+          ],
+          "sourceText": "Your Dexterity score increases by 2. Your Charisma score increases by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Halfling"
+          ],
+          "sourceText": "You can speak, read, and write Common and Halfling."
+        }
+      ]
     },
     "source": "SRD 5.1 p. 5",
     "license": {
@@ -1190,7 +1462,31 @@
           "text": "When opened, this music box plays a single song at a moderate volume. The box stops playing when it reaches the song’s end or when it is closed."
         }
       ],
-      "subraceOf": "ancestry:gnome"
+      "subraceOf": "ancestry:gnome",
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "intelligence",
+              "bonus": 2
+            },
+            {
+              "ability": "constitution",
+              "bonus": 1
+            }
+          ],
+          "sourceText": "Your Intelligence score increases by 2. Your Constitution score increases by 1."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Gnomish"
+          ],
+          "sourceText": "You can speak, read, and write Common and Gnomish."
+        }
+      ]
     },
     "source": "SRD 5.1 p. 6",
     "license": {
@@ -1261,6 +1557,30 @@
           "name": "Languages",
           "text": "You can speak, read, and write Common and Infernal."
         }
+      ],
+      "abilityScoreIncreases": [
+        {
+          "fixed": [
+            {
+              "ability": "intelligence",
+              "bonus": 1
+            },
+            {
+              "ability": "charisma",
+              "bonus": 2
+            }
+          ],
+          "sourceText": "Your Intelligence score increases by 1, and your Charisma score increases by 2."
+        }
+      ],
+      "languages": [
+        {
+          "fixed": [
+            "Common",
+            "Infernal"
+          ],
+          "sourceText": "You can speak, read, and write Common and Infernal."
+        }
       ]
     },
     "source": "SRD 5.1 p. 7",
@@ -1296,7 +1616,13 @@
         "Insight",
         "Religion"
       ],
-      "languages": "Two of your choice",
+      "languages": [
+        {
+          "fixed": [],
+          "choose": 2,
+          "sourceText": "Two of your choice"
+        }
+      ],
       "equipment": "A holy symbol (a gift to you when you entered the priesthood), a prayer book or prayer wheel, 5 sticks of incense, vestments, a set of common clothes, and a pouch containing 15 gp",
       "feature": {
         "name": "Shelter of the Faithful",
@@ -1367,9 +1693,39 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a greataxe or (b) any martial melee weapon • (a) two handaxes or (b) any simple weapon • An explorer’s pack and four javelins",
         "entries": [
-          "(a) a greataxe or (b) any martial melee weapon",
-          "(a) two handaxes or (b) any simple weapon",
-          "An explorer’s pack and four javelins"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a greataxe"
+              },
+              {
+                "label": "b",
+                "text": "any martial melee weapon"
+              }
+            ],
+            "sourceText": "(a) a greataxe or (b) any martial melee weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "two handaxes"
+              },
+              {
+                "label": "b",
+                "text": "any simple weapon"
+              }
+            ],
+            "sourceText": "(a) two handaxes or (b) any simple weapon"
+          },
+          {
+            "kind": "fixed",
+            "text": "An explorer’s pack and four javelins",
+            "sourceText": "An explorer’s pack and four javelins"
+          }
         ]
       },
       "progressionTableRef": "table:the-barbarian",
@@ -1892,10 +2248,57 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a rapier, (b) a longsword, or (c) any simple weapon • (a) a diplomat’s pack or (b) an entertainer’s pack • (a) a lute or (b) any other musical instrument • Leather armor and a dagger",
         "entries": [
-          "(a) a rapier, (b) a longsword, or (c) any simple weapon",
-          "(a) a diplomat’s pack or (b) an entertainer’s pack",
-          "(a) a lute or (b) any other musical instrument",
-          "Leather armor and a dagger"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a rapier"
+              },
+              {
+                "label": "b",
+                "text": "a longsword"
+              },
+              {
+                "label": "c",
+                "text": "any simple weapon"
+              }
+            ],
+            "sourceText": "(a) a rapier, (b) a longsword, or (c) any simple weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a diplomat’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an entertainer’s pack"
+              }
+            ],
+            "sourceText": "(a) a diplomat’s pack or (b) an entertainer’s pack"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a lute"
+              },
+              {
+                "label": "b",
+                "text": "any other musical instrument"
+              }
+            ],
+            "sourceText": "(a) a lute or (b) any other musical instrument"
+          },
+          {
+            "kind": "fixed",
+            "text": "Leather armor and a dagger",
+            "sourceText": "Leather armor and a dagger"
+          }
         ]
       },
       "progressionTableRef": "table:the-bard",
@@ -2419,7 +2822,12 @@
         "feature:bard:song-of-rest",
         "feature:bard:spellcasting",
         "feature:bard:superior-inspiration"
-      ]
+      ],
+      "spellcastingAbility": "charisma",
+      "spellPreparation": {
+        "kind": "known",
+        "sourceText": "Charisma is your spellcasting ability for your bard spells."
+      }
     },
     "source": "SRD 5.1 p. 11",
     "license": {
@@ -2482,11 +2890,71 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a mace or (b) a warhammer (if proficient) • (a) scale mail, (b) leather armor, or (c) chain mail (if proficient) • (a) a light crossbow and 20 bolts or (b) any simple weapon • (a) a priest’s pack or (b) an explorer’s pack • A shield and a holy symbol",
         "entries": [
-          "(a) a mace or (b) a warhammer (if proficient)",
-          "(a) scale mail, (b) leather armor, or (c) chain mail (if proficient)",
-          "(a) a light crossbow and 20 bolts or (b) any simple weapon",
-          "(a) a priest’s pack or (b) an explorer’s pack",
-          "A shield and a holy symbol"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a mace"
+              },
+              {
+                "label": "b",
+                "text": "a warhammer (if proficient)"
+              }
+            ],
+            "sourceText": "(a) a mace or (b) a warhammer (if proficient)"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "scale mail"
+              },
+              {
+                "label": "b",
+                "text": "leather armor"
+              },
+              {
+                "label": "c",
+                "text": "chain mail (if proficient)"
+              }
+            ],
+            "sourceText": "(a) scale mail, (b) leather armor, or (c) chain mail (if proficient)"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a light crossbow and 20 bolts"
+              },
+              {
+                "label": "b",
+                "text": "any simple weapon"
+              }
+            ],
+            "sourceText": "(a) a light crossbow and 20 bolts or (b) any simple weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a priest’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a priest’s pack or (b) an explorer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "A shield and a holy symbol",
+            "sourceText": "A shield and a holy symbol"
+          }
         ]
       },
       "progressionTableRef": "table:the-cleric",
@@ -2963,7 +3431,12 @@
         "feature:cleric:divine-domain",
         "feature:cleric:divine-intervention",
         "feature:cleric:spellcasting"
-      ]
+      ],
+      "spellcastingAbility": "wisdom",
+      "spellPreparation": {
+        "kind": "prepared",
+        "sourceText": "You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). Wisdom is your spellcasting ability for your cleric spells."
+      }
     },
     "source": "SRD 5.1 p. 15",
     "license": {
@@ -3040,9 +3513,39 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a wooden shield or (b) any simple weapon • (a) a scimitar or (b) any simple melee weapon • Leather armor, an explorer’s pack, and a druidic focus",
         "entries": [
-          "(a) a wooden shield or (b) any simple weapon",
-          "(a) a scimitar or (b) any simple melee weapon",
-          "Leather armor, an explorer’s pack, and a druidic focus"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a wooden shield"
+              },
+              {
+                "label": "b",
+                "text": "any simple weapon"
+              }
+            ],
+            "sourceText": "(a) a wooden shield or (b) any simple weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a scimitar"
+              },
+              {
+                "label": "b",
+                "text": "any simple melee weapon"
+              }
+            ],
+            "sourceText": "(a) a scimitar or (b) any simple melee weapon"
+          },
+          {
+            "kind": "fixed",
+            "text": "Leather armor, an explorer’s pack, and a druidic focus",
+            "sourceText": "Leather armor, an explorer’s pack, and a druidic focus"
+          }
         ]
       },
       "proficiencyNotes": [
@@ -3501,7 +4004,12 @@
         "feature:druid:spellcasting",
         "feature:druid:timeless-body",
         "feature:druid:wild-shape"
-      ]
+      ],
+      "spellcastingAbility": "wisdom",
+      "spellPreparation": {
+        "kind": "prepared",
+        "sourceText": "You prepare the list of druid spells that are available for you to cast, choosing from the druid spell list. When you do so, choose a number of druid spells equal to your Wisdom modifier + your druid level (minimum of one spell). Wisdom is your spellcasting ability for your druid spells."
+      }
     },
     "source": "SRD 5.1 p. 19",
     "license": {
@@ -3568,10 +4076,62 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) chain mail or (b) leather armor, longbow, and 20 arrows • (a) a martial weapon and a shield or (b) two martial weapons • (a) a light crossbow and 20 bolts or (b) two handaxes • (a) a dungeoneer’s pack or (b) an explorer’s pack",
         "entries": [
-          "(a) chain mail or (b) leather armor, longbow, and 20 arrows",
-          "(a) a martial weapon and a shield or (b) two martial weapons",
-          "(a) a light crossbow and 20 bolts or (b) two handaxes",
-          "(a) a dungeoneer’s pack or (b) an explorer’s pack"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "chain mail"
+              },
+              {
+                "label": "b",
+                "text": "leather armor, longbow, and 20 arrows"
+              }
+            ],
+            "sourceText": "(a) chain mail or (b) leather armor, longbow, and 20 arrows"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a martial weapon and a shield"
+              },
+              {
+                "label": "b",
+                "text": "two martial weapons"
+              }
+            ],
+            "sourceText": "(a) a martial weapon and a shield or (b) two martial weapons"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a light crossbow and 20 bolts"
+              },
+              {
+                "label": "b",
+                "text": "two handaxes"
+              }
+            ],
+            "sourceText": "(a) a light crossbow and 20 bolts or (b) two handaxes"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a dungeoneer’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
+          }
         ]
       },
       "progressionTableRef": "table:the-fighter",
@@ -3889,9 +4449,39 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a shortsword or (b) any simple weapon • (a) a dungeoneer’s pack or (b) an explorer’s pack • 10 darts",
         "entries": [
-          "(a) a shortsword or (b) any simple weapon",
-          "(a) a dungeoneer’s pack or (b) an explorer’s pack",
-          "10 darts"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a shortsword"
+              },
+              {
+                "label": "b",
+                "text": "any simple weapon"
+              }
+            ],
+            "sourceText": "(a) a shortsword or (b) any simple weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a dungeoneer’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "10 darts",
+            "sourceText": "10 darts"
+          }
         ]
       },
       "progressionTableRef": "table:the-monk",
@@ -4539,10 +5129,53 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a martial weapon and a shield or (b) two martial weapons • (a) five javelins or (b) any simple melee weapon • (a) a priest’s pack or (b) an explorer’s pack • Chain mail and a holy symbol",
         "entries": [
-          "(a) a martial weapon and a shield or (b) two martial weapons",
-          "(a) five javelins or (b) any simple melee weapon",
-          "(a) a priest’s pack or (b) an explorer’s pack",
-          "Chain mail and a holy symbol"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a martial weapon and a shield"
+              },
+              {
+                "label": "b",
+                "text": "two martial weapons"
+              }
+            ],
+            "sourceText": "(a) a martial weapon and a shield or (b) two martial weapons"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "five javelins"
+              },
+              {
+                "label": "b",
+                "text": "any simple melee weapon"
+              }
+            ],
+            "sourceText": "(a) five javelins or (b) any simple melee weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a priest’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a priest’s pack or (b) an explorer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "Chain mail and a holy symbol",
+            "sourceText": "Chain mail and a holy symbol"
+          }
         ]
       },
       "progressionTableRef": "table:the-paladin",
@@ -4944,7 +5577,12 @@
         "feature:paladin:lay-on-hands",
         "feature:paladin:sacred-oath",
         "feature:paladin:spellcasting"
-      ]
+      ],
+      "spellcastingAbility": "charisma",
+      "spellPreparation": {
+        "kind": "prepared",
+        "sourceText": "By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does. Charisma is your spellcasting ability for your paladin spells."
+      }
     },
     "source": "SRD 5.1 p. 30",
     "license": {
@@ -5012,10 +5650,53 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) scale mail or (b) leather armor • (a) two shortswords or (b) two simple melee weapons • (a) a dungeoneer’s pack or (b) an explorer’s pack • A longbow and a quiver of 20 arrows",
         "entries": [
-          "(a) scale mail or (b) leather armor",
-          "(a) two shortswords or (b) two simple melee weapons",
-          "(a) a dungeoneer’s pack or (b) an explorer’s pack",
-          "A longbow and a quiver of 20 arrows"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "scale mail"
+              },
+              {
+                "label": "b",
+                "text": "leather armor"
+              }
+            ],
+            "sourceText": "(a) scale mail or (b) leather armor"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "two shortswords"
+              },
+              {
+                "label": "b",
+                "text": "two simple melee weapons"
+              }
+            ],
+            "sourceText": "(a) two shortswords or (b) two simple melee weapons"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a dungeoneer’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "A longbow and a quiver of 20 arrows",
+            "sourceText": "A longbow and a quiver of 20 arrows"
+          }
         ]
       },
       "progressionTableRef": "table:the-ranger",
@@ -5450,7 +6131,12 @@
         "feature:ranger:ranger-archetype",
         "feature:ranger:spellcasting",
         "feature:ranger:vanish"
-      ]
+      ],
+      "spellcastingAbility": "wisdom",
+      "spellPreparation": {
+        "kind": "known",
+        "sourceText": "By the time you reach 2nd level, you have learned to use the magical essence of nature to cast spells, much as a druid does. Wisdom is your spellcasting ability for your ranger spells."
+      }
     },
     "source": "SRD 5.1 p. 35",
     "license": {
@@ -5523,10 +6209,57 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a rapier or (b) a shortsword • (a) a shortbow and quiver of 20 arrows or (b) a shortsword • (a) a burglar’s pack, (b) a dungeoneer’s pack, or (c) an explorer’s pack • (a) Leather armor, two daggers, and thieves’ tools",
         "entries": [
-          "(a) a rapier or (b) a shortsword",
-          "(a) a shortbow and quiver of 20 arrows or (b) a shortsword",
-          "(a) a burglar’s pack, (b) a dungeoneer’s pack, or (c) an explorer’s pack",
-          "(a) Leather armor, two daggers, and thieves’ tools"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a rapier"
+              },
+              {
+                "label": "b",
+                "text": "a shortsword"
+              }
+            ],
+            "sourceText": "(a) a rapier or (b) a shortsword"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a shortbow and quiver of 20 arrows"
+              },
+              {
+                "label": "b",
+                "text": "a shortsword"
+              }
+            ],
+            "sourceText": "(a) a shortbow and quiver of 20 arrows or (b) a shortsword"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a burglar’s pack"
+              },
+              {
+                "label": "b",
+                "text": "a dungeoneer’s pack"
+              },
+              {
+                "label": "c",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a burglar’s pack, (b) a dungeoneer’s pack, or (c) an explorer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "Leather armor, two daggers, and thieves’ tools",
+            "sourceText": "(a) Leather armor, two daggers, and thieves’ tools"
+          }
         ]
       },
       "progressionTableRef": "table:the-rogue",
@@ -5940,10 +6673,53 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a light crossbow and 20 bolts or (b) any simple weapon • (a) a component pouch or (b) an arcane focus • (a) a dungeoneer’s pack or (b) an explorer’s pack • Two daggers",
         "entries": [
-          "(a) a light crossbow and 20 bolts or (b) any simple weapon",
-          "(a) a component pouch or (b) an arcane focus",
-          "(a) a dungeoneer’s pack or (b) an explorer’s pack",
-          "Two daggers"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a light crossbow and 20 bolts"
+              },
+              {
+                "label": "b",
+                "text": "any simple weapon"
+              }
+            ],
+            "sourceText": "(a) a light crossbow and 20 bolts or (b) any simple weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a component pouch"
+              },
+              {
+                "label": "b",
+                "text": "an arcane focus"
+              }
+            ],
+            "sourceText": "(a) a component pouch or (b) an arcane focus"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a dungeoneer’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "Two daggers",
+            "sourceText": "Two daggers"
+          }
         ]
       },
       "progressionTableRef": "table:the-sorcerer",
@@ -6495,7 +7271,12 @@
         "feature:sorcerer:sorcerous-origin",
         "feature:sorcerer:sorcerous-restoration",
         "feature:sorcerer:spellcasting"
-      ]
+      ],
+      "spellcastingAbility": "charisma",
+      "spellPreparation": {
+        "kind": "known",
+        "sourceText": "Charisma is your spellcasting ability for your sorcerer spells."
+      }
     },
     "source": "SRD 5.1 p. 42",
     "license": {
@@ -6558,10 +7339,53 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a light crossbow and 20 bolts or (b) any simple weapon • (a) a component pouch or (b) an arcane focus • (a) a scholar’s pack or (b) a dungeoneer’s pack • Leather armor, any simple weapon, and two daggers",
         "entries": [
-          "(a) a light crossbow and 20 bolts or (b) any simple weapon",
-          "(a) a component pouch or (b) an arcane focus",
-          "(a) a scholar’s pack or (b) a dungeoneer’s pack",
-          "Leather armor, any simple weapon, and two daggers"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a light crossbow and 20 bolts"
+              },
+              {
+                "label": "b",
+                "text": "any simple weapon"
+              }
+            ],
+            "sourceText": "(a) a light crossbow and 20 bolts or (b) any simple weapon"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a component pouch"
+              },
+              {
+                "label": "b",
+                "text": "an arcane focus"
+              }
+            ],
+            "sourceText": "(a) a component pouch or (b) an arcane focus"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a scholar’s pack"
+              },
+              {
+                "label": "b",
+                "text": "a dungeoneer’s pack"
+              }
+            ],
+            "sourceText": "(a) a scholar’s pack or (b) a dungeoneer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "Leather armor, any simple weapon, and two daggers",
+            "sourceText": "Leather armor, any simple weapon, and two daggers"
+          }
         ]
       },
       "progressionTableRef": "table:the-warlock",
@@ -6983,7 +7807,12 @@
         "feature:warlock:otherworldly-patron",
         "feature:warlock:pact-boon",
         "feature:warlock:pact-magic"
-      ]
+      ],
+      "spellcastingAbility": "charisma",
+      "spellPreparation": {
+        "kind": "known",
+        "sourceText": "Charisma is your spellcasting ability for your warlock spells."
+      }
     },
     "source": "SRD 5.1 p. 46",
     "license": {
@@ -7047,10 +7876,53 @@
       "startingEquipment": {
         "text": "You start with the following equipment, in addition to the equipment granted by your background: • (a) a quarterstaff or (b) a dagger • (a) a component pouch or (b) an arcane focus • (a) a scholar’s pack or (b) an explorer’s pack • A spellbook",
         "entries": [
-          "(a) a quarterstaff or (b) a dagger",
-          "(a) a component pouch or (b) an arcane focus",
-          "(a) a scholar’s pack or (b) an explorer’s pack",
-          "A spellbook"
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a quarterstaff"
+              },
+              {
+                "label": "b",
+                "text": "a dagger"
+              }
+            ],
+            "sourceText": "(a) a quarterstaff or (b) a dagger"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a component pouch"
+              },
+              {
+                "label": "b",
+                "text": "an arcane focus"
+              }
+            ],
+            "sourceText": "(a) a component pouch or (b) an arcane focus"
+          },
+          {
+            "kind": "choice",
+            "options": [
+              {
+                "label": "a",
+                "text": "a scholar’s pack"
+              },
+              {
+                "label": "b",
+                "text": "an explorer’s pack"
+              }
+            ],
+            "sourceText": "(a) a scholar’s pack or (b) an explorer’s pack"
+          },
+          {
+            "kind": "fixed",
+            "text": "A spellbook",
+            "sourceText": "A spellbook"
+          }
         ]
       },
       "progressionTableRef": "table:the-wizard",
@@ -7478,7 +8350,13 @@
         "feature:wizard:spell-mastery",
         "feature:wizard:spellbook",
         "feature:wizard:spellcasting"
-      ]
+      ],
+      "spellcastingAbility": "intelligence",
+      "spellPreparation": {
+        "kind": "prepared",
+        "spellbookStartingSpells": 6,
+        "sourceText": "At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell). Intelligence is your spellcasting ability for your wizard spells."
+      }
     },
     "source": "SRD 5.1 p. 52",
     "license": {

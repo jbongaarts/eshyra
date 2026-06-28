@@ -25,6 +25,10 @@
  */
 
 import type { RulesRecord } from '../../../src/rules/types.js';
+import {
+  classSpellcastingCreationFact,
+  classStartingEquipmentCreationFact,
+} from './creationFacts.js';
 import type { TableExtraction } from './types.js';
 
 /** Class-resource columns surfaced under `progression[].resources`. */
@@ -614,6 +618,8 @@ export function enrichClassChapterRecords(input: {
     const tableKey = progressionTableKeyForClass(cls.key);
     const tableName = `The ${cls.name}`;
     const table = tableByName.get(tableName);
+    const spellcasting = classSpellcastingCreationFact(cls.key);
+    const startingEquipment = classStartingEquipmentCreationFact(cls.key);
     const features = (classFeatureKeys.get(cls.key) ?? [])
       .slice()
       .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
@@ -624,6 +630,26 @@ export function enrichClassChapterRecords(input: {
       extra.progression = deriveClassProgression(table, cls.key, byName);
     }
     if (features.length > 0) extra.features = features;
+    if (spellcasting !== undefined) {
+      extra.spellcastingAbility = spellcasting.ability;
+      extra.spellPreparation = {
+        kind: spellcasting.preparation,
+        ...(spellcasting.spellbookStartingSpells !== undefined
+          ? { spellbookStartingSpells: spellcasting.spellbookStartingSpells }
+          : {}),
+        sourceText: spellcasting.sourceText,
+      };
+    }
+    const existingStartingEquipment = asObj(cls.data).startingEquipment;
+    if (
+      startingEquipment !== undefined &&
+      typeof asObj(existingStartingEquipment).text === 'string'
+    ) {
+      extra.startingEquipment = {
+        ...asObj(existingStartingEquipment),
+        entries: startingEquipment.entries,
+      };
+    }
     return Object.keys(extra).length > 0 ? withData(cls, extra) : cls;
   });
 

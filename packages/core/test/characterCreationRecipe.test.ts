@@ -116,9 +116,12 @@ describe('D&D 5e character creation recipe boundary', () => {
       proficiencyBonus: 2,
       maxHitPoints: 12,
       abilityModifiers: {
-        strength: 2,
+        strength: 3,
         constitution: 2,
         charisma: -1,
+      },
+      finalAbilityScores: {
+        strength: 16,
       },
     });
   });
