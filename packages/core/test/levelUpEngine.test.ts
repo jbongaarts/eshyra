@@ -45,6 +45,7 @@ interface SheetOverrides {
   modifiers?: Partial<Record<(typeof ABILITIES)[number], number>>;
   spellSaveDc?: number;
   spellAttackModifier?: number;
+  subclass?: { readonly key: string; readonly name: string };
   system?: string;
   rulesPackId?: string;
 }
@@ -71,6 +72,9 @@ function buildSheet(overrides: SheetOverrides = {}): CharacterSheet {
       key: overrides.classKey ?? 'class:fighter',
       name: overrides.className ?? 'Fighter',
     },
+    ...(overrides.subclass !== undefined
+      ? { subclass: overrides.subclass }
+      : {}),
     ancestry: { key: 'ancestry:human', name: 'Human' },
     abilityScores,
     proficiencyBonus: overrides.proficiencyBonus ?? 2,
@@ -375,6 +379,44 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
       LevelUpRequiredChoicesError,
     );
+    expect(listProgressionEvents(db)).toHaveLength(0);
+    db.close();
+  });
+
+  it('blocks prose-only improvement markers instead of dropping them (Cleric 19→20)', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    const sheet = buildSheet({
+      classKey: 'class:cleric',
+      className: 'Cleric',
+      level: 19,
+      proficiencyBonus: 6,
+      maxHitPoints: 136,
+      subclass: { key: 'subclass:life-domain', name: 'Life Domain' },
+      modifiers: { wisdom: 3 },
+      spellSaveDc: 17,
+      spellAttackModifier: 9,
+    });
+    store.save('pc-1', sheet);
+
+    const choices = detectLevelUpRequiredChoices(sheet);
+    expect(choices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'level.20.unresolved-feature.divine-intervention-improvement',
+          kind: 'class-feature-choice',
+          status: 'unsupported',
+          label: 'Divine Intervention improvement',
+          unsupportedReason: expect.stringContaining(
+            'improvement, alias, or missing frozen feature record',
+          ),
+        }),
+      ]),
+    );
+    expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
+      LevelUpRequiredChoicesError,
+    );
+    expect(store.load('pc-1')?.level).toBe(19);
     expect(listProgressionEvents(db)).toHaveLength(0);
     db.close();
   });

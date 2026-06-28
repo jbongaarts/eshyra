@@ -46,6 +46,7 @@ import {
 import type { CharacterSheet } from './finalizeCharacter.js';
 import {
   getBundledDnd5eCharacterResolver,
+  type ResolvedFeatureMarker,
   type ResolvedLevelSpellcasting,
   type ResolvedSubclassData,
   type RulesPackCharacterResolver,
@@ -241,6 +242,21 @@ const SUBCLASS_FEATURE_SUFFIXES: ReadonlySet<string> = new Set([
   'arcane-tradition',
 ]);
 
+const SUBCLASS_FEATURE_MARKER_NAMES: ReadonlySet<string> = new Set([
+  'Path feature',
+  'Bard College feature',
+  'Divine Domain feature',
+  'Druid Circle feature',
+  'Martial Archetype feature',
+  'Monastic Tradition feature',
+  'Sacred Oath feature',
+  'Ranger Archetype feature',
+  'Roguish Archetype feature',
+  'Sorcerous Origin feature',
+  'Otherworldly Patron feature',
+  'Arcane Tradition feature',
+]);
+
 /** Other choice-bearing class features that require a player pick. */
 const CLASS_FEATURE_CHOICE_SUFFIXES: ReadonlySet<string> = new Set([
   'eldritch-invocations',
@@ -414,11 +430,11 @@ export function computeLevelUpChangeSet(
   const constitutionModifier = sheet.abilityScores.constitution.modifier;
   const increment = hitPointIncrement(hitDie, constitutionModifier);
 
-  const existingSubclassFeatureRefs = existingSubclassFeatureRefsForLevel(
-    sheet,
-    toLevel,
-    resolver,
-  );
+  const existingSubclassFeatureRefs = hasSubclassContextMarker(
+    row.unresolvedFeatureMarkers,
+  )
+    ? existingSubclassFeatureRefsForLevel(sheet, toLevel, resolver)
+    : [];
   const changeSet: LevelUpChangeSet = {
     classKey,
     level: { from: fromLevel, to: toLevel },
@@ -492,6 +508,15 @@ export function detectLevelUpRequiredChoices(
   }
 
   choices.push(
+    ...unresolvedFeatureMarkerChoices(
+      toRow.unresolvedFeatureMarkers,
+      sheet,
+      toLevel,
+      resolver,
+    ),
+  );
+
+  choices.push(
     ...spellSelectionChoices(
       classKey,
       fromRow?.spellcasting,
@@ -501,6 +526,66 @@ export function detectLevelUpRequiredChoices(
   );
 
   return choices;
+}
+
+function unresolvedFeatureMarkerChoices(
+  markers: readonly ResolvedFeatureMarker[],
+  sheet: CharacterSheet,
+  toLevel: number,
+  resolver: RulesPackCharacterResolver,
+): readonly LevelUpRequiredChoice[] {
+  const choices: LevelUpRequiredChoice[] = [];
+  for (const marker of markers) {
+    if (isSubclassContextMarker(marker)) {
+      const featureRefs =
+        sheet.subclass === undefined
+          ? []
+          : existingSubclassFeatureRefsForLevel(sheet, toLevel, resolver);
+      if (featureRefs.length > 0) {
+        continue;
+      }
+      choices.push({
+        id: `level.${toLevel}.subclass-feature.${slug(marker.name)}`,
+        kind: 'subclass',
+        status: 'unsupported',
+        label: marker.name,
+        reason:
+          `level ${toLevel} includes subclass marker '${marker.name}', ` +
+          'but no selected subclass feature can be mapped',
+        unsupportedReason:
+          'Subclass-context progression markers require an existing subclass with structured feature records at the target level.',
+      });
+      continue;
+    }
+    choices.push({
+      id: `level.${toLevel}.unresolved-feature.${slug(marker.name)}`,
+      kind: 'class-feature-choice',
+      status: 'unsupported',
+      label: marker.name,
+      reason: `level ${toLevel} includes '${marker.name}' without a structured feature ref`,
+      unsupportedReason:
+        'This progression marker may represent an improvement, alias, or missing frozen feature record; deterministic application is not implemented yet.',
+    });
+  }
+  return choices;
+}
+
+function hasSubclassContextMarker(
+  markers: readonly ResolvedFeatureMarker[],
+): boolean {
+  return markers.some((marker) => isSubclassContextMarker(marker));
+}
+
+function isSubclassContextMarker(marker: ResolvedFeatureMarker): boolean {
+  return SUBCLASS_FEATURE_MARKER_NAMES.has(marker.name);
+}
+
+function slug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 function featureRequiredChoice(
