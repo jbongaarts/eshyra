@@ -43,7 +43,7 @@ import {
   runNewCommand,
 } from './campaigns.js';
 import { createFileCharacterDraftStore } from './characterDraftStore.js';
-import { openCharacterRegistry } from './characterRegistry.js';
+import { openCharacterRegistryStores } from './characterRegistry.js';
 import { runCheckpointCommand } from './checkpoints.js';
 import {
   type CliConfigFile,
@@ -200,6 +200,7 @@ function buildDebug(
   if (resolved.notice !== undefined) {
     io.write(resolved.notice);
   }
+
   return {
     sink: resolved.sink,
     modelDebug: {
@@ -326,6 +327,7 @@ function buildPlayDeps(
     adapterFamily,
     sink: usageStore,
   });
+  const characterStores = openCharacterRegistryStores(dataRoot);
 
   return {
     io,
@@ -349,7 +351,8 @@ function buildPlayDeps(
     characterDraftStore: createFileCharacterDraftStore(
       characterDraftsDir(dataRoot),
     ),
-    characterRegistry: openCharacterRegistry(dataRoot),
+    characterRegistry: characterStores.registry,
+    characterChronicle: characterStores.chronicle,
     characterEngine: getDnd5eCharacterCreationEngine(),
     characterResolver: getBundledDnd5eCharacterResolver(),
     characterRng: createSeededRng((Math.random() * 0x7fffffff) | 0),

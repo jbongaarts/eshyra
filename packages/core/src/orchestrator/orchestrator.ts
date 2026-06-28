@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { CharacterChronicleStore } from '../character/characterChronicle.js';
 import type {
   CandidateDisposition,
   ModelCallTrace,
@@ -116,6 +117,12 @@ export interface RunTurnDeps {
    * the module pack from disk) is the caller's concern.
    */
   resolveAdventureModule?: AdventureModuleResolver;
+  /**
+   * Optional registry-backed chronicle store. When supplied, the context
+   * assembler renders portable records for the acting registry-linked character
+   * as character memory, separate from campaign canon.
+   */
+  characterChronicle?: CharacterChronicleStore;
 }
 
 export interface RunTurnInput {
@@ -555,6 +562,7 @@ export async function runTurn(
       recentSessionLimit: input.recentSessionLimit,
       actingCharacterId,
       resolveAdventureModule: deps.resolveAdventureModule,
+      characterChronicle: deps.characterChronicle,
     });
 
     phase = 'model_loop';

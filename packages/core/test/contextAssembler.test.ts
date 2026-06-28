@@ -1,13 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import type { Db } from '../src/internal.js';
+import type {
+  AbilityScoreName,
+  CharacterSheet,
+  Db,
+  FinalizedAbilityScore,
+} from '../src/internal.js';
 import {
   appendSceneLog,
   assembleContext,
   closeOpenArcAndOpenNext,
   closeScene,
+  createCharacterChronicleStore,
+  createSqliteCharacterSheetStore,
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
+  ensureCharacterRegistrySchema,
   memoryDrilldown,
   mutateState,
   openArcIfMissing,
+  openDatabase,
   openScene,
   recordSceneSummary,
   renderContextMessage,
@@ -20,6 +31,14 @@ import { freshDbWithSession } from './support/db.js';
 
 const CAMPAIGN = 'campaign-1';
 const SESSION = 'session-2';
+const ABILITIES: AbilityScoreName[] = [
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+];
 
 function logTurn(
   db: Db,
@@ -46,6 +65,39 @@ function logTurn(
     content: dm,
     at: '2026-05-20T10:00:01.000Z',
   });
+}
+
+function testSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
+  const abilityScores = {} as Record<AbilityScoreName, FinalizedAbilityScore>;
+  const savingThrows = {} as CharacterSheet['savingThrows'];
+  for (const ability of ABILITIES) {
+    abilityScores[ability] = { base: 10, final: 10, modifier: 0 };
+    savingThrows[ability] = { modifier: 0, proficient: false };
+  }
+  return {
+    schemaVersion: 1,
+    system: DND5E_SRD_SYSTEM_ID,
+    rulesPackId: DND5E_SRD_PACK_ID,
+    recipeId: 'dnd5e-srd-character',
+    creationMode: 'test',
+    level: 1,
+    identity: { name: 'Mira' },
+    class: { key: 'class:fighter', name: 'Fighter' },
+    ancestry: { key: 'ancestry:human', name: 'Human' },
+    abilityScores,
+    proficiencyBonus: 2,
+    maxHitPoints: 12,
+    savingThrows,
+    skillProficiencies: [],
+    toolProficiencies: [],
+    armorProficiencies: [],
+    weaponProficiencies: [],
+    equipment: [],
+    languages: ['Common'],
+    spells: [],
+    metadata: { createdAt: '2026-05-20T09:00:00.000Z' },
+    ...overrides,
+  };
 }
 
 describe('Context Assembler', () => {
@@ -350,6 +402,81 @@ describe('Context Assembler', () => {
       'The party left the city gates.',
     );
     db.close();
+  });
+
+  it('renders portable character chronicle separately from campaign canon', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      testSheet({
+        metadata: {
+          createdAt: '2026-05-20T09:00:00.000Z',
+          globalCharacterId: 'mira-global',
+        },
+      }),
+    );
+    const registryDb = openDatabase(':memory:');
+    ensureCharacterRegistrySchema(registryDb);
+    const chronicle = createCharacterChronicleStore(registryDb);
+    chronicle.appendRecord({
+      globalCharacterId: 'mira-global',
+      category: 'relationship',
+      text: 'Mira remembers owing Tamsin a life debt in Emberfall.',
+      source: {
+        campaignId: 'old-campaign',
+        sessionId: 'old-session',
+        at: '2026-05-19T20:00:00.000Z',
+      },
+      portability: 'portable',
+      visibility: 'player-visible',
+      truthStatus: 'remembered',
+      relatedRefs: [
+        {
+          ref: 'npc:tamsin',
+          scope: 'campaign',
+          campaignId: 'old-campaign',
+        },
+      ],
+    });
+    chronicle.appendRecord({
+      globalCharacterId: 'mira-global',
+      category: 'subjective-knowledge',
+      text: 'Mira privately suspects the old king betrayed her.',
+      source: {
+        campaignId: 'old-campaign',
+        sessionId: 'old-session',
+        at: '2026-05-19T20:00:00.000Z',
+      },
+      portability: 'portable',
+      visibility: 'private',
+      truthStatus: 'believed',
+      relatedRefs: [],
+    });
+
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'continue',
+      characterChronicle: chronicle,
+    });
+    const message = renderContextMessage(ctx);
+
+    expect(ctx.campaignBible).toBeUndefined();
+    expect(ctx.characterChronicle.map((record) => record.text)).toEqual([
+      'Mira remembers owing Tamsin a life debt in Emberfall.',
+    ]);
+    expect(message).toContain('## Character Chronicle');
+    expect(message).toContain(
+      "acting character's memories or attachments from prior play, not objective campaign canon",
+    );
+    expect(message).toContain(
+      'remembered: Mira remembers owing Tamsin a life debt in Emberfall.',
+    );
+    expect(message).not.toContain('Campaign Bible\n- npc: Tamsin');
+    expect(message).not.toContain('privately suspects');
+    db.close();
+    registryDb.close();
   });
 
   it('returns arcSummaries[] in sequence_no order for closed arcs', () => {

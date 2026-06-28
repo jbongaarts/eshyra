@@ -101,6 +101,9 @@ export async function turnLoop(
         ...(deps.auditor ? { auditor: deps.auditor } : {}),
         ...(deps.debug ? { debug: deps.debug } : {}),
         ...(deps.diagnostics ? { diagnostics: deps.diagnostics } : {}),
+        ...(deps.characterChronicle
+          ? { characterChronicle: deps.characterChronicle }
+          : {}),
       },
       {
         campaignId,
