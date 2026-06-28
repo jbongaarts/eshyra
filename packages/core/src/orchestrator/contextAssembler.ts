@@ -58,6 +58,7 @@ import { countSceneLog, getOpenScene, listSceneLogWindow } from './scene.js';
 
 const DEFAULT_RECENT_SESSION_LIMIT = 5;
 const DEFAULT_SCENE_TRANSCRIPT_LIMIT = 12;
+const DEFAULT_CHARACTER_CHRONICLE_LIMIT = 8;
 
 /** JSON codecs for the JSON-backed state columns the assembler reads. */
 const plotFlagValueColumn = jsonColumn<unknown>('plot_flags.value_json');
@@ -90,6 +91,8 @@ export interface ContextAssemblyInput {
   recentSessionLimit?: number;
   /** How many current-scene transcript entries to inline. Default 12. */
   sceneTranscriptLimit?: number;
+  /** How many portable chronicle records to inline. Default 8. */
+  characterChronicleLimit?: number;
   /**
    * PC whose sheet is rendered as the turn subject. Defaults to the active
    * character (`meta.active_character_id`) when omitted.
@@ -313,8 +316,13 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     input.recentSessionLimit ?? DEFAULT_RECENT_SESSION_LIMIT;
   const sceneTranscriptLimit =
     input.sceneTranscriptLimit ?? DEFAULT_SCENE_TRANSCRIPT_LIMIT;
+  const characterChronicleLimit =
+    input.characterChronicleLimit ?? DEFAULT_CHARACTER_CHRONICLE_LIMIT;
   if (sceneTranscriptLimit < 0) {
     throw new Error('sceneTranscriptLimit must be non-negative');
+  }
+  if (characterChronicleLimit < 0) {
+    throw new Error('characterChronicleLimit must be non-negative');
   }
 
   const alwaysOn = selectAlwaysOnMemory(input.db, {
@@ -368,6 +376,7 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     input.db,
     state.character.id,
     input.characterChronicle,
+    characterChronicleLimit,
   );
 
   return {
@@ -400,6 +409,7 @@ function assembleCharacterChronicle(
   db: Db,
   characterId: string,
   chronicle: CharacterChronicleStore | undefined,
+  limit: number,
 ): CharacterChronicleRecord[] {
   if (chronicle === undefined) {
     return [];
@@ -415,7 +425,8 @@ function assembleCharacterChronicle(
     .filter(
       (record) =>
         record.portability === 'portable' && record.visibility !== 'private',
-    );
+    )
+    .slice(0, limit);
 }
 
 function buildRecentSceneEvidence(
@@ -614,7 +625,7 @@ export function renderContextMessage(ctx: AssembledContext): string {
 
   if (ctx.characterChronicle.length > 0) {
     sections.push(
-      `## Character Chronicle\nThese are the acting character's memories or attachments from prior play, not objective campaign canon.\n${ctx.characterChronicle
+      `## Character Chronicle\nThese are the acting character's memories or attachments from prior play, not objective campaign canon. Player-visible entries may be surfaced naturally. DM-only entries are for DM continuity only; do not reveal them verbatim unless play makes them discoverable.\n${ctx.characterChronicle
         .map(renderChronicleRecord)
         .join('\n')}`,
     );
@@ -663,5 +674,5 @@ function renderChronicleRecord(record: CharacterChronicleRecord): string {
   const source = `source campaign ${record.source.campaignId}${
     record.source.sessionId ? `, session ${record.source.sessionId}` : ''
   }`;
-  return `- ${record.truthStatus}: ${record.text} (${source})`;
+  return `- [${record.visibility}] ${record.truthStatus}: ${record.text} (${source})`;
 }

@@ -440,6 +440,21 @@ describe('Context Assembler', () => {
     });
     chronicle.appendRecord({
       globalCharacterId: 'mira-global',
+      id: 'chronicle-2',
+      category: 'subjective-knowledge',
+      text: 'Mira believes Tamsin serves a hidden patron.',
+      source: {
+        campaignId: 'old-campaign',
+        sessionId: 'old-session',
+        at: '2026-05-19T20:01:00.000Z',
+      },
+      portability: 'portable',
+      visibility: 'dm-only',
+      truthStatus: 'believed',
+      relatedRefs: [],
+    });
+    chronicle.appendRecord({
+      globalCharacterId: 'mira-global',
       category: 'subjective-knowledge',
       text: 'Mira privately suspects the old king betrayed her.',
       source: {
@@ -465,16 +480,75 @@ describe('Context Assembler', () => {
     expect(ctx.campaignBible).toBeUndefined();
     expect(ctx.characterChronicle.map((record) => record.text)).toEqual([
       'Mira remembers owing Tamsin a life debt in Emberfall.',
+      'Mira believes Tamsin serves a hidden patron.',
     ]);
     expect(message).toContain('## Character Chronicle');
     expect(message).toContain(
-      "acting character's memories or attachments from prior play, not objective campaign canon",
+      'DM-only entries are for DM continuity only; do not reveal them verbatim',
     );
     expect(message).toContain(
-      'remembered: Mira remembers owing Tamsin a life debt in Emberfall.',
+      '[player-visible] remembered: Mira remembers owing Tamsin a life debt in Emberfall.',
+    );
+    expect(message).toContain(
+      '[dm-only] believed: Mira believes Tamsin serves a hidden patron.',
     );
     expect(message).not.toContain('Campaign Bible\n- npc: Tamsin');
     expect(message).not.toContain('privately suspects');
+    db.close();
+    registryDb.close();
+  });
+
+  it('bounds character chronicle records in assembled context', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      testSheet({
+        metadata: {
+          createdAt: '2026-05-20T09:00:00.000Z',
+          globalCharacterId: 'mira-global',
+        },
+      }),
+    );
+    const registryDb = openDatabase(':memory:');
+    ensureCharacterRegistrySchema(registryDb);
+    const chronicle = createCharacterChronicleStore(registryDb);
+    for (let n = 1; n <= 10; n++) {
+      chronicle.appendRecord({
+        globalCharacterId: 'mira-global',
+        category: 'campaign-participation',
+        text: `Portable memory ${n}.`,
+        source: {
+          campaignId: 'old-campaign',
+          sessionId: `old-session-${n}`,
+          at: `2026-05-19T20:${String(n).padStart(2, '0')}:00.000Z`,
+        },
+        portability: 'portable',
+        visibility: 'player-visible',
+        truthStatus: 'remembered',
+        relatedRefs: [],
+      });
+    }
+
+    const defaultCtx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'continue',
+      characterChronicle: chronicle,
+    });
+    const explicitCtx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'continue',
+      characterChronicle: chronicle,
+      characterChronicleLimit: 3,
+    });
+
+    expect(defaultCtx.characterChronicle).toHaveLength(8);
+    expect(explicitCtx.characterChronicle.map((record) => record.text)).toEqual(
+      ['Portable memory 1.', 'Portable memory 2.', 'Portable memory 3.'],
+    );
     db.close();
     registryDb.close();
   });
