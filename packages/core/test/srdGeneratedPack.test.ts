@@ -750,14 +750,16 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 8,
     totalInKind: 12,
   },
-  // First semantic table projection slice (eshyra-o9bd.7): the feature-owned
-  // Destroy Undead / Beast Shapes tables and the Races Draconic Ancestry table
-  // carry typed projections. The remaining table categories stay generic until
-  // their child beads land.
+  // Semantic table projections. The first slice (eshyra-o9bd.7) projected the
+  // feature-owned Destroy Undead / Beast Shapes tables and the Races Draconic
+  // Ancestry table; the eshyra-o9bd.7.1–.7.4 children add price/service,
+  // language, subclass-spell, and object AC/HP projections — 22 of 108 tables
+  // now carry typed projections. The remaining generic tables (magic-item
+  // sub-tables, deity tables, weather, etc.) are out of scope for these beads.
   {
     kind: 'table',
     field: 'projection',
-    missingCount: 105,
+    missingCount: 86,
     totalInKind: 108,
   },
 ];
@@ -3491,6 +3493,22 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(armorClass?.data).toMatchObject({
         columns: ['Substance', 'AC'],
         rows: expect.arrayContaining([['Adamantine', 23]]),
+        // eshyra-o9bd.7.4: typed object AC with split materials.
+        projection: {
+          kind: 'objectArmorClass',
+          rows: expect.arrayContaining([
+            {
+              substance: 'Cloth, paper, rope',
+              materials: ['Cloth', 'paper', 'rope'],
+              armorClass: 11,
+            },
+            {
+              substance: 'Adamantine',
+              materials: ['Adamantine'],
+              armorClass: 23,
+            },
+          ]),
+        },
       });
       expect((armorClass?.data as { rows: unknown[] }).rows).toHaveLength(7);
       expect(armorClass?.provenance.locator).toBe('p. 203');
@@ -3501,6 +3519,18 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         rows: expect.arrayContaining([
           ['Large (cart, 10-ft.-by-10-ft. window)', '5 (1d10)', '27 (5d10)'],
         ]),
+        // eshyra-o9bd.7.4: fragile/resilient average + dice per size.
+        projection: {
+          kind: 'objectHitPoints',
+          rows: expect.arrayContaining([
+            {
+              size: 'Large (cart, 10-ft.-by-10-ft. window)',
+              sizeCategory: 'Large',
+              fragile: { average: 5, dice: '1d10' },
+              resilient: { average: 27, dice: '5d10' },
+            },
+          ]),
+        },
       });
       expect((hitPoints?.data as { rows: unknown[] }).rows).toHaveLength(4);
       expect(hitPoints?.provenance.locator).toBe('p. 203');
@@ -3554,6 +3584,18 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(standard?.data).toMatchObject({
         columns: ['Language', 'Typical Speakers', 'Script'],
         rows: expect.arrayContaining([['Giant', 'Ogres, giants', 'Dwarvish']]),
+        // eshyra-o9bd.7.2: selectable language pool, tagged by category.
+        projection: {
+          kind: 'languageOptions',
+          rows: expect.arrayContaining([
+            {
+              language: 'Giant',
+              typicalSpeakers: 'Ogres, giants',
+              script: 'Dwarvish',
+              category: 'standard',
+            },
+          ]),
+        },
       });
       expect((standard?.data as { rows: unknown[] }).rows).toHaveLength(8);
       expect(standard?.provenance.locator).toBe('p. 59');
@@ -3565,6 +3607,18 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         rows: expect.arrayContaining([
           ['Deep Speech', 'Aboleths, cloakers', '—'],
         ]),
+        // eshyra-o9bd.7.2: the "—" script cell becomes a null script.
+        projection: {
+          kind: 'languageOptions',
+          rows: expect.arrayContaining([
+            {
+              language: 'Deep Speech',
+              typicalSpeakers: 'Aboleths, cloakers',
+              script: null,
+              category: 'exotic',
+            },
+          ]),
+        },
       });
       expect((exotic?.data as { rows: unknown[] }).rows).toHaveLength(8);
       expect(exotic?.provenance.locator).toBe('p. 59');
@@ -4122,6 +4176,121 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         },
       });
       expect(destroy?.provenance.locator).toBe('p. 17');
+    });
+
+    it('projects price and service tables to copper-normalized rows (eshyra-o9bd.7.1)', () => {
+      const exchange = table('table:standard-exchange-rates');
+      expect((exchange?.data as { projection?: unknown }).projection).toEqual({
+        kind: 'coinExchangeRates',
+        rows: [
+          { coin: 'cp', valueInCopper: 1 },
+          { coin: 'sp', valueInCopper: 10 },
+          { coin: 'ep', valueInCopper: 50 },
+          { coin: 'gp', valueInCopper: 100 },
+          { coin: 'pp', valueInCopper: 1000 },
+        ],
+      });
+
+      const trade = table('table:trade-goods');
+      expect(
+        (trade?.data as { projection: { rows: unknown[] } }).projection.rows,
+      ).toEqual(
+        expect.arrayContaining([
+          {
+            cost: '5 gp',
+            costCopper: 500,
+            goods: '1 lb. of silver or 1 sq. yd. of linen',
+          },
+          { cost: '500 gp', costCopper: 50000, goods: '1 lb. of platinum' },
+        ]),
+      );
+
+      const food = table('table:food-drink-and-lodging');
+      expect(
+        (food?.data as { projection: { rows: unknown[] } }).projection.rows,
+      ).toEqual(
+        expect.arrayContaining([
+          { item: 'Ale, mug', cost: '4 cp', costCopper: 4 },
+          { item: 'Banquet (per person)', cost: '10 gp', costCopper: 1000 },
+        ]),
+      );
+
+      // Services carry a parsed pay unit (flat / per mile / per day).
+      const services = table('table:services');
+      expect(
+        (services?.data as { projection: { rows: unknown[] } }).projection.rows,
+      ).toEqual(
+        expect.arrayContaining([
+          {
+            service: 'Coach cab, between towns',
+            pay: '3 cp per mile',
+            payCopper: 3,
+            payUnit: 'per mile',
+          },
+          {
+            service: 'Road or gate toll',
+            pay: '1 cp',
+            payCopper: 1,
+            payUnit: 'flat',
+          },
+        ]),
+      );
+
+      // Lifestyle Wretched is free ("—"); Aristocratic is a minimum.
+      const lifestyle = table('table:lifestyle-expenses');
+      expect(
+        (lifestyle?.data as { projection: { rows: unknown[] } }).projection
+          .rows,
+      ).toEqual(
+        expect.arrayContaining([
+          {
+            lifestyle: 'Wretched',
+            pricePerDay: '—',
+            pricePerDayCopper: null,
+            isMinimum: false,
+          },
+          {
+            lifestyle: 'Aristocratic',
+            pricePerDay: '10 gp minimum',
+            pricePerDayCopper: 1000,
+            isMinimum: true,
+          },
+        ]),
+      );
+    });
+
+    it('projects subclass spell tables to level/spell-list rows (eshyra-o9bd.7.3)', () => {
+      const fiend = table('table:fiend-expanded-spells');
+      expect((fiend?.data as { projection?: unknown }).projection).toEqual({
+        kind: 'subclassSpellGrants',
+        rows: [
+          { level: 1, spells: ['burning hands', 'command'] },
+          { level: 2, spells: ['blindness/deafness', 'scorching ray'] },
+          { level: 3, spells: ['fireball', 'stinking cloud'] },
+          { level: 4, spells: ['fire shield', 'wall of fire'] },
+          { level: 5, spells: ['flame strike', 'hallow'] },
+        ],
+      });
+
+      // All seven Circle of the Land terrains and the three class spell tables
+      // share the same projection kind.
+      const swamp = table('table:circle-of-the-land-swamp');
+      expect(
+        (swamp?.data as { projection: { kind: string; rows: unknown[] } })
+          .projection,
+      ).toMatchObject({
+        kind: 'subclassSpellGrants',
+        rows: expect.arrayContaining([
+          { level: 3, spells: ['acid arrow', 'darkness'] },
+          { level: 9, spells: ['insect plague', 'scrying'] },
+        ]),
+      });
+
+      const lifeDomain = table('table:life-domain-spells');
+      expect(
+        (lifeDomain?.data as { projection: { rows: { level: number }[] } })
+          .projection.rows[0],
+      ).toEqual({ level: 1, spells: ['bless', 'cure wounds'] });
     });
 
     it('distinguishes source-blank cells from genuine em-dash cells (eshyra-4a7.6)', () => {
