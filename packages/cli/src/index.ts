@@ -45,6 +45,7 @@ import {
 import { createFileCharacterDraftStore } from './characterDraftStore.js';
 import { openCharacterRegistryStores } from './characterRegistry.js';
 import { runCheckpointCommand } from './checkpoints.js';
+import { runChronicleSubcommand } from './chronicle.js';
 import {
   type CliConfigFile,
   ConfigFileError,
@@ -682,6 +683,11 @@ export function main(argv: string[] = process.argv): void {
     void runForkCharacterSubcommand().then((code) => {
       process.exitCode = code;
     });
+    return;
+  }
+
+  if (argv[2] === 'chronicle') {
+    process.exitCode = runChronicleSubcommand(argv.slice(3));
     return;
   }
 
