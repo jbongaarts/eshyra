@@ -180,6 +180,7 @@ export interface LevelUpAppliedChoice {
   readonly kind: Extract<LevelUpRequiredChoiceKind, 'subclass'>;
   readonly value: string;
   readonly label: string;
+  readonly featureRefs: readonly string[];
 }
 
 /**
@@ -296,6 +297,7 @@ export function applyLevelUp(
       choices,
       input.choices ?? {},
       sheet,
+      sheet.level + 1,
       resolver,
     );
     if (resolvedChoices.blockers.length > 0) {
@@ -574,6 +576,7 @@ function resolveLevelUpChoices(
   requiredChoices: readonly LevelUpRequiredChoice[],
   selections: LevelUpChoiceSelections,
   sheet: CharacterSheet,
+  targetLevel: number,
   resolver: RulesPackCharacterResolver,
 ): ResolvedLevelUpChoices {
   const blockers: LevelUpRequiredChoice[] = [];
@@ -601,11 +604,25 @@ function resolveLevelUpChoices(
         });
         continue;
       }
+      const featureRefs = subclassFeatureRefsForLevel(
+        subclass,
+        targetLevel,
+        resolver,
+      );
+      if (featureRefs.length === 0) {
+        blockers.push({
+          ...choice,
+          status: 'unsupported',
+          unsupportedReason: `Selected subclass '${subclass.name}' has no structured feature records for level ${targetLevel}; deterministic subclass application is incomplete.`,
+        });
+        continue;
+      }
       applied.push({
         id: choice.id,
         kind: 'subclass',
         value: subclass.key,
         label: subclass.name,
+        featureRefs,
       });
       continue;
     }
@@ -630,13 +647,36 @@ function resolveSubclassSelection(
     );
 }
 
+function subclassFeatureRefsForLevel(
+  subclass: ResolvedSubclassData,
+  targetLevel: number,
+  resolver: RulesPackCharacterResolver,
+): readonly string[] {
+  const subclassFeatureSet = new Set(subclass.features);
+  return resolver
+    .listFeatures()
+    .filter(
+      (feature) =>
+        feature.source === subclass.key &&
+        feature.level === targetLevel &&
+        subclassFeatureSet.has(feature.key),
+    )
+    .map((feature) => feature.key);
+}
+
 function applyResolvedChoicesToChangeSet(
   changeSet: LevelUpChangeSet,
   applied: readonly LevelUpAppliedChoice[],
 ): LevelUpChangeSet {
-  return applied.length === 0
-    ? changeSet
-    : { ...changeSet, choicesApplied: applied };
+  if (applied.length === 0) {
+    return changeSet;
+  }
+  const selectedFeatureRefs = applied.flatMap((choice) => choice.featureRefs);
+  return {
+    ...changeSet,
+    featuresGained: [...changeSet.featuresGained, ...selectedFeatureRefs],
+    choicesApplied: applied,
+  };
 }
 
 /**

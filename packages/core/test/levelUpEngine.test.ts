@@ -282,14 +282,24 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     });
     expect(result.changeSet).toMatchObject({
       level: { from: 2, to: 3 },
-      featuresGained: ['feature:fighter:martial-archetype'],
+      featuresGained: [
+        'feature:fighter:martial-archetype',
+        'feature:champion:improved-critical',
+      ],
       choicesApplied: [
         {
           id: 'level.3.subclass',
           kind: 'subclass',
           value: 'subclass:champion',
           label: 'Champion',
+          featureRefs: ['feature:champion:improved-critical'],
         },
+      ],
+    });
+    expect(listProgressionEvents(db)[0]?.appliedChanges).toMatchObject({
+      featuresGained: [
+        'feature:fighter:martial-archetype',
+        'feature:champion:improved-critical',
       ],
     });
     expect(store.load('pc-1')?.level).toBe(3);
