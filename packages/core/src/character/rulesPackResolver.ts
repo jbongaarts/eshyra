@@ -56,24 +56,42 @@ export interface ResolvedLevelSpellcasting {
   readonly spellsKnown?: number;
   /** Spell slots by spell level, e.g. `{ "1": 2 }` at level 1. */
   readonly slots?: Readonly<Record<string, number>>;
+  /** Warlock Pact Magic slots: `count` slots at spell `level`. */
+  readonly pactSlots?: { readonly count: number; readonly level: number };
+  readonly invocationsKnown?: number;
 }
 
-/** A class progression feature entry that names a row marker but has no feature ref. */
-export interface ResolvedFeatureMarker {
-  readonly name: string;
+/**
+ * A typed subclass-feature slot on a progression row (eshyra-o9bd.2): the level
+ * grants a feature determined by the character's chosen subclass. `slotName` is
+ * the source label ("Path feature"); `subclassLevel` is the level at which the
+ * subclass supplies the concrete feature.
+ */
+export interface ResolvedSubclassFeatureSlot {
+  readonly slotName: string;
+  readonly subclassLevel: number;
 }
 
-/** The structured slice of a class progression row. */
+/**
+ * A typed improvement to existing feature(s) at this level (eshyra-o9bd.2), e.g.
+ * Druid Wild Shape gaining a better beast form. `targetRefs` are the base
+ * feature records improved; `label` is the source row label.
+ */
+export interface ResolvedFeatureImprovement {
+  readonly targetRefs: readonly string[];
+  readonly label: string;
+}
+
+/** The structured slice of a class progression row (typed `advancement[]`). */
 export interface ResolvedClassLevel {
   readonly level: number;
   readonly proficiencyBonus: number;
-  /** Feature record refs granted at this level (e.g. `feature:wizard:spellcasting`). */
+  /** Feature record refs granted at this level (from `featureGrant` entries). */
   readonly featureRefs: readonly string[];
-  /**
-   * Prose-only/generated row markers that are not deterministic feature refs.
-   * Callers must classify these explicitly; they are not safe to silently apply.
-   */
-  readonly unresolvedFeatureMarkers: readonly ResolvedFeatureMarker[];
+  /** Subclass-feature slots resolved when the character has a chosen subclass. */
+  readonly subclassFeatureSlots: readonly ResolvedSubclassFeatureSlot[];
+  /** Typed improvements to existing features at this level. */
+  readonly featureImprovements: readonly ResolvedFeatureImprovement[];
   /** Spellcasting counts for this level, present only for spellcasting classes. */
   readonly spellcasting?: ResolvedLevelSpellcasting;
 }
@@ -424,21 +442,12 @@ function parseLevel1(progression: unknown): ResolvedClassLevel1 | undefined {
   if (row === undefined) {
     return undefined;
   }
-  const proficiencyBonus = parseProficiencyBonus(row.proficiencyBonus);
-  if (proficiencyBonus === undefined) {
+  const parsed = parseClassProgressionRow(row);
+  if (parsed === undefined) {
     return undefined;
   }
-  const features = parseFeatureEntries(row.features);
-  if (features === undefined) {
-    return undefined;
-  }
-  const spellcasting = parseLevelSpellcasting(row.spellcasting);
-  return {
-    featureRefs: features.refs,
-    unresolvedFeatureMarkers: features.markers,
-    spellcasting: spellcasting === 'malformed' ? undefined : spellcasting,
-    proficiencyBonus,
-  };
+  const { level: _level, ...level1 } = parsed;
+  return level1;
 }
 
 function parseClassProgression(
@@ -492,20 +501,19 @@ function parseClassProgressionRow(
   if (proficiencyBonus === undefined) {
     return undefined;
   }
-  const features = parseFeatureEntries(entry.features);
-  if (features === undefined) {
-    return undefined;
-  }
-  const spellcasting = parseLevelSpellcasting(entry.spellcasting);
-  if (spellcasting === 'malformed') {
+  const parsed = parseAdvancement(entry.advancement);
+  if (parsed === undefined) {
     return undefined;
   }
   return {
     level,
     proficiencyBonus,
-    featureRefs: features.refs,
-    unresolvedFeatureMarkers: features.markers,
-    spellcasting,
+    featureRefs: parsed.featureRefs,
+    subclassFeatureSlots: parsed.subclassFeatureSlots,
+    featureImprovements: parsed.featureImprovements,
+    ...(parsed.spellcasting !== undefined
+      ? { spellcasting: parsed.spellcasting }
+      : {}),
   };
 }
 
@@ -520,69 +528,143 @@ function parseProficiencyBonus(value: unknown): number | undefined {
   return match === null ? undefined : Number.parseInt(match[1], 10);
 }
 
-interface ParsedFeatureEntries {
-  readonly refs: readonly string[];
-  readonly markers: readonly ResolvedFeatureMarker[];
+interface ParsedAdvancement {
+  readonly featureRefs: readonly string[];
+  readonly subclassFeatureSlots: readonly ResolvedSubclassFeatureSlot[];
+  readonly featureImprovements: readonly ResolvedFeatureImprovement[];
+  readonly spellcasting?: ResolvedLevelSpellcasting;
 }
 
-function parseFeatureEntries(value: unknown): ParsedFeatureEntries | undefined {
+/**
+ * Parse a row's typed `advancement[]` discriminated union (eshyra-o9bd.2) into
+ * the resolved slices a level-up engine consumes. Returns `undefined`
+ * (malformed) on any unknown kind or ill-shaped entry — fail-closed, so a
+ * generated-pack defect surfaces rather than silently dropping advancement.
+ */
+function parseAdvancement(value: unknown): ParsedAdvancement | undefined {
   if (value === undefined) {
-    return { refs: [], markers: [] };
+    return {
+      featureRefs: [],
+      subclassFeatureSlots: [],
+      featureImprovements: [],
+    };
   }
   if (!Array.isArray(value)) {
     return undefined;
   }
-  const refs: string[] = [];
-  const markers: ResolvedFeatureMarker[] = [];
-  for (const feature of value) {
-    if (!isRecord(feature)) {
+  const featureRefs: string[] = [];
+  const subclassFeatureSlots: ResolvedSubclassFeatureSlot[] = [];
+  const featureImprovements: ResolvedFeatureImprovement[] = [];
+  let spellcasting: ResolvedLevelSpellcasting | undefined;
+  for (const entry of value) {
+    if (!isRecord(entry)) {
       return undefined;
     }
-    if (typeof feature.ref === 'string') {
-      refs.push(feature.ref);
-      continue;
+    switch (entry.kind) {
+      case 'featureGrant': {
+        if (typeof entry.ref !== 'string') return undefined;
+        featureRefs.push(entry.ref);
+        break;
+      }
+      case 'subclassFeatureSlot': {
+        if (
+          typeof entry.slotName !== 'string' ||
+          !Number.isInteger(entry.subclassLevel)
+        ) {
+          return undefined;
+        }
+        subclassFeatureSlots.push({
+          slotName: entry.slotName,
+          subclassLevel: entry.subclassLevel as number,
+        });
+        break;
+      }
+      case 'featureImprovement': {
+        if (
+          !Array.isArray(entry.targetRefs) ||
+          typeof entry.label !== 'string'
+        ) {
+          return undefined;
+        }
+        const targetRefs: string[] = [];
+        for (const ref of entry.targetRefs) {
+          if (typeof ref !== 'string') return undefined;
+          targetRefs.push(ref);
+        }
+        featureImprovements.push({ targetRefs, label: entry.label });
+        break;
+      }
+      case 'resourceProgression': {
+        if (typeof entry.resource !== 'string') return undefined;
+        // Resource progressions are not consumed by the resolver layer today;
+        // validate the shape and carry on.
+        break;
+      }
+      case 'spellcastingProgression': {
+        const parsed = parseSpellcastingEntry(entry);
+        if (parsed === 'malformed') return undefined;
+        spellcasting = parsed;
+        break;
+      }
+      default:
+        return undefined;
     }
-    if (typeof feature.name === 'string') {
-      markers.push({ name: feature.name });
-      continue;
-    }
-    return undefined;
   }
-  return { refs, markers };
+  return {
+    featureRefs,
+    subclassFeatureSlots,
+    featureImprovements,
+    spellcasting,
+  };
 }
 
-function parseLevelSpellcasting(
-  value: unknown,
-): ResolvedLevelSpellcasting | 'malformed' | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  if (!isRecord(value)) {
-    return 'malformed';
-  }
+function parseSpellcastingEntry(
+  entry: Record<string, unknown>,
+): ResolvedLevelSpellcasting | 'malformed' {
   const slots: Record<string, number> = {};
-  if (value.slots !== undefined) {
-    if (!isRecord(value.slots)) {
-      return 'malformed';
-    }
-    for (const [level, count] of Object.entries(value.slots)) {
-      if (typeof count !== 'number') {
-        return 'malformed';
-      }
+  if (entry.slots !== undefined) {
+    if (!isRecord(entry.slots)) return 'malformed';
+    for (const [level, count] of Object.entries(entry.slots)) {
+      if (typeof count !== 'number') return 'malformed';
       slots[level] = count;
     }
   }
   if (
-    (value.cantripsKnown !== undefined &&
-      typeof value.cantripsKnown !== 'number') ||
-    (value.spellsKnown !== undefined && typeof value.spellsKnown !== 'number')
+    (entry.cantripsKnown !== undefined &&
+      typeof entry.cantripsKnown !== 'number') ||
+    (entry.spellsKnown !== undefined &&
+      typeof entry.spellsKnown !== 'number') ||
+    (entry.invocationsKnown !== undefined &&
+      typeof entry.invocationsKnown !== 'number')
   ) {
     return 'malformed';
   }
+  let pactSlots: { count: number; level: number } | undefined;
+  if (entry.pactSlots !== undefined) {
+    if (
+      !isRecord(entry.pactSlots) ||
+      typeof entry.pactSlots.count !== 'number' ||
+      typeof entry.pactSlots.level !== 'number'
+    ) {
+      return 'malformed';
+    }
+    pactSlots = {
+      count: entry.pactSlots.count,
+      level: entry.pactSlots.level,
+    };
+  }
   return {
-    cantripsKnown: value.cantripsKnown,
-    spellsKnown: value.spellsKnown,
-    slots: Object.keys(slots).length > 0 ? slots : undefined,
+    ...(typeof entry.cantripsKnown === 'number'
+      ? { cantripsKnown: entry.cantripsKnown }
+      : {}),
+    ...(typeof entry.spellsKnown === 'number'
+      ? { spellsKnown: entry.spellsKnown }
+      : {}),
+    ...(Object.keys(slots).length > 0 ? { slots } : {}),
+    ...(pactSlots !== undefined ? { pactSlots } : {}),
+    ...(typeof entry.invocationsKnown === 'number'
+      ? { invocationsKnown: entry.invocationsKnown }
+      : {}),
   };
 }
 

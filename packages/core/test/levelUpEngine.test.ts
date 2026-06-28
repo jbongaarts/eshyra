@@ -383,7 +383,7 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     db.close();
   });
 
-  it('blocks prose-only improvement markers instead of dropping them (Cleric 19→20)', () => {
+  it('blocks typed feature improvements instead of dropping them (Cleric 19→20)', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
     const sheet = buildSheet({
@@ -403,12 +403,12 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     expect(choices).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: 'level.20.unresolved-feature.divine-intervention-improvement',
+          id: 'level.20.feature-improvement.divine-intervention-improvement',
           kind: 'class-feature-choice',
           status: 'unsupported',
           label: 'Divine Intervention improvement',
           unsupportedReason: expect.stringContaining(
-            'improvement, alias, or missing frozen feature record',
+            'Feature improvements change an existing feature',
           ),
         }),
       ]),

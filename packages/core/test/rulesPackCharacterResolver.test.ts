@@ -171,9 +171,29 @@ const EXPECTED_LEVEL_UP_UNRESOLVED_MARKER_ROWS = [
   { className: 'Wizard', level: 20, featureNames: ['Signature Spell'] },
 ] as const;
 
-const EXPECTED_MALFORMED_LEVEL_UP_ROWS = [
-  { className: 'Ranger', level: 1, featureNames: [] },
-] as const;
+// eshyra-o9bd.2 typed every frozen no-ref row. The same source-backed
+// classification (PR #336) now becomes typed expectations: "… feature" labels
+// resolve to subclass-feature slots, "… improvement(s)" labels to feature
+// improvements, and the rest (e.g. the Wizard "Signature Spell" alias) to
+// resolved feature grants. The Ranger level-1 `spellsKnown: null` placeholder is
+// gone (omitted), so no row is malformed any more.
+const EXPECTED_SUBCLASS_SLOT_ROWS =
+  EXPECTED_LEVEL_UP_UNRESOLVED_MARKER_ROWS.flatMap((row) =>
+    row.featureNames
+      .filter((name) => /feature$/i.test(name))
+      .map((slotName) => ({
+        className: row.className,
+        level: row.level,
+        slotName,
+      })),
+  );
+
+const EXPECTED_IMPROVEMENT_ROWS =
+  EXPECTED_LEVEL_UP_UNRESOLVED_MARKER_ROWS.flatMap((row) =>
+    row.featureNames
+      .filter((name) => /improvement/i.test(name))
+      .map((label) => ({ className: row.className, level: row.level, label })),
+  );
 
 function license(): RulesPackLicense {
   return {
@@ -227,16 +247,14 @@ function isRecordValue(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function sortedUnsupportedRows(
-  rows: ReadonlyArray<{
-    readonly className: string;
-    readonly level: number;
-    readonly featureNames: readonly string[];
-  }>,
-) {
+function sortRows<T extends { className: string; level: number }>(
+  rows: readonly T[],
+): T[] {
   return [...rows].sort(
     (left, right) =>
-      left.className.localeCompare(right.className) || left.level - right.level,
+      left.className.localeCompare(right.className) ||
+      left.level - right.level ||
+      JSON.stringify(left).localeCompare(JSON.stringify(right)),
   );
 }
 
@@ -344,17 +362,18 @@ describe('rules-pack character resolver', () => {
     }
   });
 
-  it('preserves the frozen SRD no-ref level-up markers as explicit metadata', () => {
-    const actualMarkerRows: Array<{
+  it('types every frozen level-up row as typed advancement (eshyra-o9bd.2)', () => {
+    const actualSlots: Array<{
       className: string;
       level: number;
-      featureNames: string[];
+      slotName: string;
     }> = [];
-    const actualMalformedRows: Array<{
+    const actualImprovements: Array<{
       className: string;
       level: number;
-      featureNames: string[];
+      label: string;
     }> = [];
+    const malformedRows: Array<{ className: string; level: number }> = [];
 
     for (const record of getBundledDnd5eSrdPack().records) {
       if (record.kind !== 'class' || !isRecordValue(record.data)) {
@@ -368,45 +387,37 @@ describe('rules-pack character resolver', () => {
         if (!isRecordValue(row) || typeof row.level !== 'number') {
           continue;
         }
-        const featureNames = Array.isArray(row.features)
-          ? row.features
-              .filter(
-                (feature): feature is { readonly name: string } =>
-                  isRecordValue(feature) &&
-                  typeof feature.name === 'string' &&
-                  typeof feature.ref !== 'string',
-              )
-              .map((feature) => feature.name)
-          : [];
         const result = resolver.resolveClassLevel(record.name, row.level);
-        if (result.ok) {
-          const markerNames = result.record.unresolvedFeatureMarkers.map(
-            (marker) => marker.name,
-          );
-          if (markerNames.length > 0) {
-            actualMarkerRows.push({
-              className: record.name,
-              level: row.level,
-              featureNames: markerNames,
-            });
+        if (!result.ok) {
+          if (result.code === 'malformed') {
+            malformedRows.push({ className: record.name, level: row.level });
           }
           continue;
         }
-        if (result.code === 'malformed') {
-          actualMalformedRows.push({
+        for (const slot of result.record.subclassFeatureSlots) {
+          actualSlots.push({
             className: record.name,
             level: row.level,
-            featureNames,
+            slotName: slot.slotName,
+          });
+        }
+        for (const improvement of result.record.featureImprovements) {
+          actualImprovements.push({
+            className: record.name,
+            level: row.level,
+            label: improvement.label,
           });
         }
       }
     }
 
-    expect(sortedUnsupportedRows(actualMarkerRows)).toEqual(
-      sortedUnsupportedRows(EXPECTED_LEVEL_UP_UNRESOLVED_MARKER_ROWS),
+    // No row is malformed any more: every progression row is typed.
+    expect(malformedRows).toEqual([]);
+    expect(sortRows(actualSlots)).toEqual(
+      sortRows(EXPECTED_SUBCLASS_SLOT_ROWS),
     );
-    expect(sortedUnsupportedRows(actualMalformedRows)).toEqual(
-      sortedUnsupportedRows(EXPECTED_MALFORMED_LEVEL_UP_ROWS),
+    expect(sortRows(actualImprovements)).toEqual(
+      sortRows(EXPECTED_IMPROVEMENT_ROWS),
     );
   });
 
@@ -588,7 +599,7 @@ describe('rules-pack character resolver', () => {
       }
     });
 
-    it('reports a malformed result for a class progression row with malformed feature entries', () => {
+    it('reports a malformed result for a class progression row with an unknown advancement kind', () => {
       const stack = resolveRulesStack({
         base: packWith([
           record({
@@ -602,9 +613,12 @@ describe('rules-pack character resolver', () => {
                 {
                   level: 5,
                   proficiencyBonus: '+3',
-                  features: [
-                    { ref: 'feature:fighter:extra-attack' },
-                    'Bad Feature',
+                  advancement: [
+                    {
+                      kind: 'featureGrant',
+                      ref: 'feature:fighter:extra-attack',
+                    },
+                    { kind: 'bogusKind' },
                   ],
                 },
               ],
