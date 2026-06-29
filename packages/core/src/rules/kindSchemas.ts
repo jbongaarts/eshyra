@@ -275,6 +275,70 @@ function optFeatureChoiceArray(parent: Obj, key: string, path: string): void {
 
 // Optional starting-equipment block on a class: verbatim `text` plus optional
 // per-line `entries` (the bulleted options).
+const STARTING_EQUIPMENT_FILTER_SELECTS: ReadonlySet<string> = new Set([
+  'weapon',
+  'arcane-focus',
+  'druidic-focus',
+  'holy-symbol',
+  'musical-instrument',
+]);
+const WEAPON_CATEGORIES: ReadonlySet<string> = new Set(['simple', 'martial']);
+const WEAPON_RANGES: ReadonlySet<string> = new Set(['melee', 'ranged']);
+
+/**
+ * Validate the typed starting-equipment grants (eshyra-ngcj.3): each entry is a
+ * fixed `item` grant (equipment ref + positive quantity, optional condition) or
+ * an open `filter` grant (a closed `select` vocabulary + positive quantity,
+ * with weapon category/range only on weapon filters). Required and non-empty.
+ */
+function reqStartingEquipmentGrants(parent: Obj, path: string): void {
+  const grants = objArray(parent, 'grants', path);
+  if (grants === undefined || grants.length === 0) {
+    throw new RulesPackError(`${path}.grants must be a non-empty array`);
+  }
+  grants.forEach((grant, i) => {
+    const gpath = `${path}.grants[${i}]`;
+    const kind = grant.kind;
+    if (kind === 'item') {
+      reqStr(grant, 'ref', gpath);
+      reqInt(grant, 'quantity', gpath, 1);
+      optStr(grant, 'condition', gpath);
+      return;
+    }
+    if (kind === 'filter') {
+      const select = reqStr(grant, 'select', gpath);
+      if (!STARTING_EQUIPMENT_FILTER_SELECTS.has(select)) {
+        throw new RulesPackError(
+          `${gpath}.select must be one of ${[...STARTING_EQUIPMENT_FILTER_SELECTS].join(', ')}`,
+        );
+      }
+      reqInt(grant, 'quantity', gpath, 1);
+      if (grant.weaponCategory !== undefined) {
+        if (
+          select !== 'weapon' ||
+          !WEAPON_CATEGORIES.has(grant.weaponCategory as string)
+        ) {
+          throw new RulesPackError(
+            `${gpath}.weaponCategory must be simple|martial on a weapon filter`,
+          );
+        }
+      }
+      if (grant.weaponRange !== undefined) {
+        if (
+          select !== 'weapon' ||
+          !WEAPON_RANGES.has(grant.weaponRange as string)
+        ) {
+          throw new RulesPackError(
+            `${gpath}.weaponRange must be melee|ranged on a weapon filter`,
+          );
+        }
+      }
+      return;
+    }
+    throw new RulesPackError(`${gpath}.kind must be "item" or "filter"`);
+  });
+}
+
 function optStartingEquipment(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -310,22 +374,17 @@ function optStartingEquipment(parent: Obj, key: string, path: string): void {
         );
       }
       options.forEach((option, optionIndex) => {
-        reqStr(
-          option,
-          'label',
-          `${path}.${key}.entries[${i}].options[${optionIndex}]`,
-        );
-        reqStr(
-          option,
-          'text',
-          `${path}.${key}.entries[${i}].options[${optionIndex}]`,
-        );
+        const optionPath = `${path}.${key}.entries[${i}].options[${optionIndex}]`;
+        reqStr(option, 'label', optionPath);
+        reqStr(option, 'text', optionPath);
+        reqStartingEquipmentGrants(option, optionPath);
       });
       return;
     }
     if (kind === 'fixed') {
       reqStr(entry, 'text', `${path}.${key}.entries[${i}]`);
       reqStr(entry, 'sourceText', `${path}.${key}.entries[${i}]`);
+      reqStartingEquipmentGrants(entry, `${path}.${key}.entries[${i}]`);
       return;
     }
     throw new RulesPackError(
@@ -952,6 +1011,33 @@ function validateDnd5eClass(record: RulesRecord, path: string): void {
   optSpellPreparation(data, 'spellPreparation', `${path}.data`);
 }
 
+/**
+ * Equipment is otherwise schema-permissive (varied category fields); this
+ * validator only enforces the typed pack `contents` when present (eshyra-ngcj.4):
+ * a non-empty list of line items, each with a positive `quantity`, a `name`, and
+ * an optional `equipment:` `ref` / `detail`.
+ */
+function validateDnd5eEquipment(record: RulesRecord, path: string): void {
+  const data = dataObj(record, path);
+  const contents = data.contents;
+  if (contents === undefined) return;
+  if (!Array.isArray(contents) || contents.length === 0) {
+    throw new RulesPackError(
+      `${path}.data.contents must be a non-empty array when present`,
+    );
+  }
+  contents.forEach((entry, i) => {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+      throw new RulesPackError(`${path}.data.contents[${i}] must be an object`);
+    }
+    const content = entry as Obj;
+    reqStr(content, 'name', `${path}.data.contents[${i}]`);
+    reqInt(content, 'quantity', `${path}.data.contents[${i}]`, 1);
+    optStr(content, 'ref', `${path}.data.contents[${i}]`);
+    optStr(content, 'detail', `${path}.data.contents[${i}]`);
+  });
+}
+
 function validateDnd5eCondition(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   reqStr(data, 'description', `${path}.data`);
@@ -990,10 +1076,85 @@ function validateDnd5eFeature(record: RulesRecord, path: string): void {
 // `tableRefs` linking to the emitted `table` record(s) so the option rows are
 // reachable as structured data, not prose only (eshyra-4a7.7; mirrors
 // `feature.data.tableRefs`).
+const CREATION_CHOICE_CATEGORIES: ReadonlySet<string> = new Set([
+  'draconicAncestry',
+  'tool',
+  'skill',
+  'cantrip',
+  'language',
+  'personalityTrait',
+  'ideal',
+  'bond',
+  'flaw',
+]);
+
+/**
+ * Validate ancestry/background creation choices (eshyra-ngcj.5): each entry has
+ * a kebab `id`, a closed-vocabulary `category`, a `prompt`, a positive `choose`,
+ * a `sourceText`, and optional discrete `from` / `tableRef` / `roll`.
+ */
+function optCreationChoices(parent: Obj, key: string, path: string): void {
+  const entries = objArray(parent, key, path);
+  if (entries === undefined) return;
+  if (entries.length === 0) {
+    throw new RulesPackError(`${path}.${key} must be non-empty when present`);
+  }
+  entries.forEach((entry, i) => {
+    const cpath = `${path}.${key}[${i}]`;
+    reqStr(entry, 'id', cpath);
+    const category = reqStr(entry, 'category', cpath);
+    if (!CREATION_CHOICE_CATEGORIES.has(category)) {
+      throw new RulesPackError(
+        `${cpath}.category must be one of ${[...CREATION_CHOICE_CATEGORIES].join(', ')}`,
+      );
+    }
+    reqStr(entry, 'prompt', cpath);
+    reqInt(entry, 'choose', cpath, 1);
+    reqStr(entry, 'sourceText', cpath);
+    optStrArray(entry, 'from', cpath);
+    optStr(entry, 'tableRef', cpath);
+    optStr(entry, 'roll', cpath);
+  });
+}
+
+/**
+ * Validate a background equipment-grant array (eshyra-ngcj.5): the same line-item
+ * shape as equipment-pack contents — positive `quantity`, a `name`, optional
+ * `ref` / `detail`.
+ */
+function optEquipmentGrantArray(parent: Obj, key: string, path: string): void {
+  const entries = objArray(parent, key, path);
+  if (entries === undefined) return;
+  if (entries.length === 0) {
+    throw new RulesPackError(`${path}.${key} must be non-empty when present`);
+  }
+  entries.forEach((entry, i) => {
+    const gpath = `${path}.${key}[${i}]`;
+    reqStr(entry, 'name', gpath);
+    reqInt(entry, 'quantity', gpath, 1);
+    optStr(entry, 'ref', gpath);
+    optStr(entry, 'detail', gpath);
+    // Optional open filter (e.g. a holy symbol), same closed vocabulary as a
+    // starting-equipment filter grant (eshyra-ngcj.5).
+    if (entry.select !== undefined) {
+      const select = entry.select;
+      if (
+        typeof select !== 'string' ||
+        !STARTING_EQUIPMENT_FILTER_SELECTS.has(select)
+      ) {
+        throw new RulesPackError(
+          `${gpath}.select must be one of ${[...STARTING_EQUIPMENT_FILTER_SELECTS].join(', ')}`,
+        );
+      }
+    }
+  });
+}
+
 function validateDnd5eAncestry(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   optAbilityScoreIncreaseArray(data, 'abilityScoreIncreases', `${path}.data`);
   optLanguageGrantArray(data, 'languages', `${path}.data`);
+  optCreationChoices(data, 'choices', `${path}.data`);
   const traits = objArray(data, 'traits', `${path}.data`);
   if (traits !== undefined) {
     traits.forEach((trait, i) => {
@@ -1050,6 +1211,9 @@ function validateDnd5eBackground(record: RulesRecord, path: string): void {
   // Optional links to the background's suggested-characteristics roll tables
   // (eshyra-o9bd.8.2); most backgrounds have none.
   optStrArray(data, 'tableRefs', `${path}.data`);
+  // Structured creation choices + equipment grants (eshyra-ngcj.5).
+  optCreationChoices(data, 'choices', `${path}.data`);
+  optEquipmentGrantArray(data, 'equipmentGrants', `${path}.data`);
 }
 
 function validateDnd5eHazard(record: RulesRecord, path: string): void {
@@ -1181,6 +1345,7 @@ const SYSTEM_KIND_VALIDATORS: Record<
     background: validateDnd5eBackground,
     class: validateDnd5eClass,
     condition: validateDnd5eCondition,
+    equipment: validateDnd5eEquipment,
     feat: validateDnd5eFeat,
     feature: validateDnd5eFeature,
     subclass: validateDnd5eSubclass,

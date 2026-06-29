@@ -1,4 +1,34 @@
+import {
+  type CreationChoice,
+  getAncestryCreationChoices,
+  getBackgroundCreationFacts,
+} from '../../../src/character/srdCreationChoices.js';
+import {
+  type StartingEquipmentGrant as ResolvedEquipmentGrant,
+  resolveStartingEquipmentGrants,
+} from '../../../src/character/srdStartingEquipmentGrants.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
+
+/** Sorted `spell:` keys of every wizard cantrip (level-0 wizard spell). */
+function wizardCantripKeys(records: readonly RulesRecord[]): readonly string[] {
+  const keys: string[] = [];
+  for (const record of records) {
+    if (record.kind !== 'spell') continue;
+    const data = (record.data ?? {}) as { level?: unknown; classes?: unknown };
+    if (data.level !== 0 || !Array.isArray(data.classes)) continue;
+    if (data.classes.some((c) => String(c).toLowerCase() === 'wizard')) {
+      keys.push(record.key);
+    }
+  }
+  return keys.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+function cloneCreationChoice(choice: CreationChoice): CreationChoice {
+  return {
+    ...choice,
+    ...(choice.from !== undefined ? { from: [...choice.from] } : {}),
+  };
+}
 
 const ABILITY_SCORE_NAMES = [
   'strength',
@@ -44,6 +74,7 @@ interface ClassSpellcasting {
 interface StartingEquipmentOption {
   readonly label: string;
   readonly text: string;
+  readonly grants: readonly ResolvedEquipmentGrant[];
 }
 
 interface StartingEquipmentChoice {
@@ -56,6 +87,7 @@ interface StartingEquipmentGrant {
   readonly kind: 'fixed';
   readonly text: string;
   readonly sourceText: string;
+  readonly grants: readonly ResolvedEquipmentGrant[];
 }
 
 type StartingEquipmentEntry = StartingEquipmentChoice | StartingEquipmentGrant;
@@ -89,7 +121,11 @@ function choice(
 ): StartingEquipmentChoice {
   return {
     kind: 'choice',
-    options: options.map(([label, text]) => ({ label, text })),
+    options: options.map(([label, text]) => ({
+      label,
+      text,
+      grants: resolveStartingEquipmentGrants(text),
+    })),
     sourceText,
   };
 }
@@ -98,7 +134,12 @@ function fixed(
   text: string,
   sourceText: string = text,
 ): StartingEquipmentGrant {
-  return { kind: 'fixed', text, sourceText };
+  return {
+    kind: 'fixed',
+    text,
+    sourceText,
+    grants: resolveStartingEquipmentGrants(text),
+  };
 }
 
 const ANCESTRY_ABILITY_SCORE_INCREASES: Readonly<
@@ -594,15 +635,29 @@ function cloneClassSpellcasting(value: ClassSpellcasting): ClassSpellcasting {
   };
 }
 
+function cloneGrants(
+  grants: readonly ResolvedEquipmentGrant[],
+): readonly ResolvedEquipmentGrant[] {
+  return grants.map((grant) => ({ ...grant }));
+}
+
 function cloneStartingEquipmentEntry(
   entry: StartingEquipmentEntry,
 ): StartingEquipmentEntry {
   if (entry.kind === 'fixed') {
-    return { kind: 'fixed', text: entry.text, sourceText: entry.sourceText };
+    return {
+      kind: 'fixed',
+      text: entry.text,
+      sourceText: entry.sourceText,
+      grants: cloneGrants(entry.grants),
+    };
   }
   return {
     kind: 'choice',
-    options: entry.options.map((option) => ({ ...option })),
+    options: entry.options.map((option) => ({
+      ...option,
+      grants: cloneGrants(option.grants),
+    })),
     sourceText: entry.sourceText,
   };
 }
@@ -619,13 +674,18 @@ function dataObject(record: RulesRecord): Record<string, unknown> {
 
 export function enrichAncestryCreationFacts(
   records: readonly RulesRecord[],
+  spellRecords: readonly RulesRecord[] = records,
 ): RulesRecord[] {
+  const ctx = { wizardCantrips: wizardCantripKeys(spellRecords) };
   return records.map((record) => {
     const abilityScoreIncreases = ANCESTRY_ABILITY_SCORE_INCREASES[record.key];
     const languages = ANCESTRY_LANGUAGES[record.key];
     if (abilityScoreIncreases === undefined || languages === undefined) {
       return record;
     }
+    // Build choices (eshyra-ngcj.5): the prose-bound ancestry build choices not
+    // already captured by abilityScoreIncreases[].choice / languages[].choose.
+    const choices = getAncestryCreationChoices(record.key, ctx);
     return {
       ...record,
       data: {
@@ -634,6 +694,9 @@ export function enrichAncestryCreationFacts(
           cloneAbilityScoreIncreases(abilityScoreIncreases),
         ],
         languages: [cloneLanguageGrant(languages)],
+        ...(choices !== undefined
+          ? { choices: choices.map(cloneCreationChoice) }
+          : {}),
       },
     };
   });
@@ -647,11 +710,21 @@ export function enrichBackgroundCreationFacts(
     if (languages === undefined) {
       return record;
     }
+    // Structured background choices + equipment grants (eshyra-ngcj.5).
+    const facts = getBackgroundCreationFacts(record.key);
     return {
       ...record,
       data: {
         ...dataObject(record),
         languages: [cloneLanguageGrant(languages)],
+        ...(facts !== undefined
+          ? {
+              choices: facts.choices.map(cloneCreationChoice),
+              equipmentGrants: facts.equipmentGrants.map((grant) => ({
+                ...grant,
+              })),
+            }
+          : {}),
       },
     };
   });

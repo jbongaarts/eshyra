@@ -67,8 +67,20 @@ describe('class starting-equipment oracle', () => {
       throw new Error('expected a choice group');
     }
     expect(first.options).toEqual([
-      { label: 'a', text: 'chain mail' },
-      { label: 'b', text: 'leather armor, longbow, and 20 arrows' },
+      {
+        label: 'a',
+        text: 'chain mail',
+        grants: [{ kind: 'item', ref: 'equipment:chain-mail', quantity: 1 }],
+      },
+      {
+        label: 'b',
+        text: 'leather armor, longbow, and 20 arrows',
+        grants: [
+          { kind: 'item', ref: 'equipment:leather', quantity: 1 },
+          { kind: 'item', ref: 'equipment:longbow', quantity: 1 },
+          { kind: 'item', ref: 'equipment:arrows-20', quantity: 1 },
+        ],
+      },
     ]);
   });
 
@@ -93,6 +105,7 @@ describe('class starting-equipment oracle', () => {
       kind: 'fixed',
       text: 'A spellbook',
       sourceText: 'A spellbook',
+      grants: [{ kind: 'item', ref: 'equipment:spellbook', quantity: 1 }],
     });
     // Exactly the three choose-one groups are choices.
     expect(wizard?.entries.filter((e) => e.kind === 'choice')).toHaveLength(3);

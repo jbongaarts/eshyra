@@ -127,6 +127,7 @@ async function main(): Promise<void> {
     minFeatureCount: MIN_EXPECTED_SRD_5_1_FEATURES,
     minMagicItemCount: MIN_EXPECTED_SRD_5_1_MAGIC_ITEMS,
     sourceCoverageRules: SRD_5_1_COVERAGE_RULES,
+    validateCrossReferences: true,
   });
   const c = result.counts;
   console.log(

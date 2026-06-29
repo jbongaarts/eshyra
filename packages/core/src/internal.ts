@@ -377,6 +377,20 @@ export type {
   StartingEquipmentOption,
 } from './character/srdClassStartingEquipment.js';
 export { getClassStartingEquipment } from './character/srdClassStartingEquipment.js';
+export type {
+  BackgroundCreationFacts,
+  BackgroundEquipmentGrant,
+  CreationChoice,
+  CreationChoiceCategory,
+  CreationChoiceContext,
+} from './character/srdCreationChoices.js';
+export {
+  getAncestryCreationChoices,
+  getBackgroundCreationFacts,
+  SRD_5_1_SKILLS,
+} from './character/srdCreationChoices.js';
+export type { EquipmentPackContent } from './character/srdEquipmentPacks.js';
+export { readEquipmentPackContents } from './character/srdEquipmentPacks.js';
 export type { LanguageGrant } from './character/srdLanguages.js';
 export {
   chooseableLanguages,
@@ -384,6 +398,17 @@ export {
   getBackgroundLanguages,
   SRD_STANDARD_LANGUAGES,
 } from './character/srdLanguages.js';
+export type {
+  StartingEquipmentFilterGrant,
+  StartingEquipmentFilterSelect,
+  StartingEquipmentGrant as ResolvedEquipmentGrant,
+  StartingEquipmentItemGrant,
+} from './character/srdStartingEquipmentGrants.js';
+export {
+  resolveStartingEquipmentGrants,
+  StartingEquipmentGrantError,
+  startingEquipmentGrantPhrases,
+} from './character/srdStartingEquipmentGrants.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {
@@ -810,6 +835,13 @@ export {
   SRD_5_1_TABLE_OWNERS,
   srdAuditHasFindings,
 } from './rules/srdAudit.js';
+export type { SrdChoiceProseFinding } from './rules/srdChoiceProseAudit.js';
+export {
+  auditSrdChoiceProse,
+  CHOICE_PROSE_ALLOWLIST,
+  formatSrdChoiceProseReport,
+  srdChoiceProseHasFindings,
+} from './rules/srdChoiceProseAudit.js';
 export type {
   SrdPlayabilityAudit,
   SrdPlayabilityCategory,
