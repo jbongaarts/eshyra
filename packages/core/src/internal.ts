@@ -377,6 +377,18 @@ export type {
   StartingEquipmentOption,
 } from './character/srdClassStartingEquipment.js';
 export { getClassStartingEquipment } from './character/srdClassStartingEquipment.js';
+export type {
+  BackgroundCreationFacts,
+  BackgroundEquipmentGrant,
+  CreationChoice,
+  CreationChoiceCategory,
+  CreationChoiceContext,
+} from './character/srdCreationChoices.js';
+export {
+  getAncestryCreationChoices,
+  getBackgroundCreationFacts,
+  SRD_5_1_SKILLS,
+} from './character/srdCreationChoices.js';
 export type { EquipmentPackContent } from './character/srdEquipmentPacks.js';
 export { readEquipmentPackContents } from './character/srdEquipmentPacks.js';
 export type { LanguageGrant } from './character/srdLanguages.js';

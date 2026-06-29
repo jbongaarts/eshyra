@@ -456,6 +456,11 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   readonly missingCount: number;
   readonly totalInKind: number;
 }> = [
+  // Ancestry creation choices (eshyra-ngcj.5): genuinely optional — only the 5
+  // ancestries with a prose-bound build choice (Dragonborn draconic ancestry,
+  // Dwarf/Hill Dwarf tool, Half-Elf skills, High Elf cantrip + language) carry
+  // it; the other 8 of 13 do not.
+  { kind: 'ancestry', field: 'choices', missingCount: 8, totalInKind: 13 },
   { kind: 'ancestry', field: 'subraceOf', missingCount: 9, totalInKind: 13 },
   { kind: 'ancestry', field: 'subraces', missingCount: 9, totalInKind: 13 },
   // Class options modeling (eshyra-4a7.6). progression / progressionTableRef /

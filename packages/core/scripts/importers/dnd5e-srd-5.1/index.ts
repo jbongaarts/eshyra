@@ -2061,6 +2061,15 @@ export interface RunImporterInput {
    */
   readonly sourceCoverageRules?: readonly CoverageRule[];
   /**
+   * Enforce cross-record grant/choice ref integrity (eshyra-ngcj.3/.4/.5): every
+   * class starting-equipment item grant, equipment-pack content, and ancestry/
+   * background creation-choice ref must resolve to a real record. Only the
+   * real-import CLI / verify sets this; reduced fixture PDFs legitimately omit
+   * cross-referenced records (a specific table, a piece of equipment) and would
+   * otherwise fail closed.
+   */
+  readonly validateCrossReferences?: boolean;
+  /**
    * Explicit ignore-reason codes allowed to cover inventory items classified
    * as stat blocks. The real importer supplies none; reduced typography
    * fixtures may name a narrow synthetic exception.
@@ -2334,6 +2343,69 @@ function validateEquipmentPackContentRefs(
   if (dangling.length > 0) {
     throw new Error(
       `SRD 5.1 equipment-pack content check failed: ${dangling.length} content ref(s) reference a missing equipment record: ${dangling.join('; ')}. Fix equipmentPackContents.ts or the equipment parser.`,
+    );
+  }
+}
+
+/**
+ * Fail closed when an ancestry/background creation choice or background
+ * equipment grant references a record the pack does not own (eshyra-ngcj.5): a
+ * choice `tableRef` must resolve to a `table` record, a cantrip choice's `from`
+ * spell keys to `spell` records, and an equipment grant `ref` to an `equipment`
+ * record. Runs against the FINAL emitted records.
+ */
+function validateCreationChoiceRefs(
+  records: readonly import('../../../src/rules/types.js').RulesRecord[],
+): void {
+  const keysByKind = new Map<string, Set<string>>();
+  for (const record of records) {
+    const bucket = keysByKind.get(record.kind) ?? new Set<string>();
+    bucket.add(record.key);
+    keysByKind.set(record.kind, bucket);
+  }
+  const has = (kind: string, key: string): boolean =>
+    keysByKind.get(kind)?.has(key) ?? false;
+  const dangling: string[] = [];
+  for (const record of records) {
+    if (record.kind !== 'ancestry' && record.kind !== 'background') continue;
+    const data = record.data as {
+      choices?: unknown;
+      equipmentGrants?: unknown;
+    };
+    if (Array.isArray(data.choices)) {
+      for (const entry of data.choices) {
+        const choice = entry as {
+          tableRef?: unknown;
+          category?: unknown;
+          from?: unknown;
+        };
+        if (
+          typeof choice.tableRef === 'string' &&
+          !has('table', choice.tableRef)
+        ) {
+          dangling.push(`${record.key} tableRef ${choice.tableRef}`);
+        }
+        if (choice.category === 'cantrip' && Array.isArray(choice.from)) {
+          for (const ref of choice.from) {
+            if (typeof ref === 'string' && !has('spell', ref)) {
+              dangling.push(`${record.key} cantrip ${ref}`);
+            }
+          }
+        }
+      }
+    }
+    if (Array.isArray(data.equipmentGrants)) {
+      for (const entry of data.equipmentGrants) {
+        const grant = entry as { ref?: unknown };
+        if (typeof grant.ref === 'string' && !has('equipment', grant.ref)) {
+          dangling.push(`${record.key} grant ${grant.ref}`);
+        }
+      }
+    }
+  }
+  if (dangling.length > 0) {
+    throw new Error(
+      `SRD 5.1 creation-choice ref check failed: ${dangling.length} dangling ref(s): ${dangling.join('; ')}. Fix srdCreationChoices.ts or the referenced parser.`,
     );
   }
 }
@@ -3476,12 +3548,16 @@ export async function runImporter(
     sourceHash,
   });
   validateRecordTextCoverage(pack.records, input.expectedRecordTextSentinels);
-  // Every class starting-equipment fixed item grant must reference a real
-  // equipment record (eshyra-ngcj.3).
-  validateStartingEquipmentGrantRefs(pack.records);
-  // Every equipment-pack content ref must resolve to a real equipment record
-  // (eshyra-ngcj.4).
-  validateEquipmentPackContentRefs(pack.records);
+  // Cross-record grant/choice ref integrity (eshyra-ngcj.3/.4/.5). These need
+  // the FULL record set to resolve their targets (equipment / table / spell), so
+  // they run only on the complete real import (the CLI / verify opt in via
+  // `validateCrossReferences`). Reduced fixture PDFs legitimately omit
+  // cross-referenced records and would otherwise fail closed here.
+  if (input.validateCrossReferences === true) {
+    validateStartingEquipmentGrantRefs(pack.records);
+    validateEquipmentPackContentRefs(pack.records);
+    validateCreationChoiceRefs(pack.records);
+  }
   // Source-structure coverage gate (eshyra-4a7.1): every typography-derived
   // source structure must be an emitted record, structured child data,
   // intentionally ignored with a reason, or a tracked known gap. Evaluated

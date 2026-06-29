@@ -1268,6 +1268,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
       ancestryExtractionsToRecords(input.ancestries ?? []),
       tableRecords,
     ),
+    spellRecords,
   );
   const backgroundRecords = enrichBackgroundCreationFacts(
     backgroundExtractionsToRecords(input.backgrounds ?? []),

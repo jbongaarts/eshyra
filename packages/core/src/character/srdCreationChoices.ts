@@ -1,0 +1,239 @@
+/**
+ * Deterministic ancestry & background character-creation choices (eshyra-ngcj.5).
+ *
+ * Ancestry and background records are source-complete but still carry several
+ * build choices only in prose: a Dragonborn's draconic ancestry, a Dwarf's
+ * artisan-tool proficiency, a Half-Elf's two skill proficiencies, a High Elf's
+ * wizard cantrip and extra language, and an Acolyte's personality/ideal/bond/
+ * flaw rolls plus its equipment grant. This module models each as a typed,
+ * machine-readable choice (or equipment grant) so character creation can resolve
+ * them without parsing prose.
+ *
+ * Choices that ALREADY have a dedicated typed field stay there and are NOT
+ * duplicated here: ability-score choices live in `abilityScoreIncreases[].choice`
+ * and base-language choices in `languages[].choose` (both from creationFacts).
+ * This module owns only the remaining prose-bound choices.
+ *
+ * The authored data is source-cited (each choice keeps the verbatim trait/source
+ * text). It is shared by the importer (which attaches it to ancestry/background
+ * records) and the runtime; ref/tableRef reachability is checked fail-closed by
+ * an importer guard.
+ */
+
+import type { EquipmentPackContent } from './srdEquipmentPacks.js';
+
+/** A background equipment line item reuses the pack-content shape. */
+export type BackgroundEquipmentGrant = EquipmentPackContent;
+
+/** Closed vocabulary of ancestry/background creation-choice categories. */
+export type CreationChoiceCategory =
+  | 'draconicAncestry'
+  | 'tool'
+  | 'skill'
+  | 'cantrip'
+  | 'language'
+  | 'personalityTrait'
+  | 'ideal'
+  | 'bond'
+  | 'flaw';
+
+/** A single typed character-creation choice on an ancestry or background. */
+export interface CreationChoice {
+  /** Stable, kebab-case id unique within the record. */
+  readonly id: string;
+  readonly category: CreationChoiceCategory;
+  /** Player-facing prompt. */
+  readonly prompt: string;
+  /** How many options to pick. */
+  readonly choose: number;
+  /** Discrete options (record keys or labels), when the set is enumerable. */
+  readonly from?: readonly string[];
+  /** Table record key the options come from (draconic ancestry, trait rolls). */
+  readonly tableRef?: string;
+  /** Dice for a rolled table, e.g. "1d8" (personality) or "1d6" (ideal/bond/flaw). */
+  readonly roll?: string;
+  /** Verbatim source trait/prose text, for auditability. */
+  readonly sourceText: string;
+}
+
+/** The 18 SRD 5.1 skills, the universe for an open "skills of your choice". */
+export const SRD_5_1_SKILLS: readonly string[] = [
+  'Acrobatics',
+  'Animal Handling',
+  'Arcana',
+  'Athletics',
+  'Deception',
+  'History',
+  'Insight',
+  'Intimidation',
+  'Investigation',
+  'Medicine',
+  'Nature',
+  'Perception',
+  'Performance',
+  'Persuasion',
+  'Religion',
+  'Sleight of Hand',
+  'Stealth',
+  'Survival',
+];
+
+/** The Dwarf/Hill Dwarf artisan-tool proficiency options. */
+const ARTISAN_TOOL_OPTIONS: readonly string[] = [
+  'Smith’s tools',
+  'Brewer’s supplies',
+  'Mason’s tools',
+];
+
+/** Context the importer supplies (pack-derived, enumerable option sets). */
+export interface CreationChoiceContext {
+  /** Sorted `spell:` keys of every wizard cantrip in the pack. */
+  readonly wizardCantrips: readonly string[];
+}
+
+/**
+ * The ancestry creation choices for a record key, or `undefined` when the
+ * ancestry has none. `from` sets that depend on the pack (the High Elf wizard
+ * cantrip) are filled from `ctx`.
+ */
+export function getAncestryCreationChoices(
+  ancestryKey: string,
+  ctx: CreationChoiceContext,
+): readonly CreationChoice[] | undefined {
+  switch (ancestryKey) {
+    case 'ancestry:dragonborn':
+      return [
+        {
+          id: 'draconic-ancestry',
+          category: 'draconicAncestry',
+          prompt: 'Choose one type of dragon for your draconic ancestry.',
+          choose: 1,
+          tableRef: 'table:draconic-ancestry',
+          sourceText:
+            'You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table.',
+        },
+      ];
+    case 'ancestry:dwarf':
+    case 'ancestry:hill-dwarf':
+      return [
+        {
+          id: 'tool-proficiency',
+          category: 'tool',
+          prompt: 'Choose an artisan’s tool proficiency.',
+          choose: 1,
+          from: ARTISAN_TOOL_OPTIONS,
+          sourceText:
+            'You gain proficiency with the artisan’s tools of your choice: smith’s tools, brewer’s supplies, or mason’s tools.',
+        },
+      ];
+    case 'ancestry:half-elf':
+      return [
+        {
+          id: 'skill-versatility',
+          category: 'skill',
+          prompt: 'Choose two skill proficiencies.',
+          choose: 2,
+          from: SRD_5_1_SKILLS,
+          sourceText: 'You gain proficiency in two skills of your choice.',
+        },
+      ];
+    case 'ancestry:high-elf':
+      return [
+        {
+          id: 'cantrip',
+          category: 'cantrip',
+          prompt: 'Choose one wizard cantrip.',
+          choose: 1,
+          from: ctx.wizardCantrips,
+          sourceText:
+            'You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it.',
+        },
+        {
+          id: 'extra-language',
+          category: 'language',
+          prompt: 'Choose one extra language.',
+          choose: 1,
+          sourceText:
+            'You can speak, read, and write one extra language of your choice.',
+        },
+      ];
+    default:
+      return undefined;
+  }
+}
+
+/** Structured background creation facts: choices plus equipment grants. */
+export interface BackgroundCreationFacts {
+  readonly choices: readonly CreationChoice[];
+  readonly equipmentGrants: readonly BackgroundEquipmentGrant[];
+}
+
+const ACOLYTE_FACTS: BackgroundCreationFacts = {
+  choices: [
+    {
+      id: 'personality-trait',
+      category: 'personalityTrait',
+      prompt: 'Choose or roll a personality trait.',
+      choose: 1,
+      tableRef: 'table:acolyte-personality-traits',
+      roll: '1d8',
+      sourceText: 'Acolyte Personality Traits (d8).',
+    },
+    {
+      id: 'ideal',
+      category: 'ideal',
+      prompt: 'Choose or roll an ideal.',
+      choose: 1,
+      tableRef: 'table:acolyte-ideals',
+      roll: '1d6',
+      sourceText: 'Acolyte Ideals (d6).',
+    },
+    {
+      id: 'bond',
+      category: 'bond',
+      prompt: 'Choose or roll a bond.',
+      choose: 1,
+      tableRef: 'table:acolyte-bonds',
+      roll: '1d6',
+      sourceText: 'Acolyte Bonds (d6).',
+    },
+    {
+      id: 'flaw',
+      category: 'flaw',
+      prompt: 'Choose or roll a flaw.',
+      choose: 1,
+      tableRef: 'table:acolyte-flaws',
+      roll: '1d6',
+      sourceText: 'Acolyte Flaws (d6).',
+    },
+  ],
+  equipmentGrants: [
+    {
+      quantity: 1,
+      name: 'holy symbol',
+      detail: 'a gift to you when you entered the priesthood',
+    },
+    { quantity: 1, name: 'prayer book or prayer wheel' },
+    { quantity: 5, name: 'stick of incense' },
+    { quantity: 1, name: 'vestments' },
+    {
+      quantity: 1,
+      name: 'set of common clothes',
+      ref: 'equipment:clothes-common',
+    },
+    {
+      quantity: 1,
+      name: 'pouch',
+      ref: 'equipment:pouch',
+      detail: 'containing 15 gp',
+    },
+  ],
+};
+
+/** The background creation facts for a record key, or `undefined` for none. */
+export function getBackgroundCreationFacts(
+  backgroundKey: string,
+): BackgroundCreationFacts | undefined {
+  if (backgroundKey === 'background:acolyte') return ACOLYTE_FACTS;
+  return undefined;
+}

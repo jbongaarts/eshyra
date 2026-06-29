@@ -274,7 +274,9 @@ describe('choice-bearing prose gate (committed pack baseline)', () => {
   // eshyra-ngcj.5 (ancestry/background, e.g. Rock Gnome's Tinker menu). When a
   // bead lands and this number drops, update it here.
   it('total finding count matches the pinned 2026-06-29 baseline', () => {
-    expect(findings.length).toBe(27);
+    // 27 at ngcj.1; ancestry:rock-gnome's Tinker (a per-use device-construction
+    // menu, not a creation choice) was allowlisted under eshyra-ngcj.5 -> 26.
+    expect(findings.length).toBe(26);
   });
 
   it('formats a human-readable punch-list report', () => {

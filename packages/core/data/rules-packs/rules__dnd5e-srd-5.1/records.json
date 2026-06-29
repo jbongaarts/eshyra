@@ -373,6 +373,16 @@
           ],
           "sourceText": "You can speak, read, and write Common and Draconic."
         }
+      ],
+      "choices": [
+        {
+          "id": "draconic-ancestry",
+          "category": "draconicAncestry",
+          "prompt": "Choose one type of dragon for your draconic ancestry.",
+          "choose": 1,
+          "tableRef": "table:draconic-ancestry",
+          "sourceText": "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
+        }
       ]
     },
     "source": "SRD 5.1 p. 5",
@@ -474,6 +484,20 @@
             "Dwarvish"
           ],
           "sourceText": "You can speak, read, and write Common and Dwarvish."
+        }
+      ],
+      "choices": [
+        {
+          "id": "tool-proficiency",
+          "category": "tool",
+          "prompt": "Choose an artisan’s tool proficiency.",
+          "choose": 1,
+          "from": [
+            "Smith’s tools",
+            "Brewer’s supplies",
+            "Mason’s tools"
+          ],
+          "sourceText": "You gain proficiency with the artisan’s tools of your choice: smith’s tools, brewer’s supplies, or mason’s tools."
         }
       ]
     },
@@ -765,6 +789,35 @@
           ],
           "choose": 1,
           "sourceText": "You can speak, read, and write Common, Elvish, and one extra language of your choice."
+        }
+      ],
+      "choices": [
+        {
+          "id": "skill-versatility",
+          "category": "skill",
+          "prompt": "Choose two skill proficiencies.",
+          "choose": 2,
+          "from": [
+            "Acrobatics",
+            "Animal Handling",
+            "Arcana",
+            "Athletics",
+            "Deception",
+            "History",
+            "Insight",
+            "Intimidation",
+            "Investigation",
+            "Medicine",
+            "Nature",
+            "Perception",
+            "Performance",
+            "Persuasion",
+            "Religion",
+            "Sleight of Hand",
+            "Stealth",
+            "Survival"
+          ],
+          "sourceText": "You gain proficiency in two skills of your choice."
         }
       ]
     },
@@ -1071,6 +1124,38 @@
           ],
           "sourceText": "You can speak, read, and write Common and Elvish."
         }
+      ],
+      "choices": [
+        {
+          "id": "cantrip",
+          "category": "cantrip",
+          "prompt": "Choose one wizard cantrip.",
+          "choose": 1,
+          "from": [
+            "spell:acid-splash",
+            "spell:chill-touch",
+            "spell:dancing-lights",
+            "spell:fire-bolt",
+            "spell:light",
+            "spell:mage-hand",
+            "spell:mending",
+            "spell:message",
+            "spell:minor-illusion",
+            "spell:poison-spray",
+            "spell:prestidigitation",
+            "spell:ray-of-frost",
+            "spell:shocking-grasp",
+            "spell:true-strike"
+          ],
+          "sourceText": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it."
+        },
+        {
+          "id": "extra-language",
+          "category": "language",
+          "prompt": "Choose one extra language.",
+          "choose": 1,
+          "sourceText": "You can speak, read, and write one extra language of your choice."
+        }
       ]
     },
     "source": "SRD 5.1 p. 4",
@@ -1178,6 +1263,20 @@
             "Dwarvish"
           ],
           "sourceText": "You can speak, read, and write Common and Dwarvish."
+        }
+      ],
+      "choices": [
+        {
+          "id": "tool-proficiency",
+          "category": "tool",
+          "prompt": "Choose an artisan’s tool proficiency.",
+          "choose": 1,
+          "from": [
+            "Smith’s tools",
+            "Brewer’s supplies",
+            "Mason’s tools"
+          ],
+          "sourceText": "You gain proficiency with the artisan’s tools of your choice: smith’s tools, brewer’s supplies, or mason’s tools."
         }
       ]
     },
@@ -1629,6 +1728,74 @@
         "text": "As an acolyte, you command the respect of those who share your faith, and you can perform the religious ceremonies of your deity. You and your adventuring companions can expect to receive free healing and care at a temple, shrine, or other established presence of your faith, though you must provide any material components needed for spells. Those who share your religion will support you (but only you) at a modest lifestyle. You might also have ties to a specific temple dedicated to your chosen deity or pantheon, and you have a residence there. This could be the temple where you used to serve, if you remain on good terms with it, or a temple where you have found a new home. While near your temple, you can call upon the priests for assistance, provided the assistance you ask for is not hazardous and you remain in good standing with your temple."
       },
       "suggestedCharacteristics": "Acolytes are shaped by their experience in temples or other religious communities. Their study of the history and tenets of their faith and their relationships to temples, shrines, or hierarchies affect their mannerisms and ideals. Their flaws might be some hidden hypocrisy or heretical idea, or an ideal or bond taken to an extreme.",
+      "choices": [
+        {
+          "id": "personality-trait",
+          "category": "personalityTrait",
+          "prompt": "Choose or roll a personality trait.",
+          "choose": 1,
+          "tableRef": "table:acolyte-personality-traits",
+          "roll": "1d8",
+          "sourceText": "Acolyte Personality Traits (d8)."
+        },
+        {
+          "id": "ideal",
+          "category": "ideal",
+          "prompt": "Choose or roll an ideal.",
+          "choose": 1,
+          "tableRef": "table:acolyte-ideals",
+          "roll": "1d6",
+          "sourceText": "Acolyte Ideals (d6)."
+        },
+        {
+          "id": "bond",
+          "category": "bond",
+          "prompt": "Choose or roll a bond.",
+          "choose": 1,
+          "tableRef": "table:acolyte-bonds",
+          "roll": "1d6",
+          "sourceText": "Acolyte Bonds (d6)."
+        },
+        {
+          "id": "flaw",
+          "category": "flaw",
+          "prompt": "Choose or roll a flaw.",
+          "choose": 1,
+          "tableRef": "table:acolyte-flaws",
+          "roll": "1d6",
+          "sourceText": "Acolyte Flaws (d6)."
+        }
+      ],
+      "equipmentGrants": [
+        {
+          "quantity": 1,
+          "name": "holy symbol",
+          "detail": "a gift to you when you entered the priesthood"
+        },
+        {
+          "quantity": 1,
+          "name": "prayer book or prayer wheel"
+        },
+        {
+          "quantity": 5,
+          "name": "stick of incense"
+        },
+        {
+          "quantity": 1,
+          "name": "vestments"
+        },
+        {
+          "quantity": 1,
+          "name": "set of common clothes",
+          "ref": "equipment:clothes-common"
+        },
+        {
+          "quantity": 1,
+          "name": "pouch",
+          "ref": "equipment:pouch",
+          "detail": "containing 15 gp"
+        }
+      ],
       "tableRefs": [
         "table:acolyte-bonds",
         "table:acolyte-flaws",

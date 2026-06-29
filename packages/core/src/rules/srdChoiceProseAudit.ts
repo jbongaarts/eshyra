@@ -149,6 +149,10 @@ export const CHOICE_PROSE_ALLOWLIST: ReadonlyMap<string, string> = new Map([
     'feature:school-of-evocation:sculpt-spells',
     'The "choose a number of them equal to 1 + the spell’s level" prose is a per-cast targeting formula, not a build-time spell/option catalog.',
   ],
+  [
+    'ancestry:rock-gnome',
+    'The Tinker "choose one of the following options" (Clockwork Toy / Fire Starter / Music Box) is a repeatable in-play device-construction choice, not a character-creation build catalog (eshyra-ngcj.5).',
+  ],
 ]);
 
 // ---------------------------------------------------------------------------

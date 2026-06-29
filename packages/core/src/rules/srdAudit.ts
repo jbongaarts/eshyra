@@ -818,10 +818,14 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
 
   if (Array.isArray(data.choices)) {
     for (const choice of data.choices) {
-      const from = (choice as { from?: unknown } | null)?.from;
-      if (Array.isArray(from)) {
-        for (const entry of from) push(entry, ['subclass'], 'choices[].from');
-      }
+      const c = choice as { from?: unknown; category?: unknown } | null;
+      const from = c?.from;
+      if (!Array.isArray(from)) continue;
+      // A feature's subclass choice lists `subclass:` option keys; an ancestry
+      // cantrip choice (eshyra-ngcj.5) lists `spell:` cantrip keys. Other
+      // categories (tool/skill) list free-text labels, skipped by isRecordKey.
+      const targets = c?.category === 'cantrip' ? ['spell'] : ['subclass'];
+      for (const entry of from) push(entry, targets, 'choices[].from');
     }
   }
 
