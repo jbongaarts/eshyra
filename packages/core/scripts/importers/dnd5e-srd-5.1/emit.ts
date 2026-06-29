@@ -604,7 +604,7 @@ export function subclassExtractionsToRecords(
  * granting class (`class:<slug>`) or subclass (`subclass:<slug>`) record (ADR
  * 0009 data-side linkage, never `overrides`). Field insertion order is fixed
  * for byte-stable output and matches the `dnd5e-srd` feature kindSchema
- * (`validateDnd5eFeature`: source, level, description).
+ * (`validateDnd5eFeature`: source, level, description, optional choices).
  */
 function buildFeatureData(feature: FeatureExtraction): Record<string, unknown> {
   const source =
@@ -615,6 +615,12 @@ function buildFeatureData(feature: FeatureExtraction): Record<string, unknown> {
     source,
     level: feature.level,
     description: feature.description,
+    // Structured player choices (eshyra-o9bd.9). Absent until a derivation pass
+    // populates `feature.choices`; only emitted when present so the committed
+    // pack stays byte-stable for features without modeled choices.
+    ...(feature.choices !== undefined
+      ? { choices: feature.choices.map((c) => ({ ...c })) }
+      : {}),
   };
 }
 

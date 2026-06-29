@@ -782,6 +782,15 @@ export {
   getBundledDnd5eSrdPack,
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
 } from './rules/bundledSrdPack.js';
+export type {
+  FeatureChoice,
+  FeatureChoiceCategory,
+  FeatureChoiceUnsupported,
+} from './rules/featureChoices.js';
+export {
+  FEATURE_CHOICE_CATEGORIES,
+  isFeatureChoiceCategory,
+} from './rules/featureChoices.js';
 export { validateRecordKindSchema } from './rules/kindSchemas.js';
 export type { RulesPackUsePolicy } from './rules/license.js';
 export {
