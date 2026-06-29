@@ -794,7 +794,14 @@ export interface FeatureChoiceEntry {
   readonly prompt: string;
   readonly level: number;
   readonly choose?: number;
-  readonly from?: readonly string[] | string;
+  readonly from?: readonly string[] | Record<string, unknown> | string;
+  readonly options?: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly text: string;
+    readonly prerequisite?: string;
+    readonly source: string;
+  }[];
   readonly unsupported?: { readonly reason: string };
 }
 

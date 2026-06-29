@@ -42000,7 +42000,27 @@
     "data": {
       "source": "class:bard",
       "level": 10,
-      "description": "By 10th level, you have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you and are included in the number in the Spells Known column of the Bard table. You learn two additional spells from any class at 14th level and again at 18th level."
+      "description": "By 10th level, you have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you and are included in the number in the Spells Known column of the Bard table. You learn two additional spells from any class at 14th level and again at 18th level.",
+      "choices": [
+        {
+          "id": "magical-secrets",
+          "category": "spell",
+          "prompt": "Choose two spells from any class; each must be a cantrip or of a level you can cast.",
+          "level": 10,
+          "choose": 2,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": "any",
+            "includeCantrips": true,
+            "maxSpellLevel": {
+              "classRef": "class:bard",
+              "atLevel": 10
+            },
+            "countsAsClassSpell": "class:bard",
+            "countsAgainstKnown": true
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -42146,7 +42166,62 @@
     "data": {
       "source": "subclass:champion",
       "level": 10,
-      "description": "At 10th level, you can choose a second option from the Fighting Style class feature."
+      "description": "At 10th level, you can choose a second option from the Fighting Style class feature.",
+      "choices": [
+        {
+          "id": "additional-fighting-style",
+          "category": "fightingStyle",
+          "prompt": "Choose a second option from the Fighter Fighting Style class feature.",
+          "level": 10,
+          "choose": 1,
+          "from": [
+            "fighting-style:archery",
+            "fighting-style:defense",
+            "fighting-style:dueling",
+            "fighting-style:great-weapon-fighting",
+            "fighting-style:protection",
+            "fighting-style:two-weapon-fighting"
+          ],
+          "options": [
+            {
+              "id": "fighting-style:archery",
+              "name": "Archery",
+              "text": "You gain a +2 bonus to attack rolls you make with ranged weapons.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:defense",
+              "name": "Defense",
+              "text": "While you are wearing armor, you gain a +1 bonus to AC.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:dueling",
+              "name": "Dueling",
+              "text": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:great-weapon-fighting",
+              "name": "Great Weapon Fighting",
+              "text": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:protection",
+              "name": "Protection",
+              "text": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:two-weapon-fighting",
+              "name": "Two-Weapon Fighting",
+              "text": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.",
+              "source": "SRD 5.1 p. 24"
+            }
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 25",
     "license": {
@@ -42793,7 +42868,27 @@
     "data": {
       "source": "subclass:college-of-lore",
       "level": 6,
-      "description": "At 6th level, you learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you but don’t count against the number of bard spells you know."
+      "description": "At 6th level, you learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you but don’t count against the number of bard spells you know.",
+      "choices": [
+        {
+          "id": "additional-magical-secrets",
+          "category": "spell",
+          "prompt": "Choose two spells from any class; each must be a cantrip or of a level you can cast.",
+          "level": 6,
+          "choose": 2,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": "any",
+            "includeCantrips": true,
+            "maxSpellLevel": {
+              "classRef": "class:bard",
+              "atLevel": 6
+            },
+            "countsAsClassSpell": "class:bard",
+            "countsAgainstKnown": false
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -43553,7 +43648,52 @@
           "prompt": "Choose a Fighting Style option.",
           "level": 1,
           "choose": 1,
-          "from": "a Fighting Style option from this feature"
+          "from": [
+            "fighting-style:archery",
+            "fighting-style:defense",
+            "fighting-style:dueling",
+            "fighting-style:great-weapon-fighting",
+            "fighting-style:protection",
+            "fighting-style:two-weapon-fighting"
+          ],
+          "options": [
+            {
+              "id": "fighting-style:archery",
+              "name": "Archery",
+              "text": "You gain a +2 bonus to attack rolls you make with ranged weapons.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:defense",
+              "name": "Defense",
+              "text": "While you are wearing armor, you gain a +1 bonus to AC.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:dueling",
+              "name": "Dueling",
+              "text": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:great-weapon-fighting",
+              "name": "Great Weapon Fighting",
+              "text": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:protection",
+              "name": "Protection",
+              "text": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield.",
+              "source": "SRD 5.1 p. 24"
+            },
+            {
+              "id": "fighting-style:two-weapon-fighting",
+              "name": "Two-Weapon Fighting",
+              "text": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.",
+              "source": "SRD 5.1 p. 24"
+            }
+          ]
         }
       ]
     },
@@ -43695,7 +43835,41 @@
     "data": {
       "source": "subclass:hunter",
       "level": 7,
-      "description": "At 7th level, you gain one of the following features of your choice. Escape the Horde. Opportunity attacks against you are made with disadvantage. Multiattack Defense. When a creature hits you with an attack, you gain a +4 bonus to AC against all subsequent attacks made by that creature for the rest of the turn. Steel Will. You have advantage on saving throws against being frightened."
+      "description": "At 7th level, you gain one of the following features of your choice. Escape the Horde. Opportunity attacks against you are made with disadvantage. Multiattack Defense. When a creature hits you with an attack, you gain a +4 bonus to AC against all subsequent attacks made by that creature for the rest of the turn. Steel Will. You have advantage on saving throws against being frightened.",
+      "choices": [
+        {
+          "id": "defensive-tactics",
+          "category": "other",
+          "prompt": "Choose a Defensive Tactics option.",
+          "level": 7,
+          "choose": 1,
+          "from": [
+            "defensive-tactics:escape-the-horde",
+            "defensive-tactics:multiattack-defense",
+            "defensive-tactics:steel-will"
+          ],
+          "options": [
+            {
+              "id": "defensive-tactics:escape-the-horde",
+              "name": "Escape the Horde",
+              "text": "Opportunity attacks against you are made with disadvantage.",
+              "source": "SRD 5.1 p. 38"
+            },
+            {
+              "id": "defensive-tactics:multiattack-defense",
+              "name": "Multiattack Defense",
+              "text": "When a creature hits you with an attack, you gain a +4 bonus to AC against all subsequent attacks made by that creature for the rest of the turn.",
+              "source": "SRD 5.1 p. 38"
+            },
+            {
+              "id": "defensive-tactics:steel-will",
+              "name": "Steel Will",
+              "text": "You have advantage on saving throws against being frightened.",
+              "source": "SRD 5.1 p. 38"
+            }
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 38",
     "license": {
@@ -43727,7 +43901,41 @@
     "data": {
       "source": "subclass:hunter",
       "level": 3,
-      "description": "At 3rd level, you gain one of the following features of your choice. Colossus Slayer. Your tenacity can wear down the most potent foes. When you hit a creature with a weapon attack, the creature takes an extra 1d8 damage if it’s below its hit point maximum. You can deal this extra damage only once per turn. Giant Killer. When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature. Horde Breaker. Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon."
+      "description": "At 3rd level, you gain one of the following features of your choice. Colossus Slayer. Your tenacity can wear down the most potent foes. When you hit a creature with a weapon attack, the creature takes an extra 1d8 damage if it’s below its hit point maximum. You can deal this extra damage only once per turn. Giant Killer. When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature. Horde Breaker. Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon.",
+      "choices": [
+        {
+          "id": "hunters-prey",
+          "category": "other",
+          "prompt": "Choose a Hunter's Prey option.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "hunters-prey:colossus-slayer",
+            "hunters-prey:giant-killer",
+            "hunters-prey:horde-breaker"
+          ],
+          "options": [
+            {
+              "id": "hunters-prey:colossus-slayer",
+              "name": "Colossus Slayer",
+              "text": "Your tenacity can wear down the most potent foes. When you hit a creature with a weapon attack, the creature takes an extra 1d8 damage if it’s below its hit point maximum. You can deal this extra damage only once per turn.",
+              "source": "SRD 5.1 p. 37"
+            },
+            {
+              "id": "hunters-prey:giant-killer",
+              "name": "Giant Killer",
+              "text": "When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature.",
+              "source": "SRD 5.1 p. 37"
+            },
+            {
+              "id": "hunters-prey:horde-breaker",
+              "name": "Horde Breaker",
+              "text": "Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon.",
+              "source": "SRD 5.1 p. 37"
+            }
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -43759,7 +43967,34 @@
     "data": {
       "source": "subclass:hunter",
       "level": 11,
-      "description": "At 11th level, you gain one of the following features of your choice. Volley. You can use your action to make a ranged attack against any number of creatures within 10 feet of a point you can see within your weapon’s range. You must have ammunition for each target, as normal, and you make a separate attack roll for each target. Whirlwind Attack. You can use your action to make a melee attack against any number of creatures within 5 feet of you, with a separate attack roll for each target."
+      "description": "At 11th level, you gain one of the following features of your choice. Volley. You can use your action to make a ranged attack against any number of creatures within 10 feet of a point you can see within your weapon’s range. You must have ammunition for each target, as normal, and you make a separate attack roll for each target. Whirlwind Attack. You can use your action to make a melee attack against any number of creatures within 5 feet of you, with a separate attack roll for each target.",
+      "choices": [
+        {
+          "id": "multiattack",
+          "category": "other",
+          "prompt": "Choose a Hunter Multiattack option.",
+          "level": 11,
+          "choose": 1,
+          "from": [
+            "hunter-multiattack:volley",
+            "hunter-multiattack:whirlwind-attack"
+          ],
+          "options": [
+            {
+              "id": "hunter-multiattack:volley",
+              "name": "Volley",
+              "text": "You can use your action to make a ranged attack against any number of creatures within 10 feet of a point you can see within your weapon’s range. You must have ammunition for each target, as normal, and you make a separate attack roll for each target.",
+              "source": "SRD 5.1 p. 38"
+            },
+            {
+              "id": "hunter-multiattack:whirlwind-attack",
+              "name": "Whirlwind Attack",
+              "text": "You can use your action to make a melee attack against any number of creatures within 5 feet of you, with a separate attack roll for each target.",
+              "source": "SRD 5.1 p. 38"
+            }
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 38",
     "license": {
@@ -43791,7 +44026,41 @@
     "data": {
       "source": "subclass:hunter",
       "level": 15,
-      "description": "At 15th level, you gain one of the following features of your choice. Evasion. When you are subjected to an effect, such as a red dragon’s fiery breath or a lightning bolt spell, that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail. Stand Against the Tide. When a hostile creature misses you with a melee attack, you can use your reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice. Uncanny Dodge. When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you."
+      "description": "At 15th level, you gain one of the following features of your choice. Evasion. When you are subjected to an effect, such as a red dragon’s fiery breath or a lightning bolt spell, that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail. Stand Against the Tide. When a hostile creature misses you with a melee attack, you can use your reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice. Uncanny Dodge. When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you.",
+      "choices": [
+        {
+          "id": "superior-hunters-defense",
+          "category": "other",
+          "prompt": "Choose a Superior Hunter's Defense option.",
+          "level": 15,
+          "choose": 1,
+          "from": [
+            "superior-hunters-defense:evasion",
+            "superior-hunters-defense:stand-against-the-tide",
+            "superior-hunters-defense:uncanny-dodge"
+          ],
+          "options": [
+            {
+              "id": "superior-hunters-defense:evasion",
+              "name": "Evasion",
+              "text": "When you are subjected to an effect, such as a red dragon’s fiery breath or a lightning bolt spell, that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.",
+              "source": "SRD 5.1 p. 38"
+            },
+            {
+              "id": "superior-hunters-defense:stand-against-the-tide",
+              "name": "Stand Against the Tide",
+              "text": "When a hostile creature misses you with a melee attack, you can use your reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice.",
+              "source": "SRD 5.1 p. 38"
+            },
+            {
+              "id": "superior-hunters-defense:uncanny-dodge",
+              "name": "Uncanny Dodge",
+              "text": "When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you.",
+              "source": "SRD 5.1 p. 38"
+            }
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 38",
     "license": {
@@ -43887,7 +44156,18 @@
     "data": {
       "source": "subclass:life-domain",
       "level": 2,
-      "description": "Starting at 2nd level, you can use your Channel Divinity to heal the badly injured. As an action, you present your holy symbol and evoke healing energy that can restore a number of hit points equal to five times your cleric level. Choose any creatures within 30 feet of you, and divide those hit points among them. This feature can restore a creature to no more than half of its hit point maximum. You can’t use this feature on an undead or a construct."
+      "description": "Starting at 2nd level, you can use your Channel Divinity to heal the badly injured. As an action, you present your holy symbol and evoke healing energy that can restore a number of hit points equal to five times your cleric level. Choose any creatures within 30 feet of you, and divide those hit points among them. This feature can restore a creature to no more than half of its hit point maximum. You can’t use this feature on an undead or a construct.",
+      "choices": [
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 2,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -44693,7 +44973,18 @@
     "data": {
       "source": "subclass:oath-of-devotion",
       "level": 3,
-      "description": "When you take this oath at 3rd level, you gain the following two Channel Divinity options. Sacred Weapon. As an action, you can imbue one weapon that you are holding with positive energy, using your Channel Divinity. For 1 minute, you add your Charisma modifier to attack rolls made with that weapon (with a minimum bonus of +1). The weapon also emits bright light in a 20-foot radius and dim light 20 feet beyond that. If the weapon is not already magical, it becomes magical for the duration. You can end this effect on your turn as part of any other action. If you are no longer holding or carrying this weapon, or if you fall unconscious, this effect ends. Turn the Unholy. As an action, you present your holy symbol and speak a prayer censuring fiends and undead, using your Channel Divinity. Each fiend or undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action."
+      "description": "When you take this oath at 3rd level, you gain the following two Channel Divinity options. Sacred Weapon. As an action, you can imbue one weapon that you are holding with positive energy, using your Channel Divinity. For 1 minute, you add your Charisma modifier to attack rolls made with that weapon (with a minimum bonus of +1). The weapon also emits bright light in a 20-foot radius and dim light 20 feet beyond that. If the weapon is not already magical, it becomes magical for the duration. You can end this effect on your turn as part of any other action. If you are no longer holding or carrying this weapon, or if you fall unconscious, this effect ends. Turn the Unholy. As an action, you present your holy symbol and speak a prayer censuring fiends and undead, using your Channel Divinity. Each fiend or undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action.",
+      "choices": [
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 3,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 33",
     "license": {
@@ -45079,7 +45370,38 @@
           "prompt": "Choose a Fighting Style option.",
           "level": 2,
           "choose": 1,
-          "from": "a Fighting Style option from this feature"
+          "from": [
+            "fighting-style:defense",
+            "fighting-style:dueling",
+            "fighting-style:great-weapon-fighting",
+            "fighting-style:protection"
+          ],
+          "options": [
+            {
+              "id": "fighting-style:defense",
+              "name": "Defense",
+              "text": "While you are wearing armor, you gain a +1 bonus to AC.",
+              "source": "SRD 5.1 p. 31"
+            },
+            {
+              "id": "fighting-style:dueling",
+              "name": "Dueling",
+              "text": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
+              "source": "SRD 5.1 p. 31"
+            },
+            {
+              "id": "fighting-style:great-weapon-fighting",
+              "name": "Great Weapon Fighting",
+              "text": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll. The weapon must have the two-handed or versatile property for you to gain this benefit.",
+              "source": "SRD 5.1 p. 31"
+            },
+            {
+              "id": "fighting-style:protection",
+              "name": "Protection",
+              "text": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield.",
+              "source": "SRD 5.1 p. 31"
+            }
+          ]
         }
       ]
     },
@@ -45576,7 +45898,38 @@
           "prompt": "Choose a Fighting Style option.",
           "level": 2,
           "choose": 1,
-          "from": "a Fighting Style option from this feature"
+          "from": [
+            "fighting-style:archery",
+            "fighting-style:defense",
+            "fighting-style:dueling",
+            "fighting-style:two-weapon-fighting"
+          ],
+          "options": [
+            {
+              "id": "fighting-style:archery",
+              "name": "Archery",
+              "text": "You gain a +2 bonus to attack rolls you make with ranged weapons.",
+              "source": "SRD 5.1 p. 36"
+            },
+            {
+              "id": "fighting-style:defense",
+              "name": "Defense",
+              "text": "While you are wearing armor, you gain a +1 bonus to AC.",
+              "source": "SRD 5.1 p. 36"
+            },
+            {
+              "id": "fighting-style:dueling",
+              "name": "Dueling",
+              "text": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
+              "source": "SRD 5.1 p. 36"
+            },
+            {
+              "id": "fighting-style:two-weapon-fighting",
+              "name": "Two-Weapon Fighting",
+              "text": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.",
+              "source": "SRD 5.1 p. 36"
+            }
+          ]
         }
       ]
     },
@@ -46663,7 +47016,66 @@
           "prompt": "Choose 2 Metamagic options.",
           "level": 3,
           "choose": 2,
-          "from": "a Metamagic option from this feature"
+          "from": [
+            "metamagic:careful-spell",
+            "metamagic:distant-spell",
+            "metamagic:empowered-spell",
+            "metamagic:extended-spell",
+            "metamagic:heightened-spell",
+            "metamagic:quickened-spell",
+            "metamagic:subtle-spell",
+            "metamagic:twinned-spell"
+          ],
+          "options": [
+            {
+              "id": "metamagic:careful-spell",
+              "name": "Careful Spell",
+              "text": "When you cast a spell that forces other creatures to make a saving throw, you can protect some of those creatures from the spell’s full force. To do so, you spend 1 sorcery point and choose a number of those creatures up to your Charisma modifier (minimum of one creature). A chosen creature automatically succeeds on its saving throw against the spell.",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "metamagic:distant-spell",
+              "name": "Distant Spell",
+              "text": "When you cast a spell that has a range of 5 feet or greater, you can spend 1 sorcery point to double the range of the spell. When you cast a spell that has a range of touch, you can spend 1 sorcery point to make the range of the spell 30 feet.",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "metamagic:empowered-spell",
+              "name": "Empowered Spell",
+              "text": "When you roll damage for a spell, you can spend 1 sorcery point to reroll a number of the damage dice up to your Charisma modifier (minimum of one). You must use the new rolls. You can use Empowered Spell even if you have already used a different Metamagic option during the casting of the spell.",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "metamagic:extended-spell",
+              "name": "Extended Spell",
+              "text": "When you cast a spell that has a duration of 1 minute or longer, you can spend 1 sorcery point to double its duration, to a maximum duration of 24 hours.",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "metamagic:heightened-spell",
+              "name": "Heightened Spell",
+              "text": "When you cast a spell that forces a creature to make a saving throw to resist its effects, you can spend 3 sorcery points to give one target of the spell disadvantage on its first saving throw made against the spell.",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "metamagic:quickened-spell",
+              "name": "Quickened Spell",
+              "text": "When you cast a spell that has a casting time of 1 action, you can spend 2 sorcery points to change the casting time to 1 bonus action for this casting.",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "metamagic:subtle-spell",
+              "name": "Subtle Spell",
+              "text": "When you cast a spell, you can spend 1 sorcery point to cast it without any somatic or verbal components.",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "metamagic:twinned-spell",
+              "name": "Twinned Spell",
+              "text": "When you cast a spell that targets only one creature and doesn’t have a range of self, you can spend a number of sorcery points equal to the spell’s level to target a second creature in range with the same spell (1 sorcery point if the spell is a cantrip). To be eligible, a spell must be incapable of targeting more than one creature at the spell’s current level. For example, magic missile and scorching ray aren’t eligible, but ray of frost is.",
+              "source": "SRD 5.1 p. 44"
+            }
+          ]
         }
       ]
     },
@@ -47177,7 +47589,272 @@
           "prompt": "Choose 2 Eldritch Invocations you qualify for.",
           "level": 2,
           "choose": 2,
-          "from": "an Eldritch Invocation you qualify for"
+          "from": [
+            "eldritch-invocation:agonizing-blast",
+            "eldritch-invocation:armor-of-shadows",
+            "eldritch-invocation:ascendant-step",
+            "eldritch-invocation:beast-speech",
+            "eldritch-invocation:beguiling-influence",
+            "eldritch-invocation:bewitching-whispers",
+            "eldritch-invocation:book-of-ancient-secrets",
+            "eldritch-invocation:chains-of-carceri",
+            "eldritch-invocation:devils-sight",
+            "eldritch-invocation:dreadful-word",
+            "eldritch-invocation:eldritch-sight",
+            "eldritch-invocation:eldritch-spear",
+            "eldritch-invocation:eyes-of-the-rune-keeper",
+            "eldritch-invocation:fiendish-vigor",
+            "eldritch-invocation:gaze-of-two-minds",
+            "eldritch-invocation:lifedrinker",
+            "eldritch-invocation:mask-of-many-faces",
+            "eldritch-invocation:master-of-myriad-forms",
+            "eldritch-invocation:minions-of-chaos",
+            "eldritch-invocation:mire-the-mind",
+            "eldritch-invocation:misty-visions",
+            "eldritch-invocation:one-with-shadows",
+            "eldritch-invocation:otherworldly-leap",
+            "eldritch-invocation:repelling-blast",
+            "eldritch-invocation:sculptor-of-flesh",
+            "eldritch-invocation:sign-of-ill-omen",
+            "eldritch-invocation:thief-of-five-fates",
+            "eldritch-invocation:thirsting-blade",
+            "eldritch-invocation:visions-of-distant-realms",
+            "eldritch-invocation:voice-of-the-chain-master",
+            "eldritch-invocation:whispers-of-the-grave",
+            "eldritch-invocation:witch-sight"
+          ],
+          "options": [
+            {
+              "id": "eldritch-invocation:agonizing-blast",
+              "name": "Agonizing Blast",
+              "prerequisite": "eldritch blast cantrip",
+              "text": "When you cast eldritch blast, add your Charisma modifier to the damage it deals on a hit.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:armor-of-shadows",
+              "name": "Armor of Shadows",
+              "text": "You can cast mage armor on yourself at will, without expending a spell slot or material components.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:ascendant-step",
+              "name": "Ascendant Step",
+              "prerequisite": "9th level",
+              "text": "You can cast levitate on yourself at will, without expending a spell slot or material components.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:beast-speech",
+              "name": "Beast Speech",
+              "text": "You can cast speak with animals at will, without expending a spell slot.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:beguiling-influence",
+              "name": "Beguiling Influence",
+              "text": "You gain proficiency in the Deception and Persuasion skills.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:bewitching-whispers",
+              "name": "Bewitching Whispers",
+              "prerequisite": "7th level",
+              "text": "You can cast compulsion once using a warlock spell slot. You can’t do so again until you finish a long rest.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:book-of-ancient-secrets",
+              "name": "Book of Ancient Secrets",
+              "prerequisite": "Pact of",
+              "text": "the Tome feature You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:chains-of-carceri",
+              "name": "Chains of Carceri",
+              "prerequisite": "15th level, Pact of",
+              "text": "the Chain feature You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:devils-sight",
+              "name": "Devil’s Sight",
+              "text": "You can see normally in darkness, both magical and nonmagical, to a distance of 120 feet.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:dreadful-word",
+              "name": "Dreadful Word",
+              "prerequisite": "7th level",
+              "text": "You can cast confusion once using a warlock spell slot. You can’t do so again until you finish a long rest.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:eldritch-sight",
+              "name": "Eldritch Sight",
+              "text": "You can cast detect magic at will, without expending a spell slot.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:eldritch-spear",
+              "name": "Eldritch Spear",
+              "prerequisite": "eldritch blast cantrip",
+              "text": "When you cast eldritch blast, its range is 300 feet.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:eyes-of-the-rune-keeper",
+              "name": "Eyes of the Rune Keeper",
+              "text": "You can read all writing.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:fiendish-vigor",
+              "name": "Fiendish Vigor",
+              "text": "You can cast false life on yourself at will as a 1st-level spell, without expending a spell slot or material components.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:gaze-of-two-minds",
+              "name": "Gaze of Two Minds",
+              "text": "You can use your action to touch a willing humanoid and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use your action on subsequent turns to maintain this connection, extending the duration until the end of your next turn. While perceiving through the other creature’s senses, you benefit from any special senses possessed by that creature, and you are blinded and deafened to your own surroundings.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:lifedrinker",
+              "name": "Lifedrinker",
+              "prerequisite": "12th level, Pact of",
+              "text": "the Blade feature When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1).",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:mask-of-many-faces",
+              "name": "Mask of Many Faces",
+              "text": "You can cast disguise self at will, without expending a spell slot.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:master-of-myriad-forms",
+              "name": "Master of Myriad Forms",
+              "prerequisite": "15th level",
+              "text": "You can cast alter self at will, without expending a spell slot.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:minions-of-chaos",
+              "name": "Minions of Chaos",
+              "prerequisite": "9th level",
+              "text": "You can cast conjure elemental once using a warlock spell slot. You can’t do so again until you finish a long rest.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:mire-the-mind",
+              "name": "Mire the Mind",
+              "prerequisite": "5th level",
+              "text": "You can cast slow once using a warlock spell slot. You can’t do so again until you finish a long rest.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:misty-visions",
+              "name": "Misty Visions",
+              "text": "You can cast silent image at will, without expending a spell slot or material components.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:one-with-shadows",
+              "name": "One with Shadows",
+              "prerequisite": "5th level",
+              "text": "When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:otherworldly-leap",
+              "name": "Otherworldly Leap",
+              "prerequisite": "9th level",
+              "text": "You can cast jump on yourself at will, without expending a spell slot or material components.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:repelling-blast",
+              "name": "Repelling Blast",
+              "prerequisite": "eldritch blast cantrip",
+              "text": "When you hit a creature with eldritch blast, you can push the creature up to 10 feet away from you in a straight line.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:sculptor-of-flesh",
+              "name": "Sculptor of Flesh",
+              "prerequisite": "7th level",
+              "text": "You can cast polymorph once using a warlock spell slot. You can’t do so again until you finish a long rest.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:sign-of-ill-omen",
+              "name": "Sign of Ill Omen",
+              "prerequisite": "5th level",
+              "text": "You can cast bestow curse once using a warlock spell slot. You can’t do so again until you finish a long rest.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:thief-of-five-fates",
+              "name": "Thief of Five Fates",
+              "text": "You can cast bane once using a warlock spell slot. You can’t do so again until you finish a long rest.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:thirsting-blade",
+              "name": "Thirsting Blade",
+              "prerequisite": "5th level, Pact of",
+              "text": "the Blade feature You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:visions-of-distant-realms",
+              "name": "Visions of Distant Realms",
+              "prerequisite": "15th level",
+              "text": "You can cast arcane eye at will, without expending a spell slot.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:voice-of-the-chain-master",
+              "name": "Voice of the Chain Master",
+              "prerequisite": "Pact of",
+              "text": "the Chain feature You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:whispers-of-the-grave",
+              "name": "Whispers of the Grave",
+              "prerequisite": "9th level",
+              "text": "You can cast speak with dead at will, without expending a spell slot.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "eldritch-invocation:witch-sight",
+              "name": "Witch Sight",
+              "prerequisite": "15th level",
+              "text": "You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight.",
+              "source": "SRD 5.1 p. 47"
+            }
+          ]
+        },
+        {
+          "id": "book-of-ancient-secrets-rituals",
+          "category": "spell",
+          "prompt": "If you choose Book of Ancient Secrets, choose two 1st-level ritual spells from any class.",
+          "level": 2,
+          "choose": 2,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": "any",
+            "spellLevels": [
+              1
+            ],
+            "ritualOnly": true,
+            "countsAgainstKnown": false,
+            "requiresFeatureOption": "eldritch-invocation:book-of-ancient-secrets"
+          }
         }
       ]
     },
@@ -47329,7 +48006,59 @@
     "data": {
       "source": "class:warlock",
       "level": 3,
-      "description": "At 3rd level, your otherworldly patron bestows a gift upon you for your loyal service. You gain one of the following features of your choice. Pact of the Chain You learn the find familiar spell and can cast it as a ritual. The spell doesn’t count against your number of spells known. When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction. Pact of the Blade You can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage. Your pact weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die. You can transform one magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. You can’t affect an artifact or a sentient weapon in this way. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it. The weapon appears at your feet if it is in the extradimensional space when the bond breaks. Pact of the Tome Your patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class’s spell list (the three needn’t be from the same list). While the book is on your person, you can cast those cantrips at will. They don’t count against your number of cantrips known. If they don’t appear on the warlock spell list, they are nonetheless warlock spells for you. If you lose your Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron. This ceremony can be performed during a short or long rest, and it destroys the previous book. The book turns to ash when you die."
+      "description": "At 3rd level, your otherworldly patron bestows a gift upon you for your loyal service. You gain one of the following features of your choice. Pact of the Chain You learn the find familiar spell and can cast it as a ritual. The spell doesn’t count against your number of spells known. When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction. Pact of the Blade You can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage. Your pact weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die. You can transform one magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. You can’t affect an artifact or a sentient weapon in this way. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it. The weapon appears at your feet if it is in the extradimensional space when the bond breaks. Pact of the Tome Your patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class’s spell list (the three needn’t be from the same list). While the book is on your person, you can cast those cantrips at will. They don’t count against your number of cantrips known. If they don’t appear on the warlock spell list, they are nonetheless warlock spells for you. If you lose your Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron. This ceremony can be performed during a short or long rest, and it destroys the previous book. The book turns to ash when you die.",
+      "choices": [
+        {
+          "id": "pact-boon",
+          "category": "other",
+          "prompt": "Choose a Pact Boon option.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "pact-boon:pact-of-the-chain",
+            "pact-boon:pact-of-the-blade",
+            "pact-boon:pact-of-the-tome"
+          ],
+          "options": [
+            {
+              "id": "pact-boon:pact-of-the-chain",
+              "name": "Pact of the Chain",
+              "text": "You learn the find familiar spell and can cast it as a ritual. The spell doesn’t count against your number of spells known. When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "pact-boon:pact-of-the-blade",
+              "name": "Pact of the Blade",
+              "text": "You can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage. Your pact weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die. You can transform one magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. You can’t affect an artifact or a sentient weapon in this way. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it. The weapon appears at your feet if it is in the extradimensional space when the bond breaks.",
+              "source": "SRD 5.1 p. 47"
+            },
+            {
+              "id": "pact-boon:pact-of-the-tome",
+              "name": "Pact of the Tome",
+              "text": "Your patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class’s spell list (the three needn’t be from the same list). While the book is on your person, you can cast those cantrips at will. They don’t count against your number of cantrips known. If they don’t appear on the warlock spell list, they are nonetheless warlock spells for you. If you lose your Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron. This ceremony can be performed during a short or long rest, and it destroys the previous book. The book turns to ash when you die.",
+              "source": "SRD 5.1 p. 47"
+            }
+          ]
+        },
+        {
+          "id": "pact-of-the-tome-cantrips",
+          "category": "cantrip",
+          "prompt": "If you choose Pact of the Tome, choose three cantrips from any class's spell list.",
+          "level": 3,
+          "choose": 3,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": "any",
+            "spellLevels": [
+              0
+            ],
+            "includeCantrips": true,
+            "countsAsClassSpell": "class:warlock",
+            "countsAgainstKnown": false,
+            "requiresFeatureOption": "pact-boon:pact-of-the-tome"
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 47",
     "license": {
@@ -47705,7 +48434,27 @@
     "data": {
       "source": "class:wizard",
       "level": 20,
-      "description": "When you reach 20th level, you gain mastery over two powerful spells and can cast them with little effort. Choose two 3rd-level wizard spells in your spellbook as your signature spells. You always have these spells prepared, they don’t count against the number of spells you have prepared, and you can cast each of them once at 3rd level without expending a spell slot. When you do so, you can’t do so again until you finish a short or long rest. If you want to cast either spell at a higher level, you must expend a spell slot as normal."
+      "description": "When you reach 20th level, you gain mastery over two powerful spells and can cast them with little effort. Choose two 3rd-level wizard spells in your spellbook as your signature spells. You always have these spells prepared, they don’t count against the number of spells you have prepared, and you can cast each of them once at 3rd level without expending a spell slot. When you do so, you can’t do so again until you finish a short or long rest. If you want to cast either spell at a higher level, you must expend a spell slot as normal.",
+      "choices": [
+        {
+          "id": "signature-spells",
+          "category": "spell",
+          "prompt": "Choose two 3rd-level wizard spells in your spellbook.",
+          "level": 20,
+          "choose": 2,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "spellLevels": [
+              3
+            ],
+            "mustBeInSpellbook": true,
+            "alwaysPrepared": true
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 54",
     "license": {
@@ -47737,7 +48486,45 @@
     "data": {
       "source": "class:wizard",
       "level": 18,
-      "description": "At 18th level, you have achieved such mastery over certain spells that you can cast them at will. Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared. If you want to cast either spell at a higher level, you must expend a spell slot as normal. By spending 8 hours in study, you can exchange one or both of the spells you chose for different spells of the same levels."
+      "description": "At 18th level, you have achieved such mastery over certain spells that you can cast them at will. Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared. If you want to cast either spell at a higher level, you must expend a spell slot as normal. By spending 8 hours in study, you can exchange one or both of the spells you chose for different spells of the same levels.",
+      "choices": [
+        {
+          "id": "spell-mastery-1st-level",
+          "category": "spell",
+          "prompt": "Choose a 1st-level wizard spell in your spellbook.",
+          "level": 18,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "spellLevels": [
+              1
+            ],
+            "mustBeInSpellbook": true,
+            "mustBePreparedToCast": true
+          }
+        },
+        {
+          "id": "spell-mastery-2nd-level",
+          "category": "spell",
+          "prompt": "Choose a 2nd-level wizard spell in your spellbook.",
+          "level": 18,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "spellLevels": [
+              2
+            ],
+            "mustBeInSpellbook": true,
+            "mustBePreparedToCast": true
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 53",
     "license": {

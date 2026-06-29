@@ -232,6 +232,22 @@ function optChoiceArray(parent: Obj, key: string, path: string): void {
 // so an unmodeled choice is always explicit rather than silently missing. The
 // category vocabulary and entry shape are shared with the `choice-coverage`
 // audit gate via `./featureChoices`.
+function optFeatureChoiceOptions(entry: Obj, key: string, path: string): void {
+  const options = objArray(entry, key, path);
+  if (options === undefined) return;
+  if (options.length === 0) {
+    throw new RulesPackError(`${path}.${key} must not be empty when present`);
+  }
+  options.forEach((option, i) => {
+    const at = `${path}.${key}[${i}]`;
+    reqStr(option, 'id', at);
+    reqStr(option, 'name', at);
+    reqStr(option, 'text', at);
+    optStr(option, 'prerequisite', at);
+    reqStr(option, 'source', at);
+  });
+}
+
 function optFeatureChoiceArray(parent: Obj, key: string, path: string): void {
   const entries = objArray(parent, key, path);
   if (entries === undefined) return;
@@ -259,13 +275,15 @@ function optFeatureChoiceArray(parent: Obj, key: string, path: string): void {
       if (
         from !== undefined &&
         typeof from !== 'string' &&
-        !Array.isArray(from)
+        !Array.isArray(from) &&
+        (from === null || typeof from !== 'object')
       ) {
         throw new RulesPackError(
-          `${at}.from must be a string or string array when present`,
+          `${at}.from must be a string, string array, or structured object when present`,
         );
       }
       if (Array.isArray(from)) optStrArray(entry, 'from', at);
+      optFeatureChoiceOptions(entry, 'options', at);
     } else {
       const unsupported = reqObj(entry, 'unsupported', at);
       reqStr(unsupported, 'reason', `${at}.unsupported`);

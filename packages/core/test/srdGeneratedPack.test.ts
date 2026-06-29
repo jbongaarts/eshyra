@@ -643,7 +643,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // Metamagic, Eldritch Invocations, favored enemy/terrain, Expertise, plus
   // named out-of-scope Channel Divinity markers); the other 142 features confer
   // no player choice and omit it.
-  { kind: 'feature', field: 'choices', missingCount: 142, totalInKind: 184 },
+  { kind: 'feature', field: 'choices', missingCount: 130, totalInKind: 184 },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic

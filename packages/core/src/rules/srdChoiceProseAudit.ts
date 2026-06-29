@@ -181,6 +181,10 @@ export const CHOICE_PROSE_ALLOWLIST: ReadonlyMap<string, string> = new Map([
     'ancestry:rock-gnome',
     'The Tinker "choose one of the following options" (Clockwork Toy / Fire Starter / Music Box) is a repeatable in-play device-construction choice, not a character-creation build catalog (eshyra-ngcj.5).',
   ],
+  [
+    'feature:way-of-the-open-hand:open-hand-technique',
+    'The Open Hand Technique "one of the following effects" menu is chosen each time Flurry of Blows hits, not as a character-build option.',
+  ],
 ]);
 
 // ---------------------------------------------------------------------------
