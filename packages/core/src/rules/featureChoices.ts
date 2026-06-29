@@ -16,7 +16,8 @@
  *
  * A `choices[]` entry is EITHER:
  *   - a STRUCTURED choice — a `choose` count plus an optional `from` (a discrete
- *     option list or a free-text restriction); or
+ *     option list, structured filter, or a free-text restriction), with an
+ *     optional inline `options[]` catalog for source-backed named menus; or
  *   - a named OUT-OF-SCOPE marker — `unsupported.reason`, used when a choice is
  *     intentionally not modeled yet so the gap is explicit, never silent.
  *
@@ -49,6 +50,20 @@ export interface FeatureChoiceUnsupported {
   readonly reason: string;
 }
 
+/** One source-backed option in an inline feature option catalog. */
+export interface FeatureChoiceOption {
+  /** Stable option id, suitable for persistence as the selected value. */
+  readonly id: string;
+  /** SRD option label, e.g. "Archery" or "Pact of the Chain". */
+  readonly name: string;
+  /** Verbatim SRD prose for the option body. */
+  readonly text: string;
+  /** Verbatim SRD prerequisite text, when the option prints one. */
+  readonly prerequisite?: string;
+  /** Human-readable source label for this option's source text. */
+  readonly source: string;
+}
+
 /** A single structured player choice carried on a feature record. */
 export interface FeatureChoice {
   /** Stable, kebab-case id unique within the feature (e.g. "fighting-style"). */
@@ -60,8 +75,10 @@ export interface FeatureChoice {
   readonly level: number;
   /** How many options to pick. Present iff this is a structured choice. */
   readonly choose?: number;
-  /** Legal options (record keys / labels) or a free-text restriction. */
-  readonly from?: readonly string[] | string;
+  /** Legal option ids / labels, a structured filter, or a free-text restriction. */
+  readonly from?: readonly string[] | Record<string, unknown> | string;
+  /** Inline source-backed option catalog, when the parent feature owns one. */
+  readonly options?: readonly FeatureChoiceOption[];
   /** Present iff the choice is intentionally out of scope; names why. */
   readonly unsupported?: FeatureChoiceUnsupported;
 }

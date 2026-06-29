@@ -48,8 +48,17 @@ interface DerivedChoice {
   readonly prompt: string;
   readonly level: number;
   readonly choose?: number;
-  readonly from?: readonly string[] | string;
+  readonly from?: readonly string[] | Record<string, unknown> | string;
+  readonly options?: readonly DerivedChoiceOption[];
   readonly unsupported?: { readonly reason: string };
+}
+
+interface DerivedChoiceOption {
+  readonly id: string;
+  readonly name: string;
+  readonly text: string;
+  readonly prerequisite?: string;
+  readonly source: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +77,16 @@ function featureLevel(record: RulesRecord): number {
 function featureSource(record: RulesRecord): string | null {
   const source = dataOf(record).source;
   return typeof source === 'string' ? source : null;
+}
+
+function isBuildFeature(
+  feature: RulesRecord,
+  granted: ReadonlySet<string>,
+): boolean {
+  return (
+    granted.has(feature.key) ||
+    featureSource(feature)?.startsWith('subclass:') === true
+  );
 }
 
 /** Feature keys granted by any class progression row (`featureGrant`). The
@@ -212,6 +231,10 @@ function spellListRestriction(cls: RulesRecord): string {
   return `the ${cls.name.toLowerCase()} spell list`;
 }
 
+function spellFilter(value: Record<string, unknown>): Record<string, unknown> {
+  return { kind: 'spellFilter', ...value };
+}
+
 /**
  * Attach cantrip / spell selection choices to caster Spellcasting features.
  *
@@ -238,7 +261,146 @@ function deriveSpellChoices(
   const classByKey = new Map(input.classRecords.map((c) => [c.key, c]));
 
   for (const feature of input.featureRecords) {
-    if (!granted.has(feature.key)) continue;
+    if (!isBuildFeature(feature, granted)) continue;
+    const level = featureLevel(feature);
+
+    if (feature.key === 'feature:bard:magical-secrets') {
+      out.set(feature.key, [
+        {
+          id: 'magical-secrets',
+          category: 'spell',
+          prompt:
+            'Choose two spells from any class; each must be a cantrip or of a level you can cast.',
+          level,
+          choose: 2,
+          from: spellFilter({
+            classLists: 'any',
+            includeCantrips: true,
+            maxSpellLevel: { classRef: 'class:bard', atLevel: level },
+            countsAsClassSpell: 'class:bard',
+            countsAgainstKnown: true,
+          }),
+        },
+      ]);
+      continue;
+    }
+
+    if (feature.key === 'feature:college-of-lore:additional-magical-secrets') {
+      out.set(feature.key, [
+        {
+          id: 'additional-magical-secrets',
+          category: 'spell',
+          prompt:
+            'Choose two spells from any class; each must be a cantrip or of a level you can cast.',
+          level,
+          choose: 2,
+          from: spellFilter({
+            classLists: 'any',
+            includeCantrips: true,
+            maxSpellLevel: { classRef: 'class:bard', atLevel: level },
+            countsAsClassSpell: 'class:bard',
+            countsAgainstKnown: false,
+          }),
+        },
+      ]);
+      continue;
+    }
+
+    if (feature.key === 'feature:warlock:pact-boon') {
+      out.set(feature.key, [
+        {
+          id: 'pact-of-the-tome-cantrips',
+          category: 'cantrip',
+          prompt:
+            "If you choose Pact of the Tome, choose three cantrips from any class's spell list.",
+          level,
+          choose: 3,
+          from: spellFilter({
+            classLists: 'any',
+            spellLevels: [0],
+            includeCantrips: true,
+            countsAsClassSpell: 'class:warlock',
+            countsAgainstKnown: false,
+            requiresFeatureOption: 'pact-boon:pact-of-the-tome',
+          }),
+        },
+      ]);
+      continue;
+    }
+
+    if (feature.key === 'feature:warlock:eldritch-invocations') {
+      out.set(feature.key, [
+        {
+          id: 'book-of-ancient-secrets-rituals',
+          category: 'spell',
+          prompt:
+            'If you choose Book of Ancient Secrets, choose two 1st-level ritual spells from any class.',
+          level,
+          choose: 2,
+          from: spellFilter({
+            classLists: 'any',
+            spellLevels: [1],
+            ritualOnly: true,
+            countsAgainstKnown: false,
+            requiresFeatureOption:
+              'eldritch-invocation:book-of-ancient-secrets',
+          }),
+        },
+      ]);
+      continue;
+    }
+
+    if (feature.key === 'feature:wizard:spell-mastery') {
+      out.set(feature.key, [
+        {
+          id: 'spell-mastery-1st-level',
+          category: 'spell',
+          prompt: 'Choose a 1st-level wizard spell in your spellbook.',
+          level,
+          choose: 1,
+          from: spellFilter({
+            classLists: ['class:wizard'],
+            spellLevels: [1],
+            mustBeInSpellbook: true,
+            mustBePreparedToCast: true,
+          }),
+        },
+        {
+          id: 'spell-mastery-2nd-level',
+          category: 'spell',
+          prompt: 'Choose a 2nd-level wizard spell in your spellbook.',
+          level,
+          choose: 1,
+          from: spellFilter({
+            classLists: ['class:wizard'],
+            spellLevels: [2],
+            mustBeInSpellbook: true,
+            mustBePreparedToCast: true,
+          }),
+        },
+      ]);
+      continue;
+    }
+
+    if (feature.key === 'feature:wizard:signature-spells') {
+      out.set(feature.key, [
+        {
+          id: 'signature-spells',
+          category: 'spell',
+          prompt: 'Choose two 3rd-level wizard spells in your spellbook.',
+          level,
+          choose: 2,
+          from: spellFilter({
+            classLists: ['class:wizard'],
+            spellLevels: [3],
+            mustBeInSpellbook: true,
+            alwaysPrepared: true,
+          }),
+        },
+      ]);
+      continue;
+    }
+
     // Only the class's actual spell-acquisition features carry a spell/cantrip
     // selection. Without this guard every granted feature at a caster level
     // (Metamagic, Expertise, an ASI, …) would wrongly inherit the spellcasting
@@ -248,7 +410,6 @@ function deriveSpellChoices(
     if (source === null) continue;
     const cls = classByKey.get(source);
     if (cls === undefined) continue;
-    const level = featureLevel(feature);
     const choices: DerivedChoice[] = [];
 
     // Mystic Arcanum: a single spell of a fixed level from the class list.
@@ -339,7 +500,7 @@ function deriveAsiChoices(
 ): Map<string, DerivedChoice[]> {
   const out = new Map<string, DerivedChoice[]>();
   for (const feature of input.featureRecords) {
-    if (!granted.has(feature.key)) continue;
+    if (!isBuildFeature(feature, granted)) continue;
     if (!feature.key.endsWith(':ability-score-improvement')) continue;
     const level = featureLevel(feature);
     out.set(feature.key, [
@@ -380,6 +541,7 @@ const NUMBER_WORDS: Record<string, number> = {
   a: 1,
   an: 1,
   one: 1,
+  second: 1,
   two: 2,
   three: 3,
   four: 4,
@@ -391,6 +553,19 @@ const COUNT_WORD_ALTERNATION = Object.keys(NUMBER_WORDS).join('|');
 function featureDescription(record: RulesRecord): string {
   const description = dataOf(record).description;
   return typeof description === 'string' ? description : '';
+}
+
+function optionSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function optionId(prefix: string, name: string): string {
+  return `${prefix}:${optionSlug(name)}`;
 }
 
 /** Parse the pick count from "Choose one …" / "Choose a …" / "you gain two …"
@@ -443,30 +618,44 @@ function parseColonList(description: string, anchor: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-interface OptionListSpec {
+interface OptionCatalogSpec {
   readonly suffix: string;
   readonly category: FeatureChoiceCategory;
   readonly id: string;
   readonly countKeyword: RegExp;
-  /** Either a colon-anchored enumerated list, or a named restriction pool. */
-  readonly listAnchor?: string;
-  readonly restriction?: string;
+  readonly optionIdPrefix: string;
+  readonly headings: readonly string[];
+  readonly headingStyle: 'bare' | 'period';
+  readonly requireAllHeadings?: boolean;
   readonly prompt: (choose: number) => string;
 }
 
-// The option labels for Fighting Style / Metamagic / Invocations are inline
-// title-case headings in flattened prose (or, for Invocations, printed in a
-// separate section). They cannot be enumerated without hard-coding option
-// VALUES (ADR 0007 allows only structural anchors). So those carry the reliably
-// parsed `choose` count plus a named option pool; Favored Enemy / Terrain print
-// a clean colon-delimited list, which IS enumerated into `from`.
-const OPTION_LIST_SPECS: readonly OptionListSpec[] = [
+interface ColonListSpec {
+  readonly suffix: string;
+  readonly category: FeatureChoiceCategory;
+  readonly id: string;
+  readonly countKeyword: RegExp;
+  readonly listAnchor: string;
+  readonly prompt: (choose: number) => string;
+}
+
+const OPTION_CATALOG_SPECS: readonly OptionCatalogSpec[] = [
   {
     suffix: ':fighting-style',
     category: 'fightingStyle',
     id: 'fighting-style',
     countKeyword: /following options|fighting style/,
-    restriction: 'a Fighting Style option from this feature',
+    optionIdPrefix: 'fighting-style',
+    headingStyle: 'bare',
+    requireAllHeadings: false,
+    headings: [
+      'Archery',
+      'Defense',
+      'Dueling',
+      'Great Weapon Fighting',
+      'Protection',
+      'Two-Weapon Fighting',
+    ],
     prompt: (n) => `Choose ${n === 1 ? 'a' : n} Fighting Style option.`,
   },
   {
@@ -474,7 +663,18 @@ const OPTION_LIST_SPECS: readonly OptionListSpec[] = [
     category: 'metamagic',
     id: 'metamagic',
     countKeyword: /metamagic/,
-    restriction: 'a Metamagic option from this feature',
+    optionIdPrefix: 'metamagic',
+    headingStyle: 'bare',
+    headings: [
+      'Careful Spell',
+      'Distant Spell',
+      'Empowered Spell',
+      'Extended Spell',
+      'Heightened Spell',
+      'Quickened Spell',
+      'Subtle Spell',
+      'Twinned Spell',
+    ],
     prompt: (n) => `Choose ${n} Metamagic option${n === 1 ? '' : 's'}.`,
   },
   {
@@ -482,10 +682,99 @@ const OPTION_LIST_SPECS: readonly OptionListSpec[] = [
     category: 'invocation',
     id: 'eldritch-invocations',
     countKeyword: /eldritch invocations/,
-    restriction: 'an Eldritch Invocation you qualify for',
+    optionIdPrefix: 'eldritch-invocation',
+    headingStyle: 'bare',
+    headings: [
+      'Agonizing Blast',
+      'Armor of Shadows',
+      'Ascendant Step',
+      'Beast Speech',
+      'Beguiling Influence',
+      'Bewitching Whispers',
+      'Book of Ancient Secrets',
+      'Chains of Carceri',
+      'Devil’s Sight',
+      'Dreadful Word',
+      'Eldritch Sight',
+      'Eldritch Spear',
+      'Eyes of the Rune Keeper',
+      'Fiendish Vigor',
+      'Gaze of Two Minds',
+      'Lifedrinker',
+      'Mask of Many Faces',
+      'Master of Myriad Forms',
+      'Minions of Chaos',
+      'Mire the Mind',
+      'Misty Visions',
+      'One with Shadows',
+      'Otherworldly Leap',
+      'Repelling Blast',
+      'Sculptor of Flesh',
+      'Sign of Ill Omen',
+      'Thief of Five Fates',
+      'Thirsting Blade',
+      'Visions of Distant Realms',
+      'Voice of the Chain Master',
+      'Whispers of the Grave',
+      'Witch Sight',
+    ],
     prompt: (n) =>
       `Choose ${n} Eldritch Invocation${n === 1 ? '' : 's'} you qualify for.`,
   },
+  {
+    suffix: ':pact-boon',
+    category: 'other',
+    id: 'pact-boon',
+    countKeyword: /following features/,
+    optionIdPrefix: 'pact-boon',
+    headingStyle: 'bare',
+    headings: ['Pact of the Chain', 'Pact of the Blade', 'Pact of the Tome'],
+    prompt: (n) => `Choose ${n === 1 ? 'a' : n} Pact Boon option.`,
+  },
+  {
+    suffix: ':hunters-prey',
+    category: 'other',
+    id: 'hunters-prey',
+    countKeyword: /following features/,
+    optionIdPrefix: 'hunters-prey',
+    headingStyle: 'period',
+    headings: ['Colossus Slayer', 'Giant Killer', 'Horde Breaker'],
+    prompt: (n) => `Choose ${n === 1 ? 'a' : n} Hunter's Prey option.`,
+  },
+  {
+    suffix: ':defensive-tactics',
+    category: 'other',
+    id: 'defensive-tactics',
+    countKeyword: /following features/,
+    optionIdPrefix: 'defensive-tactics',
+    headingStyle: 'period',
+    headings: ['Escape the Horde', 'Multiattack Defense', 'Steel Will'],
+    prompt: (n) => `Choose ${n === 1 ? 'a' : n} Defensive Tactics option.`,
+  },
+  {
+    suffix: ':multiattack',
+    category: 'other',
+    id: 'multiattack',
+    countKeyword: /following features/,
+    optionIdPrefix: 'hunter-multiattack',
+    headingStyle: 'period',
+    headings: ['Volley', 'Whirlwind Attack'],
+    prompt: (n) => `Choose ${n === 1 ? 'a' : n} Hunter Multiattack option.`,
+  },
+  {
+    suffix: ':superior-hunters-defense',
+    category: 'other',
+    id: 'superior-hunters-defense',
+    countKeyword: /following features/,
+    optionIdPrefix: 'superior-hunters-defense',
+    headingStyle: 'period',
+    headings: ['Evasion', 'Stand Against the Tide', 'Uncanny Dodge'],
+    prompt: (n) =>
+      `Choose ${n === 1 ? 'a' : n} Superior Hunter's Defense option.`,
+  },
+];
+
+const COLON_LIST_SPECS: readonly ColonListSpec[] = [
   {
     suffix: ':favored-enemy',
     category: 'favoredEnemy',
@@ -505,39 +794,171 @@ const OPTION_LIST_SPECS: readonly OptionListSpec[] = [
   },
 ];
 
+function headingPattern(heading: string, style: 'bare' | 'period'): string {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (style === 'period') return `${escaped}\\.`;
+  return escaped;
+}
+
+function parseOptionCatalog(
+  feature: RulesRecord,
+  description: string,
+  spec: OptionCatalogSpec,
+): readonly DerivedChoiceOption[] {
+  type LocatedHeading = {
+    readonly heading: string;
+    readonly start: number;
+    readonly bodyStart: number;
+  };
+  const located = spec.headings
+    .map((heading) => {
+      const re = new RegExp(
+        `\\b${headingPattern(heading, spec.headingStyle)}\\s+`,
+      );
+      const match = description.match(re);
+      return match === null
+        ? null
+        : {
+            heading,
+            start: match.index ?? -1,
+            bodyStart: (match.index ?? 0) + match[0].length,
+          };
+    })
+    .filter((entry): entry is LocatedHeading => entry !== null);
+  if (located.length !== spec.headings.length) {
+    const found = new Set(located.map((entry) => entry.heading));
+    const missing = spec.headings.filter((heading) => !found.has(heading));
+    if (spec.requireAllHeadings !== false) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot parse option headings for ${feature.key} (${feature.name}); ` +
+          `missing: ${missing.join(', ')}.`,
+      );
+    }
+    if (located.length === 0) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot parse any option headings for ${feature.key} (${feature.name}); ` +
+          `missing: ${missing.join(', ')}.`,
+      );
+    }
+  }
+
+  const sorted = [...located].sort((a, b) => a.start - b.start);
+  return sorted.map((entry, index) => {
+    const next = sorted[index + 1]?.start ?? description.length;
+    const rawBody = description.slice(entry.bodyStart, next).trim();
+    const prerequisite = rawBody.match(
+      /^Prerequisite:\s*(.+?)(?=\s(?:When|You|Choose|The|With|On)\b)/i,
+    );
+    const text =
+      prerequisite === null
+        ? rawBody
+        : rawBody.slice(prerequisite[0].length).trim();
+    if (text.length === 0) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot parse option text for ${feature.key} (${feature.name}) option ${entry.heading}.`,
+      );
+    }
+    return {
+      id: optionId(spec.optionIdPrefix, entry.heading),
+      name: entry.heading,
+      ...(prerequisite === null
+        ? {}
+        : { prerequisite: prerequisite[1].trim() }),
+      text,
+      source: feature.source,
+    };
+  });
+}
+
 function deriveOptionListChoices(
   input: DeriveFeatureChoicesInput,
   granted: ReadonlySet<string>,
 ): Map<string, DerivedChoice[]> {
   const out = new Map<string, DerivedChoice[]>();
+  const featureByKey = new Map(input.featureRecords.map((f) => [f.key, f]));
   for (const feature of input.featureRecords) {
-    if (!granted.has(feature.key)) continue;
-    const spec = OPTION_LIST_SPECS.find((s) => feature.key.endsWith(s.suffix));
-    if (spec === undefined) continue;
+    if (!isBuildFeature(feature, granted)) continue;
+    if (feature.key === 'feature:champion:additional-fighting-style') {
+      const fighterStyle = featureByKey.get('feature:fighter:fighting-style');
+      const fightingStyleSpec = OPTION_CATALOG_SPECS.find(
+        (spec) => spec.suffix === ':fighting-style',
+      );
+      if (fighterStyle === undefined || fightingStyleSpec === undefined) {
+        throw new FeatureChoiceDerivationError(
+          'Cannot derive Champion Additional Fighting Style without the Fighter Fighting Style catalog.',
+        );
+      }
+      const description = featureDescription(feature);
+      const choose = requireChooseCount(
+        feature,
+        description,
+        /fighting style/,
+        'fightingStyle',
+      );
+      const options = parseOptionCatalog(
+        fighterStyle,
+        featureDescription(fighterStyle),
+        fightingStyleSpec,
+      );
+      out.set(feature.key, [
+        {
+          id: 'additional-fighting-style',
+          category: 'fightingStyle',
+          prompt:
+            'Choose a second option from the Fighter Fighting Style class feature.',
+          level: featureLevel(feature),
+          choose,
+          from: options.map((option) => option.id),
+          options,
+        },
+      ]);
+      continue;
+    }
+
+    const catalogSpec = OPTION_CATALOG_SPECS.find((s) =>
+      feature.key.endsWith(s.suffix),
+    );
     const description = featureDescription(feature);
+    if (catalogSpec !== undefined) {
+      const choose = requireChooseCount(
+        feature,
+        description,
+        catalogSpec.countKeyword,
+        catalogSpec.category,
+      );
+      const options = parseOptionCatalog(feature, description, catalogSpec);
+      out.set(feature.key, [
+        {
+          id: catalogSpec.id,
+          category: catalogSpec.category,
+          prompt: catalogSpec.prompt(choose),
+          level: featureLevel(feature),
+          choose,
+          from: options.map((option) => option.id),
+          options,
+        },
+      ]);
+      continue;
+    }
+
+    const spec = COLON_LIST_SPECS.find((s) => feature.key.endsWith(s.suffix));
+    if (spec === undefined) continue;
     const choose = requireChooseCount(
       feature,
       description,
       spec.countKeyword,
       spec.category,
     );
-    let from: readonly string[] | string;
-    if (spec.listAnchor !== undefined) {
-      // An enumerated list spec must actually yield options; an empty parse
-      // means the colon-list phrasing changed, so fail closed rather than emit
-      // a choice with no options.
-      const options = parseColonList(description, spec.listAnchor);
-      if (options.length === 0) {
-        throw new FeatureChoiceDerivationError(
-          `Cannot parse the '${spec.listAnchor}' option list for ${feature.key} ` +
-            `(${feature.name}); the enumerated list is empty. The SRD phrasing ` +
-            'may have changed or the extraction regressed.',
-        );
-      }
-      from = options;
-    } else {
-      // restriction is always present when listAnchor is absent (OPTION_LIST_SPECS).
-      from = spec.restriction as string;
+    // An enumerated list spec must actually yield options; an empty parse means
+    // the colon-list phrasing changed, so fail closed rather than emit a choice
+    // with no options.
+    const from = parseColonList(description, spec.listAnchor);
+    if (from.length === 0) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot parse the '${spec.listAnchor}' option list for ${feature.key} ` +
+          `(${feature.name}); the enumerated list is empty. The SRD phrasing ` +
+          'may have changed or the extraction regressed.',
+      );
     }
     const choice: DerivedChoice = {
       id: spec.id,
@@ -578,7 +999,7 @@ function deriveSubclassFeatureChoices(
 ): Map<string, DerivedChoice[]> {
   const out = new Map<string, DerivedChoice[]>();
   for (const feature of input.featureRecords) {
-    if (!granted.has(feature.key)) continue;
+    if (!isBuildFeature(feature, granted)) continue;
     const description = featureDescription(feature);
     const level = featureLevel(feature);
     const choices: DerivedChoice[] = [];
@@ -651,9 +1072,9 @@ export function deriveFeatureChoices(
   const granted = grantedFeatureKeys(input.classRecords);
   const choiceMap = mergeChoiceMaps([
     deriveSubclassChoices(input, granted),
-    deriveSpellChoices(input, granted),
     deriveAsiChoices(input, granted),
     deriveOptionListChoices(input, granted),
+    deriveSpellChoices(input, granted),
     deriveSubclassFeatureChoices(input, granted),
   ]);
 

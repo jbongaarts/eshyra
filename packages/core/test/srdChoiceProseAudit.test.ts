@@ -274,20 +274,21 @@ describe('choice-bearing prose gate (fixtures)', () => {
 // Real-pack baseline
 // ---------------------------------------------------------------------------
 
-// The known unstructured option cases from the 2026-06-29 audit (epic
-// eshyra-ngcj). Every one MUST be detected by the gate.
+// The known unstructured choice cases remaining after eshyra-ngcj.2 modeled
+// class/subclass option catalogs and higher-level feature spell filters. Every
+// one MUST be detected by the gate until its owning bead structures it or
+// documents why it is not a build choice.
 const KNOWN_MISSES: readonly string[] = [
-  'feature:warlock:pact-boon',
-  'feature:warlock:eldritch-invocations',
-  'feature:sorcerer:metamagic',
-  'feature:fighter:fighting-style',
-  'feature:hunter:hunters-prey',
-  'feature:hunter:defensive-tactics',
-  'feature:hunter:multiattack',
-  'feature:hunter:superior-hunters-defense',
-  'feature:bard:magical-secrets',
-  'feature:wizard:spell-mastery',
-  'feature:wizard:signature-spells',
+  'feature:bard:spellcasting',
+  'feature:cleric:spellcasting',
+  'feature:druid:spellcasting',
+  'feature:paladin:spellcasting',
+  'feature:ranger:spellcasting',
+  'feature:sorcerer:spellcasting',
+  'feature:warlock:mystic-arcanum',
+  'feature:warlock:pact-magic',
+  'feature:wizard:spellbook',
+  'feature:wizard:spellcasting',
 ];
 
 describe('choice-bearing prose gate (committed pack baseline)', () => {
@@ -328,14 +329,15 @@ describe('choice-bearing prose gate (committed pack baseline)', () => {
   // eshyra-ngcj.5 (ancestry/background, e.g. Rock Gnome's Tinker menu). When a
   // bead lands and this number drops, update it here.
   it('total finding count matches the pinned 2026-06-29 baseline', () => {
-    // 27 at ngcj.1; ancestry:rock-gnome's Tinker (a per-use device-construction
-    // menu, not a creation choice) was allowlisted under eshyra-ngcj.5 -> 26.
-    expect(findings.length).toBe(26);
+    // 27 at ngcj.1; ancestry:rock-gnome's Tinker and Open Hand Technique are
+    // per-use choices, not creation choices, and eshyra-ngcj.2 modeled the
+    // class/subclass option catalogs plus feature spell filters -> 10.
+    expect(findings.length).toBe(10);
   });
 
   it('formats a human-readable punch-list report', () => {
     const report = formatSrdChoiceProseReport(pack.meta.packId, findings);
     expect(report).toContain('SRD choice-bearing prose coverage gate');
-    expect(report).toContain('feature:warlock:pact-boon');
+    expect(report).toContain('feature:bard:spellcasting');
   });
 });

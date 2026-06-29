@@ -492,12 +492,26 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
       'Fighter',
       'feature:fighter:fighting-style',
       'Fighting Style',
-      'You adopt a particular style of fighting. Choose one of the following options. Archery…',
+      'You adopt a particular style of fighting. Choose one of the following options. Archery You gain a +2 bonus. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand, you gain a +2 bonus. Great Weapon Fighting When you roll a 1 or 2 on a damage die, you can reroll the die. Protection When a creature you can see attacks a target other than you, you can use your reaction. Two-Weapon Fighting When you engage in two-weapon fighting, you can add your ability modifier.',
     );
     const choice = featureChoices(out, 'feature:fighter:fighting-style')[0];
     expect(choice.category).toBe('fightingStyle');
     expect(choice.choose).toBe(1);
-    expect(choice.from).toBe('a Fighting Style option from this feature');
+    expect(choice.from).toEqual([
+      'fighting-style:archery',
+      'fighting-style:defense',
+      'fighting-style:dueling',
+      'fighting-style:great-weapon-fighting',
+      'fighting-style:protection',
+      'fighting-style:two-weapon-fighting',
+    ]);
+    const options = choice.options as Array<Record<string, unknown>>;
+    expect(options[0]).toMatchObject({
+      id: 'fighting-style:archery',
+      name: 'Archery',
+      text: 'You gain a +2 bonus.',
+      source: 'SRD p. 1',
+    });
   });
 
   it('parses the Metamagic count of two', () => {
@@ -506,21 +520,42 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
       'Sorcerer',
       'feature:sorcerer:metamagic',
       'Metamagic',
-      'You gain two of the following Metamagic options of your choice. Careful Spell…',
+      'You gain two of the following Metamagic options of your choice. Careful Spell When you cast a spell, you can protect creatures. Distant Spell When you cast a spell, you can double the range. Empowered Spell When you roll damage, you can reroll dice. Extended Spell When you cast a spell, you can double its duration. Heightened Spell When you cast a spell, you can give one target disadvantage. Quickened Spell When you cast a spell, you can change its casting time. Subtle Spell When you cast a spell, you can cast it without components. Twinned Spell When you cast a spell, you can target a second creature.',
       3,
     );
     const choice = featureChoices(out, 'feature:sorcerer:metamagic')[0];
     expect(choice.category).toBe('metamagic');
     expect(choice.choose).toBe(2);
+    expect(choice.from).toContain('metamagic:twinned-spell');
+    expect(choice.options).toHaveLength(8);
   });
 
-  it('parses the Eldritch Invocations count', () => {
+  it('parses the Pact Boon option catalog', () => {
+    const out = optionFeature(
+      'class:warlock',
+      'Warlock',
+      'feature:warlock:pact-boon',
+      'Pact Boon',
+      'At 3rd level, you gain one of the following features of your choice. Pact of the Chain You learn the find familiar spell. Pact of the Blade You can use your action to create a pact weapon. Pact of the Tome Your patron gives you a grimoire called a Book of Shadows.',
+      3,
+    );
+    const choice = featureChoices(out, 'feature:warlock:pact-boon')[0];
+    expect(choice.category).toBe('other');
+    expect(choice.choose).toBe(1);
+    expect(choice.from).toEqual([
+      'pact-boon:pact-of-the-chain',
+      'pact-boon:pact-of-the-blade',
+      'pact-boon:pact-of-the-tome',
+    ]);
+  });
+
+  it('parses Eldritch Invocation options and prerequisites', () => {
     const out = optionFeature(
       'class:warlock',
       'Warlock',
       'feature:warlock:eldritch-invocations',
       'Eldritch Invocations',
-      'At 2nd level, you gain two eldritch invocations of your choice.',
+      'At 2nd level, you gain two eldritch invocations of your choice. Agonizing Blast Prerequisite: eldritch blast cantrip When you cast eldritch blast, add your Charisma modifier. Armor of Shadows You can cast mage armor on yourself at will. Ascendant Step Prerequisite: 9th level You can cast levitate on yourself at will. Beast Speech You can cast speak with animals at will. Beguiling Influence You gain proficiency in two skills. Bewitching Whispers Prerequisite: 7th level You can cast compulsion once. Book of Ancient Secrets Prerequisite: Pact of the Tome feature You can inscribe magical rituals. Chains of Carceri Prerequisite: 15th level, Pact of the Chain feature You can cast hold monster at will. Devil’s Sight You can see normally in darkness. Dreadful Word Prerequisite: 7th level You can cast confusion once. Eldritch Sight You can cast detect magic at will. Eldritch Spear Prerequisite: eldritch blast cantrip Its range is 300 feet. Eyes of the Rune Keeper You can read all writing. Fiendish Vigor You can cast false life. Gaze of Two Minds You can perceive through another creature. Lifedrinker Prerequisite: 12th level, Pact of the Blade feature You deal extra necrotic damage. Mask of Many Faces You can cast disguise self. Master of Myriad Forms Prerequisite: 15th level You can cast alter self. Minions of Chaos Prerequisite: 9th level You can cast conjure elemental. Mire the Mind Prerequisite: 5th level You can cast slow. Misty Visions You can cast silent image. One with Shadows Prerequisite: 5th level You can become invisible. Otherworldly Leap Prerequisite: 9th level You can cast jump. Repelling Blast Prerequisite: eldritch blast cantrip You can push the creature. Sculptor of Flesh Prerequisite: 7th level You can cast polymorph. Sign of Ill Omen Prerequisite: 5th level You can cast bestow curse. Thief of Five Fates You can cast bane. Thirsting Blade Prerequisite: 5th level, Pact of the Blade feature You can attack twice. Visions of Distant Realms Prerequisite: 15th level You can cast arcane eye. Voice of the Chain Master Prerequisite: Pact of the Chain feature You can communicate telepathically. Whispers of the Grave Prerequisite: 9th level You can cast speak with dead. Witch Sight Prerequisite: 15th level You can see true forms.',
       2,
     );
     const choice = featureChoices(
@@ -529,7 +564,208 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
     )[0];
     expect(choice.category).toBe('invocation');
     expect(choice.choose).toBe(2);
-    expect(choice.from).toBe('an Eldritch Invocation you qualify for');
+    expect(choice.from).toContain('eldritch-invocation:agonizing-blast');
+    expect(choice.options).toHaveLength(32);
+    const options = choice.options as Array<Record<string, unknown>>;
+    expect(
+      options.find((o) => o.id === 'eldritch-invocation:agonizing-blast'),
+    ).toMatchObject({
+      prerequisite: 'eldritch blast cantrip',
+    });
+  });
+
+  it('parses Hunter subclass option catalogs', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:ranger', 'Ranger', {
+          grants: [],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:hunter:hunters-prey', "Hunter's Prey", {
+          source: 'subclass:hunter',
+          level: 3,
+          description:
+            'At 3rd level, you gain one of the following features of your choice. Colossus Slayer. Your tenacity can wear down foes. Giant Killer. You can use your reaction. Horde Breaker. You can make another attack.',
+        }),
+      ],
+    });
+    const choice = featureChoices(out, 'feature:hunter:hunters-prey')[0];
+    expect(choice.choose).toBe(1);
+    expect(choice.from).toEqual([
+      'hunters-prey:colossus-slayer',
+      'hunters-prey:giant-killer',
+      'hunters-prey:horde-breaker',
+    ]);
+  });
+
+  it('models Champion Additional Fighting Style against the Fighter style ids', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:fighter', 'Fighter', {
+          grants: [],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:fighter:fighting-style', 'Fighting Style', {
+          source: 'class:fighter',
+          level: 1,
+          description:
+            'You adopt a particular style of fighting. Choose one of the following options. Archery You gain a +2 bonus. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand, you gain a +2 bonus. Great Weapon Fighting When you roll a 1 or 2 on a damage die, you can reroll the die. Protection When a creature you can see attacks a target other than you, you can use your reaction. Two-Weapon Fighting When you engage in two-weapon fighting, you can add your ability modifier.',
+        }),
+        rec(
+          'feature',
+          'feature:champion:additional-fighting-style',
+          'Additional Fighting Style',
+          {
+            source: 'subclass:champion',
+            level: 10,
+            description:
+              'At 10th level, you can choose a second option from the Fighting Style class feature.',
+          },
+        ),
+      ],
+    });
+    const choice = featureChoices(
+      out,
+      'feature:champion:additional-fighting-style',
+    )[0];
+    expect(choice.category).toBe('fightingStyle');
+    expect(choice.choose).toBe(1);
+    expect(choice.from).toContain('fighting-style:archery');
+    expect(choice.from).toContain('fighting-style:two-weapon-fighting');
+    expect(choice.options).toHaveLength(6);
+  });
+});
+
+describe('deriveFeatureChoices — feature spell filters (eshyra-ngcj.2.3)', () => {
+  it('models Magical Secrets as a structured any-class spell filter', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:bard', 'Bard', {
+          grants: [{ ref: 'feature:bard:magical-secrets', level: 10 }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:bard:magical-secrets', 'Magical Secrets', {
+          source: 'class:bard',
+          level: 10,
+          description:
+            'Choose two spells from any class, including this one. A spell you choose must be of a level you can cast, or a cantrip.',
+        }),
+      ],
+    });
+    const choice = featureChoices(out, 'feature:bard:magical-secrets')[0];
+    expect(choice.category).toBe('spell');
+    expect(choice.choose).toBe(2);
+    expect(choice.from).toMatchObject({
+      kind: 'spellFilter',
+      classLists: 'any',
+      includeCantrips: true,
+      maxSpellLevel: { classRef: 'class:bard', atLevel: 10 },
+      countsAgainstKnown: true,
+    });
+  });
+
+  it('models Spell Mastery as separate 1st- and 2nd-level spellbook choices', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:wizard', 'Wizard', {
+          grants: [{ ref: 'feature:wizard:spell-mastery', level: 18 }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:wizard:spell-mastery', 'Spell Mastery', {
+          source: 'class:wizard',
+          level: 18,
+          description:
+            'Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook.',
+        }),
+      ],
+    });
+    const choices = featureChoices(out, 'feature:wizard:spell-mastery');
+    expect(choices.map((choice) => choice.id)).toEqual([
+      'spell-mastery-1st-level',
+      'spell-mastery-2nd-level',
+    ]);
+    expect(choices[0].from).toMatchObject({
+      spellLevels: [1],
+      mustBeInSpellbook: true,
+    });
+  });
+
+  it('models Pact of the Tome cantrips as a contingent spell filter', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:warlock', 'Warlock', {
+          grants: [{ ref: 'feature:warlock:pact-boon', level: 3 }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:warlock:pact-boon', 'Pact Boon', {
+          source: 'class:warlock',
+          level: 3,
+          description:
+            'At 3rd level, you gain one of the following features of your choice. Pact of the Chain You learn find familiar. Pact of the Blade You create a pact weapon. Pact of the Tome When you gain this feature, choose three cantrips from any class’s spell list.',
+        }),
+      ],
+    });
+    const choice = featureChoices(out, 'feature:warlock:pact-boon').find(
+      (entry) => entry.id === 'pact-of-the-tome-cantrips',
+    );
+    if (choice === undefined)
+      throw new Error('missing Pact of the Tome choice');
+    expect(choice.id).toBe('pact-of-the-tome-cantrips');
+    expect(choice.category).toBe('cantrip');
+    expect(choice.from).toMatchObject({
+      kind: 'spellFilter',
+      classLists: 'any',
+      spellLevels: [0],
+      requiresFeatureOption: 'pact-boon:pact-of-the-tome',
+    });
+  });
+
+  it('models Book of Ancient Secrets rituals as a contingent spell filter', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:warlock', 'Warlock', {
+          grants: [{ ref: 'feature:warlock:eldritch-invocations', level: 2 }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec(
+          'feature',
+          'feature:warlock:eldritch-invocations',
+          'Eldritch Invocations',
+          {
+            source: 'class:warlock',
+            level: 2,
+            description:
+              'At 2nd level, you gain two eldritch invocations of your choice. Agonizing Blast Prerequisite: eldritch blast cantrip When you cast eldritch blast, add your Charisma modifier. Armor of Shadows You can cast mage armor on yourself at will. Ascendant Step Prerequisite: 9th level You can cast levitate on yourself at will. Beast Speech You can cast speak with animals at will. Beguiling Influence You gain proficiency in two skills. Bewitching Whispers Prerequisite: 7th level You can cast compulsion once. Book of Ancient Secrets Prerequisite: Pact of the Tome feature Choose two 1st-level spells that have the ritual tag from any class’s spell list. Chains of Carceri Prerequisite: 15th level, Pact of the Chain feature You can cast hold monster at will. Devil’s Sight You can see normally in darkness. Dreadful Word Prerequisite: 7th level You can cast confusion once. Eldritch Sight You can cast detect magic at will. Eldritch Spear Prerequisite: eldritch blast cantrip Its range is 300 feet. Eyes of the Rune Keeper You can read all writing. Fiendish Vigor You can cast false life. Gaze of Two Minds You can perceive through another creature. Lifedrinker Prerequisite: 12th level, Pact of the Blade feature You deal extra necrotic damage. Mask of Many Faces You can cast disguise self. Master of Myriad Forms Prerequisite: 15th level You can cast alter self. Minions of Chaos Prerequisite: 9th level You can cast conjure elemental. Mire the Mind Prerequisite: 5th level You can cast slow. Misty Visions You can cast silent image. One with Shadows Prerequisite: 5th level You can become invisible. Otherworldly Leap Prerequisite: 9th level You can cast jump. Repelling Blast Prerequisite: eldritch blast cantrip You can push the creature. Sculptor of Flesh Prerequisite: 7th level You can cast polymorph. Sign of Ill Omen Prerequisite: 5th level You can cast bestow curse. Thief of Five Fates You can cast bane. Thirsting Blade Prerequisite: 5th level, Pact of the Blade feature You can attack twice. Visions of Distant Realms Prerequisite: 15th level You can cast arcane eye. Voice of the Chain Master Prerequisite: Pact of the Chain feature You can communicate telepathically. Whispers of the Grave Prerequisite: 9th level You can cast speak with dead. Witch Sight Prerequisite: 15th level You can see true forms.',
+          },
+        ),
+      ],
+    });
+    const choice = featureChoices(
+      out,
+      'feature:warlock:eldritch-invocations',
+    ).find((entry) => entry.id === 'book-of-ancient-secrets-rituals');
+    if (choice === undefined) {
+      throw new Error('missing Book of Ancient Secrets choice');
+    }
+    expect(choice.id).toBe('book-of-ancient-secrets-rituals');
+    expect(choice.from).toMatchObject({
+      kind: 'spellFilter',
+      spellLevels: [1],
+      ritualOnly: true,
+      requiresFeatureOption: 'eldritch-invocation:book-of-ancient-secrets',
+    });
   });
 });
 

@@ -818,14 +818,28 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
 
   if (Array.isArray(data.choices)) {
     for (const choice of data.choices) {
-      const c = choice as { from?: unknown; category?: unknown } | null;
+      const c = choice as {
+        from?: unknown;
+        category?: unknown;
+        options?: unknown;
+      } | null;
       const from = c?.from;
       if (!Array.isArray(from)) continue;
+      const inlineOptionIds = new Set<string>();
+      if (Array.isArray(c?.options)) {
+        for (const option of c.options) {
+          const id = (option as { id?: unknown } | null)?.id;
+          if (typeof id === 'string') inlineOptionIds.add(id);
+        }
+      }
       // A feature's subclass choice lists `subclass:` option keys; an ancestry
       // cantrip choice (eshyra-ngcj.5) lists `spell:` cantrip keys. Other
       // categories (tool/skill) list free-text labels, skipped by isRecordKey.
       const targets = c?.category === 'cantrip' ? ['spell'] : ['subclass'];
-      for (const entry of from) push(entry, targets, 'choices[].from');
+      for (const entry of from) {
+        if (typeof entry === 'string' && inlineOptionIds.has(entry)) continue;
+        push(entry, targets, 'choices[].from');
+      }
     }
   }
 
