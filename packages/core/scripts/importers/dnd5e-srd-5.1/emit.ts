@@ -30,6 +30,7 @@ import {
   enrichAncestryCreationFacts,
   enrichBackgroundCreationFacts,
 } from './creationFacts.js';
+import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
@@ -1270,6 +1271,15 @@ export function buildPack(input: BuildPackInput): RulesPack {
     featureRecords,
     tables: input.tables ?? [],
   });
+  // Attach structured player choices (subclass selection, Fighting Style,
+  // Metamagic, ASI-vs-feat, …) to the feature records they hang off
+  // (eshyra-o9bd.9). Runs after enrichment so the class progression graph and
+  // subclass links the derivers read are already present.
+  const featureRecordsWithChoices = deriveFeatureChoices({
+    classRecords: enriched.classRecords,
+    subclassRecords: enriched.subclassRecords,
+    featureRecords: enriched.featureRecords,
+  });
   // Remove embedded-table linearizations the prose joiners absorbed into owner
   // descriptions/text, leaving the structured `table:*` records as the sole
   // representation (eshyra-3anh). The assertion fails the build closed if any
@@ -1280,7 +1290,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
       ...creatureRecords,
       ...enriched.classRecords,
       ...enriched.subclassRecords,
-      ...enriched.featureRecords,
+      ...featureRecordsWithChoices,
       ...conditionRecords,
       ...featRecords,
       ...hazardRecords,

@@ -40022,7 +40022,33 @@
     "data": {
       "source": "class:barbarian",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -40310,7 +40336,19 @@
     "data": {
       "source": "class:barbarian",
       "level": 3,
-      "description": "At 3rd level, you choose a path that shapes the nature of your rage. Choose the Path of the Berserker or the Path of the Totem Warrior, both detailed at the end of the class description. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th levels."
+      "description": "At 3rd level, you choose a path that shapes the nature of your rage. Choose the Path of the Berserker or the Path of the Totem Warrior, both detailed at the end of the class description. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th levels.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Primal Path.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:path-of-the-berserker"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -40470,7 +40508,33 @@
     "data": {
       "source": "class:bard",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -40502,7 +40566,19 @@
     "data": {
       "source": "class:bard",
       "level": 3,
-      "description": "At 3rd level, you delve into the advanced techniques of a bard college of your choice, such as the College of Lore. Your choice grants you features at 3rd level and again at 6th and 14th level."
+      "description": "At 3rd level, you delve into the advanced techniques of a bard college of your choice, such as the College of Lore. Your choice grants you features at 3rd level and again at 6th and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Bard College.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:college-of-lore"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 12",
     "license": {
@@ -40598,7 +40674,17 @@
     "data": {
       "source": "class:bard",
       "level": 3,
-      "description": "At 3rd level, choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 10th level, you can choose another two skill proficiencies to gain this benefit."
+      "description": "At 3rd level, choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 10th level, you can choose another two skill proficiencies to gain this benefit.",
+      "choices": [
+        {
+          "id": "expertise",
+          "category": "expertise",
+          "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
+          "level": 3,
+          "choose": 2,
+          "from": "your skill proficiencies"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -40758,7 +40844,25 @@
     "data": {
       "source": "class:bard",
       "level": 1,
-      "description": "You have learned to untangle and reshape the fabric of reality in harmony with your wishes and music. Your spells are part of your vast repertoire, magic that you can tune to different situations. Cantrips You know two cantrips of your choice from the bard spell list. You learn additional bard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Bard table. Spell Slots The Bard table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. For example, if you know the 1st-level spell cure wounds and have a 1st-level and a 2nd-level spell slot available, you can cast cure wounds using either slot. Spells Known of 1st Level and Higher You know four 1st-level spells of your choice from the bard spell list. The Spells Known column of the Bard table shows when you learn more bard spells of your choice. Each of these spells must be of a level for which you have spell slots, as shown on the table. For instance, when you reach 3rd level in this class, you can learn one new spell of 1st or 2nd level. Additionally, when you gain a level in this class, you can choose one of the bard spells you know and replace it with another spell from the bard spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Charisma is your spellcasting ability for your bard spells. Your magic comes from the heart and soul you pour into the performance of your music or oration. You use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a bard spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier Spell attack modifier = your proficiency bonus + your Charisma modifier Ritual Casting You can cast any bard spell you know as a ritual if that spell has the ritual tag. Spellcasting Focus You can use a musical instrument (see “Equipment”) as a spellcasting focus for your bard spells."
+      "description": "You have learned to untangle and reshape the fabric of reality in harmony with your wishes and music. Your spells are part of your vast repertoire, magic that you can tune to different situations. Cantrips You know two cantrips of your choice from the bard spell list. You learn additional bard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Bard table. Spell Slots The Bard table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. For example, if you know the 1st-level spell cure wounds and have a 1st-level and a 2nd-level spell slot available, you can cast cure wounds using either slot. Spells Known of 1st Level and Higher You know four 1st-level spells of your choice from the bard spell list. The Spells Known column of the Bard table shows when you learn more bard spells of your choice. Each of these spells must be of a level for which you have spell slots, as shown on the table. For instance, when you reach 3rd level in this class, you can learn one new spell of 1st or 2nd level. Additionally, when you gain a level in this class, you can choose one of the bard spells you know and replace it with another spell from the bard spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Charisma is your spellcasting ability for your bard spells. Your magic comes from the heart and soul you pour into the performance of your music or oration. You use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a bard spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier Spell attack modifier = your proficiency bonus + your Charisma modifier Ritual Casting You can cast any bard spell you know as a ritual if that spell has the ritual tag. Spellcasting Focus You can use a musical instrument (see “Equipment”) as a spellcasting focus for your bard spells.",
+      "choices": [
+        {
+          "id": "cantrips",
+          "category": "cantrip",
+          "prompt": "Choose your starting cantrips from the bard spell list.",
+          "level": 1,
+          "choose": 2,
+          "from": "the bard spell list"
+        },
+        {
+          "id": "spells",
+          "category": "spell",
+          "prompt": "Choose your starting spells from the bard spell list.",
+          "level": 1,
+          "choose": 4,
+          "from": "the bard spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 11",
     "license": {
@@ -41174,7 +41278,33 @@
     "data": {
       "source": "class:cleric",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -41238,7 +41368,18 @@
     "data": {
       "source": "class:cleric",
       "level": 2,
-      "description": "At 2nd level, you gain the ability to channel divine energy directly from your deity, using that energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain. Some domains grant you additional effects as you advance in levels, as noted in the domain description. When you use your Channel Divinity, you choose which effect to create. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your cleric spell save DC. Beginning at 6th level, you can use your Channel Divinity twice between rests, and beginning at 18th level, you can use it three times between rests. When you finish a short or long rest, you regain your expended uses. Channel Divinity: Turn Undead As an action, you present your holy symbol and speak a prayer censuring the undead. Each undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes any damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action."
+      "description": "At 2nd level, you gain the ability to channel divine energy directly from your deity, using that energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain. Some domains grant you additional effects as you advance in levels, as noted in the domain description. When you use your Channel Divinity, you choose which effect to create. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your cleric spell save DC. Beginning at 6th level, you can use your Channel Divinity twice between rests, and beginning at 18th level, you can use it three times between rests. When you finish a short or long rest, you regain your expended uses. Channel Divinity: Turn Undead As an action, you present your holy symbol and speak a prayer censuring the undead. Each undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes any damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action.",
+      "choices": [
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 2,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 16",
     "license": {
@@ -41305,7 +41446,28 @@
     "data": {
       "source": "class:cleric",
       "level": 1,
-      "description": "Choose one domain related to your deity, such as Life. Each domain is detailed at the end of the class description, and each one provides examples of gods associated with it. Your choice grants you domain spells and other features when you choose it at 1st level. It also grants you additional ways to use Channel Divinity when you gain that feature at 2nd level, and additional benefits at 6th, 8th, and 17th levels. Domain Spells Each domain has a list of spells—its domain spells— that you gain at the cleric levels noted in the domain description. Once you gain a domain spell, you always have it prepared, and it doesn’t count against the number of spells you can prepare each day. If you have a domain spell that doesn’t appear on the cleric spell list, the spell is nonetheless a cleric spell for you."
+      "description": "Choose one domain related to your deity, such as Life. Each domain is detailed at the end of the class description, and each one provides examples of gods associated with it. Your choice grants you domain spells and other features when you choose it at 1st level. It also grants you additional ways to use Channel Divinity when you gain that feature at 2nd level, and additional benefits at 6th, 8th, and 17th levels. Domain Spells Each domain has a list of spells—its domain spells— that you gain at the cleric levels noted in the domain description. Once you gain a domain spell, you always have it prepared, and it doesn’t count against the number of spells you can prepare each day. If you have a domain spell that doesn’t appear on the cleric spell list, the spell is nonetheless a cleric spell for you.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Divine Domain.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "subclass:life-domain"
+          ]
+        },
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 1,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 16",
     "license": {
@@ -41369,7 +41531,17 @@
     "data": {
       "source": "class:cleric",
       "level": 1,
-      "description": "As a conduit for divine power, you can cast cleric spells. Cantrips At 1st level, you know three cantrips of your choice from the cleric spell list. You learn additional cleric cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Cleric table. Preparing and Casting Spells The Cleric table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). The spells must be of a level for which you have spell slots. For example, if you are a 3rd-level cleric, you have four 1st-level and two 2nd-level spell slots. With a Wisdom of 16, your list of prepared spells can include six spells of 1st or 2nd level, in any combination. If you prepare the 1st-level spell cure wounds, you can cast it using a 1st-level or 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells. You can change your list of prepared spells when you finish a long rest. Preparing a new list of cleric spells requires time spent in prayer and meditation: at least 1 minute per spell level for each spell on your list. Spellcasting Ability Wisdom is your spellcasting ability for your cleric spells. The power of your spells comes from your devotion to your deity. You use your Wisdom whenever a cleric spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a cleric spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier Ritual Casting You can cast a cleric spell as a ritual if that spell has the ritual tag and you have the spell prepared. Spellcasting Focus You can use a holy symbol (see “Equipment”) as a spellcasting focus for your cleric spells."
+      "description": "As a conduit for divine power, you can cast cleric spells. Cantrips At 1st level, you know three cantrips of your choice from the cleric spell list. You learn additional cleric cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Cleric table. Preparing and Casting Spells The Cleric table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). The spells must be of a level for which you have spell slots. For example, if you are a 3rd-level cleric, you have four 1st-level and two 2nd-level spell slots. With a Wisdom of 16, your list of prepared spells can include six spells of 1st or 2nd level, in any combination. If you prepare the 1st-level spell cure wounds, you can cast it using a 1st-level or 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells. You can change your list of prepared spells when you finish a long rest. Preparing a new list of cleric spells requires time spent in prayer and meditation: at least 1 minute per spell level for each spell on your list. Spellcasting Ability Wisdom is your spellcasting ability for your cleric spells. The power of your spells comes from your devotion to your deity. You use your Wisdom whenever a cleric spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a cleric spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier Ritual Casting You can cast a cleric spell as a ritual if that spell has the ritual tag and you have the spell prepared. Spellcasting Focus You can use a holy symbol (see “Equipment”) as a spellcasting focus for your cleric spells.",
+      "choices": [
+        {
+          "id": "cantrips",
+          "category": "cantrip",
+          "prompt": "Choose your starting cantrips from the cleric spell list.",
+          "level": 1,
+          "choose": 3,
+          "from": "the cleric spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 15",
     "license": {
@@ -41692,7 +41864,33 @@
     "data": {
       "source": "class:druid",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 21",
     "license": {
@@ -41820,7 +42018,19 @@
     "data": {
       "source": "class:druid",
       "level": 2,
-      "description": "At 2nd level, you choose to identify with a circle of druids, such as the Circle of the Land. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level."
+      "description": "At 2nd level, you choose to identify with a circle of druids, such as the Circle of the Land. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Druid Circle.",
+          "level": 2,
+          "choose": 1,
+          "from": [
+            "subclass:circle-of-the-land"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 21",
     "license": {
@@ -41884,7 +42094,17 @@
     "data": {
       "source": "class:druid",
       "level": 1,
-      "description": "Drawing on the divine essence of nature itself, you can cast spells to shape that essence to your will. Cantrips At 1st level, you know two cantrips of your choice from the druid spell list. You learn additional druid cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Druid table. Preparing and Casting Spells The Druid table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these druid spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. You prepare the list of druid spells that are available for you to cast, choosing from the druid spell list. When you do so, choose a number of druid spells equal to your Wisdom modifier + your druid level (minimum of one spell). The spells must be of a level for which you have spell slots. For example, if you are a 3rd-level druid, you have four 1st-level and two 2nd-level spell slots. With a Wisdom of 16, your list of prepared spells can include six spells of 1st or 2nd level, in any combination. If you prepare the 1st-level spell cure wounds, you can cast it using a 1st-level or 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells. You can also change your list of prepared spells when you finish a long rest. Preparing a new list of druid spells requires time spent in prayer and meditation: at least 1 minute per spell level for each spell on your list. Spellcasting Ability Wisdom is your spellcasting ability for your druid spells, since your magic draws upon your devotion and attunement to nature. You use your Wisdom whenever a spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a druid spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier Ritual Casting You can cast a druid spell as a ritual if that spell has the ritual tag and you have the spell prepared. Spellcasting Focus You can use a druidic focus (see “Equipment”) as a spellcasting focus for your druid spells."
+      "description": "Drawing on the divine essence of nature itself, you can cast spells to shape that essence to your will. Cantrips At 1st level, you know two cantrips of your choice from the druid spell list. You learn additional druid cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Druid table. Preparing and Casting Spells The Druid table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these druid spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. You prepare the list of druid spells that are available for you to cast, choosing from the druid spell list. When you do so, choose a number of druid spells equal to your Wisdom modifier + your druid level (minimum of one spell). The spells must be of a level for which you have spell slots. For example, if you are a 3rd-level druid, you have four 1st-level and two 2nd-level spell slots. With a Wisdom of 16, your list of prepared spells can include six spells of 1st or 2nd level, in any combination. If you prepare the 1st-level spell cure wounds, you can cast it using a 1st-level or 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells. You can also change your list of prepared spells when you finish a long rest. Preparing a new list of druid spells requires time spent in prayer and meditation: at least 1 minute per spell level for each spell on your list. Spellcasting Ability Wisdom is your spellcasting ability for your druid spells, since your magic draws upon your devotion and attunement to nature. You use your Wisdom whenever a spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a druid spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier Ritual Casting You can cast a druid spell as a ritual if that spell has the ritual tag and you have the spell prepared. Spellcasting Focus You can use a druidic focus (see “Equipment”) as a spellcasting focus for your druid spells.",
+      "choices": [
+        {
+          "id": "cantrips",
+          "category": "cantrip",
+          "prompt": "Choose your starting cantrips from the druid spell list.",
+          "level": 1,
+          "choose": 2,
+          "from": "the druid spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 19",
     "license": {
@@ -41983,7 +42203,33 @@
     "data": {
       "source": "class:fighter",
       "level": 4,
-      "description": "When you reach 4th level, and again at 6th, 8th, 12th, 14th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 6th, 8th, 12th, 14th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 25",
     "license": {
@@ -42079,7 +42325,17 @@
     "data": {
       "source": "class:fighter",
       "level": 1,
-      "description": "You adopt a particular style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again. Archery You gain a +2 bonus to attack rolls you make with ranged weapons. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon. Great Weapon Fighting When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit. Protection When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield. Two-Weapon Fighting When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."
+      "description": "You adopt a particular style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again. Archery You gain a +2 bonus to attack rolls you make with ranged weapons. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon. Great Weapon Fighting When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit. Protection When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield. Two-Weapon Fighting When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.",
+      "choices": [
+        {
+          "id": "fighting-style",
+          "category": "fightingStyle",
+          "prompt": "Choose a Fighting Style option.",
+          "level": 1,
+          "choose": 1,
+          "from": "a Fighting Style option from this feature"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 24",
     "license": {
@@ -42143,7 +42399,19 @@
     "data": {
       "source": "class:fighter",
       "level": 3,
-      "description": "At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques, such as Champion. The archetype you choose grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level."
+      "description": "At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques, such as Champion. The archetype you choose grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Martial Archetype.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:champion"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 25",
     "license": {
@@ -42527,7 +42795,33 @@
     "data": {
       "source": "class:monk",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 27",
     "license": {
@@ -42815,7 +43109,19 @@
     "data": {
       "source": "class:monk",
       "level": 3,
-      "description": "When you reach 3rd level, you commit yourself to a monastic tradition, such as the Way of the Open Hand. Your tradition grants you features at 3rd level and again at 6th, 11th, and 17th level."
+      "description": "When you reach 3rd level, you commit yourself to a monastic tradition, such as the Way of the Open Hand. Your tradition grants you features at 3rd level and again at 6th, 11th, and 17th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Monastic Tradition.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:way-of-the-open-hand"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 27",
     "license": {
@@ -43263,7 +43569,33 @@
     "data": {
       "source": "class:paladin",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -43519,7 +43851,17 @@
     "data": {
       "source": "class:paladin",
       "level": 2,
-      "description": "At 2nd level, you adopt a style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon. Great Weapon Fighting When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll. The weapon must have the two-handed or versatile property for you to gain this benefit. Protection When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
+      "description": "At 2nd level, you adopt a style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon. Great Weapon Fighting When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll. The weapon must have the two-handed or versatile property for you to gain this benefit. Protection When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield.",
+      "choices": [
+        {
+          "id": "fighting-style",
+          "category": "fightingStyle",
+          "prompt": "Choose a Fighting Style option.",
+          "level": 2,
+          "choose": 1,
+          "from": "a Fighting Style option from this feature"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 31",
     "license": {
@@ -43615,7 +43957,28 @@
     "data": {
       "source": "class:paladin",
       "level": 3,
-      "description": "When you reach 3rd level, you swear the oath that binds you as a paladin forever. Up to this time you have been in a preparatory stage, committed to the path but not yet sworn to it. Now you choose an oath, such as the Oath of Devotion. Your choice grants you features at 3rd level and again at 7th, 15th, and 20th level. Those features include oath spells and the Channel Divinity feature. Oath Spells Each oath has a list of associated spells. You gain access to these spells at the levels specified in the oath description. Once you gain access to an oath spell, you always have it prepared. Oath spells don’t count against the number of spells you can prepare each day. If you gain an oath spell that doesn’t appear on the paladin spell list, the spell is nonetheless a paladin spell for you. Channel Divinity Your oath allows you to channel divine energy to fuel magical effects. Each Channel Divinity option provided by your oath explains how to use it. When you use your Channel Divinity, you choose which option to use. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your paladin spell save DC."
+      "description": "When you reach 3rd level, you swear the oath that binds you as a paladin forever. Up to this time you have been in a preparatory stage, committed to the path but not yet sworn to it. Now you choose an oath, such as the Oath of Devotion. Your choice grants you features at 3rd level and again at 7th, 15th, and 20th level. Those features include oath spells and the Channel Divinity feature. Oath Spells Each oath has a list of associated spells. You gain access to these spells at the levels specified in the oath description. Once you gain access to an oath spell, you always have it prepared. Oath spells don’t count against the number of spells you can prepare each day. If you gain an oath spell that doesn’t appear on the paladin spell list, the spell is nonetheless a paladin spell for you. Channel Divinity Your oath allows you to channel divine energy to fuel magical effects. Each Channel Divinity option provided by your oath explains how to use it. When you use your Channel Divinity, you choose which option to use. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your paladin spell save DC.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Sacred Oath.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:oath-of-devotion"
+          ]
+        },
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 3,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -43807,7 +44170,33 @@
     "data": {
       "source": "class:ranger",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -43871,7 +44260,31 @@
     "data": {
       "source": "class:ranger",
       "level": 1,
-      "description": "Beginning at 1st level, you have significant experience studying, tracking, hunting, and even talking to a certain type of enemy. Choose a type of favored enemy: aberrations, beasts, celestials, constructs, dragons, elementals, fey, fiends, giants, monstrosities, oozes, plants, or undead. Alternatively, you can select two races of humanoid (such as gnolls and orcs) as favored enemies. You have advantage on Wisdom (Survival) checks to track your favored enemies, as well as on Intelligence checks to recall information about them. When you gain this feature, you also learn one language of your choice that is spoken by your favored enemies, if they speak one at all. You choose one additional favored enemy, as well as an associated language, at 6th and 14th level. As you gain levels, your choices should reflect the types of monsters you have encountered on your adventures."
+      "description": "Beginning at 1st level, you have significant experience studying, tracking, hunting, and even talking to a certain type of enemy. Choose a type of favored enemy: aberrations, beasts, celestials, constructs, dragons, elementals, fey, fiends, giants, monstrosities, oozes, plants, or undead. Alternatively, you can select two races of humanoid (such as gnolls and orcs) as favored enemies. You have advantage on Wisdom (Survival) checks to track your favored enemies, as well as on Intelligence checks to recall information about them. When you gain this feature, you also learn one language of your choice that is spoken by your favored enemies, if they speak one at all. You choose one additional favored enemy, as well as an associated language, at 6th and 14th level. As you gain levels, your choices should reflect the types of monsters you have encountered on your adventures.",
+      "choices": [
+        {
+          "id": "favored-enemy",
+          "category": "favoredEnemy",
+          "prompt": "Choose a favored enemy type (or two humanoid races).",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "aberrations",
+            "beasts",
+            "celestials",
+            "constructs",
+            "dragons",
+            "elementals",
+            "fey",
+            "fiends",
+            "giants",
+            "monstrosities",
+            "oozes",
+            "plants",
+            "undead"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 35",
     "license": {
@@ -43935,7 +44348,17 @@
     "data": {
       "source": "class:ranger",
       "level": 2,
-      "description": "At 2nd level, you adopt a particular style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again. Archery You gain a +2 bonus to attack rolls you make with ranged weapons. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon. Two-Weapon Fighting When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."
+      "description": "At 2nd level, you adopt a particular style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again. Archery You gain a +2 bonus to attack rolls you make with ranged weapons. Defense While you are wearing armor, you gain a +1 bonus to AC. Dueling When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon. Two-Weapon Fighting When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.",
+      "choices": [
+        {
+          "id": "fighting-style",
+          "category": "fightingStyle",
+          "prompt": "Choose a Fighting Style option.",
+          "level": 2,
+          "choose": 1,
+          "from": "a Fighting Style option from this feature"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 36",
     "license": {
@@ -44063,7 +44486,25 @@
     "data": {
       "source": "class:ranger",
       "level": 1,
-      "description": "You are particularly familiar with one type of natural environment and are adept at traveling and surviving in such regions. Choose one type of favored terrain: arctic, coast, desert, forest, grassland, mountain, or swamp. When you make an Intelligence or Wisdom check related to your favored terrain, your proficiency bonus is doubled if you are using a skill that you’re proficient in. While traveling for an hour or more in your favored terrain, you gain the following benefits: • Difficult terrain doesn’t slow your group’s travel. • Your group can’t become lost except by magical means. • Even when you are engaged in another activity while traveling (such as foraging, navigating, or tracking), you remain alert to danger. • If you are traveling alone, you can move stealthily at a normal pace. • When you forage, you find twice as much food as you normally would. • While tracking other creatures, you also learn their exact number, their sizes, and how long ago they passed through the area. You choose additional favored terrain types at 6th and 10th level."
+      "description": "You are particularly familiar with one type of natural environment and are adept at traveling and surviving in such regions. Choose one type of favored terrain: arctic, coast, desert, forest, grassland, mountain, or swamp. When you make an Intelligence or Wisdom check related to your favored terrain, your proficiency bonus is doubled if you are using a skill that you’re proficient in. While traveling for an hour or more in your favored terrain, you gain the following benefits: • Difficult terrain doesn’t slow your group’s travel. • Your group can’t become lost except by magical means. • Even when you are engaged in another activity while traveling (such as foraging, navigating, or tracking), you remain alert to danger. • If you are traveling alone, you can move stealthily at a normal pace. • When you forage, you find twice as much food as you normally would. • While tracking other creatures, you also learn their exact number, their sizes, and how long ago they passed through the area. You choose additional favored terrain types at 6th and 10th level.",
+      "choices": [
+        {
+          "id": "favored-terrain",
+          "category": "naturalExplorer",
+          "prompt": "Choose a favored terrain type.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "arctic",
+            "coast",
+            "desert",
+            "forest",
+            "grassland",
+            "mountain",
+            "swamp"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 36",
     "license": {
@@ -44127,7 +44568,19 @@
     "data": {
       "source": "class:ranger",
       "level": 3,
-      "description": "At 3rd level, you choose an archetype that you strive to emulate, such as the Hunter. Your choice grants you features at 3rd level and again at 7th, 11th, and 15th level."
+      "description": "At 3rd level, you choose an archetype that you strive to emulate, such as the Hunter. Your choice grants you features at 3rd level and again at 7th, 11th, and 15th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Ranger Archetype.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:hunter"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -44159,7 +44612,17 @@
     "data": {
       "source": "class:ranger",
       "level": 2,
-      "description": "By the time you reach 2nd level, you have learned to use the magical essence of nature to cast spells, much as a druid does. Spell Slots The Ranger table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. For example, if you know the 1st-level spell animal friendship and have a 1st-level and a 2nd-level spell slot available, you can cast animal friendship using either slot. Spells Known of 1st Level and Higher You know two 1st-level spells of your choice from the ranger spell list. The Spells Known column of the Ranger table shows when you learn more ranger spells of your choice. Each of these spells must be of a level for which you have spell slots. For instance, when you reach 5th level in this class, you can learn one new spell of 1st or 2nd level. Additionally, when you gain a level in this class, you can choose one of the ranger spells you know and replace it with another spell from the ranger spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Wisdom is your spellcasting ability for your ranger spells, since your magic draws on your attunement to nature. You use your Wisdom whenever a spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a ranger spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier"
+      "description": "By the time you reach 2nd level, you have learned to use the magical essence of nature to cast spells, much as a druid does. Spell Slots The Ranger table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. For example, if you know the 1st-level spell animal friendship and have a 1st-level and a 2nd-level spell slot available, you can cast animal friendship using either slot. Spells Known of 1st Level and Higher You know two 1st-level spells of your choice from the ranger spell list. The Spells Known column of the Ranger table shows when you learn more ranger spells of your choice. Each of these spells must be of a level for which you have spell slots. For instance, when you reach 5th level in this class, you can learn one new spell of 1st or 2nd level. Additionally, when you gain a level in this class, you can choose one of the ranger spells you know and replace it with another spell from the ranger spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Wisdom is your spellcasting ability for your ranger spells, since your magic draws on your attunement to nature. You use your Wisdom whenever a spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a ranger spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Wisdom modifier Spell attack modifier = your proficiency bonus + your Wisdom modifier",
+      "choices": [
+        {
+          "id": "spells",
+          "category": "spell",
+          "prompt": "Choose your starting spells from the ranger spell list.",
+          "level": 2,
+          "choose": 2,
+          "from": "the ranger spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 36",
     "license": {
@@ -44223,7 +44686,33 @@
     "data": {
       "source": "class:rogue",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 10th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 10th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -44383,7 +44872,17 @@
     "data": {
       "source": "class:rogue",
       "level": 1,
-      "description": "At 1st level, choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves’ tools. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 6th level, you can choose two more of your proficiencies (in skills or with thieves’ tools) to gain this benefit."
+      "description": "At 1st level, choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves’ tools. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 6th level, you can choose two more of your proficiencies (in skills or with thieves’ tools) to gain this benefit.",
+      "choices": [
+        {
+          "id": "expertise",
+          "category": "expertise",
+          "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
+          "level": 1,
+          "choose": 2,
+          "from": "your skill proficiencies"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 39",
     "license": {
@@ -44447,7 +44946,19 @@
     "data": {
       "source": "class:rogue",
       "level": 3,
-      "description": "At 3rd level, you choose an archetype that you emulate in the exercise of your rogue abilities, such as Thief. Your archetype choice grants you features at 3rd level and then again at 9th, 13th, and 17th level."
+      "description": "At 3rd level, you choose an archetype that you emulate in the exercise of your rogue abilities, such as Thief. Your archetype choice grants you features at 3rd level and then again at 9th, 13th, and 17th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Roguish Archetype.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:thief"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -44799,7 +45310,33 @@
     "data": {
       "source": "class:sorcerer",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 44",
     "license": {
@@ -44898,7 +45435,17 @@
     "data": {
       "source": "class:sorcerer",
       "level": 3,
-      "description": "At 3rd level, you gain the ability to twist your spells to suit your needs. You gain two of the following Metamagic options of your choice. You gain another one at 10th and 17th level. You can use only one Metamagic option on a spell when you cast it, unless otherwise noted. Careful Spell When you cast a spell that forces other creatures to make a saving throw, you can protect some of those creatures from the spell’s full force. To do so, you spend 1 sorcery point and choose a number of those creatures up to your Charisma modifier (minimum of one creature). A chosen creature automatically succeeds on its saving throw against the spell. Distant Spell When you cast a spell that has a range of 5 feet or greater, you can spend 1 sorcery point to double the range of the spell. When you cast a spell that has a range of touch, you can spend 1 sorcery point to make the range of the spell 30 feet. Empowered Spell When you roll damage for a spell, you can spend 1 sorcery point to reroll a number of the damage dice up to your Charisma modifier (minimum of one). You must use the new rolls. You can use Empowered Spell even if you have already used a different Metamagic option during the casting of the spell. Extended Spell When you cast a spell that has a duration of 1 minute or longer, you can spend 1 sorcery point to double its duration, to a maximum duration of 24 hours. Heightened Spell When you cast a spell that forces a creature to make a saving throw to resist its effects, you can spend 3 sorcery points to give one target of the spell disadvantage on its first saving throw made against the spell. Quickened Spell When you cast a spell that has a casting time of 1 action, you can spend 2 sorcery points to change the casting time to 1 bonus action for this casting. Subtle Spell When you cast a spell, you can spend 1 sorcery point to cast it without any somatic or verbal components. Twinned Spell When you cast a spell that targets only one creature and doesn’t have a range of self, you can spend a number of sorcery points equal to the spell’s level to target a second creature in range with the same spell (1 sorcery point if the spell is a cantrip). To be eligible, a spell must be incapable of targeting more than one creature at the spell’s current level. For example, magic missile and scorching ray aren’t eligible, but ray of frost is."
+      "description": "At 3rd level, you gain the ability to twist your spells to suit your needs. You gain two of the following Metamagic options of your choice. You gain another one at 10th and 17th level. You can use only one Metamagic option on a spell when you cast it, unless otherwise noted. Careful Spell When you cast a spell that forces other creatures to make a saving throw, you can protect some of those creatures from the spell’s full force. To do so, you spend 1 sorcery point and choose a number of those creatures up to your Charisma modifier (minimum of one creature). A chosen creature automatically succeeds on its saving throw against the spell. Distant Spell When you cast a spell that has a range of 5 feet or greater, you can spend 1 sorcery point to double the range of the spell. When you cast a spell that has a range of touch, you can spend 1 sorcery point to make the range of the spell 30 feet. Empowered Spell When you roll damage for a spell, you can spend 1 sorcery point to reroll a number of the damage dice up to your Charisma modifier (minimum of one). You must use the new rolls. You can use Empowered Spell even if you have already used a different Metamagic option during the casting of the spell. Extended Spell When you cast a spell that has a duration of 1 minute or longer, you can spend 1 sorcery point to double its duration, to a maximum duration of 24 hours. Heightened Spell When you cast a spell that forces a creature to make a saving throw to resist its effects, you can spend 3 sorcery points to give one target of the spell disadvantage on its first saving throw made against the spell. Quickened Spell When you cast a spell that has a casting time of 1 action, you can spend 2 sorcery points to change the casting time to 1 bonus action for this casting. Subtle Spell When you cast a spell, you can spend 1 sorcery point to cast it without any somatic or verbal components. Twinned Spell When you cast a spell that targets only one creature and doesn’t have a range of self, you can spend a number of sorcery points equal to the spell’s level to target a second creature in range with the same spell (1 sorcery point if the spell is a cantrip). To be eligible, a spell must be incapable of targeting more than one creature at the spell’s current level. For example, magic missile and scorching ray aren’t eligible, but ray of frost is.",
+      "choices": [
+        {
+          "id": "metamagic",
+          "category": "metamagic",
+          "prompt": "Choose 2 Metamagic options.",
+          "level": 3,
+          "choose": 2,
+          "from": "a Metamagic option from this feature"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 44",
     "license": {
@@ -44930,7 +45477,19 @@
     "data": {
       "source": "class:sorcerer",
       "level": 1,
-      "description": "Choose a sorcerous origin, which describes the source of your innate magical power, such as Draconic Bloodline. Your choice grants you features when you choose it at 1st level and again at 6th, 14th, and 18th level."
+      "description": "Choose a sorcerous origin, which describes the source of your innate magical power, such as Draconic Bloodline. Your choice grants you features when you choose it at 1st level and again at 6th, 14th, and 18th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Sorcerous Origin.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "subclass:draconic-bloodline"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 43",
     "license": {
@@ -44994,7 +45553,25 @@
     "data": {
       "source": "class:sorcerer",
       "level": 1,
-      "description": "An event in your past, or in the life of a parent or ancestor, left an indelible mark on you, infusing you with arcane magic. This font of magic, whatever its origin, fuels your spells. Cantrips At 1st level, you know four cantrips of your choice from the sorcerer spell list. You learn additional sorcerer cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Sorcerer table. Spell Slots The Sorcerer table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these sorcerer spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. For example, if you know the 1st-level spell burning hands and have a 1st-level and a 2nd-level spell slot available, you can cast burning hands using either slot. Spells Known of 1st Level and Higher You know two 1st-level spells of your choice from the sorcerer spell list. The Spells Known column of the Sorcerer table shows when you learn more sorcerer spells of your choice. Each of these spells must be of a level for which you have spell slots. For instance, when you reach 3rd level in this class, you can learn one new spell of 1st or 2nd level. Additionally, when you gain a level in this class, you can choose one of the sorcerer spells you know and replace it with another spell from the sorcerer spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Charisma is your spellcasting ability for your sorcerer spells, since the power of your magic relies on your ability to project your will into the world. You use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a sorcerer spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier Spell attack modifier = your proficiency bonus + your Charisma modifier Spellcasting Focus You can use an arcane focus as a spellcasting focus for your sorcerer spells."
+      "description": "An event in your past, or in the life of a parent or ancestor, left an indelible mark on you, infusing you with arcane magic. This font of magic, whatever its origin, fuels your spells. Cantrips At 1st level, you know four cantrips of your choice from the sorcerer spell list. You learn additional sorcerer cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Sorcerer table. Spell Slots The Sorcerer table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these sorcerer spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. For example, if you know the 1st-level spell burning hands and have a 1st-level and a 2nd-level spell slot available, you can cast burning hands using either slot. Spells Known of 1st Level and Higher You know two 1st-level spells of your choice from the sorcerer spell list. The Spells Known column of the Sorcerer table shows when you learn more sorcerer spells of your choice. Each of these spells must be of a level for which you have spell slots. For instance, when you reach 3rd level in this class, you can learn one new spell of 1st or 2nd level. Additionally, when you gain a level in this class, you can choose one of the sorcerer spells you know and replace it with another spell from the sorcerer spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Charisma is your spellcasting ability for your sorcerer spells, since the power of your magic relies on your ability to project your will into the world. You use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a sorcerer spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier Spell attack modifier = your proficiency bonus + your Charisma modifier Spellcasting Focus You can use an arcane focus as a spellcasting focus for your sorcerer spells.",
+      "choices": [
+        {
+          "id": "cantrips",
+          "category": "cantrip",
+          "prompt": "Choose your starting cantrips from the sorcerer spell list.",
+          "level": 1,
+          "choose": 4,
+          "from": "the sorcerer spell list"
+        },
+        {
+          "id": "spells",
+          "category": "spell",
+          "prompt": "Choose your starting spells from the sorcerer spell list.",
+          "level": 1,
+          "choose": 2,
+          "from": "the sorcerer spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 43",
     "license": {
@@ -45314,7 +45891,33 @@
     "data": {
       "source": "class:warlock",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 48",
     "license": {
@@ -45346,7 +45949,17 @@
     "data": {
       "source": "class:warlock",
       "level": 2,
-      "description": "In your study of occult lore, you have unearthed eldritch invocations, fragments of forbidden knowledge that imbue you with an abiding magical ability. At 2nd level, you gain two eldritch invocations of your choice. Your invocation options are detailed at the end of the class description. When you gain certain warlock levels, you gain additional invocations of your choice, as shown in the Invocations Known column of the Warlock table. Additionally, when you gain a level in this class, you can choose one of the invocations you know and replace it with another invocation that you could learn at that level.\n\nIf an eldritch invocation has prerequisites, you must meet them to learn it. You can learn the invocation at the same time that you meet its prerequisites. A level prerequisite refers to your level in this class. Agonizing Blast Prerequisite: eldritch blast cantrip When you cast eldritch blast, add your Charisma modifier to the damage it deals on a hit. Armor of Shadows You can cast mage armor on yourself at will, without expending a spell slot or material components. Ascendant Step Prerequisite: 9th level You can cast levitate on yourself at will, without expending a spell slot or material components. Beast Speech You can cast speak with animals at will, without expending a spell slot. Beguiling Influence You gain proficiency in the Deception and Persuasion skills. Bewitching Whispers Prerequisite: 7th level You can cast compulsion once using a warlock spell slot. You can’t do so again until you finish a long rest. Book of Ancient Secrets Prerequisite: Pact of the Tome feature You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it. Chains of Carceri Prerequisite: 15th level, Pact of the Chain feature You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again. Devil’s Sight You can see normally in darkness, both magical and nonmagical, to a distance of 120 feet. Dreadful Word Prerequisite: 7th level You can cast confusion once using a warlock spell slot. You can’t do so again until you finish a long rest. Eldritch Sight You can cast detect magic at will, without expending a spell slot. Eldritch Spear Prerequisite: eldritch blast cantrip When you cast eldritch blast, its range is 300 feet. Eyes of the Rune Keeper You can read all writing. Fiendish Vigor You can cast false life on yourself at will as a 1st-level spell, without expending a spell slot or material components. Gaze of Two Minds You can use your action to touch a willing humanoid and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use your action on subsequent turns to maintain this connection, extending the duration until the end of your next turn. While perceiving through the other creature’s senses, you benefit from any special senses possessed by that creature, and you are blinded and deafened to your own surroundings. Lifedrinker Prerequisite: 12th level, Pact of the Blade feature When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1). Mask of Many Faces You can cast disguise self at will, without expending a spell slot. Master of Myriad Forms Prerequisite: 15th level You can cast alter self at will, without expending a spell slot. Minions of Chaos Prerequisite: 9th level You can cast conjure elemental once using a warlock spell slot. You can’t do so again until you finish a long rest. Mire the Mind Prerequisite: 5th level You can cast slow once using a warlock spell slot. You can’t do so again until you finish a long rest. Misty Visions You can cast silent image at will, without expending a spell slot or material components. One with Shadows Prerequisite: 5th level When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction. Otherworldly Leap Prerequisite: 9th level You can cast jump on yourself at will, without expending a spell slot or material components. Repelling Blast Prerequisite: eldritch blast cantrip When you hit a creature with eldritch blast, you can push the creature up to 10 feet away from you in a straight line. Sculptor of Flesh Prerequisite: 7th level You can cast polymorph once using a warlock spell slot. You can’t do so again until you finish a long rest. Sign of Ill Omen Prerequisite: 5th level You can cast bestow curse once using a warlock spell slot. You can’t do so again until you finish a long rest. Thief of Five Fates You can cast bane once using a warlock spell slot. You can’t do so again until you finish a long rest. Thirsting Blade Prerequisite: 5th level, Pact of the Blade feature You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn. Visions of Distant Realms Prerequisite: 15th level You can cast arcane eye at will, without expending a spell slot. Voice of the Chain Master Prerequisite: Pact of the Chain feature You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech. Whispers of the Grave Prerequisite: 9th level You can cast speak with dead at will, without expending a spell slot. Witch Sight Prerequisite: 15th level You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight."
+      "description": "In your study of occult lore, you have unearthed eldritch invocations, fragments of forbidden knowledge that imbue you with an abiding magical ability. At 2nd level, you gain two eldritch invocations of your choice. Your invocation options are detailed at the end of the class description. When you gain certain warlock levels, you gain additional invocations of your choice, as shown in the Invocations Known column of the Warlock table. Additionally, when you gain a level in this class, you can choose one of the invocations you know and replace it with another invocation that you could learn at that level.\n\nIf an eldritch invocation has prerequisites, you must meet them to learn it. You can learn the invocation at the same time that you meet its prerequisites. A level prerequisite refers to your level in this class. Agonizing Blast Prerequisite: eldritch blast cantrip When you cast eldritch blast, add your Charisma modifier to the damage it deals on a hit. Armor of Shadows You can cast mage armor on yourself at will, without expending a spell slot or material components. Ascendant Step Prerequisite: 9th level You can cast levitate on yourself at will, without expending a spell slot or material components. Beast Speech You can cast speak with animals at will, without expending a spell slot. Beguiling Influence You gain proficiency in the Deception and Persuasion skills. Bewitching Whispers Prerequisite: 7th level You can cast compulsion once using a warlock spell slot. You can’t do so again until you finish a long rest. Book of Ancient Secrets Prerequisite: Pact of the Tome feature You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it. Chains of Carceri Prerequisite: 15th level, Pact of the Chain feature You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again. Devil’s Sight You can see normally in darkness, both magical and nonmagical, to a distance of 120 feet. Dreadful Word Prerequisite: 7th level You can cast confusion once using a warlock spell slot. You can’t do so again until you finish a long rest. Eldritch Sight You can cast detect magic at will, without expending a spell slot. Eldritch Spear Prerequisite: eldritch blast cantrip When you cast eldritch blast, its range is 300 feet. Eyes of the Rune Keeper You can read all writing. Fiendish Vigor You can cast false life on yourself at will as a 1st-level spell, without expending a spell slot or material components. Gaze of Two Minds You can use your action to touch a willing humanoid and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use your action on subsequent turns to maintain this connection, extending the duration until the end of your next turn. While perceiving through the other creature’s senses, you benefit from any special senses possessed by that creature, and you are blinded and deafened to your own surroundings. Lifedrinker Prerequisite: 12th level, Pact of the Blade feature When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1). Mask of Many Faces You can cast disguise self at will, without expending a spell slot. Master of Myriad Forms Prerequisite: 15th level You can cast alter self at will, without expending a spell slot. Minions of Chaos Prerequisite: 9th level You can cast conjure elemental once using a warlock spell slot. You can’t do so again until you finish a long rest. Mire the Mind Prerequisite: 5th level You can cast slow once using a warlock spell slot. You can’t do so again until you finish a long rest. Misty Visions You can cast silent image at will, without expending a spell slot or material components. One with Shadows Prerequisite: 5th level When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction. Otherworldly Leap Prerequisite: 9th level You can cast jump on yourself at will, without expending a spell slot or material components. Repelling Blast Prerequisite: eldritch blast cantrip When you hit a creature with eldritch blast, you can push the creature up to 10 feet away from you in a straight line. Sculptor of Flesh Prerequisite: 7th level You can cast polymorph once using a warlock spell slot. You can’t do so again until you finish a long rest. Sign of Ill Omen Prerequisite: 5th level You can cast bestow curse once using a warlock spell slot. You can’t do so again until you finish a long rest. Thief of Five Fates You can cast bane once using a warlock spell slot. You can’t do so again until you finish a long rest. Thirsting Blade Prerequisite: 5th level, Pact of the Blade feature You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn. Visions of Distant Realms Prerequisite: 15th level You can cast arcane eye at will, without expending a spell slot. Voice of the Chain Master Prerequisite: Pact of the Chain feature You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech. Whispers of the Grave Prerequisite: 9th level You can cast speak with dead at will, without expending a spell slot. Witch Sight Prerequisite: 15th level You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight.",
+      "choices": [
+        {
+          "id": "eldritch-invocations",
+          "category": "invocation",
+          "prompt": "Choose 2 Eldritch Invocations you qualify for.",
+          "level": 2,
+          "choose": 2,
+          "from": "an Eldritch Invocation you qualify for"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 47",
     "license": {
@@ -45410,7 +46023,17 @@
     "data": {
       "source": "class:warlock",
       "level": 11,
-      "description": "At 11th level, your patron bestows upon you a magical secret called an arcanum. Choose one 6th- level spell from the warlock spell list as this arcanum. You can cast your arcanum spell once without expending a spell slot. You must finish a long rest before you can do so again. At higher levels, you gain more warlock spells of your choice that can be cast in this way: one 7th- level spell at 13th level, one 8th-level spell at 15th level, and one 9th-level spell at 17th level. You regain all uses of your Mystic Arcanum when you finish a long rest."
+      "description": "At 11th level, your patron bestows upon you a magical secret called an arcanum. Choose one 6th- level spell from the warlock spell list as this arcanum. You can cast your arcanum spell once without expending a spell slot. You must finish a long rest before you can do so again. At higher levels, you gain more warlock spells of your choice that can be cast in this way: one 7th- level spell at 13th level, one 8th-level spell at 15th level, and one 9th-level spell at 17th level. You regain all uses of your Mystic Arcanum when you finish a long rest.",
+      "choices": [
+        {
+          "id": "arcanum",
+          "category": "spell",
+          "prompt": "Choose one 6th-level spell from the warlock spell list as your arcanum.",
+          "level": 11,
+          "choose": 1,
+          "from": "the warlock spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 48",
     "license": {
@@ -45442,7 +46065,19 @@
     "data": {
       "source": "class:warlock",
       "level": 1,
-      "description": "At 1st level, you have struck a bargain with an otherworldly being of your choice: the Archfey, the Fiend, or the Great Old One, each of which is detailed at the end of the class description. Your choice grants you features at 1st level and again at 6th, 10th, and 14th level."
+      "description": "At 1st level, you have struck a bargain with an otherworldly being of your choice: the Archfey, the Fiend, or the Great Old One, each of which is detailed at the end of the class description. Your choice grants you features at 1st level and again at 6th, 10th, and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Otherworldly Patron.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "subclass:the-fiend"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 46",
     "license": {
@@ -45506,7 +46141,25 @@
     "data": {
       "source": "class:warlock",
       "level": 1,
-      "description": "Your arcane research and the magic bestowed on you by your patron have given you facility with spells. Cantrips You know two cantrips of your choice from the warlock spell list. You learn additional warlock cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Warlock table. Spell Slots The Warlock table shows how many spell slots you have. The table also shows what the level of those slots is; all of your spell slots are the same level. To cast one of your warlock spells of 1st level or higher, you must expend a spell slot. You regain all expended spell slots when you finish a short or long rest. For example, when you are 5th level, you have two 3rd-level spell slots. To cast the 1st-level spell thunderwave, you must spend one of those slots, and you cast it as a 3rd-level spell. Spells Known of 1st Level and Higher At 1st level, you know two 1st-level spells of your choice from the warlock spell list. The Spells Known column of the Warlock table shows when you learn more warlock spells of your choice of 1st level and higher. A spell you choose must be of a level no higher than what’s shown in the table’s Slot Level column for your level. When you reach 6th level, for example, you learn a new warlock spell, which can be 1st, 2nd, or 3rd level. Additionally, when you gain a level in this class, you can choose one of the warlock spells you know and replace it with another spell from the warlock spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Charisma is your spellcasting ability for your warlock spells, so you use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a warlock spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier Spell attack modifier = your proficiency bonus + your Charisma modifier Spellcasting Focus You can use an arcane focus as a spellcasting focus for your warlock spells."
+      "description": "Your arcane research and the magic bestowed on you by your patron have given you facility with spells. Cantrips You know two cantrips of your choice from the warlock spell list. You learn additional warlock cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Warlock table. Spell Slots The Warlock table shows how many spell slots you have. The table also shows what the level of those slots is; all of your spell slots are the same level. To cast one of your warlock spells of 1st level or higher, you must expend a spell slot. You regain all expended spell slots when you finish a short or long rest. For example, when you are 5th level, you have two 3rd-level spell slots. To cast the 1st-level spell thunderwave, you must spend one of those slots, and you cast it as a 3rd-level spell. Spells Known of 1st Level and Higher At 1st level, you know two 1st-level spells of your choice from the warlock spell list. The Spells Known column of the Warlock table shows when you learn more warlock spells of your choice of 1st level and higher. A spell you choose must be of a level no higher than what’s shown in the table’s Slot Level column for your level. When you reach 6th level, for example, you learn a new warlock spell, which can be 1st, 2nd, or 3rd level. Additionally, when you gain a level in this class, you can choose one of the warlock spells you know and replace it with another spell from the warlock spell list, which also must be of a level for which you have spell slots. Spellcasting Ability Charisma is your spellcasting ability for your warlock spells, so you use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a warlock spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier Spell attack modifier = your proficiency bonus + your Charisma modifier Spellcasting Focus You can use an arcane focus as a spellcasting focus for your warlock spells.",
+      "choices": [
+        {
+          "id": "cantrips",
+          "category": "cantrip",
+          "prompt": "Choose your starting cantrips from the warlock spell list.",
+          "level": 1,
+          "choose": 2,
+          "from": "the warlock spell list"
+        },
+        {
+          "id": "spells",
+          "category": "spell",
+          "prompt": "Choose your starting spells from the warlock spell list.",
+          "level": 1,
+          "choose": 2,
+          "from": "the warlock spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 46",
     "license": {
@@ -45666,7 +46319,33 @@
     "data": {
       "source": "class:wizard",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 53",
     "license": {
@@ -45730,7 +46409,19 @@
     "data": {
       "source": "class:wizard",
       "level": 2,
-      "description": "When you reach 2nd level, you choose an arcane tradition, shaping your practice of magic through one of eight schools, such as Evocation. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level."
+      "description": "When you reach 2nd level, you choose an arcane tradition, shaping your practice of magic through one of eight schools, such as Evocation. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Arcane Tradition.",
+          "level": 2,
+          "choose": 1,
+          "from": [
+            "subclass:school-of-evocation"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 53",
     "license": {
@@ -45890,7 +46581,25 @@
     "data": {
       "source": "class:wizard",
       "level": 1,
-      "description": "As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power. Cantrips At 1st level, you know three cantrips of your choice from the wizard spell list. You learn additional wizard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Wizard table. Spellbook At 1st level, you have a spellbook containing six 1st- level wizard spells of your choice. Your spellbook is the repository of the wizard spells you know, except your cantrips, which are fixed in your mind. Preparing and Casting Spells The Wizard table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell). The spells must be of a level for which you have spell slots. For example, if you’re a 3rd-level wizard, you have four 1st-level and two 2nd-level spell slots. With an Intelligence of 16, your list of prepared spells can include six spells of 1st or 2nd level, in any combination, chosen from your spellbook. If you prepare the 1st-level spell magic missile, you can cast it using a 1st-level or a 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells. You can change your list of prepared spells when you finish a long rest. Preparing a new list of wizard spells requires time spent studying your spellbook and memorizing the incantations and gestures you must make to cast the spell: at least 1 minute per spell level for each spell on your list. Spellcasting Ability Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through dedicated study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Intelligence modifier Spell attack modifier = your proficiency bonus + your Intelligence modifier Ritual Casting You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your spellbook. You don’t need to have the spell prepared. Spellcasting Focus You can use an arcane focus as a spellcasting focus for your wizard spells. Learning Spells of 1st Level and Higher Each time you gain a wizard level, you can add two wizard spells of your choice to your spellbook for free. Each of these spells must be of a level for which you have spell slots, as shown on the Wizard table. On your adventures, you might find other spells that you can add to your spellbook (see the “Your Spellbook” sidebar)."
+      "description": "As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power. Cantrips At 1st level, you know three cantrips of your choice from the wizard spell list. You learn additional wizard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Wizard table. Spellbook At 1st level, you have a spellbook containing six 1st- level wizard spells of your choice. Your spellbook is the repository of the wizard spells you know, except your cantrips, which are fixed in your mind. Preparing and Casting Spells The Wizard table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell). The spells must be of a level for which you have spell slots. For example, if you’re a 3rd-level wizard, you have four 1st-level and two 2nd-level spell slots. With an Intelligence of 16, your list of prepared spells can include six spells of 1st or 2nd level, in any combination, chosen from your spellbook. If you prepare the 1st-level spell magic missile, you can cast it using a 1st-level or a 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells. You can change your list of prepared spells when you finish a long rest. Preparing a new list of wizard spells requires time spent studying your spellbook and memorizing the incantations and gestures you must make to cast the spell: at least 1 minute per spell level for each spell on your list. Spellcasting Ability Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through dedicated study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Intelligence modifier Spell attack modifier = your proficiency bonus + your Intelligence modifier Ritual Casting You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your spellbook. You don’t need to have the spell prepared. Spellcasting Focus You can use an arcane focus as a spellcasting focus for your wizard spells. Learning Spells of 1st Level and Higher Each time you gain a wizard level, you can add two wizard spells of your choice to your spellbook for free. Each of these spells must be of a level for which you have spell slots, as shown on the Wizard table. On your adventures, you might find other spells that you can add to your spellbook (see the “Your Spellbook” sidebar).",
+      "choices": [
+        {
+          "id": "cantrips",
+          "category": "cantrip",
+          "prompt": "Choose your starting cantrips from the wizard spell list.",
+          "level": 1,
+          "choose": 3,
+          "from": "the wizard spell list"
+        },
+        {
+          "id": "spells",
+          "category": "spell",
+          "prompt": "Choose your starting spells from the wizard spell list.",
+          "level": 1,
+          "choose": 6,
+          "from": "the wizard spell list"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 52",
     "license": {
