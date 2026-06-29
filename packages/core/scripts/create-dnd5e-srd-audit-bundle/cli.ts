@@ -42,10 +42,12 @@ import {
   auditHasFindings,
   auditPack,
   auditSrd,
+  auditSrdChoiceProse,
   auditSrdPlayability,
   countSrdPlayabilityByCategory,
   formatAuditReport,
   formatSrdAuditReport,
+  formatSrdChoiceProseReport,
   formatSrdPlayabilityReport,
   getAncestryAbilityScoreIncrease,
   getAncestryLanguages,
@@ -59,8 +61,10 @@ import {
   SRD_5_1_STANDALONE_TABLES,
   SRD_5_1_TABLE_OWNERS,
   type SrdAuditFinding,
+  type SrdChoiceProseFinding,
   type SrdPlayabilityFinding,
   srdAuditHasFindings,
+  srdChoiceProseHasFindings,
   srdPlayabilityHasFindings,
 } from '../../src/internal.js';
 import {
@@ -911,6 +915,9 @@ function buildReadme(meta: {
     '- `overlay-vs-pack-parity.{json,txt}` — parity between the old',
     '  source-backed character-creation overlays and the generated pack facts',
     '- `srd-playability-audit.{json,txt}` — full playable-model gate output',
+    '- `srd-choice-prose-audit.{json,txt}` — choice-bearing prose coverage gate:',
+    '  records whose prose announces a build choice but carry no structured',
+    '  option catalog/filter (eshyra-ngcj.1)',
     '- `source-hash-verification.txt` — SHA-256 and size check for the vendored PDF',
     '',
     '## How to reproduce',
@@ -1118,6 +1125,7 @@ async function main(): Promise<void> {
   // are report projections over the committed pack, not generated-pack edits.
   log('Generating modeling-usability reports...');
   let playabilityFindings: readonly SrdPlayabilityFinding[] = [];
+  let choiceProseFindings: readonly SrdChoiceProseFinding[] = [];
   let typedAdvancementReport: ReturnType<
     typeof buildTypedAdvancementCoverageReport
   > | null = null;
@@ -1148,6 +1156,24 @@ async function main(): Promise<void> {
     writeFileSync(
       join(outDir, 'reports/srd-playability-audit.txt'),
       formatSrdPlayabilityReport(pack.meta.packId, playabilityFindings),
+      'utf8',
+    );
+
+    // Choice-bearing prose coverage gate (eshyra-ngcj.1): records whose prose
+    // announces a build choice but carry no structured option catalog/filter.
+    choiceProseFindings = auditSrdChoiceProse(pack);
+    writeFileSync(
+      join(outDir, 'reports/srd-choice-prose-audit.json'),
+      JSON.stringify(
+        { packId: pack.meta.packId, findings: choiceProseFindings },
+        null,
+        2,
+      ),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/srd-choice-prose-audit.txt'),
+      formatSrdChoiceProseReport(pack.meta.packId, choiceProseFindings),
       'utf8',
     );
 
@@ -1204,6 +1230,9 @@ async function main(): Promise<void> {
 
     log(
       `  Playability findings: ${playabilityFindings.length} (${srdPlayabilityHasFindings(playabilityFindings) ? 'NEEDS REVIEW' : 'clean'})`,
+    );
+    log(
+      `  Choice-prose findings: ${choiceProseFindings.length} (${srdChoiceProseHasFindings(choiceProseFindings) ? 'NEEDS REVIEW' : 'clean'})`,
     );
     log(
       `  Typed advancement rows: ${typedAdvancementReport.summary.rowsWithTypedAdvancement}/${typedAdvancementReport.summary.expectedRows}`,
@@ -1369,6 +1398,10 @@ async function main(): Promise<void> {
     srdPlayabilityAudit: {
       findingCount: playabilityFindings.length,
       hasFindings: srdPlayabilityHasFindings(playabilityFindings),
+    },
+    srdChoiceProseAudit: {
+      findingCount: choiceProseFindings.length,
+      hasFindings: srdChoiceProseHasFindings(choiceProseFindings),
     },
     modelingUsabilityReports: {
       typedAdvancementCoverage: typedAdvancementReport?.summary ?? null,

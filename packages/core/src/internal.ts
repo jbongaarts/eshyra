@@ -810,6 +810,13 @@ export {
   SRD_5_1_TABLE_OWNERS,
   srdAuditHasFindings,
 } from './rules/srdAudit.js';
+export type { SrdChoiceProseFinding } from './rules/srdChoiceProseAudit.js';
+export {
+  auditSrdChoiceProse,
+  CHOICE_PROSE_ALLOWLIST,
+  formatSrdChoiceProseReport,
+  srdChoiceProseHasFindings,
+} from './rules/srdChoiceProseAudit.js';
 export type {
   SrdPlayabilityAudit,
   SrdPlayabilityCategory,
