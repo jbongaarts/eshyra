@@ -586,6 +586,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 210,
     totalInKind: 218,
   },
+  // Typed pack contents (eshyra-ngcj.4): genuinely optional — only the 7
+  // equipment packs carry contents; the other 211 equipment records do not.
+  {
+    kind: 'equipment',
+    field: 'contents',
+    missingCount: 211,
+    totalInKind: 218,
+  },
   {
     kind: 'equipment',
     field: 'damageDie',

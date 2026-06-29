@@ -2307,6 +2307,38 @@ function validateStartingEquipmentGrantRefs(
 }
 
 /**
+ * Fail closed when any equipment-pack content references an equipment record
+ * the pack does not own (eshyra-ngcj.4). A content line with a `ref` must
+ * resolve to a real `equipment:` key; a record-less line (alms box, incense)
+ * carries no ref and is skipped. Runs against the FINAL emitted records.
+ */
+function validateEquipmentPackContentRefs(
+  records: readonly import('../../../src/rules/types.js').RulesRecord[],
+): void {
+  const equipmentKeys = new Set(
+    records.filter((r) => r.kind === 'equipment').map((r) => r.key),
+  );
+  const dangling: string[] = [];
+  for (const record of records) {
+    if (record.kind !== 'equipment') continue;
+    const data = record.data as { contents?: unknown };
+    if (!Array.isArray(data.contents)) continue;
+    for (const entry of data.contents) {
+      const content = entry as { ref?: unknown };
+      if (typeof content.ref !== 'string') continue;
+      if (!equipmentKeys.has(content.ref)) {
+        dangling.push(`${record.key} -> ${content.ref}`);
+      }
+    }
+  }
+  if (dangling.length > 0) {
+    throw new Error(
+      `SRD 5.1 equipment-pack content check failed: ${dangling.length} content ref(s) reference a missing equipment record: ${dangling.join('; ')}. Fix equipmentPackContents.ts or the equipment parser.`,
+    );
+  }
+}
+
+/**
  * Fail closed on ancestry under-extraction. Unlike the creature/class count
  * floors, the SRD 5.1 race/subrace name set is small and stable enough to
  * validate exactly. Runs after parsing and before any output is written.
@@ -3447,6 +3479,9 @@ export async function runImporter(
   // Every class starting-equipment fixed item grant must reference a real
   // equipment record (eshyra-ngcj.3).
   validateStartingEquipmentGrantRefs(pack.records);
+  // Every equipment-pack content ref must resolve to a real equipment record
+  // (eshyra-ngcj.4).
+  validateEquipmentPackContentRefs(pack.records);
   // Source-structure coverage gate (eshyra-4a7.1): every typography-derived
   // source structure must be an emitted record, structured child data,
   // intentionally ignored with a reason, or a tracked known gap. Evaluated

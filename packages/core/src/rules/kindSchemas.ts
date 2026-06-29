@@ -1011,6 +1011,33 @@ function validateDnd5eClass(record: RulesRecord, path: string): void {
   optSpellPreparation(data, 'spellPreparation', `${path}.data`);
 }
 
+/**
+ * Equipment is otherwise schema-permissive (varied category fields); this
+ * validator only enforces the typed pack `contents` when present (eshyra-ngcj.4):
+ * a non-empty list of line items, each with a positive `quantity`, a `name`, and
+ * an optional `equipment:` `ref` / `detail`.
+ */
+function validateDnd5eEquipment(record: RulesRecord, path: string): void {
+  const data = dataObj(record, path);
+  const contents = data.contents;
+  if (contents === undefined) return;
+  if (!Array.isArray(contents) || contents.length === 0) {
+    throw new RulesPackError(
+      `${path}.data.contents must be a non-empty array when present`,
+    );
+  }
+  contents.forEach((entry, i) => {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+      throw new RulesPackError(`${path}.data.contents[${i}] must be an object`);
+    }
+    const content = entry as Obj;
+    reqStr(content, 'name', `${path}.data.contents[${i}]`);
+    reqInt(content, 'quantity', `${path}.data.contents[${i}]`, 1);
+    optStr(content, 'ref', `${path}.data.contents[${i}]`);
+    optStr(content, 'detail', `${path}.data.contents[${i}]`);
+  });
+}
+
 function validateDnd5eCondition(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   reqStr(data, 'description', `${path}.data`);
@@ -1240,6 +1267,7 @@ const SYSTEM_KIND_VALIDATORS: Record<
     background: validateDnd5eBackground,
     class: validateDnd5eClass,
     condition: validateDnd5eCondition,
+    equipment: validateDnd5eEquipment,
     feat: validateDnd5eFeat,
     feature: validateDnd5eFeature,
     subclass: validateDnd5eSubclass,

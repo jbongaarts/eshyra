@@ -31,6 +31,7 @@ import {
   enrichBackgroundCreationFacts,
 } from './creationFacts.js';
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
+import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
@@ -971,6 +972,15 @@ function buildEquipmentData(
   }
   if (item.description !== undefined) {
     data.description = item.description;
+  }
+  // Typed pack contents (eshyra-ngcj.4): equipment packs gain a deterministic
+  // `contents` list beside the verbatim `description`, so inventory tooling can
+  // expand a granted pack into item grants.
+  if (item.category === 'pack') {
+    const contents = getEquipmentPackContents(equipmentKey(item.name));
+    if (contents !== undefined) {
+      data.contents = contents;
+    }
   }
   return data;
 }
