@@ -428,3 +428,105 @@ describe('deriveFeatureChoices — ASI vs feat (eshyra-o9bd.9.4)', () => {
     expect(featureChoices(out, 'feature:fighter:second-wind')).toEqual([]);
   });
 });
+
+describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () => {
+  function optionFeature(
+    classKey: string,
+    className: string,
+    featureKey: string,
+    featureName: string,
+    description: string,
+    level = 1,
+  ) {
+    return deriveFeatureChoices({
+      classRecords: [
+        classRec(classKey, className, {
+          grants: [{ ref: featureKey, level }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', featureKey, featureName, {
+          source: classKey,
+          level,
+          description,
+        }),
+      ],
+    });
+  }
+
+  it('parses the favored enemy colon-list into an enumerated from', () => {
+    const out = optionFeature(
+      'class:ranger',
+      'Ranger',
+      'feature:ranger:favored-enemy',
+      'Favored Enemy',
+      'Choose a type of favored enemy: aberrations, beasts, celestials, or undead. You have advantage…',
+    );
+    const choice = featureChoices(out, 'feature:ranger:favored-enemy')[0];
+    expect(choice.category).toBe('favoredEnemy');
+    expect(choice.choose).toBe(1);
+    expect(choice.from).toEqual([
+      'aberrations',
+      'beasts',
+      'celestials',
+      'undead',
+    ]);
+  });
+
+  it('parses the favored terrain colon-list', () => {
+    const out = optionFeature(
+      'class:ranger',
+      'Ranger',
+      'feature:ranger:natural-explorer',
+      'Natural Explorer',
+      'Choose one type of favored terrain: arctic, coast, desert, or swamp. When you make…',
+    );
+    const choice = featureChoices(out, 'feature:ranger:natural-explorer')[0];
+    expect(choice.category).toBe('naturalExplorer');
+    expect(choice.from).toEqual(['arctic', 'coast', 'desert', 'swamp']);
+  });
+
+  it('parses the Fighting Style pick count with a named option pool', () => {
+    const out = optionFeature(
+      'class:fighter',
+      'Fighter',
+      'feature:fighter:fighting-style',
+      'Fighting Style',
+      'You adopt a particular style of fighting. Choose one of the following options. Archery…',
+    );
+    const choice = featureChoices(out, 'feature:fighter:fighting-style')[0];
+    expect(choice.category).toBe('fightingStyle');
+    expect(choice.choose).toBe(1);
+    expect(choice.from).toBe('a Fighting Style option from this feature');
+  });
+
+  it('parses the Metamagic count of two', () => {
+    const out = optionFeature(
+      'class:sorcerer',
+      'Sorcerer',
+      'feature:sorcerer:metamagic',
+      'Metamagic',
+      'You gain two of the following Metamagic options of your choice. Careful Spell…',
+      3,
+    );
+    const choice = featureChoices(out, 'feature:sorcerer:metamagic')[0];
+    expect(choice.category).toBe('metamagic');
+    expect(choice.choose).toBe(2);
+  });
+
+  it('parses the Eldritch Invocations count', () => {
+    const out = optionFeature(
+      'class:warlock',
+      'Warlock',
+      'feature:warlock:eldritch-invocations',
+      'Eldritch Invocations',
+      'At 2nd level, you gain two eldritch invocations of your choice.',
+      2,
+    );
+    const choice = featureChoices(out, 'feature:warlock:eldritch-invocations')[0];
+    expect(choice.category).toBe('invocation');
+    expect(choice.choose).toBe(2);
+    expect(choice.from).toBe('an Eldritch Invocation you qualify for');
+  });
+});

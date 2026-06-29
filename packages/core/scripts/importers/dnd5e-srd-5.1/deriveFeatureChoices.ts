@@ -357,6 +357,143 @@ function deriveAsiChoices(
 
 
 // ---------------------------------------------------------------------------
+// Deriver: option-list choices — Fighting Style / Metamagic / Invocations /
+// favored enemy / favored terrain (eshyra-o9bd.9.5)
+// ---------------------------------------------------------------------------
+
+const NUMBER_WORDS: Record<string, number> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+};
+
+function featureDescription(record: RulesRecord): string {
+  const description = dataOf(record).description;
+  return typeof description === 'string' ? description : '';
+}
+
+/** Parse the pick count from "Choose one …" / "you gain two … of your choice"
+ * phrasing near `keyword`. Returns null when no count word is found. */
+function parseChooseCount(description: string, keyword: RegExp): number | null {
+  const source = keyword.source;
+  const re = new RegExp(
+    `(?:choose|gain)\\s+(one|two|three|four|five)\\b[^.]*?(?:${source})`,
+    'i',
+  );
+  const match = description.match(re);
+  if (match === null) return null;
+  return NUMBER_WORDS[match[1].toLowerCase()] ?? null;
+}
+
+/** Parse the comma/“or”-delimited option list that follows `anchor:` up to the
+ * first sentence end — the Favored Enemy / Favored Terrain pattern. */
+function parseColonList(description: string, anchor: string): string[] {
+  const at = description.toLowerCase().indexOf(anchor.toLowerCase());
+  if (at === -1) return [];
+  const after = description.slice(at + anchor.length);
+  const end = after.indexOf('.');
+  const segment = end === -1 ? after : after.slice(0, end);
+  return segment
+    .split(',')
+    .map((s) => s.replace(/^\s*(?:or|and)\s+/i, '').trim())
+    .filter((s) => s.length > 0);
+}
+
+interface OptionListSpec {
+  readonly suffix: string;
+  readonly category: FeatureChoiceCategory;
+  readonly id: string;
+  readonly countKeyword: RegExp;
+  /** Either a colon-anchored enumerated list, or a named restriction pool. */
+  readonly listAnchor?: string;
+  readonly restriction?: string;
+  readonly prompt: (choose: number) => string;
+}
+
+// The option labels for Fighting Style / Metamagic / Invocations are inline
+// title-case headings in flattened prose (or, for Invocations, printed in a
+// separate section). They cannot be enumerated without hard-coding option
+// VALUES (ADR 0007 allows only structural anchors). So those carry the reliably
+// parsed `choose` count plus a named option pool; Favored Enemy / Terrain print
+// a clean colon-delimited list, which IS enumerated into `from`.
+const OPTION_LIST_SPECS: readonly OptionListSpec[] = [
+  {
+    suffix: ':fighting-style',
+    category: 'fightingStyle',
+    id: 'fighting-style',
+    countKeyword: /following options|fighting style/,
+    restriction: 'a Fighting Style option from this feature',
+    prompt: (n) => `Choose ${n === 1 ? 'a' : n} Fighting Style option.`,
+  },
+  {
+    suffix: ':metamagic',
+    category: 'metamagic',
+    id: 'metamagic',
+    countKeyword: /metamagic/,
+    restriction: 'a Metamagic option from this feature',
+    prompt: (n) => `Choose ${n} Metamagic option${n === 1 ? '' : 's'}.`,
+  },
+  {
+    suffix: ':eldritch-invocations',
+    category: 'invocation',
+    id: 'eldritch-invocations',
+    countKeyword: /eldritch invocations/,
+    restriction: 'an Eldritch Invocation you qualify for',
+    prompt: (n) =>
+      `Choose ${n} Eldritch Invocation${n === 1 ? '' : 's'} you qualify for.`,
+  },
+  {
+    suffix: ':favored-enemy',
+    category: 'favoredEnemy',
+    id: 'favored-enemy',
+    countKeyword: /favored enemy/,
+    listAnchor: 'favored enemy:',
+    prompt: (n) =>
+      `Choose ${n === 1 ? 'a' : n} favored enemy type (or two humanoid races).`,
+  },
+  {
+    suffix: ':natural-explorer',
+    category: 'naturalExplorer',
+    id: 'favored-terrain',
+    countKeyword: /favored terrain/,
+    listAnchor: 'favored terrain:',
+    prompt: (n) => `Choose ${n === 1 ? 'a' : n} favored terrain type.`,
+  },
+];
+
+function deriveOptionListChoices(
+  input: DeriveFeatureChoicesInput,
+  granted: ReadonlySet<string>,
+): Map<string, DerivedChoice[]> {
+  const out = new Map<string, DerivedChoice[]>();
+  for (const feature of input.featureRecords) {
+    if (!granted.has(feature.key)) continue;
+    const spec = OPTION_LIST_SPECS.find((s) => feature.key.endsWith(s.suffix));
+    if (spec === undefined) continue;
+    const description = featureDescription(feature);
+    const choose = parseChooseCount(description, spec.countKeyword) ?? 1;
+    const from =
+      spec.listAnchor !== undefined
+        ? parseColonList(description, spec.listAnchor)
+        : spec.restriction;
+    const choice: DerivedChoice = {
+      id: spec.id,
+      category: spec.category,
+      prompt: spec.prompt(choose),
+      level: featureLevel(feature),
+      choose,
+      ...(from !== undefined && (Array.isArray(from) ? from.length > 0 : true)
+        ? { from }
+        : {}),
+    };
+    out.set(feature.key, [choice]);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Compose + apply
 // ---------------------------------------------------------------------------
 
@@ -390,6 +527,7 @@ export function deriveFeatureChoices(
     deriveSubclassChoices(input, granted),
     deriveSpellChoices(input, granted),
     deriveAsiChoices(input, granted),
+    deriveOptionListChoices(input, granted),
   ]);
 
   return input.featureRecords.map((feature) => {
