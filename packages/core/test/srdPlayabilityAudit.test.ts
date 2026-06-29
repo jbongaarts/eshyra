@@ -686,42 +686,26 @@ describe('committed SRD pack playable-model baseline', () => {
     expect(counts['proficiency-note-bleed']).toBe(0);
   });
 
-  it('RED (eshyra-o9bd.9): every level-1/level-up player choice is structured', () => {
-    // The choice-coverage gate (eshyra-o9bd.9.1) lands the schema + detector;
-    // the committed pack still carries every feature build choice as prose.
-    // Each modeling slice below flips its bucket to 0; update these counts as
-    // they land, and remove the RED assertion when the total reaches 0.
-    const choiceFindings = findingsByCategory(findings, 'choice-coverage');
-    const byBead = new Map<string, number>();
-    for (const f of choiceFindings) {
-      byBead.set(f.bead, (byBead.get(f.bead) ?? 0) + 1);
-    }
-    expect(counts['choice-coverage']).toBe(5);
-    // Per-slice punch list (the done-marker each modeling bead must drive to 0).
-    expect(byBead.get('eshyra-o9bd.9.2')).toBeUndefined(); // subclass selection — DONE
-    expect(byBead.get('eshyra-o9bd.9.3')).toBeUndefined(); // spell/cantrip — DONE
-    expect(byBead.get('eshyra-o9bd.9.4')).toBeUndefined(); // ASI-vs-feat — DONE
-    expect(byBead.get('eshyra-o9bd.9.5')).toBeUndefined(); // fighting-style/metamagic/invocation/terrain-enemy — DONE
-    expect(byBead.get('eshyra-o9bd.9.6')).toBe(5); // channel-divinity / expertise
+  it('GREEN (eshyra-o9bd.9 landed): every level-1/level-up player choice is structured', () => {
+    // All five modeling slices (eshyra-o9bd.9.2–.9.6) have landed: every granted
+    // class-feature build choice now carries a structured choices[] entry or a
+    // named out-of-scope marker, so the choice-coverage gate is clean.
+    expect(counts['choice-coverage']).toBe(0);
   });
 
-  it('every finding names an owning modeling bead', () => {
-    expect(
-      findings.every((f) => /^eshyra-o9bd\.\d+(?:\.\d+)?$/.test(f.bead)),
-    ).toBe(true);
+  it('no finding remains to name an owning modeling bead', () => {
+    expect(findings).toHaveLength(0);
   });
 
-  it('the report renders the remaining punch list', () => {
+  it('the report renders the clean (no-findings) state', () => {
     const report = formatSrdPlayabilityReport('rules:dnd5e-srd-5.1', findings);
     expect(report).toContain('SRD playable-model audit');
-    expect(report).toContain('choice-coverage');
+    expect(report).toContain('(no findings');
   });
 
-  it('re-freeze readiness: only choice-coverage (eshyra-o9bd.9) is still RED', () => {
-    // Every other implemented playable-model gate is green; choice coverage is
-    // the remaining work before the pack is re-freeze-ready (epic bar #9).
-    expect(srdPlayabilityHasFindings(findings)).toBe(true);
-    const nonChoice = findings.filter((f) => f.category !== 'choice-coverage');
-    expect(nonChoice).toHaveLength(0);
+  it('re-freeze readiness: the pack has zero playable-model findings', () => {
+    // Every implemented playable-model gate — including choice-coverage
+    // (eshyra-o9bd.9) — is green. The pack clears epic bar #9.
+    expect(srdPlayabilityHasFindings(findings)).toBe(false);
   });
 });

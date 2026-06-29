@@ -160,7 +160,6 @@ function deriveSubclassChoices(
   return out;
 }
 
-
 // ---------------------------------------------------------------------------
 // Deriver: spell / cantrip selection (eshyra-o9bd.9.3)
 // ---------------------------------------------------------------------------
@@ -180,7 +179,10 @@ const SPELL_FEATURE_SUFFIXES = [
 ] as const;
 
 /** The class's spellcastingProgression entry at `level`, if any. */
-function spellcastingAt(cls: RulesRecord, level: number): SpellcastingRow | null {
+function spellcastingAt(
+  cls: RulesRecord,
+  level: number,
+): SpellcastingRow | null {
   const progression = dataOf(cls).progression;
   if (!Array.isArray(progression)) return null;
   for (const row of progression) {
@@ -296,7 +298,6 @@ function deriveSpellChoices(
   return out;
 }
 
-
 // ---------------------------------------------------------------------------
 // Deriver: Ability Score Improvement vs feat (eshyra-o9bd.9.4)
 // ---------------------------------------------------------------------------
@@ -354,7 +355,6 @@ function deriveAsiChoices(
   }
   return out;
 }
-
 
 // ---------------------------------------------------------------------------
 // Deriver: option-list choices — Fighting Style / Metamagic / Invocations /
@@ -494,6 +494,68 @@ function deriveOptionListChoices(
 }
 
 // ---------------------------------------------------------------------------
+// Deriver: subclass-feature options — Expertise / Channel Divinity
+// (eshyra-o9bd.9.6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Attach the remaining subclass-/class-feature option choices.
+ *
+ * Expertise (Rogue, Bard) is a genuine build choice — pick which of your skill
+ * proficiencies gain a doubled proficiency bonus — so it is structured: `choose`
+ * is the parsed count and `from` names the eligible pool (the character's own
+ * skill proficiencies, which are sheet state, so they are named rather than
+ * inlined).
+ *
+ * Channel Divinity is NOT a build choice in SRD 5.1: the effects (Turn Undead
+ * plus the chosen subclass's options) are GRANTED, and which to invoke is a
+ * per-use decision. So every feature whose prose references Channel Divinity
+ * carries a named out-of-scope marker, keeping the gate's finding explicit
+ * without claiming a selection the SRD does not make at build time.
+ */
+function deriveSubclassFeatureChoices(
+  input: DeriveFeatureChoicesInput,
+  granted: ReadonlySet<string>,
+): Map<string, DerivedChoice[]> {
+  const out = new Map<string, DerivedChoice[]>();
+  for (const feature of input.featureRecords) {
+    if (!granted.has(feature.key)) continue;
+    const description = featureDescription(feature);
+    const level = featureLevel(feature);
+    const choices: DerivedChoice[] = [];
+
+    if (/choose [^.]*\bskill proficiencies\b/i.test(description)) {
+      const choose = parseChooseCount(description, /skill proficiencies/) ?? 2;
+      choices.push({
+        id: 'expertise',
+        category: 'expertise',
+        prompt:
+          'Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).',
+        level,
+        choose,
+        from: 'your skill proficiencies',
+      });
+    }
+
+    if (/\bchannel divinity\b/i.test(description)) {
+      choices.push({
+        id: 'channel-divinity',
+        category: 'channelDivinity',
+        prompt: 'Channel Divinity effects available to this character.',
+        level,
+        unsupported: {
+          reason:
+            'Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice.',
+        },
+      });
+    }
+
+    if (choices.length > 0) out.set(feature.key, choices);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Compose + apply
 // ---------------------------------------------------------------------------
 
@@ -528,6 +590,7 @@ export function deriveFeatureChoices(
     deriveSpellChoices(input, granted),
     deriveAsiChoices(input, granted),
     deriveOptionListChoices(input, granted),
+    deriveSubclassFeatureChoices(input, granted),
   ]);
 
   return input.featureRecords.map((feature) => {

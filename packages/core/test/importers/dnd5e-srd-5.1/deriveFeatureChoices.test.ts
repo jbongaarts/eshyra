@@ -11,10 +11,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { deriveFeatureChoices } from '../../../scripts/importers/dnd5e-srd-5.1/deriveFeatureChoices.js';
-import type {
-  RulesPackLicense,
-  RulesRecord,
-} from '../../../src/internal.js';
+import type { RulesPackLicense, RulesRecord } from '../../../src/internal.js';
 
 const LICENSE: RulesPackLicense = {
   licenseClass: 'open',
@@ -194,10 +191,9 @@ describe('deriveFeatureChoices — subclass selection (eshyra-o9bd.9.2)', () => 
       subclassRecords,
       featureRecords,
     });
-    expect(featureChoices(out, 'feature:cleric:divine-domain')[0].from).toEqual([
-      'subclass:life-domain',
-      'subclass:war-domain',
-    ]);
+    expect(featureChoices(out, 'feature:cleric:divine-domain')[0].from).toEqual(
+      ['subclass:life-domain', 'subclass:war-domain'],
+    );
   });
 
   it('leaves features with no derived choice unchanged (no empty choices array)', () => {
@@ -345,7 +341,8 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
         rec('feature', 'feature:warlock:mystic-arcanum', 'Mystic Arcanum', {
           source: 'class:warlock',
           level: 11,
-          description: 'Choose one 6th-level spell from the warlock spell list.',
+          description:
+            'Choose one 6th-level spell from the warlock spell list.',
         }),
       ],
     });
@@ -362,7 +359,6 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
     ]);
   });
 });
-
 
 describe('deriveFeatureChoices — ASI vs feat (eshyra-o9bd.9.4)', () => {
   it('attaches a structured ASI choice and a named feat out-of-scope marker', () => {
@@ -524,9 +520,77 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
       'At 2nd level, you gain two eldritch invocations of your choice.',
       2,
     );
-    const choice = featureChoices(out, 'feature:warlock:eldritch-invocations')[0];
+    const choice = featureChoices(
+      out,
+      'feature:warlock:eldritch-invocations',
+    )[0];
     expect(choice.category).toBe('invocation');
     expect(choice.choose).toBe(2);
     expect(choice.from).toBe('an Eldritch Invocation you qualify for');
+  });
+});
+
+describe('deriveFeatureChoices — subclass-feature options (eshyra-o9bd.9.6)', () => {
+  function singleFeature(
+    classKey: string,
+    featureKey: string,
+    featureName: string,
+    description: string,
+    level = 1,
+  ) {
+    return deriveFeatureChoices({
+      classRecords: [
+        classRec(classKey, classKey, {
+          grants: [{ ref: featureKey, level }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', featureKey, featureName, {
+          source: classKey,
+          level,
+          description,
+        }),
+      ],
+    });
+  }
+
+  it('models Expertise as a structured skill-proficiency choice', () => {
+    const out = singleFeature(
+      'class:rogue',
+      'feature:rogue:expertise',
+      'Expertise',
+      'At 1st level, choose two of your skill proficiencies. Your proficiency bonus is doubled…',
+    );
+    const choice = featureChoices(out, 'feature:rogue:expertise')[0];
+    expect(choice.category).toBe('expertise');
+    expect(choice.choose).toBe(2);
+    expect(choice.from).toBe('your skill proficiencies');
+  });
+
+  it('marks Channel Divinity as a named out-of-scope (per-use, not build) choice', () => {
+    const out = singleFeature(
+      'class:cleric',
+      'feature:cleric:channel-divinity',
+      'Channel Divinity',
+      'At 2nd level, you gain the ability to channel divine energy. When you use your Channel Divinity, you choose which effect to create.',
+      2,
+    );
+    const choice = featureChoices(out, 'feature:cleric:channel-divinity')[0];
+    expect(choice.category).toBe('channelDivinity');
+    expect(choice.choose).toBeUndefined();
+    expect((choice.unsupported as { reason: string }).reason).toMatch(
+      /per-use/,
+    );
+  });
+
+  it('does not attach to an unrelated feature', () => {
+    const out = singleFeature(
+      'class:fighter',
+      'feature:fighter:second-wind',
+      'Second Wind',
+      'You have a limited well of stamina.',
+    );
+    expect(featureChoices(out, 'feature:fighter:second-wind')).toEqual([]);
   });
 });

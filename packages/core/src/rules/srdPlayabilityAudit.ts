@@ -24,16 +24,15 @@
  *   - missing-class-feature-record— GREEN (Thieves' Cant owned) → eshyra-o9bd.3
  *   - overlay-dependence          — GREEN (creation facts emitted) → eshyra-o9bd.5
  *   - proficiency-note-bleed      — GREEN (already lifted to proficiencyNotes) → eshyra-o9bd.6 regression guard
- *   - choice-coverage             — RED (framework only; modeling slices flip it) → eshyra-o9bd.9
+ *   - choice-coverage             — GREEN (all modeling slices landed) → eshyra-o9bd.9
  *
  * The choice-coverage gate (eshyra-o9bd.9.1) lands the schema (`feature.data.choices[]`),
- * the named out-of-scope marker convention, and the detector. It is RED against
- * the committed pack: every level-1/level-up player choice still carried as
- * prose on a granted class feature is a finding, bucketed to the modeling slice
- * (eshyra-o9bd.9.2 subclass · .9.3 spells/cantrips · .9.4 ASI-vs-feat ·
+ * the named out-of-scope marker convention, and the detector. Its five modeling
+ * slices (eshyra-o9bd.9.2 subclass · .9.3 spells/cantrips · .9.4 ASI-vs-feat ·
  * .9.5 fighting-style/metamagic/invocations/terrain-enemy · .9.6 subclass-feature
- * options) that owns flipping it GREEN. The pack is not re-freeze-ready until it
- * reaches zero (epic bar #9).
+ * options) have all landed via the `deriveFeatureChoices` importer pass, so every
+ * granted class-feature build choice now carries a structured `choices[]` entry
+ * or a named out-of-scope marker. The committed pack clears epic bar #9.
  *
  * Deferred to its owning modeling beads (their gate is that bead's own
  * acceptance check and needs its modeling decisions):

@@ -26,11 +26,11 @@ import type {
 import { validateRulesPack } from '../../../src/rules/validate.js';
 import { linkAncestryOptionTables } from './ancestryOptions.js';
 import { enrichClassChapterRecords } from './classProgression.js';
-import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import {
   enrichAncestryCreationFacts,
   enrichBackgroundCreationFacts,
 } from './creationFacts.js';
+import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';

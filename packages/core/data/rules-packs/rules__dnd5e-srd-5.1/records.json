@@ -40674,7 +40674,17 @@
     "data": {
       "source": "class:bard",
       "level": 3,
-      "description": "At 3rd level, choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 10th level, you can choose another two skill proficiencies to gain this benefit."
+      "description": "At 3rd level, choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 10th level, you can choose another two skill proficiencies to gain this benefit.",
+      "choices": [
+        {
+          "id": "expertise",
+          "category": "expertise",
+          "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
+          "level": 3,
+          "choose": 2,
+          "from": "your skill proficiencies"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -41358,7 +41368,18 @@
     "data": {
       "source": "class:cleric",
       "level": 2,
-      "description": "At 2nd level, you gain the ability to channel divine energy directly from your deity, using that energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain. Some domains grant you additional effects as you advance in levels, as noted in the domain description. When you use your Channel Divinity, you choose which effect to create. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your cleric spell save DC. Beginning at 6th level, you can use your Channel Divinity twice between rests, and beginning at 18th level, you can use it three times between rests. When you finish a short or long rest, you regain your expended uses. Channel Divinity: Turn Undead As an action, you present your holy symbol and speak a prayer censuring the undead. Each undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes any damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action."
+      "description": "At 2nd level, you gain the ability to channel divine energy directly from your deity, using that energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain. Some domains grant you additional effects as you advance in levels, as noted in the domain description. When you use your Channel Divinity, you choose which effect to create. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your cleric spell save DC. Beginning at 6th level, you can use your Channel Divinity twice between rests, and beginning at 18th level, you can use it three times between rests. When you finish a short or long rest, you regain your expended uses. Channel Divinity: Turn Undead As an action, you present your holy symbol and speak a prayer censuring the undead. Each undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes any damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action.",
+      "choices": [
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 2,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 16",
     "license": {
@@ -41436,6 +41457,15 @@
           "from": [
             "subclass:life-domain"
           ]
+        },
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 1,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
         }
       ]
     },
@@ -43938,6 +43968,15 @@
           "from": [
             "subclass:oath-of-devotion"
           ]
+        },
+        {
+          "id": "channel-divinity",
+          "category": "channelDivinity",
+          "prompt": "Channel Divinity effects available to this character.",
+          "level": 3,
+          "unsupported": {
+            "reason": "Channel Divinity effects are granted by your class and chosen subclass (Turn Undead plus domain/oath options); which effect to invoke is a per-use decision, not a character-build choice."
+          }
         }
       ]
     },
@@ -44833,7 +44872,17 @@
     "data": {
       "source": "class:rogue",
       "level": 1,
-      "description": "At 1st level, choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves’ tools. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 6th level, you can choose two more of your proficiencies (in skills or with thieves’ tools) to gain this benefit."
+      "description": "At 1st level, choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves’ tools. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 6th level, you can choose two more of your proficiencies (in skills or with thieves’ tools) to gain this benefit.",
+      "choices": [
+        {
+          "id": "expertise",
+          "category": "expertise",
+          "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
+          "level": 1,
+          "choose": 2,
+          "from": "your skill proficiencies"
+        }
+      ]
     },
     "source": "SRD 5.1 p. 39",
     "license": {
