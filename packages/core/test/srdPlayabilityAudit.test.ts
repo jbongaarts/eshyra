@@ -9,10 +9,13 @@
  *  2. Real-pack baseline tests — each gate is run over the committed bundled
  *     pack. The genuinely-RED gates assert findings exist with a "flip to 0
  *     when eshyra-o9bd.N lands" note (so the modeling bead is forced to update
- *     this test as its done-marker); the already-GREEN gate asserts zero.
+ *     this test as its done-marker); the already-GREEN gates assert zero.
  *
- * The aggregate `re-freeze readiness` test is a hard green assertion: all
- * implemented playable-model gates are clean against the committed pack.
+ * The aggregate `re-freeze readiness` test asserts every implemented gate EXCEPT
+ * choice-coverage is green: choice-coverage is intentionally RED until the
+ * eshyra-o9bd.9 modeling slices land (this slice, eshyra-o9bd.9.1, ships the
+ * schema + gate as a per-slice punch list). Re-freeze (epic bar #9) requires it
+ * to reach zero.
  */
 
 import { describe, expect, it } from 'vitest';
