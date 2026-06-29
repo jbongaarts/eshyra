@@ -40310,7 +40310,19 @@
     "data": {
       "source": "class:barbarian",
       "level": 3,
-      "description": "At 3rd level, you choose a path that shapes the nature of your rage. Choose the Path of the Berserker or the Path of the Totem Warrior, both detailed at the end of the class description. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th levels."
+      "description": "At 3rd level, you choose a path that shapes the nature of your rage. Choose the Path of the Berserker or the Path of the Totem Warrior, both detailed at the end of the class description. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th levels.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Primal Path.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:path-of-the-berserker"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -40502,7 +40514,19 @@
     "data": {
       "source": "class:bard",
       "level": 3,
-      "description": "At 3rd level, you delve into the advanced techniques of a bard college of your choice, such as the College of Lore. Your choice grants you features at 3rd level and again at 6th and 14th level."
+      "description": "At 3rd level, you delve into the advanced techniques of a bard college of your choice, such as the College of Lore. Your choice grants you features at 3rd level and again at 6th and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Bard College.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:college-of-lore"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 12",
     "license": {
@@ -41305,7 +41329,19 @@
     "data": {
       "source": "class:cleric",
       "level": 1,
-      "description": "Choose one domain related to your deity, such as Life. Each domain is detailed at the end of the class description, and each one provides examples of gods associated with it. Your choice grants you domain spells and other features when you choose it at 1st level. It also grants you additional ways to use Channel Divinity when you gain that feature at 2nd level, and additional benefits at 6th, 8th, and 17th levels. Domain Spells Each domain has a list of spells—its domain spells— that you gain at the cleric levels noted in the domain description. Once you gain a domain spell, you always have it prepared, and it doesn’t count against the number of spells you can prepare each day. If you have a domain spell that doesn’t appear on the cleric spell list, the spell is nonetheless a cleric spell for you."
+      "description": "Choose one domain related to your deity, such as Life. Each domain is detailed at the end of the class description, and each one provides examples of gods associated with it. Your choice grants you domain spells and other features when you choose it at 1st level. It also grants you additional ways to use Channel Divinity when you gain that feature at 2nd level, and additional benefits at 6th, 8th, and 17th levels. Domain Spells Each domain has a list of spells—its domain spells— that you gain at the cleric levels noted in the domain description. Once you gain a domain spell, you always have it prepared, and it doesn’t count against the number of spells you can prepare each day. If you have a domain spell that doesn’t appear on the cleric spell list, the spell is nonetheless a cleric spell for you.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Divine Domain.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "subclass:life-domain"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 16",
     "license": {
@@ -41820,7 +41856,19 @@
     "data": {
       "source": "class:druid",
       "level": 2,
-      "description": "At 2nd level, you choose to identify with a circle of druids, such as the Circle of the Land. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level."
+      "description": "At 2nd level, you choose to identify with a circle of druids, such as the Circle of the Land. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Druid Circle.",
+          "level": 2,
+          "choose": 1,
+          "from": [
+            "subclass:circle-of-the-land"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 21",
     "license": {
@@ -42143,7 +42191,19 @@
     "data": {
       "source": "class:fighter",
       "level": 3,
-      "description": "At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques, such as Champion. The archetype you choose grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level."
+      "description": "At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques, such as Champion. The archetype you choose grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Martial Archetype.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:champion"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 25",
     "license": {
@@ -42815,7 +42875,19 @@
     "data": {
       "source": "class:monk",
       "level": 3,
-      "description": "When you reach 3rd level, you commit yourself to a monastic tradition, such as the Way of the Open Hand. Your tradition grants you features at 3rd level and again at 6th, 11th, and 17th level."
+      "description": "When you reach 3rd level, you commit yourself to a monastic tradition, such as the Way of the Open Hand. Your tradition grants you features at 3rd level and again at 6th, 11th, and 17th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Monastic Tradition.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:way-of-the-open-hand"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 27",
     "license": {
@@ -43615,7 +43687,19 @@
     "data": {
       "source": "class:paladin",
       "level": 3,
-      "description": "When you reach 3rd level, you swear the oath that binds you as a paladin forever. Up to this time you have been in a preparatory stage, committed to the path but not yet sworn to it. Now you choose an oath, such as the Oath of Devotion. Your choice grants you features at 3rd level and again at 7th, 15th, and 20th level. Those features include oath spells and the Channel Divinity feature. Oath Spells Each oath has a list of associated spells. You gain access to these spells at the levels specified in the oath description. Once you gain access to an oath spell, you always have it prepared. Oath spells don’t count against the number of spells you can prepare each day. If you gain an oath spell that doesn’t appear on the paladin spell list, the spell is nonetheless a paladin spell for you. Channel Divinity Your oath allows you to channel divine energy to fuel magical effects. Each Channel Divinity option provided by your oath explains how to use it. When you use your Channel Divinity, you choose which option to use. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your paladin spell save DC."
+      "description": "When you reach 3rd level, you swear the oath that binds you as a paladin forever. Up to this time you have been in a preparatory stage, committed to the path but not yet sworn to it. Now you choose an oath, such as the Oath of Devotion. Your choice grants you features at 3rd level and again at 7th, 15th, and 20th level. Those features include oath spells and the Channel Divinity feature. Oath Spells Each oath has a list of associated spells. You gain access to these spells at the levels specified in the oath description. Once you gain access to an oath spell, you always have it prepared. Oath spells don’t count against the number of spells you can prepare each day. If you gain an oath spell that doesn’t appear on the paladin spell list, the spell is nonetheless a paladin spell for you. Channel Divinity Your oath allows you to channel divine energy to fuel magical effects. Each Channel Divinity option provided by your oath explains how to use it. When you use your Channel Divinity, you choose which option to use. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your paladin spell save DC.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Sacred Oath.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:oath-of-devotion"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -44127,7 +44211,19 @@
     "data": {
       "source": "class:ranger",
       "level": 3,
-      "description": "At 3rd level, you choose an archetype that you strive to emulate, such as the Hunter. Your choice grants you features at 3rd level and again at 7th, 11th, and 15th level."
+      "description": "At 3rd level, you choose an archetype that you strive to emulate, such as the Hunter. Your choice grants you features at 3rd level and again at 7th, 11th, and 15th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Ranger Archetype.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:hunter"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -44447,7 +44543,19 @@
     "data": {
       "source": "class:rogue",
       "level": 3,
-      "description": "At 3rd level, you choose an archetype that you emulate in the exercise of your rogue abilities, such as Thief. Your archetype choice grants you features at 3rd level and then again at 9th, 13th, and 17th level."
+      "description": "At 3rd level, you choose an archetype that you emulate in the exercise of your rogue abilities, such as Thief. Your archetype choice grants you features at 3rd level and then again at 9th, 13th, and 17th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Roguish Archetype.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "subclass:thief"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -44930,7 +45038,19 @@
     "data": {
       "source": "class:sorcerer",
       "level": 1,
-      "description": "Choose a sorcerous origin, which describes the source of your innate magical power, such as Draconic Bloodline. Your choice grants you features when you choose it at 1st level and again at 6th, 14th, and 18th level."
+      "description": "Choose a sorcerous origin, which describes the source of your innate magical power, such as Draconic Bloodline. Your choice grants you features when you choose it at 1st level and again at 6th, 14th, and 18th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Sorcerous Origin.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "subclass:draconic-bloodline"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 43",
     "license": {
@@ -45442,7 +45562,19 @@
     "data": {
       "source": "class:warlock",
       "level": 1,
-      "description": "At 1st level, you have struck a bargain with an otherworldly being of your choice: the Archfey, the Fiend, or the Great Old One, each of which is detailed at the end of the class description. Your choice grants you features at 1st level and again at 6th, 10th, and 14th level."
+      "description": "At 1st level, you have struck a bargain with an otherworldly being of your choice: the Archfey, the Fiend, or the Great Old One, each of which is detailed at the end of the class description. Your choice grants you features at 1st level and again at 6th, 10th, and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Otherworldly Patron.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "subclass:the-fiend"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 46",
     "license": {
@@ -45730,7 +45862,19 @@
     "data": {
       "source": "class:wizard",
       "level": 2,
-      "description": "When you reach 2nd level, you choose an arcane tradition, shaping your practice of magic through one of eight schools, such as Evocation. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level."
+      "description": "When you reach 2nd level, you choose an arcane tradition, shaping your practice of magic through one of eight schools, such as Evocation. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level.",
+      "choices": [
+        {
+          "id": "subclass",
+          "category": "subclass",
+          "prompt": "Choose your Arcane Tradition.",
+          "level": 2,
+          "choose": 1,
+          "from": [
+            "subclass:school-of-evocation"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 53",
     "license": {
