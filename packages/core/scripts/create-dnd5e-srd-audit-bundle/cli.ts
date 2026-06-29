@@ -42,11 +42,26 @@ import {
   auditHasFindings,
   auditPack,
   auditSrd,
+  auditSrdPlayability,
+  countSrdPlayabilityByCategory,
   formatAuditReport,
   formatSrdAuditReport,
+  formatSrdPlayabilityReport,
+  getAncestryAbilityScoreIncrease,
+  getAncestryLanguages,
+  getBackgroundLanguages,
+  getClassSpellcasting,
+  getClassStartingEquipment,
   loadRulesPackFromDirectory,
+  type RulesPack,
   RulesPackError,
+  type RulesRecord,
+  SRD_5_1_STANDALONE_TABLES,
+  SRD_5_1_TABLE_OWNERS,
+  type SrdAuditFinding,
+  type SrdPlayabilityFinding,
   srdAuditHasFindings,
+  srdPlayabilityHasFindings,
 } from '../../src/internal.js';
 import {
   EXPECTED_SRD_5_1_ANCESTRY_NAMES,
@@ -322,6 +337,495 @@ function recordKeysByKind(
 }
 
 // ---------------------------------------------------------------------------
+// Modeling-usability reports
+// ---------------------------------------------------------------------------
+
+function dataObject(record: RulesRecord): Record<string, unknown> | null {
+  const data = record.data;
+  return data !== null && typeof data === 'object' && !Array.isArray(data)
+    ? (data as Record<string, unknown>)
+    : null;
+}
+
+function sortedJson(value: unknown): string {
+  return JSON.stringify(value, (_key, entry: unknown) => {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
+      return entry;
+    }
+    return Object.fromEntries(
+      Object.entries(entry as Record<string, unknown>).sort(([a], [b]) =>
+        a < b ? -1 : a > b ? 1 : 0,
+      ),
+    );
+  });
+}
+
+function valuesEqual(a: unknown, b: unknown): boolean {
+  return sortedJson(a) === sortedJson(b);
+}
+
+function objectValue(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function arrayValue(value: unknown): readonly unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function classRecords(pack: RulesPack): RulesRecord[] {
+  return pack.records
+    .filter((record) => record.kind === 'class')
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+}
+
+function buildTypedAdvancementCoverageReport(pack: RulesPack): {
+  readonly summary: {
+    readonly classes: number;
+    readonly expectedRows: number;
+    readonly rowsPresent: number;
+    readonly rowsWithTypedAdvancement: number;
+    readonly rowsMissingTypedAdvancement: number;
+    readonly unknownAdvancementKinds: number;
+  };
+  readonly classes: readonly {
+    readonly key: string;
+    readonly name: string;
+    readonly rowsPresent: number;
+    readonly levelsPresent: readonly number[];
+    readonly missingLevels: readonly number[];
+    readonly rowsWithTypedAdvancement: number;
+    readonly rowsMissingTypedAdvancement: readonly number[];
+    readonly advancementKinds: Readonly<Record<string, number>>;
+    readonly unknownAdvancementEntries: readonly {
+      readonly level: number | string;
+      readonly value: unknown;
+    }[];
+  }[];
+} {
+  const knownKinds = new Set([
+    'featureGrant',
+    'subclassFeatureSlot',
+    'featureImprovement',
+    'resourceProgression',
+    'spellcastingProgression',
+  ]);
+  const expectedLevels = Array.from({ length: 20 }, (_, index) => index + 1);
+  const classes = classRecords(pack).map((record) => {
+    const data = dataObject(record);
+    const progression = arrayValue(data?.progression);
+    const levelsPresent: number[] = [];
+    const missingTyped: number[] = [];
+    const advancementKinds: Record<string, number> = {};
+    const unknownAdvancementEntries: {
+      level: number | string;
+      value: unknown;
+    }[] = [];
+    let rowsWithTypedAdvancement = 0;
+
+    for (const rowValue of progression) {
+      const row = objectValue(rowValue);
+      const level = typeof row?.level === 'number' ? row.level : '(unknown)';
+      if (typeof level === 'number') levelsPresent.push(level);
+      const advancement = row === null ? [] : arrayValue(row.advancement);
+      if (!Array.isArray(row?.advancement)) {
+        if (typeof level === 'number') missingTyped.push(level);
+        continue;
+      }
+      rowsWithTypedAdvancement += 1;
+      for (const entryValue of advancement) {
+        const entry = objectValue(entryValue);
+        const kind = stringValue(entry?.kind);
+        if (kind !== null && knownKinds.has(kind)) {
+          advancementKinds[kind] = (advancementKinds[kind] ?? 0) + 1;
+        } else {
+          unknownAdvancementEntries.push({ level, value: entryValue });
+        }
+      }
+    }
+
+    const presentSet = new Set(levelsPresent);
+    return {
+      key: record.key,
+      name: record.name,
+      rowsPresent: progression.length,
+      levelsPresent: levelsPresent.sort((a, b) => a - b),
+      missingLevels: expectedLevels.filter((level) => !presentSet.has(level)),
+      rowsWithTypedAdvancement,
+      rowsMissingTypedAdvancement: missingTyped,
+      advancementKinds: Object.fromEntries(
+        Object.entries(advancementKinds).sort(([a], [b]) =>
+          a < b ? -1 : a > b ? 1 : 0,
+        ),
+      ),
+      unknownAdvancementEntries,
+    };
+  });
+  const summary = {
+    classes: classes.length,
+    expectedRows: classes.length * 20,
+    rowsPresent: classes.reduce((sum, entry) => sum + entry.rowsPresent, 0),
+    rowsWithTypedAdvancement: classes.reduce(
+      (sum, entry) => sum + entry.rowsWithTypedAdvancement,
+      0,
+    ),
+    rowsMissingTypedAdvancement: classes.reduce(
+      (sum, entry) => sum + entry.rowsMissingTypedAdvancement.length,
+      0,
+    ),
+    unknownAdvancementKinds: classes.reduce(
+      (sum, entry) => sum + entry.unknownAdvancementEntries.length,
+      0,
+    ),
+  };
+  return { summary, classes };
+}
+
+function formatTypedAdvancementCoverageReport(
+  report: ReturnType<typeof buildTypedAdvancementCoverageReport>,
+): string {
+  const lines = [
+    'Typed advancement coverage',
+    `Classes: ${report.summary.classes}`,
+    `Expected class/level rows: ${report.summary.expectedRows}`,
+    `Rows present: ${report.summary.rowsPresent}`,
+    `Rows with typed advancement[]: ${report.summary.rowsWithTypedAdvancement}`,
+    `Rows missing typed advancement[]: ${report.summary.rowsMissingTypedAdvancement}`,
+    `Unknown advancement entries: ${report.summary.unknownAdvancementKinds}`,
+    '',
+  ];
+  for (const cls of report.classes) {
+    lines.push(`${cls.key} (${cls.name})`);
+    lines.push(
+      `  rows=${cls.rowsPresent}, typed=${cls.rowsWithTypedAdvancement}, missingLevels=${cls.missingLevels.join(', ') || 'none'}, missingTyped=${cls.rowsMissingTypedAdvancement.join(', ') || 'none'}`,
+    );
+    lines.push(`  advancementKinds=${JSON.stringify(cls.advancementKinds)}`);
+    if (cls.unknownAdvancementEntries.length > 0) {
+      lines.push(
+        `  unknownEntries=${cls.unknownAdvancementEntries.length} (see JSON)`,
+      );
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function choiceCategoryCounts(pack: RulesPack): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const record of pack.records) {
+    const data = dataObject(record);
+    for (const choice of arrayValue(data?.choices)) {
+      const category = stringValue(objectValue(choice)?.category);
+      if (category !== null) counts[category] = (counts[category] ?? 0) + 1;
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(counts).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+  );
+}
+
+function buildChoiceCoverageReport(
+  pack: RulesPack,
+  findings: readonly SrdPlayabilityFinding[],
+): {
+  readonly summary: {
+    readonly featureRecordsWithChoices: number;
+    readonly structuredChoiceEntries: number;
+    readonly findings: number;
+  };
+  readonly categories: Readonly<Record<string, number>>;
+  readonly findings: readonly SrdPlayabilityFinding[];
+} {
+  let featureRecordsWithChoices = 0;
+  let structuredChoiceEntries = 0;
+  for (const record of pack.records) {
+    if (record.kind !== 'feature') continue;
+    const choices = arrayValue(dataObject(record)?.choices);
+    if (choices.length === 0) continue;
+    featureRecordsWithChoices += 1;
+    structuredChoiceEntries += choices.length;
+  }
+  const choiceFindings = findings.filter(
+    (finding) => finding.category === 'choice-coverage',
+  );
+  return {
+    summary: {
+      featureRecordsWithChoices,
+      structuredChoiceEntries,
+      findings: choiceFindings.length,
+    },
+    categories: choiceCategoryCounts(pack),
+    findings: choiceFindings,
+  };
+}
+
+function formatChoiceCoverageReport(
+  report: ReturnType<typeof buildChoiceCoverageReport>,
+): string {
+  const lines = [
+    'Choice coverage',
+    `Feature records with choices[]: ${report.summary.featureRecordsWithChoices}`,
+    `Structured choice entries: ${report.summary.structuredChoiceEntries}`,
+    `Choice findings: ${report.summary.findings}`,
+    `Choice categories: ${JSON.stringify(report.categories)}`,
+    '',
+  ];
+  if (report.findings.length === 0) {
+    lines.push('(no choice-coverage findings)');
+  } else {
+    for (const finding of report.findings) {
+      lines.push(`${finding.key} — ${finding.detail} (${finding.bead})`);
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function buildTableReachabilityReport(
+  pack: RulesPack,
+  srdFindings: readonly SrdAuditFinding[],
+): {
+  readonly summary: {
+    readonly tableRecords: number;
+    readonly ownedTablesExpected: number;
+    readonly standaloneTablesExpected: number;
+    readonly tableLinkFindings: number;
+  };
+  readonly ownedTables: readonly {
+    readonly tableKey: string;
+    readonly ownerKey: string;
+    readonly tablePresent: boolean;
+    readonly ownerPresent: boolean;
+    readonly ownerReferencesTable: boolean;
+  }[];
+  readonly standaloneTables: readonly {
+    readonly tableKey: string;
+    readonly tablePresent: boolean;
+  }[];
+  readonly findings: readonly SrdAuditFinding[];
+} {
+  const byKey = new Map(pack.records.map((record) => [record.key, record]));
+  const tableFindings = srdFindings.filter((finding) =>
+    [
+      'spell-table-link',
+      'table-owner-link',
+      'table-reachability',
+      'reference-integrity',
+    ].includes(finding.category),
+  );
+  const ownedTables = Object.entries(SRD_5_1_TABLE_OWNERS)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([tableKey, ownerKey]) => {
+      const owner = byKey.get(ownerKey);
+      const ownerRefs = new Set(
+        owner === undefined ? [] : arrayValue(dataObject(owner)?.tableRefs),
+      );
+      return {
+        tableKey,
+        ownerKey,
+        tablePresent: byKey.get(tableKey)?.kind === 'table',
+        ownerPresent: owner !== undefined,
+        ownerReferencesTable: ownerRefs.has(tableKey),
+      };
+    });
+  const standaloneTables = [...SRD_5_1_STANDALONE_TABLES]
+    .sort()
+    .map((tableKey) => ({
+      tableKey,
+      tablePresent: byKey.get(tableKey)?.kind === 'table',
+    }));
+  return {
+    summary: {
+      tableRecords: pack.records.filter((record) => record.kind === 'table')
+        .length,
+      ownedTablesExpected: ownedTables.length,
+      standaloneTablesExpected: standaloneTables.length,
+      tableLinkFindings: tableFindings.length,
+    },
+    ownedTables,
+    standaloneTables,
+    findings: tableFindings,
+  };
+}
+
+function formatTableReachabilityReport(
+  report: ReturnType<typeof buildTableReachabilityReport>,
+): string {
+  const linked = report.ownedTables.filter(
+    (entry) =>
+      entry.tablePresent && entry.ownerPresent && entry.ownerReferencesTable,
+  ).length;
+  const lines = [
+    'Table link / reachability',
+    `Table records: ${report.summary.tableRecords}`,
+    `Reviewed owned tables: ${linked}/${report.summary.ownedTablesExpected} linked from expected owner`,
+    `Standalone tables: ${report.standaloneTables.filter((entry) => entry.tablePresent).length}/${report.summary.standaloneTablesExpected} present`,
+    `Table-link findings: ${report.summary.tableLinkFindings}`,
+    '',
+  ];
+  if (report.findings.length === 0) {
+    lines.push('(no table-link/reachability findings)');
+  } else {
+    for (const finding of report.findings) {
+      lines.push(`${finding.category}: ${finding.key} — ${finding.detail}`);
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function spellPreparationFromOverlay(classKey: string): unknown {
+  const overlay = getClassSpellcasting(classKey);
+  if (overlay === undefined) return undefined;
+  return {
+    kind: overlay.preparation,
+    ...(overlay.spellbookStartingSpells === undefined
+      ? {}
+      : { spellbookStartingSpells: overlay.spellbookStartingSpells }),
+    sourceText: overlay.sourceText,
+  };
+}
+
+function buildOverlayParityReport(pack: RulesPack): {
+  readonly summary: {
+    readonly checkedFacts: number;
+    readonly matchedFacts: number;
+    readonly missingFacts: number;
+    readonly mismatchedFacts: number;
+  };
+  readonly checks: readonly {
+    readonly key: string;
+    readonly kind: string;
+    readonly field: string;
+    readonly status: 'match' | 'missing' | 'mismatch';
+    readonly expected?: unknown;
+    readonly actual?: unknown;
+  }[];
+} {
+  const checks: {
+    key: string;
+    kind: string;
+    field: string;
+    status: 'match' | 'missing' | 'mismatch';
+    expected?: unknown;
+    actual?: unknown;
+  }[] = [];
+  const push = (
+    record: RulesRecord,
+    field: string,
+    expected: unknown,
+    actual: unknown,
+  ): void => {
+    if (expected === undefined) return;
+    const status =
+      actual === undefined
+        ? 'missing'
+        : valuesEqual(actual, expected)
+          ? 'match'
+          : 'mismatch';
+    checks.push({
+      key: record.key,
+      kind: record.kind,
+      field,
+      status,
+      expected: status === 'match' ? undefined : expected,
+      actual: status === 'match' ? undefined : actual,
+    });
+  };
+
+  for (const record of pack.records) {
+    const data = dataObject(record);
+    if (record.kind === 'ancestry') {
+      push(
+        record,
+        'abilityScoreIncreases',
+        [getAncestryAbilityScoreIncrease(record.key)].filter(
+          (entry) => entry !== undefined,
+        ),
+        data?.abilityScoreIncreases,
+      );
+      push(
+        record,
+        'languages',
+        [getAncestryLanguages(record.key)].filter(
+          (entry) => entry !== undefined,
+        ),
+        data?.languages,
+      );
+    } else if (record.kind === 'background') {
+      push(
+        record,
+        'languages',
+        [getBackgroundLanguages(record.key)].filter(
+          (entry) => entry !== undefined,
+        ),
+        data?.languages,
+      );
+    } else if (record.kind === 'class') {
+      const spellcasting = getClassSpellcasting(record.key);
+      push(
+        record,
+        'spellcastingAbility',
+        spellcasting?.ability,
+        data?.spellcastingAbility,
+      );
+      push(
+        record,
+        'spellPreparation',
+        spellPreparationFromOverlay(record.key),
+        data?.spellPreparation,
+      );
+      push(
+        record,
+        'startingEquipment.entries',
+        getClassStartingEquipment(record.key)?.entries,
+        objectValue(data?.startingEquipment)?.entries,
+      );
+    }
+  }
+
+  const summary = {
+    checkedFacts: checks.length,
+    matchedFacts: checks.filter((check) => check.status === 'match').length,
+    missingFacts: checks.filter((check) => check.status === 'missing').length,
+    mismatchedFacts: checks.filter((check) => check.status === 'mismatch')
+      .length,
+  };
+  return {
+    summary,
+    checks: checks.sort((a, b) => {
+      if (a.status !== b.status) return a.status < b.status ? -1 : 1;
+      if (a.key !== b.key) return a.key < b.key ? -1 : 1;
+      return a.field < b.field ? -1 : a.field > b.field ? 1 : 0;
+    }),
+  };
+}
+
+function formatOverlayParityReport(
+  report: ReturnType<typeof buildOverlayParityReport>,
+): string {
+  const lines = [
+    'Overlay vs pack parity',
+    `Checked facts: ${report.summary.checkedFacts}`,
+    `Matched facts: ${report.summary.matchedFacts}`,
+    `Missing facts: ${report.summary.missingFacts}`,
+    `Mismatched facts: ${report.summary.mismatchedFacts}`,
+    '',
+  ];
+  const nonMatches = report.checks.filter((check) => check.status !== 'match');
+  if (nonMatches.length === 0) {
+    lines.push('(all checked overlay facts match pack data)');
+  } else {
+    for (const check of nonMatches) {
+      lines.push(`${check.status}: ${check.key} data.${check.field}`);
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+// ---------------------------------------------------------------------------
 // README
 // ---------------------------------------------------------------------------
 
@@ -398,6 +902,15 @@ function buildReadme(meta: {
     '- `source-region-ledger.json` — contiguous prose-region accounting ledger',
     '  showing where prose exists, which record/child/ignore owns it, and',
     '  whether any prose is unrepresented or hidden by broad structural ignores',
+    '- `typed-advancement-coverage.{json,txt}` — per-class/level coverage of',
+    '  typed `progression[].advancement[]` rows and advancement-entry kinds',
+    '- `choice-coverage.{json,txt}` — structured class-feature choice coverage',
+    '  plus any playable-model `choice-coverage` findings',
+    '- `table-link-reachability.{json,txt}` — reviewed owner/table links,',
+    '  standalone table presence, and table-link/reachability findings',
+    '- `overlay-vs-pack-parity.{json,txt}` — parity between the old',
+    '  source-backed character-creation overlays and the generated pack facts',
+    '- `srd-playability-audit.{json,txt}` — full playable-model gate output',
     '- `source-hash-verification.txt` — SHA-256 and size check for the vendored PDF',
     '',
     '## How to reproduce',
@@ -601,7 +1114,117 @@ async function main(): Promise<void> {
     );
   }
 
-  // 6c. Source-coverage artifacts (eshyra-4a7.1): copy the committed
+  // 6c. Modeling-usability reports for the re-freeze evidence bundle. These
+  // are report projections over the committed pack, not generated-pack edits.
+  log('Generating modeling-usability reports...');
+  let playabilityFindings: readonly SrdPlayabilityFinding[] = [];
+  let typedAdvancementReport: ReturnType<
+    typeof buildTypedAdvancementCoverageReport
+  > | null = null;
+  let choiceCoverageReport: ReturnType<
+    typeof buildChoiceCoverageReport
+  > | null = null;
+  let tableReachabilityReport: ReturnType<
+    typeof buildTableReachabilityReport
+  > | null = null;
+  let overlayParityReport: ReturnType<typeof buildOverlayParityReport> | null =
+    null;
+  try {
+    const pack = loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
+    playabilityFindings = auditSrdPlayability(pack);
+    writeFileSync(
+      join(outDir, 'reports/srd-playability-audit.json'),
+      JSON.stringify(
+        {
+          packId: pack.meta.packId,
+          findings: playabilityFindings,
+          countsByCategory: countSrdPlayabilityByCategory(playabilityFindings),
+        },
+        null,
+        2,
+      ),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/srd-playability-audit.txt'),
+      formatSrdPlayabilityReport(pack.meta.packId, playabilityFindings),
+      'utf8',
+    );
+
+    typedAdvancementReport = buildTypedAdvancementCoverageReport(pack);
+    writeFileSync(
+      join(outDir, 'reports/typed-advancement-coverage.json'),
+      JSON.stringify(typedAdvancementReport, null, 2),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/typed-advancement-coverage.txt'),
+      formatTypedAdvancementCoverageReport(typedAdvancementReport),
+      'utf8',
+    );
+
+    choiceCoverageReport = buildChoiceCoverageReport(pack, playabilityFindings);
+    writeFileSync(
+      join(outDir, 'reports/choice-coverage.json'),
+      JSON.stringify(choiceCoverageReport, null, 2),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/choice-coverage.txt'),
+      formatChoiceCoverageReport(choiceCoverageReport),
+      'utf8',
+    );
+
+    tableReachabilityReport = buildTableReachabilityReport(
+      pack,
+      srdAudit?.findings ?? [],
+    );
+    writeFileSync(
+      join(outDir, 'reports/table-link-reachability.json'),
+      JSON.stringify(tableReachabilityReport, null, 2),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/table-link-reachability.txt'),
+      formatTableReachabilityReport(tableReachabilityReport),
+      'utf8',
+    );
+
+    overlayParityReport = buildOverlayParityReport(pack);
+    writeFileSync(
+      join(outDir, 'reports/overlay-vs-pack-parity.json'),
+      JSON.stringify(overlayParityReport, null, 2),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/overlay-vs-pack-parity.txt'),
+      formatOverlayParityReport(overlayParityReport),
+      'utf8',
+    );
+
+    log(
+      `  Playability findings: ${playabilityFindings.length} (${srdPlayabilityHasFindings(playabilityFindings) ? 'NEEDS REVIEW' : 'clean'})`,
+    );
+    log(
+      `  Typed advancement rows: ${typedAdvancementReport.summary.rowsWithTypedAdvancement}/${typedAdvancementReport.summary.expectedRows}`,
+    );
+    log(
+      `  Choice findings: ${choiceCoverageReport.summary.findings}; table-link findings: ${tableReachabilityReport.summary.tableLinkFindings}; overlay mismatches: ${overlayParityReport.summary.mismatchedFacts}`,
+    );
+  } catch (cause) {
+    const msg =
+      cause instanceof RulesPackError
+        ? `pack validation failed: ${cause.message}`
+        : `failed to load pack: ${(cause as Error).message}`;
+    log(`  ERROR: ${msg}`);
+    writeFileSync(
+      join(outDir, 'reports/srd-playability-audit.txt'),
+      `ERROR: ${msg}\n`,
+      'utf8',
+    );
+  }
+
+  // 6d. Source-coverage artifacts (eshyra-4a7.1): copy the committed
   // typography-derived source inventory + coverage report into reports/ and
   // summarize the accounting so the bundle shows which source structures are
   // records, child data, reasoned ignores, or tracked known gaps.
@@ -743,6 +1366,16 @@ async function main(): Promise<void> {
           hasFindings: srdAuditHasFindings(srdAudit),
         }
       : null,
+    srdPlayabilityAudit: {
+      findingCount: playabilityFindings.length,
+      hasFindings: srdPlayabilityHasFindings(playabilityFindings),
+    },
+    modelingUsabilityReports: {
+      typedAdvancementCoverage: typedAdvancementReport?.summary ?? null,
+      choiceCoverage: choiceCoverageReport?.summary ?? null,
+      tableLinkReachability: tableReachabilityReport?.summary ?? null,
+      overlayVsPackParity: overlayParityReport?.summary ?? null,
+    },
     sourceCoverage: {
       inventoryItems: sourceCoverage.entries.length,
       unaccounted: sourceCoverage.summary.unaccounted,
