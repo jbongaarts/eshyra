@@ -614,6 +614,228 @@ describe('table reachability completeness (eshyra-o9bd.8.3)', () => {
       ),
     ).toEqual([]);
   });
+
+  it('counts a table reachable only via subclass progressionTableRefs (plural)', () => {
+    // The eshyra-o9bd.10 gap: a table linked solely through the plural subclass
+    // field must not be flagged orphan.
+    const referrer = record({
+      kind: 'subclass',
+      key: 'subclass:some-archetype',
+      name: 'Some Archetype',
+      data: {
+        parentClass: 'class:fighter',
+        description: 'x',
+        progressionTableRefs: ['table:some-unowned-table'],
+      },
+    });
+    expect(
+      auditSrdStructure(pack([orphan, referrer])).filter(
+        (finding) => finding.category === 'table-reachability',
+      ),
+    ).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-record reference integrity (eshyra-o9bd.10)
+// ---------------------------------------------------------------------------
+
+describe('cross-record reference integrity (eshyra-o9bd.10)', () => {
+  const refFindings = (records: readonly RulesRecord[]) =>
+    auditSrdStructure(pack(records)).filter(
+      (f) => f.category === 'reference-integrity',
+    );
+
+  const champion = record({
+    kind: 'subclass',
+    key: 'subclass:champion',
+    name: 'Champion',
+    data: { parentClass: 'class:fighter', description: 'A champion.' },
+  });
+
+  // A sentinel record makes its kind "present" so the gate checks references to
+  // that kind (reduced-fixture tolerance skips kinds the pack doesn't model).
+  const sentinelTable = record({
+    kind: 'table',
+    key: 'table:sentinel',
+    name: 'Sentinel',
+    data: { columns: ['A'], rows: [['x']] },
+  });
+
+  it('flags a feature reference to a missing table record', () => {
+    const feature = record({
+      kind: 'feature',
+      key: 'feature:fighter:second-wind',
+      name: 'Second Wind',
+      data: {
+        source: 'class:fighter',
+        level: 1,
+        description: 'x',
+        tableRefs: ['table:does-not-exist'],
+      },
+    });
+    const findings = refFindings([feature, sentinelTable]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('table:does-not-exist');
+    expect(findings[0].detail).toContain('no record owns that key');
+  });
+
+  it('flags a subclass parentClass that resolves to the wrong kind', () => {
+    // parentClass points at a feature, not a class. A sentinel class record
+    // makes the class relationship modeled so the check runs.
+    const subclass = record({
+      kind: 'subclass',
+      key: 'subclass:bad',
+      name: 'Bad',
+      data: { parentClass: 'feature:fighter:second-wind', description: 'x' },
+    });
+    const target = record({
+      kind: 'feature',
+      key: 'feature:fighter:second-wind',
+      name: 'Second Wind',
+      data: { source: 'class:fighter', level: 1, description: 'x' },
+    });
+    const sentinelClass = record({
+      kind: 'class',
+      key: 'class:fighter',
+      name: 'Fighter',
+      data: {},
+    });
+    const findings = refFindings([subclass, target, sentinelClass]).filter(
+      (f) => f.key === 'subclass:bad',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('must be one of: class');
+  });
+
+  it('flags a subclass-selection choice whose option is a missing subclass', () => {
+    const feature = record({
+      kind: 'feature',
+      key: 'feature:fighter:martial-archetype',
+      name: 'Martial Archetype',
+      data: {
+        source: 'class:fighter',
+        level: 3,
+        description: 'x',
+        choices: [
+          {
+            id: 'subclass',
+            category: 'subclass',
+            prompt: 'Choose.',
+            level: 3,
+            choose: 1,
+            from: ['subclass:missing'],
+          },
+        ],
+      },
+    });
+    const findings = refFindings([feature, champion]).filter((f) =>
+      f.detail.includes('choices[].from'),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('subclass:missing');
+  });
+
+  it('flags a dangling progression featureGrant ref', () => {
+    const cls = record({
+      kind: 'class',
+      key: 'class:fighter',
+      name: 'Fighter',
+      data: {
+        progression: [
+          {
+            level: 1,
+            advancement: [
+              { kind: 'featureGrant', ref: 'feature:fighter:ghost' },
+            ],
+          },
+        ],
+      },
+    });
+    const sentinelFeature = record({
+      kind: 'feature',
+      key: 'feature:fighter:second-wind',
+      name: 'Second Wind',
+      data: { source: 'class:fighter', level: 1, description: 'x' },
+    });
+    const findings = refFindings([cls, sentinelFeature]).filter((f) =>
+      f.detail.includes('feature:fighter:ghost'),
+    );
+    expect(findings).toHaveLength(1);
+  });
+
+  it('ignores free-text restriction `from` and prose source labels', () => {
+    const feature = record({
+      kind: 'feature',
+      key: 'feature:sorcerer:metamagic',
+      name: 'Metamagic',
+      data: {
+        source: 'class:sorcerer',
+        level: 3,
+        description: 'x',
+        choices: [
+          {
+            id: 'metamagic',
+            category: 'metamagic',
+            prompt: 'Choose.',
+            level: 3,
+            choose: 2,
+            from: 'a Metamagic option from this feature',
+          },
+        ],
+      },
+    });
+    const cls = record({
+      kind: 'class',
+      key: 'class:sorcerer',
+      name: 'Sorcerer',
+      data: {},
+    });
+    expect(refFindings([feature, cls])).toEqual([]);
+  });
+
+  it('is silent when every reference resolves to the right kind', () => {
+    const cls = record({
+      kind: 'class',
+      key: 'class:fighter',
+      name: 'Fighter',
+      data: {
+        features: ['feature:fighter:martial-archetype'],
+        progression: [
+          {
+            level: 3,
+            advancement: [
+              {
+                kind: 'featureGrant',
+                ref: 'feature:fighter:martial-archetype',
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const feature = record({
+      kind: 'feature',
+      key: 'feature:fighter:martial-archetype',
+      name: 'Martial Archetype',
+      data: {
+        source: 'class:fighter',
+        level: 3,
+        description: 'x',
+        choices: [
+          {
+            id: 'subclass',
+            category: 'subclass',
+            prompt: 'Choose.',
+            level: 3,
+            choose: 1,
+            from: ['subclass:champion'],
+          },
+        ],
+      },
+    });
+    expect(refFindings([cls, feature, champion])).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------

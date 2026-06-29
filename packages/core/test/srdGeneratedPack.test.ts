@@ -833,6 +833,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(pack.meta.version).toBe('5.1');
       expect(pack.meta.role).toBe('base');
     });
+
+    it('every cross-record reference resolves to the right-kind record (eshyra-o9bd.10)', () => {
+      // Runtime-relationship reachability: no dangling or mis-kinded link across
+      // the whole pack (class/subclass/feature/spell/magic-item/ancestry refs,
+      // subclass-selection choices, and progression feature grants).
+      const findings = auditSrdStructure(pack).filter(
+        (f) => f.category === 'reference-integrity',
+      );
+      expect(findings).toEqual([]);
+    });
   });
 
   describe('category counts', () => {
