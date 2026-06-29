@@ -1134,6 +1134,19 @@ function optEquipmentGrantArray(parent: Obj, key: string, path: string): void {
     reqInt(entry, 'quantity', gpath, 1);
     optStr(entry, 'ref', gpath);
     optStr(entry, 'detail', gpath);
+    // Optional open filter (e.g. a holy symbol), same closed vocabulary as a
+    // starting-equipment filter grant (eshyra-ngcj.5).
+    if (entry.select !== undefined) {
+      const select = entry.select;
+      if (
+        typeof select !== 'string' ||
+        !STARTING_EQUIPMENT_FILTER_SELECTS.has(select)
+      ) {
+        throw new RulesPackError(
+          `${gpath}.select must be one of ${[...STARTING_EQUIPMENT_FILTER_SELECTS].join(', ')}`,
+        );
+      }
+    }
   });
 }
 

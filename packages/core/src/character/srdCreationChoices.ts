@@ -20,10 +20,23 @@
  * an importer guard.
  */
 
-import type { EquipmentPackContent } from './srdEquipmentPacks.js';
+import type { StartingEquipmentFilterSelect } from './srdStartingEquipmentGrants.js';
 
-/** A background equipment line item reuses the pack-content shape. */
-export type BackgroundEquipmentGrant = EquipmentPackContent;
+/**
+ * A background equipment line item. Like a pack content it has an explicit
+ * `quantity` + `name`, an optional concrete `equipment:` `ref`, and an optional
+ * `detail`. It additionally supports an open `select` filter (e.g. an Acolyte's
+ * "a holy symbol", which is a `holy-symbol` category choice, not one fixed
+ * record) so deterministic tooling can prompt from that category — the same
+ * filter vocabulary class starting equipment uses (eshyra-ngcj.3/.5).
+ */
+export interface BackgroundEquipmentGrant {
+  readonly quantity: number;
+  readonly name: string;
+  readonly ref?: string;
+  readonly select?: StartingEquipmentFilterSelect;
+  readonly detail?: string;
+}
 
 /** Closed vocabulary of ancestry/background creation-choice categories. */
 export type CreationChoiceCategory =
@@ -211,6 +224,7 @@ const ACOLYTE_FACTS: BackgroundCreationFacts = {
     {
       quantity: 1,
       name: 'holy symbol',
+      select: 'holy-symbol',
       detail: 'a gift to you when you entered the priesthood',
     },
     { quantity: 1, name: 'prayer book or prayer wheel' },

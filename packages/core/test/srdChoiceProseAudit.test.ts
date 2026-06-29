@@ -166,6 +166,60 @@ describe('choice-bearing prose gate (fixtures)', () => {
     expect(auditSrdChoiceProse(pack([feature]))).toHaveLength(1);
   });
 
+  it('flags an unmodeled menu even when an unrelated choice IS modeled', () => {
+    // One structured choice (fighting style, with a discrete `from` catalog)
+    // plus a SECOND prose-only menu ("two of the following Metamagic options").
+    // The modeled fighting-style choice must NOT clear the unmodeled metamagic
+    // menu (the eshyra-ngcj.2.x robustness case).
+    const feature = record({
+      key: 'feature:multi:two-menus',
+      name: 'Two Menus',
+      data: {
+        description:
+          'Choose one of the following options for your Fighting Style. ' +
+          'You also gain two of the following Metamagic options of your choice.',
+        choices: [
+          {
+            id: 'fighting-style',
+            category: 'fightingStyle',
+            prompt: 'Choose a Fighting Style.',
+            level: 1,
+            choose: 1,
+            from: ['fighting-style:archery', 'fighting-style:defense'],
+          },
+        ],
+      },
+    });
+    const findings = auditSrdChoiceProse(pack([feature]));
+    expect(findings).toHaveLength(1);
+    // Only the unmodeled metamagic menu is reported, not the modeled style.
+    expect(findings[0].matchedPhrases).toContain('metamagic');
+    expect(findings[0].matchedPhrases).not.toContain('fighting style');
+  });
+
+  it('counts a tableRef-backed choice as a structured catalog', () => {
+    const ancestry = record({
+      kind: 'ancestry',
+      key: 'ancestry:test',
+      name: 'Test',
+      data: {
+        traits: [
+          { name: 'Menu', text: 'Choose one of the following options.' },
+        ],
+        choices: [
+          {
+            id: 'menu',
+            category: 'other',
+            prompt: 'Pick one.',
+            choose: 1,
+            tableRef: 'table:test-menu',
+          },
+        ],
+      },
+    });
+    expect(auditSrdChoiceProse(pack([ancestry]))).toHaveLength(0);
+  });
+
   it('does not fire on slot-recovery prose ("choose expended spell slots")', () => {
     const feature = record({
       key: 'feature:wizard:arcane-recovery',

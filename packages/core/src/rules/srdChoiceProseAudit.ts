@@ -75,6 +75,16 @@ interface ChoiceProseSignal {
   readonly label: string;
   readonly test: RegExp;
   readonly expected: string;
+  /**
+   * The feature-choice categories whose STRUCTURED catalog resolves this signal.
+   * A signal is "covered" on a record only when the record carries a structured
+   * choice of one of these categories — so a record with one modeled choice but
+   * a different unmodeled menu is NOT falsely cleared. An empty list marks a
+   * generic menu with no specific category; it is covered only by a structured
+   * catalog whose category is none of the categorized signals' (i.e. a generic
+   * `other`/bespoke menu catalog — e.g. eshyra-ngcj.2.1's Pact Boon).
+   */
+  readonly categories: readonly string[];
 }
 
 const OPTION_CATALOG =
@@ -89,33 +99,39 @@ const CHOICE_PROSE_SIGNALS: readonly ChoiceProseSignal[] = [
     label: 'one of the following',
     test: /\b(?:one|two|three) of the following\b/i,
     expected: OPTION_CATALOG,
+    categories: [],
   },
   {
     label: 'the following options',
     test: /\bthe following options\b/i,
     expected: OPTION_CATALOG,
+    categories: [],
   },
   // Named option menus whose catalog is prose-only.
   {
     label: 'metamagic',
     test: /\bmetamagic\b/i,
     expected: OPTION_CATALOG,
+    categories: ['metamagic'],
   },
   {
     label: 'fighting style',
     test: /\bfighting style\b/i,
     expected: OPTION_CATALOG,
+    categories: ['fightingStyle'],
   },
   {
     label: 'eldritch invocation',
     test: /\beldritch invocations?\b/i,
     expected: OPTION_CATALOG,
+    categories: ['invocation'],
   },
   // Invocation entries gate behind prerequisites that should be structured.
   {
     label: 'prerequisite',
     test: /\bprerequisite\b/i,
     expected: OPTION_CATALOG,
+    categories: [],
   },
   // Spell-selection choices: Magical Secrets, Spell Mastery, Signature Spells,
   // prepared-caster spell lists, and any "additional spells of your choice"
@@ -126,13 +142,25 @@ const CHOICE_PROSE_SIGNALS: readonly ChoiceProseSignal[] = [
     label: 'spell selection',
     test: /\bchoose\b[^.\n]{0,40}\bspells?\b(?!\s+slots?\b)/i,
     expected: SPELL_CHOICE,
+    categories: ['spell', 'cantrip'],
   },
   {
     label: 'additional spells of your choice',
     test: /\b(?:additional |more )?spells?\b[^.\n]{0,30}\bof your choice\b/i,
     expected: SPELL_CHOICE,
+    categories: ['spell', 'cantrip'],
   },
 ];
+
+/** Categories that a categorized signal claims; a generic menu is covered only
+ * by a structured catalog OUTSIDE this set. */
+const CATEGORIZED_SIGNAL_CATEGORIES: ReadonlySet<string> = new Set([
+  'metamagic',
+  'fightingStyle',
+  'invocation',
+  'spell',
+  'cantrip',
+]);
 
 // ---------------------------------------------------------------------------
 // Allowlist
@@ -181,6 +209,10 @@ function asObject(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function asString(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
 function pushText(into: string[], value: unknown): void {
   if (typeof value === 'string' && value.trim().length > 0) into.push(value);
 }
@@ -213,23 +245,56 @@ function scanProse(record: RulesRecord): string {
 }
 
 /**
- * True when the record carries at least one structured option catalog/filter: a
- * `choices[]` entry whose `from` is a discrete option array or a structured
- * filter object, or that carries a non-empty `options[]` catalog. A bare prose
+ * True when a `choices[]` entry carries a STRUCTURED catalog/filter: a `from`
+ * that is a discrete option array or a structured filter object, a non-empty
+ * `options[]` catalog, or a `tableRef` pointing at an option table. A bare prose
  * `from` STRING does not count — that is exactly the prose-only state this gate
- * exists to flag.
+ * flags.
  */
-function hasStructuredCatalog(record: RulesRecord): boolean {
+function isStructuredChoice(choice: Record<string, unknown>): boolean {
+  if (Array.isArray(choice.options) && choice.options.length > 0) return true;
+  if (typeof choice.tableRef === 'string' && choice.tableRef.length > 0) {
+    return true;
+  }
+  const from = choice.from;
+  if (Array.isArray(from)) return from.length > 0;
+  return asObject(from) !== null;
+}
+
+/**
+ * The set of choice categories on a record that already carry a structured
+ * catalog/filter. Used per-signal so one modeled choice cannot mask a different
+ * unmodeled menu on the same record (the eshyra-ngcj.2.x robustness concern).
+ */
+function structuredChoiceCategories(record: RulesRecord): ReadonlySet<string> {
   const data = dataObject(record);
-  if (data === null || !Array.isArray(data.choices)) return false;
-  return data.choices.some((entry) => {
+  const out = new Set<string>();
+  if (data === null || !Array.isArray(data.choices)) return out;
+  for (const entry of data.choices) {
     const choice = asObject(entry);
-    if (choice === null) return false;
-    if (Array.isArray(choice.options) && choice.options.length > 0) return true;
-    const from = choice.from;
-    if (Array.isArray(from)) return from.length > 0;
-    return asObject(from) !== null;
-  });
+    if (choice === null || !isStructuredChoice(choice)) continue;
+    // An untagged structured choice still counts as a generic catalog.
+    out.add(asString(choice.category) ?? '');
+  }
+  return out;
+}
+
+/** Whether a categorized signal's category has a structured catalog. */
+function categorizedSignalCovered(
+  signal: ChoiceProseSignal,
+  structured: ReadonlySet<string>,
+): boolean {
+  return signal.categories.some((category) => structured.has(category));
+}
+
+/** Whether the record carries a structured catalog for a bespoke menu (a
+ * category NOT claimed by any categorized signal — e.g. a Pact Boon `other`
+ * catalog, or an untagged/tableRef menu). */
+function hasBespokeCatalog(structured: ReadonlySet<string>): boolean {
+  for (const category of structured) {
+    if (!CATEGORIZED_SIGNAL_CATEGORIES.has(category)) return true;
+  }
+  return false;
 }
 
 function snippetAround(text: string, match: RegExpMatchArray): string {
@@ -258,21 +323,42 @@ export function auditSrdChoiceProse(
   for (const record of pack.records) {
     if (!SCANNED_KINDS.has(record.kind)) continue;
     if (CHOICE_PROSE_ALLOWLIST.has(record.key)) continue;
-    if (hasStructuredCatalog(record)) continue;
     const prose = scanProse(record);
     if (prose.length === 0) continue;
+    const structured = structuredChoiceCategories(record);
 
-    const matchedPhrases: string[] = [];
-    const expectedAreas = new Set<string>();
-    let firstSnippet: string | null = null;
-    for (const signal of CHOICE_PROSE_SIGNALS) {
-      const match = prose.match(signal.test);
-      if (match === null) continue;
-      matchedPhrases.push(signal.label);
-      expectedAreas.add(signal.expected);
-      if (firstSnippet === null) firstSnippet = snippetAround(prose, match);
-    }
-    if (matchedPhrases.length === 0) continue;
+    // Resolve coverage per signal so one modeled choice cannot clear an
+    // unrelated unmodeled menu on the same record. Categorized signals
+    // (metamagic, fighting style, …) need a structured catalog of their own
+    // category. Generic menu signals ("one of the following") have no category,
+    // so they are covered when EITHER a bespoke catalog exists (a Pact Boon
+    // `other`/tableRef menu) OR every categorized menu on the record is already
+    // covered (the generic phrase is just restating a covered categorized menu,
+    // e.g. "two of the following Metamagic options").
+    const matched = CHOICE_PROSE_SIGNALS.map(
+      (signal) => [signal, prose.match(signal.test)] as const,
+    ).filter((pair): pair is [ChoiceProseSignal, RegExpMatchArray] => {
+      return pair[1] !== null;
+    });
+    const uncoveredCategorized = matched.filter(
+      ([signal]) =>
+        signal.categories.length > 0 &&
+        !categorizedSignalCovered(signal, structured),
+    );
+    const genericCovered =
+      hasBespokeCatalog(structured) ||
+      (structured.size > 0 && uncoveredCategorized.length === 0);
+    const uncovered = matched.filter(([signal]) => {
+      if (signal.categories.length > 0) {
+        return !categorizedSignalCovered(signal, structured);
+      }
+      return !genericCovered;
+    });
+    if (uncovered.length === 0) continue;
+
+    const matchedPhrases = uncovered.map(([signal]) => signal.label);
+    const expectedAreas = new Set(uncovered.map(([signal]) => signal.expected));
+    const firstSnippet = snippetAround(prose, uncovered[0][1]);
 
     findings.push({
       key: record.key,

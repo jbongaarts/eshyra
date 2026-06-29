@@ -1770,6 +1770,7 @@
         {
           "quantity": 1,
           "name": "holy symbol",
+          "select": "holy-symbol",
           "detail": "a gift to you when you entered the priesthood"
         },
         {

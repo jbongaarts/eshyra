@@ -95,6 +95,7 @@ describe('background creation choices', () => {
       quantity: number;
       name: string;
       ref?: string;
+      select?: string;
       detail?: string;
     }[];
   };
@@ -112,6 +113,14 @@ describe('background creation choices', () => {
       const ref = byCategory.get(cat)?.tableRef ?? '';
       expect(keysByKind.get('table')?.has(ref), ref).toBe(true);
     }
+  });
+
+  it('models the holy symbol as a holy-symbol selectable grant (not a bare name)', () => {
+    const holy = (data.equipmentGrants ?? []).find(
+      (g) => g.name === 'holy symbol',
+    ) as { select?: string; ref?: string } | undefined;
+    expect(holy?.select).toBe('holy-symbol');
+    expect(holy?.ref).toBeUndefined();
   });
 
   it('models the equipment grant with explicit quantities and resolvable refs', () => {
