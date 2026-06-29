@@ -50,6 +50,7 @@ export type SrdAuditCategory =
   | 'spell-table-link'
   | 'table-owner-link'
   | 'table-reachability'
+  | 'reference-integrity'
   | 'creature-stat-block-prose-bleed'
   | 'missing-coverage';
 
@@ -709,6 +710,16 @@ function checkTableReachability(pack: RulesPack): SrdAuditFinding[] {
     if (typeof data.progressionTableRef === 'string') {
       referenced.add(data.progressionTableRef);
     }
+    // Plural subclass progression-table links (eshyra-o9bd.10). No subclass
+    // populates `progressionTableRefs` in the committed pack today, but if a
+    // future importer change links a table solely via this field the table must
+    // still count as reachable — otherwise this gate would wrongly flag it as an
+    // orphan.
+    if (Array.isArray(data.progressionTableRefs)) {
+      for (const ref of data.progressionTableRefs) {
+        if (typeof ref === 'string') referenced.add(ref);
+      }
+    }
     if (Array.isArray(data.traits)) {
       for (const trait of data.traits) {
         const traitRefs =
@@ -737,6 +748,158 @@ function checkTableReachability(pack: RulesPack): SrdAuditFinding[] {
     });
   }
 
+  return findings;
+}
+
+// ---------------------------------------------------------------------------
+// Cross-record reference integrity (eshyra-o9bd.10)
+// ---------------------------------------------------------------------------
+
+// A record key is `<kind>:<slug>` with a lowercase/dash prefix. This
+// distinguishes a genuine cross-record reference from a free-text `source`
+// label like "SRD 5.1 p. 5" (uppercase + space, no leading-lowercase colon).
+function isRecordKey(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-z][a-z-]*:/.test(value);
+}
+
+// The data fields that hold record-key references, with the record kind(s) the
+// target must be. Reachability of the table side is also covered by
+// `table-reachability` (orphan tables); this gate checks the OTHER direction —
+// every outbound reference resolves to an existing record of the right kind, so
+// a dangling or mis-kinded link is caught at its source (eshyra-o9bd.10).
+const REFERENCE_FIELDS: ReadonlyArray<{
+  readonly field: string;
+  readonly array: boolean;
+  readonly targets: readonly string[];
+}> = [
+  { field: 'tableRefs', array: true, targets: ['table'] },
+  { field: 'spellTableRefs', array: true, targets: ['table'] },
+  { field: 'progressionTableRef', array: false, targets: ['table'] },
+  { field: 'progressionTableRefs', array: true, targets: ['table'] },
+  { field: 'features', array: true, targets: ['feature'] },
+  { field: 'subraces', array: true, targets: ['ancestry'] },
+  { field: 'subraceOf', array: false, targets: ['ancestry'] },
+  { field: 'parentClass', array: false, targets: ['class'] },
+  { field: 'statBlockRefs', array: true, targets: ['stat-block'] },
+  // `feature.data.source` is the grantor key (class/subclass); other kinds'
+  // `data.source` is either absent or a free-text label, filtered by isRecordKey.
+  { field: 'source', array: false, targets: ['class', 'subclass'] },
+];
+
+interface OutboundRef {
+  readonly ref: string;
+  readonly targets: readonly string[];
+  readonly field: string;
+}
+
+// Collect every outbound record-key reference a record makes, across the flat
+// link fields plus the two nested graphs: `choices[].from` subclass options
+// (eshyra-o9bd.9) and `progression[].advancement[]` feature grants/improvements
+// (eshyra-o9bd.2). Free-text `from` restrictions and prose are skipped via
+// isRecordKey.
+function outboundReferences(record: RulesRecord): OutboundRef[] {
+  const data = dataObject(record);
+  if (data === null) return [];
+  const refs: OutboundRef[] = [];
+  const push = (ref: unknown, targets: readonly string[], field: string) => {
+    if (isRecordKey(ref)) refs.push({ ref, targets, field });
+  };
+
+  for (const spec of REFERENCE_FIELDS) {
+    const value = data[spec.field];
+    if (spec.array) {
+      if (Array.isArray(value)) {
+        for (const entry of value) push(entry, spec.targets, spec.field);
+      }
+    } else {
+      push(value, spec.targets, spec.field);
+    }
+  }
+
+  if (Array.isArray(data.choices)) {
+    for (const choice of data.choices) {
+      const from = (choice as { from?: unknown } | null)?.from;
+      if (Array.isArray(from)) {
+        for (const entry of from) push(entry, ['subclass'], 'choices[].from');
+      }
+    }
+  }
+
+  if (Array.isArray(data.progression)) {
+    for (const row of data.progression) {
+      const advancement = (row as { advancement?: unknown } | null)
+        ?.advancement;
+      if (!Array.isArray(advancement)) continue;
+      for (const entry of advancement) {
+        const adv = entry as {
+          kind?: unknown;
+          ref?: unknown;
+          targetRefs?: unknown;
+        };
+        if (adv.kind === 'featureGrant') {
+          push(adv.ref, ['feature'], 'progression.featureGrant.ref');
+        } else if (
+          adv.kind === 'featureImprovement' &&
+          Array.isArray(adv.targetRefs)
+        ) {
+          for (const target of adv.targetRefs) {
+            push(
+              target,
+              ['feature'],
+              'progression.featureImprovement.targetRefs',
+            );
+          }
+        }
+      }
+    }
+  }
+
+  return refs;
+}
+
+// Every cross-record reference must resolve to an existing record of the
+// expected kind. This is the runtime-relationship reachability graph
+// (eshyra-o9bd.10): class -> progression-table/feature refs; subclass ->
+// parent class + granted features; feature -> grantor/owned tables/subclass
+// choices; spell/rule/background/magic-item -> tables; magic-item -> stat
+// blocks; ancestry -> subraces. A dangling ref (target missing) or a
+// mis-kinded ref (target exists but is the wrong kind) is a finding.
+//
+// Reduced-fixture tolerance (mirrors `checkTableOwnerLinks` / `checkSpellTableLinks`):
+// a reference is only checked when the pack actually MODELS the target kind —
+// i.e. it contains at least one record of an expected target kind. A fixture
+// that has a feature stub with `source: 'class:fighter'` but no `class` records
+// is not modeling the class relationship, so the link is skipped; the full
+// committed pack contains every kind, so every reference is checked there.
+function checkReferenceIntegrity(pack: RulesPack): SrdAuditFinding[] {
+  const byKey = new Map(pack.records.map((record) => [record.key, record]));
+  const presentKinds = new Set<string>(
+    pack.records.map((record) => record.kind),
+  );
+  const findings: SrdAuditFinding[] = [];
+  for (const record of pack.records) {
+    for (const { ref, targets, field } of outboundReferences(record)) {
+      if (!targets.some((kind) => presentKinds.has(kind))) continue;
+      const target = byKey.get(ref);
+      if (target === undefined) {
+        findings.push({
+          category: 'reference-integrity',
+          key: record.key,
+          kind: record.kind,
+          name: record.name,
+          detail: `${field} references '${ref}', but no record owns that key`,
+        });
+      } else if (!targets.includes(target.kind)) {
+        findings.push({
+          category: 'reference-integrity',
+          key: record.key,
+          kind: record.kind,
+          name: record.name,
+          detail: `${field} references '${ref}', which is a '${target.kind}' record but must be one of: ${targets.join(', ')}`,
+        });
+      }
+    }
+  }
   return findings;
 }
 
@@ -868,6 +1031,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
   findings.push(...checkSpellTableLinks(pack));
   findings.push(...checkTableOwnerLinks(pack));
   findings.push(...checkTableReachability(pack));
+  findings.push(...checkReferenceIntegrity(pack));
   return sortFindings(findings);
 }
 
