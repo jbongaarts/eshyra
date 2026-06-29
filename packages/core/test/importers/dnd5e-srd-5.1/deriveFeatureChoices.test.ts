@@ -216,3 +216,150 @@ describe('deriveFeatureChoices — subclass selection (eshyra-o9bd.9.2)', () => 
     expect((out[0].data as { choices?: unknown }).choices).toBeUndefined();
   });
 });
+
+/** A class with a spellcastingProgression row + preparation metadata. */
+function casterClass(
+  key: string,
+  name: string,
+  opts: {
+    featureKey: string;
+    level: number;
+    cantripsKnown?: number;
+    spellsKnown?: number;
+    prep: 'known' | 'prepared';
+    spellbookStartingSpells?: number;
+  },
+): RulesRecord {
+  const spellcasting: Record<string, unknown> = {
+    kind: 'spellcastingProgression',
+  };
+  if (opts.cantripsKnown !== undefined)
+    spellcasting.cantripsKnown = opts.cantripsKnown;
+  if (opts.spellsKnown !== undefined)
+    spellcasting.spellsKnown = opts.spellsKnown;
+  const spellPreparation: Record<string, unknown> = { kind: opts.prep };
+  if (opts.spellbookStartingSpells !== undefined)
+    spellPreparation.spellbookStartingSpells = opts.spellbookStartingSpells;
+  return rec('class', key, name, {
+    spellPreparation,
+    progression: [
+      {
+        level: opts.level,
+        advancement: [
+          { kind: 'featureGrant', ref: opts.featureKey },
+          spellcasting,
+        ],
+      },
+    ],
+  });
+}
+
+describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', () => {
+  it('gives a known caster both a cantrip and a spell choice from its list', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        casterClass('class:bard', 'Bard', {
+          featureKey: 'feature:bard:spellcasting',
+          level: 1,
+          cantripsKnown: 2,
+          spellsKnown: 4,
+          prep: 'known',
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:bard:spellcasting', 'Spellcasting', {
+          source: 'class:bard',
+          level: 1,
+          description: 'cantrips of your choice; spells of your choice',
+        }),
+      ],
+    });
+    const choices = featureChoices(out, 'feature:bard:spellcasting');
+    expect(choices.map((c) => [c.category, c.choose, c.from])).toEqual([
+      ['cantrip', 2, 'the bard spell list'],
+      ['spell', 4, 'the bard spell list'],
+    ]);
+  });
+
+  it('gives a prepared caster without a spellbook only a cantrip choice', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        casterClass('class:cleric', 'Cleric', {
+          featureKey: 'feature:cleric:spellcasting',
+          level: 1,
+          cantripsKnown: 3,
+          prep: 'prepared',
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:cleric:spellcasting', 'Spellcasting', {
+          source: 'class:cleric',
+          level: 1,
+          description: 'cantrips of your choice',
+        }),
+      ],
+    });
+    const choices = featureChoices(out, 'feature:cleric:spellcasting');
+    expect(choices.map((c) => c.category)).toEqual(['cantrip']);
+  });
+
+  it('uses the spellbook starting count for the Wizard spell choice', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        casterClass('class:wizard', 'Wizard', {
+          featureKey: 'feature:wizard:spellcasting',
+          level: 1,
+          cantripsKnown: 3,
+          prep: 'prepared',
+          spellbookStartingSpells: 6,
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:wizard:spellcasting', 'Spellcasting', {
+          source: 'class:wizard',
+          level: 1,
+          description: 'cantrips of your choice; spells of your choice',
+        }),
+      ],
+    });
+    const spell = featureChoices(out, 'feature:wizard:spellcasting').find(
+      (c) => c.category === 'spell',
+    );
+    expect(spell?.choose).toBe(6);
+  });
+
+  it('models Mystic Arcanum as a single-spell choice from the class list', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        casterClass('class:warlock', 'Warlock', {
+          featureKey: 'feature:warlock:mystic-arcanum',
+          level: 11,
+          prep: 'known',
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:warlock:mystic-arcanum', 'Mystic Arcanum', {
+          source: 'class:warlock',
+          level: 11,
+          description: 'Choose one 6th-level spell from the warlock spell list.',
+        }),
+      ],
+    });
+    expect(featureChoices(out, 'feature:warlock:mystic-arcanum')).toEqual([
+      {
+        id: 'arcanum',
+        category: 'spell',
+        prompt:
+          'Choose one 6th-level spell from the warlock spell list as your arcanum.',
+        level: 11,
+        choose: 1,
+        from: 'the warlock spell list',
+      },
+    ]);
+  });
+});
+

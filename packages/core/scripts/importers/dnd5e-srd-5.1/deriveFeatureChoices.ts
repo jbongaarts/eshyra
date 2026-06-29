@@ -160,6 +160,142 @@ function deriveSubclassChoices(
   return out;
 }
 
+
+// ---------------------------------------------------------------------------
+// Deriver: spell / cantrip selection (eshyra-o9bd.9.3)
+// ---------------------------------------------------------------------------
+
+interface SpellcastingRow {
+  readonly cantripsKnown?: number;
+  readonly spellsKnown?: number;
+}
+
+/** The class features that actually grant a spell/cantrip selection — the
+ * "Spellcasting" feature, the Warlock's "Pact Magic", and "Mystic Arcanum".
+ * Every other feature, even at a caster level, makes no spell-known choice. */
+const SPELL_FEATURE_SUFFIXES = [
+  ':spellcasting',
+  ':pact-magic',
+  ':mystic-arcanum',
+] as const;
+
+/** The class's spellcastingProgression entry at `level`, if any. */
+function spellcastingAt(cls: RulesRecord, level: number): SpellcastingRow | null {
+  const progression = dataOf(cls).progression;
+  if (!Array.isArray(progression)) return null;
+  for (const row of progression) {
+    const r = row as { level?: unknown; advancement?: unknown };
+    if (r.level !== level || !Array.isArray(r.advancement)) continue;
+    for (const entry of r.advancement) {
+      const e = entry as Record<string, unknown>;
+      if (e.kind === 'spellcastingProgression') return e as SpellcastingRow;
+    }
+  }
+  return null;
+}
+
+function spellListRestriction(cls: RulesRecord): string {
+  return `the ${cls.name.toLowerCase()} spell list`;
+}
+
+/**
+ * Attach cantrip / spell selection choices to caster Spellcasting features.
+ *
+ * The choice modeled is the one made WHEN the feature is gained: `choose` is the
+ * initial count from the class's `spellcastingProgression` row at the feature's
+ * grant level (cantrips known, spells known, or — for the Wizard spellbook — the
+ * starting-spellbook count). Per-level increases are separate level-up events
+ * already carried by the later progression rows, so they are not re-modeled
+ * here. `from` is the class spell-list restriction; the authoritative option set
+ * is each spell's `data.classes` membership, so it is named rather than inlined.
+ *
+ * Categories mirror the SRD caster type, matching the `choice-coverage` gate's
+ * prose detection exactly: a cantrip choice when the class knows cantrips at that
+ * level; a spell choice for KNOWN casters (spells known) or the Wizard spellbook;
+ * prepared casters without a spellbook (Cleric/Druid/Paladin) get no spell-known
+ * choice because they prepare from the full list rather than choosing known
+ * spells. The Warlock's Mystic Arcanum is a distinct single-spell pick.
+ */
+function deriveSpellChoices(
+  input: DeriveFeatureChoicesInput,
+  granted: ReadonlySet<string>,
+): Map<string, DerivedChoice[]> {
+  const out = new Map<string, DerivedChoice[]>();
+  const classByKey = new Map(input.classRecords.map((c) => [c.key, c]));
+
+  for (const feature of input.featureRecords) {
+    if (!granted.has(feature.key)) continue;
+    // Only the class's actual spell-acquisition features carry a spell/cantrip
+    // selection. Without this guard every granted feature at a caster level
+    // (Metamagic, Expertise, an ASI, …) would wrongly inherit the spellcasting
+    // row that sits at the same level.
+    if (!SPELL_FEATURE_SUFFIXES.some((s) => feature.key.endsWith(s))) continue;
+    const source = featureSource(feature);
+    if (source === null) continue;
+    const cls = classByKey.get(source);
+    if (cls === undefined) continue;
+    const level = featureLevel(feature);
+    const choices: DerivedChoice[] = [];
+
+    // Mystic Arcanum: a single spell of a fixed level from the class list.
+    if (feature.key.endsWith(':mystic-arcanum')) {
+      choices.push({
+        id: 'arcanum',
+        category: 'spell',
+        prompt: `Choose one 6th-level spell from ${spellListRestriction(cls)} as your arcanum.`,
+        level,
+        choose: 1,
+        from: spellListRestriction(cls),
+      });
+      out.set(feature.key, choices);
+      continue;
+    }
+
+    const row = spellcastingAt(cls, level);
+    if (row === null) continue;
+    const prep = dataOf(cls).spellPreparation as
+      | { kind?: unknown; spellbookStartingSpells?: unknown }
+      | undefined;
+    const prepKind = prep?.kind;
+    const spellbookStart =
+      typeof prep?.spellbookStartingSpells === 'number'
+        ? prep.spellbookStartingSpells
+        : null;
+
+    if (typeof row.cantripsKnown === 'number') {
+      choices.push({
+        id: 'cantrips',
+        category: 'cantrip',
+        prompt: `Choose your starting cantrips from ${spellListRestriction(cls)}.`,
+        level,
+        choose: row.cantripsKnown,
+        from: spellListRestriction(cls),
+      });
+    }
+
+    // Known casters choose their spells known; the Wizard chooses the spells in
+    // their starting spellbook. Prepared casters without a spellbook do not.
+    const spellChoose =
+      prepKind === 'known' && typeof row.spellsKnown === 'number'
+        ? row.spellsKnown
+        : spellbookStart;
+    if (spellChoose !== null && spellChoose !== undefined) {
+      choices.push({
+        id: 'spells',
+        category: 'spell',
+        prompt: `Choose your starting spells from ${spellListRestriction(cls)}.`,
+        level,
+        choose: spellChoose,
+        from: spellListRestriction(cls),
+      });
+    }
+
+    if (choices.length > 0) out.set(feature.key, choices);
+  }
+
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Compose + apply
 // ---------------------------------------------------------------------------
@@ -190,7 +326,10 @@ export function deriveFeatureChoices(
   input: DeriveFeatureChoicesInput,
 ): RulesRecord[] {
   const granted = grantedFeatureKeys(input.classRecords);
-  const choiceMap = mergeChoiceMaps([deriveSubclassChoices(input, granted)]);
+  const choiceMap = mergeChoiceMaps([
+    deriveSubclassChoices(input, granted),
+    deriveSpellChoices(input, granted),
+  ]);
 
   return input.featureRecords.map((feature) => {
     const choices = choiceMap.get(feature.key);

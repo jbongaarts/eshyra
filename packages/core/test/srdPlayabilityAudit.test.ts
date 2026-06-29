@@ -696,10 +696,10 @@ describe('committed SRD pack playable-model baseline', () => {
     for (const f of choiceFindings) {
       byBead.set(f.bead, (byBead.get(f.bead) ?? 0) + 1);
     }
-    expect(counts['choice-coverage']).toBe(36);
+    expect(counts['choice-coverage']).toBe(24);
     // Per-slice punch list (the done-marker each modeling bead must drive to 0).
     expect(byBead.get('eshyra-o9bd.9.2')).toBeUndefined(); // subclass selection — DONE
-    expect(byBead.get('eshyra-o9bd.9.3')).toBe(12); // spell/cantrip choices
+    expect(byBead.get('eshyra-o9bd.9.3')).toBeUndefined(); // spell/cantrip — DONE
     expect(byBead.get('eshyra-o9bd.9.4')).toBe(12); // ASI-vs-feat
     expect(byBead.get('eshyra-o9bd.9.5')).toBe(7); // fighting-style/metamagic/invocation/terrain-enemy
     expect(byBead.get('eshyra-o9bd.9.6')).toBe(5); // channel-divinity / expertise
