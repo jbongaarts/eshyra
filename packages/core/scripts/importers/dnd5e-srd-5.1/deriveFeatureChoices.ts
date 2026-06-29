@@ -24,6 +24,18 @@
 import type { FeatureChoiceCategory } from '../../../src/rules/featureChoices.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
+/**
+ * Thrown when a choice the deriver must model cannot be read from the source —
+ * e.g. a feature whose pick count is no longer parseable because the SRD
+ * phrasing changed or the upstream extraction regressed. The deriver fails
+ * closed (throws) rather than emitting a machine-readable choice with an
+ * invented count, which would let the `choice-coverage` gate go green on wrong
+ * data.
+ */
+export class FeatureChoiceDerivationError extends Error {
+  override readonly name = 'FeatureChoiceDerivationError';
+}
+
 export interface DeriveFeatureChoicesInput {
   readonly classRecords: readonly RulesRecord[];
   readonly subclassRecords: readonly RulesRecord[];
@@ -361,7 +373,12 @@ function deriveAsiChoices(
 // favored enemy / favored terrain (eshyra-o9bd.9.5)
 // ---------------------------------------------------------------------------
 
+// SRD pick-count words. The indefinite article "a"/"an" counts as one ("Choose
+// a type of favored enemy"), so the deriver reads the real source count rather
+// than relying on a default.
 const NUMBER_WORDS: Record<string, number> = {
+  a: 1,
+  an: 1,
   one: 1,
   two: 2,
   three: 3,
@@ -369,22 +386,47 @@ const NUMBER_WORDS: Record<string, number> = {
   five: 5,
 };
 
+const COUNT_WORD_ALTERNATION = Object.keys(NUMBER_WORDS).join('|');
+
 function featureDescription(record: RulesRecord): string {
   const description = dataOf(record).description;
   return typeof description === 'string' ? description : '';
 }
 
-/** Parse the pick count from "Choose one …" / "you gain two … of your choice"
+/** Parse the pick count from "Choose one …" / "Choose a …" / "you gain two …"
  * phrasing near `keyword`. Returns null when no count word is found. */
 function parseChooseCount(description: string, keyword: RegExp): number | null {
   const source = keyword.source;
   const re = new RegExp(
-    `(?:choose|gain)\\s+(one|two|three|four|five)\\b[^.]*?(?:${source})`,
+    `(?:choose|gain)\\s+(${COUNT_WORD_ALTERNATION})\\b[^.]*?(?:${source})`,
     'i',
   );
   const match = description.match(re);
   if (match === null) return null;
   return NUMBER_WORDS[match[1].toLowerCase()] ?? null;
+}
+
+/**
+ * Parse the pick count or fail closed. Used for every feature whose choice
+ * REQUIRES a count: a missing count means the source phrasing changed or the
+ * extraction regressed, so the deriver throws with the feature key/name rather
+ * than inventing a default that would let the gate pass on wrong data.
+ */
+function requireChooseCount(
+  feature: RulesRecord,
+  description: string,
+  keyword: RegExp,
+  label: string,
+): number {
+  const count = parseChooseCount(description, keyword);
+  if (count === null) {
+    throw new FeatureChoiceDerivationError(
+      `Cannot parse a ${label} count for ${feature.key} (${feature.name}); ` +
+        `no count word matched /${keyword.source}/ in the feature description. ` +
+        'The SRD phrasing may have changed or the extraction regressed.',
+    );
+  }
+  return count;
 }
 
 /** Parse the comma/“or”-delimited option list that follows `anchor:` up to the
@@ -473,20 +515,37 @@ function deriveOptionListChoices(
     const spec = OPTION_LIST_SPECS.find((s) => feature.key.endsWith(s.suffix));
     if (spec === undefined) continue;
     const description = featureDescription(feature);
-    const choose = parseChooseCount(description, spec.countKeyword) ?? 1;
-    const from =
-      spec.listAnchor !== undefined
-        ? parseColonList(description, spec.listAnchor)
-        : spec.restriction;
+    const choose = requireChooseCount(
+      feature,
+      description,
+      spec.countKeyword,
+      spec.category,
+    );
+    let from: readonly string[] | string;
+    if (spec.listAnchor !== undefined) {
+      // An enumerated list spec must actually yield options; an empty parse
+      // means the colon-list phrasing changed, so fail closed rather than emit
+      // a choice with no options.
+      const options = parseColonList(description, spec.listAnchor);
+      if (options.length === 0) {
+        throw new FeatureChoiceDerivationError(
+          `Cannot parse the '${spec.listAnchor}' option list for ${feature.key} ` +
+            `(${feature.name}); the enumerated list is empty. The SRD phrasing ` +
+            'may have changed or the extraction regressed.',
+        );
+      }
+      from = options;
+    } else {
+      // restriction is always present when listAnchor is absent (OPTION_LIST_SPECS).
+      from = spec.restriction as string;
+    }
     const choice: DerivedChoice = {
       id: spec.id,
       category: spec.category,
       prompt: spec.prompt(choose),
       level: featureLevel(feature),
       choose,
-      ...(from !== undefined && (Array.isArray(from) ? from.length > 0 : true)
-        ? { from }
-        : {}),
+      from,
     };
     out.set(feature.key, [choice]);
   }
@@ -525,7 +584,12 @@ function deriveSubclassFeatureChoices(
     const choices: DerivedChoice[] = [];
 
     if (/choose [^.]*\bskill proficiencies\b/i.test(description)) {
-      const choose = parseChooseCount(description, /skill proficiencies/) ?? 2;
+      const choose = requireChooseCount(
+        feature,
+        description,
+        /skill proficiencies/,
+        'expertise',
+      );
       choices.push({
         id: 'expertise',
         category: 'expertise',

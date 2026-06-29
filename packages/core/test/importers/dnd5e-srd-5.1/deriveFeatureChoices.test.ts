@@ -10,7 +10,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { deriveFeatureChoices } from '../../../scripts/importers/dnd5e-srd-5.1/deriveFeatureChoices.js';
+import {
+  deriveFeatureChoices,
+  FeatureChoiceDerivationError,
+} from '../../../scripts/importers/dnd5e-srd-5.1/deriveFeatureChoices.js';
 import type { RulesPackLicense, RulesRecord } from '../../../src/internal.js';
 
 const LICENSE: RulesPackLicense = {
@@ -592,5 +595,85 @@ describe('deriveFeatureChoices — subclass-feature options (eshyra-o9bd.9.6)', 
       'You have a limited well of stamina.',
     );
     expect(featureChoices(out, 'feature:fighter:second-wind')).toEqual([]);
+  });
+});
+
+describe('deriveFeatureChoices — fail-closed count parsing (review fix)', () => {
+  function grantedFeature(
+    classKey: string,
+    featureKey: string,
+    name: string,
+    description: string,
+    level = 1,
+  ) {
+    return {
+      classRecords: [
+        classRec(classKey, classKey, { grants: [{ ref: featureKey, level }] }),
+      ],
+      subclassRecords: [] as RulesRecord[],
+      featureRecords: [
+        rec('feature', featureKey, name, {
+          source: classKey,
+          level,
+          description,
+        }),
+      ],
+    };
+  }
+
+  it('reads the indefinite article "a" as a count of 1 (not via a default)', () => {
+    const out = deriveFeatureChoices(
+      grantedFeature(
+        'class:ranger',
+        'feature:ranger:favored-enemy',
+        'Favored Enemy',
+        'Choose a type of favored enemy: aberrations, beasts, or undead. You have advantage…',
+      ),
+    );
+    const choice = featureChoices(out, 'feature:ranger:favored-enemy')[0];
+    expect(choice.choose).toBe(1);
+    expect(choice.from).toEqual(['aberrations', 'beasts', 'undead']);
+  });
+
+  it('throws (does not invent a count) when an option-list count is unparseable', () => {
+    expect(() =>
+      deriveFeatureChoices(
+        grantedFeature(
+          'class:fighter',
+          'feature:fighter:fighting-style',
+          'Fighting Style',
+          // No count word before the keyword — extraction-regression shape.
+          'You adopt a particular style of fighting as your specialty. Pick from the following options. Archery…',
+        ),
+      ),
+    ).toThrow(FeatureChoiceDerivationError);
+  });
+
+  it('throws when an enumerated option list parses empty', () => {
+    expect(() =>
+      deriveFeatureChoices(
+        grantedFeature(
+          'class:ranger',
+          'feature:ranger:natural-explorer',
+          'Natural Explorer',
+          // Count is present ("one") but the colon list is gone.
+          'Choose one type of favored terrain. When you make an Intelligence check…',
+        ),
+      ),
+    ).toThrow(/option list/);
+  });
+
+  it('throws when the Expertise count is unparseable', () => {
+    expect(() =>
+      deriveFeatureChoices(
+        grantedFeature(
+          'class:rogue',
+          'feature:rogue:expertise',
+          'Expertise',
+          // Triggers the expertise branch but carries no count word.
+          'At 1st level, choose some of your skill proficiencies. Your proficiency bonus is doubled…',
+        ),
+      ),
+    ).toThrow(FeatureChoiceDerivationError);
   });
 });
