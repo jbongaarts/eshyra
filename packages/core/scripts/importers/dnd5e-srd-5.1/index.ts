@@ -2253,6 +2253,60 @@ function validateFeatureCoverage(
 }
 
 /**
+ * Fail closed when any class starting-equipment grant references an equipment
+ * record the pack does not own (eshyra-ngcj.3). Every fixed `item` grant must
+ * resolve to a real `equipment:` key; an open `filter` grant references no
+ * concrete record and is skipped. Runs against the FINAL emitted records before
+ * any output is written, so a dangling ref refuses the pack rather than shipping
+ * an un-grantable starting-equipment entry.
+ */
+function validateStartingEquipmentGrantRefs(
+  records: readonly import('../../../src/rules/types.js').RulesRecord[],
+): void {
+  const equipmentKeys = new Set(
+    records.filter((r) => r.kind === 'equipment').map((r) => r.key),
+  );
+  const dangling: string[] = [];
+  for (const record of records) {
+    if (record.kind !== 'class') continue;
+    const data = record.data as { startingEquipment?: unknown };
+    const se = data.startingEquipment as
+      | { entries?: readonly unknown[] }
+      | undefined;
+    if (se?.entries === undefined) continue;
+    const grantBuckets: unknown[][] = [];
+    for (const entry of se.entries) {
+      const e = entry as {
+        kind?: string;
+        grants?: unknown[];
+        options?: { grants?: unknown[] }[];
+      };
+      if (e.kind === 'fixed' && Array.isArray(e.grants)) {
+        grantBuckets.push(e.grants);
+      } else if (e.kind === 'choice' && Array.isArray(e.options)) {
+        for (const option of e.options) {
+          if (Array.isArray(option.grants)) grantBuckets.push(option.grants);
+        }
+      }
+    }
+    for (const grants of grantBuckets) {
+      for (const grant of grants) {
+        const g = grant as { kind?: string; ref?: string };
+        if (g.kind !== 'item' || typeof g.ref !== 'string') continue;
+        if (!equipmentKeys.has(g.ref)) {
+          dangling.push(`${record.key} -> ${g.ref}`);
+        }
+      }
+    }
+  }
+  if (dangling.length > 0) {
+    throw new Error(
+      `SRD 5.1 starting-equipment grant check failed: ${dangling.length} grant(s) reference a missing equipment record: ${dangling.join('; ')}. Fix the grant resolution map or the equipment parser.`,
+    );
+  }
+}
+
+/**
  * Fail closed on ancestry under-extraction. Unlike the creature/class count
  * floors, the SRD 5.1 race/subrace name set is small and stable enough to
  * validate exactly. Runs after parsing and before any output is written.
@@ -3390,6 +3444,9 @@ export async function runImporter(
     sourceHash,
   });
   validateRecordTextCoverage(pack.records, input.expectedRecordTextSentinels);
+  // Every class starting-equipment fixed item grant must reference a real
+  // equipment record (eshyra-ngcj.3).
+  validateStartingEquipmentGrantRefs(pack.records);
   // Source-structure coverage gate (eshyra-4a7.1): every typography-derived
   // source structure must be an emitted record, structured child data,
   // intentionally ignored with a reason, or a tracked known gap. Evaluated

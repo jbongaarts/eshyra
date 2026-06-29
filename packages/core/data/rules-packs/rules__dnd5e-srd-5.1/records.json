@@ -1704,11 +1704,27 @@
             "options": [
               {
                 "label": "a",
-                "text": "a greataxe"
+                "text": "a greataxe",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:greataxe",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any martial melee weapon"
+                "text": "any martial melee weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "martial",
+                    "weaponRange": "melee"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a greataxe or (b) any martial melee weapon"
@@ -1718,11 +1734,26 @@
             "options": [
               {
                 "label": "a",
-                "text": "two handaxes"
+                "text": "two handaxes",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:handaxe",
+                    "quantity": 2
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple weapon"
+                "text": "any simple weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) two handaxes or (b) any simple weapon"
@@ -1730,7 +1761,19 @@
           {
             "kind": "fixed",
             "text": "An explorer’s pack and four javelins",
-            "sourceText": "An explorer’s pack and four javelins"
+            "sourceText": "An explorer’s pack and four javelins",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:explorers-pack",
+                "quantity": 1
+              },
+              {
+                "kind": "item",
+                "ref": "equipment:javelin",
+                "quantity": 4
+              }
+            ]
           }
         ]
       },
@@ -2259,15 +2302,37 @@
             "options": [
               {
                 "label": "a",
-                "text": "a rapier"
+                "text": "a rapier",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:rapier",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "a longsword"
+                "text": "a longsword",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:longsword",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "c",
-                "text": "any simple weapon"
+                "text": "any simple weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a rapier, (b) a longsword, or (c) any simple weapon"
@@ -2277,11 +2342,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a diplomat’s pack"
+                "text": "a diplomat’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:diplomats-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an entertainer’s pack"
+                "text": "an entertainer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:entertainers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a diplomat’s pack or (b) an entertainer’s pack"
@@ -2291,11 +2370,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a lute"
+                "text": "a lute",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:lute",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any other musical instrument"
+                "text": "any other musical instrument",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "musical-instrument",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a lute or (b) any other musical instrument"
@@ -2303,7 +2396,19 @@
           {
             "kind": "fixed",
             "text": "Leather armor and a dagger",
-            "sourceText": "Leather armor and a dagger"
+            "sourceText": "Leather armor and a dagger",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:leather",
+                "quantity": 1
+              },
+              {
+                "kind": "item",
+                "ref": "equipment:dagger",
+                "quantity": 1
+              }
+            ]
           }
         ]
       },
@@ -2901,11 +3006,26 @@
             "options": [
               {
                 "label": "a",
-                "text": "a mace"
+                "text": "a mace",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:mace",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "a warhammer (if proficient)"
+                "text": "a warhammer (if proficient)",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:warhammer",
+                    "quantity": 1,
+                    "condition": "if proficient"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a mace or (b) a warhammer (if proficient)"
@@ -2915,15 +3035,37 @@
             "options": [
               {
                 "label": "a",
-                "text": "scale mail"
+                "text": "scale mail",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:scale-mail",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "leather armor"
+                "text": "leather armor",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:leather",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "c",
-                "text": "chain mail (if proficient)"
+                "text": "chain mail (if proficient)",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:chain-mail",
+                    "quantity": 1,
+                    "condition": "if proficient"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) scale mail, (b) leather armor, or (c) chain mail (if proficient)"
@@ -2933,11 +3075,31 @@
             "options": [
               {
                 "label": "a",
-                "text": "a light crossbow and 20 bolts"
+                "text": "a light crossbow and 20 bolts",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-light",
+                    "quantity": 1
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-bolts-20",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple weapon"
+                "text": "any simple weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a light crossbow and 20 bolts or (b) any simple weapon"
@@ -2947,11 +3109,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a priest’s pack"
+                "text": "a priest’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:priests-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a priest’s pack or (b) an explorer’s pack"
@@ -2959,7 +3135,19 @@
           {
             "kind": "fixed",
             "text": "A shield and a holy symbol",
-            "sourceText": "A shield and a holy symbol"
+            "sourceText": "A shield and a holy symbol",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:shield",
+                "quantity": 1
+              },
+              {
+                "kind": "filter",
+                "select": "holy-symbol",
+                "quantity": 1
+              }
+            ]
           }
         ]
       },
@@ -3524,11 +3712,26 @@
             "options": [
               {
                 "label": "a",
-                "text": "a wooden shield"
+                "text": "a wooden shield",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shield",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple weapon"
+                "text": "any simple weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a wooden shield or (b) any simple weapon"
@@ -3538,11 +3741,27 @@
             "options": [
               {
                 "label": "a",
-                "text": "a scimitar"
+                "text": "a scimitar",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:scimitar",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple melee weapon"
+                "text": "any simple melee weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple",
+                    "weaponRange": "melee"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a scimitar or (b) any simple melee weapon"
@@ -3550,7 +3769,24 @@
           {
             "kind": "fixed",
             "text": "Leather armor, an explorer’s pack, and a druidic focus",
-            "sourceText": "Leather armor, an explorer’s pack, and a druidic focus"
+            "sourceText": "Leather armor, an explorer’s pack, and a druidic focus",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:leather",
+                "quantity": 1
+              },
+              {
+                "kind": "item",
+                "ref": "equipment:explorers-pack",
+                "quantity": 1
+              },
+              {
+                "kind": "filter",
+                "select": "druidic-focus",
+                "quantity": 1
+              }
+            ]
           }
         ]
       },
@@ -4087,11 +4323,35 @@
             "options": [
               {
                 "label": "a",
-                "text": "chain mail"
+                "text": "chain mail",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:chain-mail",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "leather armor, longbow, and 20 arrows"
+                "text": "leather armor, longbow, and 20 arrows",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:leather",
+                    "quantity": 1
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:longbow",
+                    "quantity": 1
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:arrows-20",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) chain mail or (b) leather armor, longbow, and 20 arrows"
@@ -4101,11 +4361,32 @@
             "options": [
               {
                 "label": "a",
-                "text": "a martial weapon and a shield"
+                "text": "a martial weapon and a shield",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "martial"
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shield",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "two martial weapons"
+                "text": "two martial weapons",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 2,
+                    "weaponCategory": "martial"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a martial weapon and a shield or (b) two martial weapons"
@@ -4115,11 +4396,30 @@
             "options": [
               {
                 "label": "a",
-                "text": "a light crossbow and 20 bolts"
+                "text": "a light crossbow and 20 bolts",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-light",
+                    "quantity": 1
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-bolts-20",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "two handaxes"
+                "text": "two handaxes",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:handaxe",
+                    "quantity": 2
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a light crossbow and 20 bolts or (b) two handaxes"
@@ -4129,11 +4429,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a dungeoneer’s pack"
+                "text": "a dungeoneer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:dungeoneers-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
@@ -4460,11 +4774,26 @@
             "options": [
               {
                 "label": "a",
-                "text": "a shortsword"
+                "text": "a shortsword",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shortsword",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple weapon"
+                "text": "any simple weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a shortsword or (b) any simple weapon"
@@ -4474,11 +4803,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a dungeoneer’s pack"
+                "text": "a dungeoneer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:dungeoneers-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
@@ -4486,7 +4829,14 @@
           {
             "kind": "fixed",
             "text": "10 darts",
-            "sourceText": "10 darts"
+            "sourceText": "10 darts",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:dart",
+                "quantity": 10
+              }
+            ]
           }
         ]
       },
@@ -5140,11 +5490,32 @@
             "options": [
               {
                 "label": "a",
-                "text": "a martial weapon and a shield"
+                "text": "a martial weapon and a shield",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "martial"
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shield",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "two martial weapons"
+                "text": "two martial weapons",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 2,
+                    "weaponCategory": "martial"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a martial weapon and a shield or (b) two martial weapons"
@@ -5154,11 +5525,27 @@
             "options": [
               {
                 "label": "a",
-                "text": "five javelins"
+                "text": "five javelins",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:javelin",
+                    "quantity": 5
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple melee weapon"
+                "text": "any simple melee weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple",
+                    "weaponRange": "melee"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) five javelins or (b) any simple melee weapon"
@@ -5168,11 +5555,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a priest’s pack"
+                "text": "a priest’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:priests-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a priest’s pack or (b) an explorer’s pack"
@@ -5180,7 +5581,19 @@
           {
             "kind": "fixed",
             "text": "Chain mail and a holy symbol",
-            "sourceText": "Chain mail and a holy symbol"
+            "sourceText": "Chain mail and a holy symbol",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:chain-mail",
+                "quantity": 1
+              },
+              {
+                "kind": "filter",
+                "select": "holy-symbol",
+                "quantity": 1
+              }
+            ]
           }
         ]
       },
@@ -5661,11 +6074,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "scale mail"
+                "text": "scale mail",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:scale-mail",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "leather armor"
+                "text": "leather armor",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:leather",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) scale mail or (b) leather armor"
@@ -5675,11 +6102,27 @@
             "options": [
               {
                 "label": "a",
-                "text": "two shortswords"
+                "text": "two shortswords",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shortsword",
+                    "quantity": 2
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "two simple melee weapons"
+                "text": "two simple melee weapons",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 2,
+                    "weaponCategory": "simple",
+                    "weaponRange": "melee"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) two shortswords or (b) two simple melee weapons"
@@ -5689,11 +6132,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a dungeoneer’s pack"
+                "text": "a dungeoneer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:dungeoneers-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
@@ -5701,7 +6158,19 @@
           {
             "kind": "fixed",
             "text": "A longbow and a quiver of 20 arrows",
-            "sourceText": "A longbow and a quiver of 20 arrows"
+            "sourceText": "A longbow and a quiver of 20 arrows",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:longbow",
+                "quantity": 1
+              },
+              {
+                "kind": "item",
+                "ref": "equipment:arrows-20",
+                "quantity": 1
+              }
+            ]
           }
         ]
       },
@@ -6220,11 +6689,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a rapier"
+                "text": "a rapier",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:rapier",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "a shortsword"
+                "text": "a shortsword",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shortsword",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a rapier or (b) a shortsword"
@@ -6234,11 +6717,30 @@
             "options": [
               {
                 "label": "a",
-                "text": "a shortbow and quiver of 20 arrows"
+                "text": "a shortbow and quiver of 20 arrows",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shortbow",
+                    "quantity": 1
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:arrows-20",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "a shortsword"
+                "text": "a shortsword",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:shortsword",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a shortbow and quiver of 20 arrows or (b) a shortsword"
@@ -6248,15 +6750,36 @@
             "options": [
               {
                 "label": "a",
-                "text": "a burglar’s pack"
+                "text": "a burglar’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:burglars-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "a dungeoneer’s pack"
+                "text": "a dungeoneer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:dungeoneers-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "c",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a burglar’s pack, (b) a dungeoneer’s pack, or (c) an explorer’s pack"
@@ -6264,7 +6787,24 @@
           {
             "kind": "fixed",
             "text": "Leather armor, two daggers, and thieves’ tools",
-            "sourceText": "(a) Leather armor, two daggers, and thieves’ tools"
+            "sourceText": "(a) Leather armor, two daggers, and thieves’ tools",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:leather",
+                "quantity": 1
+              },
+              {
+                "kind": "item",
+                "ref": "equipment:dagger",
+                "quantity": 2
+              },
+              {
+                "kind": "item",
+                "ref": "equipment:thieves-tools",
+                "quantity": 1
+              }
+            ]
           }
         ]
       },
@@ -6684,11 +7224,31 @@
             "options": [
               {
                 "label": "a",
-                "text": "a light crossbow and 20 bolts"
+                "text": "a light crossbow and 20 bolts",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-light",
+                    "quantity": 1
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-bolts-20",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple weapon"
+                "text": "any simple weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a light crossbow and 20 bolts or (b) any simple weapon"
@@ -6698,11 +7258,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a component pouch"
+                "text": "a component pouch",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:component-pouch",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an arcane focus"
+                "text": "an arcane focus",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "arcane-focus",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a component pouch or (b) an arcane focus"
@@ -6712,11 +7286,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a dungeoneer’s pack"
+                "text": "a dungeoneer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:dungeoneers-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a dungeoneer’s pack or (b) an explorer’s pack"
@@ -6724,7 +7312,14 @@
           {
             "kind": "fixed",
             "text": "Two daggers",
-            "sourceText": "Two daggers"
+            "sourceText": "Two daggers",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:dagger",
+                "quantity": 2
+              }
+            ]
           }
         ]
       },
@@ -7350,11 +7945,31 @@
             "options": [
               {
                 "label": "a",
-                "text": "a light crossbow and 20 bolts"
+                "text": "a light crossbow and 20 bolts",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-light",
+                    "quantity": 1
+                  },
+                  {
+                    "kind": "item",
+                    "ref": "equipment:crossbow-bolts-20",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "any simple weapon"
+                "text": "any simple weapon",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "weapon",
+                    "quantity": 1,
+                    "weaponCategory": "simple"
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a light crossbow and 20 bolts or (b) any simple weapon"
@@ -7364,11 +7979,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a component pouch"
+                "text": "a component pouch",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:component-pouch",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an arcane focus"
+                "text": "an arcane focus",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "arcane-focus",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a component pouch or (b) an arcane focus"
@@ -7378,11 +8007,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a scholar’s pack"
+                "text": "a scholar’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:scholars-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "a dungeoneer’s pack"
+                "text": "a dungeoneer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:dungeoneers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a scholar’s pack or (b) a dungeoneer’s pack"
@@ -7390,7 +8033,25 @@
           {
             "kind": "fixed",
             "text": "Leather armor, any simple weapon, and two daggers",
-            "sourceText": "Leather armor, any simple weapon, and two daggers"
+            "sourceText": "Leather armor, any simple weapon, and two daggers",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:leather",
+                "quantity": 1
+              },
+              {
+                "kind": "filter",
+                "select": "weapon",
+                "quantity": 1,
+                "weaponCategory": "simple"
+              },
+              {
+                "kind": "item",
+                "ref": "equipment:dagger",
+                "quantity": 2
+              }
+            ]
           }
         ]
       },
@@ -7887,11 +8548,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a quarterstaff"
+                "text": "a quarterstaff",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:quarterstaff",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "a dagger"
+                "text": "a dagger",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:dagger",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a quarterstaff or (b) a dagger"
@@ -7901,11 +8576,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a component pouch"
+                "text": "a component pouch",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:component-pouch",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an arcane focus"
+                "text": "an arcane focus",
+                "grants": [
+                  {
+                    "kind": "filter",
+                    "select": "arcane-focus",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a component pouch or (b) an arcane focus"
@@ -7915,11 +8604,25 @@
             "options": [
               {
                 "label": "a",
-                "text": "a scholar’s pack"
+                "text": "a scholar’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:scholars-pack",
+                    "quantity": 1
+                  }
+                ]
               },
               {
                 "label": "b",
-                "text": "an explorer’s pack"
+                "text": "an explorer’s pack",
+                "grants": [
+                  {
+                    "kind": "item",
+                    "ref": "equipment:explorers-pack",
+                    "quantity": 1
+                  }
+                ]
               }
             ],
             "sourceText": "(a) a scholar’s pack or (b) an explorer’s pack"
@@ -7927,7 +8630,14 @@
           {
             "kind": "fixed",
             "text": "A spellbook",
-            "sourceText": "A spellbook"
+            "sourceText": "A spellbook",
+            "grants": [
+              {
+                "kind": "item",
+                "ref": "equipment:spellbook",
+                "quantity": 1
+              }
+            ]
           }
         ]
       },

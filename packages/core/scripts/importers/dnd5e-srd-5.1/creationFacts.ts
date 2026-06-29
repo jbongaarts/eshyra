@@ -1,3 +1,7 @@
+import {
+  type StartingEquipmentGrant as ResolvedEquipmentGrant,
+  resolveStartingEquipmentGrants,
+} from '../../../src/character/srdStartingEquipmentGrants.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
 const ABILITY_SCORE_NAMES = [
@@ -44,6 +48,7 @@ interface ClassSpellcasting {
 interface StartingEquipmentOption {
   readonly label: string;
   readonly text: string;
+  readonly grants: readonly ResolvedEquipmentGrant[];
 }
 
 interface StartingEquipmentChoice {
@@ -56,6 +61,7 @@ interface StartingEquipmentGrant {
   readonly kind: 'fixed';
   readonly text: string;
   readonly sourceText: string;
+  readonly grants: readonly ResolvedEquipmentGrant[];
 }
 
 type StartingEquipmentEntry = StartingEquipmentChoice | StartingEquipmentGrant;
@@ -89,7 +95,11 @@ function choice(
 ): StartingEquipmentChoice {
   return {
     kind: 'choice',
-    options: options.map(([label, text]) => ({ label, text })),
+    options: options.map(([label, text]) => ({
+      label,
+      text,
+      grants: resolveStartingEquipmentGrants(text),
+    })),
     sourceText,
   };
 }
@@ -98,7 +108,12 @@ function fixed(
   text: string,
   sourceText: string = text,
 ): StartingEquipmentGrant {
-  return { kind: 'fixed', text, sourceText };
+  return {
+    kind: 'fixed',
+    text,
+    sourceText,
+    grants: resolveStartingEquipmentGrants(text),
+  };
 }
 
 const ANCESTRY_ABILITY_SCORE_INCREASES: Readonly<
@@ -594,15 +609,29 @@ function cloneClassSpellcasting(value: ClassSpellcasting): ClassSpellcasting {
   };
 }
 
+function cloneGrants(
+  grants: readonly ResolvedEquipmentGrant[],
+): readonly ResolvedEquipmentGrant[] {
+  return grants.map((grant) => ({ ...grant }));
+}
+
 function cloneStartingEquipmentEntry(
   entry: StartingEquipmentEntry,
 ): StartingEquipmentEntry {
   if (entry.kind === 'fixed') {
-    return { kind: 'fixed', text: entry.text, sourceText: entry.sourceText };
+    return {
+      kind: 'fixed',
+      text: entry.text,
+      sourceText: entry.sourceText,
+      grants: cloneGrants(entry.grants),
+    };
   }
   return {
     kind: 'choice',
-    options: entry.options.map((option) => ({ ...option })),
+    options: entry.options.map((option) => ({
+      ...option,
+      grants: cloneGrants(option.grants),
+    })),
     sourceText: entry.sourceText,
   };
 }

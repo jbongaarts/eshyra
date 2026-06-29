@@ -384,6 +384,17 @@ export {
   getBackgroundLanguages,
   SRD_STANDARD_LANGUAGES,
 } from './character/srdLanguages.js';
+export type {
+  StartingEquipmentFilterGrant,
+  StartingEquipmentFilterSelect,
+  StartingEquipmentGrant as ResolvedEquipmentGrant,
+  StartingEquipmentItemGrant,
+} from './character/srdStartingEquipmentGrants.js';
+export {
+  resolveStartingEquipmentGrants,
+  StartingEquipmentGrantError,
+  startingEquipmentGrantPhrases,
+} from './character/srdStartingEquipmentGrants.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {

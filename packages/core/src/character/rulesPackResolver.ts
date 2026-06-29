@@ -27,6 +27,21 @@ import { lookupRulesRecord, type RulesLookupResult } from '../rules/lookup.js';
 import { type ResolvedRulesStack, resolveRulesStack } from '../rules/stack.js';
 import type { RulesRecordKind } from '../rules/types.js';
 import type { AbilityScoreName } from './creation.js';
+import type {
+  StartingEquipmentGrant as ResolvedEquipmentGrant,
+  StartingEquipmentFilterSelect,
+} from './srdStartingEquipmentGrants.js';
+
+export type { ResolvedEquipmentGrant };
+
+const STARTING_EQUIPMENT_FILTER_SELECTS: ReadonlySet<string> =
+  new Set<StartingEquipmentFilterSelect>([
+    'weapon',
+    'arcane-focus',
+    'druidic-focus',
+    'holy-symbol',
+    'musical-instrument',
+  ]);
 
 /**
  * A source-backed choice from a generated record: the verbatim `text` plus the
@@ -54,6 +69,8 @@ export interface ResolvedStartingEquipment {
 export interface ResolvedStartingEquipmentOption {
   readonly label: string;
   readonly text: string;
+  /** Typed deterministic grants resolved from `text` (eshyra-ngcj.3). */
+  readonly grants: readonly ResolvedEquipmentGrant[];
 }
 
 export type ResolvedStartingEquipmentEntry =
@@ -66,6 +83,8 @@ export type ResolvedStartingEquipmentEntry =
       readonly kind: 'fixed';
       readonly text: string;
       readonly sourceText: string;
+      /** Typed deterministic grants resolved from `text` (eshyra-ngcj.3). */
+      readonly grants: readonly ResolvedEquipmentGrant[];
     };
 
 export interface ResolvedAbilityScoreIncrease {
@@ -541,6 +560,44 @@ function parseStartingEquipmentEntries(
   return entries;
 }
 
+function parseStartingEquipmentGrants(
+  value: unknown,
+): readonly ResolvedEquipmentGrant[] {
+  if (!Array.isArray(value)) return [];
+  const grants: ResolvedEquipmentGrant[] = [];
+  for (const entry of value) {
+    if (!isRecord(entry) || typeof entry.quantity !== 'number') continue;
+    if (entry.kind === 'item' && typeof entry.ref === 'string') {
+      grants.push({
+        kind: 'item',
+        ref: entry.ref,
+        quantity: entry.quantity,
+        ...(typeof entry.condition === 'string'
+          ? { condition: entry.condition }
+          : {}),
+      });
+    } else if (
+      entry.kind === 'filter' &&
+      typeof entry.select === 'string' &&
+      STARTING_EQUIPMENT_FILTER_SELECTS.has(entry.select)
+    ) {
+      grants.push({
+        kind: 'filter',
+        select: entry.select as StartingEquipmentFilterSelect,
+        quantity: entry.quantity,
+        ...(entry.weaponCategory === 'simple' ||
+        entry.weaponCategory === 'martial'
+          ? { weaponCategory: entry.weaponCategory }
+          : {}),
+        ...(entry.weaponRange === 'melee' || entry.weaponRange === 'ranged'
+          ? { weaponRange: entry.weaponRange }
+          : {}),
+      });
+    }
+  }
+  return grants;
+}
+
 function parseStartingEquipmentEntry(
   value: unknown,
 ): ResolvedStartingEquipmentEntry | undefined {
@@ -548,7 +605,12 @@ function parseStartingEquipmentEntry(
     return undefined;
   }
   if (value.kind === 'fixed' && typeof value.text === 'string') {
-    return { kind: 'fixed', text: value.text, sourceText: value.sourceText };
+    return {
+      kind: 'fixed',
+      text: value.text,
+      sourceText: value.sourceText,
+      grants: parseStartingEquipmentGrants(value.grants),
+    };
   }
   if (value.kind !== 'choice' || !Array.isArray(value.options)) {
     return undefined;
@@ -560,7 +622,11 @@ function parseStartingEquipmentEntry(
       typeof option.label === 'string' &&
       typeof option.text === 'string'
     ) {
-      options.push({ label: option.label, text: option.text });
+      options.push({
+        label: option.label,
+        text: option.text,
+        grants: parseStartingEquipmentGrants(option.grants),
+      });
     }
   }
   return options.length > 0

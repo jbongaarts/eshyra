@@ -275,6 +275,70 @@ function optFeatureChoiceArray(parent: Obj, key: string, path: string): void {
 
 // Optional starting-equipment block on a class: verbatim `text` plus optional
 // per-line `entries` (the bulleted options).
+const STARTING_EQUIPMENT_FILTER_SELECTS: ReadonlySet<string> = new Set([
+  'weapon',
+  'arcane-focus',
+  'druidic-focus',
+  'holy-symbol',
+  'musical-instrument',
+]);
+const WEAPON_CATEGORIES: ReadonlySet<string> = new Set(['simple', 'martial']);
+const WEAPON_RANGES: ReadonlySet<string> = new Set(['melee', 'ranged']);
+
+/**
+ * Validate the typed starting-equipment grants (eshyra-ngcj.3): each entry is a
+ * fixed `item` grant (equipment ref + positive quantity, optional condition) or
+ * an open `filter` grant (a closed `select` vocabulary + positive quantity,
+ * with weapon category/range only on weapon filters). Required and non-empty.
+ */
+function reqStartingEquipmentGrants(parent: Obj, path: string): void {
+  const grants = objArray(parent, 'grants', path);
+  if (grants === undefined || grants.length === 0) {
+    throw new RulesPackError(`${path}.grants must be a non-empty array`);
+  }
+  grants.forEach((grant, i) => {
+    const gpath = `${path}.grants[${i}]`;
+    const kind = grant.kind;
+    if (kind === 'item') {
+      reqStr(grant, 'ref', gpath);
+      reqInt(grant, 'quantity', gpath, 1);
+      optStr(grant, 'condition', gpath);
+      return;
+    }
+    if (kind === 'filter') {
+      const select = reqStr(grant, 'select', gpath);
+      if (!STARTING_EQUIPMENT_FILTER_SELECTS.has(select)) {
+        throw new RulesPackError(
+          `${gpath}.select must be one of ${[...STARTING_EQUIPMENT_FILTER_SELECTS].join(', ')}`,
+        );
+      }
+      reqInt(grant, 'quantity', gpath, 1);
+      if (grant.weaponCategory !== undefined) {
+        if (
+          select !== 'weapon' ||
+          !WEAPON_CATEGORIES.has(grant.weaponCategory as string)
+        ) {
+          throw new RulesPackError(
+            `${gpath}.weaponCategory must be simple|martial on a weapon filter`,
+          );
+        }
+      }
+      if (grant.weaponRange !== undefined) {
+        if (
+          select !== 'weapon' ||
+          !WEAPON_RANGES.has(grant.weaponRange as string)
+        ) {
+          throw new RulesPackError(
+            `${gpath}.weaponRange must be melee|ranged on a weapon filter`,
+          );
+        }
+      }
+      return;
+    }
+    throw new RulesPackError(`${gpath}.kind must be "item" or "filter"`);
+  });
+}
+
 function optStartingEquipment(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -310,22 +374,17 @@ function optStartingEquipment(parent: Obj, key: string, path: string): void {
         );
       }
       options.forEach((option, optionIndex) => {
-        reqStr(
-          option,
-          'label',
-          `${path}.${key}.entries[${i}].options[${optionIndex}]`,
-        );
-        reqStr(
-          option,
-          'text',
-          `${path}.${key}.entries[${i}].options[${optionIndex}]`,
-        );
+        const optionPath = `${path}.${key}.entries[${i}].options[${optionIndex}]`;
+        reqStr(option, 'label', optionPath);
+        reqStr(option, 'text', optionPath);
+        reqStartingEquipmentGrants(option, optionPath);
       });
       return;
     }
     if (kind === 'fixed') {
       reqStr(entry, 'text', `${path}.${key}.entries[${i}]`);
       reqStr(entry, 'sourceText', `${path}.${key}.entries[${i}]`);
+      reqStartingEquipmentGrants(entry, `${path}.${key}.entries[${i}]`);
       return;
     }
     throw new RulesPackError(

@@ -7,12 +7,21 @@
  * prose. Runtime code must not source starting equipment from this file.
  */
 
+import {
+  type StartingEquipmentGrant as ResolvedEquipmentGrant,
+  resolveStartingEquipmentGrants,
+} from './srdStartingEquipmentGrants.js';
+
+export type { ResolvedEquipmentGrant };
+
 /** One labelled option within a choose-one starting-equipment group. */
 export interface StartingEquipmentOption {
   /** The SRD's `(a)`/`(b)`/`(c)` marker, without parentheses. */
   readonly label: string;
   /** The option's items, verbatim from the SRD with the marker stripped. */
   readonly text: string;
+  /** Typed deterministic grants resolved from `text` (eshyra-ngcj.3). */
+  readonly grants: readonly ResolvedEquipmentGrant[];
 }
 
 /** A "choose one of …" starting-equipment group. */
@@ -31,6 +40,8 @@ export interface StartingEquipmentGrant {
   readonly text: string;
   /** Verbatim pack entry line this grant was authored from. */
   readonly sourceText: string;
+  /** Typed deterministic grants resolved from `text` (eshyra-ngcj.3). */
+  readonly grants: readonly ResolvedEquipmentGrant[];
 }
 
 /** One starting-equipment entry: a choose-one group or a fixed grant. */
@@ -51,7 +62,11 @@ function choice(
 ): StartingEquipmentChoice {
   return {
     kind: 'choice',
-    options: options.map(([label, text]) => ({ label, text })),
+    options: options.map(([label, text]) => ({
+      label,
+      text,
+      grants: resolveStartingEquipmentGrants(text),
+    })),
     sourceText,
   };
 }
@@ -61,7 +76,12 @@ function fixed(
   text: string,
   sourceText: string = text,
 ): StartingEquipmentGrant {
-  return { kind: 'fixed', text, sourceText };
+  return {
+    kind: 'fixed',
+    text,
+    sourceText,
+    grants: resolveStartingEquipmentGrants(text),
+  };
 }
 
 /**
