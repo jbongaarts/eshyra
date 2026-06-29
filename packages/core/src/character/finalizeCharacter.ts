@@ -14,7 +14,7 @@
  *     bonus, max HP, and spell save DC / attack (eshyra-b69j.6/.12.1/.12.2);
  *   - the level-1 mechanical choices — skills, tools, equipment, languages —
  *     selected through the engine (eshyra-b69j.13), merged with the fixed grants
- *     the source-cited overlays supply (equipment fixed grants, fixed ancestry +
+ *     generated pack metadata supplies (equipment fixed grants, fixed ancestry +
  *     background languages);
  *   - chosen spells.
  *
@@ -38,13 +38,9 @@ import {
   getBundledDnd5eCharacterResolver,
   type ResolvedBackgroundData,
   type ResolvedClassData,
+  type ResolvedLanguageGrant,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
-import { getClassStartingEquipment } from './srdClassStartingEquipment.js';
-import {
-  getAncestryLanguages,
-  getBackgroundLanguages,
-} from './srdLanguages.js';
 
 /** D&D 5e coin denominations carried by a character, not inventory rows. */
 export interface CharacterWallet {
@@ -271,8 +267,8 @@ function buildFinalizedCharacter(
     languages: collectLanguages(
       draft,
       engine,
-      ancestryRef.key,
-      backgroundRef?.key,
+      ancestryRecord.languages,
+      backgroundRecord?.languages,
     ),
     spells: [...(selections.spells ?? [])],
     metadata,
@@ -309,18 +305,17 @@ function collectEquipment(
       .map((entry) => [entry.choice.id, entry.selected] as const),
   );
   const equipment: string[] = [];
-  const overlay = getClassStartingEquipment(classRecord.key);
-  if (overlay === undefined) {
-    equipment.push(...[...chosenById.values()].flat());
-  } else {
-    overlay.entries.forEach((entry, index) => {
-      if (entry.kind === 'fixed') {
-        equipment.push(entry.text);
-        return;
-      }
+  (classRecord.startingEquipment?.entries ?? []).forEach((entry, index) => {
+    if (typeof entry === 'string') {
       equipment.push(...(chosenById.get(`class.equipment.${index}`) ?? []));
-    });
-  }
+      return;
+    }
+    if (entry.kind === 'fixed') {
+      equipment.push(entry.text);
+      return;
+    }
+    equipment.push(...(chosenById.get(`class.equipment.${index}`) ?? []));
+  });
   if (backgroundRecord?.equipment !== undefined) {
     equipment.push(backgroundRecord.equipment);
   }
@@ -336,17 +331,15 @@ function dedupe(values: readonly string[]): readonly string[] {
 function collectLanguages(
   draft: CharacterDraft,
   engine: CharacterCreationEngine,
-  ancestryKey: string,
-  backgroundKey: string | undefined,
+  ancestryLanguages: readonly ResolvedLanguageGrant[] | undefined,
+  backgroundLanguages: string | readonly ResolvedLanguageGrant[] | undefined,
 ): readonly string[] {
   const languages = new Set<string>();
-  for (const language of getAncestryLanguages(ancestryKey)?.fixed ?? []) {
+  for (const language of fixedLanguages(ancestryLanguages)) {
     languages.add(language);
   }
-  if (backgroundKey !== undefined) {
-    for (const language of getBackgroundLanguages(backgroundKey)?.fixed ?? []) {
-      languages.add(language);
-    }
+  for (const language of fixedLanguages(backgroundLanguages)) {
+    languages.add(language);
   }
   for (const entry of engine.mechanicalChoices(draft)) {
     if (entry.choice.kind === 'languages') {
@@ -356,6 +349,12 @@ function collectLanguages(
     }
   }
   return [...languages];
+}
+
+function fixedLanguages(
+  value: string | readonly ResolvedLanguageGrant[] | undefined,
+): readonly string[] {
+  return Array.isArray(value) ? value.flatMap((grant) => grant.fixed) : [];
 }
 
 /** The canonical key+name reference for a resolved record. */

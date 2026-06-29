@@ -54,13 +54,9 @@ import {
   getBundledDnd5eCharacterResolver,
   type ResolvedAncestryData,
   type ResolvedBackgroundData,
+  type ResolvedClassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
-import {
-  type AbilityScoreIncrease,
-  getAncestryAbilityScoreIncrease,
-} from './srdAncestryAbilityScoreIncreases.js';
-import { level1SpellcastingAbility } from './srdClassSpellcasting.js';
 
 /** Severity of an incremental draft diagnostic. */
 export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
@@ -280,23 +276,37 @@ function isValidBaseScore(
 
 /**
  * The ancestry ability-score increases to feed derived-value computation for a
- * resolved ancestry: the fixed bonuses from the source-cited overlay
- * (eshyra-b69j.12.1), keyed by the ancestry's frozen record key. The Half-Elf's
- * "two of your choice +1" increases are a player choice the wizard collects
- * (eshyra-b69j.8/.9); once threaded into selections they are appended here.
- * Returns an empty list for an unmodeled ancestry, so derived scores fall back
- * to the base scores rather than erroring.
+ * resolved ancestry: the fixed bonuses from generated pack metadata. The
+ * Half-Elf's "two of your choice +1" increases are a player choice the wizard
+ * collects; once threaded into selections they are appended here. Returns an
+ * empty list for an unmodeled ancestry, so derived scores fall back to the base
+ * scores rather than erroring.
  */
 function ancestryAbilityScoreIncreases(
   ancestry: ResolvedAncestryData | undefined,
-): readonly AbilityScoreIncrease[] {
-  if (ancestry === undefined) {
-    return [];
+): NonNullable<
+  Parameters<typeof deriveLevel1Values>[0]['abilityScoreIncreases']
+> {
+  return ancestry?.abilityScoreIncreases?.flatMap((entry) => entry.fixed) ?? [];
+}
+
+function castsAtLevel1(classRecord: ResolvedClassData | undefined): boolean {
+  const spellcasting = classRecord?.level1?.spellcasting;
+  if (spellcasting === undefined) {
+    return false;
   }
-  if (ancestry.abilityScoreIncreases !== undefined) {
-    return ancestry.abilityScoreIncreases.flatMap((entry) => entry.fixed);
-  }
-  return getAncestryAbilityScoreIncrease(ancestry.key)?.fixed ?? [];
+  return (
+    spellcasting.cantripsKnown !== undefined ||
+    spellcasting.spellsKnown !== undefined ||
+    spellcasting.slots !== undefined ||
+    spellcasting.pactSlots !== undefined
+  );
+}
+
+function level1SpellcastingAbility(classRecord: ResolvedClassData | undefined) {
+  return castsAtLevel1(classRecord)
+    ? classRecord?.spellcastingAbility
+    : undefined;
 }
 
 const REQUIRED_CHOICE_LABELS: Readonly<Record<string, string>> = {

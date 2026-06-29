@@ -46,13 +46,13 @@ import {
 import type { CharacterSheet } from './finalizeCharacter.js';
 import {
   getBundledDnd5eCharacterResolver,
+  type ResolvedClassData,
   type ResolvedFeatureImprovement,
   type ResolvedLevelSpellcasting,
   type ResolvedSubclassData,
   type ResolvedSubclassFeatureSlot,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
-import { getClassSpellcasting } from './srdClassSpellcasting.js';
 
 /** A before/after pair for a single scalar value changed by a level-up. */
 export interface LevelUpDelta<T> {
@@ -438,7 +438,12 @@ export function computeLevelUpChangeSet(
       },
     },
     featuresGained: [...row.featureRefs, ...existingSubclassFeatureRefs],
-    ...spellcastingChanges(sheet, classKey, row, row.proficiencyBonus),
+    ...spellcastingChanges(
+      sheet,
+      classResult.record,
+      row,
+      row.proficiencyBonus,
+    ),
   };
   return changeSet;
 }
@@ -479,6 +484,12 @@ export function detectLevelUpRequiredChoices(
   const toRow = toRowResult.record;
   const fromRowResult = resolver.resolveClassLevel(classKey, sheet.level);
   const fromRow = fromRowResult.ok ? fromRowResult.record : undefined;
+  const classResult = resolver.resolveClass(classKey);
+  if (!classResult.ok) {
+    throw new LevelUpEngineError(
+      `cannot resolve class '${classKey}' for level-up: ${classResult.message}`,
+    );
+  }
 
   const choices: LevelUpRequiredChoice[] = [];
 
@@ -504,7 +515,7 @@ export function detectLevelUpRequiredChoices(
 
   choices.push(
     ...spellSelectionChoices(
-      classKey,
+      classResult.record,
       fromRow?.spellcasting,
       toRow.spellcasting,
       toLevel,
@@ -626,13 +637,15 @@ function levelUpChoiceLabel(kind: LevelUpRequiredChoiceKind): string {
  * new learnable/preparable spells.
  */
 function spellSelectionChoices(
-  classKey: string,
+  classRecord: ResolvedClassData,
   fromSpellcasting: ResolvedLevelSpellcasting | undefined,
   toSpellcasting: ResolvedLevelSpellcasting | undefined,
   toLevel: number,
 ): readonly LevelUpRequiredChoice[] {
-  const spellcasting = getClassSpellcasting(classKey);
-  if (spellcasting === undefined || toSpellcasting === undefined) {
+  if (
+    classRecord.spellcastingAbility === undefined ||
+    toSpellcasting === undefined
+  ) {
     return [];
   }
   const reasons: string[] = [];
@@ -649,10 +662,10 @@ function spellSelectionChoices(
   if (gainsNewSpellLevel(fromSpellcasting?.slots, toSpellcasting.slots)) {
     reasons.push('a new spell level becomes available');
   }
-  // The Wizard adds spells to its spellbook every level (the overlay marks the
-  // class by its starting-spellbook size); that is a per-level learning choice
-  // even when the cantrip/known counts are unchanged.
-  if (spellcasting.spellbookStartingSpells !== undefined) {
+  // The Wizard adds spells to its spellbook every level; generated
+  // spellPreparation marks that with a starting-spellbook size. This remains a
+  // per-level learning choice even when cantrip/known counts are unchanged.
+  if (classRecord.spellPreparation?.spellbookStartingSpells !== undefined) {
     reasons.push('spells are added to the spellbook');
   }
   if (reasons.length === 0) {
@@ -841,7 +854,7 @@ function hitPointIncrement(
  */
 function spellcastingChanges(
   sheet: CharacterSheet,
-  classKey: string,
+  classRecord: ResolvedClassData,
   row: { readonly spellcasting?: ResolvedLevelSpellcasting },
   newProficiencyBonus: number,
 ): Pick<
@@ -851,7 +864,7 @@ function spellcastingChanges(
   if (row.spellcasting === undefined) {
     return {};
   }
-  const ability = getClassSpellcasting(classKey)?.ability;
+  const ability = classRecord.spellcastingAbility;
   if (ability === undefined) {
     // Capacity exists in the row but the class has no modeled ability: report
     // the slots/known counts, but do not invent a DC.

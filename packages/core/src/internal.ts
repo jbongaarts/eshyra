@@ -351,19 +351,14 @@ export {
   createRulesPackCharacterResolver,
   getBundledDnd5eCharacterResolver,
 } from './character/rulesPackResolver.js';
-// Source-cited ancestry ability-score-increase overlay (eshyra-b69j.12.1): a
-// deterministic, consumer-side metadata layer keyed to the frozen ancestry
-// record keys, supplying the increases the frozen pack carries only as prose.
+// Source-cited character-creation oracles (eshyra-o9bd.15): retained for tests
+// and audit parity only. Runtime code reads generated pack metadata instead.
 export type {
   AbilityScoreIncrease,
   AbilityScoreIncreaseChoice,
   AncestryAbilityScoreIncrease,
 } from './character/srdAncestryAbilityScoreIncreases.js';
 export { getAncestryAbilityScoreIncrease } from './character/srdAncestryAbilityScoreIncreases.js';
-// Source-cited per-class spellcasting overlay (eshyra-b69j.12.2): a
-// deterministic, consumer-side layer keyed to the frozen class record keys,
-// supplying the spellcasting ability and prepared-count formulas the frozen pack
-// carries only as (truncated) prose.
 export type {
   ClassSpellcasting,
   SpellPreparation,
@@ -374,10 +369,6 @@ export {
   level1PreparedSpellCount,
   level1SpellcastingAbility,
 } from './character/srdClassSpellcasting.js';
-// Source-cited class starting-equipment overlay (eshyra-b69j.12.3): a
-// deterministic, consumer-side layer keyed to the frozen class record keys,
-// structuring each class's starting equipment into choose-one groups and fixed
-// grants the frozen pack carries only as prose.
 export type {
   ClassStartingEquipment,
   StartingEquipmentChoice,
@@ -386,10 +377,6 @@ export type {
   StartingEquipmentOption,
 } from './character/srdClassStartingEquipment.js';
 export { getClassStartingEquipment } from './character/srdClassStartingEquipment.js';
-// Source-cited language overlay (eshyra-b69j.12.4): a deterministic,
-// consumer-side layer keyed to the frozen ancestry/background record keys,
-// supplying the fixed granted languages and free-choice counts the frozen pack
-// carries only as prose.
 export type { LanguageGrant } from './character/srdLanguages.js';
 export {
   chooseableLanguages,

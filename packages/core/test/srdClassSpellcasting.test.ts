@@ -8,9 +8,9 @@ import {
 } from '../src/internal.js';
 
 /**
- * The overlay (eshyra-b69j.12.2) supplies the per-class spellcasting ability and
- * the prepared-spell formulas the frozen pack carries only as (truncated) prose.
- * These tests pin it to the frozen class records and to the SRD facts it cites.
+ * Source-cited spellcasting constants are retained as regression oracles.
+ * Runtime creation/level-up reads generated pack fields; these tests assert
+ * that the generated fields still match the SRD-derived oracle values.
  */
 
 const resolver = getBundledDnd5eCharacterResolver();
@@ -23,7 +23,34 @@ function classRecord(name: string) {
   return result.record;
 }
 
-describe('per-class spellcasting overlay', () => {
+describe('per-class spellcasting oracle', () => {
+  it('matches generated pack spellcasting fields for every modeled caster', () => {
+    for (const name of [
+      'Bard',
+      'Cleric',
+      'Druid',
+      'Paladin',
+      'Ranger',
+      'Sorcerer',
+      'Warlock',
+      'Wizard',
+    ]) {
+      const record = classRecord(name);
+      const oracle = getClassSpellcasting(record.key);
+      if (oracle === undefined) {
+        throw new Error(`missing oracle for ${record.key}`);
+      }
+      expect(record.spellcastingAbility).toBe(oracle.ability);
+      expect(record.spellPreparation).toEqual({
+        kind: oracle.preparation,
+        ...(oracle.spellbookStartingSpells !== undefined
+          ? { spellbookStartingSpells: oracle.spellbookStartingSpells }
+          : {}),
+        sourceText: oracle.sourceText,
+      });
+    }
+  });
+
   it('maps each caster to its SRD spellcasting ability', () => {
     expect(getClassSpellcasting('class:wizard')?.ability).toBe('intelligence');
     expect(getClassSpellcasting('class:cleric')?.ability).toBe('wisdom');

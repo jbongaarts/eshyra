@@ -45,11 +45,6 @@ import {
   type ResolvedClassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
-import {
-  type AbilityScoreIncrease,
-  getAncestryAbilityScoreIncrease,
-} from './srdAncestryAbilityScoreIncreases.js';
-import { level1SpellcastingAbility } from './srdClassSpellcasting.js';
 
 /** Canonical D&D 5e SRD creation modes (design: character-creation-cli.md). */
 export type Dnd5eCreationMode = 'concept-first' | 'ability-first';
@@ -130,14 +125,29 @@ function resolveAncestryRecord(
 
 function ancestryAbilityScoreIncreases(
   ancestry: ResolvedAncestryData | undefined,
-): readonly AbilityScoreIncrease[] {
-  if (ancestry === undefined) {
-    return [];
+): NonNullable<
+  Parameters<typeof deriveLevel1Values>[0]['abilityScoreIncreases']
+> {
+  return ancestry?.abilityScoreIncreases?.flatMap((entry) => entry.fixed) ?? [];
+}
+
+function castsAtLevel1(classRecord: ResolvedClassData | undefined): boolean {
+  const spellcasting = classRecord?.level1?.spellcasting;
+  if (spellcasting === undefined) {
+    return false;
   }
-  if (ancestry.abilityScoreIncreases !== undefined) {
-    return ancestry.abilityScoreIncreases.flatMap((entry) => entry.fixed);
-  }
-  return getAncestryAbilityScoreIncrease(ancestry.key)?.fixed ?? [];
+  return (
+    spellcasting.cantripsKnown !== undefined ||
+    spellcasting.spellsKnown !== undefined ||
+    spellcasting.slots !== undefined ||
+    spellcasting.pactSlots !== undefined
+  );
+}
+
+function level1SpellcastingAbility(classRecord: ResolvedClassData | undefined) {
+  return castsAtLevel1(classRecord)
+    ? classRecord?.spellcastingAbility
+    : undefined;
 }
 
 function completionPrompt(character: CreatedCharacter): string {

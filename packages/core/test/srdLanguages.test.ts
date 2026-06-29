@@ -3,20 +3,20 @@ import {
   chooseableLanguages,
   getAncestryLanguages,
   getBackgroundLanguages,
+  getBundledDnd5eCharacterResolver,
   getBundledDnd5eSrdPack,
   resolveRulesStack,
   SRD_STANDARD_LANGUAGES,
 } from '../src/internal.js';
 
 /**
- * The overlay (eshyra-b69j.12.4) supplies language grants the frozen pack carries
- * only as prose. These tests pin it to the frozen records: each ancestry
- * overlay's `sourceText` must be a faithful prefix of the pack's "Languages"
- * trait text, and each background overlay's `sourceText` must equal the pack's
- * `data.languages` verbatim — so the overlay can never silently drift.
+ * Source-cited language constants are retained as regression oracles. Runtime
+ * creation reads generated pack fields; these tests assert that generated
+ * language grants still match the SRD-derived oracle values and source prose.
  */
 
 const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
+const resolver = getBundledDnd5eCharacterResolver();
 
 interface AncestryTrait {
   readonly name: string;
@@ -40,21 +40,26 @@ function ancestryLanguageTraits(): { key: string; text: string }[] {
   return out;
 }
 
-describe('language overlay', () => {
-  it('covers every frozen ancestry with source-faithful prose', () => {
+describe('language oracle', () => {
+  it('matches every frozen ancestry generated pack field', () => {
     const traits = ancestryLanguageTraits();
     expect(traits.length).toBeGreaterThan(0);
     for (const { key, text } of traits) {
-      const overlay = getAncestryLanguages(key);
-      if (overlay === undefined) {
-        throw new Error(`missing language overlay for ${key}`);
+      const oracle = getAncestryLanguages(key);
+      if (oracle === undefined) {
+        throw new Error(`missing language oracle for ${key}`);
       }
+      const actual = resolver.resolveAncestry(key);
+      if (!actual.ok) {
+        throw new Error(`ancestry ${key} did not resolve`);
+      }
+      expect(actual.record.languages).toEqual([oracle]);
       // The cited sentence is a verbatim prefix of the pack trait text.
       expect(
-        text.startsWith(overlay.sourceText),
-        `overlay sourceText for ${key} is not a faithful prefix`,
+        text.startsWith(oracle.sourceText),
+        `oracle sourceText for ${key} is not a faithful prefix`,
       ).toBe(true);
-      expect(overlay.fixed).toContain('Common');
+      expect(oracle.fixed).toContain('Common');
     }
   });
 
@@ -94,12 +99,11 @@ describe('language overlay', () => {
       choose: 2,
       sourceText: 'Two of your choice',
     });
-    const data = stack.recordsByKind
-      .get('background')
-      ?.byKey.get('background:acolyte')?.record.data as {
-      languages?: readonly { readonly sourceText: string }[];
-    };
-    expect(acolyte?.sourceText).toBe(data.languages?.[0]?.sourceText);
+    const actual = resolver.resolveBackground('background:acolyte');
+    if (!actual.ok) {
+      throw new Error('acolyte background did not resolve');
+    }
+    expect(actual.record.languages).toEqual([acolyte]);
   });
 
   it('chooseableLanguages excludes already-granted languages', () => {

@@ -1,28 +1,11 @@
 /**
- * Source-backed language overlay for ancestries and backgrounds
+ * Source-backed language oracle for ancestries and backgrounds
  * (eshyra-b69j.12.4).
  *
- * In the frozen generated pack (`rules:dnd5e-srd-5.1`) language grants live only
- * as prose: an ancestry's "Languages" trait (e.g. ancestry:elf — "You can
- * speak, read, and write Common and Elvish.") and a background's free-text
- * `data.languages` (e.g. background:acolyte — "Two of your choice"). The CLI
- * must not parse that prose to discover a core mechanical choice
- * (`docs/design/character-creation-cli.md`), so the guided flow cannot enumerate
- * granted vs chosen languages from the pack alone.
- *
- * The pack is a frozen, hash-pinned, signed-off artifact
- * (`docs/audits/dnd5e-srd-5.1-final/`; guard via
- * `npm run verify:dnd5e-srd-freeze`), so the gap is NOT filled by re-running the
- * importer or regenerating the pack — that would require a thaw + re-audit.
- * Instead this module is the sanctioned deterministic, consumer-side metadata
- * overlay described in
- * `docs/design/character-creation-level1-metadata-inventory.md` and the same
- * pattern as the ancestry/spellcasting/equipment overlays: authored, SRD-cited
- * tables keyed by the frozen `ancestry:*` / `background:*` record keys. It
- * mutates nothing in the pack; it is ordinary character-creation code (not
- * importer-fix-protocol work). Each entry's `sourceText` is the verbatim SRD
- * language sentence it was authored from — for an ancestry, a prefix of the
- * pack's "Languages" trait text; for a background, the exact `data.languages`.
+ * Character creation now reads generated pack metadata. These authored,
+ * SRD-cited constants remain only as regression oracles so tests can assert that
+ * importer-generated language grants stay faithful to the source prose. Runtime
+ * code must not source language grants from this file.
  */
 
 /**

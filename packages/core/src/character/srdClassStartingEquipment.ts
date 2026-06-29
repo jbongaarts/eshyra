@@ -1,28 +1,10 @@
 /**
- * Source-backed class starting-equipment overlay (eshyra-b69j.12.3).
+ * Source-backed class starting-equipment oracle (eshyra-b69j.12.3).
  *
- * In the frozen generated pack (`rules:dnd5e-srd-5.1`) a class's starting
- * equipment lives only as prose lines on `class.data.startingEquipment.entries`,
- * e.g. Fighter's `"(a) chain mail or (b) leather armor, longbow, and 20 arrows"`
- * and fixed grants like Wizard's `"A spellbook"` mixed into the same list. The
- * CLI must not parse that prose to discover a core mechanical choice
- * (`docs/design/character-creation-cli.md`), so the guided equipment flow
- * (eshyra-b69j.13) cannot present deterministic choose-one groups from the pack
- * alone.
- *
- * The pack is a frozen, hash-pinned, signed-off artifact
- * (`docs/audits/dnd5e-srd-5.1-final/`; guard via
- * `npm run verify:dnd5e-srd-freeze`), so the gap is NOT filled by re-running the
- * importer or regenerating the pack — that would require a thaw + re-audit.
- * Instead this module is the sanctioned deterministic, consumer-side metadata
- * overlay described in
- * `docs/design/character-creation-level1-metadata-inventory.md` and the same
- * pattern as the ancestry/spellcasting overlays
- * (`srdAncestryAbilityScoreIncreases.ts`, `srdClassSpellcasting.ts`): an
- * authored, SRD-cited table keyed by the frozen `class:*` record keys. It
- * mutates nothing in the pack; it is ordinary character-creation code (not
- * importer-fix-protocol work). Every entry's `sourceText` is the verbatim pack
- * entry line it was authored from, kept for provenance and faithfulness.
+ * Character creation now reads generated pack metadata. These authored,
+ * SRD-cited constants remain only as regression oracles so tests can assert that
+ * importer-generated `startingEquipment.entries` stay faithful to the source
+ * prose. Runtime code must not source starting equipment from this file.
  */
 
 /** One labelled option within a choose-one starting-equipment group. */
@@ -56,7 +38,7 @@ export type StartingEquipmentEntry =
   | StartingEquipmentChoice
   | StartingEquipmentGrant;
 
-/** The structured starting-equipment overlay for one class. */
+/** The structured starting-equipment oracle for one class. */
 export interface ClassStartingEquipment {
   /** Entries in SRD order, mirroring the frozen pack's `entries` array. */
   readonly entries: readonly StartingEquipmentEntry[];

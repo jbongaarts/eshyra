@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
   getAncestryAbilityScoreIncrease,
+  getBundledDnd5eCharacterResolver,
   getBundledDnd5eSrdPack,
   resolveRulesStack,
 } from '../src/internal.js';
 
 /**
- * The overlay (eshyra-b69j.12.1) supplies ability-score increases the frozen
- * pack carries only as prose. These tests pin it to the frozen records: every
- * pack ancestry must have an overlay, and each overlay's `sourceText` must be
- * faithful to the pack's actual "Ability Score Increase" trait prose -- so the
- * overlay can never silently drift from the audited source it cites.
+ * Source-cited ability-score-increase constants are retained as regression
+ * oracles. Character creation reads generated pack data at runtime; these tests
+ * assert that generated data still matches the SRD-derived oracle values and
+ * source prose.
  */
 
 const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
+const resolver = getBundledDnd5eCharacterResolver();
 
 interface AncestryTrait {
   readonly name: string;
@@ -39,22 +40,25 @@ function ancestryEntries(): { key: string; asiText: string }[] {
   return entries;
 }
 
-describe('ancestry ability-score-increase overlay', () => {
-  it('covers every frozen ancestry with source-faithful prose', () => {
+describe('ancestry ability-score-increase oracle', () => {
+  it('matches every frozen ancestry generated pack field', () => {
     const entries = ancestryEntries();
     expect(entries.length).toBeGreaterThan(0);
     for (const { key, asiText } of entries) {
-      const overlay = getAncestryAbilityScoreIncrease(key);
-      if (overlay === undefined) {
-        throw new Error(`missing overlay for ${key}`);
+      const oracle = getAncestryAbilityScoreIncrease(key);
+      if (oracle === undefined) {
+        throw new Error(`missing oracle for ${key}`);
       }
-      // The cited prose is a prefix of the pack trait (equal for all but
-      // rock-gnome, whose trait appends unrelated "Artificer's Lore" prose).
+      const actual = resolver.resolveAncestry(key);
+      if (!actual.ok) {
+        throw new Error(`ancestry ${key} did not resolve`);
+      }
+      expect(actual.record.abilityScoreIncreases).toEqual([oracle]);
       expect(
-        asiText.startsWith(overlay.sourceText),
-        `overlay sourceText for ${key} is not faithful to pack prose`,
+        asiText.startsWith(oracle.sourceText),
+        `oracle sourceText for ${key} is not faithful to pack prose`,
       ).toBe(true);
-      expect(overlay.fixed.length).toBeGreaterThan(0);
+      expect(oracle.fixed.length).toBeGreaterThan(0);
     }
   });
 

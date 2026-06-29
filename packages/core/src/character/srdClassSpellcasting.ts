@@ -1,35 +1,11 @@
 /**
- * Source-backed per-class spellcasting overlay (eshyra-b69j.12.2).
+ * Source-backed per-class spellcasting oracle (eshyra-b69j.12.2).
  *
- * Level-1 spellcasting *counts* are already structured on the class progression
- * rows (`class.data.progression[level==1].spellcasting` =
- * `{cantripsKnown, spellsKnown?, slots}`). Two mechanically required facts are
- * not: (1) the spellcasting *ability* per class (Wizard = Intelligence,
- * Cleric = Wisdom, Bard = Charisma, …), which gates spell save DC / spell attack
- * (deferred by eshyra-b69j.6) and the prepared-caster counts; and (2) the
- * prepared-caster spell counts and the Wizard's starting spellbook size — both
- * formulas living only in the `feature:<class>:spellcasting` prose. In the
- * frozen pack that prose is in fact truncated to a one-line flavor intro, so the
- * ability and the formulas are not recoverable from pack data at all.
- *
- * The `rules:dnd5e-srd-5.1` pack is a frozen, hash-pinned, signed-off artifact
- * (`docs/audits/dnd5e-srd-5.1-final/`; guard via
- * `npm run verify:dnd5e-srd-freeze`), so the gap is NOT filled by re-running the
- * importer or regenerating the pack — that would require a thaw + re-audit.
- * Instead this module is the sanctioned deterministic, consumer-side metadata
- * overlay described in
- * `docs/design/character-creation-level1-metadata-inventory.md` and the same
- * pattern as the ancestry overlay (`srdAncestryAbilityScoreIncreases.ts`,
- * eshyra-b69j.12.1): an authored, SRD-cited table keyed by the frozen `class:*`
- * record keys. It mutates nothing in the pack; it is ordinary character-creation
- * code (not importer-fix-protocol work). Every entry's `sourceText` is the
- * verbatim D&D 5e SRD 5.1 spellcasting prose it was authored from.
- *
- * The table covers every SRD class with a spellcasting/Pact Magic feature.
- * Paladin and Ranger carry a spellcasting ability but do not cast at level 1
- * (their progression rows grant no level-1 cantrips, spells, or slots), so the
- * overlay states the fact while consumers gate level-1 behavior on the
- * progression row, never on overlay membership.
+ * Character creation and level-up now read generated pack metadata. These
+ * authored, SRD-cited constants remain only as regression oracles so tests can
+ * assert that importer-generated `spellcastingAbility` and `spellPreparation`
+ * stay faithful to the source prose. Runtime code must not source spellcasting
+ * facts from this file.
  */
 
 import type { AbilityScoreName } from './creation.js';
@@ -45,7 +21,7 @@ import type { ResolvedClassData } from './rulesPackResolver.js';
  */
 export type SpellPreparation = 'known' | 'prepared';
 
-/** The structured spellcasting overlay for one class. */
+/** The structured spellcasting oracle for one class. */
 export interface ClassSpellcasting {
   /** The ability that powers the class's spells (spell save DC / attack). */
   readonly ability: AbilityScoreName;
@@ -57,7 +33,7 @@ export interface ClassSpellcasting {
    * prepared casters know their whole list and have no creation-time spellbook.
    */
   readonly spellbookStartingSpells?: number;
-  /** Verbatim D&D 5e SRD 5.1 spellcasting prose this overlay was authored from. */
+  /** Verbatim D&D 5e SRD 5.1 spellcasting prose this oracle was authored from. */
   readonly sourceText: string;
 }
 
@@ -121,7 +97,7 @@ const CLASS_SPELLCASTING: Readonly<Record<string, ClassSpellcasting>> = {
 };
 
 /**
- * The structured spellcasting overlay for a class, looked up by its frozen
+ * The structured spellcasting oracle for a class, looked up by its frozen
  * canonical record key (e.g. `class:wizard`), or `undefined` for a non-caster
  * (Barbarian, Fighter, Monk, Rogue) or an unmodeled class. Keyed only by
  * canonical key so it stays pinned to the frozen records and never matches on
@@ -148,7 +124,7 @@ export function level1PreparedSpellCount(abilityModifier: number): number {
  * Whether a class's level-1 progression row grants any spellcasting at level 1
  * (cantrips, spells known, or spell slots). This is the gate that separates
  * actual level-1 casters from non-casters and the half-casters (Paladin,
- * Ranger) whose spellcasting begins at level 2 — those have an overlay entry for
+ * Ranger) whose spellcasting begins at level 2 — those have an oracle entry for
  * the ability fact but an empty level-1 spellcasting row.
  */
 export function castsAtLevel1(classRecord: ResolvedClassData): boolean {
@@ -166,7 +142,7 @@ export function castsAtLevel1(classRecord: ResolvedClassData): boolean {
 /**
  * The spellcasting ability that powers a class's spells at level 1, or
  * `undefined` when the class does not cast at level 1. Combines the source-cited
- * ability overlay with the frozen progression row's level-1 gate, so callers get
+ * ability oracle with the frozen progression row's level-1 gate, so callers get
  * a spell save DC / attack ability only for real level-1 casters.
  */
 export function level1SpellcastingAbility(
