@@ -296,6 +296,66 @@ function deriveSpellChoices(
   return out;
 }
 
+
+// ---------------------------------------------------------------------------
+// Deriver: Ability Score Improvement vs feat (eshyra-o9bd.9.4)
+// ---------------------------------------------------------------------------
+
+const ABILITY_SCORES = [
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+] as const;
+
+/**
+ * Attach an `asiOrFeat` choice to each Ability Score Improvement feature.
+ *
+ * Two entries, matching the SRD 5.1 reality: the ASI itself is structured —
+ * distribute 2 points among the six ability scores (both on one score for +2,
+ * or one each on two scores for +1/+1, never above 20). The optional feat
+ * variant is a named out-of-scope marker because the SRD 5.1 feat list is a
+ * single feat (Grappler) and is not modeled as selectable structured options;
+ * the marker keeps the choice explicit rather than silently dropping it.
+ */
+function deriveAsiChoices(
+  input: DeriveFeatureChoicesInput,
+  granted: ReadonlySet<string>,
+): Map<string, DerivedChoice[]> {
+  const out = new Map<string, DerivedChoice[]>();
+  for (const feature of input.featureRecords) {
+    if (!granted.has(feature.key)) continue;
+    if (!feature.key.endsWith(':ability-score-improvement')) continue;
+    const level = featureLevel(feature);
+    out.set(feature.key, [
+      {
+        id: 'ability-score-improvement',
+        category: 'asiOrFeat',
+        prompt:
+          'Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.',
+        level,
+        choose: 2,
+        from: [...ABILITY_SCORES],
+      },
+      {
+        id: 'feat',
+        category: 'asiOrFeat',
+        prompt:
+          'Optionally forgo the ability score increase to take a feat (optional rule).',
+        level,
+        unsupported: {
+          reason:
+            'The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler.',
+        },
+      },
+    ]);
+  }
+  return out;
+}
+
+
 // ---------------------------------------------------------------------------
 // Compose + apply
 // ---------------------------------------------------------------------------
@@ -329,6 +389,7 @@ export function deriveFeatureChoices(
   const choiceMap = mergeChoiceMaps([
     deriveSubclassChoices(input, granted),
     deriveSpellChoices(input, granted),
+    deriveAsiChoices(input, granted),
   ]);
 
   return input.featureRecords.map((feature) => {

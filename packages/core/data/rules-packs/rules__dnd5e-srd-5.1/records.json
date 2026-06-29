@@ -40022,7 +40022,33 @@
     "data": {
       "source": "class:barbarian",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -40482,7 +40508,33 @@
     "data": {
       "source": "class:bard",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -41216,7 +41268,33 @@
     "data": {
       "source": "class:cleric",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -41756,7 +41834,33 @@
     "data": {
       "source": "class:druid",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 21",
     "license": {
@@ -42069,7 +42173,33 @@
     "data": {
       "source": "class:fighter",
       "level": 4,
-      "description": "When you reach 4th level, and again at 6th, 8th, 12th, 14th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 6th, 8th, 12th, 14th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 25",
     "license": {
@@ -42625,7 +42755,33 @@
     "data": {
       "source": "class:monk",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 27",
     "license": {
@@ -43373,7 +43529,33 @@
     "data": {
       "source": "class:paladin",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -43929,7 +44111,33 @@
     "data": {
       "source": "class:ranger",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -44367,7 +44575,33 @@
     "data": {
       "source": "class:rogue",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 10th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 10th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -44955,7 +45189,33 @@
     "data": {
       "source": "class:sorcerer",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 44",
     "license": {
@@ -45500,7 +45760,33 @@
     "data": {
       "source": "class:warlock",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 48",
     "license": {
@@ -45892,7 +46178,33 @@
     "data": {
       "source": "class:wizard",
       "level": 4,
-      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      "description": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.",
+      "choices": [
+        {
+          "id": "ability-score-improvement",
+          "category": "asiOrFeat",
+          "prompt": "Increase one ability score by 2, or two ability scores by 1 (no score above 20): distribute 2 points among your ability scores.",
+          "level": 4,
+          "choose": 2,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ]
+        },
+        {
+          "id": "feat",
+          "category": "asiOrFeat",
+          "prompt": "Optionally forgo the ability score increase to take a feat (optional rule).",
+          "level": 4,
+          "unsupported": {
+            "reason": "The optional feat variant is not modeled as structured options; the SRD 5.1 feat list contains only Grappler."
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 53",
     "license": {

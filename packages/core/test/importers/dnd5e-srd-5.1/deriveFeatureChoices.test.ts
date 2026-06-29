@@ -363,3 +363,68 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
   });
 });
 
+
+describe('deriveFeatureChoices — ASI vs feat (eshyra-o9bd.9.4)', () => {
+  it('attaches a structured ASI choice and a named feat out-of-scope marker', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:fighter', 'Fighter', {
+          grants: [
+            { ref: 'feature:fighter:ability-score-improvement', level: 4 },
+          ],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec(
+          'feature',
+          'feature:fighter:ability-score-improvement',
+          'Ability Score Improvement',
+          {
+            source: 'class:fighter',
+            level: 4,
+            description: 'increase one ability score of your choice by 2…',
+          },
+        ),
+      ],
+    });
+    const choices = featureChoices(
+      out,
+      'feature:fighter:ability-score-improvement',
+    );
+    expect(choices).toHaveLength(2);
+    const [asi, feat] = choices;
+    expect(asi.category).toBe('asiOrFeat');
+    expect(asi.choose).toBe(2);
+    expect(asi.from).toEqual([
+      'strength',
+      'dexterity',
+      'constitution',
+      'intelligence',
+      'wisdom',
+      'charisma',
+    ]);
+    expect(feat.category).toBe('asiOrFeat');
+    expect(feat.choose).toBeUndefined();
+    expect((feat.unsupported as { reason: string }).reason).toMatch(/Grappler/);
+  });
+
+  it('does not attach to a non-ASI feature', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:fighter', 'Fighter', {
+          grants: [{ ref: 'feature:fighter:second-wind', level: 1 }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:fighter:second-wind', 'Second Wind', {
+          source: 'class:fighter',
+          level: 1,
+          description: 'Regain hit points.',
+        }),
+      ],
+    });
+    expect(featureChoices(out, 'feature:fighter:second-wind')).toEqual([]);
+  });
+});
