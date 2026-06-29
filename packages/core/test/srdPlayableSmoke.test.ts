@@ -117,57 +117,60 @@ describe('level-1 character creation drives off pack data for every legal tuple'
         : undefined;
 
     for (const ancestry of ancestries) {
-      const background = backgrounds[0];
-      it(`creates a level-1 ${cls.name} / ${ancestry.name} / ${background.name} from pack data`, () => {
-        const increases = representativeAncestryIncreases(ancestry);
-        const derived = deriveLevel1Values({
-          validAbilityScores: REPRESENTATIVE_SCORES,
-          classRecord: {
-            hitDie: cls.hitDie,
-            savingThrowProficiencies: cls.savingThrowProficiencies,
-          },
-          abilityScoreIncreases: increases,
-          spellcastingAbility: spellAbility,
+      for (const background of backgrounds) {
+        it(`creates a level-1 ${cls.name} / ${ancestry.name} / ${background.name} from pack data`, () => {
+          const increases = representativeAncestryIncreases(ancestry);
+          const derived = deriveLevel1Values({
+            validAbilityScores: REPRESENTATIVE_SCORES,
+            classRecord: {
+              hitDie: cls.hitDie,
+              savingThrowProficiencies: cls.savingThrowProficiencies,
+            },
+            abilityScoreIncreases: increases,
+            spellcastingAbility: spellAbility,
+          });
+
+          // Proficiency bonus is +2 at level 1 for every class.
+          expect(derived.proficiencyBonus).toBe(2);
+
+          // Max HP = hit die + final-Constitution modifier (pack hit die +
+          // ancestry-adjusted CON).
+          const finalCon =
+            REPRESENTATIVE_SCORES.constitution +
+            (bonusByAbility(increases).constitution ?? 0);
+          expect(derived.maxHitPoints).toBe(cls.hitDie + abilityMod(finalCon));
+
+          // The class's two saving-throw proficiencies (from the pack) are
+          // reflected as proficient in the derived saves.
+          for (const save of cls.savingThrowProficiencies) {
+            const short = ABILITY_FULL_TO_SHORT[save];
+            expect(short).toBeDefined();
+            expect(derived.savingThrows[short]?.proficient).toBe(true);
+          }
+
+          // A level-1 caster has a spell save DC = 8 + prof + ability mod.
+          if (spellAbility !== undefined) {
+            const finalSpellScore =
+              REPRESENTATIVE_SCORES[spellAbility] +
+              (bonusByAbility(increases)[spellAbility] ?? 0);
+            expect(derived.spellSaveDc).toBe(
+              8 + 2 + abilityMod(finalSpellScore),
+            );
+            expect(derived.spellAttackModifier).toBe(
+              2 + abilityMod(finalSpellScore),
+            );
+          } else {
+            expect(derived.spellSaveDc).toBeUndefined();
+          }
+
+          // Creation inputs the pack must supply (no overlay): skill choices,
+          // starting equipment, ancestry languages, background skills.
+          expect(cls.skillChoices?.length ?? 0).toBeGreaterThan(0);
+          expect(cls.startingEquipment).toBeDefined();
+          expect(ancestry.languages?.length ?? 0).toBeGreaterThan(0);
+          expect(background.skillProficiencies.length).toBeGreaterThan(0);
         });
-
-        // Proficiency bonus is +2 at level 1 for every class.
-        expect(derived.proficiencyBonus).toBe(2);
-
-        // Max HP = hit die + final-Constitution modifier (pack hit die +
-        // ancestry-adjusted CON).
-        const finalCon =
-          REPRESENTATIVE_SCORES.constitution +
-          (bonusByAbility(increases).constitution ?? 0);
-        expect(derived.maxHitPoints).toBe(cls.hitDie + abilityMod(finalCon));
-
-        // The class's two saving-throw proficiencies (from the pack) are
-        // reflected as proficient in the derived saves.
-        for (const save of cls.savingThrowProficiencies) {
-          const short = ABILITY_FULL_TO_SHORT[save];
-          expect(short).toBeDefined();
-          expect(derived.savingThrows[short]?.proficient).toBe(true);
-        }
-
-        // A level-1 caster has a spell save DC = 8 + prof + ability mod.
-        if (spellAbility !== undefined) {
-          const finalSpellScore =
-            REPRESENTATIVE_SCORES[spellAbility] +
-            (bonusByAbility(increases)[spellAbility] ?? 0);
-          expect(derived.spellSaveDc).toBe(8 + 2 + abilityMod(finalSpellScore));
-          expect(derived.spellAttackModifier).toBe(
-            2 + abilityMod(finalSpellScore),
-          );
-        } else {
-          expect(derived.spellSaveDc).toBeUndefined();
-        }
-
-        // Creation inputs the pack must supply (no overlay): skill choices,
-        // starting equipment, ancestry languages, background skills.
-        expect(cls.skillChoices?.length ?? 0).toBeGreaterThan(0);
-        expect(cls.startingEquipment).toBeDefined();
-        expect(ancestry.languages?.length ?? 0).toBeGreaterThan(0);
-        expect(background.skillProficiencies.length).toBeGreaterThan(0);
-      });
+      }
     }
   }
 });
