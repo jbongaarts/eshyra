@@ -102,6 +102,12 @@ export interface ResolvedLevelSpellcasting {
   readonly invocationsKnown?: number;
 }
 
+export interface ResolvedSpellPreparation {
+  readonly kind: 'known' | 'prepared';
+  readonly spellbookStartingSpells?: number;
+  readonly sourceText: string;
+}
+
 /**
  * A typed subclass-feature slot on a progression row (eshyra-o9bd.2): the level
  * grants a feature determined by the character's chosen subclass. `slotName` is
@@ -161,6 +167,8 @@ export interface ResolvedClassData {
   readonly startingEquipment?: ResolvedStartingEquipment;
   /** Spellcasting ability for classes with spellcasting/Pact Magic. */
   readonly spellcastingAbility?: AbilityScoreName;
+  /** Spell preparation mode/formula metadata for classes with spellcasting. */
+  readonly spellPreparation?: ResolvedSpellPreparation;
   /** Structured class progression rows, when the pack record carries them. */
   readonly progression?: readonly ResolvedClassLevel[];
   /** Structured level-1 progression slice (features + spellcasting counts). */
@@ -436,6 +444,7 @@ function toResolvedClassData(
     toolProficiencyChoices: parseChoiceSpecs(raw.toolProficiencyChoices),
     startingEquipment: parseStartingEquipment(raw.startingEquipment),
     spellcastingAbility: parseAbility(raw.spellcastingAbility),
+    spellPreparation: parseSpellPreparation(raw.spellPreparation),
     progression: progression === 'malformed' ? undefined : progression,
     level1: parseLevel1(raw.progression),
   };
@@ -458,6 +467,25 @@ function parseAbility(value: unknown): AbilityScoreName | undefined {
   return typeof value === 'string' && ABILITY_SCORE_NAMES.has(value)
     ? (value as AbilityScoreName)
     : undefined;
+}
+
+function parseSpellPreparation(
+  value: unknown,
+): ResolvedSpellPreparation | undefined {
+  if (
+    !isRecord(value) ||
+    (value.kind !== 'known' && value.kind !== 'prepared') ||
+    typeof value.sourceText !== 'string'
+  ) {
+    return undefined;
+  }
+  return {
+    kind: value.kind,
+    ...(typeof value.spellbookStartingSpells === 'number'
+      ? { spellbookStartingSpells: value.spellbookStartingSpells }
+      : {}),
+    sourceText: value.sourceText,
+  };
 }
 
 function parseChoiceSpecs(

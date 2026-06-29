@@ -56,8 +56,8 @@ describe('enumerateLevel1RequiredChoices', () => {
     expect(choices.some((c) => c.kind === 'cantrips')).toBe(false);
     expect(choices.some((c) => c.kind === 'spellcasting_ability')).toBe(false);
 
-    // Starting equipment choose-one groups are now structured (overlay,
-    // eshyra-b69j.12.3). Fighter has four such groups.
+    // Starting equipment choose-one groups are structured in the generated pack.
+    // Fighter has four such groups.
     const equipment = choices.filter((c) => c.kind === 'equipment');
     expect(equipment).toHaveLength(4);
     expect(equipment.every((c) => c.status === 'structured')).toBe(true);
@@ -81,14 +81,14 @@ describe('enumerateLevel1RequiredChoices', () => {
       status: 'structured',
       choose: 3,
     });
-    // Wizard picks a fixed-size starting spellbook (six 1st-level spells) — now
-    // structured from the spellcasting overlay (eshyra-b69j.12.2).
+    // Wizard picks a fixed-size starting spellbook (six 1st-level spells) from
+    // generated spellPreparation metadata.
     expect(byId(choices, 'class.spells')).toMatchObject({
       kind: 'spells',
       status: 'structured',
       choose: 6,
     });
-    // The spellcasting ability is now an auto-resolved overlay fact, so it is no
+    // The spellcasting ability is now an auto-resolved pack fact, so it is no
     // longer surfaced as a prose-only required choice.
     expect(byId(choices, 'class.spellcastingAbility')).toBeUndefined();
     expect(choices.some((c) => c.kind === 'spellcasting_ability')).toBe(false);
@@ -143,7 +143,7 @@ describe('enumerateLevel1RequiredChoices', () => {
       status: 'structured',
       choose: 4,
     });
-    // The spellcasting ability is resolved from the overlay, not a prose gap.
+    // The spellcasting ability is resolved from pack metadata, not a prose gap.
     expect(byId(choices, 'class.spellcastingAbility')).toBeUndefined();
   });
 
@@ -170,7 +170,7 @@ describe('enumerateLevel1RequiredChoices', () => {
     expect(byId(choices, 'ancestry.abilityIncrease')).toBeUndefined();
 
     // Elf's languages (Common + Elvish) are fixed — granted automatically, not
-    // surfaced as a choice (overlay, eshyra-b69j.12.4).
+    // surfaced as a choice.
     expect(byId(choices, 'ancestry.languages')).toBeUndefined();
 
     // Acolyte's "Two of your choice" is now a structured language choice.
@@ -214,7 +214,7 @@ describe('enumerateLevel1RequiredChoices', () => {
     // Half-Elf grants Common + Elvish (fixed) plus one choice; Acolyte grants
     // two choices. A character with both already has Common + Elvish, so NEITHER
     // free pick may offer them — the pool spans both sources, not just the same
-    // overlay entry's own fixed set.
+    // entry's own fixed set.
     const choices = enumerateLevel1RequiredChoices({
       classData: classData('Fighter'),
       ancestry: ancestry('Half-Elf'),

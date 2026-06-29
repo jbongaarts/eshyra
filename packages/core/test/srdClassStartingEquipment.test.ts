@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getBundledDnd5eCharacterResolver,
   getBundledDnd5eSrdPack,
   getClassStartingEquipment,
   resolveRulesStack,
 } from '../src/internal.js';
 
 /**
- * The overlay (eshyra-b69j.12.3) structures each class's starting equipment that
- * the frozen pack carries only as prose. These tests pin it to the frozen
- * records: every pack class must have an overlay whose per-entry `sourceText`
- * deep-equals the pack's `startingEquipment.entries` verbatim, so the overlay can
- * never silently drift from the audited source it cites.
+ * Source-cited starting-equipment constants are retained as regression oracles.
+ * Runtime creation reads generated pack fields; these tests assert that the
+ * generated fields still match the SRD-derived oracle values.
  */
 
 const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
+const resolver = getBundledDnd5eCharacterResolver();
 
 interface PackStartingEquipment {
   readonly entries?: readonly (string | { readonly sourceText?: string })[];
@@ -39,18 +39,21 @@ function classEntries(): { key: string; entries: readonly string[] }[] {
   return out;
 }
 
-describe('class starting-equipment overlay', () => {
-  it('covers every frozen class with source-faithful entry text', () => {
+describe('class starting-equipment oracle', () => {
+  it('matches every frozen class generated pack field', () => {
     const classes = classEntries();
     expect(classes.length).toBe(12);
     for (const { key, entries } of classes) {
-      const overlay = getClassStartingEquipment(key);
-      if (overlay === undefined) {
-        throw new Error(`missing overlay for ${key}`);
+      const oracle = getClassStartingEquipment(key);
+      if (oracle === undefined) {
+        throw new Error(`missing oracle for ${key}`);
       }
-      // Each overlay entry's sourceText must equal the pack entry verbatim, in
-      // order — the freeze-faithfulness pin.
-      expect(overlay.entries.map((e) => e.sourceText)).toEqual(entries);
+      const actual = resolver.resolveClass(key);
+      if (!actual.ok) {
+        throw new Error(`class ${key} did not resolve`);
+      }
+      expect(actual.record.startingEquipment?.entries).toEqual(oracle.entries);
+      expect(oracle.entries.map((e) => e.sourceText)).toEqual(entries);
     }
   });
 

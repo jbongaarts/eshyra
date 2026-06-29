@@ -1,24 +1,10 @@
 /**
- * Source-backed ancestry ability-score-increase overlay (eshyra-b69j.12.1).
+ * Source-backed ancestry ability-score-increase oracle (eshyra-b69j.12.1).
  *
- * Each D&D 5e SRD ancestry grants ability-score increases, but in the frozen
- * generated pack (`rules:dnd5e-srd-5.1`) those bonuses live only in the prose of
- * the ancestry's "Ability Score Increase" trait (e.g. ancestry:elf carries the
- * sentence "Your Dexterity score increases by 2."). Character creation must not
- * parse that prose to discover a core mechanical choice
- * (`docs/design/character-creation-cli.md`), and `deriveLevel1Values` left final
- * ability scores equal to base scores for exactly this reason (eshyra-b69j.6).
- *
- * The pack is a frozen, hash-pinned, signed-off artifact
- * (`docs/audits/dnd5e-srd-5.1-final/`; guard via
- * `npm run verify:dnd5e-srd-freeze`), so the gap is NOT filled by re-running the
- * importer or regenerating the pack. Instead this module is the sanctioned
- * deterministic, consumer-side metadata overlay described in
- * `docs/design/character-creation-level1-metadata-inventory.md`: an authored,
- * SRD-cited table keyed by the frozen ancestry record keys. It mutates nothing
- * in the pack; it is ordinary character-creation code (not importer-fix-protocol
- * work). Every entry's `sourceText` is the verbatim SRD ability-increase prose
- * it was authored from, kept for provenance against the frozen trait.
+ * Character creation now reads generated pack metadata. These authored,
+ * SRD-cited constants remain only as regression oracles so tests can assert that
+ * importer-generated `abilityScoreIncreases` stay faithful to the source prose.
+ * Runtime code must not source ancestry bonuses from this file.
  */
 
 import { ABILITY_SCORE_NAMES } from './abilities.js';
@@ -45,13 +31,13 @@ export interface AbilityScoreIncreaseChoice {
   readonly from: readonly AbilityScoreName[];
 }
 
-/** The structured ability-score-increase overlay for one ancestry. */
+/** The structured ability-score-increase oracle for one ancestry. */
 export interface AncestryAbilityScoreIncrease {
   /** Increases applied automatically, with no player input. */
   readonly fixed: readonly AbilityScoreIncrease[];
   /** The player choice, present only when the ancestry grants one. */
   readonly choice?: AbilityScoreIncreaseChoice;
-  /** Verbatim SRD ability-increase prose this overlay was authored from. */
+  /** Verbatim SRD ability-increase prose this oracle was authored from. */
   readonly sourceText: string;
 }
 
@@ -157,10 +143,10 @@ const ANCESTRY_ABILITY_SCORE_INCREASES: Readonly<
 };
 
 /**
- * The structured ability-score increases for an ancestry, looked up by its
- * frozen canonical record key (e.g. `ancestry:half-elf`), or `undefined` when no
- * overlay is authored for that key. The overlay is keyed only by canonical key
- * so it stays pinned to the frozen records and never matches on mutable prose.
+ * The structured ability-score-increase oracle for an ancestry, looked up by
+ * its frozen canonical record key (e.g. `ancestry:half-elf`), or `undefined`
+ * when no oracle is authored for that key. Keyed only by canonical key so it
+ * stays pinned to the frozen records and never matches on mutable prose.
  */
 export function getAncestryAbilityScoreIncrease(
   ancestryKey: string,

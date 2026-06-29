@@ -81,7 +81,7 @@ describe('character creation draft engine', () => {
     expect(draft.derived.abilityModifiers.dexterity).toBe(2);
 
     draft = engine.setAncestry(draft, 'Elf');
-    // Base scores are never rewritten; only the applied ancestry overlay changes.
+    // Base scores are never rewritten; only applied ancestry bonuses change.
     expect(draft.selections.baseAbilityScores).toEqual(POINT_BUY_SCORES);
     // Elf grants only +2 DEX: STR falls back to its base 15 (+2); DEX 14→16 (+3).
     expect(draft.derived.finalAbilityScores.strength).toBe(15);

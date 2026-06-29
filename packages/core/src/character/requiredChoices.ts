@@ -9,31 +9,30 @@
  * structured pack metadata or it is an explicit, tracked gap.
  *
  * This module turns a resolved class (and optional ancestry/background) into a
- * flat list of {@link Level1RequiredChoice} descriptors, each tagged `structured`
- * (enumerable now from the generated pack or a source-cited overlay) or
- * `unstructured` (the option set or count lives only in prose; tracked by a
- * `blockingBead` for any record an overlay does not yet cover). It deliberately
+ * flat list of {@link Level1RequiredChoice} descriptors, each tagged
+ * `structured` (enumerable now from generated pack metadata) or `unstructured`
+ * (the option set or count lives only in prose; tracked by a `blockingBead`
+ * for any record the pack does not yet cover). It deliberately
  * does NOT parse the prose: an `unstructured` choice carries the verbatim
  * `sourceText` for display and the `blockingBead`, nothing more.
  *
- * Spellcasting metadata is now structured via the source-cited overlay
- * (`srdClassSpellcasting.ts`, eshyra-b69j.12.1's sibling eshyra-b69j.12.2): the
- * spellcasting ability is an auto-resolved fact (not a prompt, like a fixed
- * ancestry increase), and the level-1 spell-selection count is structured for
- * known casters (progression `spellsKnown`), Wizards (fixed spellbook size), and
+ * Spellcasting metadata is structured in the generated pack: the spellcasting
+ * ability is an auto-resolved fact (not a prompt, like a fixed ancestry
+ * increase), and the level-1 spell-selection count is structured for known
+ * casters (progression `spellsKnown`), Wizards (fixed spellbook size), and
  * prepared full casters (ability modifier + level, exact when modifiers are
  * supplied via {@link EnumerateRequiredChoicesInput.abilityModifiers}).
  *
- * Starting equipment is likewise structured via a source-cited overlay
- * (`srdClassStartingEquipment.ts`, eshyra-b69j.12.3): each SRD class's
- * choose-one groups become structured equipment choices (`choose: 1` with the
- * option texts in `from`), while fixed grants are auto-applied and not prompted.
+ * Starting equipment is likewise structured in the generated pack: each SRD
+ * class's choose-one groups become structured equipment choices (`choose: 1`
+ * with the option texts in `from`), while fixed grants are auto-applied and not
+ * prompted.
  *
- * Languages are structured via a source-cited overlay (`srdLanguages.ts`,
- * eshyra-b69j.12.4): an ancestry's/background's fixed languages are granted
- * automatically, and only a free-choice component (Half-Elf/Human "one extra",
- * Acolyte "two of your choice") is surfaced as a structured `choose`/`from`
- * language choice drawn from the SRD standard languages.
+ * Languages are structured in the generated pack: an ancestry's/background's
+ * fixed languages are granted automatically, and only a free-choice component
+ * (Half-Elf/Human "one extra", Acolyte "two of your choice") is surfaced as a
+ * structured `choose`/`from` language choice drawn from the SRD standard
+ * languages.
  *
  * The inventory of what is structured vs prose-only today lives in
  * docs/design/character-creation-level1-metadata-inventory.md.
@@ -46,22 +45,8 @@ import type {
   ResolvedBackgroundData,
   ResolvedChoiceSpec,
   ResolvedClassData,
+  ResolvedLanguageGrant,
 } from './rulesPackResolver.js';
-import { getAncestryAbilityScoreIncrease } from './srdAncestryAbilityScoreIncreases.js';
-import {
-  castsAtLevel1,
-  getClassSpellcasting,
-  level1PreparedSpellCount,
-} from './srdClassSpellcasting.js';
-import {
-  getClassStartingEquipment,
-  type StartingEquipmentEntry,
-} from './srdClassStartingEquipment.js';
-import {
-  chooseableLanguages,
-  getAncestryLanguages,
-  getBackgroundLanguages,
-} from './srdLanguages.js';
 
 /** Whether a required choice can be enumerated from structured pack data yet. */
 export type Level1RequiredChoiceStatus = 'structured' | 'unstructured';
@@ -123,6 +108,16 @@ const BEAD_ABILITY_INCREASE = 'eshyra-b69j.12.1';
 const BEAD_SPELLCASTING = 'eshyra-b69j.12.2';
 const BEAD_EQUIPMENT = 'eshyra-b69j.12.3';
 const BEAD_LANGUAGES = 'eshyra-b69j.12.4';
+const SRD_STANDARD_LANGUAGES: readonly string[] = [
+  'Common',
+  'Dwarvish',
+  'Elvish',
+  'Giant',
+  'Gnomish',
+  'Goblin',
+  'Halfling',
+  'Orc',
+];
 
 /**
  * Enumerate every required level-1 choice implied by the given class (and
@@ -149,16 +144,16 @@ export function enumerateLevel1RequiredChoices(
   return choices;
 }
 
-/** Every fixed language granted by the chosen ancestry and background overlays. */
+/** Every fixed language granted by the chosen ancestry and background records. */
 function combinedFixedLanguages(
   input: EnumerateRequiredChoicesInput,
 ): readonly string[] {
   const fixed: string[] = [];
   if (input.ancestry !== undefined) {
-    fixed.push(...(getAncestryLanguages(input.ancestry.key)?.fixed ?? []));
+    fixed.push(...fixedLanguages(input.ancestry.languages));
   }
   if (input.background !== undefined) {
-    fixed.push(...(getBackgroundLanguages(input.background.key)?.fixed ?? []));
+    fixed.push(...fixedLanguages(input.background.languages));
   }
   return fixed;
 }
@@ -180,21 +175,19 @@ function collectClassChoices(
 }
 
 /**
- * Starting-equipment choose-one groups. The source-cited overlay
- * (`srdClassStartingEquipment.ts`, eshyra-b69j.12.3) structures each SRD class's
- * equipment into choice groups (with labelled options) and fixed grants. Only
- * the choose-one groups are required choices — fixed grants are auto-applied and
- * need no prompt. A class with no overlay (a future non-SRD pack) falls back to
- * the prose `entries`, tagged unstructured so the gap stays tracked.
+ * Starting-equipment choose-one groups. Structured generated pack entries split
+ * each SRD class's equipment into choice groups (with labelled options) and
+ * fixed grants. Only the choose-one groups are required choices — fixed grants
+ * are auto-applied and need no prompt. A legacy pack with prose-only entries
+ * falls back to unstructured choices so the gap stays tracked.
  */
 function collectEquipmentChoices(
   classData: ResolvedClassData,
   choices: Level1RequiredChoice[],
 ): void {
-  const overlay = getClassStartingEquipment(classData.key);
-  if (overlay === undefined) {
-    (classData.startingEquipment?.entries ?? []).forEach((entry, index) => {
-      if (typeof entry !== 'string' || !isEquipmentOption(entry)) {
+  (classData.startingEquipment?.entries ?? []).forEach((entry, index) => {
+    if (typeof entry === 'string') {
+      if (!isEquipmentOption(entry)) {
         return; // a fixed grant (e.g. "A spellbook"), not a choice
       }
       choices.push({
@@ -206,11 +199,9 @@ function collectEquipmentChoices(
         sourceText: entry,
         blockingBead: BEAD_EQUIPMENT,
       });
-    });
-    return;
-  }
-  overlay.entries.forEach((entry: StartingEquipmentEntry, index) => {
-    if (entry.kind !== 'choice') {
+      return;
+    }
+    if (entry.kind === 'fixed') {
       return; // fixed grant — applied automatically, no prompt needed
     }
     choices.push({
@@ -259,12 +250,9 @@ function collectSpellcastingChoices(
     return; // unreachable once castsAtLevel1 is true; narrows the type
   }
 
-  // The spellcasting ability (INT/WIS/CHA) used to be a prose-only gap; it is
-  // now the source-cited overlay (eshyra-b69j.12.2), keyed by the frozen class
-  // key. An unmodeled caster (a future non-SRD pack) still surfaces a tracked
-  // gap so a real spellcasting ability is never silently dropped.
-  const overlay = getClassSpellcasting(classData.key);
-  if (overlay === undefined) {
+  // A legacy pack with level-1 casting but no modeled ability still surfaces a
+  // tracked gap so a real spellcasting ability is never silently dropped.
+  if (classData.spellcastingAbility === undefined) {
     choices.push({
       id: 'class.spellcastingAbility',
       kind: 'spellcasting_ability',
@@ -288,22 +276,22 @@ function collectSpellcastingChoices(
     });
   }
 
-  choices.push(spellSelectionChoice(spellcasting, overlay, abilityModifiers));
+  choices.push(spellSelectionChoice(classData, abilityModifiers));
 }
 
 /**
  * The level-1 spell-selection choice for a caster. Known casters (Bard,
  * Sorcerer, Warlock) carry a fixed `spellsKnown` count on the progression row.
- * Prepared casters use the spellcasting overlay (eshyra-b69j.12.2): a Wizard
- * picks a fixed-size starting spellbook, while Cleric/Druid prepare a list whose
- * size is their spellcasting-ability modifier + level — a count this fills in
- * when the modifiers are known and otherwise leaves to `level1PreparedSpellCount`.
+ * Prepared casters use generated `spellPreparation`: a Wizard picks a fixed-size
+ * starting spellbook, while Cleric/Druid prepare a list whose size is their
+ * spellcasting-ability modifier + level — a count this fills in when the
+ * modifiers are known and otherwise leaves to `level1PreparedSpellCount`.
  */
 function spellSelectionChoice(
-  spellcasting: NonNullable<ResolvedClassData['level1']>['spellcasting'],
-  overlay: ReturnType<typeof getClassSpellcasting>,
+  classData: ResolvedClassData,
   abilityModifiers: Partial<Record<AbilityScoreName, number>> | undefined,
 ): Level1RequiredChoice {
+  const spellcasting = classData.level1?.spellcasting;
   const base = {
     id: 'class.spells',
     kind: 'spells',
@@ -320,8 +308,11 @@ function spellSelectionChoice(
     };
   }
 
-  // Prepared caster with no overlay (a future non-SRD pack): keep a tracked gap.
-  if (overlay === undefined || overlay.preparation !== 'prepared') {
+  // Prepared caster with no structured preparation: keep a tracked gap.
+  if (
+    classData.spellcastingAbility === undefined ||
+    classData.spellPreparation?.kind !== 'prepared'
+  ) {
     return {
       ...base,
       status: 'unstructured',
@@ -332,19 +323,19 @@ function spellSelectionChoice(
   }
 
   // Wizard: a fixed-size starting spellbook to prepare from.
-  if (overlay.spellbookStartingSpells !== undefined) {
+  if (classData.spellPreparation.spellbookStartingSpells !== undefined) {
     return {
       ...base,
       status: 'structured',
-      label: `Choose ${overlay.spellbookStartingSpells} level-1 spells for your spellbook`,
-      choose: overlay.spellbookStartingSpells,
+      label: `Choose ${classData.spellPreparation.spellbookStartingSpells} level-1 spells for your spellbook`,
+      choose: classData.spellPreparation.spellbookStartingSpells,
     };
   }
 
   // Cleric/Druid: prepare (ability modifier + level) spells; the exact count
   // needs the modifier, so it is filled only when modifiers are supplied.
-  const abilityName = ABILITY_FULL_NAMES[overlay.ability];
-  const modifier = abilityModifiers?.[overlay.ability];
+  const abilityName = ABILITY_FULL_NAMES[classData.spellcastingAbility];
+  const modifier = abilityModifiers?.[classData.spellcastingAbility];
   const count =
     modifier !== undefined ? level1PreparedSpellCount(modifier) : undefined;
   return {
@@ -368,24 +359,23 @@ function collectAncestryChoices(
 }
 
 /**
- * Ancestry languages come from the source-cited overlay (eshyra-b69j.12.4),
- * keyed by the frozen ancestry record key — never parsed from the trait prose.
- * Fixed languages (e.g. Elf's Common + Elvish) are granted automatically and
- * need no prompt; only a free-choice component (Half-Elf / Human "one extra
- * language of your choice") is a required choice, surfaced structured with
- * `choose`/`from` (the SRD standard languages minus `grantedLanguages` — the
- * combined fixed languages from this ancestry AND the background, so a pick
- * never offers a language the character already has). An ancestry with no
- * overlay falls back to the prose trait as a tracked unstructured gap, so a real
- * language choice is never dropped.
+ * Ancestry languages come from generated pack metadata — never parsed from the
+ * trait prose. Fixed languages (e.g. Elf's Common + Elvish) are granted
+ * automatically and need no prompt; only a free-choice component (Half-Elf /
+ * Human "one extra language of your choice") is a required choice, surfaced
+ * structured with `choose`/`from` (the SRD standard languages minus
+ * `grantedLanguages` — the combined fixed languages from this ancestry AND the
+ * background, so a pick never offers a language the character already has). An
+ * ancestry with no structured languages falls back to the prose trait as a
+ * tracked unstructured gap, so a real language choice is never dropped.
  */
 function collectAncestryLanguages(
   ancestry: ResolvedAncestryData,
   grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
-  const overlay = getAncestryLanguages(ancestry.key);
-  if (overlay === undefined) {
+  const grant = firstLanguageGrant(ancestry.languages);
+  if (grant === undefined) {
     const trait = (ancestry.traits ?? []).find(
       (entry) =>
         /languages?/i.test(entry.name) && /\bchoice\b|choose/i.test(entry.text),
@@ -403,7 +393,7 @@ function collectAncestryLanguages(
     }
     return;
   }
-  if (overlay.choose === undefined) {
+  if (grant.choose === undefined) {
     return; // fixed languages only — granted automatically, no prompt needed
   }
   choices.push({
@@ -411,29 +401,31 @@ function collectAncestryLanguages(
     kind: 'languages',
     source: 'ancestry',
     status: 'structured',
-    label: `Choose ${overlay.choose} language(s)`,
-    choose: overlay.choose,
+    label: `Choose ${grant.choose} language(s)`,
+    choose: grant.choose,
     from: chooseableLanguages(grantedLanguages),
-    sourceText: overlay.sourceText,
+    sourceText: grant.sourceText,
   });
 }
 
 /**
- * Ancestry ability-score increases come from the source-cited overlay
- * (eshyra-b69j.12.1), keyed by the frozen ancestry record key — never parsed
- * from the trait prose. A *fixed* increase (e.g. Elf's +2 Dexterity) is applied
- * automatically in `deriveLevel1Values` and needs no prompt, so it is not a
- * required choice. Only the player-choice component (the Half-Elf's "two other
- * ability scores of your choice +1") is a required choice, surfaced structured
- * with `choose`/`from`. An ancestry with no overlay falls back to the prose
- * trait as a tracked unstructured gap, so a real increase is never dropped.
+ * Ancestry ability-score increases come from generated pack metadata — never
+ * parsed from the trait prose. A *fixed* increase (e.g. Elf's +2 Dexterity) is
+ * applied automatically in `deriveLevel1Values` and needs no prompt, so it is
+ * not a required choice. Only the player-choice component (the Half-Elf's "two
+ * other ability scores of your choice +1") is a required choice, surfaced
+ * structured with `choose`/`from`. An ancestry with no structured increases
+ * falls back to the prose trait as a tracked unstructured gap, so a real
+ * increase is never dropped.
  */
 function collectAncestryAbilityIncrease(
   ancestry: ResolvedAncestryData,
   choices: Level1RequiredChoice[],
 ): void {
-  const overlay = getAncestryAbilityScoreIncrease(ancestry.key);
-  if (overlay === undefined) {
+  const increase = ancestry.abilityScoreIncreases?.find(
+    (entry) => entry.choice !== undefined,
+  );
+  if (ancestry.abilityScoreIncreases === undefined) {
     const trait = (ancestry.traits ?? []).find((entry) =>
       /ability score increase/i.test(entry.name),
     );
@@ -451,11 +443,11 @@ function collectAncestryAbilityIncrease(
     return;
   }
 
-  if (overlay.choice === undefined) {
+  if (increase?.choice === undefined) {
     return; // fixed increases only — applied automatically, no prompt needed
   }
 
-  const { choose, bonus, from } = overlay.choice;
+  const { choose, bonus, from } = increase.choice;
   choices.push({
     id: 'ancestry.abilityIncrease',
     kind: 'ability_increase',
@@ -464,7 +456,7 @@ function collectAncestryAbilityIncrease(
     label: `Choose ${choose} ability scores to increase by ${bonus}`,
     choose,
     from: from.map((name) => ABILITY_FULL_NAMES[name]),
-    sourceText: overlay.sourceText,
+    sourceText: increase.sourceText,
   });
 }
 
@@ -473,8 +465,8 @@ function collectBackgroundChoices(
   grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
-  const overlay = getBackgroundLanguages(background.key);
-  if (overlay === undefined) {
+  const grant = firstLanguageGrant(background.languages);
+  if (grant === undefined) {
     const languages = background.languages;
     if (typeof languages === 'string' && /\bchoice\b|choose/i.test(languages)) {
       choices.push({
@@ -489,7 +481,7 @@ function collectBackgroundChoices(
     }
     return;
   }
-  if (overlay.choose === undefined) {
+  if (grant.choose === undefined) {
     return; // fixed languages only — granted automatically, no prompt needed
   }
   choices.push({
@@ -497,11 +489,49 @@ function collectBackgroundChoices(
     kind: 'languages',
     source: 'background',
     status: 'structured',
-    label: `Choose ${overlay.choose} language(s)`,
-    choose: overlay.choose,
+    label: `Choose ${grant.choose} language(s)`,
+    choose: grant.choose,
     from: chooseableLanguages(grantedLanguages),
-    sourceText: overlay.sourceText,
+    sourceText: grant.sourceText,
   });
+}
+
+function castsAtLevel1(classData: ResolvedClassData): boolean {
+  const spellcasting = classData.level1?.spellcasting;
+  if (spellcasting === undefined) {
+    return false;
+  }
+  return (
+    spellcasting.cantripsKnown !== undefined ||
+    spellcasting.spellsKnown !== undefined ||
+    spellcasting.slots !== undefined ||
+    spellcasting.pactSlots !== undefined
+  );
+}
+
+function level1PreparedSpellCount(abilityModifier: number): number {
+  return Math.max(1, abilityModifier + 1);
+}
+
+function firstLanguageGrant(
+  value:
+    | ResolvedAncestryData['languages']
+    | ResolvedBackgroundData['languages'],
+): ResolvedLanguageGrant | undefined {
+  return Array.isArray(value) ? value[0] : undefined;
+}
+
+function fixedLanguages(
+  value:
+    | ResolvedAncestryData['languages']
+    | ResolvedBackgroundData['languages'],
+): readonly string[] {
+  return Array.isArray(value) ? value.flatMap((grant) => grant.fixed) : [];
+}
+
+function chooseableLanguages(fixed: readonly string[]): readonly string[] {
+  const taken = new Set(fixed);
+  return SRD_STANDARD_LANGUAGES.filter((language) => !taken.has(language));
 }
 
 /**

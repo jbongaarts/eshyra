@@ -14,12 +14,11 @@
  *   - saving-throw modifiers, with class save proficiencies applied.
  *
  * Ancestry ability increases arrive as an already-resolved list of
- * `{ ability, bonus }` (the source-cited overlay in
- * `srdAncestryAbilityScoreIncreases.ts`, eshyra-b69j.12.1). This module stays
- * pure math: it applies whatever increases it is given — the fixed ancestry
- * bonuses today, plus any player-chosen ones (Half-Elf) the wizard later threads
- * in — and derives modifiers, saves, and HP from the resulting *final* scores,
- * never the base scores.
+ * `{ ability, bonus }` from generated pack metadata. This module stays pure
+ * math: it applies whatever increases it is given — the fixed ancestry bonuses
+ * today, plus any player-chosen ones (Half-Elf) the wizard later threads in —
+ * and derives modifiers, saves, and HP from the resulting *final* scores, never
+ * the base scores.
  *
  * Prerequisite gating, not cascades: a value is simply absent until its inputs
  * exist (HP needs a class hit die *and* a valid Constitution; saving-throw
@@ -27,8 +26,7 @@
  * …" message; this module never invents nonsense numbers.
  *
  * Spell save DC and spell attack modifier are computed once a level-1-casting
- * class's spellcasting ability is supplied (the source-cited overlay in
- * `srdClassSpellcasting.ts`, eshyra-b69j.12.2) and that ability has a score —
+ * class's generated spellcasting ability is supplied and that ability has a score —
  * closing the eshyra-b69j.6 deferral. The caller passes the ability only when
  * the class actually casts at level 1, so a non-caster (or Paladin/Ranger, who
  * begin casting at level 2) never gets a spurious DC.
@@ -45,7 +43,6 @@ import {
   abilityModifier,
 } from './abilities.js';
 import type { AbilityScoreName } from './creation.js';
-import type { AbilityScoreIncrease } from './srdAncestryAbilityScoreIncreases.js';
 
 /** Level-1 proficiency bonus is +2 for every D&D 5e class. */
 export const LEVEL_1_PROFICIENCY_BONUS = 2;
@@ -110,16 +107,19 @@ export interface DeriveLevel1Input {
   readonly classRecord?: DerivedClassInput;
   /**
    * Ancestry ability-score increases to add to the base scores — the fixed
-   * bonuses from {@link getAncestryAbilityScoreIncrease} plus any player-chosen
-   * increases (Half-Elf). Increases for an ability whose base score is not yet
-   * set are ignored until that score exists. Absent when no ancestry is chosen.
+   * bonuses from the resolved ancestry record plus any player-chosen increases
+   * (Half-Elf). Increases for an ability whose base score is not yet set are
+   * ignored until that score exists. Absent when no ancestry is chosen.
    */
-  readonly abilityScoreIncreases?: readonly AbilityScoreIncrease[];
+  readonly abilityScoreIncreases?: readonly {
+    readonly ability: AbilityScoreName;
+    readonly bonus: number;
+  }[];
   /**
    * The class's spellcasting ability, supplied only when the chosen class casts
-   * at level 1 (from the `srdClassSpellcasting.ts` overlay, gated on the
-   * progression row). Drives spell save DC and spell attack modifier; absent for
-   * non-casters and for classes that begin casting after level 1.
+   * at level 1 (from generated class metadata, gated on the progression row).
+   * Drives spell save DC and spell attack modifier; absent for non-casters and
+   * for classes that begin casting after level 1.
    */
   readonly spellcastingAbility?: AbilityScoreName;
 }
@@ -195,7 +195,12 @@ export function deriveLevel1Values(
 
 /** Total bonus per ability across all increases (multiple increases stack). */
 function sumIncreasesByAbility(
-  increases: readonly AbilityScoreIncrease[] | undefined,
+  increases:
+    | readonly {
+        readonly ability: AbilityScoreName;
+        readonly bonus: number;
+      }[]
+    | undefined,
 ): Partial<Record<AbilityScoreName, number>> {
   const totals: Partial<Record<AbilityScoreName, number>> = {};
   for (const { ability, bonus } of increases ?? []) {
