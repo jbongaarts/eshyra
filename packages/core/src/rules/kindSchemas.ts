@@ -721,6 +721,31 @@ function optProgression(parent: Obj, key: string, path: string): void {
   });
 }
 
+// Optional level-grouped subclass feature projection (eshyra-vk23.5). Each row
+// carries an integer `level` (>= 1) and a non-empty `features` array of feature
+// refs unlocked at that level. Rows are required to be in strictly ascending
+// level order so the projection reads as play-order progression and a level is
+// not split across two rows.
+function optFeaturesByLevel(parent: Obj, key: string, path: string): void {
+  const rows = objArray(parent, key, path);
+  if (rows === undefined) return;
+  let previousLevel = 0;
+  rows.forEach((row, i) => {
+    const rowPath = `${path}.${key}[${i}]`;
+    const level = reqInt(row, 'level', rowPath, 1);
+    if (level <= previousLevel) {
+      throw new RulesPackError(
+        `${rowPath}.level must be strictly greater than the previous row's level`,
+      );
+    }
+    previousLevel = level;
+    const features = reqStrArray(row, 'features', rowPath);
+    if (features.length === 0) {
+      throw new RulesPackError(`${rowPath}.features must be non-empty`);
+    }
+  });
+}
+
 // Baseline per-kind validators. Every record of the kind must satisfy these
 // minimum shape constraints. The shared rule is `data` is a non-null object
 // and `description` (if present) is a non-empty string; some kinds add a few
@@ -1374,6 +1399,11 @@ function validateDnd5eSubclass(record: RulesRecord, path: string): void {
   // on the subclass but is not a granted feature or spell table.
   optNamedEntryArray(data, 'sections', `${path}.data`);
   optStrArray(data, 'features', `${path}.data`);
+  // Optional level-grouped feature projection (eshyra-vk23.5): one row per
+  // distinct grant level in ascending order, each carrying the subclass-feature
+  // refs unlocked at that level. Lets a consumer read the progression order and
+  // grant level without resolving every feature ref.
+  optFeaturesByLevel(data, 'featuresByLevel', `${path}.data`);
   // Optional references to the subclass's `table` records (eshyra-4a7.6):
   // expanded/domain/oath spell tables and any progression tables, linked
   // rather than duplicated into the description.

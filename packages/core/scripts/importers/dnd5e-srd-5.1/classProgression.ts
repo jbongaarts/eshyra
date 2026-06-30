@@ -681,6 +681,53 @@ function splitRogueThievesCant(
 }
 
 /**
+ * Grant level for a subclass feature key. Throws if the key has no recorded
+ * level: every `feature` record carries an integer `data.level`, so a missing
+ * entry means the subclass references a key that is not a known feature record
+ * — a structural defect to surface, not order silently (eshyra-vk23.5).
+ */
+function subclassFeatureLevel(
+  featureLevelByKey: ReadonlyMap<string, number>,
+  featureKey: string,
+  subclassKey: string,
+): number {
+  const level = featureLevelByKey.get(featureKey);
+  if (level === undefined) {
+    throw new Error(
+      `subclass "${subclassKey}" references feature "${featureKey}" with no grant level`,
+    );
+  }
+  return level;
+}
+
+/**
+ * Group an already level-ordered list of subclass feature keys into
+ * `{ level, features }` rows, one row per distinct grant level in ascending
+ * order, preserving the input order of same-level features (eshyra-vk23.5).
+ */
+function groupSubclassFeaturesByLevel(
+  orderedFeatureKeys: readonly string[],
+  featureLevelByKey: ReadonlyMap<string, number>,
+  subclassKey: string,
+): Array<{ level: number; features: string[] }> {
+  const rows: Array<{ level: number; features: string[] }> = [];
+  for (const featureKey of orderedFeatureKeys) {
+    const level = subclassFeatureLevel(
+      featureLevelByKey,
+      featureKey,
+      subclassKey,
+    );
+    const last = rows[rows.length - 1];
+    if (last !== undefined && last.level === level) {
+      last.features.push(featureKey);
+    } else {
+      rows.push({ level, features: [featureKey] });
+    }
+  }
+  return rows;
+}
+
+/**
  * Enrich the class-chapter records (eshyra-4a7.6): add structured progression +
  * table/feature refs to classes, spell-table refs to subclasses, and table
  * refs (with description trimming) to the two feature-owned class tables.
@@ -711,6 +758,11 @@ export function enrichClassChapterRecords(input: {
   const classFeatureKeys = new Map<string, string[]>();
   const classFeatureKeyByName = new Map<string, Map<string, string>>();
   const subclassFeatureKeys = new Map<string, string[]>();
+  // Grant level per feature key, used to order subclass features by play order
+  // rather than alphabetically (eshyra-vk23.5). Every `feature` record carries
+  // an integer `data.level` (the kindSchema requires it), so a missing entry
+  // for a referenced subclass feature is a structural bug, not normal absence.
+  const featureLevelByKey = new Map<string, number>();
   const pushTo = <V>(map: Map<string, V[]>, key: string, value: V): void => {
     const list = map.get(key);
     if (list === undefined) map.set(key, [value]);
@@ -718,6 +770,8 @@ export function enrichClassChapterRecords(input: {
   };
   for (const feature of baseFeatureRecords) {
     const source = String(asObj(feature.data).source ?? '');
+    const level = asObj(feature.data).level;
+    if (typeof level === 'number') featureLevelByKey.set(feature.key, level);
     if (source.startsWith('class:')) {
       pushTo(classFeatureKeys, source, feature.key);
       let byName = classFeatureKeyByName.get(source);
@@ -778,11 +832,31 @@ export function enrichClassChapterRecords(input: {
     const spellTableRefs = SUBCLASS_SPELL_TABLE_REFS.get(sub.key);
     if (spellTableRefs !== undefined)
       extra.spellTableRefs = [...spellTableRefs];
+    // Order subclass features by grant level, then by key for a stable
+    // tiebreak among features unlocked at the same level (eshyra-vk23.5). The
+    // prior key-only sort put higher-level features ahead of lower-level ones
+    // (e.g. Champion's level-10 Additional Fighting Style before its level-3
+    // Improved Critical); a level-ordered list lets simple consumers and the
+    // DM model read the progression in play order without joining feature refs.
     const subFeatures = (subclassFeatureKeys.get(sub.key) ?? [])
       .slice()
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      .sort((a, b) => {
+        const la = subclassFeatureLevel(featureLevelByKey, a, sub.key);
+        const lb = subclassFeatureLevel(featureLevelByKey, b, sub.key);
+        if (la !== lb) return la - lb;
+        return a < b ? -1 : a > b ? 1 : 0;
+      });
     if (subFeatures.length > 0 && asObj(sub.data).features === undefined) {
       extra.features = subFeatures;
+      // Explicit level-grouped projection so a consumer sees the grant level of
+      // each feature directly, without resolving every feature ref. Features
+      // unlocked at the same level are grouped under one row, preserving the
+      // key-tiebroken order from `subFeatures`.
+      extra.featuresByLevel = groupSubclassFeaturesByLevel(
+        subFeatures,
+        featureLevelByKey,
+        sub.key,
+      );
     }
     return Object.keys(extra).length > 0 ? withData(sub, extra) : sub;
   });
