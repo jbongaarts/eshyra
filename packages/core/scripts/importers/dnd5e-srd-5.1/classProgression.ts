@@ -754,6 +754,9 @@ export function enrichClassChapterRecords(input: {
         ...(spellcasting.spellbookStartingSpells !== undefined
           ? { spellbookStartingSpells: spellcasting.spellbookStartingSpells }
           : {}),
+        ...(spellcasting.preparationFormula !== undefined
+          ? { preparationFormula: spellcasting.preparationFormula }
+          : {}),
         sourceText: spellcasting.sourceText,
       };
     }

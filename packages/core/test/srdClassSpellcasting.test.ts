@@ -46,6 +46,9 @@ describe('per-class spellcasting oracle', () => {
         ...(oracle.spellbookStartingSpells !== undefined
           ? { spellbookStartingSpells: oracle.spellbookStartingSpells }
           : {}),
+        ...(oracle.preparationFormula !== undefined
+          ? { preparationFormula: oracle.preparationFormula }
+          : {}),
         sourceText: oracle.sourceText,
       });
     }

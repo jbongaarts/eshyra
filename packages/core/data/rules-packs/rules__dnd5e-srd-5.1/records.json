@@ -4012,6 +4012,11 @@
       "spellcastingAbility": "wisdom",
       "spellPreparation": {
         "kind": "prepared",
+        "preparationFormula": {
+          "ability": "wisdom",
+          "classLevelDivisor": 1,
+          "minimum": 1
+        },
         "sourceText": "You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). Wisdom is your spellcasting ability for your cleric spells."
       }
     },
@@ -4633,6 +4638,11 @@
       "spellcastingAbility": "wisdom",
       "spellPreparation": {
         "kind": "prepared",
+        "preparationFormula": {
+          "ability": "wisdom",
+          "classLevelDivisor": 1,
+          "minimum": 1
+        },
         "sourceText": "You prepare the list of druid spells that are available for you to cast, choosing from the druid spell list. When you do so, choose a number of druid spells equal to your Wisdom modifier + your druid level (minimum of one spell). Wisdom is your spellcasting ability for your druid spells."
       }
     },
@@ -6383,7 +6393,12 @@
       "spellcastingAbility": "charisma",
       "spellPreparation": {
         "kind": "prepared",
-        "sourceText": "By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does. Charisma is your spellcasting ability for your paladin spells."
+        "preparationFormula": {
+          "ability": "charisma",
+          "classLevelDivisor": 2,
+          "minimum": 1
+        },
+        "sourceText": "By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does. You prepare the list of paladin spells that are available for you to cast, choosing from the paladin spell list. When you do so, choose a number of paladin spells equal to your Charisma modifier + half your paladin level, rounded down (minimum of one spell). Charisma is your spellcasting ability for your paladin spells."
       }
     },
     "source": "SRD 5.1 p. 30",
@@ -9454,6 +9469,11 @@
       "spellPreparation": {
         "kind": "prepared",
         "spellbookStartingSpells": 6,
+        "preparationFormula": {
+          "ability": "intelligence",
+          "classLevelDivisor": 1,
+          "minimum": 1
+        },
         "sourceText": "At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell). Intelligence is your spellcasting ability for your wizard spells."
       }
     },
@@ -59479,7 +59499,15 @@
           "prompt": "Choose your starting cantrips from the bard spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the bard spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:bard"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
           "id": "spells",
@@ -59487,7 +59515,34 @@
           "prompt": "Choose your starting spells from the bard spell list.",
           "level": 1,
           "choose": 4,
-          "from": "the bard spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:bard"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:bard",
+              "atLevel": 1
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one bard spell you know with another from the bard spell list.",
+          "level": 1,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:bard"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -60276,7 +60331,35 @@
           "prompt": "Choose your starting cantrips from the cleric spell list.",
           "level": 1,
           "choose": 3,
-          "from": "the cleric spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:cleric"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
+        },
+        {
+          "id": "prepared-spells",
+          "category": "spell",
+          "prompt": "Prepare spells from the cleric spell list each day.",
+          "level": 1,
+          "chooseFormula": {
+            "ability": "wisdom",
+            "classLevelDivisor": 1,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:cleric"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -60892,7 +60975,35 @@
           "prompt": "Choose your starting cantrips from the druid spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the druid spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:druid"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
+        },
+        {
+          "id": "prepared-spells",
+          "category": "spell",
+          "prompt": "Prepare spells from the druid spell list each day.",
+          "level": 1,
+          "chooseFormula": {
+            "ability": "wisdom",
+            "classLevelDivisor": 1,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:druid"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -63190,7 +63301,29 @@
             "kind": "proficiency"
           }
         ]
-      }
+      },
+      "choices": [
+        {
+          "id": "prepared-spells",
+          "category": "spell",
+          "prompt": "Prepare spells from the paladin spell list each day.",
+          "level": 2,
+          "chooseFormula": {
+            "ability": "charisma",
+            "classLevelDivisor": 2,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:paladin"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 31",
     "license": {
@@ -63879,7 +64012,34 @@
           "prompt": "Choose your starting spells from the ranger spell list.",
           "level": 2,
           "choose": 2,
-          "from": "the ranger spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:ranger"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:ranger",
+              "atLevel": 2
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one ranger spell you know with another from the ranger spell list.",
+          "level": 2,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:ranger"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -64959,7 +65119,15 @@
           "prompt": "Choose your starting cantrips from the sorcerer spell list.",
           "level": 1,
           "choose": 4,
-          "from": "the sorcerer spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:sorcerer"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
           "id": "spells",
@@ -64967,7 +65135,34 @@
           "prompt": "Choose your starting spells from the sorcerer spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the sorcerer spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:sorcerer"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:sorcerer",
+              "atLevel": 1
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one sorcerer spell you know with another from the sorcerer spell list.",
+          "level": 1,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:sorcerer"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -65748,12 +65943,68 @@
       },
       "choices": [
         {
-          "id": "arcanum",
+          "id": "arcanum-6",
           "category": "spell",
-          "prompt": "Choose one 6th-level spell from the warlock spell list as your arcanum.",
+          "prompt": "Choose one 6th-level spell from the warlock spell list as your 6th-level arcanum.",
           "level": 11,
           "choose": 1,
-          "from": "the warlock spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              6
+            ]
+          }
+        },
+        {
+          "id": "arcanum-7",
+          "category": "spell",
+          "prompt": "Choose one 7th-level spell from the warlock spell list as your 7th-level arcanum.",
+          "level": 13,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              7
+            ]
+          }
+        },
+        {
+          "id": "arcanum-8",
+          "category": "spell",
+          "prompt": "Choose one 8th-level spell from the warlock spell list as your 8th-level arcanum.",
+          "level": 15,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              8
+            ]
+          }
+        },
+        {
+          "id": "arcanum-9",
+          "category": "spell",
+          "prompt": "Choose one 9th-level spell from the warlock spell list as your 9th-level arcanum.",
+          "level": 17,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              9
+            ]
+          }
         }
       ]
     },
@@ -65952,7 +66203,15 @@
           "prompt": "Choose your starting cantrips from the warlock spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the warlock spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
           "id": "spells",
@@ -65960,7 +66219,34 @@
           "prompt": "Choose your starting spells from the warlock spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the warlock spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:warlock",
+              "atLevel": 1
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one warlock spell you know with another from the warlock spell list.",
+          "level": 1,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -66455,7 +66741,41 @@
             "kind": "proficiency"
           }
         ]
-      }
+      },
+      "choices": [
+        {
+          "id": "spellbook-initial",
+          "category": "spell",
+          "prompt": "Choose the 6 1st-level wizard spells in your starting spellbook.",
+          "level": 1,
+          "choose": 6,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "spellLevels": [
+              1
+            ]
+          }
+        },
+        {
+          "id": "spellbook-growth",
+          "category": "spell",
+          "prompt": "Each time you gain a wizard level, add two wizard spells of your choice to your spellbook.",
+          "level": 1,
+          "choose": 2,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 52",
     "license": {
@@ -66495,15 +66815,36 @@
           "prompt": "Choose your starting cantrips from the wizard spell list.",
           "level": 1,
           "choose": 3,
-          "from": "the wizard spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
-          "id": "spells",
+          "id": "prepared-spells",
           "category": "spell",
-          "prompt": "Choose your starting spells from the wizard spell list.",
+          "prompt": "Prepare wizard spells from your spellbook each day (Intelligence modifier + wizard level).",
           "level": 1,
-          "choose": 6,
-          "from": "the wizard spell list"
+          "chooseFormula": {
+            "ability": "intelligence",
+            "classLevelDivisor": 1,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true,
+            "mustBeInSpellbook": true
+          }
         }
       ]
     },

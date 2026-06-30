@@ -272,19 +272,29 @@ describe('targeted creation/level-up choice cases (eshyra-o9bd.12)', () => {
   it('Wizard: spellbook + cantrip selection are pack choices; Int spellcasting', () => {
     const wizard = resolver.resolveClass('class:wizard');
     expect(wizard.ok && wizard.record.spellcastingAbility).toBe('intelligence');
-    const choices =
-      featureByKey.get('feature:wizard:spellcasting')?.data &&
+    // eshyra-vk23.2: cantrips + formula-driven daily preparation hang off the
+    // Spellcasting feature; the 6-spell starting spellbook (and its growth)
+    // moved to the Spellbook feature where the SRD prose lives.
+    const castingChoices =
       (
         featureByKey.get('feature:wizard:spellcasting')?.data as {
-          choices?: { category: string; choose?: number }[];
+          choices?: { id: string; category: string; choose?: number }[];
         }
-      ).choices;
-    expect(choices).toBeDefined();
-    const byCategory = new Map(
-      (choices ?? []).map((c) => [c.category, c.choose]),
-    );
-    expect(byCategory.get('cantrip')).toBe(3); // 3 starting cantrips
-    expect(byCategory.get('spell')).toBe(6); // 6-spell starting spellbook
+      ).choices ?? [];
+    const castingById = new Map(castingChoices.map((c) => [c.id, c]));
+    expect(castingById.get('cantrips')?.choose).toBe(3); // 3 starting cantrips
+    expect(castingById.get('prepared-spells')?.category).toBe('spell');
+    expect(castingById.get('prepared-spells')?.choose).toBeUndefined();
+
+    const spellbookChoices =
+      (
+        featureByKey.get('feature:wizard:spellbook')?.data as {
+          choices?: { id: string; choose?: number }[];
+        }
+      ).choices ?? [];
+    const spellbookById = new Map(spellbookChoices.map((c) => [c.id, c]));
+    expect(spellbookById.get('spellbook-initial')?.choose).toBe(6); // 6-spell start
+    expect(spellbookById.get('spellbook-growth')?.choose).toBe(2); // +2 per level
   });
 
   it('Cleric/Druid are prepared casters: cantrips known, no fixed spells-known', () => {

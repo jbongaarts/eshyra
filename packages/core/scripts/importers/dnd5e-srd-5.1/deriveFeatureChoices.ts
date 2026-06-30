@@ -42,14 +42,29 @@ export interface DeriveFeatureChoicesInput {
   readonly featureRecords: readonly RulesRecord[];
 }
 
+/** A machine-readable prepared-spell count (eshyra-vk23.2): the prepared total
+ * is `max(minimum, abilityModifier + floor(classLevel / classLevelDivisor))`. */
+interface PreparationFormula {
+  readonly ability: string;
+  readonly classLevelDivisor: number;
+  readonly minimum: number;
+}
+
 interface DerivedChoice {
   readonly id: string;
   readonly category: FeatureChoiceCategory;
   readonly prompt: string;
   readonly level: number;
   readonly choose?: number;
+  /** Prepared-caster daily count, in place of a fixed `choose` (eshyra-vk23.2). */
+  readonly chooseFormula?: PreparationFormula;
   readonly from?: readonly string[] | Record<string, unknown> | string;
   readonly options?: readonly DerivedChoiceOption[];
+  /** When the choice is made/repeated: omitted = at creation/when gained;
+   * 'level-up' = each class level; 'daily-preparation' = each long rest. */
+  readonly trigger?: 'level-up' | 'daily-preparation';
+  /** True when the choice swaps a prior pick (known-caster level-up). */
+  readonly replaces?: boolean;
   readonly unsupported?: { readonly reason: string };
 }
 
@@ -231,9 +246,63 @@ function spellListRestriction(cls: RulesRecord): string {
   return `the ${cls.name.toLowerCase()} spell list`;
 }
 
+/**
+ * A structured, deterministic spell-selection filter (eshyra-vk23.2). Replaces
+ * free-text `from` strings ("the wizard spell list") so a tool resolves the
+ * option set from data, never English. Recognized keys:
+ *  - `classLists`: class keys whose spell lists are eligible, or 'any'.
+ *  - `spellLevels`: exact eligible spell levels (0 = cantrip).
+ *  - `minSpellLevel` / `maxSpellLevel`: level bounds; `maxSpellLevel` may be a
+ *    number or `{ classRef, atLevel }` (the caster's max castable level there).
+ *  - `castableLevelsOnly`: eligible levels are those the caster can cast at the
+ *    current character level — for recurring (level-up / daily) choices whose
+ *    ceiling scales rather than being fixed at the grant level.
+ *  - `mustBeInSpellbook`, `includeCantrips`, `ritualOnly`, `countsAsClassSpell`,
+ *    `countsAgainstKnown`, `requiresFeatureOption`, `alwaysPrepared`,
+ *    `mustBePreparedToCast`.
+ */
 function spellFilter(value: Record<string, unknown>): Record<string, unknown> {
   return { kind: 'spellFilter', ...value };
 }
+
+/** A spell filter scoped to one class's spell list. */
+function classSpellFilter(
+  cls: RulesRecord,
+  extra: Record<string, unknown>,
+): Record<string, unknown> {
+  return spellFilter({ classLists: [cls.key], ...extra });
+}
+
+/** Spells of a level the caster can currently cast, excluding cantrips — the
+ * eligible set for recurring known/prepared choices (replacement, daily prep,
+ * spellbook growth). */
+function castableSpellFilter(cls: RulesRecord): Record<string, unknown> {
+  return classSpellFilter(cls, { minSpellLevel: 1, castableLevelsOnly: true });
+}
+
+/** Warlock Mystic Arcanum tiers: one fixed-level spell unlocked at each level
+ * (eshyra-vk23.2). SRD: 6th-level at 11th, 7th at 13th, 8th at 15th, 9th at
+ * 17th. The Mystic Arcanum feature is granted once (11th); the higher tiers are
+ * level-gated picks the same feature confers. */
+const MYSTIC_ARCANUM_TIERS: ReadonlyArray<{
+  readonly level: number;
+  readonly spellLevel: number;
+}> = [
+  { level: 11, spellLevel: 6 },
+  { level: 13, spellLevel: 7 },
+  { level: 15, spellLevel: 8 },
+  { level: 17, spellLevel: 9 },
+];
+
+const ORDINALS: Readonly<Record<number, string>> = {
+  1: '1st',
+  2: '2nd',
+  3: '3rd',
+  6: '6th',
+  7: '7th',
+  8: '8th',
+  9: '9th',
+};
 
 /**
  * Attach cantrip / spell selection choices to caster Spellcasting features.
@@ -261,6 +330,45 @@ function deriveSpellChoices(
   const classByKey = new Map(input.classRecords.map((c) => [c.key, c]));
 
   for (const feature of input.featureRecords) {
+    // The Wizard Spellbook is a real build choice (six 1st-level spells at
+    // creation, +2 per level) but the SRD progression grants only the parent
+    // Spellcasting feature, so the Spellbook record is not in `granted`. Handle
+    // it explicitly, ahead of the build-feature guard (eshyra-vk23.2).
+    if (feature.key === 'feature:wizard:spellbook') {
+      const wizard = classByKey.get('class:wizard');
+      const startCount =
+        wizard === undefined
+          ? null
+          : ((
+              dataOf(wizard).spellPreparation as {
+                spellbookStartingSpells?: unknown;
+              }
+            )?.spellbookStartingSpells ?? null);
+      if (wizard !== undefined && typeof startCount === 'number') {
+        const spellbookLevel = featureLevel(feature);
+        out.set(feature.key, [
+          {
+            id: 'spellbook-initial',
+            category: 'spell',
+            prompt: `Choose the ${startCount} 1st-level wizard spells in your starting spellbook.`,
+            level: spellbookLevel,
+            choose: startCount,
+            from: classSpellFilter(wizard, { spellLevels: [1] }),
+          },
+          {
+            id: 'spellbook-growth',
+            category: 'spell',
+            prompt:
+              'Each time you gain a wizard level, add two wizard spells of your choice to your spellbook.',
+            level: spellbookLevel,
+            choose: 2,
+            trigger: 'level-up',
+            from: castableSpellFilter(wizard),
+          },
+        ]);
+      }
+      continue;
+    }
     if (!isBuildFeature(feature, granted)) continue;
     const level = featureLevel(feature);
 
@@ -412,16 +520,20 @@ function deriveSpellChoices(
     if (cls === undefined) continue;
     const choices: DerivedChoice[] = [];
 
-    // Mystic Arcanum: a single spell of a fixed level from the class list.
+    // Mystic Arcanum: one fixed-level spell from the warlock list at each of the
+    // 11th/13th/15th/17th-level tiers (eshyra-vk23.2).
     if (feature.key.endsWith(':mystic-arcanum')) {
-      choices.push({
-        id: 'arcanum',
-        category: 'spell',
-        prompt: `Choose one 6th-level spell from ${spellListRestriction(cls)} as your arcanum.`,
-        level,
-        choose: 1,
-        from: spellListRestriction(cls),
-      });
+      for (const tier of MYSTIC_ARCANUM_TIERS) {
+        const ord = ORDINALS[tier.spellLevel];
+        choices.push({
+          id: `arcanum-${tier.spellLevel}`,
+          category: 'spell',
+          prompt: `Choose one ${ord}-level spell from ${spellListRestriction(cls)} as your ${ord}-level arcanum.`,
+          level: tier.level,
+          choose: 1,
+          from: classSpellFilter(cls, { spellLevels: [tier.spellLevel] }),
+        });
+      }
       out.set(feature.key, choices);
       continue;
     }
@@ -429,13 +541,12 @@ function deriveSpellChoices(
     const row = spellcastingAt(cls, level);
     if (row === null) continue;
     const prep = dataOf(cls).spellPreparation as
-      | { kind?: unknown; spellbookStartingSpells?: unknown }
+      | {
+          kind?: unknown;
+          preparationFormula?: PreparationFormula;
+        }
       | undefined;
     const prepKind = prep?.kind;
-    const spellbookStart =
-      typeof prep?.spellbookStartingSpells === 'number'
-        ? prep.spellbookStartingSpells
-        : null;
 
     if (typeof row.cantripsKnown === 'number') {
       choices.push({
@@ -444,24 +555,55 @@ function deriveSpellChoices(
         prompt: `Choose your starting cantrips from ${spellListRestriction(cls)}.`,
         level,
         choose: row.cantripsKnown,
-        from: spellListRestriction(cls),
+        from: classSpellFilter(cls, { spellLevels: [0] }),
       });
     }
 
-    // Known casters choose their spells known; the Wizard chooses the spells in
-    // their starting spellbook. Prepared casters without a spellbook do not.
-    const spellChoose =
-      prepKind === 'known' && typeof row.spellsKnown === 'number'
-        ? row.spellsKnown
-        : spellbookStart;
-    if (spellChoose !== null && spellChoose !== undefined) {
+    if (prepKind === 'prepared' && prep?.preparationFormula !== undefined) {
+      // Prepared casters re-prepare each day; the count is a formula, not a
+      // fixed number. The Wizard prepares from the spellbook; Cleric/Druid/
+      // Paladin prepare from the full class spell list (eshyra-vk23.2).
+      const isWizard = cls.key === 'class:wizard';
+      choices.push({
+        id: 'prepared-spells',
+        category: 'spell',
+        prompt: isWizard
+          ? 'Prepare wizard spells from your spellbook each day (Intelligence modifier + wizard level).'
+          : `Prepare spells from ${spellListRestriction(cls)} each day.`,
+        level,
+        chooseFormula: { ...prep.preparationFormula },
+        trigger: 'daily-preparation',
+        from: isWizard
+          ? classSpellFilter(cls, {
+              minSpellLevel: 1,
+              castableLevelsOnly: true,
+              mustBeInSpellbook: true,
+            })
+          : castableSpellFilter(cls),
+      });
+    } else if (prepKind === 'known' && typeof row.spellsKnown === 'number') {
+      // Known casters choose a fixed number of spells known and may swap one for
+      // another from the class list whenever they gain a level (eshyra-vk23.2).
       choices.push({
         id: 'spells',
         category: 'spell',
         prompt: `Choose your starting spells from ${spellListRestriction(cls)}.`,
         level,
-        choose: spellChoose,
-        from: spellListRestriction(cls),
+        choose: row.spellsKnown,
+        from: classSpellFilter(cls, {
+          minSpellLevel: 1,
+          maxSpellLevel: { classRef: cls.key, atLevel: level },
+        }),
+      });
+      choices.push({
+        id: 'spell-replacement',
+        category: 'spell',
+        prompt: `When you gain a level in this class, you can replace one ${cls.name.toLowerCase()} spell you know with another from ${spellListRestriction(cls)}.`,
+        level,
+        choose: 1,
+        replaces: true,
+        trigger: 'level-up',
+        from: castableSpellFilter(cls),
       });
     }
 

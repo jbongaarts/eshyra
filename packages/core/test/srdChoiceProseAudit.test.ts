@@ -274,11 +274,13 @@ describe('choice-bearing prose gate (fixtures)', () => {
 // Real-pack baseline
 // ---------------------------------------------------------------------------
 
-// The known unstructured choice cases remaining after eshyra-ngcj.2 modeled
-// class/subclass option catalogs and higher-level feature spell filters. Every
-// one MUST be detected by the gate until its owning bead structures it or
-// documents why it is not a build choice.
-const KNOWN_MISSES: readonly string[] = [
+// The ten class spell-selection features that were the last unstructured
+// choice cases at the 2026-06-29 baseline. eshyra-vk23.2 structured every one
+// (cantrip/known-spell/prepared/spellbook/arcanum filters), so the gate must
+// now find NONE of them. They are kept here as an explicit regression list:
+// each MUST stay structured (no finding) or a future change is silently
+// reintroducing prose-only spell choices.
+const RESOLVED_SPELL_FEATURES: readonly string[] = [
   'feature:bard:spellcasting',
   'feature:cleric:spellcasting',
   'feature:druid:spellcasting',
@@ -296,9 +298,9 @@ describe('choice-bearing prose gate (committed pack baseline)', () => {
   const findings = auditSrdChoiceProse(pack);
   const keys = new Set(findings.map((f) => f.key));
 
-  it('detects every known 2026-06-29 unstructured option case', () => {
-    for (const key of KNOWN_MISSES) {
-      expect(keys.has(key), `expected a finding for ${key}`).toBe(true);
+  it('no longer flags the eshyra-vk23.2 class spell-selection features', () => {
+    for (const key of RESOLVED_SPELL_FEATURES) {
+      expect(keys.has(key), `expected ${key} to be structured`).toBe(false);
     }
   });
 
@@ -324,20 +326,21 @@ describe('choice-bearing prose gate (committed pack baseline)', () => {
     expect(findings.map((f) => f.key)).toEqual(sorted);
   });
 
-  // PIN: flips DOWN as the modeling beads structure each catalog/filter —
-  // eshyra-ngcj.2 (option catalogs), eshyra-ngcj.2.3 (spell choices), and
-  // eshyra-ngcj.5 (ancestry/background, e.g. Rock Gnome's Tinker menu). When a
-  // bead lands and this number drops, update it here.
-  it('total finding count matches the pinned 2026-06-29 baseline', () => {
-    // 27 at ngcj.1; ancestry:rock-gnome's Tinker and Open Hand Technique are
-    // per-use choices, not creation choices, and eshyra-ngcj.2 modeled the
-    // class/subclass option catalogs plus feature spell filters -> 10.
-    expect(findings.length).toBe(10);
+  // PIN: 27 at ngcj.1 -> 10 after eshyra-ngcj.2 modeled the class/subclass
+  // option catalogs and higher-level feature spell filters -> 0 after
+  // eshyra-vk23.2 structured the ten base class spell-selection features
+  // (cantrips, known spells + level-up replacement, prepared-spell formulas,
+  // the Wizard spellbook + growth, and Mystic Arcanum at 11th/13th/15th/17th).
+  // Every scanned build choice is now structured; raise this only if a NEW
+  // unstructured choice genuinely lands (then file/justify it), never to paper
+  // over a regression.
+  it('total finding count matches the pinned baseline (fully structured)', () => {
+    expect(findings.length).toBe(0);
   });
 
-  it('formats a human-readable punch-list report', () => {
+  it('formats a human-readable report for an empty punch list', () => {
     const report = formatSrdChoiceProseReport(pack.meta.packId, findings);
     expect(report).toContain('SRD choice-bearing prose coverage gate');
-    expect(report).toContain('feature:bard:spellcasting');
+    expect(report).toContain('no findings');
   });
 });

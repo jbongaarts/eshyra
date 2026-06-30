@@ -641,13 +641,16 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 218,
   },
   { kind: 'equipment', field: 'weight', missingCount: 44, totalInKind: 218 },
-  // Playable choice modeling (eshyra-o9bd.9): the 42 granted class features that
-  // confer a creation/level-up build choice carry structured `data.choices`
-  // (subclass selection, spell/cantrip picks, ASI-vs-feat, Fighting Style,
-  // Metamagic, Eldritch Invocations, favored enemy/terrain, Expertise, plus
-  // named out-of-scope Channel Divinity markers); the other 142 features confer
-  // no player choice and omit it.
-  { kind: 'feature', field: 'choices', missingCount: 130, totalInKind: 184 },
+  // Playable choice modeling (eshyra-o9bd.9): granted class features that confer
+  // a creation/level-up build choice carry structured `data.choices` (subclass
+  // selection, spell/cantrip picks, ASI-vs-feat, Fighting Style, Metamagic,
+  // Eldritch Invocations, favored enemy/terrain, Expertise, plus named
+  // out-of-scope Channel Divinity markers); the rest confer no player choice and
+  // omit it. eshyra-vk23.2 structured the base spell workflows, adding `choices`
+  // to feature:paladin:spellcasting (formula-driven daily preparation) and
+  // feature:wizard:spellbook (starting contents + growth), so the missing count
+  // fell 130 -> 128.
+  { kind: 'feature', field: 'choices', missingCount: 128, totalInKind: 184 },
   // First-pass mechanics projections (eshyra-ngcj.6): 74 features with explicit
   // rest-reset resources, critical range, extra attack, advantage/resistance,
   // proficiency, or spell-grant patterns carry `mechanics`; the rest remain
@@ -5723,6 +5726,129 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(byId.get('eldritch-invocation:voice-of-the-chain-master')).toBe(
         'Pact of the Chain feature',
       );
+    });
+  });
+
+  // eshyra-vk23.2: deterministic class spell workflows. Spell-selection choices
+  // must be structured filters (never prose strings); prepared casters carry a
+  // machine-readable preparation formula; the Wizard spellbook and Mystic
+  // Arcanum are fully modeled.
+  describe('deterministic class spell workflows (eshyra-vk23.2)', () => {
+    const featureByKey = new Map(
+      pack.records
+        .filter((r) => r.kind === 'feature')
+        .map((r) => [r.key, r] as const),
+    );
+    const classByKey = new Map(
+      pack.records
+        .filter((r) => r.kind === 'class')
+        .map((r) => [r.key, r] as const),
+    );
+    const choicesOf = (key: string) =>
+      ((featureByKey.get(key)?.data as { choices?: Record<string, unknown>[] })
+        ?.choices ?? []) as Record<string, unknown>[];
+
+    it('every spell/cantrip choice uses structured selection, not a prose string', () => {
+      // Structured = a discrete option-key array OR a spellFilter object; a bare
+      // prose `from` string is exactly the pre-vk23.2 state this guards against.
+      for (const record of pack.records) {
+        const choices = (record.data as { choices?: Record<string, unknown>[] })
+          .choices;
+        if (choices === undefined) continue;
+        for (const choice of choices) {
+          if (choice.category !== 'spell' && choice.category !== 'cantrip') {
+            continue;
+          }
+          const from = choice.from;
+          if (from === undefined) continue;
+          const label = `${record.key} choice ${String(choice.id)}`;
+          if (Array.isArray(from)) {
+            expect(from.length, `${label} option list`).toBeGreaterThan(0);
+          } else {
+            expect(
+              typeof from === 'object' && from !== null,
+              `${label} from must be a structured filter or option list`,
+            ).toBe(true);
+            expect((from as { kind?: unknown }).kind).toBe('spellFilter');
+          }
+        }
+      }
+    });
+
+    it('known casters get a fixed spells-known pick plus a level-up replacement', () => {
+      for (const key of [
+        'feature:bard:spellcasting',
+        'feature:sorcerer:spellcasting',
+        'feature:ranger:spellcasting',
+        'feature:warlock:pact-magic',
+      ]) {
+        const ids = choicesOf(key).map((c) => c.id);
+        expect(ids, key).toContain('spells');
+        expect(ids, key).toContain('spell-replacement');
+        const replacement = choicesOf(key).find(
+          (c) => c.id === 'spell-replacement',
+        );
+        expect(replacement?.replaces, key).toBe(true);
+        expect(replacement?.trigger, key).toBe('level-up');
+      }
+    });
+
+    it('prepared casters expose a formula-driven daily preparation choice', () => {
+      const expected: Record<string, { ability: string; divisor: number }> = {
+        'feature:cleric:spellcasting': { ability: 'wisdom', divisor: 1 },
+        'feature:druid:spellcasting': { ability: 'wisdom', divisor: 1 },
+        'feature:paladin:spellcasting': { ability: 'charisma', divisor: 2 },
+        'feature:wizard:spellcasting': { ability: 'intelligence', divisor: 1 },
+      };
+      for (const [key, { ability, divisor }] of Object.entries(expected)) {
+        const prepared = choicesOf(key).find((c) => c.id === 'prepared-spells');
+        expect(prepared, key).toBeDefined();
+        expect(prepared?.choose, key).toBeUndefined();
+        expect(prepared?.chooseFormula, key).toMatchObject({
+          ability,
+          classLevelDivisor: divisor,
+          minimum: 1,
+        });
+        expect(prepared?.trigger, key).toBe('daily-preparation');
+      }
+    });
+
+    it('prepared caster classes carry a structured preparationFormula', () => {
+      for (const key of [
+        'class:cleric',
+        'class:druid',
+        'class:paladin',
+        'class:wizard',
+      ]) {
+        const prep = (
+          classByKey.get(key)?.data as {
+            spellPreparation?: { preparationFormula?: Record<string, unknown> };
+          }
+        ).spellPreparation;
+        expect(prep?.preparationFormula, key).toBeDefined();
+        expect(typeof prep?.preparationFormula?.classLevelDivisor, key).toBe(
+          'number',
+        );
+      }
+    });
+
+    it('models the Wizard spellbook as starting contents plus per-level growth', () => {
+      const ids = choicesOf('feature:wizard:spellbook').map((c) => c.id);
+      expect(ids).toEqual(['spellbook-initial', 'spellbook-growth']);
+      const initial = choicesOf('feature:wizard:spellbook').find(
+        (c) => c.id === 'spellbook-initial',
+      );
+      expect(initial?.choose).toBe(6);
+    });
+
+    it('models Mystic Arcanum at the 11th/13th/15th/17th tiers', () => {
+      const arcana = choicesOf('feature:warlock:mystic-arcanum');
+      expect(arcana.map((c) => [c.id, c.level])).toEqual([
+        ['arcanum-6', 11],
+        ['arcanum-7', 13],
+        ['arcanum-8', 15],
+        ['arcanum-9', 17],
+      ]);
     });
   });
 

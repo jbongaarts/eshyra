@@ -263,15 +263,32 @@ function optFeatureChoiceArray(parent: Obj, key: string, path: string): void {
     }
     reqStr(entry, 'prompt', at);
     reqInt(entry, 'level', at, 1);
+    // A choice carries EXACTLY one selection mode: a fixed `choose` count, a
+    // `chooseFormula` (prepared-caster daily count, eshyra-vk23.2), or an
+    // `unsupported` out-of-scope marker — never two, never zero.
     const hasChoose = entry.choose !== undefined;
+    const hasFormula = entry.chooseFormula !== undefined;
     const hasUnsupported = entry.unsupported !== undefined;
-    if (hasChoose === hasUnsupported) {
+    const modes = [hasChoose, hasFormula, hasUnsupported].filter(
+      Boolean,
+    ).length;
+    if (modes !== 1) {
       throw new RulesPackError(
-        `${at} must carry exactly one of 'choose' (structured choice) or 'unsupported' (out-of-scope marker)`,
+        `${at} must carry exactly one of 'choose' (fixed count), 'chooseFormula' (prepared-caster count), or 'unsupported' (out-of-scope marker)`,
       );
     }
-    if (hasChoose) {
-      reqInt(entry, 'choose', at, 1);
+    if (hasChoose || hasFormula) {
+      if (hasChoose) reqInt(entry, 'choose', at, 1);
+      if (hasFormula) {
+        validatePreparationFormula(
+          reqObj(entry, 'chooseFormula', at),
+          `${at}.chooseFormula`,
+        );
+      }
+      // Optional advancement annotations: when the choice is made/repeated, and
+      // whether it replaces a prior pick (known-caster level-up swap).
+      optStr(entry, 'trigger', at);
+      optBool(entry, 'replaces', at);
       const from = entry.from;
       if (
         from !== undefined &&
@@ -478,6 +495,42 @@ function optAbilityScoreIncreaseArray(
   });
 }
 
+const SPELL_PREP_ABILITIES: ReadonlySet<string> = new Set([
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+]);
+
+/**
+ * Validate a machine-readable spell-preparation formula (eshyra-vk23.2): the
+ * prepared-spell count is `max(minimum, abilityModifier + floor(classLevel /
+ * classLevelDivisor))`. Cleric/Druid/Wizard use divisor 1 (full level), Paladin
+ * uses divisor 2 (half level rounded down). Shared by class
+ * `spellPreparation.preparationFormula` and a feature choice's `chooseFormula`.
+ */
+function validatePreparationFormula(obj: Obj, path: string): void {
+  const ability = reqStr(obj, 'ability', path);
+  if (!SPELL_PREP_ABILITIES.has(ability)) {
+    throw new RulesPackError(
+      `${path}.ability must be a lowercase ability score name`,
+    );
+  }
+  reqInt(obj, 'classLevelDivisor', path, 1);
+  reqInt(obj, 'minimum', path, 0);
+}
+
+function optPreparationFormula(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(`${path}.${key} must be an object when present`);
+  }
+  validatePreparationFormula(value as Obj, `${path}.${key}`);
+}
+
 function optSpellPreparation(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -492,6 +545,7 @@ function optSpellPreparation(parent: Obj, key: string, path: string): void {
     );
   }
   optInt(obj, 'spellbookStartingSpells', `${path}.${key}`, 1);
+  optPreparationFormula(obj, 'preparationFormula', `${path}.${key}`);
   reqStr(obj, 'sourceText', `${path}.${key}`);
 }
 
