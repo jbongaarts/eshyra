@@ -104103,11 +104103,43 @@
       "parentClass": "class:fighter",
       "description": "The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows.",
       "features": [
-        "feature:champion:additional-fighting-style",
         "feature:champion:improved-critical",
         "feature:champion:remarkable-athlete",
+        "feature:champion:additional-fighting-style",
         "feature:champion:superior-critical",
         "feature:champion:survivor"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 3,
+          "features": [
+            "feature:champion:improved-critical"
+          ]
+        },
+        {
+          "level": 7,
+          "features": [
+            "feature:champion:remarkable-athlete"
+          ]
+        },
+        {
+          "level": 10,
+          "features": [
+            "feature:champion:additional-fighting-style"
+          ]
+        },
+        {
+          "level": 15,
+          "features": [
+            "feature:champion:superior-critical"
+          ]
+        },
+        {
+          "level": 18,
+          "features": [
+            "feature:champion:survivor"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 25",
@@ -104151,11 +104183,44 @@
       ],
       "features": [
         "feature:circle-of-the-land:bonus-cantrip",
+        "feature:circle-of-the-land:natural-recovery",
         "feature:circle-of-the-land:circle-spells",
         "feature:circle-of-the-land:lands-stride",
-        "feature:circle-of-the-land:natural-recovery",
-        "feature:circle-of-the-land:natures-sanctuary",
-        "feature:circle-of-the-land:natures-ward"
+        "feature:circle-of-the-land:natures-ward",
+        "feature:circle-of-the-land:natures-sanctuary"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 2,
+          "features": [
+            "feature:circle-of-the-land:bonus-cantrip",
+            "feature:circle-of-the-land:natural-recovery"
+          ]
+        },
+        {
+          "level": 3,
+          "features": [
+            "feature:circle-of-the-land:circle-spells"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:circle-of-the-land:lands-stride"
+          ]
+        },
+        {
+          "level": 10,
+          "features": [
+            "feature:circle-of-the-land:natures-ward"
+          ]
+        },
+        {
+          "level": 14,
+          "features": [
+            "feature:circle-of-the-land:natures-sanctuary"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 21",
@@ -104189,10 +104254,31 @@
       "parentClass": "class:bard",
       "description": "Bards of the College of Lore know something about most things, collecting bits of knowledge from sources as diverse as scholarly tomes and peasant tales. Whether singing folk ballads in taverns or elaborate compositions in royal courts, these bards use their gifts to hold audiences spellbound. When the applause dies down, the audience members might find themselves questioning everything they held to be true, from their faith in the priesthood of the local temple to their loyalty to the king. The loyalty of these bards lies in the pursuit of beauty and truth, not in fealty to a monarch or following the tenets of a deity. A noble who keeps such a bard as a herald or advisor knows that the bard would rather be honest than politic. The college’s members gather in libraries and sometimes in actual colleges, complete with classrooms and dormitories, to share their lore with one another. They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority.",
       "features": [
-        "feature:college-of-lore:additional-magical-secrets",
         "feature:college-of-lore:bonus-proficiencies",
         "feature:college-of-lore:cutting-words",
+        "feature:college-of-lore:additional-magical-secrets",
         "feature:college-of-lore:peerless-skill"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 3,
+          "features": [
+            "feature:college-of-lore:bonus-proficiencies",
+            "feature:college-of-lore:cutting-words"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:college-of-lore:additional-magical-secrets"
+          ]
+        },
+        {
+          "level": 14,
+          "features": [
+            "feature:college-of-lore:peerless-skill"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 13",
@@ -104226,11 +104312,38 @@
       "parentClass": "class:sorcerer",
       "description": "Your innate magic comes from draconic magic that was mingled with your blood or that of your ancestors. Most often, sorcerers with this origin trace their descent back to a mighty sorcerer of ancient times who made a bargain with a dragon or who might even have claimed a dragon parent. Some of these bloodlines are well established in the world, but most are obscure. Any given sorcerer could be the first of a new bloodline, as a result of a pact or some other exceptional circumstance.",
       "features": [
-        "feature:draconic-bloodline:draconic-presence",
         "feature:draconic-bloodline:draconic-resilience",
         "feature:draconic-bloodline:dragon-ancestor",
+        "feature:draconic-bloodline:elemental-affinity",
         "feature:draconic-bloodline:dragon-wings",
-        "feature:draconic-bloodline:elemental-affinity"
+        "feature:draconic-bloodline:draconic-presence"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 1,
+          "features": [
+            "feature:draconic-bloodline:draconic-resilience",
+            "feature:draconic-bloodline:dragon-ancestor"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:draconic-bloodline:elemental-affinity"
+          ]
+        },
+        {
+          "level": 14,
+          "features": [
+            "feature:draconic-bloodline:dragon-wings"
+          ]
+        },
+        {
+          "level": 18,
+          "features": [
+            "feature:draconic-bloodline:draconic-presence"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 44",
@@ -104264,10 +104377,36 @@
       "parentClass": "class:ranger",
       "description": "Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. As you walk the Hunter’s path, you learn specialized techniques for fighting the threats you face, from rampaging ogres and hordes of orcs to towering giants and terrifying dragons.",
       "features": [
-        "feature:hunter:defensive-tactics",
         "feature:hunter:hunters-prey",
+        "feature:hunter:defensive-tactics",
         "feature:hunter:multiattack",
         "feature:hunter:superior-hunters-defense"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 3,
+          "features": [
+            "feature:hunter:hunters-prey"
+          ]
+        },
+        {
+          "level": 7,
+          "features": [
+            "feature:hunter:defensive-tactics"
+          ]
+        },
+        {
+          "level": 11,
+          "features": [
+            "feature:hunter:multiattack"
+          ]
+        },
+        {
+          "level": 15,
+          "features": [
+            "feature:hunter:superior-hunters-defense"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 37",
@@ -104304,12 +104443,45 @@
         "table:life-domain-spells"
       ],
       "features": [
-        "feature:life-domain:blessed-healer",
         "feature:life-domain:bonus-proficiency",
-        "feature:life-domain:channel-divinity-preserve-life",
         "feature:life-domain:disciple-of-life",
+        "feature:life-domain:channel-divinity-preserve-life",
+        "feature:life-domain:blessed-healer",
         "feature:life-domain:divine-strike",
         "feature:life-domain:supreme-healing"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 1,
+          "features": [
+            "feature:life-domain:bonus-proficiency",
+            "feature:life-domain:disciple-of-life"
+          ]
+        },
+        {
+          "level": 2,
+          "features": [
+            "feature:life-domain:channel-divinity-preserve-life"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:life-domain:blessed-healer"
+          ]
+        },
+        {
+          "level": 8,
+          "features": [
+            "feature:life-domain:divine-strike"
+          ]
+        },
+        {
+          "level": 17,
+          "features": [
+            "feature:life-domain:supreme-healing"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 17",
@@ -104352,10 +104524,36 @@
         "table:oath-of-devotion-spells"
       ],
       "features": [
-        "feature:oath-of-devotion:aura-of-devotion",
         "feature:oath-of-devotion:channel-divinity",
-        "feature:oath-of-devotion:holy-nimbus",
-        "feature:oath-of-devotion:purity-of-spirit"
+        "feature:oath-of-devotion:aura-of-devotion",
+        "feature:oath-of-devotion:purity-of-spirit",
+        "feature:oath-of-devotion:holy-nimbus"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 3,
+          "features": [
+            "feature:oath-of-devotion:channel-divinity"
+          ]
+        },
+        {
+          "level": 7,
+          "features": [
+            "feature:oath-of-devotion:aura-of-devotion"
+          ]
+        },
+        {
+          "level": 15,
+          "features": [
+            "feature:oath-of-devotion:purity-of-spirit"
+          ]
+        },
+        {
+          "level": 20,
+          "features": [
+            "feature:oath-of-devotion:holy-nimbus"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 32",
@@ -104390,9 +104588,35 @@
       "description": "For some barbarians, rage is a means to an end— that end being violence. The Path of the Berserker is a path of untrammeled fury, slick with blood. As you enter the berserker’s rage, you thrill in the chaos of battle, heedless of your own health or well-being.",
       "features": [
         "feature:path-of-the-berserker:frenzy",
-        "feature:path-of-the-berserker:intimidating-presence",
         "feature:path-of-the-berserker:mindless-rage",
+        "feature:path-of-the-berserker:intimidating-presence",
         "feature:path-of-the-berserker:retaliation"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 3,
+          "features": [
+            "feature:path-of-the-berserker:frenzy"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:path-of-the-berserker:mindless-rage"
+          ]
+        },
+        {
+          "level": 10,
+          "features": [
+            "feature:path-of-the-berserker:intimidating-presence"
+          ]
+        },
+        {
+          "level": 14,
+          "features": [
+            "feature:path-of-the-berserker:retaliation"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 9",
@@ -104426,11 +104650,38 @@
       "parentClass": "class:wizard",
       "description": "You focus your study on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid. Some evokers find employment in military forces, serving as artillery to blast enemy armies from afar. Others use their spectacular power to protect the weak, while some seek their own gain as bandits, adventurers, or aspiring tyrants.",
       "features": [
-        "feature:school-of-evocation:empowered-evocation",
         "feature:school-of-evocation:evocation-savant",
-        "feature:school-of-evocation:overchannel",
+        "feature:school-of-evocation:sculpt-spells",
         "feature:school-of-evocation:potent-cantrip",
-        "feature:school-of-evocation:sculpt-spells"
+        "feature:school-of-evocation:empowered-evocation",
+        "feature:school-of-evocation:overchannel"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 2,
+          "features": [
+            "feature:school-of-evocation:evocation-savant",
+            "feature:school-of-evocation:sculpt-spells"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:school-of-evocation:potent-cantrip"
+          ]
+        },
+        {
+          "level": 10,
+          "features": [
+            "feature:school-of-evocation:empowered-evocation"
+          ]
+        },
+        {
+          "level": 14,
+          "features": [
+            "feature:school-of-evocation:overchannel"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 54",
@@ -104471,6 +104722,32 @@
         "feature:the-fiend:dark-ones-own-luck",
         "feature:the-fiend:fiendish-resilience",
         "feature:the-fiend:hurl-through-hell"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 1,
+          "features": [
+            "feature:the-fiend:dark-ones-blessing"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:the-fiend:dark-ones-own-luck"
+          ]
+        },
+        {
+          "level": 10,
+          "features": [
+            "feature:the-fiend:fiendish-resilience"
+          ]
+        },
+        {
+          "level": 14,
+          "features": [
+            "feature:the-fiend:hurl-through-hell"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 50",
@@ -104507,8 +104784,35 @@
         "feature:thief:fast-hands",
         "feature:thief:second-story-work",
         "feature:thief:supreme-sneak",
-        "feature:thief:thiefs-reflexes",
-        "feature:thief:use-magic-device"
+        "feature:thief:use-magic-device",
+        "feature:thief:thiefs-reflexes"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 3,
+          "features": [
+            "feature:thief:fast-hands",
+            "feature:thief:second-story-work"
+          ]
+        },
+        {
+          "level": 9,
+          "features": [
+            "feature:thief:supreme-sneak"
+          ]
+        },
+        {
+          "level": 13,
+          "features": [
+            "feature:thief:use-magic-device"
+          ]
+        },
+        {
+          "level": 17,
+          "features": [
+            "feature:thief:thiefs-reflexes"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 40",
@@ -104543,9 +104847,35 @@
       "description": "Monks of the Way of the Open Hand are the ultimate masters of martial arts combat, whether armed or unarmed. They learn techniques to push and trip their opponents, manipulate ki to heal damage to their bodies, and practice advanced meditation that can protect them from harm.",
       "features": [
         "feature:way-of-the-open-hand:open-hand-technique",
-        "feature:way-of-the-open-hand:quivering-palm",
+        "feature:way-of-the-open-hand:wholeness-of-body",
         "feature:way-of-the-open-hand:tranquility",
-        "feature:way-of-the-open-hand:wholeness-of-body"
+        "feature:way-of-the-open-hand:quivering-palm"
+      ],
+      "featuresByLevel": [
+        {
+          "level": 3,
+          "features": [
+            "feature:way-of-the-open-hand:open-hand-technique"
+          ]
+        },
+        {
+          "level": 6,
+          "features": [
+            "feature:way-of-the-open-hand:wholeness-of-body"
+          ]
+        },
+        {
+          "level": 11,
+          "features": [
+            "feature:way-of-the-open-hand:tranquility"
+          ]
+        },
+        {
+          "level": 17,
+          "features": [
+            "feature:way-of-the-open-hand:quivering-palm"
+          ]
+        }
       ]
     },
     "source": "SRD 5.1 p. 28",

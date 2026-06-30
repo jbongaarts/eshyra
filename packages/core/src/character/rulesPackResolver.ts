@@ -211,11 +211,21 @@ export interface ResolvedSpellData {
   readonly classes: readonly string[];
 }
 
-/** Subclass fields level-up reads from a generated `subclass` record. */
+/**
+ * Subclass fields level-up reads from a generated `subclass` record.
+ *
+ * The generated pack may also expose `data.featuresByLevel`, but this resolved
+ * character-consumer facade intentionally stays flat for now: current
+ * deterministic level-up code only needs the subclass's level-ordered feature
+ * refs and resolves target-level membership from the referenced `feature`
+ * records. Add a grouped projection here only when a consumer needs those rows
+ * directly.
+ */
 export interface ResolvedSubclassData {
   readonly key: string;
   readonly name: string;
   readonly parentClass: string;
+  /** Feature refs in grant-level order, mirroring generated `data.features`. */
   readonly features: readonly string[];
 }
 

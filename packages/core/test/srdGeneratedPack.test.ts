@@ -1402,6 +1402,125 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  // eshyra-vk23.5: every subclass exposes its granted features in level order,
+  // directly on `data.features` and as an explicit `data.featuresByLevel`
+  // projection, so simple consumers and the DM model read the progression in
+  // play order without joining feature refs by hand. Before this the flat list
+  // was sorted by key, so Champion listed its level-10 Additional Fighting Style
+  // ahead of its level-3 Improved Critical.
+  describe('ordered subclass progression (eshyra-vk23.5)', () => {
+    const features = pack.records.filter((record) => record.kind === 'feature');
+    const featureLevel = new Map(
+      features.map((record) => [
+        record.key,
+        (record.data as { level?: unknown }).level,
+      ]),
+    );
+    const subclasses = pack.records.filter(
+      (record) => record.kind === 'subclass',
+    );
+
+    it('covers all 12 subclasses with a featuresByLevel projection', () => {
+      expect(subclasses).toHaveLength(12);
+      for (const subclass of subclasses) {
+        const data = subclass.data as {
+          features?: unknown;
+          featuresByLevel?: unknown;
+        };
+        expect(Array.isArray(data.features), `${subclass.key} features`).toBe(
+          true,
+        );
+        expect(
+          Array.isArray(data.featuresByLevel),
+          `${subclass.key} featuresByLevel`,
+        ).toBe(true);
+      }
+    });
+
+    it('orders every subclass feature list and grouping by grant level', () => {
+      for (const subclass of subclasses) {
+        const data = subclass.data as {
+          features: string[];
+          featuresByLevel: Array<{ level: number; features: string[] }>;
+        };
+
+        // The flat list is non-decreasing in grant level.
+        const flatLevels = data.features.map((key) => featureLevel.get(key));
+        for (const level of flatLevels) {
+          expect(typeof level, `${subclass.key} feature level`).toBe('number');
+        }
+        const sortedFlatLevels = [...(flatLevels as number[])].sort(
+          (a, b) => a - b,
+        );
+        expect(flatLevels, `${subclass.key} flat order`).toEqual(
+          sortedFlatLevels,
+        );
+
+        // The grouped projection is strictly ascending in level, each row's
+        // refs all sit at that level, and flattening it reproduces the flat list
+        // exactly (same refs, same order) — no ref is dropped, added, or moved.
+        let previousLevel = 0;
+        for (const row of data.featuresByLevel) {
+          expect(row.level, `${subclass.key} ascending levels`).toBeGreaterThan(
+            previousLevel,
+          );
+          previousLevel = row.level;
+          expect(
+            row.features.length,
+            `${subclass.key} non-empty row`,
+          ).toBeGreaterThan(0);
+          for (const key of row.features) {
+            expect(featureLevel.get(key), `${subclass.key} ${key} level`).toBe(
+              row.level,
+            );
+          }
+        }
+        expect(
+          data.featuresByLevel.flatMap((row) => row.features),
+          `${subclass.key} grouped vs flat`,
+        ).toEqual(data.features);
+      }
+    });
+
+    it('presents Champion progression at levels 3, 7, 10, 15, and 18 in order', () => {
+      const champion = pack.records.find(
+        (record) => record.key === 'subclass:champion',
+      );
+      const data = champion?.data as {
+        features: string[];
+        featuresByLevel: Array<{ level: number; features: string[] }>;
+      };
+      expect(data.features).toEqual([
+        'feature:champion:improved-critical',
+        'feature:champion:remarkable-athlete',
+        'feature:champion:additional-fighting-style',
+        'feature:champion:superior-critical',
+        'feature:champion:survivor',
+      ]);
+      expect(data.featuresByLevel).toEqual([
+        { level: 3, features: ['feature:champion:improved-critical'] },
+        { level: 7, features: ['feature:champion:remarkable-athlete'] },
+        { level: 10, features: ['feature:champion:additional-fighting-style'] },
+        { level: 15, features: ['feature:champion:superior-critical'] },
+        { level: 18, features: ['feature:champion:survivor'] },
+      ]);
+    });
+
+    it('groups multiple same-level features into one Life Domain row', () => {
+      const lifeDomain = pack.records.find(
+        (record) => record.key === 'subclass:life-domain',
+      );
+      const data = lifeDomain?.data as {
+        featuresByLevel: Array<{ level: number; features: string[] }>;
+      };
+      const levelOneRow = data.featuresByLevel.find((row) => row.level === 1);
+      expect(levelOneRow?.features).toEqual([
+        'feature:life-domain:bonus-proficiency',
+        'feature:life-domain:disciple-of-life',
+      ]);
+    });
+  });
+
   // eshyra-0m9.13 feature-boundary regression on the committed pack. The
   // extraction-layer band fix removed the class proficiency setup block from
   // every class first feature, and the parser-layer heading/lead-in fix split
