@@ -60,6 +60,16 @@ export interface FeatureChoiceOption {
   readonly text: string;
   /** Verbatim SRD prerequisite text, when the option prints one. */
   readonly prerequisite?: string;
+  /** Structured prerequisite clauses parsed from the prerequisite prose. */
+  readonly prerequisites?: readonly (
+    | {
+        readonly kind: 'level';
+        readonly classRef: string;
+        readonly level: number;
+      }
+    | { readonly kind: 'pactBoon'; readonly ref: string }
+    | { readonly kind: 'cantrip'; readonly ref: string }
+  )[];
   /** Human-readable source label for this option's source text. */
   readonly source: string;
 }

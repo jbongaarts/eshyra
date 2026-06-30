@@ -899,6 +899,22 @@ function hasMechanicsProjection(record: RulesRecord): boolean {
   return objectValue(objectValue(data.feature)?.mechanics) !== null;
 }
 
+function hasPartialStructure(record: RulesRecord): boolean {
+  const data = dataObject(record);
+  if (data === null) return false;
+  if (arrayValue(data.effects).length > 0) return true;
+  if (arrayValue(data.levels).length > 0) return true;
+  if (arrayValue(data.traits).length > 0) return true;
+  if (arrayValue(data.actions).length > 0) return true;
+  if (arrayValue(data.reactions).length > 0) return true;
+  if (arrayValue(data.legendaryActions).length > 0) return true;
+  if (arrayValue(data.tableRefs).length > 0) return true;
+  if (arrayValue(data.contents).length > 0) return true;
+  if (arrayValue(data.variants).length > 0) return true;
+  if (objectValue(data.feature) !== null) return true;
+  return false;
+}
+
 function hasProse(record: RulesRecord): boolean {
   const data = dataObject(record);
   if (data === null) return false;
@@ -923,7 +939,7 @@ function firstKeys(
     .slice(0, limit);
 }
 
-type GameplayReadinessReport = {
+export type GameplayReadinessReport = {
   readonly packId: string;
   readonly byKind: Record<
     string,
@@ -933,12 +949,14 @@ type GameplayReadinessReport = {
       readonly recordsWithUnresolvedChoiceProse: number;
       readonly recordsWithDeterministicGrants: number;
       readonly recordsWithMechanicsProjections: number;
+      readonly recordsWithPartialStructure: number;
       readonly proseOnlyRecords: number;
       readonly examples: {
         readonly structuredChoices: readonly string[];
         readonly unresolvedChoiceProse: readonly string[];
         readonly deterministicGrants: readonly string[];
         readonly mechanicsProjections: readonly string[];
+        readonly partialStructure: readonly string[];
         readonly proseOnly: readonly string[];
       };
     }
@@ -950,7 +968,7 @@ type GameplayReadinessReport = {
   }[];
 };
 
-function buildGameplayReadinessReport(
+export function buildGameplayReadinessReport(
   pack: RulesPack,
   choiceProseFindings: readonly SrdChoiceProseFinding[],
 ): GameplayReadinessReport {
@@ -967,13 +985,15 @@ function buildGameplayReadinessReport(
     );
     const grants = records.filter(hasDeterministicGrants);
     const mechanics = records.filter(hasMechanicsProjection);
+    const partial = records.filter(hasPartialStructure);
     const proseOnly = records.filter(
       (record) =>
         hasProse(record) &&
         !hasStructuredChoices(record) &&
         !choiceFindingKeys.has(record.key) &&
         !hasDeterministicGrants(record) &&
-        !hasMechanicsProjection(record),
+        !hasMechanicsProjection(record) &&
+        !hasPartialStructure(record),
     );
     byKind[kind] = {
       totalRecords: records.length,
@@ -981,6 +1001,7 @@ function buildGameplayReadinessReport(
       recordsWithUnresolvedChoiceProse: unresolved.length,
       recordsWithDeterministicGrants: grants.length,
       recordsWithMechanicsProjections: mechanics.length,
+      recordsWithPartialStructure: partial.length,
       proseOnlyRecords: proseOnly.length,
       examples: {
         structuredChoices: firstKeys(records, hasStructuredChoices),
@@ -989,6 +1010,7 @@ function buildGameplayReadinessReport(
         ),
         deterministicGrants: firstKeys(records, hasDeterministicGrants),
         mechanicsProjections: firstKeys(records, hasMechanicsProjection),
+        partialStructure: firstKeys(records, hasPartialStructure),
         proseOnly: firstKeys(records, (record) => proseOnly.includes(record)),
       },
     };
@@ -1004,25 +1026,25 @@ function buildGameplayReadinessReport(
   };
 }
 
-function formatGameplayReadinessReport(
+export function formatGameplayReadinessReport(
   report: ReturnType<typeof buildGameplayReadinessReport>,
 ): string {
   const lines = [
     'Gameplay readiness',
     `Pack: ${report.packId}`,
     '',
-    '| kind | total | structured choices | unresolved choice prose | deterministic grants | mechanics projections | prose-only |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| kind | total | structured choices | unresolved choice prose | deterministic grants | mechanics projections | partial structure | prose-only |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
   ];
   for (const [kind, summary] of Object.entries(report.byKind)) {
     lines.push(
-      `| ${kind} | ${summary.totalRecords} | ${summary.recordsWithStructuredChoices} | ${summary.recordsWithUnresolvedChoiceProse} | ${summary.recordsWithDeterministicGrants} | ${summary.recordsWithMechanicsProjections} | ${summary.proseOnlyRecords} |`,
+      `| ${kind} | ${summary.totalRecords} | ${summary.recordsWithStructuredChoices} | ${summary.recordsWithUnresolvedChoiceProse} | ${summary.recordsWithDeterministicGrants} | ${summary.recordsWithMechanicsProjections} | ${summary.recordsWithPartialStructure} | ${summary.proseOnlyRecords} |`,
     );
   }
   lines.push('', 'Examples by kind');
   for (const [kind, summary] of Object.entries(report.byKind)) {
     lines.push(
-      `- ${kind}: choices [${summary.examples.structuredChoices.join(', ') || 'none'}]; unresolved [${summary.examples.unresolvedChoiceProse.join(', ') || 'none'}]; grants [${summary.examples.deterministicGrants.join(', ') || 'none'}]; mechanics [${summary.examples.mechanicsProjections.join(', ') || 'none'}]; prose-only [${summary.examples.proseOnly.join(', ') || 'none'}]`,
+      `- ${kind}: choices [${summary.examples.structuredChoices.join(', ') || 'none'}]; unresolved [${summary.examples.unresolvedChoiceProse.join(', ') || 'none'}]; grants [${summary.examples.deterministicGrants.join(', ') || 'none'}]; mechanics [${summary.examples.mechanicsProjections.join(', ') || 'none'}]; partial [${summary.examples.partialStructure.join(', ') || 'none'}]; prose-only [${summary.examples.proseOnly.join(', ') || 'none'}]`,
     );
   }
   lines.push('', 'High-impact unresolved choice-prose examples');
@@ -1718,7 +1740,9 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

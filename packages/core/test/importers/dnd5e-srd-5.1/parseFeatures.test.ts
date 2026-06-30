@@ -230,6 +230,57 @@ describe('parseFeatures — title-case option subheadings', () => {
   });
 });
 
+const WARLOCK_INVOCATIONS_ACROSS_PAGES = [
+  page(47, [
+    'Warlock',
+    'The Warlock',
+    'Level Proficiency Bonus Features',
+    '1st +2 Otherworldly Patron, Pact Magic',
+    '2nd +2 Eldritch Invocations',
+    'Class Features',
+    'Hit Dice: 1d8 per warlock level',
+    'Armor: Light armor',
+    'Weapons: Simple weapons',
+    'Saving Throws: Wisdom, Charisma',
+    'Eldritch Invocations',
+    'At 2nd level, you gain two eldritch invocations of your choice.',
+  ]),
+  page(48, [
+    'Eldritch Invocations',
+    'Agonizing Blast',
+    'Prerequisite: eldritch blast cantrip',
+    'When you cast eldritch blast, add your Charisma modifier.',
+  ]),
+  page(49, [
+    'Lifedrinker',
+    'Prerequisite: 12th level, Pact of the Blade feature',
+    'You deal extra necrotic damage.',
+  ]),
+  page(50, [
+    'Thirsting Blade',
+    'Prerequisite: 5th level, Pact of the Blade feature',
+    'You can attack twice.',
+  ]),
+];
+
+describe('parseFeatures — option heading source pages', () => {
+  const [invocations] = parseFeatures(WARLOCK_INVOCATIONS_ACROSS_PAGES);
+
+  it('merges a repeated option-list heading into the parent feature', () => {
+    expect(invocations.name).toBe('Eldritch Invocations');
+    expect(invocations.description).toMatch(/Agonizing Blast/);
+    expect(invocations.description).toMatch(/Thirsting Blade/);
+  });
+
+  it('records source pages for option headings inside the feature body', () => {
+    expect(invocations.optionSourcePages).toMatchObject({
+      'Agonizing Blast': 48,
+      Lifedrinker: 49,
+      'Thirsting Blade': 50,
+    });
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Subclass-granted features with explicit level lead-ins.
 // ---------------------------------------------------------------------------

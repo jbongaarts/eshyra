@@ -689,6 +689,25 @@ function buildFeatureData(
   };
 }
 
+function optionSourceLabelsByFeatureKey(
+  features: readonly FeatureExtraction[],
+): ReadonlyMap<string, ReadonlyMap<string, string>> {
+  const out = new Map<string, ReadonlyMap<string, string>>();
+  for (const feature of features) {
+    if (feature.optionSourcePages === undefined) continue;
+    out.set(
+      `feature:${slug(feature.grantorName)}:${slug(feature.name)}`,
+      new Map(
+        Object.entries(feature.optionSourcePages).map(([heading, page]) => [
+          heading,
+          sourceLabelFor(page),
+        ]),
+      ),
+    );
+  }
+  return out;
+}
+
 export function featureExtractionsToRecords(
   features: readonly FeatureExtraction[],
   resolveSpellGrant?: SpellGrantResolver,
@@ -1404,6 +1423,9 @@ export function buildPack(input: BuildPackInput): RulesPack {
     classRecords: enriched.classRecords,
     subclassRecords: enriched.subclassRecords,
     featureRecords: enriched.featureRecords,
+    optionSourceLabelsByFeatureKey: optionSourceLabelsByFeatureKey(
+      input.features ?? [],
+    ),
   });
   // Remove embedded-table linearizations the prose joiners absorbed into owner
   // descriptions/text, leaving the structured `table:*` records as the sole

@@ -5846,6 +5846,22 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'Pact of the Chain feature',
       );
     });
+
+    it('attributes invocation option sources to their own pages', () => {
+      const byId = new Map(
+        options.map(({ option }) => [
+          option.id,
+          (option as { source?: string }).source,
+        ]),
+      );
+      expect(byId.get('eldritch-invocation:agonizing-blast')).toBe(
+        'SRD 5.1 p. 48',
+      );
+      expect(byId.get('eldritch-invocation:lifedrinker')).toBe('SRD 5.1 p. 49');
+      expect(byId.get('eldritch-invocation:thirsting-blade')).toBe(
+        'SRD 5.1 p. 50',
+      );
+    });
   });
 
   // eshyra-vk23.9: invocation prerequisites are also parsed into structured

@@ -800,10 +800,20 @@ export interface FeatureChoiceEntry {
     readonly name: string;
     readonly text: string;
     readonly prerequisite?: string;
+    readonly prerequisites?: readonly PrerequisiteClause[];
     readonly source: string;
   }[];
   readonly unsupported?: { readonly reason: string };
 }
+
+type PrerequisiteClause =
+  | {
+      readonly kind: 'level';
+      readonly classRef: string;
+      readonly level: number;
+    }
+  | { readonly kind: 'pactBoon'; readonly ref: string }
+  | { readonly kind: 'cantrip'; readonly ref: string };
 
 export interface FeatureExtraction {
   readonly name: string;
@@ -815,6 +825,12 @@ export interface FeatureExtraction {
   readonly level: number;
   /** Feature body prose, re-flowed into paragraphs. */
   readonly description: string;
+  /**
+   * Source page by option heading found inside this feature's body. Used for
+   * inline option catalogs whose entries span different SRD pages, notably the
+   * Warlock Eldritch Invocation list (eshyra-vk23.8).
+   */
+  readonly optionSourcePages?: Readonly<Record<string, number>>;
   /**
    * Structured player choices this feature requires (eshyra-o9bd.9). Absent
    * until a choice-derivation pass populates it; emitted to `data.choices`.
