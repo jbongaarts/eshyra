@@ -3,8 +3,8 @@
     "entries": 2655,
     "proseRegions": 2628,
     "pureStructure": 27,
-    "record": 2102,
-    "childOf": 443,
+    "record": 2101,
+    "childOf": 444,
     "intentionallyIgnored": {
       "front-matter": 2,
       "spell-list-header": 81
@@ -53302,9 +53302,8 @@
       "firstPhrase": "1) piercing damage, or 5 (1d8 + 1) piercing damage if used with two",
       "lastPhrase": "sentries in a citadel or fortified town, and the bodyguards of merchants and nobles.",
       "normalizedCharCount": 222,
-      "classification": "record:creature:guard",
-      "targetKey": "creature:guard",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "classification": "child-of:creature:guard",
+      "targetKey": "creature:guard"
     },
     {
       "id": "p400-l6-prose",

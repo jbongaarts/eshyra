@@ -19,7 +19,9 @@ import {
   buildPack,
   creatureExtractionsToRecords,
   diseaseExtractionsToRecords,
+  featExtractionsToRecords,
   featureExtractionsToRecords,
+  hazardExtractionsToRecords,
   magicItemExtractionsToRecords,
   poisonExtractionsToRecords,
   SRD_5_1_LICENSE,
@@ -33,7 +35,9 @@ import type {
   AncestryExtraction,
   CreatureExtraction,
   DiseaseExtraction,
+  FeatExtraction,
   FeatureExtraction,
+  HazardExtraction,
   MagicItemExtraction,
   PoisonExtraction,
   RuleExtraction,
@@ -113,6 +117,13 @@ const ATTACK_ACTION: ActionExtraction = {
   sourcePage: 92,
 };
 
+const LONGSWORD_ACTION: ActionExtraction = {
+  name: 'Longsword',
+  description:
+    'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 4) slashing damage.',
+  sourcePage: 254,
+};
+
 const DWARF_ANCESTRY: AncestryExtraction = {
   name: 'Dwarf',
   description: 'Bold and hardy, dwarves are known as skilled warriors.',
@@ -166,6 +177,16 @@ const IMPROVED_CRITICAL_FEATURE: FeatureExtraction = {
   level: 3,
   description:
     'Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20.',
+  sourcePage: 72,
+};
+
+const SECOND_WIND_FEATURE: FeatureExtraction = {
+  name: 'Second Wind',
+  grantorKind: 'class',
+  grantorName: 'Fighter',
+  level: 1,
+  description:
+    'Once on your turn, you can use a bonus action to regain hit points equal to 1d10 + your fighter level. You must finish a short or long rest before you can use it again.',
   sourcePage: 72,
 };
 
@@ -396,6 +417,43 @@ describe('spellExtractionsToRecords — record shape', () => {
     );
     expect(record.provenance.locator).toBe('p. 211');
   });
+
+  it('projects concentration, save, condition, and scaling mechanics', () => {
+    const holdPerson: SpellExtraction = {
+      name: 'Hold Person',
+      level: 2,
+      school: 'enchantment',
+      ritual: false,
+      castingTime: '1 action',
+      range: '60 feet',
+      components: ['V', 'S', 'M'],
+      duration: 'Concentration, up to 1 minute',
+      description:
+        'Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration.',
+      higherLevels:
+        'When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd.',
+      sourcePage: 251,
+    };
+    const [record] = spellExtractionsToRecords([holdPerson], new Map());
+    expect(record.data).toMatchObject({
+      mechanics: {
+        concentration: true,
+        saves: [{ ability: 'wisdom' }],
+        conditions: [{ condition: 'paralyzed' }],
+        scaling: { sourceText: holdPerson.higherLevels },
+      },
+    });
+  });
+
+  it('marks non-concentration spells without inventing prose mechanics', () => {
+    const [record] = spellExtractionsToRecords([AID], new Map());
+    expect(record.data).toMatchObject({
+      mechanics: { concentration: false },
+    });
+    expect(
+      (record.data as { mechanics: Record<string, unknown> }).mechanics,
+    ).not.toHaveProperty('saves');
+  });
 });
 
 describe('creatureExtractionsToRecords — keyed defensive / sense fields', () => {
@@ -623,6 +681,23 @@ describe('actionExtractionsToRecords — record shape', () => {
       /Attack action/,
     );
   });
+
+  it('projects explicit attack mechanics from action prose', () => {
+    const [record] = actionExtractionsToRecords([LONGSWORD_ACTION]);
+    expect(record.data).toMatchObject({
+      mechanics: {
+        attacks: [
+          {
+            attackType: 'melee-weapon',
+            attackBonus: 5,
+            reachFeet: 5,
+            target: 'one target',
+            hitDamage: [{ average: 8, dice: '1d8 + 4', type: 'slashing' }],
+          },
+        ],
+      },
+    });
+  });
 });
 
 describe('subclassExtractionsToRecords — record shape', () => {
@@ -682,6 +757,28 @@ describe('featureExtractionsToRecords — record shape', () => {
   it('attaches provenance pointing at the SRD source page', () => {
     const [record] = featureExtractionsToRecords([IMPROVED_CRITICAL_FEATURE]);
     expect(record.provenance.locator).toBe('p. 72');
+  });
+
+  it('projects subclass critical-range mechanics', () => {
+    const [record] = featureExtractionsToRecords([IMPROVED_CRITICAL_FEATURE]);
+    expect(record.data).toMatchObject({
+      mechanics: {
+        effects: [{ kind: 'criticalRange', minimumRoll: 19 }],
+      },
+    });
+  });
+
+  it('projects class feature rest-reset resources', () => {
+    const [record] = featureExtractionsToRecords([SECOND_WIND_FEATURE]);
+    expect(record.data).toMatchObject({
+      mechanics: {
+        resources: [
+          {
+            reset: 'short-or-long-rest',
+          },
+        ],
+      },
+    });
   });
 });
 
@@ -748,6 +845,45 @@ describe('ancestryExtractionsToRecords — record shape', () => {
     ).traits.map((t) => t.name);
     expect(names).toContain('Dwarven Toughness');
   });
+
+  it('projects ancestry trait mechanics when the prose is explicit', () => {
+    const resistant: AncestryExtraction = {
+      ...DWARF_ANCESTRY,
+      traits: [
+        {
+          name: 'Dwarven Resilience',
+          text: 'You have advantage on saving throws against poison, and you have resistance against poison damage.',
+        },
+      ],
+    };
+    const [record] = ancestryExtractionsToRecords([resistant]);
+    expect(record.data).toMatchObject({
+      traits: [
+        {
+          mechanics: {
+            effects: [{ kind: 'advantage' }, { kind: 'resistance' }],
+          },
+        },
+      ],
+    });
+  });
+});
+
+describe('featExtractionsToRecords — mechanics projection', () => {
+  it('projects explicit feat proficiency mechanics', () => {
+    const skilled: FeatExtraction = {
+      name: 'Skilled',
+      description:
+        'You gain proficiency in any combination of three skills or tools of your choice.',
+      sourcePage: 170,
+    };
+    const [record] = featExtractionsToRecords([skilled]);
+    expect(record.data).toMatchObject({
+      mechanics: {
+        effects: [{ kind: 'proficiency' }],
+      },
+    });
+  });
 });
 
 describe('magicItemExtractionsToRecords — record shape', () => {
@@ -790,6 +926,24 @@ describe('diseaseExtractionsToRecords — record shape', () => {
         'This disease targets humanoids, although gnomes are immune.',
     });
     expect(record.provenance.locator).toBe('p. 199');
+  });
+});
+
+describe('hazardExtractionsToRecords — mechanics projection', () => {
+  it('projects explicit save and damage mechanics', () => {
+    const lava: HazardExtraction = {
+      name: 'Lava',
+      description:
+        'A creature must make a DC 15 Dexterity saving throw, taking 22 (4d10) fire damage on a failed save.',
+      sourcePage: 110,
+    };
+    const [record] = hazardExtractionsToRecords([lava]);
+    expect(record.data).toMatchObject({
+      mechanics: {
+        saves: [{ ability: 'dexterity', dc: 15 }],
+        damage: [{ average: 22, dice: '4d10', type: 'fire' }],
+      },
+    });
   });
 });
 
