@@ -803,6 +803,15 @@ export {
   FEATURE_CHOICE_CATEGORIES,
   isFeatureChoiceCategory,
 } from './rules/featureChoices.js';
+export type {
+  InlineFeatureOption,
+  InlineFeatureOptionIndex,
+} from './rules/inlineFeatureOptions.js';
+export {
+  buildInlineFeatureOptionIndex,
+  buildInlineFeatureOptionIndexForPack,
+  resolveInlineFeatureOption,
+} from './rules/inlineFeatureOptions.js';
 export { validateRecordKindSchema } from './rules/kindSchemas.js';
 export type { RulesPackUsePolicy } from './rules/license.js';
 export {

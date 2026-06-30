@@ -650,6 +650,115 @@ describe('subclass choice-coverage gate (eshyra-o9bd.9.2)', () => {
   });
 });
 
+describe('unresolvable-inline-option-ref gate (eshyra-ldqb)', () => {
+  it('fires on a pactBoon prerequisite ref that no choice offers', () => {
+    const invocations = feature(
+      'feature:warlock:eldritch-invocations',
+      'Choose two invocations.',
+      'class:warlock',
+      {
+        choices: [
+          {
+            id: 'eldritch-invocations',
+            category: 'invocation',
+            prompt: 'Choose two Eldritch Invocations.',
+            level: 2,
+            choose: 2,
+            from: ['eldritch-invocation:thief-of-five-fates'],
+            options: [
+              {
+                id: 'eldritch-invocation:thief-of-five-fates',
+                name: 'Thief of Five Fates',
+                text: 'You can cast bestow curse once.',
+                prerequisite: '9th level',
+                prerequisites: [
+                  { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-undead' },
+                ],
+                source: 'SRD 5.1 p. 49',
+              },
+            ],
+          },
+        ],
+      },
+    );
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([invocations])),
+      'unresolvable-inline-option-ref',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].bead).toBe('eshyra-ldqb');
+    expect(findings[0].detail).toContain('pact-boon:pact-of-the-undead');
+  });
+
+  it('fires on a from.requiresFeatureOption ref that no choice offers', () => {
+    const pactBoon = feature(
+      'feature:warlock:pact-boon',
+      'Choose a Pact Boon.',
+      'class:warlock',
+      {
+        choices: [
+          {
+            id: 'tome-cantrips',
+            category: 'cantrip',
+            prompt: 'If you choose Pact of the Tome, choose three cantrips.',
+            level: 3,
+            choose: 3,
+            from: { requiresFeatureOption: 'pact-boon:pact-of-the-tome' },
+          },
+        ],
+      },
+    );
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([pactBoon])),
+      'unresolvable-inline-option-ref',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('pact-boon:pact-of-the-tome');
+  });
+
+  it('is silent when the referenced inline option id is offered by some choice', () => {
+    const pactBoon = feature(
+      'feature:warlock:pact-boon',
+      'Choose a Pact Boon.',
+      'class:warlock',
+      {
+        choices: [
+          {
+            id: 'pact-boon',
+            category: 'other',
+            prompt: 'Choose a Pact Boon option.',
+            level: 3,
+            choose: 1,
+            from: ['pact-boon:pact-of-the-tome'],
+            options: [
+              {
+                id: 'pact-boon:pact-of-the-tome',
+                name: 'Pact of the Tome',
+                text: 'Your patron gives you a grimoire.',
+                source: 'SRD 5.1 p. 48',
+              },
+            ],
+          },
+          {
+            id: 'tome-cantrips',
+            category: 'cantrip',
+            prompt: 'If you choose Pact of the Tome, choose three cantrips.',
+            level: 3,
+            choose: 3,
+            from: { requiresFeatureOption: 'pact-boon:pact-of-the-tome' },
+          },
+        ],
+      },
+    );
+    expect(
+      findingsByCategory(
+        auditSrdPlayability(pack([pactBoon])),
+        'unresolvable-inline-option-ref',
+      ),
+    ).toHaveLength(0);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Real committed-pack baselines (the RED/GREEN state the modeling beads move)
 // ---------------------------------------------------------------------------
@@ -691,6 +800,13 @@ describe('committed SRD pack playable-model baseline', () => {
     // class-feature build choice now carries a structured choices[] entry or a
     // named out-of-scope marker, so the choice-coverage gate is clean.
     expect(counts['choice-coverage']).toBe(0);
+  });
+
+  it('GREEN (eshyra-ldqb): every inline-option reference resolves (Warlock invocation prerequisites included)', () => {
+    // Eldritch Invocation pactBoon prerequisites and the Pact of the Tome
+    // cantrip choice's requiresFeatureOption filter all address real options
+    // offered by feature:warlock:pact-boon's choices.
+    expect(counts['unresolvable-inline-option-ref']).toBe(0);
   });
 
   it('no finding remains to name an owning modeling bead', () => {
