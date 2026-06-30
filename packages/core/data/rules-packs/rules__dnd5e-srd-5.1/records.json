@@ -65647,6 +65647,12 @@
               "id": "eldritch-invocation:agonizing-blast",
               "name": "Agonizing Blast",
               "prerequisite": "eldritch blast cantrip",
+              "prerequisites": [
+                {
+                  "kind": "cantrip",
+                  "ref": "spell:eldritch-blast"
+                }
+              ],
               "text": "When you cast eldritch blast, add your Charisma modifier to the damage it deals on a hit.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65660,6 +65666,13 @@
               "id": "eldritch-invocation:ascendant-step",
               "name": "Ascendant Step",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast levitate on yourself at will, without expending a spell slot or material components.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65679,6 +65692,13 @@
               "id": "eldritch-invocation:bewitching-whispers",
               "name": "Bewitching Whispers",
               "prerequisite": "7th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 7
+                }
+              ],
               "text": "You can cast compulsion once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65686,6 +65706,12 @@
               "id": "eldritch-invocation:book-of-ancient-secrets",
               "name": "Book of Ancient Secrets",
               "prerequisite": "Pact of the Tome feature",
+              "prerequisites": [
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-tome"
+                }
+              ],
               "text": "You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65693,6 +65719,17 @@
               "id": "eldritch-invocation:chains-of-carceri",
               "name": "Chains of Carceri",
               "prerequisite": "15th level, Pact of the Chain feature",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                },
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-chain"
+                }
+              ],
               "text": "You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65706,6 +65743,13 @@
               "id": "eldritch-invocation:dreadful-word",
               "name": "Dreadful Word",
               "prerequisite": "7th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 7
+                }
+              ],
               "text": "You can cast confusion once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65719,6 +65763,12 @@
               "id": "eldritch-invocation:eldritch-spear",
               "name": "Eldritch Spear",
               "prerequisite": "eldritch blast cantrip",
+              "prerequisites": [
+                {
+                  "kind": "cantrip",
+                  "ref": "spell:eldritch-blast"
+                }
+              ],
               "text": "When you cast eldritch blast, its range is 300 feet.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65744,6 +65794,17 @@
               "id": "eldritch-invocation:lifedrinker",
               "name": "Lifedrinker",
               "prerequisite": "12th level, Pact of the Blade feature",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 12
+                },
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-blade"
+                }
+              ],
               "text": "When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1).",
               "source": "SRD 5.1 p. 47"
             },
@@ -65757,6 +65818,13 @@
               "id": "eldritch-invocation:master-of-myriad-forms",
               "name": "Master of Myriad Forms",
               "prerequisite": "15th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                }
+              ],
               "text": "You can cast alter self at will, without expending a spell slot.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65764,6 +65832,13 @@
               "id": "eldritch-invocation:minions-of-chaos",
               "name": "Minions of Chaos",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast conjure elemental once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65771,6 +65846,13 @@
               "id": "eldritch-invocation:mire-the-mind",
               "name": "Mire the Mind",
               "prerequisite": "5th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                }
+              ],
               "text": "You can cast slow once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65784,6 +65866,13 @@
               "id": "eldritch-invocation:one-with-shadows",
               "name": "One with Shadows",
               "prerequisite": "5th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                }
+              ],
               "text": "When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65791,6 +65880,13 @@
               "id": "eldritch-invocation:otherworldly-leap",
               "name": "Otherworldly Leap",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast jump on yourself at will, without expending a spell slot or material components.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65798,6 +65894,12 @@
               "id": "eldritch-invocation:repelling-blast",
               "name": "Repelling Blast",
               "prerequisite": "eldritch blast cantrip",
+              "prerequisites": [
+                {
+                  "kind": "cantrip",
+                  "ref": "spell:eldritch-blast"
+                }
+              ],
               "text": "When you hit a creature with eldritch blast, you can push the creature up to 10 feet away from you in a straight line.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65805,6 +65907,13 @@
               "id": "eldritch-invocation:sculptor-of-flesh",
               "name": "Sculptor of Flesh",
               "prerequisite": "7th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 7
+                }
+              ],
               "text": "You can cast polymorph once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65812,6 +65921,13 @@
               "id": "eldritch-invocation:sign-of-ill-omen",
               "name": "Sign of Ill Omen",
               "prerequisite": "5th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                }
+              ],
               "text": "You can cast bestow curse once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65825,6 +65941,17 @@
               "id": "eldritch-invocation:thirsting-blade",
               "name": "Thirsting Blade",
               "prerequisite": "5th level, Pact of the Blade feature",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                },
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-blade"
+                }
+              ],
               "text": "You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65832,6 +65959,13 @@
               "id": "eldritch-invocation:visions-of-distant-realms",
               "name": "Visions of Distant Realms",
               "prerequisite": "15th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                }
+              ],
               "text": "You can cast arcane eye at will, without expending a spell slot.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65839,6 +65973,12 @@
               "id": "eldritch-invocation:voice-of-the-chain-master",
               "name": "Voice of the Chain Master",
               "prerequisite": "Pact of the Chain feature",
+              "prerequisites": [
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-chain"
+                }
+              ],
               "text": "You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65846,6 +65986,13 @@
               "id": "eldritch-invocation:whispers-of-the-grave",
               "name": "Whispers of the Grave",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast speak with dead at will, without expending a spell slot.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65853,6 +66000,13 @@
               "id": "eldritch-invocation:witch-sight",
               "name": "Witch Sight",
               "prerequisite": "15th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                }
+              ],
               "text": "You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight.",
               "source": "SRD 5.1 p. 47"
             }

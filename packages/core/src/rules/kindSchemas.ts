@@ -245,7 +245,46 @@ function optFeatureChoiceOptions(entry: Obj, key: string, path: string): void {
     reqStr(option, 'name', at);
     reqStr(option, 'text', at);
     optStr(option, 'prerequisite', at);
+    optPrerequisiteClauses(option, 'prerequisites', at);
     reqStr(option, 'source', at);
+  });
+}
+
+// Structured prerequisite clauses on an option (eshyra-vk23.9): each is a typed
+// `level` (class-scoped minimum level), `pactBoon` (required Pact Boon ref), or
+// `cantrip` (required spell ref). The verbatim `prerequisite` prose is retained
+// alongside; this is its machine-readable parse.
+function optPrerequisiteClauses(parent: Obj, key: string, path: string): void {
+  const clauses = objArray(parent, key, path);
+  if (clauses === undefined) return;
+  if (clauses.length === 0) {
+    throw new RulesPackError(`${path}.${key} must not be empty when present`);
+  }
+  clauses.forEach((clause, i) => {
+    const at = `${path}.${key}[${i}]`;
+    const kind = reqStr(clause, 'kind', at);
+    if (kind === 'level') {
+      reqStr(clause, 'classRef', at);
+      reqInt(clause, 'level', at, 1);
+    } else if (kind === 'pactBoon') {
+      const ref = reqStr(clause, 'ref', at);
+      if (!ref.startsWith('pact-boon:')) {
+        throw new RulesPackError(
+          `${at}.ref must be a 'pact-boon:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+    } else if (kind === 'cantrip') {
+      const ref = reqStr(clause, 'ref', at);
+      if (!ref.startsWith('spell:')) {
+        throw new RulesPackError(
+          `${at}.ref must be a 'spell:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+    } else {
+      throw new RulesPackError(
+        `${at}.kind must be one of: level, pactBoon, cantrip`,
+      );
+    }
   });
 }
 

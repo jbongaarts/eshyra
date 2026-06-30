@@ -68,11 +68,27 @@ interface DerivedChoice {
   readonly unsupported?: { readonly reason: string };
 }
 
+/**
+ * A structured, deterministic prerequisite clause on an option (eshyra-vk23.9),
+ * so a tool gates the option from data instead of parsing the `prerequisite`
+ * prose. Eldritch Invocation prerequisites are exactly three closed forms:
+ *  - `level`   — a minimum class level, scoped to the granting class.
+ *  - `pactBoon`— a required Pact Boon option, by its `pact-boon:` ref.
+ *  - `cantrip` — a required cantrip, by its `spell:` ref.
+ */
+type PrerequisiteClause =
+  | { readonly kind: 'level'; readonly classRef: string; readonly level: number }
+  | { readonly kind: 'pactBoon'; readonly ref: string }
+  | { readonly kind: 'cantrip'; readonly ref: string };
+
 interface DerivedChoiceOption {
   readonly id: string;
   readonly name: string;
   readonly text: string;
+  /** Verbatim prerequisite prose, preserved for DM context. */
   readonly prerequisite?: string;
+  /** Structured, machine-readable parse of `prerequisite` (eshyra-vk23.9). */
+  readonly prerequisites?: readonly PrerequisiteClause[];
   readonly source: string;
 }
 
@@ -974,6 +990,53 @@ const PREREQUISITE_LINE = new RegExp(
   String.raw`^Prerequisite:\s*((?:${PREREQUISITE_CLAUSE.source})(?:,\s*(?:${PREREQUISITE_CLAUSE.source}))*)`,
 );
 
+const PACT_BOON_PREREQ_REF: Readonly<Record<string, string>> = {
+  Blade: 'pact-boon:pact-of-the-blade',
+  Chain: 'pact-boon:pact-of-the-chain',
+  Tome: 'pact-boon:pact-of-the-tome',
+};
+
+/**
+ * Parse the (already source-validated) prerequisite prose into structured
+ * clauses (eshyra-vk23.9). The prose is the comma-separated grammar matched by
+ * `PREREQUISITE_LINE`; each clause maps to a typed level / pact-boon / cantrip
+ * requirement. `classRef` scopes a level requirement to the granting class (the
+ * SRD: "a level prerequisite refers to your level in this class"). Throws on an
+ * unrecognized clause so a parser regression fails closed rather than dropping a
+ * gate.
+ */
+function parsePrerequisiteClauses(
+  prose: string,
+  classRef: string,
+  feature: RulesRecord,
+  heading: string,
+): readonly PrerequisiteClause[] {
+  const clauses: PrerequisiteClause[] = [];
+  for (const raw of prose.split(',')) {
+    const clause = raw.trim();
+    if (clause.length === 0) continue;
+    const level = /^(\d+)(?:st|nd|rd|th) level$/.exec(clause);
+    if (level !== null) {
+      clauses.push({ kind: 'level', classRef, level: Number(level[1]) });
+      continue;
+    }
+    const pact = /^Pact of the (Blade|Chain|Tome) feature$/.exec(clause);
+    if (pact !== null) {
+      clauses.push({ kind: 'pactBoon', ref: PACT_BOON_PREREQ_REF[pact[1]] });
+      continue;
+    }
+    const cantrip = /^(.+?) cantrip$/.exec(clause);
+    if (cantrip !== null) {
+      clauses.push({ kind: 'cantrip', ref: `spell:${optionSlug(cantrip[1])}` });
+      continue;
+    }
+    throw new FeatureChoiceDerivationError(
+      `Unrecognized prerequisite clause "${clause}" for ${feature.key} option ${heading}.`,
+    );
+  }
+  return clauses;
+}
+
 function parseOptionCatalog(
   feature: RulesRecord,
   description: string,
@@ -1037,12 +1100,31 @@ function parseOptionCatalog(
         `Cannot parse option text for ${feature.key} (${feature.name}) option ${entry.heading}.`,
       );
     }
+    if (prerequisite === null) {
+      return {
+        id: optionId(spec.optionIdPrefix, entry.heading),
+        name: entry.heading,
+        text,
+        source: feature.source,
+      };
+    }
+    const prereqProse = prerequisite[1].trim();
+    const classRef = featureSource(feature);
+    if (classRef === null) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot scope level prerequisite for ${feature.key} option ${entry.heading} (feature has no source class).`,
+      );
+    }
     return {
       id: optionId(spec.optionIdPrefix, entry.heading),
       name: entry.heading,
-      ...(prerequisite === null
-        ? {}
-        : { prerequisite: prerequisite[1].trim() }),
+      prerequisite: prereqProse,
+      prerequisites: parsePrerequisiteClauses(
+        prereqProse,
+        classRef,
+        feature,
+        entry.heading,
+      ),
       text,
       source: feature.source,
     };

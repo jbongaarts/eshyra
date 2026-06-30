@@ -5729,6 +5729,110 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  // eshyra-vk23.9: invocation prerequisites are also parsed into structured
+  // clauses (level / pactBoon / cantrip) so tools gate options from data, with
+  // the prose preserved. Every clause ref must resolve to a real record.
+  describe('structured invocation prerequisites (eshyra-vk23.9)', () => {
+    type Clause = { kind: string; classRef?: string; ref?: string };
+    const invocationOptions = (
+      (
+        pack.records.find(
+          (r) => r.key === 'feature:warlock:eldritch-invocations',
+        )?.data as {
+          choices?: {
+            options?: { id?: string; prerequisites?: Clause[] }[];
+          }[];
+        }
+      ).choices ?? []
+    ).flatMap((c) => c.options ?? []);
+    const byId = new Map(invocationOptions.map((o) => [o.id, o]));
+
+    const spellKeys = new Set(
+      pack.records.filter((r) => r.kind === 'spell').map((r) => r.key),
+    );
+    const classKeys = new Set(
+      pack.records.filter((r) => r.kind === 'class').map((r) => r.key),
+    );
+    const pactBoonRefs = new Set(
+      (
+        (
+          pack.records.find((r) => r.key === 'feature:warlock:pact-boon')
+            ?.data as { choices?: { options?: { id?: string }[] }[] }
+        ).choices ?? []
+      ).flatMap((c) => (c.options ?? []).map((o) => o.id)),
+    );
+
+    it('parses the five wrapped pact-feature prerequisites into clauses', () => {
+      expect(byId.get('eldritch-invocation:book-of-ancient-secrets')
+        ?.prerequisites).toEqual([
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' },
+      ]);
+      expect(byId.get('eldritch-invocation:chains-of-carceri')
+        ?.prerequisites).toEqual([
+        { kind: 'level', classRef: 'class:warlock', level: 15 },
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
+      ]);
+      expect(byId.get('eldritch-invocation:lifedrinker')
+        ?.prerequisites).toEqual([
+        { kind: 'level', classRef: 'class:warlock', level: 12 },
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+      ]);
+      expect(byId.get('eldritch-invocation:thirsting-blade')
+        ?.prerequisites).toEqual([
+        { kind: 'level', classRef: 'class:warlock', level: 5 },
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+      ]);
+      expect(byId.get('eldritch-invocation:voice-of-the-chain-master')
+        ?.prerequisites).toEqual([
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
+      ]);
+    });
+
+    it('parses a cantrip prerequisite into a resolvable spell ref', () => {
+      expect(byId.get('eldritch-invocation:agonizing-blast')
+        ?.prerequisites).toEqual([
+        { kind: 'cantrip', ref: 'spell:eldritch-blast' },
+      ]);
+    });
+
+    it('every structured prerequisite ref resolves to a real record', () => {
+      let clauseCount = 0;
+      for (const option of invocationOptions) {
+        for (const clause of option.prerequisites ?? []) {
+          clauseCount++;
+          if (clause.kind === 'level') {
+            expect(
+              classKeys.has(clause.classRef ?? ''),
+              `${option.id} level classRef`,
+            ).toBe(true);
+          } else if (clause.kind === 'pactBoon') {
+            expect(
+              pactBoonRefs.has(clause.ref),
+              `${option.id} pactBoon ref ${clause.ref}`,
+            ).toBe(true);
+          } else if (clause.kind === 'cantrip') {
+            expect(
+              spellKeys.has(clause.ref ?? ''),
+              `${option.id} cantrip ref ${clause.ref}`,
+            ).toBe(true);
+          } else {
+            throw new Error(`unknown clause kind ${clause.kind}`);
+          }
+        }
+      }
+      expect(clauseCount).toBeGreaterThan(0);
+    });
+
+    it('keeps the verbatim prerequisite prose alongside the structured clauses', () => {
+      const carceri = byId.get('eldritch-invocation:chains-of-carceri') as {
+        prerequisite?: string;
+        prerequisites?: unknown;
+      };
+      expect(carceri.prerequisite).toBe('15th level, Pact of the Chain feature');
+      expect(carceri.prerequisites).toBeDefined();
+    });
+  });
+
   // eshyra-vk23.2: deterministic class spell workflows. Spell-selection choices
   // must be structured filters (never prose strings); prepared casters carry a
   // machine-readable preparation formula; the Wizard spellbook and Mystic
