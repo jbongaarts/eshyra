@@ -800,6 +800,22 @@ function headingPattern(heading: string, style: 'bare' | 'period'): string {
   return escaped;
 }
 
+// Eldritch Invocation prerequisites are a comma-separated list of typed
+// clauses (eshyra-vk23.3). Parse them with an explicit grammar instead of
+// guessing the body boundary from a capitalized-word lookahead: the old
+// `/^Prerequisite:\s*(.+?)(?=\s(?:When|You|Choose|The|With|On)\b)/i` truncated
+// "Pact of the Tome feature" at "Pact of" — the case-insensitive `The`
+// alternative matched the lowercase "the" inside the clause — and leaked
+// "the Tome feature ..." into the option body. The SRD invocation grammar is
+// closed: a class level ("9th level"), a cantrip prerequisite ("eldritch blast
+// cantrip"), or a pact-boon prerequisite ("Pact of the Tome|Blade|Chain
+// feature"), optionally combined with commas.
+const PREREQUISITE_CLAUSE =
+  /\d+(?:st|nd|rd|th) level|Pact of the (?:Blade|Chain|Tome) feature\b|[A-Za-z][A-Za-z' ]*? cantrip\b/;
+const PREREQUISITE_LINE = new RegExp(
+  String.raw`^Prerequisite:\s*((?:${PREREQUISITE_CLAUSE.source})(?:,\s*(?:${PREREQUISITE_CLAUSE.source}))*)`,
+);
+
 function parseOptionCatalog(
   feature: RulesRecord,
   description: string,
@@ -846,9 +862,14 @@ function parseOptionCatalog(
   return sorted.map((entry, index) => {
     const next = sorted[index + 1]?.start ?? description.length;
     const rawBody = description.slice(entry.bodyStart, next).trim();
-    const prerequisite = rawBody.match(
-      /^Prerequisite:\s*(.+?)(?=\s(?:When|You|Choose|The|With|On)\b)/i,
-    );
+    const prerequisite = rawBody.startsWith('Prerequisite:')
+      ? rawBody.match(PREREQUISITE_LINE)
+      : null;
+    if (rawBody.startsWith('Prerequisite:') && prerequisite === null) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot parse option prerequisite for ${feature.key} (${feature.name}) option ${entry.heading}.`,
+      );
+    }
     const text =
       prerequisite === null
         ? rawBody

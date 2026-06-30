@@ -65477,15 +65477,15 @@
             {
               "id": "eldritch-invocation:book-of-ancient-secrets",
               "name": "Book of Ancient Secrets",
-              "prerequisite": "Pact of",
-              "text": "the Tome feature You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it.",
+              "prerequisite": "Pact of the Tome feature",
+              "text": "You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it.",
               "source": "SRD 5.1 p. 47"
             },
             {
               "id": "eldritch-invocation:chains-of-carceri",
               "name": "Chains of Carceri",
-              "prerequisite": "15th level, Pact of",
-              "text": "the Chain feature You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.",
+              "prerequisite": "15th level, Pact of the Chain feature",
+              "text": "You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.",
               "source": "SRD 5.1 p. 47"
             },
             {
@@ -65535,8 +65535,8 @@
             {
               "id": "eldritch-invocation:lifedrinker",
               "name": "Lifedrinker",
-              "prerequisite": "12th level, Pact of",
-              "text": "the Blade feature When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1).",
+              "prerequisite": "12th level, Pact of the Blade feature",
+              "text": "When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1).",
               "source": "SRD 5.1 p. 47"
             },
             {
@@ -65616,8 +65616,8 @@
             {
               "id": "eldritch-invocation:thirsting-blade",
               "name": "Thirsting Blade",
-              "prerequisite": "5th level, Pact of",
-              "text": "the Blade feature You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn.",
+              "prerequisite": "5th level, Pact of the Blade feature",
+              "text": "You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn.",
               "source": "SRD 5.1 p. 47"
             },
             {
@@ -65630,8 +65630,8 @@
             {
               "id": "eldritch-invocation:voice-of-the-chain-master",
               "name": "Voice of the Chain Master",
-              "prerequisite": "Pact of",
-              "text": "the Chain feature You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech.",
+              "prerequisite": "Pact of the Chain feature",
+              "text": "You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech.",
               "source": "SRD 5.1 p. 47"
             },
             {

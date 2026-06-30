@@ -572,6 +572,46 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
     ).toMatchObject({
       prerequisite: 'eldritch blast cantrip',
     });
+
+    // eshyra-vk23.3: prerequisites that wrap "Pact of the <X> feature" across
+    // SRD lines must stay intact, not truncate to "Pact of" and leak "the X
+    // feature ..." into the option body.
+    const byId = new Map(options.map((o) => [o.id as string, o]));
+    const expectations: ReadonlyArray<[string, string, string]> = [
+      [
+        'eldritch-invocation:book-of-ancient-secrets',
+        'Pact of the Tome feature',
+        'You can inscribe',
+      ],
+      [
+        'eldritch-invocation:chains-of-carceri',
+        '15th level, Pact of the Chain feature',
+        'You can cast hold monster',
+      ],
+      [
+        'eldritch-invocation:lifedrinker',
+        '12th level, Pact of the Blade feature',
+        'You deal extra necrotic damage',
+      ],
+      [
+        'eldritch-invocation:thirsting-blade',
+        '5th level, Pact of the Blade feature',
+        'You can attack twice',
+      ],
+      [
+        'eldritch-invocation:voice-of-the-chain-master',
+        'Pact of the Chain feature',
+        'You can communicate telepathically',
+      ],
+    ];
+    for (const [id, prerequisite, bodyStart] of expectations) {
+      const option = byId.get(id);
+      expect(option, id).toBeDefined();
+      expect(option).toMatchObject({ prerequisite });
+      const text = option?.text as string;
+      expect(text.startsWith(bodyStart), `${id} body: ${text}`).toBe(true);
+      expect(text.startsWith('the '), `${id} leaked prereq`).toBe(false);
+    }
   });
 
   it('parses Hunter subclass option catalogs', () => {

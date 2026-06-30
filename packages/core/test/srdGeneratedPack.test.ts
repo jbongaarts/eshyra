@@ -5655,6 +5655,77 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  // eshyra-vk23.3: option prerequisites that wrap "Pact of the <X> feature"
+  // across SRD lines must parse intact. The old lookahead truncated them to
+  // "Pact of" and leaked "the <X> feature ..." into the option body. Guard the
+  // whole pack so no choice option can carry a dangling prerequisite or a body
+  // that begins with a leaked prerequisite continuation.
+  describe('choice option prerequisites are intact (eshyra-vk23.3)', () => {
+    const options = pack.records.flatMap((record) => {
+      const choices =
+        (record.data as { choices?: { options?: unknown[] }[] }).choices ?? [];
+      return choices.flatMap((choice) =>
+        (choice.options ?? []).map((option) => ({
+          recordKey: record.key,
+          option: option as {
+            id?: string;
+            prerequisite?: string;
+            text?: string;
+          },
+        })),
+      );
+    });
+
+    it('exposes the warlock invocation catalog under test', () => {
+      const invocations = options.filter((o) =>
+        o.option.id?.startsWith('eldritch-invocation:'),
+      );
+      expect(invocations.length).toBe(32);
+    });
+
+    it('has no dangling "Pact of" prerequisite fragment', () => {
+      for (const { recordKey, option } of options) {
+        const pre = option.prerequisite;
+        if (pre === undefined) continue;
+        expect(
+          /\bPact of$/.test(pre.trim()),
+          `${recordKey} option ${option.id} prerequisite: ${pre}`,
+        ).toBe(false);
+      }
+    });
+
+    it('has no body that begins with a leaked "the <Pact> feature" clause', () => {
+      for (const { recordKey, option } of options) {
+        const text = option.text ?? '';
+        expect(
+          /^the (?:Tome|Blade|Chain) feature\b/.test(text),
+          `${recordKey} option ${option.id} body: ${text.slice(0, 40)}`,
+        ).toBe(false);
+      }
+    });
+
+    it('keeps the five wrapped pact-feature prerequisites complete', () => {
+      const byId = new Map(
+        options.map(({ option }) => [option.id, option.prerequisite]),
+      );
+      expect(byId.get('eldritch-invocation:book-of-ancient-secrets')).toBe(
+        'Pact of the Tome feature',
+      );
+      expect(byId.get('eldritch-invocation:chains-of-carceri')).toBe(
+        '15th level, Pact of the Chain feature',
+      );
+      expect(byId.get('eldritch-invocation:lifedrinker')).toBe(
+        '12th level, Pact of the Blade feature',
+      );
+      expect(byId.get('eldritch-invocation:thirsting-blade')).toBe(
+        '5th level, Pact of the Blade feature',
+      );
+      expect(byId.get('eldritch-invocation:voice-of-the-chain-master')).toBe(
+        'Pact of the Chain feature',
+      );
+    });
+  });
+
   describe('hidden-Unicode hygiene', () => {
     // Read the committed records.json verbatim (not the parsed pack) so the
     // assertion covers the exact bytes that ship — the durable artifact a
