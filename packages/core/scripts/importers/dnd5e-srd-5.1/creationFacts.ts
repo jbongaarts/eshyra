@@ -530,10 +530,7 @@ const CLASS_STARTING_EQUIPMENT: Readonly<
         ['b', 'a dungeoneer’s pack'],
         ['c', 'an explorer’s pack'],
       ),
-      fixed(
-        'Leather armor, two daggers, and thieves’ tools',
-        '(a) Leather armor, two daggers, and thieves’ tools',
-      ),
+      fixed('Leather armor, two daggers, and thieves’ tools'),
     ],
   },
   'class:sorcerer': {

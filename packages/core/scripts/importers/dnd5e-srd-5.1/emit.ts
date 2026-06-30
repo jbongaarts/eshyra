@@ -777,10 +777,10 @@ export function hazardExtractionsToRecords(
  * Sample traps emit under the `hazard` record kind (loreweaver-hvp). Schema
  * fit: the SRD's "Traps" section sits in the gamemastering chapter alongside
  * Diseases/Madness/Poisons, and a trap is — like an environmental hazard — a
- * description-only danger, so it satisfies the same `hazard` kindSchema
- * (`validateDnd5eHazard` requires only `description`). The `trapType`
- * discriminator ("mechanical" | "magic") preserves the SRD subtitle and marks
- * the record as a trap. A dedicated `trap` record kind was considered and
+ * description-only danger, so it satisfies the same `hazard` kindSchema.
+ * `category: "trap"` gives deterministic filtering the same discriminator
+ * shape diseases and poisons use, while `trapType` ("mechanical" | "magic")
+ * preserves the SRD subtitle. A dedicated `trap` record kind was considered and
  * rejected: it would force changes across the exhaustive
  * `Record<RulesRecordKind, …>` validators and stack indexes for no schema
  * benefit. Keyed `hazard:<slug>`; the SRD 5.1 environmental-hazard set is empty
@@ -792,6 +792,7 @@ export function trapExtractionsToRecords(
   const out: RulesRecord[] = traps.map((trap) => {
     const mechanics = deriveHazardMechanics(trap);
     const data: Record<string, unknown> = {
+      category: 'trap',
       trapType: trap.trapType,
       description: trap.description,
     };
@@ -822,9 +823,8 @@ export function trapExtractionsToRecords(
  * `description`). A dedicated `disease` kind was rejected for the same reason
  * traps reuse `hazard` — it would force changes across every exhaustive
  * `Record<RulesRecordKind, …>` validator and stack index for no schema benefit
- * (see Note B in the SRD section-coverage audit). `category` (absent on traps,
- * which the `trapType` discriminator already marks) lets callers tell the three
- * gamemastering hazard sub-families apart. Keyed `hazard:<slug>`; no SRD 5.1
+ * (see Note B in the SRD section-coverage audit). `category` lets callers tell
+ * the three gamemastering hazard sub-families apart. Keyed `hazard:<slug>`; no SRD 5.1
  * disease name collides with a trap or environmental-hazard name.
  */
 export function diseaseExtractionsToRecords(
@@ -1297,9 +1297,9 @@ export function buildPack(input: BuildPackInput): RulesPack {
   const featRecords = featExtractionsToRecords(input.feats ?? []);
   // Environmental hazards (empty for SRD 5.1), sample traps (loreweaver-hvp),
   // and the gamemastering diseases + poisons (loreweaver-6ra) all emit under the
-  // `hazard` kind; concatenate before the shared sort. Traps carry a `trapType`
-  // discriminator; diseases and poisons carry `data.category` ('disease' /
-  // 'poison').
+  // `hazard` kind; concatenate before the shared sort. All gamemastering
+  // sub-families carry `data.category`; traps additionally carry `trapType`,
+  // and poisons additionally carry `poisonType` / `price`.
   const hazardRecords = [
     ...hazardExtractionsToRecords(input.hazards ?? []),
     ...trapExtractionsToRecords(input.traps ?? []),

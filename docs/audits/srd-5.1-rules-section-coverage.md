@@ -54,7 +54,8 @@ genuinely good - it is the prose-rule layer that is thin:
   complete.
 - **`hazard` (25):** the eight sample traps from the gamemastering Traps section
   (`loreweaver-hvp`) plus the 3 sample diseases and 14 sample poisons
-  (`loreweaver-6ra`), discriminated by `data.trapType` / `data.category`.
+  (`loreweaver-6ra`), discriminated by `data.category` plus trap-only
+  `data.trapType`.
 - **`table` (3):** Difficulty Classes, Trap Save DCs/Attack Bonuses, Damage
   Severity by Level - the only reconstructable reference tables in the source
   (`loreweaver-46m`).
@@ -237,7 +238,7 @@ Confirmed high-value expansions, filed as their own beads:
    slices a contiguous line of text; this also corrected the School of
    Evocation spellbook prose (p54).
 3. **`loreweaver-6ra`** (P2) - Poisons + Diseases as structured `hazard` records
-   (`data.category: 'poison'`/`'disease'`). **DONE.** `parseDiseases` (3 records)
+   (`data.category: 'trap'`/`'poison'`/`'disease'`). **DONE.** `parseDiseases` (3 records)
    and `parsePoisons` (14 records, with `poisonType` + `price`) emit under the
    `hazard` kind, taking the pack from 8 → 25 `hazard` records, gated by
    `EXPECTED_SRD_5_1_DISEASE_NAMES` / `_POISON_NAMES`. Also fixed an extractor

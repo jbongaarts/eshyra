@@ -111,17 +111,16 @@ describe('class starting-equipment oracle', () => {
     expect(wizard?.entries.filter((e) => e.kind === 'choice')).toHaveLength(3);
   });
 
-  it('treats the Rogue leather-armor line as a fixed grant despite a stray (a)', () => {
+  it('treats the Rogue leather-armor line as a fixed grant without a stray (a)', () => {
     const rogue = getClassStartingEquipment('class:rogue');
     const last = rogue?.entries.at(-1);
     expect(last?.kind).toBe('fixed');
     if (last?.kind !== 'fixed') {
       throw new Error('expected a fixed grant');
     }
-    // The clean text drops the artifact marker; sourceText keeps it verbatim.
     expect(last.text).toBe('Leather armor, two daggers, and thieves’ tools');
     expect(last.sourceText).toBe(
-      '(a) Leather armor, two daggers, and thieves’ tools',
+      'Leather armor, two daggers, and thieves’ tools',
     );
   });
 

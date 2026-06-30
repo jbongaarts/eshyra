@@ -829,6 +829,213 @@ function formatOverlayParityReport(
   return `${lines.join('\n')}\n`;
 }
 
+function hasStructuredChoices(record: RulesRecord): boolean {
+  const data = dataObject(record);
+  if (data === null) return false;
+  if (arrayValue(data.choices).length > 0) return true;
+  if (arrayValue(data.skillChoices).length > 0) return true;
+  if (arrayValue(data.toolProficiencyChoices).length > 0) return true;
+  const startingEquipment = objectValue(data.startingEquipment);
+  if (
+    arrayValue(startingEquipment?.entries).some((entry) => {
+      const e = objectValue(entry);
+      return e?.kind === 'choice' || arrayValue(e?.options).length > 0;
+    })
+  ) {
+    return true;
+  }
+  if (record.kind === 'ancestry') {
+    return arrayValue(data.traits).some((trait) => {
+      const t = objectValue(trait);
+      return (
+        arrayValue(t?.choices).length > 0 ||
+        arrayValue(t?.abilityScoreIncreases).length > 0 ||
+        arrayValue(t?.languages).length > 0
+      );
+    });
+  }
+  return false;
+}
+
+function hasDeterministicGrants(record: RulesRecord): boolean {
+  const data = dataObject(record);
+  if (data === null) return false;
+  if (arrayValue(data.equipmentGrants).length > 0) return true;
+  if (arrayValue(data.features).length > 0) return true;
+  if (arrayValue(data.abilityScoreIncreases).length > 0) return true;
+  if (arrayValue(data.languages).length > 0) return true;
+  const startingEquipment = objectValue(data.startingEquipment);
+  if (
+    arrayValue(startingEquipment?.entries).some((entry) => {
+      const e = objectValue(entry);
+      if (arrayValue(e?.grants).length > 0) return true;
+      return arrayValue(e?.options).some(
+        (option) => arrayValue(objectValue(option)?.grants).length > 0,
+      );
+    })
+  ) {
+    return true;
+  }
+  return arrayValue(data.progression).some((row) =>
+    arrayValue(objectValue(row)?.advancement).some((entry) => {
+      const kind = stringValue(objectValue(entry)?.kind);
+      return kind !== null && /Grant$/.test(kind);
+    }),
+  );
+}
+
+function hasMechanicsProjection(record: RulesRecord): boolean {
+  const data = dataObject(record);
+  if (data === null) return false;
+  if (objectValue(data.mechanics) !== null) return true;
+  if (objectValue(data.projection) !== null) return true;
+  if (
+    arrayValue(data.traits).some(
+      (trait) => objectValue(objectValue(trait)?.mechanics) !== null,
+    )
+  ) {
+    return true;
+  }
+  return objectValue(objectValue(data.feature)?.mechanics) !== null;
+}
+
+function hasProse(record: RulesRecord): boolean {
+  const data = dataObject(record);
+  if (data === null) return false;
+  if (stringValue(data.description) !== null) return true;
+  if (stringValue(data.text) !== null) return true;
+  if (stringValue(data.suggestedCharacteristics) !== null) return true;
+  if (stringValue(objectValue(data.feature)?.text) !== null) return true;
+  return arrayValue(data.traits).some(
+    (trait) => stringValue(objectValue(trait)?.text) !== null,
+  );
+}
+
+function firstKeys(
+  records: readonly RulesRecord[],
+  predicate: (record: RulesRecord) => boolean,
+  limit = 5,
+): readonly string[] {
+  return records
+    .filter(predicate)
+    .map((record) => record.key)
+    .sort()
+    .slice(0, limit);
+}
+
+type GameplayReadinessReport = {
+  readonly packId: string;
+  readonly byKind: Record<
+    string,
+    {
+      readonly totalRecords: number;
+      readonly recordsWithStructuredChoices: number;
+      readonly recordsWithUnresolvedChoiceProse: number;
+      readonly recordsWithDeterministicGrants: number;
+      readonly recordsWithMechanicsProjections: number;
+      readonly proseOnlyRecords: number;
+      readonly examples: {
+        readonly structuredChoices: readonly string[];
+        readonly unresolvedChoiceProse: readonly string[];
+        readonly deterministicGrants: readonly string[];
+        readonly mechanicsProjections: readonly string[];
+        readonly proseOnly: readonly string[];
+      };
+    }
+  >;
+  readonly highImpactExamples: readonly {
+    readonly key: string;
+    readonly kind: string;
+    readonly signal: string;
+  }[];
+};
+
+function buildGameplayReadinessReport(
+  pack: RulesPack,
+  choiceProseFindings: readonly SrdChoiceProseFinding[],
+): GameplayReadinessReport {
+  const choiceFindingKeys = new Set(choiceProseFindings.map((f) => f.key));
+  const kinds = [...new Set(pack.records.map((record) => record.kind))].sort();
+  const byKind: GameplayReadinessReport['byKind'] = {};
+  for (const kind of kinds) {
+    const records = pack.records
+      .filter((record) => record.kind === kind)
+      .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+    const structured = records.filter(hasStructuredChoices);
+    const unresolved = records.filter((record) =>
+      choiceFindingKeys.has(record.key),
+    );
+    const grants = records.filter(hasDeterministicGrants);
+    const mechanics = records.filter(hasMechanicsProjection);
+    const proseOnly = records.filter(
+      (record) =>
+        hasProse(record) &&
+        !hasStructuredChoices(record) &&
+        !choiceFindingKeys.has(record.key) &&
+        !hasDeterministicGrants(record) &&
+        !hasMechanicsProjection(record),
+    );
+    byKind[kind] = {
+      totalRecords: records.length,
+      recordsWithStructuredChoices: structured.length,
+      recordsWithUnresolvedChoiceProse: unresolved.length,
+      recordsWithDeterministicGrants: grants.length,
+      recordsWithMechanicsProjections: mechanics.length,
+      proseOnlyRecords: proseOnly.length,
+      examples: {
+        structuredChoices: firstKeys(records, hasStructuredChoices),
+        unresolvedChoiceProse: firstKeys(records, (record) =>
+          choiceFindingKeys.has(record.key),
+        ),
+        deterministicGrants: firstKeys(records, hasDeterministicGrants),
+        mechanicsProjections: firstKeys(records, hasMechanicsProjection),
+        proseOnly: firstKeys(records, (record) => proseOnly.includes(record)),
+      },
+    };
+  }
+  return {
+    packId: pack.meta.packId,
+    byKind,
+    highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
+      key: finding.key,
+      kind: finding.kind,
+      signal: finding.matchedPhrases.join(', '),
+    })),
+  };
+}
+
+function formatGameplayReadinessReport(
+  report: ReturnType<typeof buildGameplayReadinessReport>,
+): string {
+  const lines = [
+    'Gameplay readiness',
+    `Pack: ${report.packId}`,
+    '',
+    '| kind | total | structured choices | unresolved choice prose | deterministic grants | mechanics projections | prose-only |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
+  ];
+  for (const [kind, summary] of Object.entries(report.byKind)) {
+    lines.push(
+      `| ${kind} | ${summary.totalRecords} | ${summary.recordsWithStructuredChoices} | ${summary.recordsWithUnresolvedChoiceProse} | ${summary.recordsWithDeterministicGrants} | ${summary.recordsWithMechanicsProjections} | ${summary.proseOnlyRecords} |`,
+    );
+  }
+  lines.push('', 'Examples by kind');
+  for (const [kind, summary] of Object.entries(report.byKind)) {
+    lines.push(
+      `- ${kind}: choices [${summary.examples.structuredChoices.join(', ') || 'none'}]; unresolved [${summary.examples.unresolvedChoiceProse.join(', ') || 'none'}]; grants [${summary.examples.deterministicGrants.join(', ') || 'none'}]; mechanics [${summary.examples.mechanicsProjections.join(', ') || 'none'}]; prose-only [${summary.examples.proseOnly.join(', ') || 'none'}]`,
+    );
+  }
+  lines.push('', 'High-impact unresolved choice-prose examples');
+  if (report.highImpactExamples.length === 0) {
+    lines.push('(none)');
+  } else {
+    for (const example of report.highImpactExamples) {
+      lines.push(`${example.kind}: ${example.key} — ${example.signal}`);
+    }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
 // ---------------------------------------------------------------------------
 // README
 // ---------------------------------------------------------------------------
@@ -918,6 +1125,9 @@ function buildReadme(meta: {
     '- `srd-choice-prose-audit.{json,txt}` — choice-bearing prose coverage gate:',
     '  records whose prose announces a build choice but carry no structured',
     '  option catalog/filter (eshyra-ngcj.1)',
+    '- `gameplay-readiness.{json,txt}` — per-kind readiness summary for',
+    '  structured choices, unresolved choice prose, deterministic grants,',
+    '  mechanics projections, and prose-only records',
     '- `source-hash-verification.txt` — SHA-256 and size check for the vendored PDF',
     '',
     '## How to reproduce',
@@ -1137,6 +1347,9 @@ async function main(): Promise<void> {
   > | null = null;
   let overlayParityReport: ReturnType<typeof buildOverlayParityReport> | null =
     null;
+  let gameplayReadinessReport: ReturnType<
+    typeof buildGameplayReadinessReport
+  > | null = null;
   try {
     const pack = loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
     playabilityFindings = auditSrdPlayability(pack);
@@ -1228,6 +1441,21 @@ async function main(): Promise<void> {
       'utf8',
     );
 
+    gameplayReadinessReport = buildGameplayReadinessReport(
+      pack,
+      choiceProseFindings,
+    );
+    writeFileSync(
+      join(outDir, 'reports/gameplay-readiness.json'),
+      JSON.stringify(gameplayReadinessReport, null, 2),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/gameplay-readiness.txt'),
+      formatGameplayReadinessReport(gameplayReadinessReport),
+      'utf8',
+    );
+
     log(
       `  Playability findings: ${playabilityFindings.length} (${srdPlayabilityHasFindings(playabilityFindings) ? 'NEEDS REVIEW' : 'clean'})`,
     );
@@ -1239,6 +1467,9 @@ async function main(): Promise<void> {
     );
     log(
       `  Choice findings: ${choiceCoverageReport.summary.findings}; table-link findings: ${tableReachabilityReport.summary.tableLinkFindings}; overlay mismatches: ${overlayParityReport.summary.mismatchedFacts}`,
+    );
+    log(
+      `  Gameplay-readiness kinds: ${Object.keys(gameplayReadinessReport.byKind).length}`,
     );
   } catch (cause) {
     const msg =

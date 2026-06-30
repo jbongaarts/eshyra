@@ -83,6 +83,23 @@ const COMMITTED_PACK_DIR = resolve(
   'packages/core/data/rules-packs/rules__dnd5e-srd-5.1',
 );
 
+function countByField<T extends string>(
+  values: readonly T[],
+): Readonly<Record<T, number>> {
+  const counts = Object.create(null) as Record<T, number>;
+  for (const value of values) {
+    counts[value] = (counts[value] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function formatCounts(counts: Readonly<Record<string, number>>): string {
+  return Object.entries(counts)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([kind, count]) => `${kind}: ${count}`)
+    .join(', ');
+}
+
 async function main(): Promise<void> {
   const tmpDir = mkdtempSync(join(tmpdir(), 'verify-dnd5e-srd-pack-'));
   try {
@@ -117,11 +134,7 @@ async function main(): Promise<void> {
       process.exit(2);
     }
 
-    const c = result.counts;
     console.log(`Source PDF SHA-256: ${result.sourceHash}`);
-    console.log(
-      `Importer counts: ${c.spells} spells, ${c.creatures} creatures, ${c.npcs} NPCs, ${c.classes} classes, ${c.subclasses} subclasses, ${c.features} features, ${c.conditions} conditions, ${c.feats} feats, ${c.hazards} hazards, ${c.traps} traps, ${c.actions} actions, ${c.rules} rules, ${c.tables} tables, ${c.equipment} equipment, ${c.magicItems} magic items, ${c.ancestries} ancestries, ${c.backgrounds} backgrounds`,
-    );
     console.log('');
 
     let committed: ReturnType<typeof loadRulesPackFromDirectory>;
@@ -137,6 +150,21 @@ async function main(): Promise<void> {
       }
       process.exit(2);
     }
+
+    const regeneratedKindCounts = countByField(
+      regenerated.records.map((record) => record.kind),
+    );
+    const hazardCategories = countByField(
+      regenerated.records
+        .filter((record) => record.kind === 'hazard')
+        .map((record) => {
+          const data = record.data as { category?: string };
+          return data.category ?? 'uncategorized';
+        }),
+    );
+    console.log(`Record kind counts: ${formatCounts(regeneratedKindCounts)}`);
+    console.log(`Hazard categories: ${formatCounts(hazardCategories)}`);
+    console.log('');
 
     const diff = diffPacks(committed, regenerated);
     process.stdout.write(formatDiffReport(diff));

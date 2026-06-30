@@ -1297,7 +1297,46 @@ function validateDnd5eBackground(record: RulesRecord, path: string): void {
 
 function validateDnd5eHazard(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
+  optStr(data, 'category', `${path}.data`);
+  optStr(data, 'trapType', `${path}.data`);
+  optStr(data, 'poisonType', `${path}.data`);
   reqStr(data, 'description', `${path}.data`);
+  const category = data.category;
+  if (
+    category !== undefined &&
+    category !== 'trap' &&
+    category !== 'disease' &&
+    category !== 'poison'
+  ) {
+    throw new RulesPackError(
+      `${path}.data.category must be "trap", "disease", or "poison" when present`,
+    );
+  }
+  const trapType = data.trapType;
+  if (
+    trapType !== undefined &&
+    trapType !== 'mechanical' &&
+    trapType !== 'magic'
+  ) {
+    throw new RulesPackError(
+      `${path}.data.trapType must be "mechanical" or "magic" when present`,
+    );
+  }
+  if (trapType !== undefined && category !== 'trap') {
+    throw new RulesPackError(
+      `${path}.data.category must be "trap" when trapType is present`,
+    );
+  }
+  if (category === 'trap' && trapType === undefined) {
+    throw new RulesPackError(
+      `${path}.data.trapType must be present when category is "trap"`,
+    );
+  }
+  if (data.poisonType !== undefined && category !== 'poison') {
+    throw new RulesPackError(
+      `${path}.data.category must be "poison" when poisonType is present`,
+    );
+  }
   optMechanics(data, 'mechanics', `${path}.data`);
 }
 
