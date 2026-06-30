@@ -33,6 +33,14 @@ import {
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
+import {
+  deriveActionMechanics,
+  deriveCreatureEntryMechanics,
+  deriveFeatMechanics,
+  deriveFeatureMechanics,
+  deriveHazardMechanics,
+  deriveSpellMechanics,
+} from './mechanicsProjections.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
 import type { SourceRegionLedger } from './sourceRegionLedger.js';
@@ -215,6 +223,7 @@ function buildSpellData(
     components: [...spell.components],
     classes: [...classes],
     description: spell.description,
+    mechanics: deriveSpellMechanics(spell),
   };
   if (spell.componentMaterials !== undefined) {
     base.componentMaterials = spell.componentMaterials;
@@ -339,29 +348,48 @@ function buildCreatureData(
   // object so the emitted JSON is byte-stable; sections absent from the source
   // produce no key.
   if (creature.traits !== undefined) {
-    data.traits = creature.traits.map((e) => ({ name: e.name, text: e.text }));
+    data.traits = creature.traits.map((e) => {
+      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      return {
+        name: e.name,
+        text: e.text,
+        ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+      };
+    });
   }
   if (creature.actions !== undefined) {
-    data.actions = creature.actions.map((e) => ({
-      name: e.name,
-      text: e.text,
-    }));
+    data.actions = creature.actions.map((e) => {
+      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      return {
+        name: e.name,
+        text: e.text,
+        ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+      };
+    });
   }
   if (creature.reactions !== undefined) {
-    data.reactions = creature.reactions.map((e) => ({
-      name: e.name,
-      text: e.text,
-    }));
+    data.reactions = creature.reactions.map((e) => {
+      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      return {
+        name: e.name,
+        text: e.text,
+        ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+      };
+    });
   }
   if (creature.legendaryActions !== undefined) {
     const legendary: Record<string, unknown> = {};
     if (creature.legendaryActions.description !== undefined) {
       legendary.description = creature.legendaryActions.description;
     }
-    legendary.entries = creature.legendaryActions.entries.map((e) => ({
-      name: e.name,
-      text: e.text,
-    }));
+    legendary.entries = creature.legendaryActions.entries.map((e) => {
+      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      return {
+        name: e.name,
+        text: e.text,
+        ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+      };
+    });
     data.legendaryActions = legendary;
   }
   // Source-derived flavor/description prose printed after the stat block
@@ -454,16 +482,24 @@ function buildStatBlockData(
   if (statBlock.experiencePoints !== undefined)
     data.experiencePoints = statBlock.experiencePoints;
   if (statBlock.traits !== undefined) {
-    data.traits = statBlock.traits.map((entry) => ({
-      name: entry.name,
-      text: entry.text,
-    }));
+    data.traits = statBlock.traits.map((entry) => {
+      const mechanics = deriveCreatureEntryMechanics(entry.name, entry.text);
+      return {
+        name: entry.name,
+        text: entry.text,
+        ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+      };
+    });
   }
   if (statBlock.actions !== undefined) {
-    data.actions = statBlock.actions.map((entry) => ({
-      name: entry.name,
-      text: entry.text,
-    }));
+    data.actions = statBlock.actions.map((entry) => {
+      const mechanics = deriveCreatureEntryMechanics(entry.name, entry.text);
+      return {
+        name: entry.name,
+        text: entry.text,
+        ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+      };
+    });
   }
   data.inlineSource = {
     containingItem: statBlock.containingItem,
@@ -613,10 +649,12 @@ function buildFeatureData(feature: FeatureExtraction): Record<string, unknown> {
     feature.grantorKind === 'class'
       ? classKey(feature.grantorName)
       : subclassKey(feature.grantorName);
+  const mechanics = deriveFeatureMechanics(feature.description);
   return {
     source,
     level: feature.level,
     description: feature.description,
+    ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
     // Structured player choices (eshyra-o9bd.9). Absent until a derivation pass
     // populates `feature.choices`; only emitted when present so the committed
     // pack stays byte-stable for features without modeled choices.
@@ -682,11 +720,15 @@ export function featExtractionsToRecords(
   feats: readonly FeatExtraction[],
 ): RulesRecord[] {
   const out: RulesRecord[] = feats.map((feat) => {
+    const mechanics = deriveFeatMechanics(feat);
     const data: Record<string, unknown> = {
       description: feat.description,
     };
     if (feat.prerequisites !== undefined) {
       data.prerequisites = feat.prerequisites;
+    }
+    if (Object.keys(mechanics).length > 0) {
+      data.mechanics = mechanics;
     }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
@@ -708,9 +750,13 @@ export function hazardExtractionsToRecords(
   hazards: readonly HazardExtraction[],
 ): RulesRecord[] {
   const out: RulesRecord[] = hazards.map((hazard) => {
+    const mechanics = deriveHazardMechanics(hazard);
     const data: Record<string, unknown> = {
       description: hazard.description,
     };
+    if (Object.keys(mechanics).length > 0) {
+      data.mechanics = mechanics;
+    }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'hazard',
@@ -744,10 +790,14 @@ export function trapExtractionsToRecords(
   traps: readonly TrapExtraction[],
 ): RulesRecord[] {
   const out: RulesRecord[] = traps.map((trap) => {
+    const mechanics = deriveHazardMechanics(trap);
     const data: Record<string, unknown> = {
       trapType: trap.trapType,
       description: trap.description,
     };
+    if (Object.keys(mechanics).length > 0) {
+      data.mechanics = mechanics;
+    }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'hazard',
@@ -781,10 +831,14 @@ export function diseaseExtractionsToRecords(
   diseases: readonly DiseaseExtraction[],
 ): RulesRecord[] {
   const out: RulesRecord[] = diseases.map((disease) => {
+    const mechanics = deriveHazardMechanics(disease);
     const data: Record<string, unknown> = {
       category: 'disease',
       description: disease.description,
     };
+    if (Object.keys(mechanics).length > 0) {
+      data.mechanics = mechanics;
+    }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'hazard',
@@ -815,6 +869,7 @@ export function poisonExtractionsToRecords(
   poisons: readonly PoisonExtraction[],
 ): RulesRecord[] {
   const out: RulesRecord[] = poisons.map((poison) => {
+    const mechanics = deriveHazardMechanics(poison);
     const data: Record<string, unknown> = {
       category: 'poison',
       poisonType: poison.poisonType,
@@ -823,6 +878,9 @@ export function poisonExtractionsToRecords(
       data.price = poison.price;
     }
     data.description = poison.description;
+    if (Object.keys(mechanics).length > 0) {
+      data.mechanics = mechanics;
+    }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'hazard',
@@ -872,9 +930,13 @@ export function actionExtractionsToRecords(
   actions: readonly ActionExtraction[],
 ): RulesRecord[] {
   const out: RulesRecord[] = actions.map((action) => {
+    const mechanics = deriveActionMechanics(action);
     const data: Record<string, unknown> = {
       description: action.description,
     };
+    if (Object.keys(mechanics).length > 0) {
+      data.mechanics = mechanics;
+    }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'action',
@@ -1076,7 +1138,14 @@ export function ancestryExtractionsToRecords(
     if (ancestry.speed !== undefined) {
       data.speed = ancestry.speed;
     }
-    data.traits = ancestry.traits.map((t) => ({ name: t.name, text: t.text }));
+    data.traits = ancestry.traits.map((t) => {
+      const mechanics = deriveFeatureMechanics(t.text);
+      return {
+        name: t.name,
+        text: t.text,
+        ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+      };
+    });
     if (ancestry.subraceOf !== undefined) {
       data.subraceOf = ancestryKey(ancestry.subraceOf);
     }
@@ -1129,9 +1198,11 @@ function buildBackgroundData(
   if (background.equipment !== undefined) {
     data.equipment = background.equipment;
   }
+  const mechanics = deriveFeatureMechanics(background.feature.text);
   data.feature = {
     name: background.feature.name,
     text: background.feature.text,
+    ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
   };
   if (background.suggestedCharacteristics !== undefined) {
     data.suggestedCharacteristics = background.suggestedCharacteristics;

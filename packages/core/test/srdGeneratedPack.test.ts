@@ -456,6 +456,10 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   readonly missingCount: number;
   readonly totalInKind: number;
 }> = [
+  // First-pass mechanics projections (eshyra-ngcj.6) are optional and
+  // source-pattern gated. Only Dodge has an explicit condition effect among the
+  // ten top-level combat actions; other action records remain prose-only.
+  { kind: 'action', field: 'mechanics', missingCount: 9, totalInKind: 10 },
   // Ancestry creation choices (eshyra-ngcj.5): genuinely optional — only the 5
   // ancestries with a prose-bound build choice (Dragonborn draconic ancestry,
   // Dwarf/Hill Dwarf tool, Half-Elf skills, High Elf cantrip + language) carry
@@ -644,6 +648,11 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // named out-of-scope Channel Divinity markers); the other 142 features confer
   // no player choice and omit it.
   { kind: 'feature', field: 'choices', missingCount: 130, totalInKind: 184 },
+  // First-pass mechanics projections (eshyra-ngcj.6): 76 features with explicit
+  // rest-reset resources, critical range, extra attack, advantage/resistance,
+  // proficiency, or spell-grant patterns carry `mechanics`; the rest remain
+  // prose-backed.
+  { kind: 'feature', field: 'mechanics', missingCount: 108, totalInKind: 184 },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic
@@ -655,6 +664,9 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // carry `trapType`; the 3 diseases + 14 poisons carry `category`; the 14
   // poisons additionally carry `poisonType` and `price`.
   { kind: 'hazard', field: 'category', missingCount: 8, totalInKind: 25 },
+  // First-pass mechanics projections (eshyra-ngcj.6): all but one trap/disease/
+  // poison record expose an explicit save, damage, or condition projection.
+  { kind: 'hazard', field: 'mechanics', missingCount: 1, totalInKind: 25 },
   { kind: 'hazard', field: 'poisonType', missingCount: 11, totalInKind: 25 },
   { kind: 'hazard', field: 'price', missingCount: 11, totalInKind: 25 },
   { kind: 'hazard', field: 'trapType', missingCount: 17, totalInKind: 25 },

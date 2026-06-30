@@ -146,6 +146,7 @@ function optNamedEntryArray(parent: Obj, key: string, path: string): void {
     const entry = item as Obj;
     reqStr(entry, 'name', `${path}.${key}[${i}]`);
     reqStr(entry, 'text', `${path}.${key}[${i}]`);
+    optMechanics(entry, 'mechanics', `${path}.${key}[${i}]`);
   });
 }
 
@@ -504,6 +505,60 @@ function optProficiencyNotes(parent: Obj, key: string, path: string): void {
     reqStr(entry, 'field', `${path}.${key}[${i}]`);
     reqStr(entry, 'text', `${path}.${key}[${i}]`);
   });
+}
+
+function optMechanics(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) return;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(`${path}.${key} must be an object when present`);
+  }
+  const mechanics = value as Obj;
+  optBool(mechanics, 'concentration', `${path}.${key}`);
+  optBool(mechanics, 'spellAttack', `${path}.${key}`);
+  optStr(mechanics, 'spellGrants', `${path}.${key}`);
+  for (const arrayKey of [
+    'attacks',
+    'saves',
+    'damage',
+    'conditions',
+    'resources',
+    'effects',
+    'hitDamage',
+  ]) {
+    const entries = objArray(mechanics, arrayKey, `${path}.${key}`);
+    if (entries === undefined) continue;
+    if (entries.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.${arrayKey} must not be empty when present`,
+      );
+    }
+  }
+  const scaling = mechanics.scaling;
+  if (scaling !== undefined) {
+    if (
+      typeof scaling !== 'object' ||
+      scaling === null ||
+      Array.isArray(scaling)
+    ) {
+      throw new RulesPackError(`${path}.${key}.scaling must be an object`);
+    }
+    optStr(scaling as Obj, 'sourceText', `${path}.${key}.scaling`);
+  }
+  const recharge = mechanics.recharge;
+  if (recharge !== undefined) {
+    if (
+      typeof recharge !== 'object' ||
+      recharge === null ||
+      Array.isArray(recharge)
+    ) {
+      throw new RulesPackError(`${path}.${key}.recharge must be an object`);
+    }
+    const obj = recharge as Obj;
+    reqStr(obj, 'roll', `${path}.${key}.recharge`);
+    reqInt(obj, 'minimum', `${path}.${key}.recharge`, 1);
+    reqInt(obj, 'maximum', `${path}.${key}.recharge`, 1);
+  }
 }
 
 // Optional level-by-level class progression (eshyra-4a7.6). Each row carries an
@@ -880,6 +935,7 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
   // description (eshyra-o4j7). The prose remains source-preserving; tableRefs
   // provides direct navigation to the separately emitted table records.
   optStrArray(data, 'tableRefs', `${path}.data`);
+  optMechanics(data, 'mechanics', `${path}.data`);
 }
 
 function validateDnd5eCreature(record: RulesRecord, path: string): void {
@@ -939,6 +995,7 @@ function validateDnd5eCreature(record: RulesRecord, path: string): void {
   optStr(data, 'description', `${path}.data`);
   // Optional "Variant: …" sidebars that modify the creature (eshyra-70xr).
   optNamedEntryArray(data, 'variants', `${path}.data`);
+  optMechanics(data, 'mechanics', `${path}.data`);
 }
 
 // An abbreviated combat stat block defined INLINE under another entry — Avatar
@@ -1002,6 +1059,7 @@ function validateDnd5eStatBlock(record: RulesRecord, path: string): void {
   optInt(data, 'experiencePoints', `${path}.data`, 0);
   optNamedEntryArray(data, 'traits', `${path}.data`);
   optNamedEntryArray(data, 'actions', `${path}.data`);
+  optMechanics(data, 'mechanics', `${path}.data`);
   const inlineSource = reqObj(data, 'inlineSource', `${path}.data`);
   reqStr(inlineSource, 'containingItem', `${path}.data.inlineSource`);
   reqInt(inlineSource, 'page', `${path}.data.inlineSource`, 1);
@@ -1083,6 +1141,7 @@ function validateDnd5eFeature(record: RulesRecord, path: string): void {
   // feature:druid:wild-shape -> table:beast-shapes — so the table rows live in
   // one reviewed `table` record instead of flattened into the feature prose.
   optStrArray(data, 'tableRefs', `${path}.data`);
+  optMechanics(data, 'mechanics', `${path}.data`);
   // Optional structured player choices the feature requires at creation/level-up
   // (eshyra-o9bd.9): Fighting Style, subclass selection, Metamagic, etc.
   optFeatureChoiceArray(data, 'choices', `${path}.data`);
@@ -1180,6 +1239,7 @@ function validateDnd5eAncestry(record: RulesRecord, path: string): void {
       reqStr(trait, 'name', traitPath);
       reqStr(trait, 'text', traitPath);
       optStrArray(trait, 'tableRefs', traitPath);
+      optMechanics(trait, 'mechanics', traitPath);
     });
   }
 }
@@ -1225,6 +1285,7 @@ function validateDnd5eBackground(record: RulesRecord, path: string): void {
   const feature = reqObj(data, 'feature', `${path}.data`);
   reqStr(feature, 'name', `${path}.data.feature`);
   reqStr(feature, 'text', `${path}.data.feature`);
+  optMechanics(feature, 'mechanics', `${path}.data.feature`);
   optStr(data, 'suggestedCharacteristics', `${path}.data`);
   // Optional links to the background's suggested-characteristics roll tables
   // (eshyra-o9bd.8.2); most backgrounds have none.
@@ -1237,11 +1298,13 @@ function validateDnd5eBackground(record: RulesRecord, path: string): void {
 function validateDnd5eHazard(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   reqStr(data, 'description', `${path}.data`);
+  optMechanics(data, 'mechanics', `${path}.data`);
 }
 
 function validateDnd5eAction(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   reqStr(data, 'description', `${path}.data`);
+  optMechanics(data, 'mechanics', `${path}.data`);
 }
 
 function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
