@@ -782,6 +782,64 @@ describe('featureExtractionsToRecords — record shape', () => {
   });
 });
 
+// eshyra-vk23.1: `spellGrants` must be validated structure, not regex residue.
+// The projection captures "you learn/can cast/know the X spell" fragments but
+// only keeps them when a resolver maps the fragment to a real spell ref, so a
+// mechanics-looking field can never surface clipped prose as authoritative data.
+describe('featureExtractionsToRecords — fail-closed spellGrants (eshyra-vk23.1)', () => {
+  const resolveSpellGrant = (candidate: string): string | undefined =>
+    candidate.trim().toLowerCase() === 'find familiar'
+      ? 'spell:find-familiar'
+      : undefined;
+
+  const PACT_CHAIN: FeatureExtraction = {
+    name: 'Pact Boon',
+    grantorKind: 'class',
+    grantorName: 'Warlock',
+    level: 3,
+    description:
+      'You learn the find familiar spell and can cast it as a ritual. It does not count against your number of spells known.',
+    sourcePage: 47,
+  };
+
+  const PROSE_RESIDUE: FeatureExtraction = {
+    name: 'Spellcasting',
+    grantorKind: 'class',
+    grantorName: 'Bard',
+    level: 1,
+    description:
+      'You know two cantrips of your choice from the bard spell list. When you gain a level, you can choose one of the bard spells you know and replace it with another spell.',
+    sourcePage: 11,
+  };
+
+  it('keeps a captured grant only when it resolves to a real spell ref', () => {
+    const [record] = featureExtractionsToRecords(
+      [PACT_CHAIN],
+      resolveSpellGrant,
+    );
+    expect(record.data).toMatchObject({
+      mechanics: { spellGrants: [{ spell: 'spell:find-familiar' }] },
+    });
+  });
+
+  it('omits spellGrants for unresolved natural-language fragments', () => {
+    const [record] = featureExtractionsToRecords(
+      [PROSE_RESIDUE],
+      resolveSpellGrant,
+    );
+    const mechanics = (record.data as { mechanics?: Record<string, unknown> })
+      .mechanics;
+    expect(mechanics ?? {}).not.toHaveProperty('spellGrants');
+  });
+
+  it('omits spellGrants entirely when no resolver is supplied (fail closed)', () => {
+    const [record] = featureExtractionsToRecords([PACT_CHAIN]);
+    const mechanics = (record.data as { mechanics?: Record<string, unknown> })
+      .mechanics;
+    expect(mechanics ?? {}).not.toHaveProperty('spellGrants');
+  });
+});
+
 describe('tableExtractionsToRecords - record shape', () => {
   it('builds table keys of the form "table:<slug>"', () => {
     const [record] = tableExtractionsToRecords([DIFFICULTY_TABLE]);

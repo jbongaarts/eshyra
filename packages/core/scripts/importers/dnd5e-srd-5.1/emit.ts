@@ -40,6 +40,7 @@ import {
   deriveFeatureMechanics,
   deriveHazardMechanics,
   deriveSpellMechanics,
+  type SpellGrantResolver,
 } from './mechanicsProjections.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
@@ -140,6 +141,24 @@ function buildMeta(
 
 function spellKey(name: string): string {
   return `spell:${slug(name)}`;
+}
+
+/**
+ * Build a fail-closed spell-grant resolver (eshyra-vk23.1) from the emitted
+ * spell set. Captured prose fragments are matched by slug against real SRD
+ * spell names; anything that is not a known spell resolves to `undefined` so
+ * the `spellGrants` mechanics projection omits it instead of surfacing regex
+ * residue as authoritative gameplay data. Returns a no-resolve function when no
+ * spells are supplied (focused fixtures), which keeps spell grants absent.
+ */
+function buildSpellGrantResolver(
+  spells: readonly SpellExtraction[],
+): SpellGrantResolver {
+  const bySlug = new Map<string, string>();
+  for (const spell of spells) {
+    bySlug.set(slug(spell.name), spellKey(spell.name));
+  }
+  return (candidate) => bySlug.get(slug(candidate));
 }
 
 function slug(name: string): string {
@@ -644,12 +663,18 @@ export function subclassExtractionsToRecords(
  * for byte-stable output and matches the `dnd5e-srd` feature kindSchema
  * (`validateDnd5eFeature`: source, level, description, optional choices).
  */
-function buildFeatureData(feature: FeatureExtraction): Record<string, unknown> {
+function buildFeatureData(
+  feature: FeatureExtraction,
+  resolveSpellGrant?: SpellGrantResolver,
+): Record<string, unknown> {
   const source =
     feature.grantorKind === 'class'
       ? classKey(feature.grantorName)
       : subclassKey(feature.grantorName);
-  const mechanics = deriveFeatureMechanics(feature.description);
+  const mechanics = deriveFeatureMechanics(
+    feature.description,
+    resolveSpellGrant,
+  );
   return {
     source,
     level: feature.level,
@@ -666,6 +691,7 @@ function buildFeatureData(feature: FeatureExtraction): Record<string, unknown> {
 
 export function featureExtractionsToRecords(
   features: readonly FeatureExtraction[],
+  resolveSpellGrant?: SpellGrantResolver,
 ): RulesRecord[] {
   const out: RulesRecord[] = features.map((feature) => {
     const record: RulesRecord = {
@@ -673,7 +699,7 @@ export function featureExtractionsToRecords(
       kind: 'feature',
       key: `feature:${slug(feature.grantorName)}:${slug(feature.name)}`,
       name: feature.name,
-      data: buildFeatureData(feature),
+      data: buildFeatureData(feature, resolveSpellGrant),
       source: sourceLabelFor(feature.sourcePage),
       license: SRD_5_1_LICENSE,
       provenance: provenanceFor(feature.sourcePage),
@@ -718,9 +744,10 @@ export function conditionExtractionsToRecords(
 
 export function featExtractionsToRecords(
   feats: readonly FeatExtraction[],
+  resolveSpellGrant?: SpellGrantResolver,
 ): RulesRecord[] {
   const out: RulesRecord[] = feats.map((feat) => {
-    const mechanics = deriveFeatMechanics(feat);
+    const mechanics = deriveFeatMechanics(feat, resolveSpellGrant);
     const data: Record<string, unknown> = {
       description: feat.description,
     };
@@ -1123,6 +1150,7 @@ export function magicItemExtractionsToRecords(
 
 export function ancestryExtractionsToRecords(
   ancestries: readonly AncestryExtraction[],
+  resolveSpellGrant?: SpellGrantResolver,
 ): RulesRecord[] {
   const out: RulesRecord[] = ancestries.map((ancestry) => {
     // `source: 'race'` preserves the SRD 5.1 source term while the record kind
@@ -1139,7 +1167,7 @@ export function ancestryExtractionsToRecords(
       data.speed = ancestry.speed;
     }
     data.traits = ancestry.traits.map((t) => {
-      const mechanics = deriveFeatureMechanics(t.text);
+      const mechanics = deriveFeatureMechanics(t.text, resolveSpellGrant);
       return {
         name: t.name,
         text: t.text,
@@ -1184,6 +1212,7 @@ function backgroundKey(name: string): string {
  */
 function buildBackgroundData(
   background: BackgroundExtraction,
+  resolveSpellGrant?: SpellGrantResolver,
 ): Record<string, unknown> {
   const data: Record<string, unknown> = {
     description: background.description,
@@ -1198,7 +1227,10 @@ function buildBackgroundData(
   if (background.equipment !== undefined) {
     data.equipment = background.equipment;
   }
-  const mechanics = deriveFeatureMechanics(background.feature.text);
+  const mechanics = deriveFeatureMechanics(
+    background.feature.text,
+    resolveSpellGrant,
+  );
   data.feature = {
     name: background.feature.name,
     text: background.feature.text,
@@ -1212,6 +1244,7 @@ function buildBackgroundData(
 
 export function backgroundExtractionsToRecords(
   backgrounds: readonly BackgroundExtraction[],
+  resolveSpellGrant?: SpellGrantResolver,
 ): RulesRecord[] {
   const out: RulesRecord[] = backgrounds.map((background) => {
     const record: RulesRecord = {
@@ -1219,7 +1252,7 @@ export function backgroundExtractionsToRecords(
       kind: 'background',
       key: backgroundKey(background.name),
       name: background.name,
-      data: buildBackgroundData(background),
+      data: buildBackgroundData(background, resolveSpellGrant),
       source: sourceLabelFor(background.sourcePage),
       license: SRD_5_1_LICENSE,
       provenance: provenanceFor(background.sourcePage),
@@ -1285,6 +1318,10 @@ export function buildPack(input: BuildPackInput): RulesPack {
         ];
       }),
     );
+  // Fail-closed spell-grant resolver (eshyra-vk23.1): feature/feat/ancestry/
+  // background mechanics projections only keep a captured spell name when it
+  // resolves to a real emitted spell, never raw regex residue.
+  const resolveSpellGrant = buildSpellGrantResolver(input.spells);
   const baseSpellRecords = spellExtractionsToRecords(input.spells, classByName);
   const creatureRecords = creatureExtractionsToRecords(input.creatures ?? []);
   const classRecords = classExtractionsToRecords(
@@ -1292,9 +1329,15 @@ export function buildPack(input: BuildPackInput): RulesPack {
     input.primaryAbilityIndex,
   );
   const subclassRecords = subclassExtractionsToRecords(input.subclasses ?? []);
-  const featureRecords = featureExtractionsToRecords(input.features ?? []);
+  const featureRecords = featureExtractionsToRecords(
+    input.features ?? [],
+    resolveSpellGrant,
+  );
   const conditionRecords = conditionExtractionsToRecords(input.conditions);
-  const featRecords = featExtractionsToRecords(input.feats ?? []);
+  const featRecords = featExtractionsToRecords(
+    input.feats ?? [],
+    resolveSpellGrant,
+  );
   // Environmental hazards (empty for SRD 5.1), sample traps (loreweaver-hvp),
   // and the gamemastering diseases + poisons (loreweaver-6ra) all emit under the
   // `hazard` kind; concatenate before the shared sort. All gamemastering
@@ -1336,13 +1379,13 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // option rows are reachable as structured data rather than prose-only.
   const ancestryRecords = enrichAncestryCreationFacts(
     linkAncestryOptionTables(
-      ancestryExtractionsToRecords(input.ancestries ?? []),
+      ancestryExtractionsToRecords(input.ancestries ?? [], resolveSpellGrant),
       tableRecords,
     ),
     spellRecords,
   );
   const backgroundRecords = enrichBackgroundCreationFacts(
-    backgroundExtractionsToRecords(input.backgrounds ?? []),
+    backgroundExtractionsToRecords(input.backgrounds ?? [], resolveSpellGrant),
   );
   // Enrich the class-chapter records with structured progression and the
   // class/subclass/feature cross-references (eshyra-4a7.6). Derived from the

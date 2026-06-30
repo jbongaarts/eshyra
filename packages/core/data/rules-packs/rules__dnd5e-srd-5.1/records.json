@@ -1227,10 +1227,7 @@
         },
         {
           "name": "Cantrip",
-          "text": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it.",
-          "mechanics": {
-            "spellGrants": "one cantrip of your choice from the wizard"
-          }
+          "text": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it."
         },
         {
           "name": "Extra Language",
@@ -1860,7 +1857,14 @@
                 "reset": "long-rest"
               }
             ],
-            "spellGrants": "hellish rebuke"
+            "spellGrants": [
+              {
+                "spell": "spell:hellish-rebuke"
+              },
+              {
+                "spell": "spell:darkness"
+              }
+            ]
           }
         },
         {
@@ -4008,6 +4012,11 @@
       "spellcastingAbility": "wisdom",
       "spellPreparation": {
         "kind": "prepared",
+        "preparationFormula": {
+          "ability": "wisdom",
+          "classLevelDivisor": 1,
+          "minimum": 1
+        },
         "sourceText": "You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). Wisdom is your spellcasting ability for your cleric spells."
       }
     },
@@ -4629,6 +4638,11 @@
       "spellcastingAbility": "wisdom",
       "spellPreparation": {
         "kind": "prepared",
+        "preparationFormula": {
+          "ability": "wisdom",
+          "classLevelDivisor": 1,
+          "minimum": 1
+        },
         "sourceText": "You prepare the list of druid spells that are available for you to cast, choosing from the druid spell list. When you do so, choose a number of druid spells equal to your Wisdom modifier + your druid level (minimum of one spell). Wisdom is your spellcasting ability for your druid spells."
       }
     },
@@ -6379,7 +6393,12 @@
       "spellcastingAbility": "charisma",
       "spellPreparation": {
         "kind": "prepared",
-        "sourceText": "By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does. Charisma is your spellcasting ability for your paladin spells."
+        "preparationFormula": {
+          "ability": "charisma",
+          "classLevelDivisor": 2,
+          "minimum": 1
+        },
+        "sourceText": "By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does. You prepare the list of paladin spells that are available for you to cast, choosing from the paladin spell list. When you do so, choose a number of paladin spells equal to your Charisma modifier + half your paladin level, rounded down (minimum of one spell). Charisma is your spellcasting ability for your paladin spells."
       }
     },
     "source": "SRD 5.1 p. 30",
@@ -9450,6 +9469,11 @@
       "spellPreparation": {
         "kind": "prepared",
         "spellbookStartingSpells": 6,
+        "preparationFormula": {
+          "ability": "intelligence",
+          "classLevelDivisor": 1,
+          "minimum": 1
+        },
         "sourceText": "At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell). Intelligence is your spellcasting ability for your wizard spells."
       }
     },
@@ -59252,7 +59276,12 @@
           "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
           "level": 3,
           "choose": 2,
-          "from": "your skill proficiencies"
+          "from": {
+            "kind": "characterStateFilter",
+            "proficiencyTypes": [
+              "skill"
+            ]
+          }
         }
       ]
     },
@@ -59466,8 +59495,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "two cantrips of your choice from the bard"
+        ]
       },
       "choices": [
         {
@@ -59476,7 +59504,15 @@
           "prompt": "Choose your starting cantrips from the bard spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the bard spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:bard"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
           "id": "spells",
@@ -59484,7 +59520,34 @@
           "prompt": "Choose your starting spells from the bard spell list.",
           "level": 1,
           "choose": 4,
-          "from": "the bard spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:bard"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:bard",
+              "atLevel": 1
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one bard spell you know with another from the bard spell list.",
+          "level": 1,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:bard"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -60055,8 +60118,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "three cantrips of your choice from the cleric"
+        ]
       }
     },
     "source": "SRD 5.1 p. 15",
@@ -60274,7 +60336,35 @@
           "prompt": "Choose your starting cantrips from the cleric spell list.",
           "level": 1,
           "choose": 3,
-          "from": "the cleric spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:cleric"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
+        },
+        {
+          "id": "prepared-spells",
+          "category": "spell",
+          "prompt": "Prepare spells from the cleric spell list each day.",
+          "level": 1,
+          "chooseFormula": {
+            "ability": "wisdom",
+            "classLevelDivisor": 1,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:cleric"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -60773,8 +60863,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "two cantrips of your choice from the druid"
+        ]
       }
     },
     "source": "SRD 5.1 p. 20",
@@ -60891,7 +60980,35 @@
           "prompt": "Choose your starting cantrips from the druid spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the druid spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:druid"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
+        },
+        {
+          "id": "prepared-spells",
+          "category": "spell",
+          "prompt": "Prepare spells from the druid spell list each day.",
+          "level": 1,
+          "chooseFormula": {
+            "ability": "wisdom",
+            "classLevelDivisor": 1,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:druid"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -63189,7 +63306,29 @@
             "kind": "proficiency"
           }
         ]
-      }
+      },
+      "choices": [
+        {
+          "id": "prepared-spells",
+          "category": "spell",
+          "prompt": "Prepare spells from the paladin spell list each day.",
+          "level": 2,
+          "chooseFormula": {
+            "ability": "charisma",
+            "classLevelDivisor": 2,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:paladin"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 31",
     "license": {
@@ -63869,8 +64008,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "and replace it with another"
+        ]
       },
       "choices": [
         {
@@ -63879,7 +64017,34 @@
           "prompt": "Choose your starting spells from the ranger spell list.",
           "level": 2,
           "choose": 2,
-          "from": "the ranger spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:ranger"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:ranger",
+              "atLevel": 2
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one ranger spell you know with another from the ranger spell list.",
+          "level": 2,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:ranger"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -64153,7 +64318,15 @@
           "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
           "level": 1,
           "choose": 2,
-          "from": "your skill proficiencies"
+          "from": {
+            "kind": "characterStateFilter",
+            "proficiencyTypes": [
+              "skill"
+            ],
+            "tools": [
+              "thieves-tools"
+            ]
+          }
         }
       ]
     },
@@ -64692,8 +64865,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "four cantrips of your choice from the sorcerer"
+        ]
       }
     },
     "source": "SRD 5.1 p. 43",
@@ -64960,7 +65132,15 @@
           "prompt": "Choose your starting cantrips from the sorcerer spell list.",
           "level": 1,
           "choose": 4,
-          "from": "the sorcerer spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:sorcerer"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
           "id": "spells",
@@ -64968,7 +65148,34 @@
           "prompt": "Choose your starting spells from the sorcerer spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the sorcerer spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:sorcerer"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:sorcerer",
+              "atLevel": 1
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one sorcerer spell you know with another from the sorcerer spell list.",
+          "level": 1,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:sorcerer"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -65392,8 +65599,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "compulsion once using a warlock"
+        ]
       },
       "choices": [
         {
@@ -65441,6 +65647,12 @@
               "id": "eldritch-invocation:agonizing-blast",
               "name": "Agonizing Blast",
               "prerequisite": "eldritch blast cantrip",
+              "prerequisites": [
+                {
+                  "kind": "cantrip",
+                  "ref": "spell:eldritch-blast"
+                }
+              ],
               "text": "When you cast eldritch blast, add your Charisma modifier to the damage it deals on a hit.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65454,6 +65666,13 @@
               "id": "eldritch-invocation:ascendant-step",
               "name": "Ascendant Step",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast levitate on yourself at will, without expending a spell slot or material components.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65473,21 +65692,45 @@
               "id": "eldritch-invocation:bewitching-whispers",
               "name": "Bewitching Whispers",
               "prerequisite": "7th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 7
+                }
+              ],
               "text": "You can cast compulsion once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
             {
               "id": "eldritch-invocation:book-of-ancient-secrets",
               "name": "Book of Ancient Secrets",
-              "prerequisite": "Pact of",
-              "text": "the Tome feature You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it.",
+              "prerequisite": "Pact of the Tome feature",
+              "prerequisites": [
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-tome"
+                }
+              ],
+              "text": "You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it.",
               "source": "SRD 5.1 p. 47"
             },
             {
               "id": "eldritch-invocation:chains-of-carceri",
               "name": "Chains of Carceri",
-              "prerequisite": "15th level, Pact of",
-              "text": "the Chain feature You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.",
+              "prerequisite": "15th level, Pact of the Chain feature",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                },
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-chain"
+                }
+              ],
+              "text": "You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.",
               "source": "SRD 5.1 p. 47"
             },
             {
@@ -65500,6 +65743,13 @@
               "id": "eldritch-invocation:dreadful-word",
               "name": "Dreadful Word",
               "prerequisite": "7th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 7
+                }
+              ],
               "text": "You can cast confusion once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65513,6 +65763,12 @@
               "id": "eldritch-invocation:eldritch-spear",
               "name": "Eldritch Spear",
               "prerequisite": "eldritch blast cantrip",
+              "prerequisites": [
+                {
+                  "kind": "cantrip",
+                  "ref": "spell:eldritch-blast"
+                }
+              ],
               "text": "When you cast eldritch blast, its range is 300 feet.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65537,8 +65793,19 @@
             {
               "id": "eldritch-invocation:lifedrinker",
               "name": "Lifedrinker",
-              "prerequisite": "12th level, Pact of",
-              "text": "the Blade feature When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1).",
+              "prerequisite": "12th level, Pact of the Blade feature",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 12
+                },
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-blade"
+                }
+              ],
+              "text": "When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1).",
               "source": "SRD 5.1 p. 47"
             },
             {
@@ -65551,6 +65818,13 @@
               "id": "eldritch-invocation:master-of-myriad-forms",
               "name": "Master of Myriad Forms",
               "prerequisite": "15th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                }
+              ],
               "text": "You can cast alter self at will, without expending a spell slot.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65558,6 +65832,13 @@
               "id": "eldritch-invocation:minions-of-chaos",
               "name": "Minions of Chaos",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast conjure elemental once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65565,6 +65846,13 @@
               "id": "eldritch-invocation:mire-the-mind",
               "name": "Mire the Mind",
               "prerequisite": "5th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                }
+              ],
               "text": "You can cast slow once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65578,6 +65866,13 @@
               "id": "eldritch-invocation:one-with-shadows",
               "name": "One with Shadows",
               "prerequisite": "5th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                }
+              ],
               "text": "When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65585,6 +65880,13 @@
               "id": "eldritch-invocation:otherworldly-leap",
               "name": "Otherworldly Leap",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast jump on yourself at will, without expending a spell slot or material components.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65592,6 +65894,12 @@
               "id": "eldritch-invocation:repelling-blast",
               "name": "Repelling Blast",
               "prerequisite": "eldritch blast cantrip",
+              "prerequisites": [
+                {
+                  "kind": "cantrip",
+                  "ref": "spell:eldritch-blast"
+                }
+              ],
               "text": "When you hit a creature with eldritch blast, you can push the creature up to 10 feet away from you in a straight line.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65599,6 +65907,13 @@
               "id": "eldritch-invocation:sculptor-of-flesh",
               "name": "Sculptor of Flesh",
               "prerequisite": "7th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 7
+                }
+              ],
               "text": "You can cast polymorph once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65606,6 +65921,13 @@
               "id": "eldritch-invocation:sign-of-ill-omen",
               "name": "Sign of Ill Omen",
               "prerequisite": "5th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                }
+              ],
               "text": "You can cast bestow curse once using a warlock spell slot. You can’t do so again until you finish a long rest.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65618,28 +65940,59 @@
             {
               "id": "eldritch-invocation:thirsting-blade",
               "name": "Thirsting Blade",
-              "prerequisite": "5th level, Pact of",
-              "text": "the Blade feature You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn.",
+              "prerequisite": "5th level, Pact of the Blade feature",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 5
+                },
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-blade"
+                }
+              ],
+              "text": "You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn.",
               "source": "SRD 5.1 p. 47"
             },
             {
               "id": "eldritch-invocation:visions-of-distant-realms",
               "name": "Visions of Distant Realms",
               "prerequisite": "15th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                }
+              ],
               "text": "You can cast arcane eye at will, without expending a spell slot.",
               "source": "SRD 5.1 p. 47"
             },
             {
               "id": "eldritch-invocation:voice-of-the-chain-master",
               "name": "Voice of the Chain Master",
-              "prerequisite": "Pact of",
-              "text": "the Chain feature You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech.",
+              "prerequisite": "Pact of the Chain feature",
+              "prerequisites": [
+                {
+                  "kind": "pactBoon",
+                  "ref": "pact-boon:pact-of-the-chain"
+                }
+              ],
+              "text": "You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech.",
               "source": "SRD 5.1 p. 47"
             },
             {
               "id": "eldritch-invocation:whispers-of-the-grave",
               "name": "Whispers of the Grave",
               "prerequisite": "9th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 9
+                }
+              ],
               "text": "You can cast speak with dead at will, without expending a spell slot.",
               "source": "SRD 5.1 p. 47"
             },
@@ -65647,6 +66000,13 @@
               "id": "eldritch-invocation:witch-sight",
               "name": "Witch Sight",
               "prerequisite": "15th level",
+              "prerequisites": [
+                {
+                  "kind": "level",
+                  "classRef": "class:warlock",
+                  "level": 15
+                }
+              ],
               "text": "You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight.",
               "source": "SRD 5.1 p. 47"
             }
@@ -65746,17 +66106,72 @@
           {
             "reset": "long-rest"
           }
-        ],
-        "spellGrants": "your arcanum"
+        ]
       },
       "choices": [
         {
-          "id": "arcanum",
+          "id": "arcanum-6",
           "category": "spell",
-          "prompt": "Choose one 6th-level spell from the warlock spell list as your arcanum.",
+          "prompt": "Choose one 6th-level spell from the warlock spell list as your 6th-level arcanum.",
           "level": 11,
           "choose": 1,
-          "from": "the warlock spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              6
+            ]
+          }
+        },
+        {
+          "id": "arcanum-7",
+          "category": "spell",
+          "prompt": "Choose one 7th-level spell from the warlock spell list as your 7th-level arcanum.",
+          "level": 13,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              7
+            ]
+          }
+        },
+        {
+          "id": "arcanum-8",
+          "category": "spell",
+          "prompt": "Choose one 8th-level spell from the warlock spell list as your 8th-level arcanum.",
+          "level": 15,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              8
+            ]
+          }
+        },
+        {
+          "id": "arcanum-9",
+          "category": "spell",
+          "prompt": "Choose one 9th-level spell from the warlock spell list as your 9th-level arcanum.",
+          "level": 17,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              9
+            ]
+          }
         }
       ]
     },
@@ -65846,7 +66261,11 @@
             "kind": "resistance"
           }
         ],
-        "spellGrants": "find familiar"
+        "spellGrants": [
+          {
+            "spell": "spell:find-familiar"
+          }
+        ]
       },
       "choices": [
         {
@@ -65942,8 +66361,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "two cantrips of your choice from the warlock"
+        ]
       },
       "choices": [
         {
@@ -65952,7 +66370,15 @@
           "prompt": "Choose your starting cantrips from the warlock spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the warlock spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
           "id": "spells",
@@ -65960,7 +66386,34 @@
           "prompt": "Choose your starting spells from the warlock spell list.",
           "level": 1,
           "choose": 2,
-          "from": "the warlock spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "minSpellLevel": 1,
+            "maxSpellLevel": {
+              "classRef": "class:warlock",
+              "atLevel": 1
+            }
+          }
+        },
+        {
+          "id": "spell-replacement",
+          "category": "spell",
+          "prompt": "When you gain a level in this class, you can replace one warlock spell you know with another from the warlock spell list.",
+          "level": 1,
+          "choose": 1,
+          "replaces": true,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:warlock"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
         }
       ]
     },
@@ -66282,10 +66735,7 @@
     "data": {
       "source": "class:wizard",
       "level": 1,
-      "description": "At 1st level, you know three cantrips of your choice from the wizard spell list. You learn additional wizard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Wizard table.",
-      "mechanics": {
-        "spellGrants": "three cantrips of your choice from the wizard"
-      }
+      "description": "At 1st level, you know three cantrips of your choice from the wizard spell list. You learn additional wizard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Wizard table."
     },
     "source": "SRD 5.1 p. 52",
     "license": {
@@ -66377,9 +66827,6 @@
       "source": "class:wizard",
       "level": 18,
       "description": "At 18th level, you have achieved such mastery over certain spells that you can cast them at will. Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared. If you want to cast either spell at a higher level, you must expend a spell slot as normal. By spending 8 hours in study, you can exchange one or both of the spells you chose for different spells of the same levels.",
-      "mechanics": {
-        "spellGrants": "those spells at their lowest level without expending a"
-      },
       "choices": [
         {
           "id": "spell-mastery-1st-level",
@@ -66460,9 +66907,42 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "a wizard"
-      }
+        ]
+      },
+      "choices": [
+        {
+          "id": "spellbook-initial",
+          "category": "spell",
+          "prompt": "Choose the 6 1st-level wizard spells in your starting spellbook.",
+          "level": 1,
+          "choose": 6,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "spellLevels": [
+              1
+            ]
+          }
+        },
+        {
+          "id": "spellbook-growth",
+          "category": "spell",
+          "prompt": "Each time you gain a wizard level, add two wizard spells of your choice to your spellbook.",
+          "level": 1,
+          "choose": 2,
+          "trigger": "level-up",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 52",
     "license": {
@@ -66502,15 +66982,36 @@
           "prompt": "Choose your starting cantrips from the wizard spell list.",
           "level": 1,
           "choose": 3,
-          "from": "the wizard spell list"
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "spellLevels": [
+              0
+            ]
+          }
         },
         {
-          "id": "spells",
+          "id": "prepared-spells",
           "category": "spell",
-          "prompt": "Choose your starting spells from the wizard spell list.",
+          "prompt": "Prepare wizard spells from your spellbook each day (Intelligence modifier + wizard level).",
           "level": 1,
-          "choose": 6,
-          "from": "the wizard spell list"
+          "chooseFormula": {
+            "ability": "intelligence",
+            "classLevelDivisor": 1,
+            "minimum": 1
+          },
+          "trigger": "daily-preparation",
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:wizard"
+            ],
+            "minSpellLevel": 1,
+            "castableLevelsOnly": true,
+            "mustBeInSpellbook": true
+          }
         }
       ]
     },

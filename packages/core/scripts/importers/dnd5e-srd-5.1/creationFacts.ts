@@ -64,10 +64,23 @@ interface LanguageGrant {
   readonly sourceText: string;
 }
 
+/**
+ * Machine-readable prepared-spell count (eshyra-vk23.2). The number of spells a
+ * prepared caster can prepare is `max(minimum, abilityModifier + floor(classLevel
+ * / classLevelDivisor))`. Cleric/Druid/Wizard use divisor 1 (full level);
+ * Paladin uses divisor 2 (half level rounded down). Known casters omit it.
+ */
+interface PreparationFormula {
+  readonly ability: AbilityScoreName;
+  readonly classLevelDivisor: number;
+  readonly minimum: number;
+}
+
 interface ClassSpellcasting {
   readonly ability: AbilityScoreName;
   readonly preparation: 'known' | 'prepared';
   readonly spellbookStartingSpells?: number;
+  readonly preparationFormula?: PreparationFormula;
   readonly sourceText: string;
 }
 
@@ -311,20 +324,27 @@ const CLASS_SPELLCASTING: Readonly<Record<string, ClassSpellcasting>> = {
   'class:cleric': {
     ability: 'wisdom',
     preparation: 'prepared',
+    preparationFormula: { ability: 'wisdom', classLevelDivisor: 1, minimum: 1 },
     sourceText:
       'You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). Wisdom is your spellcasting ability for your cleric spells.',
   },
   'class:druid': {
     ability: 'wisdom',
     preparation: 'prepared',
+    preparationFormula: { ability: 'wisdom', classLevelDivisor: 1, minimum: 1 },
     sourceText:
       'You prepare the list of druid spells that are available for you to cast, choosing from the druid spell list. When you do so, choose a number of druid spells equal to your Wisdom modifier + your druid level (minimum of one spell). Wisdom is your spellcasting ability for your druid spells.',
   },
   'class:paladin': {
     ability: 'charisma',
     preparation: 'prepared',
+    preparationFormula: {
+      ability: 'charisma',
+      classLevelDivisor: 2,
+      minimum: 1,
+    },
     sourceText:
-      'By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does. Charisma is your spellcasting ability for your paladin spells.',
+      'By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does. You prepare the list of paladin spells that are available for you to cast, choosing from the paladin spell list. When you do so, choose a number of paladin spells equal to your Charisma modifier + half your paladin level, rounded down (minimum of one spell). Charisma is your spellcasting ability for your paladin spells.',
   },
   'class:ranger': {
     ability: 'wisdom',
@@ -348,6 +368,11 @@ const CLASS_SPELLCASTING: Readonly<Record<string, ClassSpellcasting>> = {
     ability: 'intelligence',
     preparation: 'prepared',
     spellbookStartingSpells: 6,
+    preparationFormula: {
+      ability: 'intelligence',
+      classLevelDivisor: 1,
+      minimum: 1,
+    },
     sourceText:
       'At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice. You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell). Intelligence is your spellcasting ability for your wizard spells.',
   },
@@ -627,6 +652,9 @@ function cloneClassSpellcasting(value: ClassSpellcasting): ClassSpellcasting {
     preparation: value.preparation,
     ...(value.spellbookStartingSpells !== undefined
       ? { spellbookStartingSpells: value.spellbookStartingSpells }
+      : {}),
+    ...(value.preparationFormula !== undefined
+      ? { preparationFormula: { ...value.preparationFormula } }
       : {}),
     sourceText: value.sourceText,
   };

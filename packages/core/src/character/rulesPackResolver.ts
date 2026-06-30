@@ -121,9 +121,18 @@ export interface ResolvedLevelSpellcasting {
   readonly invocationsKnown?: number;
 }
 
+/** Prepared-spell count formula (eshyra-vk23.2): prepared total is
+ * `max(minimum, abilityModifier + floor(classLevel / classLevelDivisor))`. */
+export interface ResolvedPreparationFormula {
+  readonly ability: string;
+  readonly classLevelDivisor: number;
+  readonly minimum: number;
+}
+
 export interface ResolvedSpellPreparation {
   readonly kind: 'known' | 'prepared';
   readonly spellbookStartingSpells?: number;
+  readonly preparationFormula?: ResolvedPreparationFormula;
   readonly sourceText: string;
 }
 
@@ -503,7 +512,30 @@ function parseSpellPreparation(
     ...(typeof value.spellbookStartingSpells === 'number'
       ? { spellbookStartingSpells: value.spellbookStartingSpells }
       : {}),
+    ...(parsePreparationFormula(value.preparationFormula) !== undefined
+      ? {
+          preparationFormula: parsePreparationFormula(value.preparationFormula),
+        }
+      : {}),
     sourceText: value.sourceText,
+  };
+}
+
+function parsePreparationFormula(
+  value: unknown,
+): ResolvedPreparationFormula | undefined {
+  if (
+    !isRecord(value) ||
+    typeof value.ability !== 'string' ||
+    typeof value.classLevelDivisor !== 'number' ||
+    typeof value.minimum !== 'number'
+  ) {
+    return undefined;
+  }
+  return {
+    ability: value.ability,
+    classLevelDivisor: value.classLevelDivisor,
+    minimum: value.minimum,
   };
 }
 

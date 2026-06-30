@@ -42,22 +42,57 @@ export interface DeriveFeatureChoicesInput {
   readonly featureRecords: readonly RulesRecord[];
 }
 
+/** A machine-readable prepared-spell count (eshyra-vk23.2): the prepared total
+ * is `max(minimum, abilityModifier + floor(classLevel / classLevelDivisor))`. */
+interface PreparationFormula {
+  readonly ability: string;
+  readonly classLevelDivisor: number;
+  readonly minimum: number;
+}
+
 interface DerivedChoice {
   readonly id: string;
   readonly category: FeatureChoiceCategory;
   readonly prompt: string;
   readonly level: number;
   readonly choose?: number;
+  /** Prepared-caster daily count, in place of a fixed `choose` (eshyra-vk23.2). */
+  readonly chooseFormula?: PreparationFormula;
   readonly from?: readonly string[] | Record<string, unknown> | string;
   readonly options?: readonly DerivedChoiceOption[];
+  /** When the choice is made/repeated: omitted = at creation/when gained;
+   * 'level-up' = each class level; 'daily-preparation' = each long rest. */
+  readonly trigger?: 'level-up' | 'daily-preparation';
+  /** True when the choice swaps a prior pick (known-caster level-up). */
+  readonly replaces?: boolean;
   readonly unsupported?: { readonly reason: string };
 }
+
+/**
+ * A structured, deterministic prerequisite clause on an option (eshyra-vk23.9),
+ * so a tool gates the option from data instead of parsing the `prerequisite`
+ * prose. Eldritch Invocation prerequisites are exactly three closed forms:
+ *  - `level`   — a minimum class level, scoped to the granting class.
+ *  - `pactBoon`— a required Pact Boon option, by its `pact-boon:` ref.
+ *  - `cantrip` — a required cantrip, by its `spell:` ref.
+ */
+type PrerequisiteClause =
+  | {
+      readonly kind: 'level';
+      readonly classRef: string;
+      readonly level: number;
+    }
+  | { readonly kind: 'pactBoon'; readonly ref: string }
+  | { readonly kind: 'cantrip'; readonly ref: string };
 
 interface DerivedChoiceOption {
   readonly id: string;
   readonly name: string;
   readonly text: string;
+  /** Verbatim prerequisite prose, preserved for DM context. */
   readonly prerequisite?: string;
+  /** Structured, machine-readable parse of `prerequisite` (eshyra-vk23.9). */
+  readonly prerequisites?: readonly PrerequisiteClause[];
   readonly source: string;
 }
 
@@ -231,9 +266,79 @@ function spellListRestriction(cls: RulesRecord): string {
   return `the ${cls.name.toLowerCase()} spell list`;
 }
 
+/**
+ * A structured, deterministic spell-selection filter (eshyra-vk23.2). Replaces
+ * free-text `from` strings ("the wizard spell list") so a tool resolves the
+ * option set from data, never English. Recognized keys:
+ *  - `classLists`: class keys whose spell lists are eligible, or 'any'.
+ *  - `spellLevels`: exact eligible spell levels (0 = cantrip).
+ *  - `minSpellLevel` / `maxSpellLevel`: level bounds; `maxSpellLevel` may be a
+ *    number or `{ classRef, atLevel }` (the caster's max castable level there).
+ *  - `castableLevelsOnly`: eligible levels are those the caster can cast at the
+ *    current character level — for recurring (level-up / daily) choices whose
+ *    ceiling scales rather than being fixed at the grant level.
+ *  - `mustBeInSpellbook`, `includeCantrips`, `ritualOnly`, `countsAsClassSpell`,
+ *    `countsAgainstKnown`, `requiresFeatureOption`, `alwaysPrepared`,
+ *    `mustBePreparedToCast`.
+ */
 function spellFilter(value: Record<string, unknown>): Record<string, unknown> {
   return { kind: 'spellFilter', ...value };
 }
+
+/**
+ * A structured filter over the character's OWN sheet state (eshyra-vk23.4),
+ * for choices whose option pool is "your existing proficiencies" rather than a
+ * static catalog — e.g. Expertise. Replaces the free-text `from: 'your skill
+ * proficiencies'` so a tool reads the eligible pool from data. Keys:
+ *  - `proficiencyTypes`: which categories of the character's current
+ *    proficiencies are eligible ('skill', 'tool', …).
+ *  - `tools`: specific tool proficiencies additionally eligible, by slug
+ *    (Rogue Expertise also covers thieves' tools).
+ */
+function characterStateFilter(
+  value: Record<string, unknown>,
+): Record<string, unknown> {
+  return { kind: 'characterStateFilter', ...value };
+}
+
+/** A spell filter scoped to one class's spell list. */
+function classSpellFilter(
+  cls: RulesRecord,
+  extra: Record<string, unknown>,
+): Record<string, unknown> {
+  return spellFilter({ classLists: [cls.key], ...extra });
+}
+
+/** Spells of a level the caster can currently cast, excluding cantrips — the
+ * eligible set for recurring known/prepared choices (replacement, daily prep,
+ * spellbook growth). */
+function castableSpellFilter(cls: RulesRecord): Record<string, unknown> {
+  return classSpellFilter(cls, { minSpellLevel: 1, castableLevelsOnly: true });
+}
+
+/** Warlock Mystic Arcanum tiers: one fixed-level spell unlocked at each level
+ * (eshyra-vk23.2). SRD: 6th-level at 11th, 7th at 13th, 8th at 15th, 9th at
+ * 17th. The Mystic Arcanum feature is granted once (11th); the higher tiers are
+ * level-gated picks the same feature confers. */
+const MYSTIC_ARCANUM_TIERS: ReadonlyArray<{
+  readonly level: number;
+  readonly spellLevel: number;
+}> = [
+  { level: 11, spellLevel: 6 },
+  { level: 13, spellLevel: 7 },
+  { level: 15, spellLevel: 8 },
+  { level: 17, spellLevel: 9 },
+];
+
+const ORDINALS: Readonly<Record<number, string>> = {
+  1: '1st',
+  2: '2nd',
+  3: '3rd',
+  6: '6th',
+  7: '7th',
+  8: '8th',
+  9: '9th',
+};
 
 /**
  * Attach cantrip / spell selection choices to caster Spellcasting features.
@@ -261,6 +366,45 @@ function deriveSpellChoices(
   const classByKey = new Map(input.classRecords.map((c) => [c.key, c]));
 
   for (const feature of input.featureRecords) {
+    // The Wizard Spellbook is a real build choice (six 1st-level spells at
+    // creation, +2 per level) but the SRD progression grants only the parent
+    // Spellcasting feature, so the Spellbook record is not in `granted`. Handle
+    // it explicitly, ahead of the build-feature guard (eshyra-vk23.2).
+    if (feature.key === 'feature:wizard:spellbook') {
+      const wizard = classByKey.get('class:wizard');
+      const startCount =
+        wizard === undefined
+          ? null
+          : ((
+              dataOf(wizard).spellPreparation as {
+                spellbookStartingSpells?: unknown;
+              }
+            )?.spellbookStartingSpells ?? null);
+      if (wizard !== undefined && typeof startCount === 'number') {
+        const spellbookLevel = featureLevel(feature);
+        out.set(feature.key, [
+          {
+            id: 'spellbook-initial',
+            category: 'spell',
+            prompt: `Choose the ${startCount} 1st-level wizard spells in your starting spellbook.`,
+            level: spellbookLevel,
+            choose: startCount,
+            from: classSpellFilter(wizard, { spellLevels: [1] }),
+          },
+          {
+            id: 'spellbook-growth',
+            category: 'spell',
+            prompt:
+              'Each time you gain a wizard level, add two wizard spells of your choice to your spellbook.',
+            level: spellbookLevel,
+            choose: 2,
+            trigger: 'level-up',
+            from: castableSpellFilter(wizard),
+          },
+        ]);
+      }
+      continue;
+    }
     if (!isBuildFeature(feature, granted)) continue;
     const level = featureLevel(feature);
 
@@ -412,16 +556,20 @@ function deriveSpellChoices(
     if (cls === undefined) continue;
     const choices: DerivedChoice[] = [];
 
-    // Mystic Arcanum: a single spell of a fixed level from the class list.
+    // Mystic Arcanum: one fixed-level spell from the warlock list at each of the
+    // 11th/13th/15th/17th-level tiers (eshyra-vk23.2).
     if (feature.key.endsWith(':mystic-arcanum')) {
-      choices.push({
-        id: 'arcanum',
-        category: 'spell',
-        prompt: `Choose one 6th-level spell from ${spellListRestriction(cls)} as your arcanum.`,
-        level,
-        choose: 1,
-        from: spellListRestriction(cls),
-      });
+      for (const tier of MYSTIC_ARCANUM_TIERS) {
+        const ord = ORDINALS[tier.spellLevel];
+        choices.push({
+          id: `arcanum-${tier.spellLevel}`,
+          category: 'spell',
+          prompt: `Choose one ${ord}-level spell from ${spellListRestriction(cls)} as your ${ord}-level arcanum.`,
+          level: tier.level,
+          choose: 1,
+          from: classSpellFilter(cls, { spellLevels: [tier.spellLevel] }),
+        });
+      }
       out.set(feature.key, choices);
       continue;
     }
@@ -429,13 +577,12 @@ function deriveSpellChoices(
     const row = spellcastingAt(cls, level);
     if (row === null) continue;
     const prep = dataOf(cls).spellPreparation as
-      | { kind?: unknown; spellbookStartingSpells?: unknown }
+      | {
+          kind?: unknown;
+          preparationFormula?: PreparationFormula;
+        }
       | undefined;
     const prepKind = prep?.kind;
-    const spellbookStart =
-      typeof prep?.spellbookStartingSpells === 'number'
-        ? prep.spellbookStartingSpells
-        : null;
 
     if (typeof row.cantripsKnown === 'number') {
       choices.push({
@@ -444,24 +591,55 @@ function deriveSpellChoices(
         prompt: `Choose your starting cantrips from ${spellListRestriction(cls)}.`,
         level,
         choose: row.cantripsKnown,
-        from: spellListRestriction(cls),
+        from: classSpellFilter(cls, { spellLevels: [0] }),
       });
     }
 
-    // Known casters choose their spells known; the Wizard chooses the spells in
-    // their starting spellbook. Prepared casters without a spellbook do not.
-    const spellChoose =
-      prepKind === 'known' && typeof row.spellsKnown === 'number'
-        ? row.spellsKnown
-        : spellbookStart;
-    if (spellChoose !== null && spellChoose !== undefined) {
+    if (prepKind === 'prepared' && prep?.preparationFormula !== undefined) {
+      // Prepared casters re-prepare each day; the count is a formula, not a
+      // fixed number. The Wizard prepares from the spellbook; Cleric/Druid/
+      // Paladin prepare from the full class spell list (eshyra-vk23.2).
+      const isWizard = cls.key === 'class:wizard';
+      choices.push({
+        id: 'prepared-spells',
+        category: 'spell',
+        prompt: isWizard
+          ? 'Prepare wizard spells from your spellbook each day (Intelligence modifier + wizard level).'
+          : `Prepare spells from ${spellListRestriction(cls)} each day.`,
+        level,
+        chooseFormula: { ...prep.preparationFormula },
+        trigger: 'daily-preparation',
+        from: isWizard
+          ? classSpellFilter(cls, {
+              minSpellLevel: 1,
+              castableLevelsOnly: true,
+              mustBeInSpellbook: true,
+            })
+          : castableSpellFilter(cls),
+      });
+    } else if (prepKind === 'known' && typeof row.spellsKnown === 'number') {
+      // Known casters choose a fixed number of spells known and may swap one for
+      // another from the class list whenever they gain a level (eshyra-vk23.2).
       choices.push({
         id: 'spells',
         category: 'spell',
         prompt: `Choose your starting spells from ${spellListRestriction(cls)}.`,
         level,
-        choose: spellChoose,
-        from: spellListRestriction(cls),
+        choose: row.spellsKnown,
+        from: classSpellFilter(cls, {
+          minSpellLevel: 1,
+          maxSpellLevel: { classRef: cls.key, atLevel: level },
+        }),
+      });
+      choices.push({
+        id: 'spell-replacement',
+        category: 'spell',
+        prompt: `When you gain a level in this class, you can replace one ${cls.name.toLowerCase()} spell you know with another from ${spellListRestriction(cls)}.`,
+        level,
+        choose: 1,
+        replaces: true,
+        trigger: 'level-up',
+        from: castableSpellFilter(cls),
       });
     }
 
@@ -800,6 +978,69 @@ function headingPattern(heading: string, style: 'bare' | 'period'): string {
   return escaped;
 }
 
+// Eldritch Invocation prerequisites are a comma-separated list of typed
+// clauses (eshyra-vk23.3). Parse them with an explicit grammar instead of
+// guessing the body boundary from a capitalized-word lookahead: the old
+// `/^Prerequisite:\s*(.+?)(?=\s(?:When|You|Choose|The|With|On)\b)/i` truncated
+// "Pact of the Tome feature" at "Pact of" — the case-insensitive `The`
+// alternative matched the lowercase "the" inside the clause — and leaked
+// "the Tome feature ..." into the option body. The SRD invocation grammar is
+// closed: a class level ("9th level"), a cantrip prerequisite ("eldritch blast
+// cantrip"), or a pact-boon prerequisite ("Pact of the Tome|Blade|Chain
+// feature"), optionally combined with commas.
+const PREREQUISITE_CLAUSE =
+  /\d+(?:st|nd|rd|th) level|Pact of the (?:Blade|Chain|Tome) feature\b|[A-Za-z][A-Za-z' ]*? cantrip\b/;
+const PREREQUISITE_LINE = new RegExp(
+  String.raw`^Prerequisite:\s*((?:${PREREQUISITE_CLAUSE.source})(?:,\s*(?:${PREREQUISITE_CLAUSE.source}))*)`,
+);
+
+const PACT_BOON_PREREQ_REF: Readonly<Record<string, string>> = {
+  Blade: 'pact-boon:pact-of-the-blade',
+  Chain: 'pact-boon:pact-of-the-chain',
+  Tome: 'pact-boon:pact-of-the-tome',
+};
+
+/**
+ * Parse the (already source-validated) prerequisite prose into structured
+ * clauses (eshyra-vk23.9). The prose is the comma-separated grammar matched by
+ * `PREREQUISITE_LINE`; each clause maps to a typed level / pact-boon / cantrip
+ * requirement. `classRef` scopes a level requirement to the granting class (the
+ * SRD: "a level prerequisite refers to your level in this class"). Throws on an
+ * unrecognized clause so a parser regression fails closed rather than dropping a
+ * gate.
+ */
+function parsePrerequisiteClauses(
+  prose: string,
+  classRef: string,
+  feature: RulesRecord,
+  heading: string,
+): readonly PrerequisiteClause[] {
+  const clauses: PrerequisiteClause[] = [];
+  for (const raw of prose.split(',')) {
+    const clause = raw.trim();
+    if (clause.length === 0) continue;
+    const level = /^(\d+)(?:st|nd|rd|th) level$/.exec(clause);
+    if (level !== null) {
+      clauses.push({ kind: 'level', classRef, level: Number(level[1]) });
+      continue;
+    }
+    const pact = /^Pact of the (Blade|Chain|Tome) feature$/.exec(clause);
+    if (pact !== null) {
+      clauses.push({ kind: 'pactBoon', ref: PACT_BOON_PREREQ_REF[pact[1]] });
+      continue;
+    }
+    const cantrip = /^(.+?) cantrip$/.exec(clause);
+    if (cantrip !== null) {
+      clauses.push({ kind: 'cantrip', ref: `spell:${optionSlug(cantrip[1])}` });
+      continue;
+    }
+    throw new FeatureChoiceDerivationError(
+      `Unrecognized prerequisite clause "${clause}" for ${feature.key} option ${heading}.`,
+    );
+  }
+  return clauses;
+}
+
 function parseOptionCatalog(
   feature: RulesRecord,
   description: string,
@@ -846,9 +1087,14 @@ function parseOptionCatalog(
   return sorted.map((entry, index) => {
     const next = sorted[index + 1]?.start ?? description.length;
     const rawBody = description.slice(entry.bodyStart, next).trim();
-    const prerequisite = rawBody.match(
-      /^Prerequisite:\s*(.+?)(?=\s(?:When|You|Choose|The|With|On)\b)/i,
-    );
+    const prerequisite = rawBody.startsWith('Prerequisite:')
+      ? rawBody.match(PREREQUISITE_LINE)
+      : null;
+    if (rawBody.startsWith('Prerequisite:') && prerequisite === null) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot parse option prerequisite for ${feature.key} (${feature.name}) option ${entry.heading}.`,
+      );
+    }
     const text =
       prerequisite === null
         ? rawBody
@@ -858,12 +1104,31 @@ function parseOptionCatalog(
         `Cannot parse option text for ${feature.key} (${feature.name}) option ${entry.heading}.`,
       );
     }
+    if (prerequisite === null) {
+      return {
+        id: optionId(spec.optionIdPrefix, entry.heading),
+        name: entry.heading,
+        text,
+        source: feature.source,
+      };
+    }
+    const prereqProse = prerequisite[1].trim();
+    const classRef = featureSource(feature);
+    if (classRef === null) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot scope level prerequisite for ${feature.key} option ${entry.heading} (feature has no source class).`,
+      );
+    }
     return {
       id: optionId(spec.optionIdPrefix, entry.heading),
       name: entry.heading,
-      ...(prerequisite === null
-        ? {}
-        : { prerequisite: prerequisite[1].trim() }),
+      prerequisite: prereqProse,
+      prerequisites: parsePrerequisiteClauses(
+        prereqProse,
+        classRef,
+        feature,
+        entry.heading,
+      ),
       text,
       source: feature.source,
     };
@@ -1011,6 +1276,10 @@ function deriveSubclassFeatureChoices(
         /skill proficiencies/,
         'expertise',
       );
+      // Rogue Expertise also covers thieves' tools ("one of your skill
+      // proficiencies and your proficiency with thieves' tools"); Bard
+      // Expertise is skills only (eshyra-vk23.4).
+      const includesThievesTools = /thieves[’']?\s*tools/i.test(description);
       choices.push({
         id: 'expertise',
         category: 'expertise',
@@ -1018,7 +1287,10 @@ function deriveSubclassFeatureChoices(
           'Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).',
         level,
         choose,
-        from: 'your skill proficiencies',
+        from: characterStateFilter({
+          proficiencyTypes: ['skill'],
+          ...(includesThievesTools ? { tools: ['thieves-tools'] } : {}),
+        }),
       });
     }
 

@@ -227,6 +227,11 @@ function casterClass(
     spellsKnown?: number;
     prep: 'known' | 'prepared';
     spellbookStartingSpells?: number;
+    preparationFormula?: {
+      ability: string;
+      classLevelDivisor: number;
+      minimum: number;
+    };
   },
 ): RulesRecord {
   const spellcasting: Record<string, unknown> = {
@@ -239,6 +244,8 @@ function casterClass(
   const spellPreparation: Record<string, unknown> = { kind: opts.prep };
   if (opts.spellbookStartingSpells !== undefined)
     spellPreparation.spellbookStartingSpells = opts.spellbookStartingSpells;
+  if (opts.preparationFormula !== undefined)
+    spellPreparation.preparationFormula = opts.preparationFormula;
   return rec('class', key, name, {
     spellPreparation,
     progression: [
@@ -274,14 +281,40 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
         }),
       ],
     });
+    // eshyra-vk23.2: structured filters (not prose strings) plus a level-up
+    // replacement choice for known casters.
     const choices = featureChoices(out, 'feature:bard:spellcasting');
-    expect(choices.map((c) => [c.category, c.choose, c.from])).toEqual([
-      ['cantrip', 2, 'the bard spell list'],
-      ['spell', 4, 'the bard spell list'],
+    expect(choices.map((c) => c.id)).toEqual([
+      'cantrips',
+      'spells',
+      'spell-replacement',
     ]);
+    const cantrips = choices[0] as Record<string, unknown>;
+    expect(cantrips.category).toBe('cantrip');
+    expect(cantrips.choose).toBe(2);
+    expect(cantrips.from).toMatchObject({
+      kind: 'spellFilter',
+      classLists: ['class:bard'],
+      spellLevels: [0],
+    });
+    const spells = choices[1] as Record<string, unknown>;
+    expect(spells.choose).toBe(4);
+    expect(spells.from).toMatchObject({
+      kind: 'spellFilter',
+      classLists: ['class:bard'],
+      maxSpellLevel: { classRef: 'class:bard', atLevel: 1 },
+    });
+    const replacement = choices[2] as Record<string, unknown>;
+    expect(replacement).toMatchObject({
+      category: 'spell',
+      choose: 1,
+      replaces: true,
+      trigger: 'level-up',
+    });
+    expect(replacement.from).toMatchObject({ kind: 'spellFilter' });
   });
 
-  it('gives a prepared caster without a spellbook only a cantrip choice', () => {
+  it('gives a prepared caster a cantrip choice and a formula-driven preparation choice', () => {
     const out = deriveFeatureChoices({
       classRecords: [
         casterClass('class:cleric', 'Cleric', {
@@ -289,6 +322,11 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
           level: 1,
           cantripsKnown: 3,
           prep: 'prepared',
+          preparationFormula: {
+            ability: 'wisdom',
+            classLevelDivisor: 1,
+            minimum: 1,
+          },
         }),
       ],
       subclassRecords: [],
@@ -301,10 +339,17 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
       ],
     });
     const choices = featureChoices(out, 'feature:cleric:spellcasting');
-    expect(choices.map((c) => c.category)).toEqual(['cantrip']);
+    expect(choices.map((c) => c.id)).toEqual(['cantrips', 'prepared-spells']);
+    const prepared = choices[1] as Record<string, unknown>;
+    expect(prepared).toMatchObject({
+      category: 'spell',
+      trigger: 'daily-preparation',
+      chooseFormula: { ability: 'wisdom', classLevelDivisor: 1, minimum: 1 },
+    });
+    expect(prepared.choose).toBeUndefined();
   });
 
-  it('uses the spellbook starting count for the Wizard spell choice', () => {
+  it('models the Wizard spellbook as starting contents plus per-level growth', () => {
     const out = deriveFeatureChoices({
       classRecords: [
         casterClass('class:wizard', 'Wizard', {
@@ -313,24 +358,42 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
           cantripsKnown: 3,
           prep: 'prepared',
           spellbookStartingSpells: 6,
+          preparationFormula: {
+            ability: 'intelligence',
+            classLevelDivisor: 1,
+            minimum: 1,
+          },
         }),
       ],
       subclassRecords: [],
       featureRecords: [
-        rec('feature', 'feature:wizard:spellcasting', 'Spellcasting', {
+        rec('feature', 'feature:wizard:spellbook', 'Spellbook', {
           source: 'class:wizard',
           level: 1,
-          description: 'cantrips of your choice; spells of your choice',
+          description:
+            'a spellbook containing six 1st-level wizard spells of your choice',
         }),
       ],
     });
-    const spell = featureChoices(out, 'feature:wizard:spellcasting').find(
-      (c) => c.category === 'spell',
-    );
-    expect(spell?.choose).toBe(6);
+    const choices = featureChoices(out, 'feature:wizard:spellbook');
+    expect(choices.map((c) => c.id)).toEqual([
+      'spellbook-initial',
+      'spellbook-growth',
+    ]);
+    expect(choices[0]).toMatchObject({ category: 'spell', choose: 6 });
+    expect((choices[0] as Record<string, unknown>).from).toMatchObject({
+      kind: 'spellFilter',
+      classLists: ['class:wizard'],
+      spellLevels: [1],
+    });
+    expect(choices[1]).toMatchObject({
+      category: 'spell',
+      choose: 2,
+      trigger: 'level-up',
+    });
   });
 
-  it('models Mystic Arcanum as a single-spell choice from the class list', () => {
+  it('models Mystic Arcanum as one pick per 11th/13th/15th/17th tier', () => {
     const out = deriveFeatureChoices({
       classRecords: [
         casterClass('class:warlock', 'Warlock', {
@@ -349,17 +412,26 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
         }),
       ],
     });
-    expect(featureChoices(out, 'feature:warlock:mystic-arcanum')).toEqual([
-      {
-        id: 'arcanum',
-        category: 'spell',
-        prompt:
-          'Choose one 6th-level spell from the warlock spell list as your arcanum.',
-        level: 11,
-        choose: 1,
-        from: 'the warlock spell list',
-      },
+    const choices = featureChoices(out, 'feature:warlock:mystic-arcanum');
+    expect(
+      choices.map((c) => [
+        c.id,
+        c.level,
+        (c.from as { spellLevels?: number[] }).spellLevels,
+      ]),
+    ).toEqual([
+      ['arcanum-6', 11, [6]],
+      ['arcanum-7', 13, [7]],
+      ['arcanum-8', 15, [8]],
+      ['arcanum-9', 17, [9]],
     ]);
+    for (const c of choices) {
+      expect(c.category).toBe('spell');
+      expect(c.choose).toBe(1);
+      expect((c.from as { classLists?: string[] }).classLists).toEqual([
+        'class:warlock',
+      ]);
+    }
   });
 });
 
@@ -572,6 +644,69 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
     ).toMatchObject({
       prerequisite: 'eldritch blast cantrip',
     });
+
+    // eshyra-vk23.3: prerequisites that wrap "Pact of the <X> feature" across
+    // SRD lines must stay intact, not truncate to "Pact of" and leak "the X
+    // feature ..." into the option body. eshyra-vk23.9: the same prose is also
+    // parsed into structured `prerequisites` clauses (preserving the prose).
+    const byId = new Map(options.map((o) => [o.id as string, o]));
+    const expectations: ReadonlyArray<
+      [string, string, string, Array<Record<string, unknown>>]
+    > = [
+      [
+        'eldritch-invocation:book-of-ancient-secrets',
+        'Pact of the Tome feature',
+        'You can inscribe',
+        [{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' }],
+      ],
+      [
+        'eldritch-invocation:chains-of-carceri',
+        '15th level, Pact of the Chain feature',
+        'You can cast hold monster',
+        [
+          { kind: 'level', classRef: 'class:warlock', level: 15 },
+          { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
+        ],
+      ],
+      [
+        'eldritch-invocation:lifedrinker',
+        '12th level, Pact of the Blade feature',
+        'You deal extra necrotic damage',
+        [
+          { kind: 'level', classRef: 'class:warlock', level: 12 },
+          { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+        ],
+      ],
+      [
+        'eldritch-invocation:thirsting-blade',
+        '5th level, Pact of the Blade feature',
+        'You can attack twice',
+        [
+          { kind: 'level', classRef: 'class:warlock', level: 5 },
+          { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+        ],
+      ],
+      [
+        'eldritch-invocation:voice-of-the-chain-master',
+        'Pact of the Chain feature',
+        'You can communicate telepathically',
+        [{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' }],
+      ],
+    ];
+    for (const [id, prerequisite, bodyStart, clauses] of expectations) {
+      const option = byId.get(id);
+      expect(option, id).toBeDefined();
+      expect(option).toMatchObject({ prerequisite });
+      expect(option?.prerequisites, `${id} structured`).toEqual(clauses);
+      const text = option?.text as string;
+      expect(text.startsWith(bodyStart), `${id} body: ${text}`).toBe(true);
+      expect(text.startsWith('the '), `${id} leaked prereq`).toBe(false);
+    }
+
+    // A cantrip prerequisite resolves to its spell ref (eshyra-vk23.9).
+    expect(
+      byId.get('eldritch-invocation:agonizing-blast')?.prerequisites,
+    ).toEqual([{ kind: 'cantrip', ref: 'spell:eldritch-blast' }]);
   });
 
   it('parses Hunter subclass option catalogs', () => {
@@ -794,17 +929,38 @@ describe('deriveFeatureChoices — subclass-feature options (eshyra-o9bd.9.6)', 
     });
   }
 
-  it('models Expertise as a structured skill-proficiency choice', () => {
+  it('models Bard Expertise as a structured character-state skill filter', () => {
+    const out = singleFeature(
+      'class:bard',
+      'feature:bard:expertise',
+      'Expertise',
+      'At 3rd level, choose two of your skill proficiencies. Your proficiency bonus is doubled…',
+      3,
+    );
+    const choice = featureChoices(out, 'feature:bard:expertise')[0];
+    expect(choice.category).toBe('expertise');
+    expect(choice.choose).toBe(2);
+    // eshyra-vk23.4: a structured character-state filter, not a prose string.
+    expect(choice.from).toEqual({
+      kind: 'characterStateFilter',
+      proficiencyTypes: ['skill'],
+    });
+  });
+
+  it('includes thieves’ tools in the Rogue Expertise character-state filter', () => {
     const out = singleFeature(
       'class:rogue',
       'feature:rogue:expertise',
       'Expertise',
-      'At 1st level, choose two of your skill proficiencies. Your proficiency bonus is doubled…',
+      'At 1st level, choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves’ tools. Your proficiency bonus is doubled…',
     );
     const choice = featureChoices(out, 'feature:rogue:expertise')[0];
     expect(choice.category).toBe('expertise');
-    expect(choice.choose).toBe(2);
-    expect(choice.from).toBe('your skill proficiencies');
+    expect(choice.from).toEqual({
+      kind: 'characterStateFilter',
+      proficiencyTypes: ['skill'],
+      tools: ['thieves-tools'],
+    });
   });
 
   it('marks Channel Divinity as a named out-of-scope (per-use, not build) choice', () => {

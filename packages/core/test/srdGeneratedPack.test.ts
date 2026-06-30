@@ -641,18 +641,24 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 218,
   },
   { kind: 'equipment', field: 'weight', missingCount: 44, totalInKind: 218 },
-  // Playable choice modeling (eshyra-o9bd.9): the 42 granted class features that
-  // confer a creation/level-up build choice carry structured `data.choices`
-  // (subclass selection, spell/cantrip picks, ASI-vs-feat, Fighting Style,
-  // Metamagic, Eldritch Invocations, favored enemy/terrain, Expertise, plus
-  // named out-of-scope Channel Divinity markers); the other 142 features confer
-  // no player choice and omit it.
-  { kind: 'feature', field: 'choices', missingCount: 130, totalInKind: 184 },
-  // First-pass mechanics projections (eshyra-ngcj.6): 76 features with explicit
+  // Playable choice modeling (eshyra-o9bd.9): granted class features that confer
+  // a creation/level-up build choice carry structured `data.choices` (subclass
+  // selection, spell/cantrip picks, ASI-vs-feat, Fighting Style, Metamagic,
+  // Eldritch Invocations, favored enemy/terrain, Expertise, plus named
+  // out-of-scope Channel Divinity markers); the rest confer no player choice and
+  // omit it. eshyra-vk23.2 structured the base spell workflows, adding `choices`
+  // to feature:paladin:spellcasting (formula-driven daily preparation) and
+  // feature:wizard:spellbook (starting contents + growth), so the missing count
+  // fell 130 -> 128.
+  { kind: 'feature', field: 'choices', missingCount: 128, totalInKind: 184 },
+  // First-pass mechanics projections (eshyra-ngcj.6): 74 features with explicit
   // rest-reset resources, critical range, extra attack, advantage/resistance,
   // proficiency, or spell-grant patterns carry `mechanics`; the rest remain
-  // prose-backed.
-  { kind: 'feature', field: 'mechanics', missingCount: 108, totalInKind: 184 },
+  // prose-backed. eshyra-vk23.1 made `spellGrants` fail-closed: two features
+  // (feature:wizard:cantrips, feature:wizard:spell-mastery) whose ONLY projected
+  // mechanics was clipped spell-grant prose now carry no `mechanics` block at
+  // all, so the missing count rose 108 -> 110.
+  { kind: 'feature', field: 'mechanics', missingCount: 110, totalInKind: 184 },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic
@@ -5555,6 +5561,448 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         totalInKind: group.totalInKind,
       }));
       expect(compact).toEqual(EXPECTED_PARTIAL_FIELDS);
+    });
+  });
+
+  // eshyra-vk23.1: mechanics-looking fields must be validated structure, not
+  // plausible-looking prose. The `spellGrants` projection previously captured
+  // raw regex residue (e.g. "two cantrips of your choice from the bard"); it is
+  // now a fail-closed list of `{ spell: 'spell:<slug>' }` refs that must each
+  // resolve to a real spell record. This invariant guards the whole pack so the
+  // corruption cannot return through any mechanics-bearing record kind.
+  describe('spellGrants are validated spell refs (eshyra-vk23.1)', () => {
+    const spellKeys = new Set(
+      pack.records.filter((r) => r.kind === 'spell').map((r) => r.key),
+    );
+
+    // Every place a feature/trait `mechanics` object can hang in the pack.
+    const mechanicsBlocks: { recordKey: string; mechanics: unknown }[] = [];
+    for (const record of pack.records) {
+      const data = record.data as {
+        mechanics?: unknown;
+        traits?: { mechanics?: unknown }[];
+        feature?: { mechanics?: unknown };
+      };
+      if (data.mechanics !== undefined) {
+        mechanicsBlocks.push({
+          recordKey: record.key,
+          mechanics: data.mechanics,
+        });
+      }
+      for (const trait of data.traits ?? []) {
+        if (trait.mechanics !== undefined) {
+          mechanicsBlocks.push({
+            recordKey: record.key,
+            mechanics: trait.mechanics,
+          });
+        }
+      }
+      if (data.feature?.mechanics !== undefined) {
+        mechanicsBlocks.push({
+          recordKey: record.key,
+          mechanics: data.feature.mechanics,
+        });
+      }
+    }
+
+    const grants = mechanicsBlocks.flatMap(({ recordKey, mechanics }) => {
+      const value = (mechanics as { spellGrants?: unknown }).spellGrants;
+      if (value === undefined) return [];
+      return [{ recordKey, value }];
+    });
+
+    it('every spellGrants value is a non-empty array of objects', () => {
+      for (const { recordKey, value } of grants) {
+        expect(Array.isArray(value), `${recordKey} spellGrants`).toBe(true);
+        const arr = value as unknown[];
+        expect(arr.length, `${recordKey} spellGrants`).toBeGreaterThan(0);
+        for (const entry of arr) {
+          expect(typeof entry, `${recordKey} spellGrants entry`).toBe('object');
+        }
+      }
+    });
+
+    it('every granted spell ref resolves to a real spell record', () => {
+      for (const { recordKey, value } of grants) {
+        for (const entry of value as { spell?: unknown }[]) {
+          const ref = entry.spell;
+          expect(typeof ref, `${recordKey} spellGrants[].spell`).toBe('string');
+          expect(
+            spellKeys.has(ref as string),
+            `${recordKey} grants unknown spell ${JSON.stringify(ref)}`,
+          ).toBe(true);
+        }
+      }
+    });
+
+    it('no granted spell ref carries clipped natural-language prose', () => {
+      // A real ref is `spell:<slug>` with no spaces; prose residue would.
+      for (const { recordKey, value } of grants) {
+        for (const entry of value as { spell?: unknown }[]) {
+          const ref = entry.spell as string;
+          expect(ref.startsWith('spell:'), `${recordKey} ref ${ref}`).toBe(
+            true,
+          );
+          expect(/\s/.test(ref), `${recordKey} ref ${ref} has whitespace`).toBe(
+            false,
+          );
+        }
+      }
+    });
+
+    it('includes the known Pact of the Chain find familiar grant', () => {
+      const pactBoon = grants.find(
+        (g) => g.recordKey === 'feature:warlock:pact-boon',
+      );
+      expect(pactBoon?.value).toEqual([{ spell: 'spell:find-familiar' }]);
+    });
+  });
+
+  // eshyra-vk23.3: option prerequisites that wrap "Pact of the <X> feature"
+  // across SRD lines must parse intact. The old lookahead truncated them to
+  // "Pact of" and leaked "the <X> feature ..." into the option body. Guard the
+  // whole pack so no choice option can carry a dangling prerequisite or a body
+  // that begins with a leaked prerequisite continuation.
+  describe('choice option prerequisites are intact (eshyra-vk23.3)', () => {
+    const options = pack.records.flatMap((record) => {
+      const choices =
+        (record.data as { choices?: { options?: unknown[] }[] }).choices ?? [];
+      return choices.flatMap((choice) =>
+        (choice.options ?? []).map((option) => ({
+          recordKey: record.key,
+          option: option as {
+            id?: string;
+            prerequisite?: string;
+            text?: string;
+          },
+        })),
+      );
+    });
+
+    it('exposes the warlock invocation catalog under test', () => {
+      const invocations = options.filter((o) =>
+        o.option.id?.startsWith('eldritch-invocation:'),
+      );
+      expect(invocations.length).toBe(32);
+    });
+
+    it('has no dangling "Pact of" prerequisite fragment', () => {
+      for (const { recordKey, option } of options) {
+        const pre = option.prerequisite;
+        if (pre === undefined) continue;
+        expect(
+          /\bPact of$/.test(pre.trim()),
+          `${recordKey} option ${option.id} prerequisite: ${pre}`,
+        ).toBe(false);
+      }
+    });
+
+    it('has no body that begins with a leaked "the <Pact> feature" clause', () => {
+      for (const { recordKey, option } of options) {
+        const text = option.text ?? '';
+        expect(
+          /^the (?:Tome|Blade|Chain) feature\b/.test(text),
+          `${recordKey} option ${option.id} body: ${text.slice(0, 40)}`,
+        ).toBe(false);
+      }
+    });
+
+    it('keeps the five wrapped pact-feature prerequisites complete', () => {
+      const byId = new Map(
+        options.map(({ option }) => [option.id, option.prerequisite]),
+      );
+      expect(byId.get('eldritch-invocation:book-of-ancient-secrets')).toBe(
+        'Pact of the Tome feature',
+      );
+      expect(byId.get('eldritch-invocation:chains-of-carceri')).toBe(
+        '15th level, Pact of the Chain feature',
+      );
+      expect(byId.get('eldritch-invocation:lifedrinker')).toBe(
+        '12th level, Pact of the Blade feature',
+      );
+      expect(byId.get('eldritch-invocation:thirsting-blade')).toBe(
+        '5th level, Pact of the Blade feature',
+      );
+      expect(byId.get('eldritch-invocation:voice-of-the-chain-master')).toBe(
+        'Pact of the Chain feature',
+      );
+    });
+  });
+
+  // eshyra-vk23.9: invocation prerequisites are also parsed into structured
+  // clauses (level / pactBoon / cantrip) so tools gate options from data, with
+  // the prose preserved. Every clause ref must resolve to a real record.
+  describe('structured invocation prerequisites (eshyra-vk23.9)', () => {
+    type Clause = { kind: string; classRef?: string; ref?: string };
+    const invocationOptions = (
+      (
+        pack.records.find(
+          (r) => r.key === 'feature:warlock:eldritch-invocations',
+        )?.data as {
+          choices?: {
+            options?: { id?: string; prerequisites?: Clause[] }[];
+          }[];
+        }
+      ).choices ?? []
+    ).flatMap((c) => c.options ?? []);
+    const byId = new Map(invocationOptions.map((o) => [o.id, o]));
+
+    const spellKeys = new Set(
+      pack.records.filter((r) => r.kind === 'spell').map((r) => r.key),
+    );
+    const classKeys = new Set(
+      pack.records.filter((r) => r.kind === 'class').map((r) => r.key),
+    );
+    const pactBoonRefs = new Set(
+      (
+        (
+          pack.records.find((r) => r.key === 'feature:warlock:pact-boon')
+            ?.data as { choices?: { options?: { id?: string }[] }[] }
+        ).choices ?? []
+      ).flatMap((c) => (c.options ?? []).map((o) => o.id)),
+    );
+
+    it('parses the five wrapped pact-feature prerequisites into clauses', () => {
+      expect(
+        byId.get('eldritch-invocation:book-of-ancient-secrets')?.prerequisites,
+      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' }]);
+      expect(
+        byId.get('eldritch-invocation:chains-of-carceri')?.prerequisites,
+      ).toEqual([
+        { kind: 'level', classRef: 'class:warlock', level: 15 },
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
+      ]);
+      expect(
+        byId.get('eldritch-invocation:lifedrinker')?.prerequisites,
+      ).toEqual([
+        { kind: 'level', classRef: 'class:warlock', level: 12 },
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+      ]);
+      expect(
+        byId.get('eldritch-invocation:thirsting-blade')?.prerequisites,
+      ).toEqual([
+        { kind: 'level', classRef: 'class:warlock', level: 5 },
+        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+      ]);
+      expect(
+        byId.get('eldritch-invocation:voice-of-the-chain-master')
+          ?.prerequisites,
+      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' }]);
+    });
+
+    it('parses a cantrip prerequisite into a resolvable spell ref', () => {
+      expect(
+        byId.get('eldritch-invocation:agonizing-blast')?.prerequisites,
+      ).toEqual([{ kind: 'cantrip', ref: 'spell:eldritch-blast' }]);
+    });
+
+    it('every structured prerequisite ref resolves to a real record', () => {
+      let clauseCount = 0;
+      for (const option of invocationOptions) {
+        for (const clause of option.prerequisites ?? []) {
+          clauseCount++;
+          if (clause.kind === 'level') {
+            expect(
+              classKeys.has(clause.classRef ?? ''),
+              `${option.id} level classRef`,
+            ).toBe(true);
+          } else if (clause.kind === 'pactBoon') {
+            expect(
+              pactBoonRefs.has(clause.ref),
+              `${option.id} pactBoon ref ${clause.ref}`,
+            ).toBe(true);
+          } else if (clause.kind === 'cantrip') {
+            expect(
+              spellKeys.has(clause.ref ?? ''),
+              `${option.id} cantrip ref ${clause.ref}`,
+            ).toBe(true);
+          } else {
+            throw new Error(`unknown clause kind ${clause.kind}`);
+          }
+        }
+      }
+      expect(clauseCount).toBeGreaterThan(0);
+    });
+
+    it('keeps the verbatim prerequisite prose alongside the structured clauses', () => {
+      const carceri = byId.get('eldritch-invocation:chains-of-carceri') as {
+        prerequisite?: string;
+        prerequisites?: unknown;
+      };
+      expect(carceri.prerequisite).toBe(
+        '15th level, Pact of the Chain feature',
+      );
+      expect(carceri.prerequisites).toBeDefined();
+    });
+  });
+
+  // eshyra-vk23.2: deterministic class spell workflows. Spell-selection choices
+  // must be structured filters (never prose strings); prepared casters carry a
+  // machine-readable preparation formula; the Wizard spellbook and Mystic
+  // Arcanum are fully modeled.
+  describe('deterministic class spell workflows (eshyra-vk23.2)', () => {
+    const featureByKey = new Map(
+      pack.records
+        .filter((r) => r.kind === 'feature')
+        .map((r) => [r.key, r] as const),
+    );
+    const classByKey = new Map(
+      pack.records
+        .filter((r) => r.kind === 'class')
+        .map((r) => [r.key, r] as const),
+    );
+    const choicesOf = (key: string) =>
+      ((featureByKey.get(key)?.data as { choices?: Record<string, unknown>[] })
+        ?.choices ?? []) as Record<string, unknown>[];
+
+    it('every spell/cantrip choice uses structured selection, not a prose string', () => {
+      // Structured = a discrete option-key array OR a spellFilter object; a bare
+      // prose `from` string is exactly the pre-vk23.2 state this guards against.
+      for (const record of pack.records) {
+        const choices = (record.data as { choices?: Record<string, unknown>[] })
+          .choices;
+        if (choices === undefined) continue;
+        for (const choice of choices) {
+          if (choice.category !== 'spell' && choice.category !== 'cantrip') {
+            continue;
+          }
+          const from = choice.from;
+          if (from === undefined) continue;
+          const label = `${record.key} choice ${String(choice.id)}`;
+          if (Array.isArray(from)) {
+            expect(from.length, `${label} option list`).toBeGreaterThan(0);
+          } else {
+            expect(
+              typeof from === 'object' && from !== null,
+              `${label} from must be a structured filter or option list`,
+            ).toBe(true);
+            expect((from as { kind?: unknown }).kind).toBe('spellFilter');
+          }
+        }
+      }
+    });
+
+    it('known casters get a fixed spells-known pick plus a level-up replacement', () => {
+      for (const key of [
+        'feature:bard:spellcasting',
+        'feature:sorcerer:spellcasting',
+        'feature:ranger:spellcasting',
+        'feature:warlock:pact-magic',
+      ]) {
+        const ids = choicesOf(key).map((c) => c.id);
+        expect(ids, key).toContain('spells');
+        expect(ids, key).toContain('spell-replacement');
+        const replacement = choicesOf(key).find(
+          (c) => c.id === 'spell-replacement',
+        );
+        expect(replacement?.replaces, key).toBe(true);
+        expect(replacement?.trigger, key).toBe('level-up');
+      }
+    });
+
+    it('prepared casters expose a formula-driven daily preparation choice', () => {
+      const expected: Record<string, { ability: string; divisor: number }> = {
+        'feature:cleric:spellcasting': { ability: 'wisdom', divisor: 1 },
+        'feature:druid:spellcasting': { ability: 'wisdom', divisor: 1 },
+        'feature:paladin:spellcasting': { ability: 'charisma', divisor: 2 },
+        'feature:wizard:spellcasting': { ability: 'intelligence', divisor: 1 },
+      };
+      for (const [key, { ability, divisor }] of Object.entries(expected)) {
+        const prepared = choicesOf(key).find((c) => c.id === 'prepared-spells');
+        expect(prepared, key).toBeDefined();
+        expect(prepared?.choose, key).toBeUndefined();
+        expect(prepared?.chooseFormula, key).toMatchObject({
+          ability,
+          classLevelDivisor: divisor,
+          minimum: 1,
+        });
+        expect(prepared?.trigger, key).toBe('daily-preparation');
+      }
+    });
+
+    it('prepared caster classes carry a structured preparationFormula', () => {
+      for (const key of [
+        'class:cleric',
+        'class:druid',
+        'class:paladin',
+        'class:wizard',
+      ]) {
+        const prep = (
+          classByKey.get(key)?.data as {
+            spellPreparation?: { preparationFormula?: Record<string, unknown> };
+          }
+        ).spellPreparation;
+        expect(prep?.preparationFormula, key).toBeDefined();
+        expect(typeof prep?.preparationFormula?.classLevelDivisor, key).toBe(
+          'number',
+        );
+      }
+    });
+
+    it('models the Wizard spellbook as starting contents plus per-level growth', () => {
+      const ids = choicesOf('feature:wizard:spellbook').map((c) => c.id);
+      expect(ids).toEqual(['spellbook-initial', 'spellbook-growth']);
+      const initial = choicesOf('feature:wizard:spellbook').find(
+        (c) => c.id === 'spellbook-initial',
+      );
+      expect(initial?.choose).toBe(6);
+    });
+
+    it('models Mystic Arcanum at the 11th/13th/15th/17th tiers', () => {
+      const arcana = choicesOf('feature:warlock:mystic-arcanum');
+      expect(arcana.map((c) => [c.id, c.level])).toEqual([
+        ['arcanum-6', 11],
+        ['arcanum-7', 13],
+        ['arcanum-8', 15],
+        ['arcanum-9', 17],
+      ]);
+    });
+  });
+
+  // eshyra-vk23.4: deterministic choice domains must not fall back to free-text
+  // `from` strings. After vk23.2 (spell/cantrip filters) and vk23.4 (Expertise
+  // character-state filters), NO choice in the pack carries a prose `from`
+  // string — every `from` is a discrete option-key array or a structured filter
+  // object. This guards the whole pack so a future importer change cannot
+  // reintroduce a prose filter for a deterministic choice; if a genuinely
+  // DM-only/unresolved prose choice is ever added, narrow this guard and justify
+  // it rather than weakening it wholesale.
+  describe('choice filters are structured, never prose strings (eshyra-vk23.4)', () => {
+    const allChoices = pack.records.flatMap((record) =>
+      (
+        (record.data as { choices?: Record<string, unknown>[] }).choices ?? []
+      ).map((choice) => ({ recordKey: record.key, choice })),
+    );
+
+    it('no choice uses a bare string `from`', () => {
+      for (const { recordKey, choice } of allChoices) {
+        const from = choice.from;
+        if (from === undefined) continue;
+        expect(
+          typeof from === 'string',
+          `${recordKey} choice ${String(choice.id)} has prose from: ${JSON.stringify(from)}`,
+        ).toBe(false);
+      }
+    });
+
+    it('models Expertise as a character-state filter (Rogue adds thieves’ tools)', () => {
+      const expertiseFrom = (key: string) =>
+        (
+          (
+            pack.records.find((r) => r.key === key)?.data as {
+              choices?: Record<string, unknown>[];
+            }
+          ).choices ?? []
+        ).find((c) => c.id === 'expertise')?.from;
+      expect(expertiseFrom('feature:bard:expertise')).toEqual({
+        kind: 'characterStateFilter',
+        proficiencyTypes: ['skill'],
+      });
+      expect(expertiseFrom('feature:rogue:expertise')).toEqual({
+        kind: 'characterStateFilter',
+        proficiencyTypes: ['skill'],
+        tools: ['thieves-tools'],
+      });
     });
   });
 
