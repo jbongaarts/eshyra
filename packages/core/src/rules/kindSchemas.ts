@@ -516,7 +516,28 @@ function optMechanics(parent: Obj, key: string, path: string): void {
   const mechanics = value as Obj;
   optBool(mechanics, 'concentration', `${path}.${key}`);
   optBool(mechanics, 'spellAttack', `${path}.${key}`);
-  optStr(mechanics, 'spellGrants', `${path}.${key}`);
+  // `spellGrants` is a structured list of validated spell refs (eshyra-vk23.1),
+  // not free prose: each entry is `{ spell: 'spell:<slug>' }`. The importer
+  // emits an entry only when a captured spell name resolves to a real spell
+  // record, so this field can never carry clipped natural-language fragments.
+  const spellGrants = objArray(mechanics, 'spellGrants', `${path}.${key}`);
+  if (spellGrants !== undefined) {
+    if (spellGrants.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.spellGrants must not be empty when present`,
+      );
+    }
+    spellGrants.forEach((grant, i) => {
+      const grantPath = `${path}.${key}.spellGrants[${i}]`;
+      reqStr(grant, 'spell', grantPath);
+      const ref = grant.spell;
+      if (typeof ref === 'string' && !ref.startsWith('spell:')) {
+        throw new RulesPackError(
+          `${grantPath}.spell must be a 'spell:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+    });
+  }
   for (const arrayKey of [
     'attacks',
     'saves',

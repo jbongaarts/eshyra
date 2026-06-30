@@ -1227,10 +1227,7 @@
         },
         {
           "name": "Cantrip",
-          "text": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it.",
-          "mechanics": {
-            "spellGrants": "one cantrip of your choice from the wizard"
-          }
+          "text": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it."
         },
         {
           "name": "Extra Language",
@@ -1860,7 +1857,14 @@
                 "reset": "long-rest"
               }
             ],
-            "spellGrants": "hellish rebuke"
+            "spellGrants": [
+              {
+                "spell": "spell:hellish-rebuke"
+              },
+              {
+                "spell": "spell:darkness"
+              }
+            ]
           }
         },
         {
@@ -59466,8 +59470,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "two cantrips of your choice from the bard"
+        ]
       },
       "choices": [
         {
@@ -60055,8 +60058,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "three cantrips of your choice from the cleric"
+        ]
       }
     },
     "source": "SRD 5.1 p. 15",
@@ -60773,8 +60775,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "two cantrips of your choice from the druid"
+        ]
       }
     },
     "source": "SRD 5.1 p. 20",
@@ -63869,8 +63870,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "and replace it with another"
+        ]
       },
       "choices": [
         {
@@ -64692,8 +64692,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "four cantrips of your choice from the sorcerer"
+        ]
       }
     },
     "source": "SRD 5.1 p. 43",
@@ -65392,8 +65391,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "compulsion once using a warlock"
+        ]
       },
       "choices": [
         {
@@ -65746,8 +65744,7 @@
           {
             "reset": "long-rest"
           }
-        ],
-        "spellGrants": "your arcanum"
+        ]
       },
       "choices": [
         {
@@ -65846,7 +65843,11 @@
             "kind": "resistance"
           }
         ],
-        "spellGrants": "find familiar"
+        "spellGrants": [
+          {
+            "spell": "spell:find-familiar"
+          }
+        ]
       },
       "choices": [
         {
@@ -65942,8 +65943,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "two cantrips of your choice from the warlock"
+        ]
       },
       "choices": [
         {
@@ -66282,10 +66282,7 @@
     "data": {
       "source": "class:wizard",
       "level": 1,
-      "description": "At 1st level, you know three cantrips of your choice from the wizard spell list. You learn additional wizard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Wizard table.",
-      "mechanics": {
-        "spellGrants": "three cantrips of your choice from the wizard"
-      }
+      "description": "At 1st level, you know three cantrips of your choice from the wizard spell list. You learn additional wizard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Wizard table."
     },
     "source": "SRD 5.1 p. 52",
     "license": {
@@ -66377,9 +66374,6 @@
       "source": "class:wizard",
       "level": 18,
       "description": "At 18th level, you have achieved such mastery over certain spells that you can cast them at will. Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared. If you want to cast either spell at a higher level, you must expend a spell slot as normal. By spending 8 hours in study, you can exchange one or both of the spells you chose for different spells of the same levels.",
-      "mechanics": {
-        "spellGrants": "those spells at their lowest level without expending a"
-      },
       "choices": [
         {
           "id": "spell-mastery-1st-level",
@@ -66460,8 +66454,7 @@
           {
             "kind": "proficiency"
           }
-        ],
-        "spellGrants": "a wizard"
+        ]
       }
     },
     "source": "SRD 5.1 p. 52",

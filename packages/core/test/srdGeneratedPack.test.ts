@@ -648,11 +648,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // named out-of-scope Channel Divinity markers); the other 142 features confer
   // no player choice and omit it.
   { kind: 'feature', field: 'choices', missingCount: 130, totalInKind: 184 },
-  // First-pass mechanics projections (eshyra-ngcj.6): 76 features with explicit
+  // First-pass mechanics projections (eshyra-ngcj.6): 74 features with explicit
   // rest-reset resources, critical range, extra attack, advantage/resistance,
   // proficiency, or spell-grant patterns carry `mechanics`; the rest remain
-  // prose-backed.
-  { kind: 'feature', field: 'mechanics', missingCount: 108, totalInKind: 184 },
+  // prose-backed. eshyra-vk23.1 made `spellGrants` fail-closed: two features
+  // (feature:wizard:cantrips, feature:wizard:spell-mastery) whose ONLY projected
+  // mechanics was clipped spell-grant prose now carry no `mechanics` block at
+  // all, so the missing count rose 108 -> 110.
+  { kind: 'feature', field: 'mechanics', missingCount: 110, totalInKind: 184 },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic
@@ -5555,6 +5558,100 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         totalInKind: group.totalInKind,
       }));
       expect(compact).toEqual(EXPECTED_PARTIAL_FIELDS);
+    });
+  });
+
+  // eshyra-vk23.1: mechanics-looking fields must be validated structure, not
+  // plausible-looking prose. The `spellGrants` projection previously captured
+  // raw regex residue (e.g. "two cantrips of your choice from the bard"); it is
+  // now a fail-closed list of `{ spell: 'spell:<slug>' }` refs that must each
+  // resolve to a real spell record. This invariant guards the whole pack so the
+  // corruption cannot return through any mechanics-bearing record kind.
+  describe('spellGrants are validated spell refs (eshyra-vk23.1)', () => {
+    const spellKeys = new Set(
+      pack.records.filter((r) => r.kind === 'spell').map((r) => r.key),
+    );
+
+    // Every place a feature/trait `mechanics` object can hang in the pack.
+    const mechanicsBlocks: { recordKey: string; mechanics: unknown }[] = [];
+    for (const record of pack.records) {
+      const data = record.data as {
+        mechanics?: unknown;
+        traits?: { mechanics?: unknown }[];
+        feature?: { mechanics?: unknown };
+      };
+      if (data.mechanics !== undefined) {
+        mechanicsBlocks.push({
+          recordKey: record.key,
+          mechanics: data.mechanics,
+        });
+      }
+      for (const trait of data.traits ?? []) {
+        if (trait.mechanics !== undefined) {
+          mechanicsBlocks.push({
+            recordKey: record.key,
+            mechanics: trait.mechanics,
+          });
+        }
+      }
+      if (data.feature?.mechanics !== undefined) {
+        mechanicsBlocks.push({
+          recordKey: record.key,
+          mechanics: data.feature.mechanics,
+        });
+      }
+    }
+
+    const grants = mechanicsBlocks.flatMap(({ recordKey, mechanics }) => {
+      const value = (mechanics as { spellGrants?: unknown }).spellGrants;
+      if (value === undefined) return [];
+      return [{ recordKey, value }];
+    });
+
+    it('every spellGrants value is a non-empty array of objects', () => {
+      for (const { recordKey, value } of grants) {
+        expect(Array.isArray(value), `${recordKey} spellGrants`).toBe(true);
+        const arr = value as unknown[];
+        expect(arr.length, `${recordKey} spellGrants`).toBeGreaterThan(0);
+        for (const entry of arr) {
+          expect(typeof entry, `${recordKey} spellGrants entry`).toBe('object');
+        }
+      }
+    });
+
+    it('every granted spell ref resolves to a real spell record', () => {
+      for (const { recordKey, value } of grants) {
+        for (const entry of value as { spell?: unknown }[]) {
+          const ref = entry.spell;
+          expect(typeof ref, `${recordKey} spellGrants[].spell`).toBe('string');
+          expect(
+            spellKeys.has(ref as string),
+            `${recordKey} grants unknown spell ${JSON.stringify(ref)}`,
+          ).toBe(true);
+        }
+      }
+    });
+
+    it('no granted spell ref carries clipped natural-language prose', () => {
+      // A real ref is `spell:<slug>` with no spaces; prose residue would.
+      for (const { recordKey, value } of grants) {
+        for (const entry of value as { spell?: unknown }[]) {
+          const ref = entry.spell as string;
+          expect(ref.startsWith('spell:'), `${recordKey} ref ${ref}`).toBe(
+            true,
+          );
+          expect(/\s/.test(ref), `${recordKey} ref ${ref} has whitespace`).toBe(
+            false,
+          );
+        }
+      }
+    });
+
+    it('includes the known Pact of the Chain find familiar grant', () => {
+      const pactBoon = grants.find(
+        (g) => g.recordKey === 'feature:warlock:pact-boon',
+      );
+      expect(pactBoon?.value).toEqual([{ spell: 'spell:find-familiar' }]);
     });
   });
 

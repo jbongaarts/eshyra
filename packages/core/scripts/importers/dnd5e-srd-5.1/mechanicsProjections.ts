@@ -7,6 +7,18 @@ import type {
 
 type Mechanics = Record<string, unknown>;
 
+/**
+ * Resolves a free-text spell name fragment captured from feature prose to a
+ * stable `spell:<slug>` ref, or `undefined` when the fragment is not a known
+ * SRD spell. The importer builds this from the emitted spell records so the
+ * `spellGrants` projection can fail closed: a captured fragment becomes a
+ * structured grant only when it resolves to a real spell. Garbage regex
+ * residue (e.g. "two cantrips of your choice from the bard") resolves to
+ * `undefined` and is omitted rather than emitted as authoritative data
+ * (eshyra-vk23.1).
+ */
+export type SpellGrantResolver = (candidate: string) => string | undefined;
+
 const ABILITIES = [
   'Strength',
   'Dexterity',
@@ -167,7 +179,37 @@ export function deriveCreatureEntryMechanics(
   });
 }
 
-export function deriveFeatureMechanics(text: string): Mechanics {
+/**
+ * Project structured spell grants from feature prose. Fail-closed: the loose
+ * "you learn/can cast/know the X spell" capture is only kept when `resolve`
+ * maps the captured fragment to a real `spell:<slug>` ref. Without a resolver
+ * (focused fixtures, non-spell-bearing records) no grants are emitted, so a
+ * mechanics-looking field never carries unvalidated natural-language residue
+ * (eshyra-vk23.1).
+ */
+function deriveSpellGrants(
+  text: string,
+  resolve: SpellGrantResolver | undefined,
+): readonly Mechanics[] | undefined {
+  if (resolve === undefined) return undefined;
+  const grants: Mechanics[] = [];
+  const seen = new Set<string>();
+  for (const match of text.matchAll(
+    /\byou (?:learn|can cast|know) (?:the )?([a-z][a-z' -]+?) spell\b/gi,
+  )) {
+    const ref = resolve(match[1]);
+    if (ref !== undefined && !seen.has(ref)) {
+      seen.add(ref);
+      grants.push({ spell: ref });
+    }
+  }
+  return grants.length > 0 ? grants : undefined;
+}
+
+export function deriveFeatureMechanics(
+  text: string,
+  resolveSpellGrant?: SpellGrantResolver,
+): Mechanics {
   const lower = text.toLowerCase();
   return compact({
     resources: /\b(short or long rest|long rest|short rest)\b/i.test(text)
@@ -192,15 +234,15 @@ export function deriveFeatureMechanics(text: string): Mechanics {
       ...(/\bresistance\b/i.test(text) ? [{ kind: 'resistance' }] : []),
       ...(/\bproficiency\b/i.test(text) ? [{ kind: 'proficiency' }] : []),
     ],
-    spellGrants:
-      /\byou (?:learn|can cast|know) (?:the )?([a-z][a-z' -]+?) spell\b/i.exec(
-        text,
-      )?.[1],
+    spellGrants: deriveSpellGrants(text, resolveSpellGrant),
   });
 }
 
-export function deriveFeatMechanics(feat: FeatExtraction): Mechanics {
-  return deriveFeatureMechanics(feat.description);
+export function deriveFeatMechanics(
+  feat: FeatExtraction,
+  resolveSpellGrant?: SpellGrantResolver,
+): Mechanics {
+  return deriveFeatureMechanics(feat.description, resolveSpellGrant);
 }
 
 export function deriveHazardMechanics(hazard: HazardExtraction): Mechanics {
