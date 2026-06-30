@@ -5852,6 +5852,53 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  // eshyra-vk23.4: deterministic choice domains must not fall back to free-text
+  // `from` strings. After vk23.2 (spell/cantrip filters) and vk23.4 (Expertise
+  // character-state filters), NO choice in the pack carries a prose `from`
+  // string — every `from` is a discrete option-key array or a structured filter
+  // object. This guards the whole pack so a future importer change cannot
+  // reintroduce a prose filter for a deterministic choice; if a genuinely
+  // DM-only/unresolved prose choice is ever added, narrow this guard and justify
+  // it rather than weakening it wholesale.
+  describe('choice filters are structured, never prose strings (eshyra-vk23.4)', () => {
+    const allChoices = pack.records.flatMap((record) =>
+      (
+        (record.data as { choices?: Record<string, unknown>[] }).choices ?? []
+      ).map((choice) => ({ recordKey: record.key, choice })),
+    );
+
+    it('no choice uses a bare string `from`', () => {
+      for (const { recordKey, choice } of allChoices) {
+        const from = choice.from;
+        if (from === undefined) continue;
+        expect(
+          typeof from === 'string',
+          `${recordKey} choice ${String(choice.id)} has prose from: ${JSON.stringify(from)}`,
+        ).toBe(false);
+      }
+    });
+
+    it('models Expertise as a character-state filter (Rogue adds thieves’ tools)', () => {
+      const expertiseFrom = (key: string) =>
+        (
+          (
+            pack.records.find((r) => r.key === key)?.data as {
+              choices?: Record<string, unknown>[];
+            }
+          ).choices ?? []
+        ).find((c) => c.id === 'expertise')?.from;
+      expect(expertiseFrom('feature:bard:expertise')).toEqual({
+        kind: 'characterStateFilter',
+        proficiencyTypes: ['skill'],
+      });
+      expect(expertiseFrom('feature:rogue:expertise')).toEqual({
+        kind: 'characterStateFilter',
+        proficiencyTypes: ['skill'],
+        tools: ['thieves-tools'],
+      });
+    });
+  });
+
   describe('hidden-Unicode hygiene', () => {
     // Read the committed records.json verbatim (not the parsed pack) so the
     // assertion covers the exact bytes that ship — the durable artifact a

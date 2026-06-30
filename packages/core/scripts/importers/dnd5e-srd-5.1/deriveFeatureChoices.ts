@@ -265,6 +265,22 @@ function spellFilter(value: Record<string, unknown>): Record<string, unknown> {
   return { kind: 'spellFilter', ...value };
 }
 
+/**
+ * A structured filter over the character's OWN sheet state (eshyra-vk23.4),
+ * for choices whose option pool is "your existing proficiencies" rather than a
+ * static catalog — e.g. Expertise. Replaces the free-text `from: 'your skill
+ * proficiencies'` so a tool reads the eligible pool from data. Keys:
+ *  - `proficiencyTypes`: which categories of the character's current
+ *    proficiencies are eligible ('skill', 'tool', …).
+ *  - `tools`: specific tool proficiencies additionally eligible, by slug
+ *    (Rogue Expertise also covers thieves' tools).
+ */
+function characterStateFilter(
+  value: Record<string, unknown>,
+): Record<string, unknown> {
+  return { kind: 'characterStateFilter', ...value };
+}
+
 /** A spell filter scoped to one class's spell list. */
 function classSpellFilter(
   cls: RulesRecord,
@@ -1174,6 +1190,10 @@ function deriveSubclassFeatureChoices(
         /skill proficiencies/,
         'expertise',
       );
+      // Rogue Expertise also covers thieves' tools ("one of your skill
+      // proficiencies and your proficiency with thieves' tools"); Bard
+      // Expertise is skills only (eshyra-vk23.4).
+      const includesThievesTools = /thieves[’']?\s*tools/i.test(description);
       choices.push({
         id: 'expertise',
         category: 'expertise',
@@ -1181,7 +1201,10 @@ function deriveSubclassFeatureChoices(
           'Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).',
         level,
         choose,
-        from: 'your skill proficiencies',
+        from: characterStateFilter({
+          proficiencyTypes: ['skill'],
+          ...(includesThievesTools ? { tools: ['thieves-tools'] } : {}),
+        }),
       });
     }
 

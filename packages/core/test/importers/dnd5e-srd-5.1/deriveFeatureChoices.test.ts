@@ -906,17 +906,38 @@ describe('deriveFeatureChoices — subclass-feature options (eshyra-o9bd.9.6)', 
     });
   }
 
-  it('models Expertise as a structured skill-proficiency choice', () => {
+  it('models Bard Expertise as a structured character-state skill filter', () => {
+    const out = singleFeature(
+      'class:bard',
+      'feature:bard:expertise',
+      'Expertise',
+      'At 3rd level, choose two of your skill proficiencies. Your proficiency bonus is doubled…',
+      3,
+    );
+    const choice = featureChoices(out, 'feature:bard:expertise')[0];
+    expect(choice.category).toBe('expertise');
+    expect(choice.choose).toBe(2);
+    // eshyra-vk23.4: a structured character-state filter, not a prose string.
+    expect(choice.from).toEqual({
+      kind: 'characterStateFilter',
+      proficiencyTypes: ['skill'],
+    });
+  });
+
+  it('includes thieves’ tools in the Rogue Expertise character-state filter', () => {
     const out = singleFeature(
       'class:rogue',
       'feature:rogue:expertise',
       'Expertise',
-      'At 1st level, choose two of your skill proficiencies. Your proficiency bonus is doubled…',
+      'At 1st level, choose two of your skill proficiencies, or one of your skill proficiencies and your proficiency with thieves’ tools. Your proficiency bonus is doubled…',
     );
     const choice = featureChoices(out, 'feature:rogue:expertise')[0];
     expect(choice.category).toBe('expertise');
-    expect(choice.choose).toBe(2);
-    expect(choice.from).toBe('your skill proficiencies');
+    expect(choice.from).toEqual({
+      kind: 'characterStateFilter',
+      proficiencyTypes: ['skill'],
+      tools: ['thieves-tools'],
+    });
   });
 
   it('marks Channel Divinity as a named out-of-scope (per-use, not build) choice', () => {

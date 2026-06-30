@@ -59276,7 +59276,12 @@
           "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
           "level": 3,
           "choose": 2,
-          "from": "your skill proficiencies"
+          "from": {
+            "kind": "characterStateFilter",
+            "proficiencyTypes": [
+              "skill"
+            ]
+          }
         }
       ]
     },
@@ -64313,7 +64318,15 @@
           "prompt": "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus).",
           "level": 1,
           "choose": 2,
-          "from": "your skill proficiencies"
+          "from": {
+            "kind": "characterStateFilter",
+            "proficiencyTypes": [
+              "skill"
+            ],
+            "tools": [
+              "thieves-tools"
+            ]
+          }
         }
       ]
     },
