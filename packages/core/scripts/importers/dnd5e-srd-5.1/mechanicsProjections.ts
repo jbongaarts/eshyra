@@ -123,7 +123,9 @@ function parseAttack(text: string): Mechanics | undefined {
 }
 
 function parseRecharge(name: string): Mechanics | undefined {
-  const match = /\bRecharge\s+(\d)(?:-(\d))?\b/i.exec(name);
+  // The SRD prints recharge ranges with an en dash ("Recharge 5–6"), not an
+  // ASCII hyphen; match both plus em dash so PDF-extracted text round-trips.
+  const match = /\bRecharge\s+(\d)(?:[-–—](\d))?\b/i.exec(name);
   if (match === null) return undefined;
   return compact({
     roll: 'd6',

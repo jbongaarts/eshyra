@@ -10490,7 +10490,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -10732,7 +10732,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -10964,7 +10964,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -11223,7 +11223,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -11477,7 +11477,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -11731,7 +11731,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -12000,7 +12000,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -12242,7 +12242,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -12473,7 +12473,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -12747,7 +12747,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -12903,7 +12903,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 4,
-              "maximum": 4
+              "maximum": 6
             },
             "saves": [
               {
@@ -13122,7 +13122,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -13364,7 +13364,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -13596,7 +13596,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -13859,7 +13859,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -14113,7 +14113,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -14371,7 +14371,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -14640,7 +14640,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -14882,7 +14882,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -15113,7 +15113,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -15387,7 +15387,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -17813,7 +17813,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -18175,7 +18175,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -18407,7 +18407,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 4,
-              "maximum": 4
+              "maximum": 6
             }
           }
         }
@@ -18615,7 +18615,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -18985,7 +18985,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -19126,7 +19126,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -20112,7 +20112,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -20375,7 +20375,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         }
@@ -20963,7 +20963,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -22430,7 +22430,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -24247,7 +24247,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "conditions": [
               {
@@ -28098,7 +28098,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "conditions": [
               {
@@ -28754,7 +28754,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -29639,7 +29639,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -29808,7 +29808,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -30047,7 +30047,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -31007,7 +31007,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -31341,7 +31341,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -36835,7 +36835,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -40123,7 +40123,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -42491,7 +42491,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -43842,7 +43842,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -43990,7 +43990,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -47124,7 +47124,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 4,
-              "maximum": 4
+              "maximum": 6
             },
             "saves": [
               {
@@ -48123,7 +48123,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -48524,7 +48524,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -49233,7 +49233,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -49387,7 +49387,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -49531,7 +49531,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -49704,7 +49704,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -49866,7 +49866,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -50034,7 +50034,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -50213,7 +50213,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -50367,7 +50367,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -50510,7 +50510,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -50694,7 +50694,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
