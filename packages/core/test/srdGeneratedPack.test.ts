@@ -180,8 +180,8 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   feature: 184,
   // 8 sample traps (loreweaver-hvp) + 3 sample diseases + 14 sample poisons
   // (loreweaver-6ra) all emit under the `hazard` kind; SRD 5.1 has no
-  // environmental hazards. Traps carry a `trapType` discriminator; diseases and
-  // poisons carry `data.category` ('disease' / 'poison').
+  // environmental hazards. All three gamemastering sub-families carry
+  // `data.category`; traps additionally carry a `trapType` discriminator.
   hazard: 25,
   // 239 Magic Items A-Z entries plus Orb of Dragonkind from the Artifacts
   // subsection. Figurine of Wondrous Power is no longer swallowed by Feather
@@ -430,11 +430,11 @@ const EXPECTED_STABLE_KEYS: readonly string[] = [
  *     cell — the items with a "—" weight (Sling, gaming sets, and many
  *     adventuring-gear/tack rows) plus the 7 packs, 8 mounts, and 6 waterborne
  *     vehicles (priced by speed/capacity, not weight).
- *   - hazard.{category,poisonType,price,trapType}: the `hazard` kind holds three
- *     gamemastering sub-families (loreweaver-6ra). The 8 traps carry `trapType`;
- *     the 3 diseases + 14 poisons carry `category` ('disease'/'poison'); the 14
- *     poisons additionally carry `poisonType` and `price`. Every hazard record
- *     still carries the required `description`.
+ *   - hazard.{poisonType,price,trapType}: the `hazard` kind holds three
+ *     gamemastering sub-families (loreweaver-6ra). Every hazard carries
+ *     `category` ('trap'/'disease'/'poison'); the 8 traps carry `trapType`; the
+ *     14 poisons additionally carry `poisonType` and `price`. Every hazard
+ *     record still carries the required `description`.
  *   - magic-item.attunementRequirement: only the 26 items whose category line
  *     restricts attunement by class, ancestry, alignment, or spellcasting carry
  *     this text; all 240 records still carry the boolean `requiresAttunement`.
@@ -660,10 +660,9 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // -> table:draconic-bloodline-draconic-ancestry): 182 -> 180 of 184 features
   // own no table.
   { kind: 'feature', field: 'tableRefs', missingCount: 180, totalInKind: 184 },
-  // hazard sub-families (loreweaver-6ra): of the 25 hazard records, the 8 traps
-  // carry `trapType`; the 3 diseases + 14 poisons carry `category`; the 14
-  // poisons additionally carry `poisonType` and `price`.
-  { kind: 'hazard', field: 'category', missingCount: 8, totalInKind: 25 },
+  // hazard sub-families (loreweaver-6ra / eshyra-ngcj.7): all 25 hazard records
+  // carry `category`; the 8 traps carry `trapType`; the 14 poisons additionally
+  // carry `poisonType` and `price`.
   // First-pass mechanics projections (eshyra-ngcj.6): all but one trap/disease/
   // poison record expose an explicit save, damage, or condition projection.
   { kind: 'hazard', field: 'mechanics', missingCount: 1, totalInKind: 25 },
@@ -882,6 +881,29 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         0,
       );
       expect(pack.records).toHaveLength(expectedTotal);
+    });
+
+    it('can filter every hazard sub-family by canonical category', () => {
+      const hazardsByCategory = new Map<string, string[]>();
+      for (const record of pack.records.filter((r) => r.kind === 'hazard')) {
+        const data = record.data as { category?: string; trapType?: string };
+        if (data.category === undefined) {
+          throw new Error(`${record.key} is missing data.category`);
+        }
+        hazardsByCategory.set(data.category, [
+          ...(hazardsByCategory.get(data.category) ?? []),
+          record.key,
+        ]);
+        if (data.category === 'trap') {
+          expect(data.trapType).toMatch(/^(mechanical|magic)$/);
+        }
+      }
+      expect(hazardsByCategory.get('trap')).toHaveLength(8);
+      expect(hazardsByCategory.get('disease')).toHaveLength(3);
+      expect(hazardsByCategory.get('poison')).toHaveLength(14);
+      expect(hazardsByCategory.get('trap')).toContain(
+        'hazard:fire-breathing-statue',
+      );
     });
   });
 
@@ -2575,11 +2597,11 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       }
     });
 
-    it('keeps traps free of a category and diseases/poisons free of trapType', () => {
+    it('categorizes every hazard sub-family and keeps trapType trap-only', () => {
       for (const r of hazards) {
         const data = r.data as { category?: unknown; trapType?: unknown };
         if (data.trapType !== undefined) {
-          expect(data.category).toBeUndefined();
+          expect(data.category).toBe('trap');
         } else {
           expect(['disease', 'poison']).toContain(data.category);
         }

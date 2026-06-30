@@ -19,7 +19,8 @@
  * `npm run verify:dnd5e-srd-pack` returns to exit 0.
  */
 
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   EXPECTED_SRD_5_1_BACKGROUND_NAMES,
@@ -105,6 +106,21 @@ function printHelpAndExit(code: number): never {
   process.exit(code);
 }
 
+function formatCounts(recordsPath: string): string {
+  const records = JSON.parse(readFileSync(recordsPath, 'utf8')) as Array<{
+    readonly kind?: unknown;
+  }>;
+  const counts = new Map<string, number>();
+  for (const record of records) {
+    const kind = typeof record.kind === 'string' ? record.kind : '(unknown)';
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([kind, count]) => `${kind}: ${count}`)
+    .join(', ');
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const result = await runImporter({
@@ -129,9 +145,8 @@ async function main(): Promise<void> {
     sourceCoverageRules: SRD_5_1_COVERAGE_RULES,
     validateCrossReferences: true,
   });
-  const c = result.counts;
   console.log(
-    `Imported ${c.spells} spells, ${c.creatures} creatures, ${c.npcs} NPCs, ${c.statBlocks} inline stat blocks, ${c.classes} classes, ${c.subclasses} subclasses, ${c.features} features, ${c.conditions} conditions, ${c.feats} feats, ${c.hazards} hazards, ${c.traps} traps, ${c.diseases} diseases, ${c.poisons} poisons, ${c.actions} actions, ${c.rules} rules, ${c.tables} tables, ${c.equipment} equipment, ${c.magicItems} magic items, ${c.ancestries} ancestries, and ${c.backgrounds} backgrounds.`,
+    `Imported record kind counts: ${formatCounts(join(result.outDir, 'records.json'))}.`,
   );
   console.log(`Source PDF SHA-256: ${result.sourceHash}`);
   console.log(`Output written to: ${result.outDir}`);

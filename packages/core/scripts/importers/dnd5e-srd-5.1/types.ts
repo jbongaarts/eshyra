@@ -167,10 +167,10 @@ export type TrapKind = 'mechanical' | 'magic';
 /**
  * A sample-trap entry as extracted from the SRD 5.1 "Traps" section, before
  * conversion to a `RulesRecord`. Traps are emitted under the `hazard` record
- * kind (schema fit: both are description-only environmental dangers; see the
- * importer README's hazard/trap decision note), with `trapType` preserving the
- * SRD's "Mechanical trap" / "Magic trap" subtitle. `description` is the full
- * body text, re-flowed into paragraphs.
+ * kind with `data.category: 'trap'` (schema fit: both are description-only
+ * environmental dangers; see the importer README's hazard/trap decision note),
+ * with `trapType` preserving the SRD's "Mechanical trap" / "Magic trap"
+ * subtitle. `description` is the full body text, re-flowed into paragraphs.
  */
 export interface TrapExtraction {
   readonly name: string;

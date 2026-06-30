@@ -23,27 +23,13 @@ Authoritative `countsByKind` from `auditPack` (committed pack). Total: **1812**.
 | subclass | 12 | One per class. |
 | table | **108** | 1077 rows total; 0 structural issues; column-counts 2–15. |
 
-## Reconciliation with `verify:dnd5e-srd-pack` importer categories
+## Reconciliation with importer hazard families
 
-The importer prints category counts that map onto final `kind` as follows:
+`verify:dnd5e-srd-pack` and `import:dnd5e-srd` print final record-kind counts.
+The `hazard` kind maps to importer parser families as follows:
 
 ```
-319 spells                          -> spell 319
-296 creatures + 21 NPCs             -> creature 317
-12 classes / 12 subclasses          -> class 12 / subclass 12
-184 features                        -> feature 184
-15 conditions                       -> condition 15
-1 feat                              -> feat 1
 0 env-hazards + 8 traps + 3 diseases + 14 poisons -> hazard 25
-10 actions                          -> action 10
-335 rules                           -> rule 335
-108 tables                          -> table 108
-218 equipment                       -> equipment 218
-240 magic items                     -> magic-item 240
-13 ancestries / 1 background        -> ancestry 13 / background 1
-(2 inline stat blocks)              -> stat-block 2
-                                       ------------------------------
-                                       TOTAL 1812
 ```
 
 ## Table coverage highlights (108 tables)

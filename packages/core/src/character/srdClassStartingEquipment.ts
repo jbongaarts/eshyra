@@ -87,9 +87,10 @@ function fixed(
 /**
  * Structured starting equipment per class, keyed by the frozen pack's canonical
  * `class:<slug>` record key. Source: D&D 5e SRD 5.1, each class's Equipment
- * section — the same prose carried verbatim in each entry's `sourceText` (which
+ * section — the same prose carried in each entry's `sourceText` (which
  * deep-equals the pack's `startingEquipment.entries`). Curly apostrophes match
- * the pack's extracted text.
+ * the pack's extracted text; one Rogue fixed-grant list marker is intentionally
+ * normalized out as an extraction artifact.
  */
 const CLASS_STARTING_EQUIPMENT: Readonly<
   Record<string, ClassStartingEquipment>
@@ -268,13 +269,9 @@ const CLASS_STARTING_EQUIPMENT: Readonly<
         ['b', 'a dungeoneer’s pack'],
         ['c', 'an explorer’s pack'],
       ),
-      // The pack carries a stray "(a) " prefix on this single fixed grant (an
-      // extraction artifact — the SRD has no (b) here); model it as fixed while
-      // keeping sourceText verbatim so the freeze-faithfulness check still holds.
-      fixed(
-        'Leather armor, two daggers, and thieves’ tools',
-        '(a) Leather armor, two daggers, and thieves’ tools',
-      ),
+      // The SRD has no (b) option here; a previous extraction artifact prefixed
+      // this fixed grant with "(a)", so keep the normalized fixed source text.
+      fixed('Leather armor, two daggers, and thieves’ tools'),
     ],
   },
   'class:sorcerer': {

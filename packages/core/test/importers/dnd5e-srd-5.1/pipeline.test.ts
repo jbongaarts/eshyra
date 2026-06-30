@@ -1072,7 +1072,7 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     const featKeys = keys.filter((k) => k.startsWith('feat:'));
     expect(featKeys).toEqual(['feat:grappler']);
     // The `hazard` kind now holds the environmental hazard (Brown Mold) plus the
-    // sample traps, which emit under `hazard` with a `trapType` discriminator
+    // sample traps, which emit under `hazard` with category/trapType
     // (loreweaver-hvp).
     const hazardKeys = keys.filter((k) => k.startsWith('hazard:'));
     expect(hazardKeys).toEqual([
@@ -1279,23 +1279,26 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     const brown = pack.records.find((r) => r.key === 'hazard:brown-mold');
     const brownData = brown?.data as Record<string, unknown>;
     expect(brownData.trapType).toBeUndefined();
+    expect(brownData.category).toBeUndefined();
     expect(brownData.description).not.toMatch(
       /A trap can be either mechanical or magical in nature\./,
     );
 
-    // Sample traps emit under `hazard` with a `trapType` discriminator; the
+    // Sample traps emit under `hazard` with category/trapType; the
     // traps slice ends at "Diseases", so the magic trap's body stops there.
     const collapsing = pack.records.find(
       (r) => r.key === 'hazard:collapsing-roof',
     );
     expect(collapsing?.name).toBe('Collapsing Roof');
     const collapsingData = collapsing?.data as Record<string, unknown>;
+    expect(collapsingData.category).toBe('trap');
     expect(collapsingData.trapType).toBe('mechanical');
     expect(collapsingData.description).toMatch(/trip wire/);
     const statue = pack.records.find(
       (r) => r.key === 'hazard:fire-breathing-statue',
     );
     const statueData = statue?.data as Record<string, unknown>;
+    expect(statueData.category).toBe('trap');
     expect(statueData.trapType).toBe('magic');
     expect(statueData.description).not.toMatch(/Diseases/);
 
