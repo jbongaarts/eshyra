@@ -139,6 +139,17 @@ interface FeatureStart {
   readonly level: number;
 }
 
+function collectOptionSourcePages(
+  body: readonly FlatLine[],
+): Readonly<Record<string, number>> | undefined {
+  const pages: Record<string, number> = {};
+  for (const { line, page } of body) {
+    if (!isFeatureHeading(line)) continue;
+    pages[line] ??= page;
+  }
+  return Object.keys(pages).length > 0 ? pages : undefined;
+}
+
 /** Collapse internal whitespace runs to single spaces and trim. */
 function normalizeLine(line: string): string {
   return line.replace(/\s+/g, ' ').trim();
@@ -571,7 +582,7 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
 
     // Collect the body: every line up to the next structural anchor or the next
     // feature heading.
-    const bodyLines: string[] = [];
+    const body: FlatLine[] = [];
     let j = i + 1;
     for (; j < flat.length; j++) {
       if (isStructuralLine(flat[j], tiersPresent)) break;
@@ -591,15 +602,16 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
       ) {
         break;
       }
-      bodyLines.push(flat[j].line);
+      body.push(flat[j]);
     }
 
-    const description = joinParagraphs(bodyLines);
+    const description = joinParagraphs(body.map((entry) => entry.line));
     if (description.length === 0) {
       throw new Error(
         `feature "${line}" at page ${page} has no description text`,
       );
     }
+    const optionSourcePages = collectOptionSourcePages(body);
 
     // A given (grantor, name) pair may legitimately have its heading repeated
     // in the source: an in-body reference table caption that re-states the
@@ -617,6 +629,10 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
       out[existingIdx] = {
         ...existing,
         description: `${existing.description}\n\n${description}`.trim(),
+        optionSourcePages: {
+          ...(existing.optionSourcePages ?? {}),
+          ...(optionSourcePages ?? {}),
+        },
       };
       i = j - 1;
       continue;
@@ -629,6 +645,7 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
       grantorName,
       level: start.level,
       description,
+      ...(optionSourcePages !== undefined ? { optionSourcePages } : {}),
       sourcePage: page,
     });
 

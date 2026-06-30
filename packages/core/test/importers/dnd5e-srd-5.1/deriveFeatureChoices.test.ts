@@ -709,6 +709,54 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
     ).toEqual([{ kind: 'cantrip', ref: 'spell:eldritch-blast' }]);
   });
 
+  it('uses per-option source labels when the source list spans pages', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:warlock', 'Warlock', {
+          grants: [{ ref: 'feature:warlock:eldritch-invocations', level: 2 }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec(
+          'feature',
+          'feature:warlock:eldritch-invocations',
+          'Eldritch Invocations',
+          {
+            source: 'class:warlock',
+            level: 2,
+            description:
+              'At 2nd level, you gain two eldritch invocations of your choice. Agonizing Blast Prerequisite: eldritch blast cantrip When you cast eldritch blast, add your Charisma modifier. Armor of Shadows You can cast mage armor on yourself at will. Ascendant Step Prerequisite: 9th level You can cast levitate on yourself at will. Beast Speech You can cast speak with animals at will. Beguiling Influence You gain proficiency in two skills. Bewitching Whispers Prerequisite: 7th level You can cast compulsion once. Book of Ancient Secrets Prerequisite: Pact of the Tome feature You can inscribe magical rituals. Chains of Carceri Prerequisite: 15th level, Pact of the Chain feature You can cast hold monster at will. Devil’s Sight You can see normally in darkness. Dreadful Word Prerequisite: 7th level You can cast confusion once. Eldritch Sight You can cast detect magic at will. Eldritch Spear Prerequisite: eldritch blast cantrip Its range is 300 feet. Eyes of the Rune Keeper You can read all writing. Fiendish Vigor You can cast false life. Gaze of Two Minds You can perceive through another creature. Lifedrinker Prerequisite: 12th level, Pact of the Blade feature You deal extra necrotic damage. Mask of Many Faces You can cast disguise self. Master of Myriad Forms Prerequisite: 15th level You can cast alter self. Minions of Chaos Prerequisite: 9th level You can cast conjure elemental. Mire the Mind Prerequisite: 5th level You can cast slow. Misty Visions You can cast silent image. One with Shadows Prerequisite: 5th level You can become invisible. Otherworldly Leap Prerequisite: 9th level You can cast jump. Repelling Blast Prerequisite: eldritch blast cantrip You can push the creature. Sculptor of Flesh Prerequisite: 7th level You can cast polymorph. Sign of Ill Omen Prerequisite: 5th level You can cast bestow curse. Thief of Five Fates You can cast bane. Thirsting Blade Prerequisite: 5th level, Pact of the Blade feature You can attack twice. Visions of Distant Realms Prerequisite: 15th level You can cast arcane eye. Voice of the Chain Master Prerequisite: Pact of the Chain feature You can communicate telepathically. Whispers of the Grave Prerequisite: 9th level You can cast speak with dead. Witch Sight Prerequisite: 15th level You can see true forms.',
+          },
+        ),
+      ],
+      optionSourceLabelsByFeatureKey: new Map([
+        [
+          'feature:warlock:eldritch-invocations',
+          new Map([
+            ['Agonizing Blast', 'SRD 5.1 p. 48'],
+            ['Lifedrinker', 'SRD 5.1 p. 49'],
+            ['Thirsting Blade', 'SRD 5.1 p. 50'],
+          ]),
+        ],
+      ]),
+    });
+    const options = featureChoices(
+      out,
+      'feature:warlock:eldritch-invocations',
+    )[0].options as Array<Record<string, unknown>>;
+    const sourceById = new Map(options.map((o) => [o.id, o.source]));
+    expect(sourceById.get('eldritch-invocation:agonizing-blast')).toBe(
+      'SRD 5.1 p. 48',
+    );
+    expect(sourceById.get('eldritch-invocation:lifedrinker')).toBe(
+      'SRD 5.1 p. 49',
+    );
+    expect(sourceById.get('eldritch-invocation:thirsting-blade')).toBe(
+      'SRD 5.1 p. 50',
+    );
+  });
+
   it('parses Hunter subclass option catalogs', () => {
     const out = deriveFeatureChoices({
       classRecords: [

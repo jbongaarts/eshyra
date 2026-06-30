@@ -40,6 +40,10 @@ export interface DeriveFeatureChoicesInput {
   readonly classRecords: readonly RulesRecord[];
   readonly subclassRecords: readonly RulesRecord[];
   readonly featureRecords: readonly RulesRecord[];
+  readonly optionSourceLabelsByFeatureKey?: ReadonlyMap<
+    string,
+    ReadonlyMap<string, string>
+  >;
 }
 
 /** A machine-readable prepared-spell count (eshyra-vk23.2): the prepared total
@@ -94,6 +98,17 @@ interface DerivedChoiceOption {
   /** Structured, machine-readable parse of `prerequisite` (eshyra-vk23.9). */
   readonly prerequisites?: readonly PrerequisiteClause[];
   readonly source: string;
+}
+
+function optionSourceFor(
+  input: DeriveFeatureChoicesInput,
+  feature: RulesRecord,
+  heading: string,
+): string {
+  return (
+    input.optionSourceLabelsByFeatureKey?.get(feature.key)?.get(heading) ??
+    feature.source
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1042,6 +1057,7 @@ function parsePrerequisiteClauses(
 }
 
 function parseOptionCatalog(
+  input: DeriveFeatureChoicesInput,
   feature: RulesRecord,
   description: string,
   spec: OptionCatalogSpec,
@@ -1109,7 +1125,7 @@ function parseOptionCatalog(
         id: optionId(spec.optionIdPrefix, entry.heading),
         name: entry.heading,
         text,
-        source: feature.source,
+        source: optionSourceFor(input, feature, entry.heading),
       };
     }
     const prereqProse = prerequisite[1].trim();
@@ -1130,7 +1146,7 @@ function parseOptionCatalog(
         entry.heading,
       ),
       text,
-      source: feature.source,
+      source: optionSourceFor(input, feature, entry.heading),
     };
   });
 }
@@ -1161,6 +1177,7 @@ function deriveOptionListChoices(
         'fightingStyle',
       );
       const options = parseOptionCatalog(
+        input,
         fighterStyle,
         featureDescription(fighterStyle),
         fightingStyleSpec,
@@ -1191,7 +1208,12 @@ function deriveOptionListChoices(
         catalogSpec.countKeyword,
         catalogSpec.category,
       );
-      const options = parseOptionCatalog(feature, description, catalogSpec);
+      const options = parseOptionCatalog(
+        input,
+        feature,
+        description,
+        catalogSpec,
+      );
       out.set(feature.key, [
         {
           id: catalogSpec.id,
