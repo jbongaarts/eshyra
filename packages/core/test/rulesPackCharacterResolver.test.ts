@@ -298,6 +298,27 @@ describe('rules-pack character resolver', () => {
     }
   });
 
+  it('exposes subclass feature refs in grant-level order without duplicating featuresByLevel', () => {
+    const champion = resolver
+      .listSubclasses()
+      .find((subclass) => subclass.key === 'subclass:champion');
+    expect(champion?.parentClass).toBe('class:fighter');
+    expect(champion?.features).toEqual([
+      'feature:champion:improved-critical',
+      'feature:champion:remarkable-athlete',
+      'feature:champion:additional-fighting-style',
+      'feature:champion:superior-critical',
+      'feature:champion:survivor',
+    ]);
+
+    // Current deterministic consumers ask "which selected-subclass refs apply
+    // at this target level?" and answer it by intersecting this ordered flat
+    // list with resolved feature records. The raw pack's `data.featuresByLevel`
+    // remains available to direct pack consumers, but the resolved character
+    // facade does not need to duplicate it until a caller needs grouped rows.
+    expect(Object.hasOwn(champion ?? {}, 'featuresByLevel')).toBe(false);
+  });
+
   it('reports a not_found result for an unknown class', () => {
     const result = resolver.resolveClass('Artificer');
     expect(result).toMatchObject({ ok: false, code: 'not_found' });
