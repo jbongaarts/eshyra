@@ -5763,36 +5763,37 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     );
 
     it('parses the five wrapped pact-feature prerequisites into clauses', () => {
-      expect(byId.get('eldritch-invocation:book-of-ancient-secrets')
-        ?.prerequisites).toEqual([
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' },
-      ]);
-      expect(byId.get('eldritch-invocation:chains-of-carceri')
-        ?.prerequisites).toEqual([
+      expect(
+        byId.get('eldritch-invocation:book-of-ancient-secrets')?.prerequisites,
+      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' }]);
+      expect(
+        byId.get('eldritch-invocation:chains-of-carceri')?.prerequisites,
+      ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 15 },
         { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
       ]);
-      expect(byId.get('eldritch-invocation:lifedrinker')
-        ?.prerequisites).toEqual([
+      expect(
+        byId.get('eldritch-invocation:lifedrinker')?.prerequisites,
+      ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 12 },
         { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
       ]);
-      expect(byId.get('eldritch-invocation:thirsting-blade')
-        ?.prerequisites).toEqual([
+      expect(
+        byId.get('eldritch-invocation:thirsting-blade')?.prerequisites,
+      ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 5 },
         { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
       ]);
-      expect(byId.get('eldritch-invocation:voice-of-the-chain-master')
-        ?.prerequisites).toEqual([
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
-      ]);
+      expect(
+        byId.get('eldritch-invocation:voice-of-the-chain-master')
+          ?.prerequisites,
+      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' }]);
     });
 
     it('parses a cantrip prerequisite into a resolvable spell ref', () => {
-      expect(byId.get('eldritch-invocation:agonizing-blast')
-        ?.prerequisites).toEqual([
-        { kind: 'cantrip', ref: 'spell:eldritch-blast' },
-      ]);
+      expect(
+        byId.get('eldritch-invocation:agonizing-blast')?.prerequisites,
+      ).toEqual([{ kind: 'cantrip', ref: 'spell:eldritch-blast' }]);
     });
 
     it('every structured prerequisite ref resolves to a real record', () => {
@@ -5828,7 +5829,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         prerequisite?: string;
         prerequisites?: unknown;
       };
-      expect(carceri.prerequisite).toBe('15th level, Pact of the Chain feature');
+      expect(carceri.prerequisite).toBe(
+        '15th level, Pact of the Chain feature',
+      );
       expect(carceri.prerequisites).toBeDefined();
     });
   });

@@ -709,7 +709,6 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
     ).toEqual([{ kind: 'cantrip', ref: 'spell:eldritch-blast' }]);
   });
 
-
   it('parses Hunter subclass option catalogs', () => {
     const out = deriveFeatureChoices({
       classRecords: [

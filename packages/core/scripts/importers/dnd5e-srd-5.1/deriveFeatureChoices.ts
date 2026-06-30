@@ -77,7 +77,11 @@ interface DerivedChoice {
  *  - `cantrip` — a required cantrip, by its `spell:` ref.
  */
 type PrerequisiteClause =
-  | { readonly kind: 'level'; readonly classRef: string; readonly level: number }
+  | {
+      readonly kind: 'level';
+      readonly classRef: string;
+      readonly level: number;
+    }
   | { readonly kind: 'pactBoon'; readonly ref: string }
   | { readonly kind: 'cantrip'; readonly ref: string };
 
