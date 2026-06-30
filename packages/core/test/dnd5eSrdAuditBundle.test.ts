@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildGameplayReadinessReport } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
+import {
+  buildGameplayReadinessReport,
+  buildOverlayParityReport,
+} from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
 import type {
   RulesPack,
   RulesPackLicense,
@@ -86,5 +89,75 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
       'condition:exhaustion',
     ]);
     expect(report.byKind.condition.examples.proseOnly).toEqual([]);
+  });
+});
+
+describe('D&D SRD audit bundle overlay-vs-pack parity report (eshyra-jk4d)', () => {
+  it('does not flag a prepared-caster class whose pack data matches the overlay, including preparationFormula', () => {
+    const report = buildOverlayParityReport(
+      pack([
+        record({
+          kind: 'class',
+          key: 'class:cleric',
+          name: 'Cleric',
+          data: {
+            spellcastingAbility: 'wisdom',
+            spellPreparation: {
+              kind: 'prepared',
+              preparationFormula: {
+                ability: 'wisdom',
+                classLevelDivisor: 1,
+                minimum: 1,
+              },
+              sourceText:
+                'You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). Wisdom is your spellcasting ability for your cleric spells.',
+            },
+          },
+        }),
+      ]),
+    );
+
+    expect(report.summary.mismatchedFacts).toBe(0);
+    expect(
+      report.checks.filter(
+        (check) =>
+          check.key === 'class:cleric' && check.field === 'spellPreparation',
+      ),
+    ).toEqual([
+      expect.objectContaining({ key: 'class:cleric', status: 'match' }),
+    ]);
+  });
+
+  it('still flags a genuine spellPreparation mismatch (e.g. wrong preparationFormula divisor)', () => {
+    const report = buildOverlayParityReport(
+      pack([
+        record({
+          kind: 'class',
+          key: 'class:cleric',
+          name: 'Cleric',
+          data: {
+            spellcastingAbility: 'wisdom',
+            spellPreparation: {
+              kind: 'prepared',
+              preparationFormula: {
+                ability: 'wisdom',
+                classLevelDivisor: 2,
+                minimum: 1,
+              },
+              sourceText:
+                'You prepare the list of cleric spells that are available for you to cast, choosing from the cleric spell list. When you do so, choose a number of cleric spells equal to your Wisdom modifier + your cleric level (minimum of one spell). Wisdom is your spellcasting ability for your cleric spells.',
+            },
+          },
+        }),
+      ]),
+    );
+
+    expect(report.summary.mismatchedFacts).toBe(1);
+    expect(
+      report.checks.find(
+        (check) =>
+          check.key === 'class:cleric' && check.field === 'spellPreparation',
+      ),
+    ).toMatchObject({ status: 'mismatch' });
   });
 });
