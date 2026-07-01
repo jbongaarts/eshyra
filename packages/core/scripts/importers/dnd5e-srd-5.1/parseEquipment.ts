@@ -168,6 +168,20 @@ const ARMOR_RIGHT =
 // LEFT-block region.
 const WEAPON_FIRST_SUBHEADER = /^Simple Melee Weapons$/i;
 const GEAR_TITLE = /^Adventuring Gear$/i;
+// The four Weapons-table sub-headers group every weapon row into the
+// SRD's proficiency category (simple/martial) and engagement range
+// (melee/ranged) — eshyra-erf5.3.1. They appear in this fixed order and each
+// exactly once; a weapon row is classified by the nearest preceding one.
+const WEAPON_SUBHEADERS: ReadonlyArray<{
+  readonly test: RegExp;
+  readonly category: 'simple' | 'martial';
+  readonly range: 'melee' | 'ranged';
+}> = [
+  { test: /^Simple Melee Weapons$/i, category: 'simple', range: 'melee' },
+  { test: /^Simple Ranged Weapons$/i, category: 'simple', range: 'ranged' },
+  { test: /^Martial Melee Weapons$/i, category: 'martial', range: 'melee' },
+  { test: /^Martial Ranged Weapons$/i, category: 'martial', range: 'ranged' },
+];
 // Weapon LEFT-block row tail: everything after "<name> <cost> " must be exactly
 // a damage cell ("1d8 slashing", "1 piercing") or a dash (the Net has no
 // damage). The trailing-dash form collides with gear/tool rows that have a "—"
@@ -287,6 +301,48 @@ function activeDescriptionIsDangling(
     const parts = descriptions.get(name)?.parts;
     const last = parts?.[parts.length - 1]?.trim();
     return last !== undefined && /\b(?:and|or|the|of the|with)$/i.test(last);
+  });
+}
+
+// The SHARED_DESCRIPTION_TARGETS labels that name a gameplay-relevant SRD
+// equipment group (eshyra-erf5.3.2), as opposed to labels that merely share
+// generic description prose for unrelated reasons ("rope", "tent" — two rope
+// lengths or a two-person tent, not a proficiency/filter category).
+const EQUIPMENT_GROUP_LABELS: ReadonlySet<string> = new Set([
+  'arcane focus',
+  'druidic focus',
+  'holy symbol',
+  'artisans tools',
+  'gaming set',
+  'musical instrument',
+]);
+
+/**
+ * Tag each item that belongs to one of the SRD's named gameplay-relevant
+ * equipment groups (arcane focus, druidic focus, holy symbol, artisan's
+ * tools, gaming set, musical instrument) with a stable kebab-case
+ * `equipmentGroup` (eshyra-erf5.3.2). Reuses `SHARED_DESCRIPTION_TARGETS` —
+ * the same reviewed label -> member-name mapping already used to attach
+ * shared description prose — as the source of truth for group membership
+ * (filtered to `EQUIPMENT_GROUP_LABELS`, since that map also covers unrelated
+ * shared-description pairs like "rope"/"tent"), so the two concerns cannot
+ * drift apart. This is a pure name -> group lookup, independent of whether
+ * the description prose itself was found in a given fixture.
+ */
+function attachEquipmentGroups(
+  items: readonly EquipmentExtraction[],
+): EquipmentExtraction[] {
+  const groupByName = new Map<string, string>();
+  for (const [label, names] of SHARED_DESCRIPTION_TARGETS) {
+    if (!EQUIPMENT_GROUP_LABELS.has(label)) continue;
+    const group = label.replace(/\s+/g, '-');
+    for (const name of names) {
+      groupByName.set(normalizeDescriptionName(name), group);
+    }
+  }
+  return items.map((item) => {
+    const group = groupByName.get(normalizeDescriptionName(item.name));
+    return group === undefined ? item : { ...item, equipmentGroup: group };
   });
 }
 
@@ -446,6 +502,8 @@ interface WeaponLeft {
   readonly cost: string;
   readonly damageDie?: string;
   readonly damageType?: string;
+  readonly weaponCategory: 'simple' | 'martial';
+  readonly weaponRange: 'melee' | 'ranged';
   readonly page: number;
 }
 
@@ -470,8 +528,20 @@ function collectWeapons(flat: readonly FlatLine[]): EquipmentExtraction[] {
   }
 
   const left: WeaponLeft[] = [];
+  // `startIdx` is, by definition, the position of "Simple Melee Weapons" — the
+  // first WEAPON_SUBHEADERS entry — so the loop's very first iteration always
+  // overwrites these before any weapon row can be reached; the initial values
+  // are never actually read.
+  let currentCategory: 'simple' | 'martial' = 'simple';
+  let currentRange: 'melee' | 'ranged' = 'melee';
   for (let i = startIdx; i < gearIdx; i++) {
     const { line, page } = flat[i];
+    const subheader = WEAPON_SUBHEADERS.find((h) => h.test.test(line));
+    if (subheader !== undefined) {
+      currentCategory = subheader.category;
+      currentRange = subheader.range;
+      continue;
+    }
     const split = splitNameAndCost(line);
     if (split === undefined || !WEAPON_DAMAGE_TOKEN.test(split.rest)) {
       continue;
@@ -480,6 +550,8 @@ function collectWeapons(flat: readonly FlatLine[]): EquipmentExtraction[] {
     left.push({
       name: split.name,
       cost: split.cost,
+      weaponCategory: currentCategory,
+      weaponRange: currentRange,
       ...(dmg === null
         ? {}
         : { damageDie: dmg[1], damageType: dmg[2].toLowerCase() }),
@@ -517,6 +589,8 @@ function collectWeapons(flat: readonly FlatLine[]): EquipmentExtraction[] {
       name: row.name,
       category: 'weapon',
       cost: row.cost,
+      weaponCategory: row.weaponCategory,
+      weaponRange: row.weaponRange,
       ...(row.damageDie === undefined ? {} : { damageDie: row.damageDie }),
       ...(row.damageType === undefined ? {} : { damageType: row.damageType }),
       properties: [...tail.properties],
@@ -958,15 +1032,17 @@ export function parseEquipment(
   pages: readonly PageText[],
 ): EquipmentExtraction[] {
   const flat = flatten(pages);
-  const out = attachDescriptions(
-    [
-      ...collectArmor(flat),
-      ...collectWeapons(flat),
-      ...collectTools(flat),
-      ...collectGear(flat),
-      ...collectEquipmentPacks(flat),
-    ],
-    flat,
+  const out = attachEquipmentGroups(
+    attachDescriptions(
+      [
+        ...collectArmor(flat),
+        ...collectWeapons(flat),
+        ...collectTools(flat),
+        ...collectGear(flat),
+        ...collectEquipmentPacks(flat),
+      ],
+      flat,
+    ),
   );
   out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return out;

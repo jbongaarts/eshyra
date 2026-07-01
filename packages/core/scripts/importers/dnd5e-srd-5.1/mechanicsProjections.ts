@@ -28,6 +28,29 @@ const ABILITIES = [
   'Charisma',
 ] as const;
 
+/**
+ * The 13 canonical SRD 5.1 damage types (PH ch. 9 "Damage Types"). `mechanics.
+ * damage[].type` must be one of these — `parseDamage`'s "<dice> <word>
+ * damage" pattern otherwise happily captures non-damage adjectives too, e.g.
+ * Enlarge/Reduce's "1d4 extra damage" / "1d4 less damage" weapon-size flavor
+ * text (eshyra-erf5.4), which are not dealt damage at all.
+ */
+const SRD_5_1_DAMAGE_TYPES: ReadonlySet<string> = new Set([
+  'acid',
+  'bludgeoning',
+  'cold',
+  'fire',
+  'force',
+  'lightning',
+  'necrotic',
+  'piercing',
+  'poison',
+  'psychic',
+  'radiant',
+  'slashing',
+  'thunder',
+]);
+
 function compact<T extends Record<string, unknown>>(obj: T): T {
   for (const key of Object.keys(obj)) {
     const value = obj[key];
@@ -50,13 +73,35 @@ function parseDamage(text: string): readonly Mechanics[] {
   const damageRe =
     /(?:(\d+)\s*\()?(\d+d\d+(?:\s*[+-]\s*\d+)?)\)?\s+([a-z]+)\s+damage/gi;
   for (const match of text.matchAll(damageRe)) {
+    const type = match[3].toLowerCase();
+    if (!SRD_5_1_DAMAGE_TYPES.has(type)) continue;
     out.push(
       compact({
         average: match[1] === undefined ? undefined : Number(match[1]),
         dice: match[2].replace(/\s+/g, ' '),
-        type: match[3].toLowerCase(),
+        type,
       }),
     );
+  }
+  return out;
+}
+
+/**
+ * A weapon-damage-die MODIFIER, not dealt damage itself — e.g. Enlarge's
+ * "attacks with them deal 1d4 extra damage" / Reduce's "deal 1d4 less damage"
+ * (eshyra-erf5.4). Distinct from `mechanics.damage`, which is always damage a
+ * creature/effect directly deals.
+ */
+const WEAPON_DAMAGE_DELTA_RE =
+  /\battacks with (?:it|them) deal (\d+d\d+(?:\s*[+-]\s*\d+)?) (extra|less) damage/gi;
+
+function parseWeaponDamageModifiers(text: string): readonly Mechanics[] {
+  const out: Mechanics[] = [];
+  for (const match of text.matchAll(WEAPON_DAMAGE_DELTA_RE)) {
+    out.push({
+      dice: match[1].replace(/\s+/g, ' '),
+      operation: match[2].toLowerCase() === 'extra' ? 'increase' : 'decrease',
+    });
   }
   return out;
 }
@@ -255,6 +300,7 @@ function parseRecharge(name: string): Mechanics | undefined {
 export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
   const text = `${spell.description} ${spell.higherLevels ?? ''}`;
   const damage = parseDamage(text);
+  const weaponDamageModifiers = parseWeaponDamageModifiers(text);
   const save = parseSave(text);
   const conditions = parseConditions(text);
   const scaling = spell.higherLevels?.match(
@@ -267,6 +313,7 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     spellAttack: /\b(?:ranged|melee) spell attack\b/i.test(text),
     saves: save === undefined ? undefined : [save],
     damage,
+    weaponDamageModifiers,
     conditions,
     scaling,
   });

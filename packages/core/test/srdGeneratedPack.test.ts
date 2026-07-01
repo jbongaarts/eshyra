@@ -582,6 +582,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   { kind: 'creature', field: 'traits', missingCount: 55, totalInKind: 317 },
   { kind: 'creature', field: 'variants', missingCount: 315, totalInKind: 317 },
   { kind: 'equipment', field: 'ac', missingCount: 205, totalInKind: 218 },
+  // eshyra-rtgi: structured armorClass alongside the verbatim ac string, only
+  // on the 13 armor/shield records.
+  {
+    kind: 'equipment',
+    field: 'armorClass',
+    missingCount: 205,
+    totalInKind: 218,
+  },
   {
     kind: 'equipment',
     field: 'armorType',
@@ -621,6 +629,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 110,
     totalInKind: 218,
   },
+  // eshyra-erf5.3.2: the 41 items in a named SRD equipment group (5 arcane
+  // focus + 4 druidic focus + 3 holy symbol + 17 artisan's tools + 2 gaming
+  // set + 10 musical instruments) carry equipmentGroup; the other 177 do not.
+  {
+    kind: 'equipment',
+    field: 'equipmentGroup',
+    missingCount: 177,
+    totalInKind: 218,
+  },
   {
     kind: 'equipment',
     field: 'properties',
@@ -638,6 +655,19 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     kind: 'equipment',
     field: 'strengthRequirement',
     missingCount: 215,
+    totalInKind: 218,
+  },
+  // eshyra-erf5.3.1: only the 37 weapon records carry weaponCategory/Range.
+  {
+    kind: 'equipment',
+    field: 'weaponCategory',
+    missingCount: 181,
+    totalInKind: 218,
+  },
+  {
+    kind: 'equipment',
+    field: 'weaponRange',
+    missingCount: 181,
     totalInKind: 218,
   },
   { kind: 'equipment', field: 'weight', missingCount: 44, totalInKind: 218 },
@@ -726,6 +756,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-o9bd.8.3 adds thirteen more section-owning rules (four pantheons,
   // languages, coinage, getting-into-and-out-of-armor, ability-checks, speed,
   // trap-effects, hit-points, size, challenge-experience-points): 319 -> 306.
+  // eshyra-erf5.1: rule:skills alone carries the p78 skill-to-ability map.
+  {
+    kind: 'rule',
+    field: 'skillsByAbility',
+    missingCount: 334,
+    totalInKind: 335,
+  },
   {
     kind: 'rule',
     field: 'tableRefs',
@@ -2581,8 +2618,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         excludedPhrase: 'nature deities',
       },
       {
+        // eshyra-lpk9: this sidebar's body continues onto p34, so provenance
+        // now covers both pages instead of only its starting page.
         key: 'rule:paladin-breaking-your-oath',
-        locator: 'p. 33',
+        locator: 'pp. 33, 34',
         bodyPhrase: 'impenitent paladin',
         excludedPhrase: 'As a ranger, you gain the following class features',
       },
@@ -2593,8 +2632,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         excludedPhrase: 'As a wizard, you gain the following class features',
       },
       {
+        // eshyra-lpk9: this sidebar's body continues onto p55.
         key: 'rule:wizard-your-spellbook',
-        locator: 'p. 54',
+        locator: 'pp. 54, 55',
         bodyPhrase: 'the process takes 2 hours and costs 50 gp',
       },
     ];
@@ -2801,6 +2841,37 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         armorType: 'light',
         stealthDisadvantage: true,
         weight: '8 lb.',
+        armorClass: { base: 11, dexModifier: 'unlimited' },
+      });
+    });
+
+    // eshyra-rtgi: structured armorClass alongside the verbatim ac string,
+    // one representative per armor weight class plus the shield.
+    it('derives structured armorClass for light/medium/heavy armor and the shield', () => {
+      expect(
+        pack.records.find((r) => r.key === 'equipment:leather')?.data,
+      ).toMatchObject({
+        ac: '11 + Dex modifier',
+        armorClass: { base: 11, dexModifier: 'unlimited' },
+      });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:chain-shirt')?.data,
+      ).toMatchObject({
+        ac: '13 + Dex modifier (max 2)',
+        armorClass: { base: 13, dexModifier: 'capped', dexModifierCap: 2 },
+      });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:chain-mail')?.data,
+      ).toMatchObject({
+        ac: '16',
+        armorClass: { base: 16, dexModifier: 'none' },
+      });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:shield')?.data,
+      ).toMatchObject({
+        ac: '+2',
+        armorType: 'shield',
+        armorClass: { bonus: 2 },
       });
     });
 
@@ -2820,7 +2891,134 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         damageType: 'slashing',
         weight: '3 lb.',
         properties: ['Versatile (1d10)'],
+        weaponCategory: 'martial',
+        weaponRange: 'melee',
       });
+    });
+
+    // eshyra-erf5.3.1: every weapon carries its SRD simple/martial proficiency
+    // category and melee/ranged engagement range, derived from the Weapons
+    // table's four sub-headers rather than patched in by hand.
+    it('tags every weapon with its SRD simple/martial melee/ranged group', () => {
+      const weapons = equipment.filter(
+        (r) => (r.data as { category?: unknown }).category === 'weapon',
+      );
+      const counts = new Map<string, number>();
+      for (const weapon of weapons) {
+        const data = weapon.data as {
+          weaponCategory?: unknown;
+          weaponRange?: unknown;
+        };
+        expect(['simple', 'martial'], weapon.key).toContain(
+          data.weaponCategory,
+        );
+        expect(['melee', 'ranged'], weapon.key).toContain(data.weaponRange);
+        const bucket = `${data.weaponCategory}-${data.weaponRange}`;
+        counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
+      }
+      // The reviewed SRD 5.1 weapon table: 10 simple melee, 4 simple ranged,
+      // 18 martial melee, 5 martial ranged (37 total).
+      expect(Object.fromEntries(counts)).toEqual({
+        'simple-melee': 10,
+        'simple-ranged': 4,
+        'martial-melee': 18,
+        'martial-ranged': 5,
+      });
+      // One representative per group.
+      expect(category('equipment:club')).toBe('weapon');
+      expect(
+        pack.records.find((r) => r.key === 'equipment:club')?.data,
+      ).toMatchObject({ weaponCategory: 'simple', weaponRange: 'melee' });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:sling')?.data,
+      ).toMatchObject({ weaponCategory: 'simple', weaponRange: 'ranged' });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:battleaxe')?.data,
+      ).toMatchObject({ weaponCategory: 'martial', weaponRange: 'melee' });
+      // The Net is Martial Ranged despite having no damage die/type.
+      expect(
+        pack.records.find((r) => r.key === 'equipment:net')?.data,
+      ).toMatchObject({ weaponCategory: 'martial', weaponRange: 'ranged' });
+    });
+
+    // eshyra-erf5.3.2: named SRD equipment groups (arcane focus, druidic
+    // focus, holy symbol, artisan's tools, gaming set, musical instrument) are
+    // tagged with a structured equipmentGroup so starting-equipment filters
+    // and proficiency choices can enumerate candidates without prose/name
+    // heuristics.
+    it('tags every focus/symbol/instrument/tool group member with equipmentGroup', () => {
+      const byGroup = new Map<string, string[]>();
+      for (const item of equipment) {
+        const group = (item.data as { equipmentGroup?: unknown })
+          .equipmentGroup;
+        if (typeof group !== 'string') continue;
+        const bucket = byGroup.get(group) ?? [];
+        bucket.push(item.key);
+        byGroup.set(group, bucket);
+      }
+      expect(
+        Object.fromEntries(
+          [...byGroup].map(([group, keys]) => [group, keys.sort()]),
+        ),
+      ).toEqual({
+        'arcane-focus': [
+          'equipment:crystal',
+          'equipment:orb',
+          'equipment:rod',
+          'equipment:staff',
+          'equipment:wand',
+        ],
+        'druidic-focus': [
+          'equipment:sprig-of-mistletoe',
+          'equipment:totem',
+          'equipment:wooden-staff',
+          'equipment:yew-wand',
+        ],
+        'holy-symbol': [
+          'equipment:amulet',
+          'equipment:emblem',
+          'equipment:reliquary',
+        ],
+        'artisans-tools': [
+          'equipment:alchemists-supplies',
+          'equipment:brewers-supplies',
+          'equipment:calligraphers-supplies',
+          'equipment:carpenters-tools',
+          'equipment:cartographers-tools',
+          'equipment:cobblers-tools',
+          'equipment:cooks-utensils',
+          'equipment:glassblowers-tools',
+          'equipment:jewelers-tools',
+          'equipment:leatherworkers-tools',
+          'equipment:masons-tools',
+          'equipment:painters-supplies',
+          'equipment:potters-tools',
+          'equipment:smiths-tools',
+          'equipment:tinkers-tools',
+          'equipment:weavers-tools',
+          'equipment:woodcarvers-tools',
+        ],
+        'gaming-set': ['equipment:dice-set', 'equipment:playing-card-set'],
+        'musical-instrument': [
+          'equipment:bagpipes',
+          'equipment:drum',
+          'equipment:dulcimer',
+          'equipment:flute',
+          'equipment:horn',
+          'equipment:lute',
+          'equipment:lyre',
+          'equipment:pan-flute',
+          'equipment:shawm',
+          'equipment:viol',
+        ],
+      });
+      // Unrelated shared-description labels ("rope", "tent") must not leak
+      // into equipmentGroup — they describe why two items share prose, not a
+      // proficiency/filter category.
+      expect(
+        pack.records.find((r) => r.key === 'equipment:rope-hempen-50-feet')
+          ?.data,
+      ).not.toHaveProperty('equipmentGroup');
     });
 
     // loreweaver-4zu: the Adventuring Gear table is reconstructed from two
@@ -2851,6 +3049,23 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(pack.records.some((r) => r.key === 'equipment:arcane-focus')).toBe(
         false,
       );
+    });
+
+    // eshyra-erf5.4: the only name shared across the equipment/magic-item
+    // kinds. Each spelling is independently source-accurate for its own
+    // physical location — the Adventuring Gear table row prints item names
+    // in sentence case ("Potion of healing", p69), while the Magic Items A-Z
+    // section prints named entries as Title Case headings ("Potion of
+    // Healing", p234) — so this is NOT normalized to one spelling: doing so
+    // would misquote whichever source location it no longer matches.
+    it('keeps Potion of Healing at each kind’s own source capitalization (eshyra-erf5.4)', () => {
+      expect(
+        pack.records.find((r) => r.key === 'equipment:potion-of-healing')?.name,
+      ).toBe('Potion of healing');
+      expect(
+        pack.records.find((r) => r.key === 'magic-item:potion-of-healing')
+          ?.name,
+      ).toBe('Potion of Healing');
     });
 
     it('imports Mounts and Vehicles with per-table categories (loreweaver-4zu)', () => {
@@ -4231,7 +4446,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (ancestry?.data as { projection?: { rows?: unknown[] } }).projection
           ?.rows,
       ).toHaveLength(10);
-      expect(ancestry?.provenance.locator).toBe('p. 5');
+      // eshyra-lpk9: the table's page-5 caption is followed by Dragonborn
+      // ancestry-trait prose that continues onto p6, so provenance now
+      // reflects both pages instead of only the table's own starting page.
+      expect(ancestry?.provenance.locator).toBe('pp. 5, 6');
 
       const bloodline = table('table:draconic-bloodline-draconic-ancestry');
       expect(bloodline?.data).toMatchObject({
@@ -5533,10 +5751,12 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       return (record?.data as { text: string }).text;
     }
 
-    it('emits Acolyte as the only background record with p60 provenance', () => {
+    it('emits Acolyte as the only background record with p60-61 provenance', () => {
       expect(acolyte?.kind).toBe('background');
       expect(acolyte?.name).toBe('Acolyte');
-      expect(acolyte?.provenance.locator).toBe('p. 60');
+      // eshyra-lpk9: the Acolyte entry's suggested-characteristics tables
+      // continue onto p61, so provenance now covers both pages.
+      expect(acolyte?.provenance.locator).toBe('pp. 60, 61');
       expect(
         pack.records.filter((record) => record.kind === 'background'),
       ).toHaveLength(1);

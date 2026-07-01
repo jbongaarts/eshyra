@@ -47,6 +47,7 @@ import {
   writePackToDirectory,
   writeSourceCoverageArtifacts,
 } from './emit.js';
+import { enrichProvenanceFromRegionLedger } from './enrichProvenance.js';
 import { extractPdfText } from './extract.js';
 import { parseActions } from './parseActions.js';
 import { parseAncestries } from './parseAncestries.js';
@@ -75,6 +76,7 @@ import { parseSelfSufficiency } from './parseSelfSufficiency.js';
 import { parseSpellcastingServices } from './parseSpellcastingServices.js';
 import {
   applyClassLists,
+  parseSpellClassLevelLists,
   parseSpellClassLists,
   parseSpells,
 } from './parseSpells.js';
@@ -101,6 +103,10 @@ import {
   assertSourceRegionLedger,
   buildSourceRegionLedger,
 } from './sourceRegionLedger.js';
+import {
+  assertSpellListParity,
+  auditSpellListParity,
+} from './spellListParityAudit.js';
 import { addSemanticTableProjections } from './tableProjections.js';
 import type {
   AncestryExtraction,
@@ -3518,7 +3524,7 @@ export async function runImporter(
     if (!(error instanceof SectionNotFoundError)) throw error;
     // Multiclassing section absent: leave primaryAbilities empty.
   }
-  const pack = buildPack({
+  let pack = buildPack({
     spells,
     classIndex,
     spellClasses,
@@ -3591,6 +3597,27 @@ export async function runImporter(
       report: buildSourceCoverageReport(coverageEntries, pack.records),
       regionLedger,
     };
+    // Multi-page provenance enrichment (eshyra-lpk9): the region ledger just
+    // proved above already knows every page a record's own prose and child
+    // data occupy, so union that evidence into any record whose locator still
+    // names only its first page. Runs after the coverage/ledger gates (which
+    // read record.data, not provenance) so it cannot affect their pass/fail.
+    pack = {
+      ...pack,
+      records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+    };
+    // Class spell-list parity gate (eshyra-erf5.2): the source-coverage gate
+    // above only proves the spell-list PAGES are structurally accounted for
+    // (mostly via the `spell-list-header` ignore), not that the emitted
+    // `spell:*` records' class/level membership still matches what those
+    // pages actually print. Re-scan the same source pages independently of
+    // `applyClassLists` and fail closed on any drift.
+    assertSpellListParity(
+      auditSpellListParity(
+        parseSpellClassLevelLists(spellListPages),
+        pack.records.filter((record) => record.kind === 'spell'),
+      ),
+    );
   }
   writePackToDirectory(pack, { outDir: input.outDir });
   if (sourceCoverageArtifacts !== undefined) {

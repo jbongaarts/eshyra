@@ -39,12 +39,15 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import {
+  assertEquipmentResolution,
+  auditEquipmentResolution,
   auditHasFindings,
   auditPack,
   auditSrd,
   auditSrdChoiceProse,
   auditSrdPlayability,
   countSrdPlayabilityByCategory,
+  type EquipmentResolutionResult,
   formatAuditReport,
   formatSrdAuditReport,
   formatSrdChoiceProseReport,
@@ -891,6 +894,36 @@ function hasDeterministicGrants(record: RulesRecord): boolean {
   );
 }
 
+/**
+ * Nested creature mechanics projections (eshyra-txxa): actions, reactions,
+ * and legendary actions each carry their own `mechanics` object (attacks,
+ * saves, damage) independent of any top-level `data.mechanics`. Missing these
+ * undercounted `recordsWithMechanicsProjections` against the 314/317 figure
+ * used elsewhere in the audit docs, which does scan these nested arrays.
+ */
+function hasNestedCreatureMechanicsProjection(
+  data: Record<string, unknown>,
+): boolean {
+  if (
+    arrayValue(data.actions).some(
+      (action) => objectValue(objectValue(action)?.mechanics) !== null,
+    )
+  ) {
+    return true;
+  }
+  if (
+    arrayValue(data.reactions).some(
+      (reaction) => objectValue(objectValue(reaction)?.mechanics) !== null,
+    )
+  ) {
+    return true;
+  }
+  const legendaryActions = objectValue(data.legendaryActions);
+  return arrayValue(legendaryActions?.entries).some(
+    (entry) => objectValue(objectValue(entry)?.mechanics) !== null,
+  );
+}
+
 function hasMechanicsProjection(record: RulesRecord): boolean {
   const data = dataObject(record);
   if (data === null) return false;
@@ -903,7 +936,8 @@ function hasMechanicsProjection(record: RulesRecord): boolean {
   ) {
     return true;
   }
-  return objectValue(objectValue(data.feature)?.mechanics) !== null;
+  if (objectValue(objectValue(data.feature)?.mechanics) !== null) return true;
+  return hasNestedCreatureMechanicsProjection(data);
 }
 
 function hasPartialStructure(record: RulesRecord): boolean {
@@ -1061,6 +1095,30 @@ export function formatGameplayReadinessReport(
     for (const example of report.highImpactExamples) {
       lines.push(`${example.kind}: ${example.key} — ${example.signal}`);
     }
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * Format the equipment filter/proficiency resolution audit (eshyra-erf5.3.3)
+ * as a reviewable text report: every distinct starting-equipment filter and
+ * class equipment proficiency phrase, its candidate count, and up to 5
+ * representative candidate keys.
+ */
+export function formatEquipmentResolutionReport(
+  results: readonly EquipmentResolutionResult[],
+): string {
+  const lines = [
+    'SRD equipment filter / proficiency resolution',
+    '',
+    '| source | phrase | candidates | examples |',
+    '| --- | --- | ---: | --- |',
+  ];
+  for (const result of results) {
+    const examples = result.candidateKeys.slice(0, 5).join(', ') || '(none)';
+    lines.push(
+      `| ${result.source} | ${result.phrase} | ${result.candidateKeys.length} | ${examples} |`,
+    );
   }
   return `${lines.join('\n')}\n`;
 }
@@ -1379,6 +1437,7 @@ async function main(): Promise<void> {
   let gameplayReadinessReport: ReturnType<
     typeof buildGameplayReadinessReport
   > | null = null;
+  let equipmentResolutionResults: readonly EquipmentResolutionResult[] = [];
   try {
     const pack = loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
     playabilityFindings = auditSrdPlayability(pack);
@@ -1485,6 +1544,24 @@ async function main(): Promise<void> {
       'utf8',
     );
 
+    // Equipment filter / class-proficiency resolution audit (eshyra-erf5.3.3):
+    // proves every starting-equipment filter and class equipment proficiency
+    // phrase actually resolves to at least one catalog candidate. Throws
+    // (failing the bundle build) on a zero-candidate result or an unreviewed
+    // proficiency phrase — this is a fail-closed gate, not just a report.
+    equipmentResolutionResults = auditEquipmentResolution(pack);
+    assertEquipmentResolution(equipmentResolutionResults);
+    writeFileSync(
+      join(outDir, 'reports/equipment-resolution-audit.json'),
+      JSON.stringify(equipmentResolutionResults, null, 2),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/equipment-resolution-audit.txt'),
+      formatEquipmentResolutionReport(equipmentResolutionResults),
+      'utf8',
+    );
+
     log(
       `  Playability findings: ${playabilityFindings.length} (${srdPlayabilityHasFindings(playabilityFindings) ? 'NEEDS REVIEW' : 'clean'})`,
     );
@@ -1499,6 +1576,9 @@ async function main(): Promise<void> {
     );
     log(
       `  Gameplay-readiness kinds: ${Object.keys(gameplayReadinessReport.byKind).length}`,
+    );
+    log(
+      `  Equipment resolution: ${equipmentResolutionResults.length} filter/proficiency phrases, all resolved`,
     );
   } catch (cause) {
     const msg =

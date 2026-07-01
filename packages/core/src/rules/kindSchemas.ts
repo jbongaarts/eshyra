@@ -119,6 +119,59 @@ function optStrArray(parent: Obj, key: string, path: string): void {
   });
 }
 
+/** SRD 5.1's six ability scores, lowercase, as `rule:skills`' map keys. */
+const ABILITY_SCORE_KEYS: ReadonlySet<string> = new Set([
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+]);
+
+/**
+ * `rule:skills`' p78 skill-to-ability mapping (eshyra-erf5.1): an object keyed
+ * by lowercase ability name, each value a (possibly empty, e.g. Constitution)
+ * array of governing skill names.
+ */
+function optSkillsByAbility(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be a non-null object when present`,
+    );
+  }
+  const map = value as Obj;
+  for (const ability of Object.keys(map)) {
+    if (!ABILITY_SCORE_KEYS.has(ability)) {
+      throw new RulesPackError(
+        `${path}.${key} has unsupported ability key "${ability}"`,
+      );
+    }
+    const skills = map[ability];
+    if (!Array.isArray(skills)) {
+      throw new RulesPackError(`${path}.${key}.${ability} must be an array`);
+    }
+    skills.forEach((skill, i) => {
+      if (typeof skill !== 'string' || skill.length === 0) {
+        throw new RulesPackError(
+          `${path}.${key}.${ability}[${i}] must be a non-empty string`,
+        );
+      }
+    });
+  }
+  for (const ability of ABILITY_SCORE_KEYS) {
+    if (!(ability in map)) {
+      throw new RulesPackError(
+        `${path}.${key} is missing ability "${ability}"`,
+      );
+    }
+  }
+}
+
 function optNonEmptyStrArray(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) {
@@ -620,6 +673,25 @@ function optProficiencyNotes(parent: Obj, key: string, path: string): void {
   });
 }
 
+// The 13 canonical SRD 5.1 damage types (PH ch. 9 "Damage Types"). Shared
+// with the importer's own copy in mechanicsProjections.ts, which is what
+// keeps `parseDamage` from capturing non-damage adjectives (eshyra-erf5.4).
+const SRD_5_1_DAMAGE_TYPES: ReadonlySet<string> = new Set([
+  'acid',
+  'bludgeoning',
+  'cold',
+  'fire',
+  'force',
+  'lightning',
+  'necrotic',
+  'piercing',
+  'poison',
+  'psychic',
+  'radiant',
+  'slashing',
+  'thunder',
+]);
+
 function optMechanics(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -674,14 +746,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       }
     });
   }
-  for (const arrayKey of [
-    'attacks',
-    'saves',
-    'damage',
-    'resources',
-    'effects',
-    'hitDamage',
-  ]) {
+  for (const arrayKey of ['attacks', 'saves', 'resources', 'effects']) {
     const entries = objArray(mechanics, arrayKey, `${path}.${key}`);
     if (entries === undefined) continue;
     if (entries.length === 0) {
@@ -689,6 +754,53 @@ function optMechanics(parent: Obj, key: string, path: string): void {
         `${path}.${key}.${arrayKey} must not be empty when present`,
       );
     }
+  }
+  // `damage`/`hitDamage` entries are dealt damage, so `type` must be one of
+  // the 13 canonical SRD damage types — not any "<dice> <word> damage" match,
+  // which would also capture non-damage adjectives like Enlarge/Reduce's
+  // "1d4 extra damage" weapon-size flavor text (eshyra-erf5.4). That case is
+  // instead modeled as `weaponDamageModifiers` below.
+  for (const damageKey of ['damage', 'hitDamage']) {
+    const entries = objArray(mechanics, damageKey, `${path}.${key}`);
+    if (entries === undefined) continue;
+    if (entries.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.${damageKey} must not be empty when present`,
+      );
+    }
+    entries.forEach((entry, i) => {
+      const entryPath = `${path}.${key}.${damageKey}[${i}]`;
+      reqStr(entry, 'dice', entryPath);
+      const type = reqStr(entry, 'type', entryPath);
+      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+        throw new RulesPackError(
+          `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+        );
+      }
+    });
+  }
+  // A weapon-damage-die MODIFIER (Enlarge/Reduce), not damage dealt directly.
+  const weaponDamageModifiers = objArray(
+    mechanics,
+    'weaponDamageModifiers',
+    `${path}.${key}`,
+  );
+  if (weaponDamageModifiers !== undefined) {
+    if (weaponDamageModifiers.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.weaponDamageModifiers must not be empty when present`,
+      );
+    }
+    weaponDamageModifiers.forEach((entry, i) => {
+      const entryPath = `${path}.${key}.weaponDamageModifiers[${i}]`;
+      reqStr(entry, 'dice', entryPath);
+      const operation = reqStr(entry, 'operation', entryPath);
+      if (operation !== 'increase' && operation !== 'decrease') {
+        throw new RulesPackError(
+          `${entryPath}.operation must be "increase" or "decrease", got ${JSON.stringify(operation)}`,
+        );
+      }
+    });
   }
   const scaling = mechanics.scaling;
   if (scaling !== undefined) {
@@ -1055,6 +1167,7 @@ const BASE_KIND_VALIDATORS: Record<RulesRecordKind, Validator> = {
     const data = dataObj(record, path);
     reqStr(data, 'text', `${path}.data`);
     optStrArray(data, 'tableRefs', `${path}.data`);
+    optSkillsByAbility(data, 'skillsByAbility', `${path}.data`);
   },
   spell: baseObjectKind,
   // An abbreviated inline combat stat block (eshyra-4a7.4); baseline only
@@ -1268,6 +1381,28 @@ function validateDnd5eClass(record: RulesRecord, path: string): void {
   optSpellPreparation(data, 'spellPreparation', `${path}.data`);
 }
 
+// The closed vocabulary of named SRD gameplay-relevant equipment groups
+// (eshyra-erf5.3.2). The four focus/symbol/instrument groups match the
+// `StartingEquipmentFilterSelect` filter vocabulary exactly; artisan-tools and
+// gaming-set have no dedicated filter yet but are equally reviewed groups.
+const EQUIPMENT_GROUPS: ReadonlySet<string> = new Set([
+  'arcane-focus',
+  'druidic-focus',
+  'holy-symbol',
+  'artisans-tools',
+  'gaming-set',
+  'musical-instrument',
+]);
+
+// How (if at all) the Dexterity modifier applies to a non-shield armor's base
+// AC (eshyra-rtgi): light armor is unlimited, medium is capped (SRD 5.1 caps
+// every medium armor at +2), heavy applies none.
+const ARMOR_DEX_MODIFIER_KINDS: ReadonlySet<string> = new Set([
+  'none',
+  'unlimited',
+  'capped',
+]);
+
 /**
  * Equipment is otherwise schema-permissive (varied category fields); this
  * validator only enforces the typed pack `contents` when present (eshyra-ngcj.4):
@@ -1277,22 +1412,84 @@ function validateDnd5eClass(record: RulesRecord, path: string): void {
 function validateDnd5eEquipment(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   const contents = data.contents;
-  if (contents === undefined) return;
-  if (!Array.isArray(contents) || contents.length === 0) {
-    throw new RulesPackError(
-      `${path}.data.contents must be a non-empty array when present`,
-    );
-  }
-  contents.forEach((entry, i) => {
-    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
-      throw new RulesPackError(`${path}.data.contents[${i}] must be an object`);
+  if (contents !== undefined) {
+    if (!Array.isArray(contents) || contents.length === 0) {
+      throw new RulesPackError(
+        `${path}.data.contents must be a non-empty array when present`,
+      );
     }
-    const content = entry as Obj;
-    reqStr(content, 'name', `${path}.data.contents[${i}]`);
-    reqInt(content, 'quantity', `${path}.data.contents[${i}]`, 1);
-    optStr(content, 'ref', `${path}.data.contents[${i}]`);
-    optStr(content, 'detail', `${path}.data.contents[${i}]`);
-  });
+    contents.forEach((entry, i) => {
+      if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+        throw new RulesPackError(
+          `${path}.data.contents[${i}] must be an object`,
+        );
+      }
+      const content = entry as Obj;
+      reqStr(content, 'name', `${path}.data.contents[${i}]`);
+      reqInt(content, 'quantity', `${path}.data.contents[${i}]`, 1);
+      optStr(content, 'ref', `${path}.data.contents[${i}]`);
+      optStr(content, 'detail', `${path}.data.contents[${i}]`);
+    });
+  }
+  // Every weapon carries its SRD proficiency category (simple/martial) and
+  // engagement range (melee/ranged) so class proficiencies and
+  // starting-equipment filters can resolve deterministically (eshyra-erf5.3.1).
+  if (data.category === 'weapon') {
+    const weaponCategory = data.weaponCategory;
+    if (
+      typeof weaponCategory !== 'string' ||
+      !WEAPON_CATEGORIES.has(weaponCategory)
+    ) {
+      throw new RulesPackError(
+        `${path}.data.weaponCategory must be "simple" or "martial"`,
+      );
+    }
+    const weaponRange = data.weaponRange;
+    if (typeof weaponRange !== 'string' || !WEAPON_RANGES.has(weaponRange)) {
+      throw new RulesPackError(
+        `${path}.data.weaponRange must be "melee" or "ranged"`,
+      );
+    }
+  }
+  if (data.equipmentGroup !== undefined) {
+    if (
+      typeof data.equipmentGroup !== 'string' ||
+      !EQUIPMENT_GROUPS.has(data.equipmentGroup)
+    ) {
+      throw new RulesPackError(
+        `${path}.data.equipmentGroup must be one of ${[...EQUIPMENT_GROUPS].join(', ')}`,
+      );
+    }
+  }
+  // Deterministic armor-calculation data (eshyra-rtgi): a shield's
+  // `armorClass` is an add-on bonus (it has no base AC of its own — it adds
+  // to whatever AC the wearer already has); every other armor type carries a
+  // base AC plus how (if at all) the Dexterity modifier applies.
+  if (data.category === 'armor') {
+    const armorClass = reqObj(data, 'armorClass', `${path}.data`);
+    if (data.armorType === 'shield') {
+      reqInt(armorClass, 'bonus', `${path}.data.armorClass`, 1);
+    } else {
+      reqInt(armorClass, 'base', `${path}.data.armorClass`, 1);
+      const dexModifier = reqStr(
+        armorClass,
+        'dexModifier',
+        `${path}.data.armorClass`,
+      );
+      if (!ARMOR_DEX_MODIFIER_KINDS.has(dexModifier)) {
+        throw new RulesPackError(
+          `${path}.data.armorClass.dexModifier must be one of ${[...ARMOR_DEX_MODIFIER_KINDS].join(', ')}`,
+        );
+      }
+      if (dexModifier === 'capped') {
+        reqInt(armorClass, 'dexModifierCap', `${path}.data.armorClass`, 0);
+      } else if (armorClass.dexModifierCap !== undefined) {
+        throw new RulesPackError(
+          `${path}.data.armorClass.dexModifierCap is only valid when dexModifier is "capped"`,
+        );
+      }
+    }
+  }
 }
 
 function validateDnd5eCondition(record: RulesRecord, path: string): void {

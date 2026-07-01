@@ -51,6 +51,16 @@ export interface SourceRegionLedgerEntry {
   readonly targetKey?: string;
   readonly ignoreReason?: string;
   readonly guardNotes?: string;
+  /**
+   * True when `targetKey` came from a document-wide text-content search
+   * (`findRepresentingRecord`) rather than from the region's own owning
+   * heading. A content match proves the region's TEXT was reproduced
+   * somewhere in the target record's data (e.g. a spell-list page's names
+   * also projected into a table's rows); it says nothing about which PAGE
+   * that record's own content lives on, so consumers computing a record's
+   * physical page span (eshyra-lpk9) must exclude these entries.
+   */
+  readonly contentMatch?: boolean;
 }
 
 export interface SourceRegionLedger {
@@ -175,8 +185,36 @@ function updateHeadingPath(
   return [...path.slice(0, rank), item.text];
 }
 
+/**
+ * True when `owner` is a sidebar/callout heading that `sourceInventory.ts`
+ * classified as a `table-caption` (eshyra-5c7f). Sidebar box body prose
+ * renders in the same h≈8.9 table-cell band as real table rows/cells (see
+ * `isTableCell`'s own doc comment), so a heading immediately followed by a
+ * sidebar's body reads exactly like a heading immediately followed by a real
+ * table. For a GENUINE table caption this is correct — its rows are already
+ * accounted for by the emitted `table:` record, so skipping them here avoids
+ * double-counting. But a sidebar has no such `table:` record: skipping its
+ * body the same way silently drops the only prose that could ever attribute
+ * a ledger entry to it, so its heading gets a correct coverage status but
+ * zero owned ledger entries. Tier is the reliable discriminator: every
+ * `table-caption` item this misclassifies as sidebar prose is `tier:
+ * 'sidebar'` (h≈10.8), while every genuine table caption is `tier: 'leaf'`
+ * or higher.
+ */
+function isSidebarBodyOwner(owner: ActiveOwner | undefined): boolean {
+  return (
+    owner !== undefined &&
+    owner.item.tier === 'sidebar' &&
+    owner.item.structure === 'table-caption'
+  );
+}
+
 function regionTypeForOwner(owner: ActiveOwner | undefined): SourceRegionType {
   if (owner === undefined) return 'orphan-prose';
+  // A sidebar's body is the record's own text, not a preface to a table that
+  // doesn't exist (eshyra-5c7f) — check this before the general table-caption
+  // case below.
+  if (isSidebarBodyOwner(owner)) return 'record-body';
   if (owner.item.structure === 'table-caption') return 'table-preface';
   if (/^Appendix\b/.test(owner.item.text)) return 'appendix-intro';
   if (owner.item.tier === 'chapter') return 'chapter-intro';
@@ -190,37 +228,18 @@ function regionTypeForOwner(owner: ActiveOwner | undefined): SourceRegionType {
   return 'record-body';
 }
 
-function classifyRegion(
+/**
+ * Classify a region using only its owning heading's coverage status — never
+ * the document-wide content search. Factored out so `classifyRegion` can
+ * compare a content-search match against what the owner alone would have
+ * produced (eshyra-lpk9's `contentMatch` discriminator).
+ */
+function classifyRegionByOwner(
   owner: ActiveOwner | undefined,
-  pageStart: number,
-  body: string,
-  searchableRecords: readonly SearchableRecord[],
 ): Pick<
   SourceRegionLedgerEntry,
   'classification' | 'targetKey' | 'ignoreReason' | 'guardNotes'
 > {
-  if (pageStart <= FRONT_MATTER_MAX_PAGE) {
-    return {
-      classification: 'intentionally-ignored:front-matter',
-      ignoreReason: 'front-matter',
-      guardNotes: 'Front-matter prose is outside SRD rules content.',
-    };
-  }
-
-  const representedRecordKey = findRepresentingRecord(
-    body,
-    owner,
-    searchableRecords,
-  );
-  if (representedRecordKey !== undefined) {
-    return {
-      classification: `record:${representedRecordKey}`,
-      targetKey: representedRecordKey,
-      guardNotes:
-        'Region text is contained in generated record data; heading status alone was not used.',
-    };
-  }
-
   if (owner === undefined) {
     return {
       classification: 'unrepresented',
@@ -297,6 +316,63 @@ function classifyRegion(
     classification: 'unrepresented',
     guardNotes: `Owning source structure has non-covering status ${owner.status}.`,
   };
+}
+
+function classifyRegion(
+  owner: ActiveOwner | undefined,
+  pageStart: number,
+  body: string,
+  searchableRecords: readonly SearchableRecord[],
+): Pick<
+  SourceRegionLedgerEntry,
+  | 'classification'
+  | 'targetKey'
+  | 'ignoreReason'
+  | 'guardNotes'
+  | 'contentMatch'
+> {
+  if (pageStart <= FRONT_MATTER_MAX_PAGE) {
+    return {
+      classification: 'intentionally-ignored:front-matter',
+      ignoreReason: 'front-matter',
+      guardNotes: 'Front-matter prose is outside SRD rules content.',
+    };
+  }
+
+  const ownerBased = classifyRegionByOwner(owner);
+  const representedRecordKey = findRepresentingRecord(
+    body,
+    owner,
+    searchableRecords,
+  );
+  if (representedRecordKey !== undefined) {
+    // A same-named heading disambiguates to `ambiguous:a|b` (no single
+    // owner-implied key); the content search choosing one of those exact
+    // candidates (e.g. "Ready" -> action:ready vs rule:ready) is a genuine,
+    // intended disambiguation, not a cross-reference.
+    const ambiguousCandidates = owner?.status.startsWith('ambiguous:')
+      ? owner.status.slice('ambiguous:'.length).split('|')
+      : [];
+    // A content match that lands on the SAME key the owner already implies
+    // (or on one of an ambiguous owner's own candidates) is just confirming
+    // genuine physical containment — safe for page-span purposes. A match on
+    // a DIFFERENT, unrelated key is a document-wide cross-reference (e.g. a
+    // spell-list page's names also projected into an unrelated table's rows
+    // far earlier in the document) and must be flagged (eshyra-lpk9's
+    // `contentMatch`) so page-span consumers exclude it.
+    const isSelfConsistent =
+      ownerBased.targetKey === representedRecordKey ||
+      ambiguousCandidates.includes(representedRecordKey);
+    return {
+      classification: `record:${representedRecordKey}`,
+      targetKey: representedRecordKey,
+      guardNotes:
+        'Region text is contained in generated record data; heading status alone was not used.',
+      ...(isSelfConsistent ? {} : { contentMatch: true }),
+    };
+  }
+
+  return ownerBased;
 }
 
 function classChildDataKey(owner: ActiveOwner): string | undefined {
@@ -661,7 +737,7 @@ export function buildSourceRegionLedger(
     if (
       line.text.length === 0 ||
       classifyTier(line.height) !== null ||
-      isTableCell(line.height)
+      (isTableCell(line.height) && !isSidebarBodyOwner(owner))
     ) {
       flushRegion();
       continue;

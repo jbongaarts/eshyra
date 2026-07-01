@@ -389,6 +389,7 @@ export {
   getBackgroundCreationFacts,
   SRD_5_1_ARTISAN_TOOLS,
   SRD_5_1_MUSICAL_INSTRUMENTS,
+  SRD_5_1_SKILL_ABILITIES,
   SRD_5_1_SKILLS,
   SRD_5_1_STANDARD_LANGUAGES,
 } from './character/srdCreationChoices.js';
@@ -859,6 +860,16 @@ export {
   formatSrdChoiceProseReport,
   srdChoiceProseHasFindings,
 } from './rules/srdChoiceProseAudit.js';
+export type {
+  EquipmentResolutionResult,
+  EquipmentResolutionSource,
+} from './rules/srdEquipmentResolutionAudit.js';
+export {
+  assertEquipmentResolution,
+  auditEquipmentResolution,
+  EquipmentResolutionEmptyError,
+  UnresolvedProficiencyPhraseError,
+} from './rules/srdEquipmentResolutionAudit.js';
 export type {
   SrdPlayabilityAudit,
   SrdPlayabilityCategory,

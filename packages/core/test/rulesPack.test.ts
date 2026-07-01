@@ -433,6 +433,185 @@ describe('rules pack validation', () => {
     ).toThrow(/tableRefs/);
   });
 
+  it('rejects a non-canonical mechanics.damage type (eshyra-erf5.4)', () => {
+    const spell = record('spell:example', {
+      kind: 'spell',
+      name: 'Example',
+      data: {
+        level: 1,
+        school: 'evocation',
+        castingTime: '1 action',
+        range: '30 feet',
+        components: ['V', 'S'],
+        duration: 'Instantaneous',
+        classes: ['Wizard'],
+        mechanics: { damage: [{ dice: '1d4', type: 'extra' }] },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [spell] })),
+    ).toThrow(/damage\[0\]\.type must be a canonical SRD damage type/);
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...spell,
+              data: {
+                ...spell.data,
+                mechanics: {
+                  damage: [{ dice: '1d4', type: 'fire' }],
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('accepts spell weaponDamageModifiers and rejects an unknown operation (eshyra-erf5.4)', () => {
+    const spell = record('spell:enlarge-reduce', {
+      kind: 'spell',
+      name: 'Enlarge/Reduce',
+      data: {
+        level: 2,
+        school: 'transmutation',
+        castingTime: '1 action',
+        range: '30 feet',
+        components: ['V', 'S', 'M'],
+        duration: 'Concentration, up to 1 minute',
+        classes: ['Sorcerer', 'Wizard'],
+        mechanics: {
+          weaponDamageModifiers: [{ dice: '1d4', operation: 'increase' }],
+        },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [spell] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...spell,
+              data: {
+                ...spell.data,
+                mechanics: {
+                  weaponDamageModifiers: [{ dice: '1d4', operation: 'more' }],
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/weaponDamageModifiers\[0\]\.operation/);
+  });
+
+  it('requires structured armorClass on armor/shield equipment (eshyra-rtgi)', () => {
+    const leather = record('equipment:leather', {
+      kind: 'equipment',
+      name: 'Leather',
+      data: {
+        category: 'armor',
+        ac: '11 + Dex modifier',
+        armorType: 'light',
+        armorClass: { base: 11, dexModifier: 'unlimited' },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [leather] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            { ...leather, data: { ...leather.data, armorClass: undefined } },
+          ],
+        }),
+      ),
+    ).toThrow(/armorClass/);
+  });
+
+  it('requires a valid dexModifier kind and rejects a stray dexModifierCap (eshyra-rtgi)', () => {
+    const base = record('equipment:example-armor', {
+      kind: 'equipment',
+      name: 'Example Armor',
+      data: {
+        category: 'armor',
+        ac: '16',
+        armorType: 'heavy',
+        armorClass: { base: 16, dexModifier: 'none' },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [base] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...base,
+              data: {
+                ...base.data,
+                armorClass: { base: 16, dexModifier: 'bogus' },
+              },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/dexModifier must be one of/);
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...base,
+              data: {
+                ...base.data,
+                armorClass: {
+                  base: 16,
+                  dexModifier: 'none',
+                  dexModifierCap: 2,
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/dexModifierCap is only valid when dexModifier is "capped"/);
+  });
+
+  it('requires a shield armorClass to carry a bonus, not a base/dexModifier', () => {
+    const shield = record('equipment:shield', {
+      kind: 'equipment',
+      name: 'Shield',
+      data: {
+        category: 'armor',
+        ac: '+2',
+        armorType: 'shield',
+        armorClass: { bonus: 2 },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [shield] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...shield,
+              data: { ...shield.data, armorClass: { base: 2 } },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/armorClass\.bonus/);
+  });
+
   it('rejects dnd5e action records missing a description', () => {
     const pack = validRulesPack({
       records: [

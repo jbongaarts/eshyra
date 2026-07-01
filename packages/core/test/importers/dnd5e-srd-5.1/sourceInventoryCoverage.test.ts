@@ -243,9 +243,11 @@ describe('evaluateSourceCoverage — rules and defaults', () => {
     ]);
   });
 
-  it('applies ignore, known-gap, and child-of rules in order after auto-match', () => {
+  it('applies ignore, known-gap, and child-of rules in list order ahead of the auto-match', () => {
     const inventory = [
-      item({ text: 'Aboleth' }), // auto-match wins even though a rule would also match
+      // eshyra-erf5.1: a curated rule outranks the auto-match even though a
+      // same-named record ("creature:aboleth") exists.
+      item({ text: 'Aboleth' }),
       item({ text: 'Wizard Spells', lineIndex: 1 }),
       item({ text: 'Figurine of Wondrous Power', lineIndex: 2 }),
       item({
@@ -256,6 +258,7 @@ describe('evaluateSourceCoverage — rules and defaults', () => {
       }),
     ];
     const entries = evaluateSourceCoverage(inventory, records, [
+      ignoreRule('curated-override', (i) => i.text === 'Aboleth'),
       ignoreRule('spell-list-header', (i) => / Spells$/.test(i.text)),
       knownGapRule(
         'eshyra-4a7.8',
@@ -265,11 +268,9 @@ describe('evaluateSourceCoverage — rules and defaults', () => {
         'magic-item:ring-of-resistance',
         (i) => i.structure === 'table-shape',
       ),
-      // A later rule matching an already-matched item must not override.
-      ignoreRule('too-late', (i) => i.text === 'Aboleth'),
     ]);
     expect(entries.map((e) => e.status)).toEqual([
-      { kind: 'record', key: 'creature:aboleth' },
+      { kind: 'ignored', reason: 'curated-override' },
       { kind: 'ignored', reason: 'spell-list-header' },
       { kind: 'known-gap', beadId: 'eshyra-4a7.8' },
       { kind: 'child-of', key: 'magic-item:ring-of-resistance' },
@@ -401,9 +402,14 @@ describe('evaluateSourceCoverage — rules and defaults', () => {
     ]);
   });
 
-  it('keeps non-record rules behind the auto-match', () => {
-    // Hoisting applies ONLY to record-type rules: an ignore/known-gap rule
-    // matching a record-named heading must not steal it from the auto-match.
+  it('lets non-record rules outrank the auto-match, first rule in list order winning', () => {
+    // eshyra-erf5.1: a curated rule is more precise than the bare-name
+    // heuristic and must win even when a record of the same name exists —
+    // otherwise a same-named-but-unrelated record can silently swallow a
+    // source item a curated rule already classifies (the p78 Skills-caption
+    // "Strength"/"Dexterity"/... headings vs the real per-ability rule
+    // records of the same name). Multiple matching rules resolve first-match
+    // wins, same as record-type rules.
     const entries = evaluateSourceCoverage(
       [item({ text: 'Aboleth' })],
       records,
@@ -413,8 +419,8 @@ describe('evaluateSourceCoverage — rules and defaults', () => {
       ],
     );
     expect(entries[0].status).toEqual({
-      kind: 'record',
-      key: 'creature:aboleth',
+      kind: 'ignored',
+      reason: 'would-shadow',
     });
   });
 

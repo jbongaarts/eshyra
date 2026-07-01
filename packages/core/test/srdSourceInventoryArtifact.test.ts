@@ -257,7 +257,27 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // 1452 -> 1453 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection, split
     // out of feature:rogue:sneak-attack into its own feature:rogue:thieves-cant
     // record, now maps to that record instead of riding in Sneak Attack's body.
-    expect(coverage.summary.record).toBe(1453);
+    // 1453 -> 1444 (eshyra-erf5.1): curated non-record rules (child-of/ignore/
+    // taxonomy/known-gap) now outrank the bare-name auto-match, the same as
+    // record-type rules already did — a same-named-but-unrelated record must
+    // not silently swallow a source item a curated rule already classifies.
+    // This resurrects several previously-dead-but-correct curated rules: the
+    // p78 five per-ability "Skills" bullet captions move to child-of
+    // rule:skills instead of the unrelated same-named per-ability rule records
+    // (-5); "Two-Weapon Fighting" under Fighter/Ranger moves child-of its
+    // owning feature:*:fighting-style instead of the unrelated general combat
+    // rule:two-weapon-fighting (-2); the Equipment "Tools" and Spellcasting-
+    // section "Poisons" table captions move to the existing
+    // table-rows-emitted-as-records ignore instead of the unrelated same-named
+    // rule:tools / rule:poisons (-2). One stale curated rule that would have
+    // wrongly resurfaced (a `feature:rogue:sneak-attack` child-of predicate for
+    // "Thieves' Cant" written before that text got its own
+    // feature:rogue:thieves-cant record) was removed, and the eldritch-
+    // invocations page-range rule gained two exclusions for "Dark One's
+    // Blessing" / "Dark One's Own Luck" (The Fiend's own p50 features,
+    // interleaved with the invocation list) so both keep resolving to their
+    // real feature:the-fiend:* records via the auto-match.
+    expect(coverage.summary.record).toBe(1444);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // map child-of their owning feature/subclass records (the text rides in
@@ -266,7 +286,11 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // subclass:oath-of-devotion (its prose is a named section on that record).
     // 456 -> 455 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection no longer
     // rides child-of Sneak Attack; it is its own feature record (see `record`).
-    expect(coverage.summary.childOf).toBe(455);
+    // 455 -> 462 (eshyra-erf5.1): the same reordering fix moves the seven
+    // record-count decreases above (minus the two that landed in `ignored`)
+    // into `childOf` instead: the five p78 ability captions (+5) and the two
+    // Two-Weapon Fighting headings (+2).
+    expect(coverage.summary.childOf).toBe(462);
     expect(coverage.summary.ambiguous).toBe(187);
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.unaccounted).toBe(0);
@@ -294,13 +318,18 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // region ledger follow-up removes equipment-category-heading and subclass-
     // spell-table-heading by mapping those headings to emitted rules, and moves
     // Adventuring Gear out of table-rows-emitted-as-records.
+    // eshyra-erf5.1: table-rows-emitted-as-records 11 -> 13. The Equipment
+    // "Tools" and Spellcasting-section "Poisons" table captions now resolve to
+    // this pre-existing (previously dead) ignore rule instead of the
+    // unrelated same-named rule:tools / rule:poisons prose records — see the
+    // `record` count comment above.
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
       'document-structure': 29,
       'front-matter': 2,
       'spell-list-header': 78,
-      'table-rows-emitted-as-records': 11,
+      'table-rows-emitted-as-records': 13,
     });
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
@@ -455,6 +484,63 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     expect(frontMatter).toBeDefined();
     expect(frontMatter?.normalizedCharCount).toBeGreaterThan(0);
     expect(frontMatter?.ignoreReason).toBe('front-matter');
+  });
+
+  it('gives every sidebar callout a ledger entry keyed to its emitted record (eshyra-5c7f)', () => {
+    // Sidebar box body prose renders in the same h≈8.9 table-cell band as real
+    // table rows, so a heading immediately followed by a sidebar body used to
+    // look exactly like a heading immediately followed by a real table and
+    // its body was silently skipped as table-row noise — the heading still
+    // got a correct `record:`/`child-of:` coverage status, but zero ledger
+    // entries ever cited it, so `source-region-ledger.json` could claim
+    // `unrepresented: 0` while genuinely never having looked at these 19
+    // regions (17 named in the bead plus two incidental creature-variant
+    // sidebars the same fix naturally covers).
+    const targetKeys = [
+      'rule:druid-sacred-plants-and-wood',
+      'rule:druid-druids-and-the-gods',
+      'rule:paladin-breaking-your-oath',
+      'rule:warlock-your-pact-boon',
+      'rule:wizard-your-spellbook',
+      'rule:equipment-packs',
+      'rule:self-sufficiency',
+      'rule:hiding',
+      'rule:combat-step-by-step',
+      'rule:interacting-with-objects-around-you',
+      'rule:contests-in-combat',
+      'rule:casting-in-armor',
+      'rule:the-schools-of-magic',
+      'rule:modifying-creatures',
+      'rule:armor-weapon-and-tool-proficiencies',
+      'rule:grapple-rules-for-monsters',
+      'condition:exhaustion',
+      'creature:giant-rat',
+      'creature:swarm-of-insects',
+    ];
+    for (const targetKey of targetKeys) {
+      const entries = sourceRegionLedger.entries.filter(
+        (entry) => entry.targetKey === targetKey,
+      );
+      expect(entries.length, targetKey).toBeGreaterThan(0);
+      for (const entry of entries) {
+        expect(entry.normalizedCharCount, targetKey).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('includes the p23/p34/p55 sidebar continuation pages in source evidence (eshyra-5c7f)', () => {
+    // "Druids and the Gods" (p23), "Breaking Your Oath" (p33-34), and "Your
+    // Spellbook" (p54-55) are each sidebars whose body text continues onto a
+    // second page; the same fix that gives the sidebar a ledger entry at all
+    // naturally carries its continuation page along, since the region ledger
+    // attributes prose to the active owning heading regardless of page
+    // breaks.
+    for (const page of [23, 34, 55]) {
+      const entries = sourceRegionLedger.entries.filter(
+        (entry) => entry.pageStart <= page && page <= entry.pageEnd,
+      );
+      expect(entries.length, `page ${page}`).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -788,7 +874,15 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
     // stat-blocks to their creature records, removing the two false
     // background/class collapse groups (56 -> 54).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(15);
+    // eshyra-erf5.1: 15 -> 7. Curated non-record rules now outrank the
+    // bare-name auto-match (see the `record`/`childOf` summary comments
+    // above), so eight of these bare-name collapse groups are no longer
+    // uniform "N source items -> 1 record" groups: the five p78 ability
+    // captions (Strength/Dexterity/Intelligence/Wisdom/Charisma) and
+    // "Two-Weapon Fighting" now split between their curated child-of target
+    // and the real per-topic rule record, and "Tools" / "Poisons" now split
+    // between the table-rows-emitted-as-records ignore and the real rule.
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(7);
     expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(75);
   });
 

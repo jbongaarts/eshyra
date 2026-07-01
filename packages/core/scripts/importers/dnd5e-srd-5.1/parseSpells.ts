@@ -456,13 +456,29 @@ export function parseSpells(pages: readonly PageText[]): SpellExtraction[] {
  *
  * The caller is responsible for slicing input to the class-lists section.
  */
-export function parseSpellClassLists(
+/** One spell-list entry as printed: a spell name under a class/level heading. */
+export interface SpellClassLevelEntry {
+  readonly spellName: string;
+  readonly casterClass: SpellCasterClass;
+  /** 0 for a cantrip, otherwise the printed "Nth Level" number. */
+  readonly level: number;
+}
+
+/**
+ * Scan the SRD 5.1 per-class spell-list pages (p105-113) and return every
+ * (spell name, class, level) triple exactly as printed, in reading order.
+ * The lower-level primitive both `parseSpellClassLists` (which only needs
+ * name -> classes, for `applyClassLists`) and the spell-list parity audit
+ * (eshyra-erf5.2, which also needs level) are built on, so both read the same
+ * scan instead of drifting apart.
+ */
+export function parseSpellClassLevelLists(
   pages: readonly PageText[],
-): SpellClassIndex {
+): readonly SpellClassLevelEntry[] {
   const flat = flatten(pages);
-  const index = new Map<string, Set<SpellCasterClass>>();
+  const out: SpellClassLevelEntry[] = [];
   let currentClass: SpellCasterClass | undefined;
-  let inLevelSubsection = false;
+  let currentLevel: number | undefined;
   for (const { line } of flat) {
     if (line.length === 0) {
       continue;
@@ -470,28 +486,46 @@ export function parseSpellClassLists(
     const classHeader = CLASS_SECTION_HEADER.exec(line);
     if (classHeader !== null) {
       currentClass = classHeader[1] as SpellCasterClass;
-      inLevelSubsection = false;
+      currentLevel = undefined;
       continue;
     }
     if (currentClass === undefined) continue;
-    if (CANTRIP_LEVEL_HEADER.test(line) || NUMBERED_LEVEL_HEADER.test(line)) {
-      inLevelSubsection = true;
+    if (CANTRIP_LEVEL_HEADER.test(line)) {
+      currentLevel = 0;
       continue;
     }
-    if (inLevelSubsection === false) continue;
+    const numberedLevel = NUMBERED_LEVEL_HEADER.exec(line);
+    if (numberedLevel !== null) {
+      currentLevel = Number(numberedLevel[1]);
+      continue;
+    }
+    if (currentLevel === undefined) continue;
     if (isLikelySpellName(line) === false) {
       // Unknown line shape inside a class section; conservatively reset state
       // so we don't pick up unrelated text as spell names.
-      inLevelSubsection = false;
+      currentLevel = undefined;
       continue;
     }
-    const name = line.trim();
-    let bucket = index.get(name);
+    out.push({
+      spellName: line.trim(),
+      casterClass: currentClass,
+      level: currentLevel,
+    });
+  }
+  return out;
+}
+
+export function parseSpellClassLists(
+  pages: readonly PageText[],
+): SpellClassIndex {
+  const index = new Map<string, Set<SpellCasterClass>>();
+  for (const entry of parseSpellClassLevelLists(pages)) {
+    let bucket = index.get(entry.spellName);
     if (bucket === undefined) {
       bucket = new Set();
-      index.set(name, bucket);
+      index.set(entry.spellName, bucket);
     }
-    bucket.add(currentClass);
+    bucket.add(entry.casterClass);
   }
   return index;
 }
@@ -553,7 +587,7 @@ export function applyClassLists(
   return { withClasses: out, classes };
 }
 
-function normalizeSpellListName(name: string): string {
+export function normalizeSpellListName(name: string): string {
   return name.replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
