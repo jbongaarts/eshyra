@@ -185,7 +185,12 @@ Prerequisites for repository work:
 
 - Node.js 24 LTS (`>=24 <25`).
 - npm.
-- A C++ toolchain only if `better-sqlite3` cannot use its Node 24 prebuild.
+- A C/C++ toolchain (e.g. `build-essential` on Linux, Xcode Command Line
+  Tools on macOS, Visual Studio Build Tools on Windows) and Python 3, needed
+  by `node-gyp` to compile the `better-sqlite3` native addon from source. The
+  repo's `.npmrc` sets `build-from-source=true`
+  ([ADR 0016](docs/adr/0016-native-dependency-install-policy-by-environment.md)),
+  so this is required for every `npm ci`/`npm install`, not just a fallback.
 - Dolt is optional; Dolt-gated tests skip when the binary is absent.
 
 Install and verify from a checkout:

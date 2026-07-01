@@ -34,7 +34,8 @@ routine dependency PR.
 
 `better-sqlite3` major updates are ignored by Dependabot. Open those manually
 only as part of a Node runtime/native dependency decision, because the Node
-engine range, CI runtime, and native prebuild availability must move together.
+engine range, CI runtime, and native source-build compatibility must move
+together.
 Semver-major updates for `@types/node`, `@biomejs/biome`, and `typescript` are
 also ignored by Dependabot and must be opened manually or separately. These
 updates can change the supported runtime contract, formatter/linter behavior,
@@ -66,23 +67,29 @@ with the supported Node runtime:
 - Node 24 LTS is the supported runtime for this release line.
 - Root and workspace `engines.node` ranges stay at `>=24 <25`.
 - `@types/node` stays on 24.x while the engine range targets Node 24.
-- CI runs on Node 24 and sets `npm_config_build_from_source=false`.
-- The selected `better-sqlite3` line must provide prebuilt binaries for the
-  supported CI and release platforms.
+- CI runs on Node 24. The root `.npmrc` sets `build-from-source=true`, so
+  every `npm ci`/`npm install` (contributor machines, `ci.yml`, and
+  `release.yml` alike) compiles `better-sqlite3` from source rather than
+  downloading a `prebuild-install` prebuilt binary (ADR 0016). A working C/C++
+  toolchain is required everywhere `npm ci` runs.
+- The selected `better-sqlite3` line must still compile cleanly from source
+  for the supported CI and release platforms; prebuilt-binary availability is
+  no longer the primary install path but remains a documented recovery option
+  (see ADR 0016) if source-build-first is ever reversed.
 
-If an update causes `better-sqlite3` to fall back to `node-gyp` source
-compilation in the dev/test CI workflow (`.github/workflows/ci.yml`), treat
-that as a regression unless a bead explicitly changes the runtime/native
-support policy — contributor machines are not guaranteed to have a working
-toolchain. Release CI (`.github/workflows/release.yml`) is not held to the
-same hard-fail rule: its runners are fixed, toolchain-equipped images for the
-supported release targets, so a controlled source-compile fallback there is
-an accepted last resort (ADR 0016). Either way, the end-user artifact never
-compiles anything — it bundles whichever `.node` binary release CI produced.
-See `docs/adr/0008-node-runtime-and-native-sqlite-support.md` (Node 24 /
-`better-sqlite3` pin), `docs/adr/0016-native-dependency-install-policy-by-environment.md`
-(dev/release-CI/end-user policy split), and the header comment in
-`.github/workflows/ci.yml` for the full rationale.
+If an update causes `better-sqlite3` to fail to compile from source on any
+supported CI or release platform, that is a real install failure to fix —
+there is currently no automatic fallback to a downloaded prebuilt binary
+(`better-sqlite3`'s install script order can't be reversed without custom
+wrapper tooling; ADR 0016 leaves that as a future option, not a requirement).
+The end-user release artifact is unaffected by any of this: it bundles
+whichever `.node` binary the release build produced and never compiles
+anything on the end-user's machine. See
+`docs/adr/0008-node-runtime-and-native-sqlite-support.md` (Node 24 /
+`better-sqlite3` pin) and
+`docs/adr/0016-native-dependency-install-policy-by-environment.md`
+(source-build-first policy, dev/release-CI/end-user layer split) for the full
+rationale.
 
 ## Category-Specific Notes
 

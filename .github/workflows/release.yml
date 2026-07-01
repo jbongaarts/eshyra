@@ -2,7 +2,8 @@
 # artifacts (decision: eshyra-upef / eshyra-0p8u).
 #
 # Each artifact bundles a pinned Node 24 runtime + the ABI-matched
-# better-sqlite3 prebuild + the production app tree + bundled SRD data +
+# better-sqlite3 native addon (compiled from source on the runner, per the
+# root .npmrc / ADR 0016) + the production app tree + bundled SRD data +
 # license/notice files. Because the runtime and native binding must match the
 # host ABI, every artifact is built ON its target platform -- the same
 # host-targeted model the install-smoke job uses. dolt is NOT bundled (it stays
@@ -68,10 +69,10 @@ jobs:
         edition: [api, claude, codex, full]
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-14, windows-latest]
     env:
-      # Keep prebuild-install on the prebuilt-first path (ADR 0008): the bundled
-      # better-sqlite3 binding must be a downloaded prebuild, not a source build.
-      npm_config_build_from_source: "false"
       # Edition selected per matrix leg; the builder also reads ESHYRA_EDITION.
+      # Native better-sqlite3 install policy (compile from source, not a
+      # downloaded prebuild) comes from the root .npmrc (ADR 0016); no env
+      # override needed here.
       ESHYRA_EDITION: ${{ matrix.edition }}
     steps:
       - uses: actions/checkout@v7
@@ -165,8 +166,6 @@ jobs:
       matrix:
         # ubuntu-latest -> linux-x64 (GNU); macos-14 -> darwin-arm64 (BSD).
         os: [ubuntu-latest, macos-14]
-    env:
-      npm_config_build_from_source: "false"
     steps:
       - uses: actions/checkout@v7
 

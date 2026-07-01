@@ -1,15 +1,16 @@
 // Build a self-contained, per-platform GitHub Release CLI artifact.
 //
 // Decision: eshyra-upef. The artifact bundles a pinned Node 24 runtime, the
-// ABI-matched better-sqlite3 prebuild, the built @eshyra/cli + @eshyra/core
-// dist (production deps only), the bundled SRD rules-pack data, and the
+// ABI-matched better-sqlite3 native addon (compiled from source on this
+// runner, per ADR 0016), the built @eshyra/cli + @eshyra/core dist
+// (production deps only), the bundled SRD rules-pack data, and the
 // license/notice files. The user installs nothing else: no system Node is
 // required, and dolt stays lazy/self-provisioned (it is NOT bundled).
 //
 // This build is HOST-TARGETED: it packages an artifact for the platform/arch
 // it runs on, using `process.execPath` as the runtime and the better-sqlite3
-// prebuild that npm installed for this exact Node ABI. Cross-platform coverage
-// comes from running this once per OS in the release CI matrix — the same
+// native addon that npm just compiled for this exact Node ABI. Cross-platform
+// coverage comes from running this once per OS in the release CI matrix — the same
 // model the existing install-smoke job already uses. No npm package is
 // published and no package `private` guard is touched.
 //
@@ -554,12 +555,15 @@ function main() {
     const cliTar = packWorkspace('@eshyra/cli', packDir, cache);
 
     console.log(
-      '• installing production app tree (no devDeps, prebuilt native)…',
+      '• installing production app tree (no devDeps, native from source)…',
     );
     // Production-only global install into a private prefix. --omit=dev keeps
-    // tsx/pdfkit/pdfjs out; build_from_source=false keeps the better-sqlite3
-    // prebuilt-binary path (ADR 0008). This reuses the exact mechanism the
-    // install-smoke job already validates.
+    // tsx/pdfkit/pdfjs out. This is a --global install outside the repo root,
+    // so it does not inherit the root .npmrc; build_from_source=true is
+    // passed explicitly here to compile better-sqlite3 from source on this
+    // exact runner/ABI rather than downloading a prebuild-install prebuilt
+    // binary (ADR 0016). This reuses the exact mechanism the install-smoke
+    // job already validates.
     npm(
       [
         'install',
@@ -573,7 +577,7 @@ function main() {
         coreTar,
         cliTar,
       ],
-      { npm_config_build_from_source: 'false' },
+      { npm_config_build_from_source: 'true' },
     );
 
     console.log('• assembling staging tree…');

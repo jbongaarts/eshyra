@@ -62,8 +62,6 @@ permissions:
 jobs:
   verify-srd-freeze:
     runs-on: ubuntu-latest
-    env:
-      npm_config_build_from_source: "false"
     steps:
       - uses: actions/checkout@v7
         with:
