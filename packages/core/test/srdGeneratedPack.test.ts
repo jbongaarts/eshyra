@@ -2610,8 +2610,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         excludedPhrase: 'nature deities',
       },
       {
+        // eshyra-lpk9: this sidebar's body continues onto p34, so provenance
+        // now covers both pages instead of only its starting page.
         key: 'rule:paladin-breaking-your-oath',
-        locator: 'p. 33',
+        locator: 'pp. 33, 34',
         bodyPhrase: 'impenitent paladin',
         excludedPhrase: 'As a ranger, you gain the following class features',
       },
@@ -2622,8 +2624,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         excludedPhrase: 'As a wizard, you gain the following class features',
       },
       {
+        // eshyra-lpk9: this sidebar's body continues onto p55.
         key: 'rule:wizard-your-spellbook',
-        locator: 'p. 54',
+        locator: 'pp. 54, 55',
         bodyPhrase: 'the process takes 2 hours and costs 50 gp',
       },
     ];
@@ -4387,7 +4390,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (ancestry?.data as { projection?: { rows?: unknown[] } }).projection
           ?.rows,
       ).toHaveLength(10);
-      expect(ancestry?.provenance.locator).toBe('p. 5');
+      // eshyra-lpk9: the table's page-5 caption is followed by Dragonborn
+      // ancestry-trait prose that continues onto p6, so provenance now
+      // reflects both pages instead of only the table's own starting page.
+      expect(ancestry?.provenance.locator).toBe('pp. 5, 6');
 
       const bloodline = table('table:draconic-bloodline-draconic-ancestry');
       expect(bloodline?.data).toMatchObject({
@@ -5689,10 +5695,12 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       return (record?.data as { text: string }).text;
     }
 
-    it('emits Acolyte as the only background record with p60 provenance', () => {
+    it('emits Acolyte as the only background record with p60-61 provenance', () => {
       expect(acolyte?.kind).toBe('background');
       expect(acolyte?.name).toBe('Acolyte');
-      expect(acolyte?.provenance.locator).toBe('p. 60');
+      // eshyra-lpk9: the Acolyte entry's suggested-characteristics tables
+      // continue onto p61, so provenance now covers both pages.
+      expect(acolyte?.provenance.locator).toBe('pp. 60, 61');
       expect(
         pack.records.filter((record) => record.kind === 'background'),
       ).toHaveLength(1);

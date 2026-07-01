@@ -51,6 +51,16 @@ export interface SourceRegionLedgerEntry {
   readonly targetKey?: string;
   readonly ignoreReason?: string;
   readonly guardNotes?: string;
+  /**
+   * True when `targetKey` came from a document-wide text-content search
+   * (`findRepresentingRecord`) rather than from the region's own owning
+   * heading. A content match proves the region's TEXT was reproduced
+   * somewhere in the target record's data (e.g. a spell-list page's names
+   * also projected into a table's rows); it says nothing about which PAGE
+   * that record's own content lives on, so consumers computing a record's
+   * physical page span (eshyra-lpk9) must exclude these entries.
+   */
+  readonly contentMatch?: boolean;
 }
 
 export interface SourceRegionLedger {
@@ -218,37 +228,18 @@ function regionTypeForOwner(owner: ActiveOwner | undefined): SourceRegionType {
   return 'record-body';
 }
 
-function classifyRegion(
+/**
+ * Classify a region using only its owning heading's coverage status — never
+ * the document-wide content search. Factored out so `classifyRegion` can
+ * compare a content-search match against what the owner alone would have
+ * produced (eshyra-lpk9's `contentMatch` discriminator).
+ */
+function classifyRegionByOwner(
   owner: ActiveOwner | undefined,
-  pageStart: number,
-  body: string,
-  searchableRecords: readonly SearchableRecord[],
 ): Pick<
   SourceRegionLedgerEntry,
   'classification' | 'targetKey' | 'ignoreReason' | 'guardNotes'
 > {
-  if (pageStart <= FRONT_MATTER_MAX_PAGE) {
-    return {
-      classification: 'intentionally-ignored:front-matter',
-      ignoreReason: 'front-matter',
-      guardNotes: 'Front-matter prose is outside SRD rules content.',
-    };
-  }
-
-  const representedRecordKey = findRepresentingRecord(
-    body,
-    owner,
-    searchableRecords,
-  );
-  if (representedRecordKey !== undefined) {
-    return {
-      classification: `record:${representedRecordKey}`,
-      targetKey: representedRecordKey,
-      guardNotes:
-        'Region text is contained in generated record data; heading status alone was not used.',
-    };
-  }
-
   if (owner === undefined) {
     return {
       classification: 'unrepresented',
@@ -325,6 +316,63 @@ function classifyRegion(
     classification: 'unrepresented',
     guardNotes: `Owning source structure has non-covering status ${owner.status}.`,
   };
+}
+
+function classifyRegion(
+  owner: ActiveOwner | undefined,
+  pageStart: number,
+  body: string,
+  searchableRecords: readonly SearchableRecord[],
+): Pick<
+  SourceRegionLedgerEntry,
+  | 'classification'
+  | 'targetKey'
+  | 'ignoreReason'
+  | 'guardNotes'
+  | 'contentMatch'
+> {
+  if (pageStart <= FRONT_MATTER_MAX_PAGE) {
+    return {
+      classification: 'intentionally-ignored:front-matter',
+      ignoreReason: 'front-matter',
+      guardNotes: 'Front-matter prose is outside SRD rules content.',
+    };
+  }
+
+  const ownerBased = classifyRegionByOwner(owner);
+  const representedRecordKey = findRepresentingRecord(
+    body,
+    owner,
+    searchableRecords,
+  );
+  if (representedRecordKey !== undefined) {
+    // A same-named heading disambiguates to `ambiguous:a|b` (no single
+    // owner-implied key); the content search choosing one of those exact
+    // candidates (e.g. "Ready" -> action:ready vs rule:ready) is a genuine,
+    // intended disambiguation, not a cross-reference.
+    const ambiguousCandidates = owner?.status.startsWith('ambiguous:')
+      ? owner.status.slice('ambiguous:'.length).split('|')
+      : [];
+    // A content match that lands on the SAME key the owner already implies
+    // (or on one of an ambiguous owner's own candidates) is just confirming
+    // genuine physical containment — safe for page-span purposes. A match on
+    // a DIFFERENT, unrelated key is a document-wide cross-reference (e.g. a
+    // spell-list page's names also projected into an unrelated table's rows
+    // far earlier in the document) and must be flagged (eshyra-lpk9's
+    // `contentMatch`) so page-span consumers exclude it.
+    const isSelfConsistent =
+      ownerBased.targetKey === representedRecordKey ||
+      ambiguousCandidates.includes(representedRecordKey);
+    return {
+      classification: `record:${representedRecordKey}`,
+      targetKey: representedRecordKey,
+      guardNotes:
+        'Region text is contained in generated record data; heading status alone was not used.',
+      ...(isSelfConsistent ? {} : { contentMatch: true }),
+    };
+  }
+
+  return ownerBased;
 }
 
 function classChildDataKey(owner: ActiveOwner): string | undefined {

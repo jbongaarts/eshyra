@@ -47,6 +47,7 @@ import {
   writePackToDirectory,
   writeSourceCoverageArtifacts,
 } from './emit.js';
+import { enrichProvenanceFromRegionLedger } from './enrichProvenance.js';
 import { extractPdfText } from './extract.js';
 import { parseActions } from './parseActions.js';
 import { parseAncestries } from './parseAncestries.js';
@@ -3518,7 +3519,7 @@ export async function runImporter(
     if (!(error instanceof SectionNotFoundError)) throw error;
     // Multiclassing section absent: leave primaryAbilities empty.
   }
-  const pack = buildPack({
+  let pack = buildPack({
     spells,
     classIndex,
     spellClasses,
@@ -3590,6 +3591,15 @@ export async function runImporter(
       inventory,
       report: buildSourceCoverageReport(coverageEntries, pack.records),
       regionLedger,
+    };
+    // Multi-page provenance enrichment (eshyra-lpk9): the region ledger just
+    // proved above already knows every page a record's own prose and child
+    // data occupy, so union that evidence into any record whose locator still
+    // names only its first page. Runs after the coverage/ledger gates (which
+    // read record.data, not provenance) so it cannot affect their pass/fail.
+    pack = {
+      ...pack,
+      records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
     };
   }
   writePackToDirectory(pack, { outDir: input.outDir });

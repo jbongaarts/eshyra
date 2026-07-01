@@ -1243,7 +1243,8 @@
       "normalizedCharCount": 187,
       "classification": "record:feature:bard:spellcasting",
       "targetKey": "feature:bard:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p12-l6-prose",
@@ -1264,7 +1265,8 @@
       "normalizedCharCount": 404,
       "classification": "record:feature:bard:spellcasting",
       "targetKey": "feature:bard:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p12-l16-prose",
@@ -1306,7 +1308,8 @@
       "normalizedCharCount": 516,
       "classification": "record:feature:bard:spellcasting",
       "targetKey": "feature:bard:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p12-l43-prose",
@@ -1835,7 +1838,8 @@
       "normalizedCharCount": 485,
       "classification": "record:feature:cleric:spellcasting",
       "targetKey": "feature:cleric:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p16-l38-prose",
@@ -2449,7 +2453,8 @@
       "normalizedCharCount": 479,
       "classification": "record:feature:druid:spellcasting",
       "targetKey": "feature:druid:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p20-l43-prose",
@@ -2532,7 +2537,8 @@
       "normalizedCharCount": 1263,
       "classification": "record:feature:druid:wild-shape",
       "targetKey": "feature:druid:wild-shape",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p21-l0-prose",
@@ -2553,7 +2559,8 @@
       "normalizedCharCount": 1256,
       "classification": "record:feature:druid:wild-shape",
       "targetKey": "feature:druid:wild-shape",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p21-l28-prose",
@@ -4427,7 +4434,8 @@
       "normalizedCharCount": 490,
       "classification": "record:feature:paladin:spellcasting",
       "targetKey": "feature:paladin:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p31-l85-prose",
@@ -4570,7 +4578,8 @@
       "normalizedCharCount": 431,
       "classification": "record:feature:paladin:sacred-oath",
       "targetKey": "feature:paladin:sacred-oath",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p32-l35-prose",
@@ -5265,7 +5274,8 @@
       "normalizedCharCount": 418,
       "classification": "record:feature:ranger:spellcasting",
       "targetKey": "feature:ranger:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p36-l63-prose",
@@ -5307,7 +5317,8 @@
       "normalizedCharCount": 466,
       "classification": "record:feature:ranger:spellcasting",
       "targetKey": "feature:ranger:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p37-l1-prose",
@@ -6359,7 +6370,8 @@
       "normalizedCharCount": 421,
       "classification": "record:feature:sorcerer:spellcasting",
       "targetKey": "feature:sorcerer:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p43-l22-prose",
@@ -6401,7 +6413,8 @@
       "normalizedCharCount": 445,
       "classification": "record:feature:sorcerer:spellcasting",
       "targetKey": "feature:sorcerer:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p43-l46-prose",
@@ -6422,7 +6435,8 @@
       "normalizedCharCount": 71,
       "classification": "record:feature:sorcerer:spellcasting",
       "targetKey": "feature:sorcerer:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p43-l49-prose",
@@ -6546,7 +6560,8 @@
       "normalizedCharCount": 99,
       "classification": "record:feature:sorcerer:font-of-magic",
       "targetKey": "feature:sorcerer:font-of-magic",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p44-l0-prose",
@@ -6567,7 +6582,8 @@
       "normalizedCharCount": 67,
       "classification": "record:feature:sorcerer:font-of-magic",
       "targetKey": "feature:sorcerer:font-of-magic",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p44-l3-prose",
@@ -6876,7 +6892,8 @@
       "normalizedCharCount": 182,
       "classification": "record:feature:draconic-bloodline:dragon-ancestor",
       "targetKey": "feature:draconic-bloodline:dragon-ancestor",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p45-l14-prose",
@@ -7142,7 +7159,8 @@
       "normalizedCharCount": 94,
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p47-l0-prose",
@@ -7163,7 +7181,8 @@
       "normalizedCharCount": 101,
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p47-l3-prose",
@@ -7184,7 +7203,8 @@
       "normalizedCharCount": 503,
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p47-l15-prose",
@@ -7226,7 +7246,8 @@
       "normalizedCharCount": 428,
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p47-l41-prose",
@@ -8574,7 +8595,8 @@
       "normalizedCharCount": 513,
       "classification": "record:feature:wizard:spellcasting",
       "targetKey": "feature:wizard:spellcasting",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p53-l41-prose",
@@ -9569,7 +9591,8 @@
       "normalizedCharCount": 334,
       "classification": "record:background:acolyte",
       "targetKey": "background:acolyte",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p62-l1-prose",
@@ -9587,7 +9610,8 @@
       "normalizedCharCount": 1589,
       "classification": "record:rule:coinage",
       "targetKey": "rule:coinage",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p62-l43-prose",
@@ -9703,7 +9727,8 @@
       "normalizedCharCount": 69,
       "classification": "record:equipment:padded",
       "targetKey": "equipment:padded",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l15-prose-segment-0-2",
@@ -9723,7 +9748,8 @@
       "normalizedCharCount": 199,
       "classification": "record:equipment:leather",
       "targetKey": "equipment:leather",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l15-prose-segment-0-3",
@@ -9743,7 +9769,8 @@
       "normalizedCharCount": 117,
       "classification": "record:equipment:studded-leather",
       "targetKey": "equipment:studded-leather",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l31-prose",
@@ -9783,7 +9810,8 @@
       "normalizedCharCount": 202,
       "classification": "record:equipment:hide",
       "targetKey": "equipment:hide",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l31-prose-segment-0-2",
@@ -9803,7 +9831,8 @@
       "normalizedCharCount": 198,
       "classification": "record:equipment:chain-shirt",
       "targetKey": "equipment:chain-shirt",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l49-prose",
@@ -9824,7 +9853,8 @@
       "normalizedCharCount": 64,
       "classification": "record:equipment:chain-shirt",
       "targetKey": "equipment:chain-shirt",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l49-prose-segment-0-1",
@@ -9845,7 +9875,8 @@
       "normalizedCharCount": 199,
       "classification": "record:equipment:scale-mail",
       "targetKey": "equipment:scale-mail",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l49-prose-segment-0-2",
@@ -9866,7 +9897,8 @@
       "normalizedCharCount": 265,
       "classification": "record:equipment:breastplate",
       "targetKey": "equipment:breastplate",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l49-prose-segment-0-3",
@@ -9887,7 +9919,8 @@
       "normalizedCharCount": 188,
       "classification": "record:equipment:half-plate",
       "targetKey": "equipment:half-plate",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l66-prose",
@@ -9927,7 +9960,8 @@
       "normalizedCharCount": 244,
       "classification": "record:equipment:ring-mail",
       "targetKey": "equipment:ring-mail",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l66-prose-segment-0-2",
@@ -9947,7 +9981,8 @@
       "normalizedCharCount": 200,
       "classification": "record:equipment:chain-mail",
       "targetKey": "equipment:chain-mail",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l66-prose-segment-0-3",
@@ -9967,7 +10002,8 @@
       "normalizedCharCount": 167,
       "classification": "record:equipment:splint",
       "targetKey": "equipment:splint",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p63-l66-prose-segment-0-4",
@@ -9987,7 +10023,8 @@
       "normalizedCharCount": 265,
       "classification": "record:equipment:plate",
       "targetKey": "equipment:plate",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p64-l16-prose",
@@ -10026,7 +10063,8 @@
       "normalizedCharCount": 656,
       "classification": "record:rule:weapons",
       "targetKey": "rule:weapons",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p64-l45-prose",
@@ -10066,7 +10104,8 @@
       "normalizedCharCount": 610,
       "classification": "record:rule:weapon-proficiency",
       "targetKey": "rule:weapon-proficiency",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p64-l75-prose",
@@ -10148,7 +10187,8 @@
       "normalizedCharCount": 746,
       "classification": "record:rule:improvised-weapons",
       "targetKey": "rule:improvised-weapons",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p65-l68-prose",
@@ -10270,7 +10310,8 @@
       "normalizedCharCount": 309,
       "classification": "record:equipment:acid-vial",
       "targetKey": "equipment:acid-vial",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p66-l41-prose-segment-1-1",
@@ -10289,7 +10330,8 @@
       "normalizedCharCount": 160,
       "classification": "record:equipment:alchemists-fire-flask",
       "targetKey": "equipment:alchemists-fire-flask",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p66-l89-prose",
@@ -10308,7 +10350,8 @@
       "normalizedCharCount": 285,
       "classification": "record:equipment:alchemists-fire-flask",
       "targetKey": "equipment:alchemists-fire-flask",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p66-l89-prose-segment-0-1",
@@ -10327,7 +10370,8 @@
       "normalizedCharCount": 160,
       "classification": "record:equipment:antitoxin-vial",
       "targetKey": "equipment:antitoxin-vial",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p66-l89-prose-segment-0-2",
@@ -10346,7 +10390,8 @@
       "normalizedCharCount": 205,
       "classification": "record:equipment:crystal",
       "targetKey": "equipment:crystal",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose",
@@ -10365,7 +10410,8 @@
       "normalizedCharCount": 74,
       "classification": "record:equipment:crystal",
       "targetKey": "equipment:crystal",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-1",
@@ -10384,7 +10430,8 @@
       "normalizedCharCount": 323,
       "classification": "record:equipment:ball-bearings-bag-of-1-000",
       "targetKey": "equipment:ball-bearings-bag-of-1-000",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-10",
@@ -10403,7 +10450,8 @@
       "normalizedCharCount": 283,
       "classification": "record:equipment:component-pouch",
       "targetKey": "equipment:component-pouch",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-11",
@@ -10422,7 +10470,8 @@
       "normalizedCharCount": 105,
       "classification": "record:equipment:crowbar",
       "targetKey": "equipment:crowbar",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-2",
@@ -10441,7 +10490,8 @@
       "normalizedCharCount": 192,
       "classification": "record:equipment:block-and-tackle",
       "targetKey": "equipment:block-and-tackle",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-3",
@@ -10460,7 +10510,8 @@
       "normalizedCharCount": 296,
       "classification": "record:equipment:book",
       "targetKey": "equipment:book",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-4",
@@ -10479,7 +10530,8 @@
       "normalizedCharCount": 435,
       "classification": "record:equipment:caltrops-bag-of-20",
       "targetKey": "equipment:caltrops-bag-of-20",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-5",
@@ -10498,7 +10550,8 @@
       "normalizedCharCount": 106,
       "classification": "record:equipment:candle",
       "targetKey": "equipment:candle",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-6",
@@ -10517,7 +10570,8 @@
       "normalizedCharCount": 75,
       "classification": "record:equipment:case-crossbow-bolt",
       "targetKey": "equipment:case-crossbow-bolt",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-7",
@@ -10536,7 +10590,8 @@
       "normalizedCharCount": 134,
       "classification": "record:equipment:case-map-or-scroll",
       "targetKey": "equipment:case-map-or-scroll",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-8",
@@ -10555,7 +10610,8 @@
       "normalizedCharCount": 89,
       "classification": "record:equipment:chain-10-feet",
       "targetKey": "equipment:chain-10-feet",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l0-prose-segment-0-9",
@@ -10574,7 +10630,8 @@
       "normalizedCharCount": 329,
       "classification": "record:equipment:climbers-kit",
       "targetKey": "equipment:climbers-kit",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l53-prose",
@@ -10593,7 +10650,8 @@
       "normalizedCharCount": 308,
       "classification": "record:equipment:sprig-of-mistletoe",
       "targetKey": "equipment:sprig-of-mistletoe",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l53-prose-segment-0-1",
@@ -10612,7 +10670,8 @@
       "normalizedCharCount": 139,
       "classification": "record:equipment:fishing-tackle",
       "targetKey": "equipment:fishing-tackle",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l53-prose-segment-0-2",
@@ -10631,7 +10690,8 @@
       "normalizedCharCount": 251,
       "classification": "record:equipment:healers-kit",
       "targetKey": "equipment:healers-kit",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l53-prose-segment-0-3",
@@ -10650,7 +10710,8 @@
       "normalizedCharCount": 543,
       "classification": "record:equipment:amulet",
       "targetKey": "equipment:amulet",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l53-prose-segment-0-4",
@@ -10669,7 +10730,8 @@
       "normalizedCharCount": 539,
       "classification": "record:equipment:holy-water-flask",
       "targetKey": "equipment:holy-water-flask",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p67-l53-prose-segment-0-5",
@@ -10688,7 +10750,8 @@
       "normalizedCharCount": 727,
       "classification": "record:equipment:hunting-trap",
       "targetKey": "equipment:hunting-trap",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose",
@@ -10707,7 +10770,8 @@
       "normalizedCharCount": 151,
       "classification": "record:equipment:lamp",
       "targetKey": "equipment:lamp",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose-segment-0-1",
@@ -10726,7 +10790,8 @@
       "normalizedCharCount": 174,
       "classification": "record:equipment:lantern-bullseye",
       "targetKey": "equipment:lantern-bullseye",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose-segment-0-2",
@@ -10745,7 +10810,8 @@
       "normalizedCharCount": 262,
       "classification": "record:equipment:lantern-hooded",
       "targetKey": "equipment:lantern-hooded",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose-segment-0-3",
@@ -10764,7 +10830,8 @@
       "normalizedCharCount": 227,
       "classification": "record:equipment:lock",
       "targetKey": "equipment:lock",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose-segment-0-4",
@@ -10783,7 +10850,8 @@
       "normalizedCharCount": 417,
       "classification": "record:equipment:magnifying-glass",
       "targetKey": "equipment:magnifying-glass",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose-segment-0-5",
@@ -10802,7 +10870,8 @@
       "normalizedCharCount": 392,
       "classification": "record:equipment:manacles",
       "targetKey": "equipment:manacles",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose-segment-0-6",
@@ -10821,7 +10890,8 @@
       "normalizedCharCount": 166,
       "classification": "record:equipment:mess-kit",
       "targetKey": "equipment:mess-kit",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l0-prose-segment-0-7",
@@ -10840,7 +10910,8 @@
       "normalizedCharCount": 771,
       "classification": "record:equipment:oil-flask",
       "targetKey": "equipment:oil-flask",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose",
@@ -10859,7 +10930,8 @@
       "normalizedCharCount": 356,
       "classification": "record:equipment:poison-basic-vial",
       "targetKey": "equipment:poison-basic-vial",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-1",
@@ -10878,7 +10950,8 @@
       "normalizedCharCount": 156,
       "classification": "record:equipment:potion-of-healing",
       "targetKey": "equipment:potion-of-healing",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-10",
@@ -10897,7 +10970,8 @@
       "normalizedCharCount": 62,
       "classification": "record:equipment:tent-two-person",
       "targetKey": "equipment:tent-two-person",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-11",
@@ -10916,7 +10990,8 @@
       "normalizedCharCount": 258,
       "classification": "record:equipment:tinderbox",
       "targetKey": "equipment:tinderbox",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-12",
@@ -10935,7 +11010,8 @@
       "normalizedCharCount": 197,
       "classification": "record:equipment:torch",
       "targetKey": "equipment:torch",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-2",
@@ -10954,7 +11030,8 @@
       "normalizedCharCount": 226,
       "classification": "record:equipment:pouch",
       "targetKey": "equipment:pouch",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-3",
@@ -10973,7 +11050,8 @@
       "normalizedCharCount": 42,
       "classification": "record:equipment:quiver",
       "targetKey": "equipment:quiver",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-4",
@@ -10992,7 +11070,8 @@
       "normalizedCharCount": 202,
       "classification": "record:equipment:ram-portable",
       "targetKey": "equipment:ram-portable",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-5",
@@ -11011,7 +11090,8 @@
       "normalizedCharCount": 117,
       "classification": "record:equipment:rations-1-day",
       "targetKey": "equipment:rations-1-day",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-6",
@@ -11030,7 +11110,8 @@
       "normalizedCharCount": 104,
       "classification": "record:equipment:rope-hempen-50-feet",
       "targetKey": "equipment:rope-hempen-50-feet",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-7",
@@ -11049,7 +11130,8 @@
       "normalizedCharCount": 246,
       "classification": "record:equipment:scale-merchants",
       "targetKey": "equipment:scale-merchants",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-8",
@@ -11068,7 +11150,8 @@
       "normalizedCharCount": 128,
       "classification": "record:equipment:spellbook",
       "targetKey": "equipment:spellbook",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p68-l53-prose-segment-0-9",
@@ -11087,7 +11170,8 @@
       "normalizedCharCount": 78,
       "classification": "record:equipment:spyglass",
       "targetKey": "equipment:spyglass",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p70-l10-prose",
@@ -11166,7 +11250,8 @@
       "normalizedCharCount": 399,
       "classification": "record:equipment:alchemists-supplies",
       "targetKey": "equipment:alchemists-supplies",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose",
@@ -11186,7 +11271,8 @@
       "normalizedCharCount": 250,
       "classification": "record:equipment:disguise-kit",
       "targetKey": "equipment:disguise-kit",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose-segment-0-1",
@@ -11206,7 +11292,8 @@
       "normalizedCharCount": 352,
       "classification": "record:equipment:forgery-kit",
       "targetKey": "equipment:forgery-kit",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose-segment-0-2",
@@ -11226,7 +11313,8 @@
       "normalizedCharCount": 412,
       "classification": "record:equipment:dice-set",
       "targetKey": "equipment:dice-set",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose-segment-0-3",
@@ -11246,7 +11334,8 @@
       "normalizedCharCount": 376,
       "classification": "record:equipment:herbalism-kit",
       "targetKey": "equipment:herbalism-kit",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose-segment-0-4",
@@ -11266,7 +11355,8 @@
       "normalizedCharCount": 395,
       "classification": "record:equipment:bagpipes",
       "targetKey": "equipment:bagpipes",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose-segment-0-5",
@@ -11286,7 +11376,8 @@
       "normalizedCharCount": 294,
       "classification": "record:equipment:navigators-tools",
       "targetKey": "equipment:navigators-tools",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose-segment-0-6",
@@ -11306,7 +11397,8 @@
       "normalizedCharCount": 240,
       "classification": "record:equipment:poisoners-kit",
       "targetKey": "equipment:poisoners-kit",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l0-prose-segment-0-7",
@@ -11326,7 +11418,8 @@
       "normalizedCharCount": 212,
       "classification": "record:equipment:thieves-tools",
       "targetKey": "equipment:thieves-tools",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l52-prose",
@@ -11346,7 +11439,8 @@
       "normalizedCharCount": 88,
       "classification": "record:equipment:thieves-tools",
       "targetKey": "equipment:thieves-tools",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p71-l55-prose",
@@ -11757,7 +11851,8 @@
       "normalizedCharCount": 445,
       "classification": "record:rule:ability-checks",
       "targetKey": "rule:ability-checks",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p77-l67-prose",
@@ -12781,7 +12876,8 @@
       "normalizedCharCount": 1708,
       "classification": "record:rule:speed",
       "targetKey": "rule:speed",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p85-l1-prose",
@@ -15951,7 +16047,8 @@
       "normalizedCharCount": 7,
       "classification": "record:spell:eyebite",
       "targetKey": "spell:eyebite",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p106-l0-prose",
@@ -16712,7 +16809,8 @@
       "normalizedCharCount": 31,
       "classification": "record:table:circle-of-the-land-forest",
       "targetKey": "table:circle-of-the-land-forest",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p109-l53-prose",
@@ -24381,7 +24479,8 @@
       "normalizedCharCount": 220,
       "classification": "record:spell:reincarnate",
       "targetKey": "spell:reincarnate",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p174-l85-prose",
@@ -24706,7 +24805,8 @@
       "normalizedCharCount": 620,
       "classification": "record:spell:scrying",
       "targetKey": "spell:scrying",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p177-l14-prose",
@@ -25758,7 +25858,8 @@
       "normalizedCharCount": 1507,
       "classification": "record:spell:teleport",
       "targetKey": "spell:teleport",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p186-l52-prose",
@@ -25779,7 +25880,8 @@
       "normalizedCharCount": 932,
       "classification": "record:spell:teleport",
       "targetKey": "spell:teleport",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p186-l73-prose",
@@ -27319,7 +27421,8 @@
       "normalizedCharCount": 445,
       "classification": "record:rule:objects",
       "targetKey": "rule:objects",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p203-l48-prose",
@@ -27340,7 +27443,8 @@
       "normalizedCharCount": 1704,
       "classification": "record:rule:objects",
       "targetKey": "rule:objects",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p204-l1-prose",
@@ -28415,7 +28519,8 @@
       "normalizedCharCount": 700,
       "classification": "record:magic-item:candle-of-invocation",
       "targetKey": "magic-item:candle-of-invocation",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p213-l48-prose",
@@ -28436,7 +28541,8 @@
       "normalizedCharCount": 127,
       "classification": "record:magic-item:candle-of-invocation",
       "targetKey": "magic-item:candle-of-invocation",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p213-l52-prose",
@@ -28498,7 +28604,8 @@
       "normalizedCharCount": 133,
       "classification": "record:magic-item:carpet-of-flying",
       "targetKey": "magic-item:carpet-of-flying",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p213-l80-prose",
@@ -28802,7 +28909,8 @@
       "normalizedCharCount": 162,
       "classification": "record:magic-item:cube-of-force",
       "targetKey": "magic-item:cube-of-force",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p215-l56-prose",
@@ -29008,7 +29116,8 @@
       "normalizedCharCount": 807,
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p217-l52-prose",
@@ -29029,7 +29138,8 @@
       "normalizedCharCount": 2353,
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p218-l0-prose",
@@ -29050,7 +29160,8 @@
       "normalizedCharCount": 334,
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p218-l8-prose",
@@ -29071,7 +29182,8 @@
       "normalizedCharCount": 704,
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p218-l28-prose",
@@ -29093,7 +29205,8 @@
       "normalizedCharCount": 672,
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p218-l43-prose",
@@ -29115,7 +29228,8 @@
       "normalizedCharCount": 818,
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p218-l62-prose",
@@ -29562,7 +29676,8 @@
       "normalizedCharCount": 905,
       "classification": "record:magic-item:feather-token",
       "targetKey": "magic-item:feather-token",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p221-l47-prose",
@@ -29583,7 +29698,8 @@
       "normalizedCharCount": 1740,
       "classification": "record:magic-item:feather-token",
       "targetKey": "magic-item:feather-token",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p221-l85-prose",
@@ -29645,7 +29761,8 @@
       "normalizedCharCount": 1032,
       "classification": "record:magic-item:figurine-of-wondrous-power",
       "targetKey": "magic-item:figurine-of-wondrous-power",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p222-l46-prose",
@@ -29666,7 +29783,8 @@
       "normalizedCharCount": 2548,
       "classification": "record:magic-item:figurine-of-wondrous-power",
       "targetKey": "magic-item:figurine-of-wondrous-power",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p223-l0-prose",
@@ -29687,7 +29805,8 @@
       "normalizedCharCount": 161,
       "classification": "record:magic-item:figurine-of-wondrous-power",
       "targetKey": "magic-item:figurine-of-wondrous-power",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p223-l4-prose",
@@ -30233,7 +30352,8 @@
       "normalizedCharCount": 189,
       "classification": "record:magic-item:horn-of-valhalla",
       "targetKey": "magic-item:horn-of-valhalla",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p226-l49-prose",
@@ -30659,7 +30779,8 @@
       "normalizedCharCount": 446,
       "classification": "record:magic-item:manual-of-golems",
       "targetKey": "magic-item:manual-of-golems",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p230-l11-prose",
@@ -31936,7 +32057,8 @@
       "normalizedCharCount": 400,
       "classification": "record:magic-item:ring-of-shooting-stars",
       "targetKey": "magic-item:ring-of-shooting-stars",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p237-l70-prose",
@@ -32644,7 +32766,8 @@
       "normalizedCharCount": 573,
       "classification": "record:magic-item:spell-scroll",
       "targetKey": "magic-item:spell-scroll",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p242-l69-prose",
@@ -32665,7 +32788,8 @@
       "normalizedCharCount": 360,
       "classification": "record:magic-item:spell-scroll",
       "targetKey": "magic-item:spell-scroll",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p242-l77-prose",
@@ -34363,7 +34487,8 @@
       "normalizedCharCount": 325,
       "classification": "record:rule:hit-points",
       "targetKey": "rule:hit-points",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p256-l16-prose",
@@ -42790,7 +42915,8 @@
       "normalizedCharCount": 234,
       "classification": "record:rule:half-dragon-template",
       "targetKey": "rule:half-dragon-template",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p321-l15-prose",
@@ -48041,7 +48167,8 @@
       "normalizedCharCount": 315,
       "classification": "record:rule:fantasy-historical-pantheons",
       "targetKey": "rule:fantasy-historical-pantheons",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p360-l9-prose",
@@ -48140,7 +48267,8 @@
       "normalizedCharCount": 776,
       "classification": "record:rule:the-planes-of-existence",
       "targetKey": "rule:the-planes-of-existence",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
+      "contentMatch": true
     },
     {
       "id": "p363-l19-prose",
