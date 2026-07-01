@@ -5,6 +5,22 @@
  * tables, and stat blocks. This companion ledger accounts for contiguous
  * prose-height regions between those structures, so prose cannot hide behind a
  * broad heading-level ignore such as `ignored:document-structure`.
+ *
+ * Table-row accounting (eshyra-erf5.5): table-cell-height runs are normally
+ * skipped here because their content is already represented by the owning
+ * caption's coverage status (a `table:` record's rows, or rows emitted as
+ * their own records — e.g. the Adventuring Gear price list's equipment
+ * records). That is a deliberate design decision, not an omission — but it
+ * must not let a PAGE disappear from the ledger entirely: a page consisting
+ * only of table rows (p362's Norse Deities continuation, p69's price-list
+ * body with its embedded sub-group captions, which render at cell height and
+ * are typographically indistinguishable from rows) previously had zero ledger
+ * entries while the summary still claimed `unrepresented: 0`. So any cell run
+ * touching a page that would otherwise have no ledger entry now gets an
+ * explicit `table-rows` entry stating what represents it, and the summary's
+ * `unaccountedPages` lists any non-empty page with neither a ledger entry nor
+ * a source-inventory coverage item — asserted empty by
+ * `assertSourceRegionLedger`, so a page can no longer vanish silently.
  */
 
 import {
@@ -26,7 +42,8 @@ export type SourceRegionType =
   | 'record-body'
   | 'table-preface'
   | 'orphan-prose'
-  | 'pure-structure';
+  | 'pure-structure'
+  | 'table-rows';
 
 export type SourceRegionClassification =
   | `record:${string}`
@@ -74,6 +91,13 @@ export interface SourceRegionLedger {
     readonly pureDocumentStructure: number;
     readonly unrepresented: number;
     readonly broadStructuralIgnores: number;
+    /**
+     * Non-empty source pages (beyond front matter) with neither a ledger
+     * entry nor a source-inventory coverage item (eshyra-erf5.5). Must be
+     * empty: a page silently owning no accounting at all is exactly the
+     * failure mode this ledger exists to prevent.
+     */
+    readonly unaccountedPages: readonly number[];
   };
   readonly entries: readonly SourceRegionLedgerEntry[];
 }
@@ -99,6 +123,18 @@ interface SearchableRecord {
 interface RegionSegment {
   readonly body: string;
   readonly idSuffix: string;
+}
+
+/**
+ * A contiguous run of table-cell-height lines skipped by the prose walk
+ * because their content is represented via the owning caption's coverage
+ * status (eshyra-erf5.5). Tracked so a page consisting only of such runs can
+ * still receive an explicit ledger entry instead of silently owning nothing.
+ */
+interface TableCellRun {
+  readonly owner: ActiveOwner | undefined;
+  readonly headingPath: readonly string[];
+  readonly lines: FlatLine[];
 }
 
 const BROAD_STRUCTURAL_IGNORES = new Set([
@@ -556,13 +592,21 @@ function findRepresentingRecord(
       ? undefined
       : slug(owner.item.section);
   const headingSlug = owner === undefined ? undefined : slug(owner.item.text);
-  const preferred = matches.find(
-    (record) =>
-      (sectionSlug !== undefined && record.key.includes(`:${sectionSlug}:`)) ||
-      (headingSlug !== undefined &&
+  // Section-slug matches win outright: same-boilerplate headings recur across
+  // sections (every class has an identically worded "Ability Score
+  // Improvement" feature), so a heading-slug hit alone cannot distinguish the
+  // owning section's record from its 11 siblings (eshyra-erf5.6).
+  const preferred =
+    matches.find(
+      (record) =>
+        sectionSlug !== undefined && record.key.includes(`:${sectionSlug}:`),
+    ) ??
+    matches.find(
+      (record) =>
+        headingSlug !== undefined &&
         (record.key.endsWith(`:${headingSlug}`) ||
-          record.key.includes(`:${headingSlug}:`))),
-  );
+          record.key.includes(`:${headingSlug}:`)),
+    );
   if (preferred !== undefined) return preferred.key;
   if (matches.every((record) => record.key.startsWith('equipment:'))) {
     return [...matches].sort((a, b) => a.key.localeCompare(b.key))[0]?.key;
@@ -603,7 +647,10 @@ function pureStructureEntry(
   };
 }
 
-function summarize(entries: readonly SourceRegionLedgerEntry[]) {
+function summarize(
+  entries: readonly SourceRegionLedgerEntry[],
+  unaccountedPages: readonly number[],
+) {
   let record = 0;
   let childOf = 0;
   let pureDocumentStructure = 0;
@@ -651,6 +698,7 @@ function summarize(entries: readonly SourceRegionLedgerEntry[]) {
     pureDocumentStructure,
     unrepresented,
     broadStructuralIgnores,
+    unaccountedPages,
   };
 }
 
@@ -677,6 +725,8 @@ export function buildSourceRegionLedger(
   let regionLines: FlatLine[] = [];
   let regionHeadingPath: readonly string[] = [];
   let regionOwner: ActiveOwner | undefined;
+  const cellRuns: TableCellRun[] = [];
+  let currentCellRun: TableCellRun | undefined;
 
   const flushRegion = () => {
     if (regionLines.length === 0) return;
@@ -726,6 +776,7 @@ export function buildSourceRegionLedger(
     const coverage = coverageByLocation.get(location);
     if (coverage !== undefined) {
       flushRegion();
+      currentCellRun = undefined;
       headingPath = updateHeadingPath(headingPath, coverage.item);
       owner = {
         item: coverage.item,
@@ -735,13 +786,28 @@ export function buildSourceRegionLedger(
     }
 
     if (
-      line.text.length === 0 ||
-      classifyTier(line.height) !== null ||
-      (isTableCell(line.height) && !isSidebarBodyOwner(owner))
+      line.text.length > 0 &&
+      isTableCell(line.height) &&
+      !isSidebarBodyOwner(owner)
     ) {
       flushRegion();
+      // Track the skipped run so a table-rows-only page still gets explicit
+      // accounting (eshyra-erf5.5). Owner identity groups a caption's rows.
+      if (currentCellRun !== undefined && currentCellRun.owner === owner) {
+        currentCellRun.lines.push(line);
+      } else {
+        currentCellRun = { owner, headingPath, lines: [line] };
+        cellRuns.push(currentCellRun);
+      }
       continue;
     }
+
+    if (line.text.length === 0 || classifyTier(line.height) !== null) {
+      flushRegion();
+      currentCellRun = undefined;
+      continue;
+    }
+    currentCellRun = undefined;
 
     if (
       regionLines.length > 0 &&
@@ -780,13 +846,157 @@ export function buildSourceRegionLedger(
     );
   }
 
+  // Table-rows-only page accounting (eshyra-erf5.5): a skipped cell run whose
+  // pages all carry other ledger entries needs no entry of its own — the
+  // owning caption's coverage status is the intended proof for row content.
+  // But a run touching a page that would otherwise have NO ledger entry gets
+  // an explicit entry stating what represents it, so the page cannot vanish
+  // behind a zero-unrepresented summary.
+  const pagesWithEntries = new Set<number>();
+  for (const entry of entries) {
+    for (let page = entry.pageStart; page <= entry.pageEnd; page++) {
+      pagesWithEntries.add(page);
+    }
+  }
+  for (const run of cellRuns) {
+    const first = run.lines[0];
+    const last = run.lines[run.lines.length - 1];
+    let touchesUnaccountedPage = false;
+    for (let page = first.page; page <= last.page; page++) {
+      if (!pagesWithEntries.has(page)) touchesUnaccountedPage = true;
+    }
+    if (!touchesUnaccountedPage) continue;
+    entries.push(tableRowsEntry(run));
+  }
+
   entries.sort(
     (a, b) =>
       a.pageStart - b.pageStart ||
       a.lineStart - b.lineStart ||
       a.id.localeCompare(b.id),
   );
-  return { summary: summarize(entries), entries };
+  const unaccountedPages = findUnaccountedPages(
+    lines,
+    coverageEntries,
+    entries,
+  );
+  return { summary: summarize(entries, unaccountedPages), entries };
+}
+
+/**
+ * Build the explicit ledger entry for a table-cell run on an otherwise
+ * unaccounted page (eshyra-erf5.5). Rows owned by a caption that resolves to
+ * a `table:` record ARE that record's row data, so they classify as
+ * `record:<key>` (which also lets provenance enrichment count the
+ * continuation page — e.g. table:norse-deities' p362 rows). Rows owned by any
+ * other specifically-accounted caption (the Adventuring Gear price list's
+ * rows and embedded sub-group captions, all emitted as `equipment:` records)
+ * classify under the same `table-rows-emitted-as-records` reason the coverage
+ * report already uses for such captions. A run with no owner, or one hiding
+ * behind a broad structural ignore, fails closed as `unrepresented`.
+ */
+function tableRowsEntry(run: TableCellRun): SourceRegionLedgerEntry {
+  const first = run.lines[0];
+  const last = run.lines[run.lines.length - 1];
+  const body = normalizeText(run.lines.map((line) => line.text).join(' '));
+  const base = {
+    id: `p${first.page}-l${first.lineIndex}-table-rows`,
+    pageStart: first.page,
+    pageEnd: last.page,
+    lineStart: first.lineIndex,
+    lineEnd: last.lineIndex,
+    headingPath: run.headingPath,
+    sourceContext: run.owner?.item.text ?? null,
+    regionType: 'table-rows' as const,
+    firstPhrase: phrase(body),
+    lastPhrase: phrase(body, true),
+    normalizedCharCount: body.length,
+  };
+  if (first.page <= FRONT_MATTER_MAX_PAGE) {
+    return {
+      ...base,
+      classification: 'intentionally-ignored:front-matter',
+      ignoreReason: 'front-matter',
+      guardNotes: 'Front-matter content is outside SRD rules content.',
+    };
+  }
+  const status = run.owner?.status;
+  if (status !== undefined) {
+    if (status.startsWith('record:table:')) {
+      const targetKey = status.slice('record:'.length);
+      return {
+        ...base,
+        classification: `record:${targetKey}`,
+        targetKey,
+        guardNotes:
+          'Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data.',
+      };
+    }
+    if (
+      !BROAD_STRUCTURAL_IGNORES.has(status) &&
+      status.startsWith('ignored:')
+    ) {
+      // The owning structure already carries a specific, documented ignore
+      // (e.g. deity-table-column-header); the run defers to that same reason.
+      const reason = status.slice('ignored:'.length);
+      return {
+        ...base,
+        classification: `intentionally-ignored:${reason}`,
+        ignoreReason: reason,
+        guardNotes:
+          'Table rows on an otherwise unaccounted page; accounted under the owning structure’s documented ignore reason.',
+      };
+    }
+    if (
+      status.startsWith('record:') ||
+      status.startsWith('child-of:') ||
+      status.startsWith('ambiguous:')
+    ) {
+      return {
+        ...base,
+        classification: 'intentionally-ignored:table-rows-emitted-as-records',
+        ignoreReason: 'table-rows-emitted-as-records',
+        guardNotes:
+          'Table rows on an otherwise unaccounted page; row content (including any embedded sub-group captions rendered at cell height) is emitted as its own records under the owning caption’s coverage status.',
+      };
+    }
+  }
+  return {
+    ...base,
+    classification: 'unrepresented',
+    guardNotes:
+      'Table-cell run on an otherwise unaccounted page has no specifically-accounted owning structure.',
+  };
+}
+
+/**
+ * Non-empty pages (beyond front matter) with neither a ledger entry nor a
+ * source-inventory coverage item (eshyra-erf5.5). Asserted empty by
+ * `assertSourceRegionLedger`.
+ */
+function findUnaccountedPages(
+  lines: readonly FlatLine[],
+  coverageEntries: readonly SourceCoverageEntry[],
+  entries: readonly SourceRegionLedgerEntry[],
+): readonly number[] {
+  const accounted = new Set<number>();
+  for (const entry of entries) {
+    for (let page = entry.pageStart; page <= entry.pageEnd; page++) {
+      accounted.add(page);
+    }
+  }
+  for (const coverage of coverageEntries) accounted.add(coverage.item.page);
+  const unaccounted = new Set<number>();
+  for (const line of lines) {
+    if (
+      line.text.length > 0 &&
+      line.page > FRONT_MATTER_MAX_PAGE &&
+      !accounted.has(line.page)
+    ) {
+      unaccounted.add(line.page);
+    }
+  }
+  return [...unaccounted].sort((a, b) => a - b);
 }
 
 export class SourceRegionLedgerError extends Error {
@@ -804,6 +1014,11 @@ export class SourceRegionLedgerError extends Error {
         (entry) =>
           `  ${entry.id} [${entry.regionType}] ${entry.classification}: ${entry.firstPhrase}`,
       );
+    if (ledger.summary.unaccountedPages.length > 0) {
+      lines.push(
+        `  pages with no ledger entry and no coverage item: ${ledger.summary.unaccountedPages.join(', ')}`,
+      );
+    }
     super(
       `SRD source-region ledger has ${invalid.length} invalid prose-bearing region(s):\n${lines.join('\n')}`,
     );
@@ -814,7 +1029,8 @@ export class SourceRegionLedgerError extends Error {
 export function assertSourceRegionLedger(ledger: SourceRegionLedger): void {
   if (
     ledger.summary.unrepresented > 0 ||
-    ledger.summary.broadStructuralIgnores > 0
+    ledger.summary.broadStructuralIgnores > 0 ||
+    ledger.summary.unaccountedPages.length > 0
   ) {
     throw new SourceRegionLedgerError(ledger);
   }

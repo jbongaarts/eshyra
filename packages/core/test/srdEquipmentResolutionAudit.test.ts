@@ -246,6 +246,28 @@ describe('auditEquipmentResolution — class equipment proficiencies', () => {
     ).toEqual(['equipment:thieves-tools']);
   });
 
+  it('fails closed when a named proficiency key is missing from the equipment catalog', () => {
+    // eshyra-erf5.7: named single-item phrases must prove the hard-coded key
+    // exists in the catalog, not merely that the resolver returned a string.
+    // A pack whose catalog lacks equipment:crossbow-hand must make the
+    // 'hand crossbows' phrase resolve to zero candidates and fail the gate.
+    const rogue = record({
+      kind: 'class',
+      key: 'class:rogue',
+      data: {
+        armorProficiencies: [],
+        weaponProficiencies: ['hand crossbows'],
+        toolProficiencies: [],
+      },
+    });
+    const results = auditEquipmentResolution(pack([DAGGER, rogue]));
+    const handCrossbows = results.find((r) => r.phrase === 'hand crossbows');
+    expect(handCrossbows?.candidateKeys).toEqual([]);
+    expect(() => assertEquipmentResolution(results)).toThrow(
+      EquipmentResolutionEmptyError,
+    );
+  });
+
   it('fails closed on an unreviewed proficiency phrase', () => {
     const weird = record({
       kind: 'class',
