@@ -119,6 +119,59 @@ function optStrArray(parent: Obj, key: string, path: string): void {
   });
 }
 
+/** SRD 5.1's six ability scores, lowercase, as `rule:skills`' map keys. */
+const ABILITY_SCORE_KEYS: ReadonlySet<string> = new Set([
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+]);
+
+/**
+ * `rule:skills`' p78 skill-to-ability mapping (eshyra-erf5.1): an object keyed
+ * by lowercase ability name, each value a (possibly empty, e.g. Constitution)
+ * array of governing skill names.
+ */
+function optSkillsByAbility(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be a non-null object when present`,
+    );
+  }
+  const map = value as Obj;
+  for (const ability of Object.keys(map)) {
+    if (!ABILITY_SCORE_KEYS.has(ability)) {
+      throw new RulesPackError(
+        `${path}.${key} has unsupported ability key "${ability}"`,
+      );
+    }
+    const skills = map[ability];
+    if (!Array.isArray(skills)) {
+      throw new RulesPackError(`${path}.${key}.${ability} must be an array`);
+    }
+    skills.forEach((skill, i) => {
+      if (typeof skill !== 'string' || skill.length === 0) {
+        throw new RulesPackError(
+          `${path}.${key}.${ability}[${i}] must be a non-empty string`,
+        );
+      }
+    });
+  }
+  for (const ability of ABILITY_SCORE_KEYS) {
+    if (!(ability in map)) {
+      throw new RulesPackError(
+        `${path}.${key} is missing ability "${ability}"`,
+      );
+    }
+  }
+}
+
 function optNonEmptyStrArray(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) {
@@ -1055,6 +1108,7 @@ const BASE_KIND_VALIDATORS: Record<RulesRecordKind, Validator> = {
     const data = dataObj(record, path);
     reqStr(data, 'text', `${path}.data`);
     optStrArray(data, 'tableRefs', `${path}.data`);
+    optSkillsByAbility(data, 'skillsByAbility', `${path}.data`);
   },
   spell: baseObjectKind,
   // An abbreviated inline combat stat block (eshyra-4a7.4); baseline only

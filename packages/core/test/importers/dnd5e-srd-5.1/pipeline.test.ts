@@ -2705,8 +2705,13 @@ describe('runImporter — source-structure coverage gate (eshyra-4a7.1)', () => 
       pdfPath,
       outDir,
       sourceCoverageRules: [
-        // Account for every fixture line the name auto-match doesn't claim.
-        ignoreRule('fixture-body', () => true),
+        // Account for every fixture line except the one heading this test
+        // wants to fall through to the name auto-match. Curated rules now
+        // outrank the auto-match (eshyra-erf5.1), so an unconditional
+        // catch-all would swallow real headings too; excluding "Acid Splash"
+        // lets it demonstrate the auto-match still covers an emitted
+        // record's own heading.
+        ignoreRule('fixture-body', (i) => i.text !== 'Acid Splash'),
       ],
       statBlockCoverageExceptionReasons: ['fixture-body'],
     });
@@ -2728,8 +2733,8 @@ describe('runImporter — source-structure coverage gate (eshyra-4a7.1)', () => 
       entries: ReadonlyArray<{ text: string; status: string }>;
     };
     expect(coverage.summary.unaccounted).toBe(0);
-    // The name auto-match runs before any rule: an emitted record claims its
-    // own source heading even though the catch-all ignore would also match.
+    // The catch-all ignore excludes "Acid Splash" so the name auto-match
+    // still claims that emitted record's own source heading.
     expect(
       coverage.entries.some((e) => e.status === 'record:spell:acid-splash'),
     ).toBe(true);

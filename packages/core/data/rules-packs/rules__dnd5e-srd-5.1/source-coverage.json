@@ -1,7 +1,7 @@
 {
   "summary": {
-    "record": 1453,
-    "childOf": 455,
+    "record": 1444,
+    "childOf": 462,
     "ambiguous": 187,
     "taxonomy": 33,
     "ignored": {
@@ -10,7 +10,7 @@
       "document-structure": 29,
       "front-matter": 2,
       "spell-list-header": 78,
-      "table-rows-emitted-as-records": 11
+      "table-rows-emitted-as-records": 13
     },
     "knownGap": {},
     "unaccounted": 0
@@ -687,29 +687,9 @@
         "count": 2
       },
       {
-        "text": "Charisma",
-        "resolvedKey": "rule:charisma",
-        "count": 2
-      },
-      {
         "text": "Class Features",
         "resolvedKey": "rule:class-features",
         "count": 13
-      },
-      {
-        "text": "Dexterity",
-        "resolvedKey": "rule:dexterity",
-        "count": 2
-      },
-      {
-        "text": "Intelligence",
-        "resolvedKey": "rule:intelligence",
-        "count": 2
-      },
-      {
-        "text": "Poisons",
-        "resolvedKey": "rule:poisons",
-        "count": 2
       },
       {
         "text": "Spell Slots",
@@ -717,28 +697,8 @@
         "count": 5
       },
       {
-        "text": "Strength",
-        "resolvedKey": "rule:strength",
-        "count": 2
-      },
-      {
         "text": "Suggested Characteristics",
         "resolvedKey": "rule:suggested-characteristics",
-        "count": 2
-      },
-      {
-        "text": "Tools",
-        "resolvedKey": "rule:tools",
-        "count": 2
-      },
-      {
-        "text": "Two-Weapon Fighting",
-        "resolvedKey": "rule:two-weapon-fighting",
-        "count": 3
-      },
-      {
-        "text": "Wisdom",
-        "resolvedKey": "rule:wisdom",
         "count": 2
       },
       {
@@ -2896,7 +2856,7 @@
       "structure": "heading",
       "text": "Two-Weapon Fighting",
       "section": "Fighter",
-      "status": "record:rule:two-weapon-fighting"
+      "status": "child-of:feature:fighter:fighting-style"
     },
     {
       "page": 24,
@@ -3805,7 +3765,7 @@
       "structure": "heading",
       "text": "Two-Weapon Fighting",
       "section": "Ranger",
-      "status": "record:rule:two-weapon-fighting"
+      "status": "child-of:feature:ranger:fighting-style"
     },
     {
       "page": 36,
@@ -5920,7 +5880,7 @@
       "structure": "table-caption",
       "text": "Tools",
       "section": "Equipment",
-      "status": "record:rule:tools"
+      "status": "ignored:table-rows-emitted-as-records"
     },
     {
       "page": 71,
@@ -6163,7 +6123,7 @@
       "structure": "heading",
       "text": "Strength",
       "section": "Using Ability Scores",
-      "status": "record:rule:strength"
+      "status": "child-of:rule:skills"
     },
     {
       "page": 78,
@@ -6172,7 +6132,7 @@
       "structure": "heading",
       "text": "Dexterity",
       "section": "Using Ability Scores",
-      "status": "record:rule:dexterity"
+      "status": "child-of:rule:skills"
     },
     {
       "page": 78,
@@ -6181,7 +6141,7 @@
       "structure": "heading",
       "text": "Intelligence",
       "section": "Using Ability Scores",
-      "status": "record:rule:intelligence"
+      "status": "child-of:rule:skills"
     },
     {
       "page": 78,
@@ -6190,7 +6150,7 @@
       "structure": "heading",
       "text": "Wisdom",
       "section": "Using Ability Scores",
-      "status": "record:rule:wisdom"
+      "status": "child-of:rule:skills"
     },
     {
       "page": 78,
@@ -6199,7 +6159,7 @@
       "structure": "heading",
       "text": "Charisma",
       "section": "Using Ability Scores",
-      "status": "record:rule:charisma"
+      "status": "child-of:rule:skills"
     },
     {
       "page": 78,
@@ -11635,7 +11595,7 @@
       "structure": "table-caption",
       "text": "Poisons",
       "section": "Spellcasting",
-      "status": "record:rule:poisons"
+      "status": "ignored:table-rows-emitted-as-records"
     },
     {
       "page": 204,

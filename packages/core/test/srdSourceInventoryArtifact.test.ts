@@ -257,7 +257,27 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // 1452 -> 1453 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection, split
     // out of feature:rogue:sneak-attack into its own feature:rogue:thieves-cant
     // record, now maps to that record instead of riding in Sneak Attack's body.
-    expect(coverage.summary.record).toBe(1453);
+    // 1453 -> 1444 (eshyra-erf5.1): curated non-record rules (child-of/ignore/
+    // taxonomy/known-gap) now outrank the bare-name auto-match, the same as
+    // record-type rules already did — a same-named-but-unrelated record must
+    // not silently swallow a source item a curated rule already classifies.
+    // This resurrects several previously-dead-but-correct curated rules: the
+    // p78 five per-ability "Skills" bullet captions move to child-of
+    // rule:skills instead of the unrelated same-named per-ability rule records
+    // (-5); "Two-Weapon Fighting" under Fighter/Ranger moves child-of its
+    // owning feature:*:fighting-style instead of the unrelated general combat
+    // rule:two-weapon-fighting (-2); the Equipment "Tools" and Spellcasting-
+    // section "Poisons" table captions move to the existing
+    // table-rows-emitted-as-records ignore instead of the unrelated same-named
+    // rule:tools / rule:poisons (-2). One stale curated rule that would have
+    // wrongly resurfaced (a `feature:rogue:sneak-attack` child-of predicate for
+    // "Thieves' Cant" written before that text got its own
+    // feature:rogue:thieves-cant record) was removed, and the eldritch-
+    // invocations page-range rule gained two exclusions for "Dark One's
+    // Blessing" / "Dark One's Own Luck" (The Fiend's own p50 features,
+    // interleaved with the invocation list) so both keep resolving to their
+    // real feature:the-fiend:* records via the auto-match.
+    expect(coverage.summary.record).toBe(1444);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // map child-of their owning feature/subclass records (the text rides in
@@ -266,7 +286,11 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // subclass:oath-of-devotion (its prose is a named section on that record).
     // 456 -> 455 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection no longer
     // rides child-of Sneak Attack; it is its own feature record (see `record`).
-    expect(coverage.summary.childOf).toBe(455);
+    // 455 -> 462 (eshyra-erf5.1): the same reordering fix moves the seven
+    // record-count decreases above (minus the two that landed in `ignored`)
+    // into `childOf` instead: the five p78 ability captions (+5) and the two
+    // Two-Weapon Fighting headings (+2).
+    expect(coverage.summary.childOf).toBe(462);
     expect(coverage.summary.ambiguous).toBe(187);
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.unaccounted).toBe(0);
@@ -294,13 +318,18 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // region ledger follow-up removes equipment-category-heading and subclass-
     // spell-table-heading by mapping those headings to emitted rules, and moves
     // Adventuring Gear out of table-rows-emitted-as-records.
+    // eshyra-erf5.1: table-rows-emitted-as-records 11 -> 13. The Equipment
+    // "Tools" and Spellcasting-section "Poisons" table captions now resolve to
+    // this pre-existing (previously dead) ignore rule instead of the
+    // unrelated same-named rule:tools / rule:poisons prose records — see the
+    // `record` count comment above.
     expect(coverage.summary.ignored).toEqual({
       'class-progression-table-internal': 9,
       'deity-table-column-header': 1,
       'document-structure': 29,
       'front-matter': 2,
       'spell-list-header': 78,
-      'table-rows-emitted-as-records': 11,
+      'table-rows-emitted-as-records': 13,
     });
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
@@ -788,7 +817,15 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
     // stat-blocks to their creature records, removing the two false
     // background/class collapse groups (56 -> 54).
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(15);
+    // eshyra-erf5.1: 15 -> 7. Curated non-record rules now outrank the
+    // bare-name auto-match (see the `record`/`childOf` summary comments
+    // above), so eight of these bare-name collapse groups are no longer
+    // uniform "N source items -> 1 record" groups: the five p78 ability
+    // captions (Strength/Dexterity/Intelligence/Wisdom/Charisma) and
+    // "Two-Weapon Fighting" now split between their curated child-of target
+    // and the real per-topic rule record, and "Tools" / "Poisons" now split
+    // between the table-rows-emitted-as-records ignore and the real rule.
+    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(7);
     expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(75);
   });
 

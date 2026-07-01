@@ -91,6 +91,28 @@ export const SRD_5_1_SKILLS: readonly string[] = [
   'Survival',
 ];
 
+/**
+ * The p78 "Skills" per-ability mapping (eshyra-erf5.1): which of the 18 SRD
+ * skills falls under each ability score, keyed by lowercase ability name.
+ * Constitution has no associated skills. The SRD prints this as a caption +
+ * bullet list per ability rather than a literal table, and the importer
+ * deliberately excludes those captions from becoming their own prose `rule`
+ * records (they collide by name with the real "Using Each Ability"
+ * subsections and are list scaffolding, not adjudication text) — this
+ * canonical mapping is what `rule:skills` carries instead, so deterministic
+ * tools can still resolve every skill to its governing ability.
+ */
+export const SRD_5_1_SKILL_ABILITIES: Readonly<
+  Record<string, readonly string[]>
+> = {
+  strength: ['Athletics'],
+  dexterity: ['Acrobatics', 'Sleight of Hand', 'Stealth'],
+  constitution: [],
+  intelligence: ['Arcana', 'History', 'Investigation', 'Nature', 'Religion'],
+  wisdom: ['Animal Handling', 'Insight', 'Medicine', 'Perception', 'Survival'],
+  charisma: ['Deception', 'Intimidation', 'Performance', 'Persuasion'],
+};
+
 /** The Dwarf/Hill Dwarf artisan-tool proficiency options. */
 const ARTISAN_TOOL_OPTIONS: readonly string[] = [
   'Smith’s tools',

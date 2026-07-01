@@ -726,6 +726,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-o9bd.8.3 adds thirteen more section-owning rules (four pantheons,
   // languages, coinage, getting-into-and-out-of-armor, ability-checks, speed,
   // trap-effects, hit-points, size, challenge-experience-points): 319 -> 306.
+  // eshyra-erf5.1: rule:skills alone carries the p78 skill-to-ability map.
+  {
+    kind: 'rule',
+    field: 'skillsByAbility',
+    missingCount: 334,
+    totalInKind: 335,
+  },
   {
     kind: 'rule',
     field: 'tableRefs',

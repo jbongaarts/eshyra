@@ -4,6 +4,7 @@ import {
   getBackgroundCreationFacts,
   SRD_5_1_ARTISAN_TOOLS,
   SRD_5_1_MUSICAL_INSTRUMENTS,
+  SRD_5_1_SKILL_ABILITIES,
   SRD_5_1_STANDARD_LANGUAGES,
 } from '../../../src/character/srdCreationChoices.js';
 import {
@@ -761,6 +762,35 @@ export function enrichBackgroundCreationFacts(
               })),
             }
           : {}),
+      },
+    };
+  });
+}
+
+/**
+ * Attach the p78 skill-to-ability mapping to `rule:skills` (eshyra-erf5.1).
+ * The SRD's per-ability "Skills" bullet captions are deliberately excluded
+ * from becoming their own prose `rule` records (`parseRules`'
+ * `bodyLeadsWithBullet`; they collide by name with the real "Using Each
+ * Ability" subsections), so `rule:skills` — which already promises the list
+ * in its prose ("shown in the following list") — is enriched with the
+ * canonical mapping as structured data instead of losing it.
+ */
+export function enrichSkillsRule(
+  records: readonly RulesRecord[],
+): RulesRecord[] {
+  return records.map((record) => {
+    if (record.key !== 'rule:skills') return record;
+    return {
+      ...record,
+      data: {
+        ...dataObject(record),
+        skillsByAbility: Object.fromEntries(
+          Object.entries(SRD_5_1_SKILL_ABILITIES).map(([ability, skills]) => [
+            ability,
+            [...skills],
+          ]),
+        ),
       },
     };
   });

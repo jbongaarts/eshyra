@@ -30,6 +30,7 @@ import {
   enrichAncestryCreationFacts,
   enrichBackgroundCreationFacts,
   enrichClassToolChoiceDomains,
+  enrichSkillsRule,
 } from './creationFacts.js';
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
@@ -1369,7 +1370,12 @@ export function buildPack(input: BuildPackInput): RulesPack {
     ...poisonExtractionsToRecords(input.poisons ?? []),
   ];
   const actionRecords = actionExtractionsToRecords(input.actions ?? []);
-  const ruleRecords = ruleExtractionsToRecords(input.rules ?? []);
+  // Attach the p78 skill-to-ability mapping to `rule:skills` (eshyra-erf5.1):
+  // the SRD's per-ability bullet captions are excluded from becoming their
+  // own prose rules, so the mapping is carried here as structured data.
+  const ruleRecords = enrichSkillsRule(
+    ruleExtractionsToRecords(input.rules ?? []),
+  );
   const tableRecords = tableExtractionsToRecords(input.tables ?? []);
   const spellRecords = linkSpellEmbeddedTables({
     spellRecords: baseSpellRecords,

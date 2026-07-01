@@ -17,14 +17,22 @@
  *                    the new coverage;
  *   - `unaccounted`— nothing claims it. `assertSourceCoverage` fails closed.
  *
- * Resolution order: explicit `record`-type rules first (a curated mapping is
- * more precise than the name heuristic, so it can disambiguate duplicate
- * source captions — e.g. the two "Draconic Ancestry" tables on p5 and p44
- * map to two different emitted records), then contextual stat-block ownership,
- * then unique-name auto-match, then the caller's remaining rules in order
- * (first match wins). A multi-record name match becomes `ambiguous` rather
- * than arbitrarily choosing a winner. Finally, chapter/section tiers use the
- * document-structure default; anything else is unaccounted.
+ * Resolution order: ALL explicit curated rules (both `record`-type and the
+ * caller's remaining `child-of`/`ignore`/`taxonomy`/`known-gap` rules, in
+ * list order, first match wins) outrank the unique-name auto-match, which
+ * runs last before the ambiguous/document-structure defaults. A curated rule
+ * is always more precise than the name heuristic: it can disambiguate
+ * duplicate source captions (e.g. the two "Draconic Ancestry" tables on p5
+ * and p44 map to two different emitted records) AND it can override a name
+ * heuristic that would otherwise silently miscount a source item — e.g. the
+ * SRD's p78 per-ability "Skills" bullet captions ("Strength", "Dexterity", …)
+ * share their bare name with the real p79+ "Using Each Ability" subsections,
+ * so without an explicit `child-of` rule the auto-match would count the p78
+ * caption as covered by the unrelated same-named ability record even though
+ * that record's body never mentions it (eshyra-erf5.1). A multi-record name
+ * match becomes `ambiguous` rather than arbitrarily choosing a winner.
+ * Finally, chapter/section tiers use the document-structure default; anything
+ * else is unaccounted.
  *
  * Rules are PREDICATES with stable reason codes, not per-item lists: one rule
  * accounts for a whole class of source items (e.g. every spell-list header),
@@ -252,10 +260,10 @@ export function evaluateSourceCoverage(
         status: { kind: 'child-of', key: activeStatBlockKey },
       };
     }
-    const matchedKeys = keysByName.get(normalizeName(item.text)) ?? [];
-    if (matchedKeys.length === 1) {
-      return { item, status: { kind: 'record', key: matchedKeys[0] } };
-    }
+    // The remaining curated rules (child-of/ignore/taxonomy/known-gap) also
+    // outrank the unique-name auto-match below: a same-named-but-unrelated
+    // record must not silently swallow a source item a curated rule already
+    // classifies (eshyra-erf5.1 — see the module docstring).
     for (const rule of rules) {
       if (rule.type !== 'record' && rule.match(item)) {
         if (
@@ -266,6 +274,10 @@ export function evaluateSourceCoverage(
         }
         return { item, status: statusForRule(rule) };
       }
+    }
+    const matchedKeys = keysByName.get(normalizeName(item.text)) ?? [];
+    if (matchedKeys.length === 1) {
+      return { item, status: { kind: 'record', key: matchedKeys[0] } };
     }
     if (matchedKeys.length > 1) {
       return {
@@ -678,6 +690,19 @@ const WARLOCK_PACT_OPTIONS: ReadonlySet<string> = new Set([
   'Pact of the Chain',
   'Pact of the Blade',
   'Pact of the Tome',
+]);
+
+/**
+ * The five p78 "Skills" per-ability leaf captions (child-of `rule:skills`,
+ * eshyra-erf5.1). Constitution has no caption because the SRD lists no
+ * skills under it.
+ */
+const SKILL_CAPTION_ABILITY_NAMES: ReadonlySet<string> = new Set([
+  'Strength',
+  'Dexterity',
+  'Intelligence',
+  'Wisdom',
+  'Charisma',
 ]);
 
 /** Spellcasting-feature boilerplate subsections, shared across caster classes. */
@@ -1104,9 +1129,13 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   ),
   // The Eldritch Invocations (the p48–50 Warlock leaf headings) all live in the
   // feature:warlock:eldritch-invocations body. They are bounded by page (the
-  // Pact Boon block ends on p47) with the two non-invocation headings inside
-  // that page span excluded: "Pact of the Tome" (a Pact Boon, handled above)
-  // and "Expanded Spell List" (the Fiend patron's, handled below).
+  // Pact Boon block ends on p47) with the non-invocation headings inside that
+  // page span excluded: "Pact of the Tome" (a Pact Boon, handled above),
+  // "Expanded Spell List" (the Fiend patron's, handled below), and "Dark One's
+  // Blessing" / "Dark One's Own Luck" (The Fiend patron's own p50 features,
+  // interleaved in the two-column layout with the invocation list —
+  // eshyra-erf5.1; confirmed each is its own emitted
+  // `feature:the-fiend:dark-ones-*` record, not part of the invocations body).
   childOfRule(
     'feature:warlock:eldritch-invocations',
     (i) =>
@@ -1116,7 +1145,9 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       i.page >= 48 &&
       i.page <= 50 &&
       i.text !== 'Pact of the Tome' &&
-      i.text !== 'Expanded Spell List',
+      i.text !== 'Expanded Spell List' &&
+      i.text !== 'Dark One’s Blessing' &&
+      i.text !== 'Dark One’s Own Luck',
   ),
   // Spellcasting boilerplate subsections (Preparing and Casting Spells, Ritual
   // Casting, Spellcasting Focus, Spells/Learning Spells Known of 1st Level and
@@ -1166,13 +1197,6 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   childOfRule(
     'subclass:oath-of-devotion',
     (i) => i.section === 'Paladin' && i.text === 'Tenets of Devotion',
-  ),
-  // The Rogue's "Thieves' Cant" level-1 feature is not emitted as its own
-  // record; the SRD prints it as a subheading the feature parser folds into the
-  // Sneak Attack feature body, so it is child-of that feature.
-  childOfRule(
-    'feature:rogue:sneak-attack',
-    (i) => i.section === 'Rogue' && i.text === 'Thieves’ Cant',
   ),
   // The 8 subclass-group section headings (Martial Archetypes, Sacred Oaths,
   // Arcane Traditions, …) now own their overview prose as `rule` records named
@@ -1426,5 +1450,25 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     (i) =>
       (i.section?.startsWith('Appendix PH-B') ?? false) &&
       i.text === 'Suggested Domains Symbol',
+  ),
+  // p78 "Skills" per-ability bullet captions (eshyra-erf5.1). Ability Checks'
+  // "Skills" subsection prints five h≈12 leaf captions ("Strength",
+  // "Dexterity", "Intelligence", "Wisdom", "Charisma" — Constitution has none)
+  // each followed by a bulleted skill list; `parseRules`'
+  // `bodyLeadsWithBullet` deliberately excludes them from becoming their own
+  // `rule` records because they are list scaffolding, not adjudication prose,
+  // and `rule:skills` carries the reconstructed mapping as structured data
+  // instead (see `SRD_5_1_SKILL_ABILITIES` / `buildSkillsByAbility`). Without
+  // this rule the bare-name auto-match would silently count each caption as
+  // covered by the unrelated p79+ "Using Each Ability" record of the same
+  // name (`rule:strength`, `rule:dexterity`, ...), whose body never mentions
+  // skills at all.
+  childOfRule(
+    'rule:skills',
+    (i) =>
+      i.section === 'Using Ability Scores' &&
+      i.tier === 'leaf' &&
+      i.structure === 'heading' &&
+      SKILL_CAPTION_ABILITY_NAMES.has(i.text),
   ),
 ];

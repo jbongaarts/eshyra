@@ -3,8 +3,8 @@
     "entries": 2655,
     "proseRegions": 2628,
     "pureStructure": 27,
-    "record": 2101,
-    "childOf": 444,
+    "record": 2095,
+    "childOf": 450,
     "intentionallyIgnored": {
       "front-matter": 2,
       "spell-list-header": 81
@@ -11639,8 +11639,8 @@
       "firstPhrase": "• Athletics",
       "lastPhrase": "• Athletics",
       "normalizedCharCount": 11,
-      "classification": "record:rule:strength",
-      "targetKey": "rule:strength"
+      "classification": "child-of:rule:skills",
+      "targetKey": "rule:skills"
     },
     {
       "id": "p78-l21-prose",
@@ -11659,8 +11659,8 @@
       "firstPhrase": "• Acrobatics • Sleight of Hand • Stealth",
       "lastPhrase": "• Acrobatics • Sleight of Hand • Stealth",
       "normalizedCharCount": 40,
-      "classification": "record:rule:dexterity",
-      "targetKey": "rule:dexterity"
+      "classification": "child-of:rule:skills",
+      "targetKey": "rule:skills"
     },
     {
       "id": "p78-l25-prose",
@@ -11679,8 +11679,8 @@
       "firstPhrase": "• Arcana • History • Investigation • Nature • Religion",
       "lastPhrase": "• Arcana • History • Investigation • Nature • Religion",
       "normalizedCharCount": 54,
-      "classification": "record:rule:intelligence",
-      "targetKey": "rule:intelligence"
+      "classification": "child-of:rule:skills",
+      "targetKey": "rule:skills"
     },
     {
       "id": "p78-l31-prose",
@@ -11699,8 +11699,8 @@
       "firstPhrase": "• Animal Handling • Insight • Medicine • Perception • Survival",
       "lastPhrase": "• Animal Handling • Insight • Medicine • Perception • Survival",
       "normalizedCharCount": 62,
-      "classification": "record:rule:wisdom",
-      "targetKey": "rule:wisdom"
+      "classification": "child-of:rule:skills",
+      "targetKey": "rule:skills"
     },
     {
       "id": "p78-l37-prose",
@@ -11719,8 +11719,8 @@
       "firstPhrase": "• Deception • Intimidation • Performance • Persuasion Sometimes, the GM might ask for",
       "lastPhrase": "particular skill applies to a check. In either case, proficiency in a skill means",
       "normalizedCharCount": 318,
-      "classification": "record:rule:charisma",
-      "targetKey": "rule:charisma"
+      "classification": "child-of:rule:skills",
+      "targetKey": "rule:skills"
     },
     {
       "id": "p78-l46-prose",
@@ -11739,8 +11739,8 @@
       "firstPhrase": "an individual can add his or her proficiency bonus to ability checks that involve",
       "lastPhrase": "If the character lacks that proficiency, he or she just makes a Strength check.",
       "normalizedCharCount": 482,
-      "classification": "record:rule:charisma",
-      "targetKey": "rule:charisma"
+      "classification": "child-of:rule:skills",
+      "targetKey": "rule:skills"
     },
     {
       "id": "p78-l57-prose",
