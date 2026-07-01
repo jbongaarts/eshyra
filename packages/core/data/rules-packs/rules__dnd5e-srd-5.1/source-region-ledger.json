@@ -1,17 +1,20 @@
 {
   "summary": {
-    "entries": 2679,
-    "proseRegions": 2652,
+    "entries": 2685,
+    "proseRegions": 2658,
     "pureStructure": 27,
-    "record": 2119,
+    "record": 2122,
     "childOf": 450,
     "intentionallyIgnored": {
+      "deity-table-column-header": 1,
       "front-matter": 2,
-      "spell-list-header": 81
+      "spell-list-header": 81,
+      "table-rows-emitted-as-records": 2
     },
     "pureDocumentStructure": 27,
     "unrepresented": 0,
-    "broadStructuralIgnores": 0
+    "broadStructuralIgnores": 0,
+    "unaccountedPages": []
   },
   "entries": [
     {
@@ -11172,6 +11175,47 @@
       "targetKey": "equipment:spyglass",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "contentMatch": true
+    },
+    {
+      "id": "p69-l0-table-rows",
+      "pageStart": 69,
+      "pageEnd": 69,
+      "lineStart": 0,
+      "lineEnd": 146,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear",
+        "Adventuring Gear"
+      ],
+      "sourceContext": "Adventuring Gear",
+      "regionType": "table-rows",
+      "firstPhrase": "Item Abacus Acid (vial) Alchemist’s fire (flask) Ammunition Arrows (20) Blowgun needles (50) Crossbow",
+      "lastPhrase": "1 lb. 1 gp 4 lb. 2 cp 1 lb. 2 gp 4 lb.",
+      "normalizedCharCount": 2310,
+      "classification": "intentionally-ignored:table-rows-emitted-as-records",
+      "ignoreReason": "table-rows-emitted-as-records",
+      "guardNotes": "Table rows on an otherwise unaccounted page; row content (including any embedded sub-group captions rendered at cell height) is emitted as its own records under the owning caption’s coverage status."
+    },
+    {
+      "id": "p69-l148-table-rows",
+      "pageStart": 69,
+      "pageEnd": 70,
+      "lineStart": 148,
+      "lineEnd": 8,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear",
+        "Adventuring Gear",
+        "Container Capacity"
+      ],
+      "sourceContext": "Container Capacity",
+      "regionType": "table-rows",
+      "firstPhrase": "1 gp 3 lb. Container Capacity 2 gp 10 lb. Backpack* 1 cubic foot/30",
+      "lastPhrase": "as a bedroll or a coil of rope, to the outside of a backpack.",
+      "normalizedCharCount": 628,
+      "classification": "intentionally-ignored:table-rows-emitted-as-records",
+      "ignoreReason": "table-rows-emitted-as-records",
+      "guardNotes": "Table rows on an otherwise unaccounted page; accounted under the owning structure’s documented ignore reason."
     },
     {
       "id": "p70-l10-prose",
@@ -48250,6 +48294,90 @@
       "classification": "record:rule:the-norse-pantheon",
       "targetKey": "rule:the-norse-pantheon",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p360-l83-table-rows",
+      "pageStart": 360,
+      "pageEnd": 361,
+      "lineStart": 83,
+      "lineEnd": 4,
+      "headingPath": [
+        "Appendix PH-B: Fantasy-Historical Pantheons",
+        "The Celtic Pantheon",
+        "The Greek Pantheon",
+        "The Norse Pantheon"
+      ],
+      "sourceContext": "Suggested Domains Symbol",
+      "regionType": "table-rows",
+      "firstPhrase": "CG Nature, Trickery Bubbling cauldron or shield NE Life, Death Black star on gray",
+      "lastPhrase": "and warriors Oghma, god of speech and writing Silvanus, god of nature and forests",
+      "normalizedCharCount": 517,
+      "classification": "intentionally-ignored:deity-table-column-header",
+      "ignoreReason": "deity-table-column-header",
+      "guardNotes": "Table rows on an otherwise unaccounted page; accounted under the owning structure’s documented ignore reason."
+    },
+    {
+      "id": "p361-l6-table-rows",
+      "pageStart": 361,
+      "pageEnd": 361,
+      "lineStart": 6,
+      "lineEnd": 25,
+      "headingPath": [
+        "Appendix PH-B: Fantasy-Historical Pantheons",
+        "The Celtic Pantheon",
+        "The Greek Pantheon",
+        "Greek Deities"
+      ],
+      "sourceContext": "Greek Deities",
+      "regionType": "table-rows",
+      "firstPhrase": "Deity Alignment Zeus, god of the sky, ruler of the gods Aphrodite, goddess of",
+      "lastPhrase": "of nature Poseidon, god of the sea and earthquakes Tyche, goddess of good fortune",
+      "normalizedCharCount": 682,
+      "classification": "record:table:greek-deities",
+      "targetKey": "table:greek-deities",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p361-l27-table-rows",
+      "pageStart": 361,
+      "pageEnd": 361,
+      "lineStart": 27,
+      "lineEnd": 41,
+      "headingPath": [
+        "Appendix PH-B: Fantasy-Historical Pantheons",
+        "The Celtic Pantheon",
+        "The Greek Pantheon",
+        "Egyptian Deities"
+      ],
+      "sourceContext": "Egyptian Deities",
+      "regionType": "table-rows",
+      "firstPhrase": "Deity Re-Horakhty, god of the sun, ruler of the gods Anubis, god of judgment",
+      "lastPhrase": "desert storms Sobek, god of water and crocodiles Thoth, god of knowledge and wisdom",
+      "normalizedCharCount": 538,
+      "classification": "record:table:egyptian-deities",
+      "targetKey": "table:egyptian-deities",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p361-l43-table-rows",
+      "pageStart": 361,
+      "pageEnd": 362,
+      "lineStart": 43,
+      "lineEnd": 28,
+      "headingPath": [
+        "Appendix PH-B: Fantasy-Historical Pantheons",
+        "The Celtic Pantheon",
+        "The Greek Pantheon",
+        "Norse Deities"
+      ],
+      "sourceContext": "Norse Deities",
+      "regionType": "table-rows",
+      "firstPhrase": "Deity Alignment Odin, god of knowledge and war Aegir, god of the sea and",
+      "lastPhrase": "War Hammer CE War White double-bladed axe LN Knowledge, War Sword CN Nature Longbow",
+      "normalizedCharCount": 2419,
+      "classification": "record:table:norse-deities",
+      "targetKey": "table:norse-deities",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p363-l1-prose",

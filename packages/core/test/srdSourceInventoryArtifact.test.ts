@@ -110,6 +110,7 @@ interface SourceRegionLedger {
     readonly pureDocumentStructure: number;
     readonly unrepresented: number;
     readonly broadStructuralIgnores: number;
+    readonly unaccountedPages: readonly number[];
   };
   readonly entries: readonly SourceRegionLedgerEntry[];
 }
@@ -371,10 +372,58 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     // attributed to that table record. Ignored spell-list headers drop 82 -> 81
     // and represented records rise by one — a source coverage improvement, not a
     // regression.
+    // eshyra-erf5.5: table-rows-only pages (p69's Adventuring Gear price-list
+    // body, the p360-361 deity-table column-header run) now carry explicit
+    // table-rows entries instead of silently owning nothing, classified under
+    // the owning structure's documented reason.
     expect(sourceRegionLedger.summary.intentionallyIgnored).toEqual({
+      'deity-table-column-header': 1,
       'front-matter': 2,
       'spell-list-header': 81,
+      'table-rows-emitted-as-records': 2,
     });
+  });
+
+  it('gives every previously silent table-rows-only page explicit accounting (eshyra-erf5.5)', () => {
+    // p69, p361, and p362 had zero ledger entries before eshyra-erf5.5 even
+    // though their content is fully represented (equipment records; deity
+    // table: records' rows). Pin their explicit accounting so a page can
+    // never again vanish behind a zero-unrepresented summary.
+    expect(sourceRegionLedger.summary.unaccountedPages).toEqual([]);
+
+    const entriesTouching = (page: number) =>
+      sourceRegionLedger.entries.filter(
+        (entry) => entry.pageStart <= page && page <= entry.pageEnd,
+      );
+    expect(entriesTouching(69).length).toBeGreaterThan(0);
+    expect(entriesTouching(361).length).toBeGreaterThan(0);
+    expect(entriesTouching(362).length).toBeGreaterThan(0);
+
+    // The deity table rows are the owning table records' own row data; the
+    // Norse run's p362 continuation (Frigga through Uller) must be attributed
+    // to table:norse-deities specifically.
+    const norse = sourceRegionLedger.entries.find(
+      (entry) => entry.id === 'p361-l43-table-rows',
+    );
+    expect(norse).toMatchObject({
+      regionType: 'table-rows',
+      pageStart: 361,
+      pageEnd: 362,
+      classification: 'record:table:norse-deities',
+      targetKey: 'table:norse-deities',
+    });
+
+    // The Adventuring Gear price-list body (including its embedded sub-group
+    // captions, which render at table-cell height) is emitted as equipment
+    // records, and the ledger says so explicitly.
+    const priceList = sourceRegionLedger.entries.find(
+      (entry) => entry.id === 'p69-l0-table-rows',
+    );
+    expect(priceList).toMatchObject({
+      regionType: 'table-rows',
+      classification: 'intentionally-ignored:table-rows-emitted-as-records',
+    });
+    expect(priceList?.firstPhrase).toContain('Ammunition');
   });
 
   it('keeps pure structural headings distinct from prose-bearing regions', () => {
