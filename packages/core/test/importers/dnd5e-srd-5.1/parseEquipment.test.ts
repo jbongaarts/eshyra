@@ -436,6 +436,15 @@ describe('parseEquipment — tools', () => {
   it('stops the tool table at the Vehicles row', () => {
     expect(byName(items, 'Vehicles (land or water)')).toBeUndefined();
   });
+
+  // eshyra-erf5.3.2: at least one non-focus tool group (artisan's tools,
+  // gaming set) is tagged the same way as the focus/symbol/instrument groups.
+  it('tags artisan’s tools and gaming set members with equipmentGroup', () => {
+    expect(byName(items, 'Smith’s tools')?.equipmentGroup).toBe(
+      'artisans-tools',
+    );
+    expect(byName(items, 'Dice set')?.equipmentGroup).toBe('gaming-set');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -602,6 +611,18 @@ describe('parseEquipment — Adventuring Gear', () => {
     expect(names.has('Arcane focus')).toBe(false);
     expect(names.has('Cost Weight')).toBe(false);
     expect(names.has('Container Capacity')).toBe(false);
+  });
+
+  // eshyra-erf5.3.2: a group-member item's tag is derived from a static
+  // name -> group lookup, independent of the description-prose scan above —
+  // Crystal is tagged "arcane-focus" even though this fixture never prints
+  // the "Arcane Focus." lead-in sentence that attaches its description.
+  it('tags a named equipment group member independent of description prose', () => {
+    expect(byName(gear, 'Crystal')?.equipmentGroup).toBe('arcane-focus');
+  });
+
+  it('does not tag an item outside any named equipment group', () => {
+    expect(byName(gear, 'Backpack')?.equipmentGroup).toBeUndefined();
   });
 
   it('attaches Container Capacity to the matching gear record', () => {

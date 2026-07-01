@@ -621,6 +621,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 110,
     totalInKind: 218,
   },
+  // eshyra-erf5.3.2: the 41 items in a named SRD equipment group (5 arcane
+  // focus + 4 druidic focus + 3 holy symbol + 17 artisan's tools + 2 gaming
+  // set + 10 musical instruments) carry equipmentGroup; the other 177 do not.
+  {
+    kind: 'equipment',
+    field: 'equipmentGroup',
+    missingCount: 177,
+    totalInKind: 218,
+  },
   {
     kind: 'equipment',
     field: 'properties',
@@ -2888,6 +2897,86 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(
         pack.records.find((r) => r.key === 'equipment:net')?.data,
       ).toMatchObject({ weaponCategory: 'martial', weaponRange: 'ranged' });
+    });
+
+    // eshyra-erf5.3.2: named SRD equipment groups (arcane focus, druidic
+    // focus, holy symbol, artisan's tools, gaming set, musical instrument) are
+    // tagged with a structured equipmentGroup so starting-equipment filters
+    // and proficiency choices can enumerate candidates without prose/name
+    // heuristics.
+    it('tags every focus/symbol/instrument/tool group member with equipmentGroup', () => {
+      const byGroup = new Map<string, string[]>();
+      for (const item of equipment) {
+        const group = (item.data as { equipmentGroup?: unknown })
+          .equipmentGroup;
+        if (typeof group !== 'string') continue;
+        const bucket = byGroup.get(group) ?? [];
+        bucket.push(item.key);
+        byGroup.set(group, bucket);
+      }
+      expect(
+        Object.fromEntries(
+          [...byGroup].map(([group, keys]) => [group, keys.sort()]),
+        ),
+      ).toEqual({
+        'arcane-focus': [
+          'equipment:crystal',
+          'equipment:orb',
+          'equipment:rod',
+          'equipment:staff',
+          'equipment:wand',
+        ],
+        'druidic-focus': [
+          'equipment:sprig-of-mistletoe',
+          'equipment:totem',
+          'equipment:wooden-staff',
+          'equipment:yew-wand',
+        ],
+        'holy-symbol': [
+          'equipment:amulet',
+          'equipment:emblem',
+          'equipment:reliquary',
+        ],
+        'artisans-tools': [
+          'equipment:alchemists-supplies',
+          'equipment:brewers-supplies',
+          'equipment:calligraphers-supplies',
+          'equipment:carpenters-tools',
+          'equipment:cartographers-tools',
+          'equipment:cobblers-tools',
+          'equipment:cooks-utensils',
+          'equipment:glassblowers-tools',
+          'equipment:jewelers-tools',
+          'equipment:leatherworkers-tools',
+          'equipment:masons-tools',
+          'equipment:painters-supplies',
+          'equipment:potters-tools',
+          'equipment:smiths-tools',
+          'equipment:tinkers-tools',
+          'equipment:weavers-tools',
+          'equipment:woodcarvers-tools',
+        ],
+        'gaming-set': ['equipment:dice-set', 'equipment:playing-card-set'],
+        'musical-instrument': [
+          'equipment:bagpipes',
+          'equipment:drum',
+          'equipment:dulcimer',
+          'equipment:flute',
+          'equipment:horn',
+          'equipment:lute',
+          'equipment:lyre',
+          'equipment:pan-flute',
+          'equipment:shawm',
+          'equipment:viol',
+        ],
+      });
+      // Unrelated shared-description labels ("rope", "tent") must not leak
+      // into equipmentGroup — they describe why two items share prose, not a
+      // proficiency/filter category.
+      expect(
+        pack.records.find((r) => r.key === 'equipment:rope-hempen-50-feet')
+          ?.data,
+      ).not.toHaveProperty('equipmentGroup');
     });
 
     // loreweaver-4zu: the Adventuring Gear table is reconstructed from two

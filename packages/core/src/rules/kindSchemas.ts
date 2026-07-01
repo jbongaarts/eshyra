@@ -1322,6 +1322,19 @@ function validateDnd5eClass(record: RulesRecord, path: string): void {
   optSpellPreparation(data, 'spellPreparation', `${path}.data`);
 }
 
+// The closed vocabulary of named SRD gameplay-relevant equipment groups
+// (eshyra-erf5.3.2). The four focus/symbol/instrument groups match the
+// `StartingEquipmentFilterSelect` filter vocabulary exactly; artisan-tools and
+// gaming-set have no dedicated filter yet but are equally reviewed groups.
+const EQUIPMENT_GROUPS: ReadonlySet<string> = new Set([
+  'arcane-focus',
+  'druidic-focus',
+  'holy-symbol',
+  'artisans-tools',
+  'gaming-set',
+  'musical-instrument',
+]);
+
 /**
  * Equipment is otherwise schema-permissive (varied category fields); this
  * validator only enforces the typed pack `contents` when present (eshyra-ngcj.4):
@@ -1367,6 +1380,16 @@ function validateDnd5eEquipment(record: RulesRecord, path: string): void {
     if (typeof weaponRange !== 'string' || !WEAPON_RANGES.has(weaponRange)) {
       throw new RulesPackError(
         `${path}.data.weaponRange must be "melee" or "ranged"`,
+      );
+    }
+  }
+  if (data.equipmentGroup !== undefined) {
+    if (
+      typeof data.equipmentGroup !== 'string' ||
+      !EQUIPMENT_GROUPS.has(data.equipmentGroup)
+    ) {
+      throw new RulesPackError(
+        `${path}.data.equipmentGroup must be one of ${[...EQUIPMENT_GROUPS].join(', ')}`,
       );
     }
   }

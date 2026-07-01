@@ -1089,6 +1089,13 @@ function buildEquipmentData(
   if (item.capacity !== undefined) {
     data.capacity = item.capacity;
   }
+  // Named gameplay-relevant item group (arcane focus, druidic focus, holy
+  // symbol, artisan's tools, gaming set, musical instrument), so
+  // starting-equipment filters can resolve without name/prose heuristics
+  // (eshyra-erf5.3.2).
+  if (item.equipmentGroup !== undefined) {
+    data.equipmentGroup = item.equipmentGroup;
+  }
   if (item.description !== undefined) {
     data.description = item.description;
   }

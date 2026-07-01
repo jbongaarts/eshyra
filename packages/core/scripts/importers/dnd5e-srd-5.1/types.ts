@@ -342,6 +342,13 @@ export interface EquipmentExtraction {
   readonly weaponCategory?: 'simple' | 'martial';
   /** Weapon engagement range, from the table's sub-header grouping. */
   readonly weaponRange?: 'melee' | 'ranged';
+  /**
+   * Gameplay-relevant item group this leaf belongs to, e.g. "arcane-focus" or
+   * "musical-instrument" (eshyra-erf5.3.2). Kebab-case; absent for items that
+   * belong to no named SRD group. See `EQUIPMENT_GROUPS` in kindSchemas.ts for
+   * the closed vocabulary.
+   */
+  readonly equipmentGroup?: string;
   /** Armor class text, e.g. "11 + Dex modifier" or "18". */
   readonly ac?: string;
   /** Armor weight class: "light" | "medium" | "heavy" | "shield". */

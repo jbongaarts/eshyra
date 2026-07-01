@@ -51380,6 +51380,7 @@
       "category": "tool",
       "cost": "50 gp",
       "weight": "8 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -51413,6 +51414,7 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "1 lb.",
+      "equipmentGroup": "holy-symbol",
       "description": "Holy Symbol. A holy symbol is a representation of a god or pantheon. It might be an amulet depicting a symbol representing a deity, the same symbol carefully engraved or inlaid as an emblem on a shield, or a tiny box holding a fragment of a sacred relic. Appendix PH-B \"Fantasy-Historical Pantheons\" lists the symbols commonly associated with many gods in the multiverse. A cleric or paladin can use a holy symbol as a spellcasting focus. To use the symbol in this way, the caster must hold it in hand, wear it visibly, or bear it on a shield."
     },
     "source": "SRD 5.1 pp. 67, 69",
@@ -51543,6 +51545,7 @@
       "category": "tool",
       "cost": "30 gp",
       "weight": "6 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -52048,6 +52051,7 @@
       "category": "tool",
       "cost": "20 gp",
       "weight": "9 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -52219,6 +52223,7 @@
       "category": "tool",
       "cost": "10 gp",
       "weight": "5 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -52350,6 +52355,7 @@
       "category": "tool",
       "cost": "8 gp",
       "weight": "6 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -52447,6 +52453,7 @@
       "category": "tool",
       "cost": "15 gp",
       "weight": "6 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -52948,6 +52955,7 @@
       "category": "tool",
       "cost": "5 gp",
       "weight": "5 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -53014,6 +53022,7 @@
       "category": "tool",
       "cost": "1 gp",
       "weight": "8 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -53236,6 +53245,7 @@
       "category": "gear",
       "cost": "10 gp",
       "weight": "1 lb.",
+      "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 66, 69",
@@ -53349,6 +53359,7 @@
     "data": {
       "category": "tool",
       "cost": "1 sp",
+      "equipmentGroup": "gaming-set",
       "description": "Gaming Set. This item encompasses a wide range of game pieces, including dice and decks of cards (for games such as Three-Dragon Ante). A few common examples appear on the Tools table, but other kinds of gaming sets exist. If you are proficient with a gaming set, you can add your proficiency bonus to ability checks you make to play a game with that set. Each type of gaming set requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -53537,6 +53548,7 @@
       "category": "tool",
       "cost": "6 gp",
       "weight": "3 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -53570,6 +53582,7 @@
       "category": "tool",
       "cost": "25 gp",
       "weight": "10 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -53715,6 +53728,7 @@
     "data": {
       "category": "gear",
       "cost": "5 gp",
+      "equipmentGroup": "holy-symbol",
       "description": "Holy Symbol. A holy symbol is a representation of a god or pantheon. It might be an amulet depicting a symbol representing a deity, the same symbol carefully engraved or inlaid as an emblem on a shield, or a tiny box holding a fragment of a sacred relic. Appendix PH-B \"Fantasy-Historical Pantheons\" lists the symbols commonly associated with many gods in the multiverse. A cleric or paladin can use a holy symbol as a spellcasting focus. To use the symbol in this way, the caster must hold it in hand, wear it visibly, or bear it on a shield."
     },
     "source": "SRD 5.1 pp. 67, 69",
@@ -54027,6 +54041,7 @@
       "category": "tool",
       "cost": "2 gp",
       "weight": "1 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -54166,6 +54181,7 @@
       "category": "tool",
       "cost": "30 gp",
       "weight": "5 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -54666,6 +54682,7 @@
       "category": "tool",
       "cost": "3 gp",
       "weight": "2 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -54931,6 +54948,7 @@
       "category": "tool",
       "cost": "25 gp",
       "weight": "2 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -55237,6 +55255,7 @@
       "category": "tool",
       "cost": "5 gp",
       "weight": "5 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -55455,6 +55474,7 @@
       "category": "tool",
       "cost": "35 gp",
       "weight": "2 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -55488,6 +55508,7 @@
       "category": "tool",
       "cost": "30 gp",
       "weight": "2 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -55623,6 +55644,7 @@
       "category": "tool",
       "cost": "10 gp",
       "weight": "8 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -55936,6 +55958,7 @@
       "category": "gear",
       "cost": "20 gp",
       "weight": "3 lb.",
+      "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 66, 69",
@@ -56005,6 +56028,7 @@
       "category": "tool",
       "cost": "10 gp",
       "weight": "5 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -56038,6 +56062,7 @@
       "category": "tool",
       "cost": "12 gp",
       "weight": "2 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -56305,6 +56330,7 @@
     "data": {
       "category": "tool",
       "cost": "5 sp",
+      "equipmentGroup": "gaming-set",
       "description": "Gaming Set. This item encompasses a wide range of game pieces, including dice and decks of cards (for games such as Three-Dragon Ante). A few common examples appear on the Tools table, but other kinds of gaming sets exist. If you are proficient with a gaming set, you can add your proficiency bonus to ability checks you make to play a game with that set. Each type of gaming set requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -56534,6 +56560,7 @@
       "category": "tool",
       "cost": "10 gp",
       "weight": "3 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -56858,6 +56885,7 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "2 lb.",
+      "equipmentGroup": "holy-symbol",
       "description": "Holy Symbol. A holy symbol is a representation of a god or pantheon. It might be an amulet depicting a symbol representing a deity, the same symbol carefully engraved or inlaid as an emblem on a shield, or a tiny box holding a fragment of a sacred relic. Appendix PH-B \"Fantasy-Historical Pantheons\" lists the symbols commonly associated with many gods in the multiverse. A cleric or paladin can use a holy symbol as a spellcasting focus. To use the symbol in this way, the caster must hold it in hand, wear it visibly, or bear it on a shield."
     },
     "source": "SRD 5.1 pp. 67, 69",
@@ -56959,6 +56987,7 @@
       "category": "gear",
       "cost": "10 gp",
       "weight": "2 lb.",
+      "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 66, 69",
@@ -57523,6 +57552,7 @@
       "category": "tool",
       "cost": "2 gp",
       "weight": "1 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -57906,6 +57936,7 @@
       "category": "tool",
       "cost": "20 gp",
       "weight": "8 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -58111,6 +58142,7 @@
     "data": {
       "category": "gear",
       "cost": "1 gp",
+      "equipmentGroup": "druidic-focus",
       "description": "Druidic Focus. A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 67, 69",
@@ -58208,6 +58240,7 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "4 lb.",
+      "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 66, 69",
@@ -58376,6 +58409,7 @@
       "category": "tool",
       "cost": "50 gp",
       "weight": "10 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -58441,6 +58475,7 @@
     "data": {
       "category": "gear",
       "cost": "1 gp",
+      "equipmentGroup": "druidic-focus",
       "description": "Druidic Focus. A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 67, 69",
@@ -58546,6 +58581,7 @@
       "category": "tool",
       "cost": "30 gp",
       "weight": "1 lb.",
+      "equipmentGroup": "musical-instrument",
       "description": "Musical Instrument. Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
     },
     "source": "SRD 5.1 pp. 70, 71",
@@ -58611,6 +58647,7 @@
       "category": "gear",
       "cost": "10 gp",
       "weight": "1 lb.",
+      "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 66, 69",
@@ -58818,6 +58855,7 @@
       "category": "tool",
       "cost": "1 gp",
       "weight": "5 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -58923,6 +58961,7 @@
       "category": "tool",
       "cost": "1 gp",
       "weight": "5 lb.",
+      "equipmentGroup": "artisans-tools",
       "description": "Artisan’s Tools. These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
     },
     "source": "SRD 5.1 p. 70",
@@ -58956,6 +58995,7 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "4 lb.",
+      "equipmentGroup": "druidic-focus",
       "description": "Druidic Focus. A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 67, 69",
@@ -58989,6 +59029,7 @@
       "category": "gear",
       "cost": "10 gp",
       "weight": "1 lb.",
+      "equipmentGroup": "druidic-focus",
       "description": "Druidic Focus. A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
     },
     "source": "SRD 5.1 pp. 67, 69",

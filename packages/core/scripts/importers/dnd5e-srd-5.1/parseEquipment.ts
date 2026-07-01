@@ -304,6 +304,48 @@ function activeDescriptionIsDangling(
   });
 }
 
+// The SHARED_DESCRIPTION_TARGETS labels that name a gameplay-relevant SRD
+// equipment group (eshyra-erf5.3.2), as opposed to labels that merely share
+// generic description prose for unrelated reasons ("rope", "tent" — two rope
+// lengths or a two-person tent, not a proficiency/filter category).
+const EQUIPMENT_GROUP_LABELS: ReadonlySet<string> = new Set([
+  'arcane focus',
+  'druidic focus',
+  'holy symbol',
+  'artisans tools',
+  'gaming set',
+  'musical instrument',
+]);
+
+/**
+ * Tag each item that belongs to one of the SRD's named gameplay-relevant
+ * equipment groups (arcane focus, druidic focus, holy symbol, artisan's
+ * tools, gaming set, musical instrument) with a stable kebab-case
+ * `equipmentGroup` (eshyra-erf5.3.2). Reuses `SHARED_DESCRIPTION_TARGETS` —
+ * the same reviewed label -> member-name mapping already used to attach
+ * shared description prose — as the source of truth for group membership
+ * (filtered to `EQUIPMENT_GROUP_LABELS`, since that map also covers unrelated
+ * shared-description pairs like "rope"/"tent"), so the two concerns cannot
+ * drift apart. This is a pure name -> group lookup, independent of whether
+ * the description prose itself was found in a given fixture.
+ */
+function attachEquipmentGroups(
+  items: readonly EquipmentExtraction[],
+): EquipmentExtraction[] {
+  const groupByName = new Map<string, string>();
+  for (const [label, names] of SHARED_DESCRIPTION_TARGETS) {
+    if (!EQUIPMENT_GROUP_LABELS.has(label)) continue;
+    const group = label.replace(/\s+/g, '-');
+    for (const name of names) {
+      groupByName.set(normalizeDescriptionName(name), group);
+    }
+  }
+  return items.map((item) => {
+    const group = groupByName.get(normalizeDescriptionName(item.name));
+    return group === undefined ? item : { ...item, equipmentGroup: group };
+  });
+}
+
 function attachDescriptions(
   items: readonly EquipmentExtraction[],
   flat: readonly FlatLine[],
@@ -990,15 +1032,17 @@ export function parseEquipment(
   pages: readonly PageText[],
 ): EquipmentExtraction[] {
   const flat = flatten(pages);
-  const out = attachDescriptions(
-    [
-      ...collectArmor(flat),
-      ...collectWeapons(flat),
-      ...collectTools(flat),
-      ...collectGear(flat),
-      ...collectEquipmentPacks(flat),
-    ],
-    flat,
+  const out = attachEquipmentGroups(
+    attachDescriptions(
+      [
+        ...collectArmor(flat),
+        ...collectWeapons(flat),
+        ...collectTools(flat),
+        ...collectGear(flat),
+        ...collectEquipmentPacks(flat),
+      ],
+      flat,
+    ),
   );
   out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return out;
