@@ -1394,6 +1394,15 @@ const EQUIPMENT_GROUPS: ReadonlySet<string> = new Set([
   'musical-instrument',
 ]);
 
+// How (if at all) the Dexterity modifier applies to a non-shield armor's base
+// AC (eshyra-rtgi): light armor is unlimited, medium is capped (SRD 5.1 caps
+// every medium armor at +2), heavy applies none.
+const ARMOR_DEX_MODIFIER_KINDS: ReadonlySet<string> = new Set([
+  'none',
+  'unlimited',
+  'capped',
+]);
+
 /**
  * Equipment is otherwise schema-permissive (varied category fields); this
  * validator only enforces the typed pack `contents` when present (eshyra-ngcj.4):
@@ -1450,6 +1459,35 @@ function validateDnd5eEquipment(record: RulesRecord, path: string): void {
       throw new RulesPackError(
         `${path}.data.equipmentGroup must be one of ${[...EQUIPMENT_GROUPS].join(', ')}`,
       );
+    }
+  }
+  // Deterministic armor-calculation data (eshyra-rtgi): a shield's
+  // `armorClass` is an add-on bonus (it has no base AC of its own — it adds
+  // to whatever AC the wearer already has); every other armor type carries a
+  // base AC plus how (if at all) the Dexterity modifier applies.
+  if (data.category === 'armor') {
+    const armorClass = reqObj(data, 'armorClass', `${path}.data`);
+    if (data.armorType === 'shield') {
+      reqInt(armorClass, 'bonus', `${path}.data.armorClass`, 1);
+    } else {
+      reqInt(armorClass, 'base', `${path}.data.armorClass`, 1);
+      const dexModifier = reqStr(
+        armorClass,
+        'dexModifier',
+        `${path}.data.armorClass`,
+      );
+      if (!ARMOR_DEX_MODIFIER_KINDS.has(dexModifier)) {
+        throw new RulesPackError(
+          `${path}.data.armorClass.dexModifier must be one of ${[...ARMOR_DEX_MODIFIER_KINDS].join(', ')}`,
+        );
+      }
+      if (dexModifier === 'capped') {
+        reqInt(armorClass, 'dexModifierCap', `${path}.data.armorClass`, 0);
+      } else if (armorClass.dexModifierCap !== undefined) {
+        throw new RulesPackError(
+          `${path}.data.armorClass.dexModifierCap is only valid when dexModifier is "capped"`,
+        );
+      }
     }
   }
 }

@@ -52015,6 +52015,11 @@
       "category": "armor",
       "cost": "400 gp",
       "ac": "14 + Dex modifier (max 2)",
+      "armorClass": {
+        "base": 14,
+        "dexModifier": "capped",
+        "dexModifierCap": 2
+      },
       "armorType": "medium",
       "stealthDisadvantage": false,
       "weight": "20 lb.",
@@ -52586,6 +52591,10 @@
       "category": "armor",
       "cost": "75 gp",
       "ac": "16",
+      "armorClass": {
+        "base": 16,
+        "dexModifier": "none"
+      },
       "armorType": "heavy",
       "stealthDisadvantage": true,
       "strengthRequirement": 13,
@@ -52623,6 +52632,11 @@
       "category": "armor",
       "cost": "50 gp",
       "ac": "13 + Dex modifier (max 2)",
+      "armorClass": {
+        "base": 13,
+        "dexModifier": "capped",
+        "dexModifierCap": 2
+      },
       "armorType": "medium",
       "stealthDisadvantage": false,
       "weight": "20 lb.",
@@ -54407,6 +54421,11 @@
       "category": "armor",
       "cost": "750 gp",
       "ac": "15 + Dex modifier (max 2)",
+      "armorClass": {
+        "base": 15,
+        "dexModifier": "capped",
+        "dexModifierCap": 2
+      },
       "armorType": "medium",
       "stealthDisadvantage": true,
       "weight": "40 lb.",
@@ -54613,6 +54632,11 @@
       "category": "armor",
       "cost": "10 gp",
       "ac": "12 + Dex modifier (max 2)",
+      "armorClass": {
+        "base": 12,
+        "dexModifier": "capped",
+        "dexModifierCap": 2
+      },
       "armorType": "medium",
       "stealthDisadvantage": false,
       "weight": "12 lb.",
@@ -55219,6 +55243,10 @@
       "category": "armor",
       "cost": "10 gp",
       "ac": "11 + Dex modifier",
+      "armorClass": {
+        "base": 11,
+        "dexModifier": "unlimited"
+      },
       "armorType": "light",
       "stealthDisadvantage": false,
       "weight": "10 lb.",
@@ -55992,6 +56020,10 @@
       "category": "armor",
       "cost": "5 gp",
       "ac": "11 + Dex modifier",
+      "armorClass": {
+        "base": 11,
+        "dexModifier": "unlimited"
+      },
       "armorType": "light",
       "stealthDisadvantage": true,
       "weight": "8 lb.",
@@ -56294,6 +56326,10 @@
       "category": "armor",
       "cost": "1,500 gp",
       "ac": "18",
+      "armorClass": {
+        "base": 18,
+        "dexModifier": "none"
+      },
       "armorType": "heavy",
       "stealthDisadvantage": true,
       "strengthRequirement": 15,
@@ -56919,6 +56955,10 @@
       "category": "armor",
       "cost": "30 gp",
       "ac": "14",
+      "armorClass": {
+        "base": 14,
+        "dexModifier": "none"
+      },
       "armorType": "heavy",
       "stealthDisadvantage": true,
       "weight": "40 lb.",
@@ -57344,6 +57384,11 @@
       "category": "armor",
       "cost": "50 gp",
       "ac": "14 + Dex modifier (max 2)",
+      "armorClass": {
+        "base": 14,
+        "dexModifier": "capped",
+        "dexModifierCap": 2
+      },
       "armorType": "medium",
       "stealthDisadvantage": true,
       "weight": "45 lb.",
@@ -57586,6 +57631,9 @@
       "category": "armor",
       "cost": "10 gp",
       "ac": "+2",
+      "armorClass": {
+        "bonus": 2
+      },
       "armorType": "shield",
       "stealthDisadvantage": false,
       "weight": "6 lb."
@@ -58106,6 +58154,10 @@
       "category": "armor",
       "cost": "200 gp",
       "ac": "17",
+      "armorClass": {
+        "base": 17,
+        "dexModifier": "none"
+      },
       "armorType": "heavy",
       "stealthDisadvantage": true,
       "strengthRequirement": 15,
@@ -58274,6 +58326,10 @@
       "category": "armor",
       "cost": "45 gp",
       "ac": "12 + Dex modifier",
+      "armorClass": {
+        "base": 12,
+        "dexModifier": "unlimited"
+      },
       "armorType": "light",
       "stealthDisadvantage": false,
       "weight": "13 lb.",

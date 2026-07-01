@@ -582,6 +582,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   { kind: 'creature', field: 'traits', missingCount: 55, totalInKind: 317 },
   { kind: 'creature', field: 'variants', missingCount: 315, totalInKind: 317 },
   { kind: 'equipment', field: 'ac', missingCount: 205, totalInKind: 218 },
+  // eshyra-rtgi: structured armorClass alongside the verbatim ac string, only
+  // on the 13 armor/shield records.
+  {
+    kind: 'equipment',
+    field: 'armorClass',
+    missingCount: 205,
+    totalInKind: 218,
+  },
   {
     kind: 'equipment',
     field: 'armorType',
@@ -2833,6 +2841,37 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         armorType: 'light',
         stealthDisadvantage: true,
         weight: '8 lb.',
+        armorClass: { base: 11, dexModifier: 'unlimited' },
+      });
+    });
+
+    // eshyra-rtgi: structured armorClass alongside the verbatim ac string,
+    // one representative per armor weight class plus the shield.
+    it('derives structured armorClass for light/medium/heavy armor and the shield', () => {
+      expect(
+        pack.records.find((r) => r.key === 'equipment:leather')?.data,
+      ).toMatchObject({
+        ac: '11 + Dex modifier',
+        armorClass: { base: 11, dexModifier: 'unlimited' },
+      });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:chain-shirt')?.data,
+      ).toMatchObject({
+        ac: '13 + Dex modifier (max 2)',
+        armorClass: { base: 13, dexModifier: 'capped', dexModifierCap: 2 },
+      });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:chain-mail')?.data,
+      ).toMatchObject({
+        ac: '16',
+        armorClass: { base: 16, dexModifier: 'none' },
+      });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:shield')?.data,
+      ).toMatchObject({
+        ac: '+2',
+        armorType: 'shield',
+        armorClass: { bonus: 2 },
       });
     });
 

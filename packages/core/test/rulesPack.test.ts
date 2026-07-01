@@ -509,6 +509,109 @@ describe('rules pack validation', () => {
     ).toThrow(/weaponDamageModifiers\[0\]\.operation/);
   });
 
+  it('requires structured armorClass on armor/shield equipment (eshyra-rtgi)', () => {
+    const leather = record('equipment:leather', {
+      kind: 'equipment',
+      name: 'Leather',
+      data: {
+        category: 'armor',
+        ac: '11 + Dex modifier',
+        armorType: 'light',
+        armorClass: { base: 11, dexModifier: 'unlimited' },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [leather] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            { ...leather, data: { ...leather.data, armorClass: undefined } },
+          ],
+        }),
+      ),
+    ).toThrow(/armorClass/);
+  });
+
+  it('requires a valid dexModifier kind and rejects a stray dexModifierCap (eshyra-rtgi)', () => {
+    const base = record('equipment:example-armor', {
+      kind: 'equipment',
+      name: 'Example Armor',
+      data: {
+        category: 'armor',
+        ac: '16',
+        armorType: 'heavy',
+        armorClass: { base: 16, dexModifier: 'none' },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [base] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...base,
+              data: {
+                ...base.data,
+                armorClass: { base: 16, dexModifier: 'bogus' },
+              },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/dexModifier must be one of/);
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...base,
+              data: {
+                ...base.data,
+                armorClass: {
+                  base: 16,
+                  dexModifier: 'none',
+                  dexModifierCap: 2,
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/dexModifierCap is only valid when dexModifier is "capped"/);
+  });
+
+  it('requires a shield armorClass to carry a bonus, not a base/dexModifier', () => {
+    const shield = record('equipment:shield', {
+      kind: 'equipment',
+      name: 'Shield',
+      data: {
+        category: 'armor',
+        ac: '+2',
+        armorType: 'shield',
+        armorClass: { bonus: 2 },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [shield] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...shield,
+              data: { ...shield.data, armorClass: { base: 2 } },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/armorClass\.bonus/);
+  });
+
   it('rejects dnd5e action records missing a description', () => {
     const pack = validRulesPack({
       records: [

@@ -14,11 +14,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  ArmorClassShapeError,
   actionExtractionsToRecords,
   ancestryExtractionsToRecords,
   buildPack,
   creatureExtractionsToRecords,
   diseaseExtractionsToRecords,
+  equipmentExtractionsToRecords,
   featExtractionsToRecords,
   featureExtractionsToRecords,
   hazardExtractionsToRecords,
@@ -35,6 +37,7 @@ import type {
   AncestryExtraction,
   CreatureExtraction,
   DiseaseExtraction,
+  EquipmentExtraction,
   FeatExtraction,
   FeatureExtraction,
   HazardExtraction,
@@ -1048,6 +1051,76 @@ describe('poisonExtractionsToRecords — record shape', () => {
       'poisonType',
       'description',
     ]);
+  });
+});
+
+describe('equipmentExtractionsToRecords — armorClass (eshyra-rtgi)', () => {
+  function armor(overrides: Partial<EquipmentExtraction>): EquipmentExtraction {
+    return {
+      name: 'Test Armor',
+      category: 'armor',
+      sourcePage: 63,
+      ...overrides,
+    };
+  }
+
+  it('derives an unlimited-Dex-modifier armorClass for light armor', () => {
+    const [record] = equipmentExtractionsToRecords([
+      armor({ name: 'Leather', ac: '11 + Dex modifier', armorType: 'light' }),
+    ]);
+    expect(record.data).toMatchObject({
+      ac: '11 + Dex modifier',
+      armorClass: { base: 11, dexModifier: 'unlimited' },
+    });
+  });
+
+  it('derives a capped-Dex-modifier armorClass for medium armor', () => {
+    const [record] = equipmentExtractionsToRecords([
+      armor({
+        name: 'Chain Shirt',
+        ac: '13 + Dex modifier (max 2)',
+        armorType: 'medium',
+      }),
+    ]);
+    expect(record.data).toMatchObject({
+      ac: '13 + Dex modifier (max 2)',
+      armorClass: { base: 13, dexModifier: 'capped', dexModifierCap: 2 },
+    });
+  });
+
+  it('derives a no-Dex-modifier armorClass for heavy armor', () => {
+    const [record] = equipmentExtractionsToRecords([
+      armor({ name: 'Chain Mail', ac: '16', armorType: 'heavy' }),
+    ]);
+    expect(record.data).toMatchObject({
+      ac: '16',
+      armorClass: { base: 16, dexModifier: 'none' },
+    });
+  });
+
+  it('derives a bonus-only armorClass for a shield', () => {
+    const [record] = equipmentExtractionsToRecords([
+      armor({ name: 'Shield', ac: '+2', armorType: 'shield' }),
+    ]);
+    expect(record.data).toMatchObject({
+      ac: '+2',
+      armorClass: { bonus: 2 },
+    });
+  });
+
+  it('fails closed on an AC cell shape outside the four reviewed cases', () => {
+    expect(() =>
+      equipmentExtractionsToRecords([
+        armor({ name: 'Mystery Armor', ac: 'AC 20', armorType: 'heavy' }),
+      ]),
+    ).toThrow(ArmorClassShapeError);
+  });
+
+  it('does not attach armorClass to non-armor equipment', () => {
+    const [record] = equipmentExtractionsToRecords([
+      { name: 'Backpack', category: 'gear', sourcePage: 68, cost: '2 gp' },
+    ]);
+    expect(record.data).not.toHaveProperty('armorClass');
   });
 });
 

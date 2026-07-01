@@ -1029,6 +1029,65 @@ export function tableExtractionsToRecords(
 }
 
 /**
+ * Thrown when an armor/shield's verbatim `ac` cell does not match one of the
+ * four known SRD 5.1 AC-cell shapes (eshyra-rtgi). The four armor/shield
+ * records are a small, fully reviewed set; a source revision that adds a
+ * fifth shape must be reviewed and added to `parseArmorClass` rather than
+ * silently emitting a record with no structured `armorClass`.
+ */
+export class ArmorClassShapeError extends Error {
+  constructor(public readonly ac: string) {
+    super(
+      `Armor Class cell ${JSON.stringify(ac)} does not match any known SRD 5.1 AC shape ` +
+        '(a flat number, "<N> + Dex modifier", "<N> + Dex modifier (max <N>)", or "+<N>").',
+    );
+    this.name = 'ArmorClassShapeError';
+  }
+}
+
+const ARMOR_AC_CAPPED = /^(\d+) \+ Dex modifier \(max (\d+)\)$/;
+const ARMOR_AC_UNCAPPED = /^(\d+) \+ Dex modifier$/;
+const ARMOR_AC_FLAT = /^(\d+)$/;
+const SHIELD_AC_BONUS = /^\+(\d+)$/;
+
+/**
+ * Deterministic armor-calculation data (eshyra-rtgi): the verbatim `ac` cell
+ * ("11 + Dex modifier", "14 + Dex modifier (max 2)", "18", "+2") is accurate
+ * for display but not directly machine-executable. Derives the same four
+ * shapes into a structured `{ base, dexModifier, dexModifierCap? }` (armor)
+ * or `{ bonus }` (a shield, which adds to whatever AC the wearer already
+ * has rather than defining a base) alongside the retained verbatim `ac`
+ * string. Fails closed on a shape outside the four reviewed cases.
+ */
+function parseArmorClass(
+  ac: string,
+  armorType: string | undefined,
+): Record<string, unknown> {
+  if (armorType === 'shield') {
+    const shield = SHIELD_AC_BONUS.exec(ac);
+    if (shield !== null) return { bonus: Number(shield[1]) };
+    throw new ArmorClassShapeError(ac);
+  }
+  const capped = ARMOR_AC_CAPPED.exec(ac);
+  if (capped !== null) {
+    return {
+      base: Number(capped[1]),
+      dexModifier: 'capped',
+      dexModifierCap: Number(capped[2]),
+    };
+  }
+  const uncapped = ARMOR_AC_UNCAPPED.exec(ac);
+  if (uncapped !== null) {
+    return { base: Number(uncapped[1]), dexModifier: 'unlimited' };
+  }
+  const flat = ARMOR_AC_FLAT.exec(ac);
+  if (flat !== null) {
+    return { base: Number(flat[1]), dexModifier: 'none' };
+  }
+  throw new ArmorClassShapeError(ac);
+}
+
+/**
  * Build the `data` payload for one equipment record. Field insertion order is
  * fixed (so emitted JSON is byte-stable) and category-specific fields are
  * present only for the matching `category`. The record validates against the
@@ -1063,6 +1122,7 @@ function buildEquipmentData(
   if (item.category === 'armor') {
     if (item.ac !== undefined) {
       data.ac = item.ac;
+      data.armorClass = parseArmorClass(item.ac, item.armorType);
     }
     if (item.armorType !== undefined) {
       data.armorType = item.armorType;
