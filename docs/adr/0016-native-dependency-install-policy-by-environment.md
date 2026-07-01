@@ -128,20 +128,29 @@ before the flip was reverted, so they are known-good, not speculative):
   that addon was a downloaded prebuild or a source compile (layers 1–2's
   choice) is invisible and irrelevant to the end user.
 
-### Clean-environment artifact smoke coverage (new requirement)
+### Clean-environment artifact smoke coverage (implemented)
 
 At least one release validation/smoke step must run the unpacked artifact's
 launcher on a target environment that actually lacks a native build
 toolchain, to prove layer 3's claim rather than assume it from restricted
-`PATH` alone. Today's `validate-release-artifact.mjs` and installer-smoke jobs
-run on GitHub-hosted runners that always have a toolchain on disk. This ADR
-requires the coverage; the concrete CI mechanism (e.g. a containerized Linux
-leg on a minimal base image without `build-essential`/`python3`, fed a
-pre-built artifact from the existing build job) is tracked as follow-up
-(`eshyra-w7bp`) and is out of scope for this decision record. Windows/macOS
-GitHub-hosted runners ship toolchains by default and cannot easily be made
-"clean" short of self-hosted runners; the follow-up should scope initial
-coverage to Linux and record that limitation.
+`PATH` alone: `validate-release-artifact.mjs` and installer-smoke run on
+GitHub-hosted runners that always have a toolchain on disk.
+
+Implemented (bead `eshyra-w7bp`) by `scripts/release/clean-env-smoke.sh` and
+the `clean-env-smoke` job in `.github/workflows/release.yml`. The job takes the
+linux-x64 artifact the build job produced and runs its bundled launcher inside
+a minimal Debian (`debian:bookworm-slim`) container that genuinely has no
+`gcc`/`cc`/`make`/`python3`/system-Node. The script first self-checks that
+those tools are absent (so the proof fails loudly if the base image ever ships
+them), then runs the launcher with a scrubbed, no-config environment and
+asserts the documented behavior (exit 1 + setup guidance). It gates the
+tag-release job, so a toolchain-dependent artifact can never publish.
+
+Scope is linux-x64: the bundled Node is a glibc binary that a Debian slim
+(glibc) image runs but a musl image (Alpine) would not, and Windows/macOS
+GitHub-hosted runners ship toolchains that cannot be removed without
+self-hosted runners. Extending clean-room coverage to those platforms is left
+as future work rather than blocking on it.
 
 ### Node-major guard (preserved from ADR 0008)
 
@@ -180,8 +189,9 @@ an implementation choice rather than a policy change.
 - A future flip to source-build-first (for resiliency against the deprecated
   `prebuild-install` download path) needs no new ADR — only the four
   conditions above, which are recorded from a validated end-to-end trial.
-- Follow-up `eshyra-w7bp` adds the clean-toolchain-free artifact smoke job to
-  prove layer 3.
+- Layer 3 is now proven, not just asserted: `eshyra-w7bp` added the
+  clean-toolchain-free artifact smoke job (`scripts/release/clean-env-smoke.sh`
+  + the `clean-env-smoke` release job), which gates tag publication.
 
 ## Rejected Alternatives
 
@@ -216,4 +226,4 @@ an implementation choice rather than a policy change.
 - `docs/dependencies.md` — native/runtime dependency update rules.
 - Beads: `eshyra-le7p` (this decision), `eshyra-nkbo` (closed won't-fix — the
   `prebuild-install` deprecation warning), `eshyra-w7bp` (clean-environment
-  smoke test follow-up).
+  smoke test — implemented; see `scripts/release/clean-env-smoke.sh`).

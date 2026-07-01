@@ -17,7 +17,10 @@
 # release packaging inputs change, so release-path regressions are caught before
 # merge. The validate-installer-scripts job also runs on PRs to confirm that
 # install.sh, install.ps1, and sha256sums.txt are wired in correctly before any
-# tag release. The release-attach job is tag-gated and never runs on pull_request.
+# tag release. The clean-env-smoke job runs the built linux-x64 artifact inside
+# a toolchain-free container to prove ADR 0016's "end users need no toolchain"
+# claim (bead eshyra-w7bp). The release-attach job is tag-gated and never runs
+# on pull_request.
 
 name: Release
 
@@ -182,13 +185,46 @@ jobs:
       - name: Run installer smoke
         run: npm run release:smoke-installer
 
+  clean-env-smoke:
+    # Clean-environment artifact proof (ADR 0016 / bead eshyra-w7bp). The build
+    # matrix and installer-smoke both run on GitHub-hosted images that always
+    # have a C/C++ toolchain + python on disk, so "end users need no toolchain"
+    # (layer 3 of ADR 0016) has never been exercised on a machine that actually
+    # lacks one -- validate-release-artifact.mjs only restricts PATH, not what
+    # is installed. This job downloads the linux-x64 artifact the build job
+    # produced and runs its bundled launcher inside a minimal Debian container
+    # that genuinely has no gcc/make/python3/system-node, asserting the same
+    # no-config behavior (exit 1 + setup guidance) validate already checks.
+    #
+    # Linux-only: the bundled Node is a glibc linux-x64 binary (Debian slim is
+    # glibc-based; Alpine/musl would not run it), and Windows/macOS
+    # GitHub-hosted runners ship toolchains that can't be removed without
+    # self-hosted runners (ADR 0016). The `api` edition is used because it is
+    # the smallest artifact and the no-config run path is identical across
+    # editions (validate exercises every edition).
+    name: Clean-env artifact smoke (linux-x64)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download linux-x64 artifact (api edition)
+        uses: actions/download-artifact@v8
+        with:
+          name: eshyra-cli-api-ubuntu-latest
+          path: dist-release
+
+      - name: Run launcher in a toolchain-free container
+        run: bash scripts/release/clean-env-smoke.sh
+
   release:
     name: Attach to GitHub Release
     # Gate publication on the per-platform build/validate matrix, the installer
-    # script validation, AND the functional installer smoke, so a broken
-    # installer can never ship attached to a tag release. Still tag-gated and
-    # still never publishes to npm.
-    needs: [build, validate-installer-scripts, installer-smoke]
+    # script validation, the functional installer smoke, AND the clean-env
+    # (no-toolchain) artifact smoke, so a broken installer or a toolchain-
+    # dependent artifact can never ship attached to a tag release. Still
+    # tag-gated and still never publishes to npm.
+    needs: [build, validate-installer-scripts, installer-smoke, clean-env-smoke]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

@@ -26,6 +26,7 @@
     "release:validate": "node scripts/release/validate-release-artifact.mjs",
     "release:checksums": "node scripts/release/generate-checksums.mjs",
     "release:smoke-installer": "node scripts/release/smoke-installer.mjs",
+    "release:smoke-clean-env": "bash scripts/release/clean-env-smoke.sh",
     "import:dnd5e-srd": "tsx packages/core/scripts/importers/dnd5e-srd-5.1/cli.ts",
     "verify:dnd5e-srd-pack": "tsx packages/core/scripts/verify-dnd5e-srd-pack/cli.ts",
     "verify:dnd5e-srd-freeze": "tsx packages/core/scripts/verify-dnd5e-srd-freeze/cli.ts",
