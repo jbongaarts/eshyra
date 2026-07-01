@@ -875,7 +875,11 @@ export function buildSourceRegionLedger(
       a.lineStart - b.lineStart ||
       a.id.localeCompare(b.id),
   );
-  const unaccountedPages = findUnaccountedPages(lines, coverageEntries, entries);
+  const unaccountedPages = findUnaccountedPages(
+    lines,
+    coverageEntries,
+    entries,
+  );
   return { summary: summarize(entries, unaccountedPages), entries };
 }
 
@@ -917,45 +921,45 @@ function tableRowsEntry(run: TableCellRun): SourceRegionLedgerEntry {
     };
   }
   const status = run.owner?.status;
-  if (status !== undefined && status.startsWith('record:table:')) {
-    const targetKey = status.slice('record:'.length);
-    return {
-      ...base,
-      classification: `record:${targetKey}`,
-      targetKey,
-      guardNotes:
-        'Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data.',
-    };
-  }
-  if (
-    status !== undefined &&
-    !BROAD_STRUCTURAL_IGNORES.has(status) &&
-    status.startsWith('ignored:')
-  ) {
-    // The owning structure already carries a specific, documented ignore
-    // (e.g. deity-table-column-header); the run defers to that same reason.
-    const reason = status.slice('ignored:'.length);
-    return {
-      ...base,
-      classification: `intentionally-ignored:${reason}`,
-      ignoreReason: reason,
-      guardNotes:
-        'Table rows on an otherwise unaccounted page; accounted under the owning structure’s documented ignore reason.',
-    };
-  }
-  if (
-    status !== undefined &&
-    (status.startsWith('record:') ||
+  if (status !== undefined) {
+    if (status.startsWith('record:table:')) {
+      const targetKey = status.slice('record:'.length);
+      return {
+        ...base,
+        classification: `record:${targetKey}`,
+        targetKey,
+        guardNotes:
+          'Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data.',
+      };
+    }
+    if (
+      !BROAD_STRUCTURAL_IGNORES.has(status) &&
+      status.startsWith('ignored:')
+    ) {
+      // The owning structure already carries a specific, documented ignore
+      // (e.g. deity-table-column-header); the run defers to that same reason.
+      const reason = status.slice('ignored:'.length);
+      return {
+        ...base,
+        classification: `intentionally-ignored:${reason}`,
+        ignoreReason: reason,
+        guardNotes:
+          'Table rows on an otherwise unaccounted page; accounted under the owning structure’s documented ignore reason.',
+      };
+    }
+    if (
+      status.startsWith('record:') ||
       status.startsWith('child-of:') ||
-      status.startsWith('ambiguous:'))
-  ) {
-    return {
-      ...base,
-      classification: 'intentionally-ignored:table-rows-emitted-as-records',
-      ignoreReason: 'table-rows-emitted-as-records',
-      guardNotes:
-        'Table rows on an otherwise unaccounted page; row content (including any embedded sub-group captions rendered at cell height) is emitted as its own records under the owning caption’s coverage status.',
-    };
+      status.startsWith('ambiguous:')
+    ) {
+      return {
+        ...base,
+        classification: 'intentionally-ignored:table-rows-emitted-as-records',
+        ignoreReason: 'table-rows-emitted-as-records',
+        guardNotes:
+          'Table rows on an otherwise unaccounted page; row content (including any embedded sub-group captions rendered at cell height) is emitted as its own records under the owning caption’s coverage status.',
+      };
+    }
   }
   return {
     ...base,

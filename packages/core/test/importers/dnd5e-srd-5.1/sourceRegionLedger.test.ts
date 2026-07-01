@@ -279,9 +279,7 @@ describe('buildSourceRegionLedger', () => {
       ],
     );
 
-    const body = ledger.entries.find(
-      (entry) => entry.normalizedCharCount > 0,
-    );
+    const body = ledger.entries.find((entry) => entry.normalizedCharCount > 0);
     expect(body).toMatchObject({
       classification: 'record:feature:cleric:ability-score-improvement',
       targetKey: 'feature:cleric:ability-score-improvement',
@@ -329,7 +327,11 @@ describe('buildSourceRegionLedger', () => {
     const pages: PageText[] = [
       {
         pageNumber: 3,
-        lines: ['Example Deities', 'Odin, god of knowledge', 'Aegir, god of the sea'],
+        lines: [
+          'Example Deities',
+          'Odin, god of knowledge',
+          'Aegir, god of the sea',
+        ],
         lineHeights: [12, 8.9, 8.9],
         lineGaps: [null, 10, 10],
       },
@@ -377,7 +379,12 @@ describe('buildSourceRegionLedger', () => {
     const pages: PageText[] = [
       {
         pageNumber: 3,
-        lines: ['Adventuring Gear', 'Abacus 2 gp 2 lb.', 'Ammunition', 'Arrows (20) 1 gp 1 lb.'],
+        lines: [
+          'Adventuring Gear',
+          'Abacus 2 gp 2 lb.',
+          'Ammunition',
+          'Arrows (20) 1 gp 1 lb.',
+        ],
         lineHeights: [12, 8.9, 8.9, 8.9],
         lineGaps: [null, 10, 10, 10],
       },

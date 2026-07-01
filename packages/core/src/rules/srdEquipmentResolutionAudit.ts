@@ -236,12 +236,21 @@ const PROFICIENCY_PHRASE_RESOLVERS: ReadonlyMap<string, ProficiencyResolver> =
     ['Daggers', (eq) => namedItemCandidates(eq, 'equipment:dagger')],
     ['daggers', (eq) => namedItemCandidates(eq, 'equipment:dagger')],
     ['darts', (eq) => namedItemCandidates(eq, 'equipment:dart')],
-    ['hand crossbows', (eq) => namedItemCandidates(eq, 'equipment:crossbow-hand')],
+    [
+      'hand crossbows',
+      (eq) => namedItemCandidates(eq, 'equipment:crossbow-hand'),
+    ],
     ['javelins', (eq) => namedItemCandidates(eq, 'equipment:javelin')],
-    ['light crossbows', (eq) => namedItemCandidates(eq, 'equipment:crossbow-light')],
+    [
+      'light crossbows',
+      (eq) => namedItemCandidates(eq, 'equipment:crossbow-light'),
+    ],
     ['longswords', (eq) => namedItemCandidates(eq, 'equipment:longsword')],
     ['maces', (eq) => namedItemCandidates(eq, 'equipment:mace')],
-    ['quarterstaffs', (eq) => namedItemCandidates(eq, 'equipment:quarterstaff')],
+    [
+      'quarterstaffs',
+      (eq) => namedItemCandidates(eq, 'equipment:quarterstaff'),
+    ],
     ['rapiers', (eq) => namedItemCandidates(eq, 'equipment:rapier')],
     ['scimitars', (eq) => namedItemCandidates(eq, 'equipment:scimitar')],
     ['shortswords', (eq) => namedItemCandidates(eq, 'equipment:shortsword')],
@@ -249,8 +258,14 @@ const PROFICIENCY_PHRASE_RESOLVERS: ReadonlyMap<string, ProficiencyResolver> =
     ['slings', (eq) => namedItemCandidates(eq, 'equipment:sling')],
     ['spears', (eq) => namedItemCandidates(eq, 'equipment:spear')],
     // Named tool proficiencies.
-    ['Herbalism kit', (eq) => namedItemCandidates(eq, 'equipment:herbalism-kit')],
-    ['Thieves’ tools', (eq) => namedItemCandidates(eq, 'equipment:thieves-tools')],
+    [
+      'Herbalism kit',
+      (eq) => namedItemCandidates(eq, 'equipment:herbalism-kit'),
+    ],
+    [
+      'Thieves’ tools',
+      (eq) => namedItemCandidates(eq, 'equipment:thieves-tools'),
+    ],
   ]);
 
 function resolveClassProficiencies(
