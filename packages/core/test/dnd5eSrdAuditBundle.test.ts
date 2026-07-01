@@ -3,10 +3,11 @@ import {
   buildGameplayReadinessReport,
   buildOverlayParityReport,
 } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
-import type {
-  RulesPack,
-  RulesPackLicense,
-  RulesRecord,
+import {
+  getBundledDnd5eSrdPack,
+  type RulesPack,
+  type RulesPackLicense,
+  type RulesRecord,
 } from '../src/internal.js';
 
 const LICENSE: RulesPackLicense = {
@@ -89,6 +90,92 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
       'condition:exhaustion',
     ]);
     expect(report.byKind.condition.examples.proseOnly).toEqual([]);
+  });
+
+  // eshyra-txxa: `hasMechanicsProjection` only checked top-level
+  // `data.mechanics`/`data.projection`, `data.traits[].mechanics`, and
+  // `data.feature.mechanics`, undercounting creature mechanics that live in
+  // nested actions/reactions/legendary actions instead.
+  it('counts mechanics nested in creature actions, reactions, and legendary actions', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'creature',
+          key: 'creature:action-only',
+          name: 'Action Only',
+          data: {
+            actions: [
+              {
+                name: 'Bite',
+                text: 'Melee attack.',
+                mechanics: { attacks: [], damage: [] },
+              },
+            ],
+          },
+        }),
+        record({
+          kind: 'creature',
+          key: 'creature:reaction-only',
+          name: 'Reaction Only',
+          data: {
+            reactions: [
+              {
+                name: 'Parry',
+                text: 'Reaction.',
+                mechanics: { attacks: [] },
+              },
+            ],
+          },
+        }),
+        record({
+          kind: 'creature',
+          key: 'creature:legendary-only',
+          name: 'Legendary Only',
+          data: {
+            legendaryActions: {
+              description: 'Can take 3 legendary actions.',
+              entries: [
+                {
+                  name: 'Detect',
+                  text: 'Perception check.',
+                  mechanics: { attacks: [] },
+                },
+              ],
+            },
+          },
+        }),
+        record({
+          kind: 'creature',
+          key: 'creature:no-mechanics',
+          name: 'No Mechanics',
+          data: {
+            actions: [{ name: 'Bite', text: 'Melee attack, no mechanics.' }],
+          },
+        }),
+      ]),
+      [],
+    );
+
+    expect(report.byKind.creature).toMatchObject({
+      totalRecords: 4,
+      recordsWithMechanicsProjections: 3,
+    });
+    expect(report.byKind.creature.examples.mechanicsProjections).toEqual([
+      'creature:action-only',
+      'creature:legendary-only',
+      'creature:reaction-only',
+    ]);
+  });
+
+  it('pins the committed pack creature mechanics-projection count to the documented 314/317 baseline', () => {
+    // Matches docs/audits/dnd5e-srd-5.1-final/mechanics-projection-report.md
+    // and the audit's own direct-scan count (eshyra-txxa) — before this fix
+    // the report undercounted at 100/317 by only checking top-level fields.
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    expect(report.byKind.creature).toMatchObject({
+      totalRecords: 317,
+      recordsWithMechanicsProjections: 314,
+    });
   });
 });
 

@@ -894,6 +894,36 @@ function hasDeterministicGrants(record: RulesRecord): boolean {
   );
 }
 
+/**
+ * Nested creature mechanics projections (eshyra-txxa): actions, reactions,
+ * and legendary actions each carry their own `mechanics` object (attacks,
+ * saves, damage) independent of any top-level `data.mechanics`. Missing these
+ * undercounted `recordsWithMechanicsProjections` against the 314/317 figure
+ * used elsewhere in the audit docs, which does scan these nested arrays.
+ */
+function hasNestedCreatureMechanicsProjection(
+  data: Record<string, unknown>,
+): boolean {
+  if (
+    arrayValue(data.actions).some(
+      (action) => objectValue(objectValue(action)?.mechanics) !== null,
+    )
+  ) {
+    return true;
+  }
+  if (
+    arrayValue(data.reactions).some(
+      (reaction) => objectValue(objectValue(reaction)?.mechanics) !== null,
+    )
+  ) {
+    return true;
+  }
+  const legendaryActions = objectValue(data.legendaryActions);
+  return arrayValue(legendaryActions?.entries).some(
+    (entry) => objectValue(objectValue(entry)?.mechanics) !== null,
+  );
+}
+
 function hasMechanicsProjection(record: RulesRecord): boolean {
   const data = dataObject(record);
   if (data === null) return false;
@@ -906,7 +936,8 @@ function hasMechanicsProjection(record: RulesRecord): boolean {
   ) {
     return true;
   }
-  return objectValue(objectValue(data.feature)?.mechanics) !== null;
+  if (objectValue(objectValue(data.feature)?.mechanics) !== null) return true;
+  return hasNestedCreatureMechanicsProjection(data);
 }
 
 function hasPartialStructure(record: RulesRecord): boolean {
