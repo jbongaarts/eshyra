@@ -640,6 +640,19 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 215,
     totalInKind: 218,
   },
+  // eshyra-erf5.3.1: only the 37 weapon records carry weaponCategory/Range.
+  {
+    kind: 'equipment',
+    field: 'weaponCategory',
+    missingCount: 181,
+    totalInKind: 218,
+  },
+  {
+    kind: 'equipment',
+    field: 'weaponRange',
+    missingCount: 181,
+    totalInKind: 218,
+  },
   { kind: 'equipment', field: 'weight', missingCount: 44, totalInKind: 218 },
   // Playable choice modeling (eshyra-o9bd.9): granted class features that confer
   // a creation/level-up build choice carry structured `data.choices` (subclass
@@ -2827,7 +2840,54 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         damageType: 'slashing',
         weight: '3 lb.',
         properties: ['Versatile (1d10)'],
+        weaponCategory: 'martial',
+        weaponRange: 'melee',
       });
+    });
+
+    // eshyra-erf5.3.1: every weapon carries its SRD simple/martial proficiency
+    // category and melee/ranged engagement range, derived from the Weapons
+    // table's four sub-headers rather than patched in by hand.
+    it('tags every weapon with its SRD simple/martial melee/ranged group', () => {
+      const weapons = equipment.filter(
+        (r) => (r.data as { category?: unknown }).category === 'weapon',
+      );
+      const counts = new Map<string, number>();
+      for (const weapon of weapons) {
+        const data = weapon.data as {
+          weaponCategory?: unknown;
+          weaponRange?: unknown;
+        };
+        expect(['simple', 'martial'], weapon.key).toContain(
+          data.weaponCategory,
+        );
+        expect(['melee', 'ranged'], weapon.key).toContain(data.weaponRange);
+        const bucket = `${data.weaponCategory}-${data.weaponRange}`;
+        counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
+      }
+      // The reviewed SRD 5.1 weapon table: 10 simple melee, 4 simple ranged,
+      // 18 martial melee, 5 martial ranged (37 total).
+      expect(Object.fromEntries(counts)).toEqual({
+        'simple-melee': 10,
+        'simple-ranged': 4,
+        'martial-melee': 18,
+        'martial-ranged': 5,
+      });
+      // One representative per group.
+      expect(category('equipment:club')).toBe('weapon');
+      expect(
+        pack.records.find((r) => r.key === 'equipment:club')?.data,
+      ).toMatchObject({ weaponCategory: 'simple', weaponRange: 'melee' });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:sling')?.data,
+      ).toMatchObject({ weaponCategory: 'simple', weaponRange: 'ranged' });
+      expect(
+        pack.records.find((r) => r.key === 'equipment:battleaxe')?.data,
+      ).toMatchObject({ weaponCategory: 'martial', weaponRange: 'melee' });
+      // The Net is Martial Ranged despite having no damage die/type.
+      expect(
+        pack.records.find((r) => r.key === 'equipment:net')?.data,
+      ).toMatchObject({ weaponCategory: 'martial', weaponRange: 'ranged' });
     });
 
     // loreweaver-4zu: the Adventuring Gear table is reconstructed from two

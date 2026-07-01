@@ -51679,6 +51679,8 @@
       "properties": [
         "Versatile (1d10)"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "4 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -51877,6 +51879,8 @@
         "Ammunition (range 25/100)",
         "loading"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "ranged",
       "weight": "1 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -52909,6 +52913,8 @@
       "properties": [
         "Light"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -53079,6 +53085,8 @@
         "light",
         "loading"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "ranged",
       "weight": "3 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -53119,6 +53127,8 @@
         "loading",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "ranged",
       "weight": "18 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -53158,6 +53168,8 @@
         "loading",
         "two-handed"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "ranged",
       "weight": "5 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -53263,6 +53275,8 @@
         "light",
         "thrown (range 20/60)"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "1 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -53301,6 +53315,8 @@
         "Finesse",
         "thrown (range 20/60)"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "ranged",
       "weight": "1/4 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -53943,6 +53959,8 @@
       "damageDie": "1d8",
       "damageType": "bludgeoning",
       "properties": [],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -54113,6 +54131,8 @@
         "reach",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "6 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -54216,6 +54236,8 @@
         "Heavy",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "7 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -54253,6 +54275,8 @@
       "properties": [
         "Two-handed"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "10 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -54291,6 +54315,8 @@
         "Heavy",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "6 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -54330,6 +54356,8 @@
         "reach",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "6 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -54468,6 +54496,8 @@
         "Light",
         "thrown (range 20/60)"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -54866,6 +54896,8 @@
       "properties": [
         "Thrown (range 30/120)"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -55067,6 +55099,8 @@
         "Reach",
         "special"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "6 lb.",
       "description": "Lance. You have disadvantage when you use a lance to attack a target within 5 feet of you. Also, a lance requires two hands to wield when you aren’t mounted."
     },
@@ -55241,6 +55275,8 @@
         "Light",
         "thrown (range 20/60)"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -55313,6 +55349,8 @@
         "heavy",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "ranged",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -55382,6 +55420,8 @@
       "properties": [
         "Versatile (1d10)"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "3 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -55483,6 +55523,8 @@
       "damageDie": "1d6",
       "damageType": "bludgeoning",
       "properties": [],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "4 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -55652,6 +55694,8 @@
         "Heavy",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "10 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -55752,6 +55796,8 @@
       "damageDie": "1d8",
       "damageType": "piercing",
       "properties": [],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "4 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -55821,6 +55867,8 @@
         "Special",
         "thrown (range 5/15)"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "ranged",
       "weight": "3 lb.",
       "description": "Net. A Large or smaller creature hit by a net is restrained until it is freed. A net has no effect on creatures that are formless, or creatures that are Huge or larger. A creature can use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success. Dealing 5 slashing damage to the net (AC 10) also frees the creature without harming it, ending the effect and destroying the net. When you use an action, bonus action, or reaction to attack with a net, you can make only one attack regardless of the number of attacks you can normally make."
     },
@@ -56154,6 +56202,8 @@
         "reach",
         "two-handed"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "18 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -56635,6 +56685,8 @@
       "properties": [
         "Versatile (1d8)"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "4 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -56738,6 +56790,8 @@
       "properties": [
         "Finesse"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -57403,6 +57457,8 @@
         "Finesse",
         "light"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "3 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -57540,6 +57596,8 @@
         "Ammunition (range 80/320)",
         "two-handed"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "ranged",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -57578,6 +57636,8 @@
         "Finesse",
         "light"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -57647,6 +57707,8 @@
       "properties": [
         "Light"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -57777,7 +57839,9 @@
       "damageType": "bludgeoning",
       "properties": [
         "Ammunition (range 30/120)"
-      ]
+      ],
+      "weaponCategory": "simple",
+      "weaponRange": "ranged"
     },
     "source": "SRD 5.1 p. 66",
     "license": {
@@ -57911,6 +57975,8 @@
         "Thrown (range 20/60)",
         "versatile (1d8)"
       ],
+      "weaponCategory": "simple",
+      "weaponRange": "melee",
       "weight": "3 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -58413,6 +58479,8 @@
         "Thrown (range 20/60)",
         "versatile (1d8)"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "4 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -58578,6 +58646,8 @@
       "damageDie": "1d8",
       "damageType": "piercing",
       "properties": [],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -58615,6 +58685,8 @@
       "properties": [
         "Versatile (1d10)"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "2 lb."
     },
     "source": "SRD 5.1 p. 66",
@@ -58816,6 +58888,8 @@
         "Finesse",
         "reach"
       ],
+      "weaponCategory": "martial",
+      "weaponRange": "melee",
       "weight": "3 lb."
     },
     "source": "SRD 5.1 p. 66",

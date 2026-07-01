@@ -1331,22 +1331,45 @@ function validateDnd5eClass(record: RulesRecord, path: string): void {
 function validateDnd5eEquipment(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   const contents = data.contents;
-  if (contents === undefined) return;
-  if (!Array.isArray(contents) || contents.length === 0) {
-    throw new RulesPackError(
-      `${path}.data.contents must be a non-empty array when present`,
-    );
-  }
-  contents.forEach((entry, i) => {
-    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
-      throw new RulesPackError(`${path}.data.contents[${i}] must be an object`);
+  if (contents !== undefined) {
+    if (!Array.isArray(contents) || contents.length === 0) {
+      throw new RulesPackError(
+        `${path}.data.contents must be a non-empty array when present`,
+      );
     }
-    const content = entry as Obj;
-    reqStr(content, 'name', `${path}.data.contents[${i}]`);
-    reqInt(content, 'quantity', `${path}.data.contents[${i}]`, 1);
-    optStr(content, 'ref', `${path}.data.contents[${i}]`);
-    optStr(content, 'detail', `${path}.data.contents[${i}]`);
-  });
+    contents.forEach((entry, i) => {
+      if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+        throw new RulesPackError(
+          `${path}.data.contents[${i}] must be an object`,
+        );
+      }
+      const content = entry as Obj;
+      reqStr(content, 'name', `${path}.data.contents[${i}]`);
+      reqInt(content, 'quantity', `${path}.data.contents[${i}]`, 1);
+      optStr(content, 'ref', `${path}.data.contents[${i}]`);
+      optStr(content, 'detail', `${path}.data.contents[${i}]`);
+    });
+  }
+  // Every weapon carries its SRD proficiency category (simple/martial) and
+  // engagement range (melee/ranged) so class proficiencies and
+  // starting-equipment filters can resolve deterministically (eshyra-erf5.3.1).
+  if (data.category === 'weapon') {
+    const weaponCategory = data.weaponCategory;
+    if (
+      typeof weaponCategory !== 'string' ||
+      !WEAPON_CATEGORIES.has(weaponCategory)
+    ) {
+      throw new RulesPackError(
+        `${path}.data.weaponCategory must be "simple" or "martial"`,
+      );
+    }
+    const weaponRange = data.weaponRange;
+    if (typeof weaponRange !== 'string' || !WEAPON_RANGES.has(weaponRange)) {
+      throw new RulesPackError(
+        `${path}.data.weaponRange must be "melee" or "ranged"`,
+      );
+    }
+  }
 }
 
 function validateDnd5eCondition(record: RulesRecord, path: string): void {

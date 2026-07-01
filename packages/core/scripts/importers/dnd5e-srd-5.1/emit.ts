@@ -1050,6 +1050,15 @@ function buildEquipmentData(
       data.damageType = item.damageType;
     }
     data.properties = [...(item.properties ?? [])];
+    // Simple/martial proficiency category and melee/ranged engagement range,
+    // from the Weapons table's sub-header grouping (eshyra-erf5.3.1) — needed
+    // for deterministic class-proficiency and starting-equipment filters.
+    if (item.weaponCategory !== undefined) {
+      data.weaponCategory = item.weaponCategory;
+    }
+    if (item.weaponRange !== undefined) {
+      data.weaponRange = item.weaponRange;
+    }
   }
   if (item.category === 'armor') {
     if (item.ac !== undefined) {

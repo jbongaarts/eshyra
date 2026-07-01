@@ -312,6 +312,8 @@ describe('parseEquipment — weapons', () => {
       damageType: 'piercing',
       weight: '1 lb.',
       properties: ['Finesse', 'light', 'thrown (range 20/60)'],
+      weaponCategory: 'simple',
+      weaponRange: 'melee',
     });
   });
 
@@ -324,6 +326,8 @@ describe('parseEquipment — weapons', () => {
       damageType: 'slashing',
       weight: '3 lb.',
       properties: ['Versatile (1d10)'],
+      weaponCategory: 'martial',
+      weaponRange: 'melee',
     });
   });
 
@@ -335,6 +339,8 @@ describe('parseEquipment — weapons', () => {
       damageType: 'bludgeoning',
       weight: '4 lb.',
       properties: [],
+      weaponCategory: 'simple',
+      weaponRange: 'melee',
     });
   });
 
@@ -348,6 +354,8 @@ describe('parseEquipment — weapons', () => {
       cost: '1 gp',
       weight: '3 lb.',
       properties: ['Special', 'thrown (range 5/15)'],
+      weaponCategory: 'martial',
+      weaponRange: 'ranged',
     });
     expect(net?.damageDie).toBeUndefined();
     expect(net?.damageType).toBeUndefined();
@@ -357,6 +365,45 @@ describe('parseEquipment — weapons', () => {
     const dagger = byName(items, 'Dagger');
     expect(dagger?.ac).toBeUndefined();
     expect(dagger?.armorType).toBeUndefined();
+  });
+
+  // eshyra-erf5.3.1: every weapon row is tagged with its proficiency category
+  // (simple/martial) and engagement range (melee/ranged) from the nearest
+  // preceding Weapons-table sub-header, across all four groups.
+  it('classifies every weapon by its nearest preceding simple/martial melee/ranged sub-header', () => {
+    const page = pageWithHeights(63, [
+      ['Weapons', 18],
+      ['Simple Melee Weapons', 8.88],
+      ['Club 1 sp 1d4 bludgeoning', 8.88],
+      ['Simple Ranged Weapons', 8.88],
+      ['Sling 1 sp 1d4 bludgeoning', 8.88],
+      ['Martial Melee Weapons', 8.88],
+      ['Battleaxe 10 gp 1d8 slashing', 8.88],
+      ['Martial Ranged Weapons', 8.88],
+      ['Longbow 50 gp 1d8 piercing', 8.88],
+      ['Adventuring Gear', 18],
+      ['1 lb. —', 8.88],
+      ['— —', 8.88],
+      ['4 lb. Heavy, two-handed', 8.88],
+      ['2 lb. Ammunition (range 150/600), heavy, two-handed', 8.88],
+    ]);
+    const parsed = parseEquipment([page]);
+    expect(byName(parsed, 'Club')).toMatchObject({
+      weaponCategory: 'simple',
+      weaponRange: 'melee',
+    });
+    expect(byName(parsed, 'Sling')).toMatchObject({
+      weaponCategory: 'simple',
+      weaponRange: 'ranged',
+    });
+    expect(byName(parsed, 'Battleaxe')).toMatchObject({
+      weaponCategory: 'martial',
+      weaponRange: 'melee',
+    });
+    expect(byName(parsed, 'Longbow')).toMatchObject({
+      weaponCategory: 'martial',
+      weaponRange: 'ranged',
+    });
   });
 });
 
