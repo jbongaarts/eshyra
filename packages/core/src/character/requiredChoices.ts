@@ -47,6 +47,7 @@ import type {
   ResolvedClassData,
   ResolvedLanguageGrant,
 } from './rulesPackResolver.js';
+import { SRD_5_1_STANDARD_LANGUAGES } from './srdCreationChoices.js';
 
 /** Whether a required choice can be enumerated from structured pack data yet. */
 export type Level1RequiredChoiceStatus = 'structured' | 'unstructured';
@@ -108,16 +109,11 @@ const BEAD_ABILITY_INCREASE = 'eshyra-b69j.12.1';
 const BEAD_SPELLCASTING = 'eshyra-b69j.12.2';
 const BEAD_EQUIPMENT = 'eshyra-b69j.12.3';
 const BEAD_LANGUAGES = 'eshyra-b69j.12.4';
-const SRD_STANDARD_LANGUAGES: readonly string[] = [
-  'Common',
-  'Dwarvish',
-  'Elvish',
-  'Giant',
-  'Gnomish',
-  'Goblin',
-  'Halfling',
-  'Orc',
-];
+// Fallback only: a pack without a generated `languages[].from` domain
+// (eshyra-8r8f) still gets a choosable pool rather than an empty one. Every
+// SRD 5.1 ancestry/background language grant now carries `from`, so this
+// path is not exercised against the committed pack.
+const SRD_STANDARD_LANGUAGES_FALLBACK = SRD_5_1_STANDARD_LANGUAGES;
 
 /**
  * Enumerate every required level-1 choice implied by the given class (and
@@ -403,7 +399,7 @@ function collectAncestryLanguages(
     status: 'structured',
     label: `Choose ${grant.choose} language(s)`,
     choose: grant.choose,
-    from: chooseableLanguages(grantedLanguages),
+    from: chooseableLanguages(grantedLanguages, grant.from),
     sourceText: grant.sourceText,
   });
 }
@@ -491,7 +487,7 @@ function collectBackgroundChoices(
     status: 'structured',
     label: `Choose ${grant.choose} language(s)`,
     choose: grant.choose,
-    from: chooseableLanguages(grantedLanguages),
+    from: chooseableLanguages(grantedLanguages, grant.from),
     sourceText: grant.sourceText,
   });
 }
@@ -529,9 +525,14 @@ function fixedLanguages(
   return Array.isArray(value) ? value.flatMap((grant) => grant.fixed) : [];
 }
 
-function chooseableLanguages(fixed: readonly string[]): readonly string[] {
+function chooseableLanguages(
+  fixed: readonly string[],
+  domain: readonly string[] | undefined,
+): readonly string[] {
   const taken = new Set(fixed);
-  return SRD_STANDARD_LANGUAGES.filter((language) => !taken.has(language));
+  return (domain ?? SRD_STANDARD_LANGUAGES_FALLBACK).filter(
+    (language) => !taken.has(language),
+  );
 }
 
 /**

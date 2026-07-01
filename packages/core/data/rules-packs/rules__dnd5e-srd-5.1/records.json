@@ -881,6 +881,16 @@
             "Elvish"
           ],
           "choose": 1,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "You can speak, read, and write Common, Elvish, and one extra language of your choice."
         }
       ],
@@ -1289,6 +1299,16 @@
           "category": "language",
           "prompt": "Choose one extra language.",
           "choose": 1,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "You can speak, read, and write one extra language of your choice."
         }
       ]
@@ -1541,6 +1561,16 @@
             "Common"
           ],
           "choose": 1,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "You can speak, read, and write Common and one extra language of your choice."
         }
       ]
@@ -1935,6 +1965,16 @@
         {
           "fixed": [],
           "choose": 2,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "Two of your choice"
         }
       ],
@@ -2668,7 +2708,19 @@
       "toolProficiencyChoices": [
         {
           "text": "Three musical instruments of your choice",
-          "choose": 3
+          "choose": 3,
+          "from": [
+            "Bagpipes",
+            "Drum",
+            "Dulcimer",
+            "Flute",
+            "Horn",
+            "Lute",
+            "Lyre",
+            "Pan flute",
+            "Shawm",
+            "Viol"
+          ]
         }
       ],
       "skillChoices": [
@@ -5143,7 +5195,36 @@
       "toolProficiencyChoices": [
         {
           "text": "Choose one type of artisan’s tools or one musical instrument",
-          "choose": 1
+          "choose": 1,
+          "from": [
+            "Alchemist’s supplies",
+            "Brewer’s supplies",
+            "Calligrapher's supplies",
+            "Carpenter’s tools",
+            "Cartographer’s tools",
+            "Cobbler’s tools",
+            "Cook’s utensils",
+            "Glassblower’s tools",
+            "Jeweler’s tools",
+            "Leatherworker’s tools",
+            "Mason’s tools",
+            "Painter’s supplies",
+            "Potter’s tools",
+            "Smith’s tools",
+            "Tinker’s tools",
+            "Weaver’s tools",
+            "Woodcarver’s tools",
+            "Bagpipes",
+            "Drum",
+            "Dulcimer",
+            "Flute",
+            "Horn",
+            "Lute",
+            "Lyre",
+            "Pan flute",
+            "Shawm",
+            "Viol"
+          ]
         }
       ],
       "skillChoices": [

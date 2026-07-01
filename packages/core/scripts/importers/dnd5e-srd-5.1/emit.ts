@@ -29,6 +29,7 @@ import { enrichClassChapterRecords } from './classProgression.js';
 import {
   enrichAncestryCreationFacts,
   enrichBackgroundCreationFacts,
+  enrichClassToolChoiceDomains,
 } from './creationFacts.js';
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
@@ -1343,9 +1344,8 @@ export function buildPack(input: BuildPackInput): RulesPack {
   const resolveSpellGrant = buildSpellGrantResolver(input.spells);
   const baseSpellRecords = spellExtractionsToRecords(input.spells, classByName);
   const creatureRecords = creatureExtractionsToRecords(input.creatures ?? []);
-  const classRecords = classExtractionsToRecords(
-    input.classes ?? [],
-    input.primaryAbilityIndex,
+  const classRecords = enrichClassToolChoiceDomains(
+    classExtractionsToRecords(input.classes ?? [], input.primaryAbilityIndex),
   );
   const subclassRecords = subclassExtractionsToRecords(input.subclasses ?? []);
   const featureRecords = featureExtractionsToRecords(

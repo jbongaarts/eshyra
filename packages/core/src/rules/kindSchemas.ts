@@ -490,6 +490,16 @@ function optLanguageGrantArray(parent: Obj, key: string, path: string): void {
   entries.forEach((entry, i) => {
     reqStrArray(entry, 'fixed', `${path}.${key}[${i}]`);
     optInt(entry, 'choose', `${path}.${key}[${i}]`, 1);
+    // The enumerable option domain for `choose` (eshyra-8r8f) — e.g. the
+    // Standard Languages table for a Half-Elf/Human/Acolyte "extra language".
+    if (entry.from !== undefined) {
+      optStrArray(entry, 'from', `${path}.${key}[${i}]`);
+      if ((entry.from as unknown[]).length === 0) {
+        throw new RulesPackError(
+          `${path}.${key}[${i}].from must not be empty when present`,
+        );
+      }
+    }
     reqStr(entry, 'sourceText', `${path}.${key}[${i}]`);
   });
 }

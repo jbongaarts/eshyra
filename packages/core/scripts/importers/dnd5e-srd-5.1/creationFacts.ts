@@ -2,6 +2,9 @@ import {
   type CreationChoice,
   getAncestryCreationChoices,
   getBackgroundCreationFacts,
+  SRD_5_1_ARTISAN_TOOLS,
+  SRD_5_1_MUSICAL_INSTRUMENTS,
+  SRD_5_1_STANDARD_LANGUAGES,
 } from '../../../src/character/srdCreationChoices.js';
 import {
   type StartingEquipmentGrant as ResolvedEquipmentGrant,
@@ -61,6 +64,9 @@ interface AncestryAbilityScoreIncrease {
 interface LanguageGrant {
   readonly fixed: readonly string[];
   readonly choose?: number;
+  /** Legal option domain for `choose`, when the SRD's choice is enumerable
+   * (eshyra-8r8f). Present iff `choose` is present. */
+  readonly from?: readonly string[];
   readonly sourceText: string;
 }
 
@@ -120,12 +126,16 @@ function known(sourceText: string, ...fixed: readonly string[]): LanguageGrant {
   return { fixed, sourceText };
 }
 
+// Every "extra language of your choice" in the SRD 5.1 base game draws from
+// the same Standard Languages table domain, per rule:languages' own
+// precedence ("Choose your languages from the Standard Languages table") —
+// eshyra-8r8f.
 function choose(
   sourceText: string,
   count: number,
   ...fixed: readonly string[]
 ): LanguageGrant {
-  return { fixed, choose: count, sourceText };
+  return { fixed, choose: count, from: SRD_5_1_STANDARD_LANGUAGES, sourceText };
 }
 
 function choice(
@@ -642,6 +652,7 @@ function cloneLanguageGrant(value: LanguageGrant): LanguageGrant {
   return {
     fixed: [...value.fixed],
     ...(value.choose !== undefined ? { choose: value.choose } : {}),
+    ...(value.from !== undefined ? { from: [...value.from] } : {}),
     sourceText: value.sourceText,
   };
 }
@@ -750,6 +761,43 @@ export function enrichBackgroundCreationFacts(
               })),
             }
           : {}),
+      },
+    };
+  });
+}
+
+// The class-level "toolProficiencyChoices" entries this domain applies to,
+// keyed by class key (eshyra-8r8f). Both are the only SRD 5.1 base-class Tools
+// lines that name an open musical-instrument/artisan-tool choice; see
+// parseToolsValue, which preserves the prose verbatim but cannot itself know
+// which named catalog a given class's choice draws from.
+const CLASS_TOOL_CHOICE_DOMAINS: Readonly<Record<string, readonly string[]>> = {
+  'class:bard': SRD_5_1_MUSICAL_INSTRUMENTS,
+  'class:monk': [...SRD_5_1_ARTISAN_TOOLS, ...SRD_5_1_MUSICAL_INSTRUMENTS],
+};
+
+/**
+ * Attach the enumerable option domain to a class's `toolProficiencyChoices[0]`
+ * when the class key names one (eshyra-8r8f: Bard's "three musical
+ * instruments", Monk's "one type of artisan's tools or one musical
+ * instrument"). Every other class's tool choices (there are none in SRD 5.1
+ * beyond these two) pass through unchanged.
+ */
+export function enrichClassToolChoiceDomains(
+  records: readonly RulesRecord[],
+): RulesRecord[] {
+  return records.map((record) => {
+    const domain = CLASS_TOOL_CHOICE_DOMAINS[record.key];
+    if (domain === undefined) return record;
+    const data = dataObject(record);
+    const choices = data.toolProficiencyChoices;
+    if (!Array.isArray(choices) || choices.length === 0) return record;
+    const [first, ...rest] = choices as Record<string, unknown>[];
+    return {
+      ...record,
+      data: {
+        ...data,
+        toolProficiencyChoices: [{ ...first, from: [...domain] }, ...rest],
       },
     };
   });

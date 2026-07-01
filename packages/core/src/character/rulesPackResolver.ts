@@ -107,6 +107,8 @@ export interface ResolvedAncestryAbilityScoreIncrease {
 export interface ResolvedLanguageGrant {
   readonly fixed: readonly string[];
   readonly choose?: number;
+  /** Enumerable option domain for `choose` (eshyra-8r8f), when the pack has one. */
+  readonly from?: readonly string[];
   readonly sourceText: string;
 }
 
@@ -1114,6 +1116,7 @@ function parseLanguageGrants(
     grants.push({
       fixed: entry.fixed,
       ...(typeof entry.choose === 'number' ? { choose: entry.choose } : {}),
+      ...(isStringArray(entry.from) ? { from: entry.from } : {}),
       sourceText: entry.sourceText,
     });
   }

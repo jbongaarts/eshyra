@@ -98,6 +98,61 @@ const ARTISAN_TOOL_OPTIONS: readonly string[] = [
   'Mason’s tools',
 ];
 
+/**
+ * The 8 SRD 5.1 Standard Languages table entries (eshyra-8r8f) — the domain
+ * for an open "one/two extra language(s) of your choice", per `rule:languages`'
+ * own precedence ("Choose your languages from the Standard Languages table").
+ * The Exotic Languages table (Abyssal, Celestial, Draconic, Deep Speech,
+ * Infernal, Primordial, Sylvan, Undercommon) is GM-permission-gated in the
+ * source prose, not part of the default domain, so it is intentionally
+ * excluded here.
+ */
+export const SRD_5_1_STANDARD_LANGUAGES: readonly string[] = [
+  'Common',
+  'Dwarvish',
+  'Elvish',
+  'Giant',
+  'Gnomish',
+  'Goblin',
+  'Halfling',
+  'Orc',
+];
+
+/** The 17 SRD 5.1 Artisan's Tools table entries (eshyra-8r8f). */
+export const SRD_5_1_ARTISAN_TOOLS: readonly string[] = [
+  'Alchemist’s supplies',
+  'Brewer’s supplies',
+  "Calligrapher's supplies",
+  'Carpenter’s tools',
+  'Cartographer’s tools',
+  'Cobbler’s tools',
+  'Cook’s utensils',
+  'Glassblower’s tools',
+  'Jeweler’s tools',
+  'Leatherworker’s tools',
+  'Mason’s tools',
+  'Painter’s supplies',
+  'Potter’s tools',
+  'Smith’s tools',
+  'Tinker’s tools',
+  'Weaver’s tools',
+  'Woodcarver’s tools',
+];
+
+/** The 10 SRD 5.1 Musical Instrument table entries (eshyra-8r8f). */
+export const SRD_5_1_MUSICAL_INSTRUMENTS: readonly string[] = [
+  'Bagpipes',
+  'Drum',
+  'Dulcimer',
+  'Flute',
+  'Horn',
+  'Lute',
+  'Lyre',
+  'Pan flute',
+  'Shawm',
+  'Viol',
+];
+
 /** Context the importer supplies (pack-derived, enumerable option sets). */
 export interface CreationChoiceContext {
   /** Sorted `spell:` keys of every wizard cantrip in the pack. */
@@ -166,6 +221,7 @@ export function getAncestryCreationChoices(
           category: 'language',
           prompt: 'Choose one extra language.',
           choose: 1,
+          from: SRD_5_1_STANDARD_LANGUAGES,
           sourceText:
             'You can speak, read, and write one extra language of your choice.',
         },

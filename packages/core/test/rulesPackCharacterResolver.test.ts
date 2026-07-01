@@ -460,7 +460,21 @@ describe('rules-pack character resolver', () => {
         expect.arrayContaining(['Insight', 'Religion']),
       );
       expect(acolyte.record.languages).toEqual([
-        { fixed: [], choose: 2, sourceText: 'Two of your choice' },
+        {
+          fixed: [],
+          choose: 2,
+          from: [
+            'Common',
+            'Dwarvish',
+            'Elvish',
+            'Giant',
+            'Gnomish',
+            'Goblin',
+            'Halfling',
+            'Orc',
+          ],
+          sourceText: 'Two of your choice',
+        },
       ]);
     }
     expect(resolver.resolveBackground('Noble').ok).toBe(false);

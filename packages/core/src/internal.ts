@@ -387,7 +387,10 @@ export type {
 export {
   getAncestryCreationChoices,
   getBackgroundCreationFacts,
+  SRD_5_1_ARTISAN_TOOLS,
+  SRD_5_1_MUSICAL_INSTRUMENTS,
   SRD_5_1_SKILLS,
+  SRD_5_1_STANDARD_LANGUAGES,
 } from './character/srdCreationChoices.js';
 export type { EquipmentPackContent } from './character/srdEquipmentPacks.js';
 export { readEquipmentPackContents } from './character/srdEquipmentPacks.js';
