@@ -76,6 +76,7 @@ import { parseSelfSufficiency } from './parseSelfSufficiency.js';
 import { parseSpellcastingServices } from './parseSpellcastingServices.js';
 import {
   applyClassLists,
+  parseSpellClassLevelLists,
   parseSpellClassLists,
   parseSpells,
 } from './parseSpells.js';
@@ -102,6 +103,10 @@ import {
   assertSourceRegionLedger,
   buildSourceRegionLedger,
 } from './sourceRegionLedger.js';
+import {
+  assertSpellListParity,
+  auditSpellListParity,
+} from './spellListParityAudit.js';
 import { addSemanticTableProjections } from './tableProjections.js';
 import type {
   AncestryExtraction,
@@ -3601,6 +3606,18 @@ export async function runImporter(
       ...pack,
       records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
     };
+    // Class spell-list parity gate (eshyra-erf5.2): the source-coverage gate
+    // above only proves the spell-list PAGES are structurally accounted for
+    // (mostly via the `spell-list-header` ignore), not that the emitted
+    // `spell:*` records' class/level membership still matches what those
+    // pages actually print. Re-scan the same source pages independently of
+    // `applyClassLists` and fail closed on any drift.
+    assertSpellListParity(
+      auditSpellListParity(
+        parseSpellClassLevelLists(spellListPages),
+        pack.records.filter((record) => record.kind === 'spell'),
+      ),
+    );
   }
   writePackToDirectory(pack, { outDir: input.outDir });
   if (sourceCoverageArtifacts !== undefined) {
