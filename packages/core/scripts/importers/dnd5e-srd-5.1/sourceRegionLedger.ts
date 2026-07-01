@@ -556,13 +556,21 @@ function findRepresentingRecord(
       ? undefined
       : slug(owner.item.section);
   const headingSlug = owner === undefined ? undefined : slug(owner.item.text);
-  const preferred = matches.find(
-    (record) =>
-      (sectionSlug !== undefined && record.key.includes(`:${sectionSlug}:`)) ||
-      (headingSlug !== undefined &&
+  // Section-slug matches win outright: same-boilerplate headings recur across
+  // sections (every class has an identically worded "Ability Score
+  // Improvement" feature), so a heading-slug hit alone cannot distinguish the
+  // owning section's record from its 11 siblings (eshyra-erf5.6).
+  const preferred =
+    matches.find(
+      (record) =>
+        sectionSlug !== undefined && record.key.includes(`:${sectionSlug}:`),
+    ) ??
+    matches.find(
+      (record) =>
+        headingSlug !== undefined &&
         (record.key.endsWith(`:${headingSlug}`) ||
-          record.key.includes(`:${headingSlug}:`))),
-  );
+          record.key.includes(`:${headingSlug}:`)),
+    );
   if (preferred !== undefined) return preferred.key;
   if (matches.every((record) => record.key.startsWith('equipment:'))) {
     return [...matches].sort((a, b) => a.key.localeCompare(b.key))[0]?.key;

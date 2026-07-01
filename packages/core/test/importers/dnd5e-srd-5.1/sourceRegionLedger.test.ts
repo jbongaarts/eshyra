@@ -239,6 +239,56 @@ describe('buildSourceRegionLedger', () => {
     expect(ledger.entries[0].normalizedCharCount).toBeGreaterThan(0);
   });
 
+  it('prefers the section-slug match when every candidate shares the heading slug (eshyra-erf5.6)', () => {
+    // Every class has an identically worded "Ability Score Improvement"
+    // feature, so a document-wide content search matches all of them and
+    // every candidate key ends with `:ability-score-improvement`. Only the
+    // owning section (here: Cleric) distinguishes them; the section-slug
+    // match must win even though feature:barbarian:... sorts first.
+    const boilerplate =
+      'When you reach 4th level, you can increase one ability score of your choice by 2.';
+    const heading = item({
+      text: 'Ability Score Improvement',
+      lineIndex: 0,
+      section: 'Cleric',
+    });
+    const ledger = buildSourceRegionLedger(
+      [page(['Ability Score Improvement', boilerplate], [12, 9.8])],
+      [
+        coverage(heading, {
+          kind: 'record',
+          key: 'feature:cleric:ability-score-improvement',
+        }),
+      ],
+      [
+        record(
+          'feature:barbarian:ability-score-improvement',
+          'Ability Score Improvement',
+          boilerplate,
+        ),
+        record(
+          'feature:bard:ability-score-improvement',
+          'Ability Score Improvement',
+          boilerplate,
+        ),
+        record(
+          'feature:cleric:ability-score-improvement',
+          'Ability Score Improvement',
+          boilerplate,
+        ),
+      ],
+    );
+
+    const body = ledger.entries.find(
+      (entry) => entry.normalizedCharCount > 0,
+    );
+    expect(body).toMatchObject({
+      classification: 'record:feature:cleric:ability-score-improvement',
+      targetKey: 'feature:cleric:ability-score-improvement',
+    });
+    expect(body?.contentMatch).toBeUndefined();
+  });
+
   it('handles adjacent records without creating orphan prose', () => {
     const first = item({ text: 'First Rule', lineIndex: 0 });
     const second = item({ text: 'Second Rule', lineIndex: 2 });

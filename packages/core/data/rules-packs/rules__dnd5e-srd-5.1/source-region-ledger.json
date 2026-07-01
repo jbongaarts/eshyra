@@ -1469,8 +1469,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:bard:ability-score-improvement",
+      "targetKey": "feature:bard:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -2001,8 +2001,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:cleric:ability-score-improvement",
+      "targetKey": "feature:cleric:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -2598,8 +2598,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:druid:ability-score-improvement",
+      "targetKey": "feature:druid:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -3722,8 +3722,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:monk:ability-score-improvement",
+      "targetKey": "feature:monk:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -3762,8 +3762,8 @@
       "firstPhrase": "Beginning at 5th level, you can attack twice, instead of once, whenever you take",
       "lastPhrase": "attack twice, instead of once, whenever you take the Attack action on your turn.",
       "normalizedCharCount": 112,
-      "classification": "record:feature:barbarian:extra-attack",
-      "targetKey": "feature:barbarian:extra-attack",
+      "classification": "record:feature:monk:extra-attack",
+      "targetKey": "feature:monk:extra-attack",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -4597,8 +4597,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:paladin:ability-score-improvement",
+      "targetKey": "feature:paladin:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -4617,8 +4617,8 @@
       "firstPhrase": "Beginning at 5th level, you can attack twice, instead of once, whenever you take",
       "lastPhrase": "attack twice, instead of once, whenever you take the Attack action on your turn.",
       "normalizedCharCount": 112,
-      "classification": "record:feature:barbarian:extra-attack",
-      "targetKey": "feature:barbarian:extra-attack",
+      "classification": "record:feature:paladin:extra-attack",
+      "targetKey": "feature:paladin:extra-attack",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -5376,8 +5376,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:ranger:ability-score-improvement",
+      "targetKey": "feature:ranger:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -5396,8 +5396,8 @@
       "firstPhrase": "Beginning at 5th level, you can attack twice, instead of once, whenever you take",
       "lastPhrase": "attack twice, instead of once, whenever you take the Attack action on your turn.",
       "normalizedCharCount": 112,
-      "classification": "record:feature:barbarian:extra-attack",
-      "targetKey": "feature:barbarian:extra-attack",
+      "classification": "record:feature:ranger:extra-attack",
+      "targetKey": "feature:ranger:extra-attack",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -6789,8 +6789,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:sorcerer:ability-score-improvement",
+      "targetKey": "feature:sorcerer:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -7430,8 +7430,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:warlock:ability-score-improvement",
+      "targetKey": "feature:warlock:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -8717,8 +8717,8 @@
       "firstPhrase": "When you reach 4th level, and again at 8th, 12th, 16th, and 19th level,",
       "lastPhrase": "1. As normal, you can’t increase an ability score above 20 using this feature.",
       "normalizedCharCount": 263,
-      "classification": "record:feature:barbarian:ability-score-improvement",
-      "targetKey": "feature:barbarian:ability-score-improvement",
+      "classification": "record:feature:wizard:ability-score-improvement",
+      "targetKey": "feature:wizard:ability-score-improvement",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
