@@ -1,9 +1,9 @@
 {
   "summary": {
-    "entries": 2655,
-    "proseRegions": 2628,
+    "entries": 2679,
+    "proseRegions": 2652,
     "pureStructure": 27,
-    "record": 2095,
+    "record": 2119,
     "childOf": 450,
     "intentionallyIgnored": {
       "front-matter": 2,
@@ -2843,6 +2843,50 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p22-l77-prose",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 77,
+      "lineEnd": 93,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Nature’s Sanctuary",
+        "Sacred Plants and Wood"
+      ],
+      "sourceContext": "Sacred Plants and Wood",
+      "regionType": "record-body",
+      "firstPhrase": "A druid holds certain plants to be sacred, particularly alder, ash, birch, elder, hazel,",
+      "lastPhrase": "a druid of a desert region might value the yucca tree and cactus plants.",
+      "normalizedCharCount": 911,
+      "classification": "record:rule:druid-sacred-plants-and-wood",
+      "targetKey": "rule:druid-sacred-plants-and-wood",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p23-l1-prose",
+      "pageStart": 23,
+      "pageEnd": 23,
+      "lineStart": 1,
+      "lineEnd": 6,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Nature’s Sanctuary",
+        "Druids and the Gods"
+      ],
+      "sourceContext": "Druids and the Gods",
+      "regionType": "record-body",
+      "firstPhrase": "Some druids venerate the forces of nature themselves, but most druids are devoted to",
+      "lastPhrase": "often considered a more ancient tradition than the faiths of clerics and urbanized peoples.",
+      "normalizedCharCount": 332,
+      "classification": "record:rule:druid-druids-and-the-gods",
+      "targetKey": "rule:druid-druids-and-the-gods",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
       "id": "p24-l2-prose",
       "pageStart": 24,
       "pageEnd": 24,
@@ -4852,6 +4896,50 @@
       "normalizedCharCount": 461,
       "classification": "record:feature:oath-of-devotion:holy-nimbus",
       "targetKey": "feature:oath-of-devotion:holy-nimbus",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p33-l90-prose",
+      "pageStart": 33,
+      "pageEnd": 33,
+      "lineStart": 90,
+      "lineEnd": 98,
+      "headingPath": [
+        "Paladin",
+        "Sacred Oaths",
+        "Oath of Devotion",
+        "Holy Nimbus",
+        "Breaking Your Oath"
+      ],
+      "sourceContext": "Breaking Your Oath",
+      "regionType": "record-body",
+      "firstPhrase": "A paladin tries to hold to the highest standards of conduct, but even the",
+      "lastPhrase": "all- night vigil in prayer as a sign of penitence, or undertake a fast",
+      "normalizedCharCount": 535,
+      "classification": "record:rule:paladin-breaking-your-oath",
+      "targetKey": "rule:paladin-breaking-your-oath",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p34-l0-prose",
+      "pageStart": 34,
+      "pageEnd": 34,
+      "lineStart": 0,
+      "lineEnd": 5,
+      "headingPath": [
+        "Paladin",
+        "Sacred Oaths",
+        "Oath of Devotion",
+        "Holy Nimbus",
+        "Breaking Your Oath"
+      ],
+      "sourceContext": "Breaking Your Oath",
+      "regionType": "record-body",
+      "firstPhrase": "or similar act of self-denial. After a rite of confession and forgiveness, the paladin",
+      "lastPhrase": "discretion, an impenitent paladin might be forced to abandon this class and adopt another.",
+      "normalizedCharCount": 322,
+      "classification": "record:rule:paladin-breaking-your-oath",
+      "targetKey": "rule:paladin-breaking-your-oath",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -8242,6 +8330,28 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p51-l24-prose",
+      "pageStart": 51,
+      "pageEnd": 51,
+      "lineStart": 24,
+      "lineEnd": 35,
+      "headingPath": [
+        "Warlock",
+        "Otherworldly Patrons",
+        "The Fiend",
+        "Hurl Through Hell",
+        "Your Pact Boon"
+      ],
+      "sourceContext": "Your Pact Boon",
+      "regionType": "record-body",
+      "firstPhrase": "Each Pact Boon option produces a special creature or an object that reflects your",
+      "lastPhrase": "forbidden lore about the sinister regions of the cosmos, a gift of the Fiend.",
+      "normalizedCharCount": 619,
+      "classification": "record:rule:warlock-your-pact-boon",
+      "targetKey": "rule:warlock-your-pact-boon",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
       "id": "p52-l2-prose",
       "pageStart": 52,
       "pageEnd": 52,
@@ -8792,6 +8902,50 @@
       "normalizedCharCount": 566,
       "classification": "record:feature:school-of-evocation:overchannel",
       "targetKey": "feature:school-of-evocation:overchannel",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p54-l77-prose",
+      "pageStart": 54,
+      "pageEnd": 54,
+      "lineStart": 77,
+      "lineEnd": 95,
+      "headingPath": [
+        "Wizard",
+        "Arcane Traditions",
+        "School of Evocation",
+        "Overchannel",
+        "Your Spellbook"
+      ],
+      "sourceContext": "Your Spellbook",
+      "regionType": "record-body",
+      "firstPhrase": "The spells that you add to your spellbook as you gain levels reflect the",
+      "lastPhrase": "process takes 2 hours and costs 50 gp. The cost represents material components you",
+      "normalizedCharCount": 1027,
+      "classification": "record:rule:wizard-your-spellbook",
+      "targetKey": "rule:wizard-your-spellbook",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p55-l0-prose",
+      "pageStart": 55,
+      "pageEnd": 55,
+      "lineStart": 0,
+      "lineEnd": 23,
+      "headingPath": [
+        "Wizard",
+        "Arcane Traditions",
+        "School of Evocation",
+        "Overchannel",
+        "Your Spellbook"
+      ],
+      "sourceContext": "Your Spellbook",
+      "regionType": "record-body",
+      "firstPhrase": "expend as you experiment with the spell to master it, as well as the",
+      "lastPhrase": "collection of notes scrounged together after you lost your previous spellbook in a mishap.",
+      "normalizedCharCount": 1266,
+      "classification": "record:rule:wizard-your-spellbook",
+      "targetKey": "rule:wizard-your-spellbook",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -10936,6 +11090,27 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p70-l10-prose",
+      "pageStart": 70,
+      "pageEnd": 70,
+      "lineStart": 10,
+      "lineEnd": 41,
+      "headingPath": [
+        "Equipment",
+        "Adventuring Gear",
+        "Adventuring Gear",
+        "Container Capacity",
+        "Equipment Packs"
+      ],
+      "sourceContext": "Equipment Packs",
+      "regionType": "record-body",
+      "firstPhrase": "The starting equipment you get from your class includes a collection of useful adventuring",
+      "lastPhrase": "pen, 10 sheets of parchment, a little bag of sand, and a small knife.",
+      "normalizedCharCount": 1690,
+      "classification": "record:rule:equipment-packs",
+      "targetKey": "rule:equipment-packs"
+    },
+    {
       "id": "p70-l43-prose",
       "pageStart": 70,
       "pageEnd": 70,
@@ -11290,6 +11465,28 @@
       "normalizedCharCount": 1197,
       "classification": "record:rule:expenses-lifestyle-expenses",
       "targetKey": "rule:expenses-lifestyle-expenses",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p73-l77-prose",
+      "pageStart": 73,
+      "pageEnd": 73,
+      "lineStart": 77,
+      "lineEnd": 90,
+      "headingPath": [
+        "Equipment",
+        "Expenses",
+        "Lifestyle Expenses",
+        "Lifestyle Expenses",
+        "Self-Sufficiency"
+      ],
+      "sourceContext": "Self-Sufficiency",
+      "regionType": "record-body",
+      "firstPhrase": "The expenses and lifestyles described here assume that you are spending your time between",
+      "lastPhrase": "in the Survival skill lets you live at the equivalent of a comfortable lifestyle.",
+      "normalizedCharCount": 748,
+      "classification": "record:rule:self-sufficiency",
+      "targetKey": "rule:self-sufficiency",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -12111,6 +12308,50 @@
       "normalizedCharCount": 145,
       "classification": "record:rule:dexterity-initiative",
       "targetKey": "rule:dexterity-initiative",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p80-l86-prose",
+      "pageStart": 80,
+      "pageEnd": 80,
+      "lineStart": 86,
+      "lineEnd": 98,
+      "headingPath": [
+        "Using Ability Scores",
+        "Using Each Ability",
+        "Dexterity",
+        "Initiative",
+        "Hiding"
+      ],
+      "sourceContext": "Hiding",
+      "regionType": "record-body",
+      "firstPhrase": "The GM decides when circumstances are appropriate for hiding. When you try to hide,",
+      "lastPhrase": "of danger all around, so if you come out of hiding and approach a",
+      "normalizedCharCount": 690,
+      "classification": "record:rule:hiding",
+      "targetKey": "rule:hiding",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p81-l0-prose",
+      "pageStart": 81,
+      "pageEnd": 81,
+      "lineStart": 0,
+      "lineEnd": 19,
+      "headingPath": [
+        "Using Ability Scores",
+        "Using Each Ability",
+        "Dexterity",
+        "Initiative",
+        "Hiding"
+      ],
+      "sourceContext": "Hiding",
+      "regionType": "record-body",
+      "firstPhrase": "creature, it usually sees you. However, under certain circumstances, the GM might allow you",
+      "lastPhrase": "an area, which might be lightly or heavily obscured, as explained in \"The Environment.”",
+      "normalizedCharCount": 1053,
+      "classification": "record:rule:hiding",
+      "targetKey": "rule:hiding",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -13175,6 +13416,26 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p90-l13-prose",
+      "pageStart": 90,
+      "pageEnd": 90,
+      "lineStart": 13,
+      "lineEnd": 26,
+      "headingPath": [
+        "Using Ability Scores",
+        "The Order of Combat",
+        "Combat Step by Step"
+      ],
+      "sourceContext": "Combat Step by Step",
+      "regionType": "record-body",
+      "firstPhrase": "1. Determine surprise. The GM determines whether anyone involved in the combat encounter is",
+      "lastPhrase": "has had a turn, the round ends. Repeat step 4 until the fighting stops.",
+      "normalizedCharCount": 704,
+      "classification": "record:rule:combat-step-by-step",
+      "targetKey": "rule:combat-step-by-step",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
       "id": "p90-l28-prose",
       "pageStart": 90,
       "pageEnd": 90,
@@ -13456,6 +13717,27 @@
       "normalizedCharCount": 372,
       "classification": "record:rule:being-prone",
       "targetKey": "rule:being-prone",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p92-l9-prose",
+      "pageStart": 92,
+      "pageEnd": 92,
+      "lineStart": 9,
+      "lineEnd": 31,
+      "headingPath": [
+        "Using Ability Scores",
+        "Movement and Position",
+        "Being Prone",
+        "Interacting with Objects Around You"
+      ],
+      "sourceContext": "Interacting with Objects Around You",
+      "regionType": "record-body",
+      "firstPhrase": "Here are a few examples of the sorts of thing you can do in",
+      "lastPhrase": "tap the floor with a 10-foot pole • hand an item to another character",
+      "normalizedCharCount": 739,
+      "classification": "record:rule:interacting-with-objects-around-you",
+      "targetKey": "rule:interacting-with-objects-around-you",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -14104,6 +14386,28 @@
       "normalizedCharCount": 181,
       "classification": "record:rule:grappling",
       "targetKey": "rule:grappling",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p96-l5-prose",
+      "pageStart": 96,
+      "pageEnd": 96,
+      "lineStart": 5,
+      "lineEnd": 9,
+      "headingPath": [
+        "Using Ability Scores",
+        "Making an Attack",
+        "Melee Attacks",
+        "Grappling",
+        "Contests in Combat"
+      ],
+      "sourceContext": "Contests in Combat",
+      "regionType": "record-body",
+      "firstPhrase": "Battle often involves pitting your prowess against that of your foe. Such a challenge",
+      "lastPhrase": "shoving a creature. The GM can use these contests as models for improvising others.",
+      "normalizedCharCount": 293,
+      "classification": "record:rule:contests-in-combat",
+      "targetKey": "rule:contests-in-combat",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -14770,6 +15074,28 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p100-l93-prose",
+      "pageStart": 100,
+      "pageEnd": 100,
+      "lineStart": 93,
+      "lineEnd": 96,
+      "headingPath": [
+        "Spellcasting",
+        "What Is a Spell?",
+        "Spell Slots",
+        "Casting a Spell at a Higher Level",
+        "Casting in Armor"
+      ],
+      "sourceContext": "Casting in Armor",
+      "regionType": "record-body",
+      "firstPhrase": "Because of the mental focus and precise gestures required for spellcasting, you must be",
+      "lastPhrase": "spell. You are otherwise too distracted and physically hampered by your armor for spellcasting.",
+      "normalizedCharCount": 235,
+      "classification": "record:rule:casting-in-armor",
+      "targetKey": "rule:casting-in-armor",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
       "id": "p101-l1-prose",
       "pageStart": 101,
       "pageEnd": 101,
@@ -15384,6 +15710,48 @@
       "normalizedCharCount": 439,
       "classification": "record:rule:casting-a-spell-attack-rolls",
       "targetKey": "rule:casting-a-spell-attack-rolls",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p103-l68-prose",
+      "pageStart": 103,
+      "pageEnd": 103,
+      "lineStart": 68,
+      "lineEnd": 98,
+      "headingPath": [
+        "Spellcasting",
+        "Casting a Spell",
+        "Attack Rolls",
+        "The Schools of Magic"
+      ],
+      "sourceContext": "The Schools of Magic",
+      "regionType": "record-body",
+      "firstPhrase": "Academies of magic group spells into eight categories called schools of magic. Scholars, particularly",
+      "lastPhrase": "hear phantom noises, or to remember things that never happened. Some illusions create phantom",
+      "normalizedCharCount": 1736,
+      "classification": "record:rule:the-schools-of-magic",
+      "targetKey": "rule:the-schools-of-magic",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p104-l0-prose",
+      "pageStart": 104,
+      "pageEnd": 104,
+      "lineStart": 0,
+      "lineEnd": 13,
+      "headingPath": [
+        "Spellcasting",
+        "Casting a Spell",
+        "Attack Rolls",
+        "The Schools of Magic"
+      ],
+      "sourceContext": "The Schools of Magic",
+      "regionType": "record-body",
+      "firstPhrase": "images that any creature can see, but the most insidious illusions plant an image",
+      "lastPhrase": "caster’s command, or enhance a creature’s innate healing abilities to rapidly recover from injury.",
+      "normalizedCharCount": 772,
+      "classification": "record:rule:the-schools-of-magic",
+      "targetKey": "rule:the-schools-of-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -33794,6 +34162,27 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p254-l19-prose",
+      "pageStart": 254,
+      "pageEnd": 254,
+      "lineStart": 19,
+      "lineEnd": 27,
+      "headingPath": [
+        "Monsters",
+        "Size",
+        "Size Categories",
+        "Modifying Creatures"
+      ],
+      "sourceContext": "Modifying Creatures",
+      "regionType": "record-body",
+      "firstPhrase": "Despite the versatile collection of monsters in this book, you might be at a",
+      "lastPhrase": "monster, including when you apply a template to it, might change its challenge rating.",
+      "normalizedCharCount": 484,
+      "classification": "record:rule:modifying-creatures",
+      "targetKey": "rule:modifying-creatures",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
       "id": "p254-l29-prose",
       "pageStart": 254,
       "pageEnd": 254,
@@ -34243,6 +34632,28 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p257-l38-prose",
+      "pageStart": 257,
+      "pageEnd": 257,
+      "lineStart": 38,
+      "lineEnd": 46,
+      "headingPath": [
+        "Monsters",
+        "Size",
+        "Senses",
+        "Darkvision",
+        "Armor, Weapon, and Tool Proficiencies"
+      ],
+      "sourceContext": "Armor, Weapon, and Tool Proficiencies",
+      "regionType": "record-body",
+      "firstPhrase": "Assume that a creature is proficient with its armor, weapons, and tools. If you",
+      "lastPhrase": "neither. See the Player’s Handbook for rules on using armor or weapons without proficiency.",
+      "normalizedCharCount": 469,
+      "classification": "record:rule:armor-weapon-and-tool-proficiencies",
+      "targetKey": "rule:armor-weapon-and-tool-proficiencies",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
       "id": "p257-l48-prose",
       "pageStart": 257,
       "pageEnd": 257,
@@ -34570,6 +34981,27 @@
       "normalizedCharCount": 1134,
       "classification": "record:rule:limited-usage",
       "targetKey": "rule:limited-usage",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
+      "id": "p259-l78-prose",
+      "pageStart": 259,
+      "pageEnd": 259,
+      "lineStart": 78,
+      "lineEnd": 88,
+      "headingPath": [
+        "Monsters",
+        "Size",
+        "Limited Usage",
+        "Grapple Rules for Monsters"
+      ],
+      "sourceContext": "Grapple Rules for Monsters",
+      "regionType": "record-body",
+      "firstPhrase": "Many monsters have special attacks that allow them to quickly grapple prey. When a",
+      "lastPhrase": "DC is given, assume the DC is 10 + the monster’s Strength (Athletics) modifier.",
+      "normalizedCharCount": 545,
+      "classification": "record:rule:grapple-rules-for-monsters",
+      "targetKey": "rule:grapple-rules-for-monsters",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
@@ -47312,6 +47744,48 @@
       "targetKey": "condition:deafened"
     },
     {
+      "id": "p358-l31-prose",
+      "pageStart": 358,
+      "pageEnd": 358,
+      "lineStart": 31,
+      "lineEnd": 42,
+      "headingPath": [
+        "Appendix PH-A: Conditions",
+        "Blinded",
+        "Charmed",
+        "Deafened",
+        "Exhaustion"
+      ],
+      "sourceContext": "Exhaustion",
+      "regionType": "record-body",
+      "firstPhrase": "Some special abilities and environmental hazards, such as starvation and the long-term effects of",
+      "lastPhrase": "rolls and saving throws 4 Hit point maximum halved 5 Speed reduced to 0",
+      "normalizedCharCount": 486,
+      "classification": "record:condition:exhaustion",
+      "targetKey": "condition:exhaustion"
+    },
+    {
+      "id": "p358-l43-prose",
+      "pageStart": 358,
+      "pageEnd": 358,
+      "lineStart": 43,
+      "lineEnd": 57,
+      "headingPath": [
+        "Appendix PH-A: Conditions",
+        "Blinded",
+        "Charmed",
+        "Deafened",
+        "Exhaustion"
+      ],
+      "sourceContext": "Exhaustion",
+      "regionType": "record-body",
+      "firstPhrase": "6 Death If an already exhausted creature suffers another effect that causes exhaustion, its",
+      "lastPhrase": "level by 1, provided that the creature has also ingested some food and drink.",
+      "normalizedCharCount": 704,
+      "classification": "record:condition:exhaustion",
+      "targetKey": "condition:exhaustion"
+    },
+    {
       "id": "p358-l59-prose",
       "pageStart": 358,
       "pageEnd": 358,
@@ -50096,6 +50570,28 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
+      "id": "p378-l37-prose",
+      "pageStart": 378,
+      "pageEnd": 378,
+      "lineStart": 37,
+      "lineEnd": 47,
+      "headingPath": [
+        "Appendix MM-A: Miscellaneous Creatures",
+        "Ape",
+        "Actions",
+        "Giant Rat",
+        "Variant: Diseased Giant Rats"
+      ],
+      "sourceContext": "Variant: Diseased Giant Rats",
+      "regionType": "record-body",
+      "firstPhrase": "Some giant rats carry vile diseases that they spread with their bites. A diseased",
+      "lastPhrase": "point maximum drops to 0 as a result of this disease, the target dies.",
+      "normalizedCharCount": 642,
+      "classification": "record:creature:giant-rat",
+      "targetKey": "creature:giant-rat",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
+    },
+    {
       "id": "p378-l49-prose",
       "pageStart": 378,
       "pageEnd": 378,
@@ -52182,6 +52678,28 @@
       "normalizedCharCount": 191,
       "classification": "child-of:creature:swarm-of-ravens",
       "targetKey": "creature:swarm-of-ravens"
+    },
+    {
+      "id": "p391-l44-prose",
+      "pageStart": 391,
+      "pageEnd": 391,
+      "lineStart": 44,
+      "lineEnd": 63,
+      "headingPath": [
+        "Appendix MM-A: Miscellaneous Creatures",
+        "Ape",
+        "Actions",
+        "Swarm of Ravens",
+        "Variant: Insect Swarms"
+      ],
+      "sourceContext": "Variant: Insect Swarms",
+      "regionType": "record-body",
+      "firstPhrase": "Different kinds of insects can gather in swarms, and each swarm has the special",
+      "lastPhrase": "speed of 5 feet, a flying speed of 30 feet, and no climbing speed.",
+      "normalizedCharCount": 892,
+      "classification": "record:creature:swarm-of-insects",
+      "targetKey": "creature:swarm-of-insects",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p391-l65-prose",

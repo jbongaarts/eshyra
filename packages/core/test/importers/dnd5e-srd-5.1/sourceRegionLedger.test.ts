@@ -182,10 +182,61 @@ describe('buildSourceRegionLedger', () => {
       ],
     );
 
+    // The table-cell-height row is a real table row, already owned by the
+    // `table:` record — it must not also surface as a ledger entry.
+    expect(ledger.entries).toHaveLength(1);
     expect(ledger.entries[0]).toMatchObject({
       regionType: 'table-preface',
       classification: 'record:table:damage-severity-by-level',
     });
+  });
+
+  it('gives a sidebar heading a ledger entry for its table-cell-height body prose (eshyra-5c7f)', () => {
+    // Sidebar/callout box body text renders in the same h≈8.9 table-cell band
+    // as real table rows, so a heading immediately followed by sidebar prose
+    // is classified `structure: 'table-caption'` just like a heading
+    // immediately followed by a real table (see `sourceInventory.ts`). Unlike
+    // a real table caption, a sidebar has no `table:` record owning that
+    // "row" data — it IS the sidebar's own body — so it must not be skipped
+    // as table-row noise the way the previous test's genuine table row is.
+    const sidebar = item({
+      text: 'Sacred Plants and Wood',
+      lineIndex: 0,
+      structure: 'table-caption',
+      tier: 'sidebar',
+    });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Sacred Plants and Wood',
+            'A druid holds certain plants to be sacred.',
+          ],
+          [10.8, 8.9],
+        ),
+      ],
+      [
+        coverage(sidebar, {
+          kind: 'record',
+          key: 'rule:druid-sacred-plants-and-wood',
+        }),
+      ],
+      [
+        record(
+          'rule:druid-sacred-plants-and-wood',
+          'Sacred Plants and Wood',
+          'A druid holds certain plants to be sacred.',
+        ),
+      ],
+    );
+
+    expect(ledger.entries).toHaveLength(1);
+    expect(ledger.entries[0]).toMatchObject({
+      regionType: 'record-body',
+      classification: 'record:rule:druid-sacred-plants-and-wood',
+      targetKey: 'rule:druid-sacred-plants-and-wood',
+    });
+    expect(ledger.entries[0].normalizedCharCount).toBeGreaterThan(0);
   });
 
   it('handles adjacent records without creating orphan prose', () => {

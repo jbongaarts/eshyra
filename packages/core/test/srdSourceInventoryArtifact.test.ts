@@ -485,6 +485,63 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     expect(frontMatter?.normalizedCharCount).toBeGreaterThan(0);
     expect(frontMatter?.ignoreReason).toBe('front-matter');
   });
+
+  it('gives every sidebar callout a ledger entry keyed to its emitted record (eshyra-5c7f)', () => {
+    // Sidebar box body prose renders in the same h≈8.9 table-cell band as real
+    // table rows, so a heading immediately followed by a sidebar body used to
+    // look exactly like a heading immediately followed by a real table and
+    // its body was silently skipped as table-row noise — the heading still
+    // got a correct `record:`/`child-of:` coverage status, but zero ledger
+    // entries ever cited it, so `source-region-ledger.json` could claim
+    // `unrepresented: 0` while genuinely never having looked at these 19
+    // regions (17 named in the bead plus two incidental creature-variant
+    // sidebars the same fix naturally covers).
+    const targetKeys = [
+      'rule:druid-sacred-plants-and-wood',
+      'rule:druid-druids-and-the-gods',
+      'rule:paladin-breaking-your-oath',
+      'rule:warlock-your-pact-boon',
+      'rule:wizard-your-spellbook',
+      'rule:equipment-packs',
+      'rule:self-sufficiency',
+      'rule:hiding',
+      'rule:combat-step-by-step',
+      'rule:interacting-with-objects-around-you',
+      'rule:contests-in-combat',
+      'rule:casting-in-armor',
+      'rule:the-schools-of-magic',
+      'rule:modifying-creatures',
+      'rule:armor-weapon-and-tool-proficiencies',
+      'rule:grapple-rules-for-monsters',
+      'condition:exhaustion',
+      'creature:giant-rat',
+      'creature:swarm-of-insects',
+    ];
+    for (const targetKey of targetKeys) {
+      const entries = sourceRegionLedger.entries.filter(
+        (entry) => entry.targetKey === targetKey,
+      );
+      expect(entries.length, targetKey).toBeGreaterThan(0);
+      for (const entry of entries) {
+        expect(entry.normalizedCharCount, targetKey).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('includes the p23/p34/p55 sidebar continuation pages in source evidence (eshyra-5c7f)', () => {
+    // "Druids and the Gods" (p23), "Breaking Your Oath" (p33-34), and "Your
+    // Spellbook" (p54-55) are each sidebars whose body text continues onto a
+    // second page; the same fix that gives the sidebar a ledger entry at all
+    // naturally carries its continuation page along, since the region ledger
+    // attributes prose to the active owning heading regardless of page
+    // breaks.
+    for (const page of [23, 34, 55]) {
+      const entries = sourceRegionLedger.entries.filter(
+        (entry) => entry.pageStart <= page && page <= entry.pageEnd,
+      );
+      expect(entries.length, `page ${page}`).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe('committed SRD source-coverage artifacts — known-gap sentinels', () => {

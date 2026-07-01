@@ -175,8 +175,36 @@ function updateHeadingPath(
   return [...path.slice(0, rank), item.text];
 }
 
+/**
+ * True when `owner` is a sidebar/callout heading that `sourceInventory.ts`
+ * classified as a `table-caption` (eshyra-5c7f). Sidebar box body prose
+ * renders in the same h≈8.9 table-cell band as real table rows/cells (see
+ * `isTableCell`'s own doc comment), so a heading immediately followed by a
+ * sidebar's body reads exactly like a heading immediately followed by a real
+ * table. For a GENUINE table caption this is correct — its rows are already
+ * accounted for by the emitted `table:` record, so skipping them here avoids
+ * double-counting. But a sidebar has no such `table:` record: skipping its
+ * body the same way silently drops the only prose that could ever attribute
+ * a ledger entry to it, so its heading gets a correct coverage status but
+ * zero owned ledger entries. Tier is the reliable discriminator: every
+ * `table-caption` item this misclassifies as sidebar prose is `tier:
+ * 'sidebar'` (h≈10.8), while every genuine table caption is `tier: 'leaf'`
+ * or higher.
+ */
+function isSidebarBodyOwner(owner: ActiveOwner | undefined): boolean {
+  return (
+    owner !== undefined &&
+    owner.item.tier === 'sidebar' &&
+    owner.item.structure === 'table-caption'
+  );
+}
+
 function regionTypeForOwner(owner: ActiveOwner | undefined): SourceRegionType {
   if (owner === undefined) return 'orphan-prose';
+  // A sidebar's body is the record's own text, not a preface to a table that
+  // doesn't exist (eshyra-5c7f) — check this before the general table-caption
+  // case below.
+  if (isSidebarBodyOwner(owner)) return 'record-body';
   if (owner.item.structure === 'table-caption') return 'table-preface';
   if (/^Appendix\b/.test(owner.item.text)) return 'appendix-intro';
   if (owner.item.tier === 'chapter') return 'chapter-intro';
@@ -661,7 +689,7 @@ export function buildSourceRegionLedger(
     if (
       line.text.length === 0 ||
       classifyTier(line.height) !== null ||
-      isTableCell(line.height)
+      (isTableCell(line.height) && !isSidebarBodyOwner(owner))
     ) {
       flushRegion();
       continue;
