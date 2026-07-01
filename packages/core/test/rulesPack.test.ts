@@ -433,6 +433,82 @@ describe('rules pack validation', () => {
     ).toThrow(/tableRefs/);
   });
 
+  it('rejects a non-canonical mechanics.damage type (eshyra-erf5.4)', () => {
+    const spell = record('spell:example', {
+      kind: 'spell',
+      name: 'Example',
+      data: {
+        level: 1,
+        school: 'evocation',
+        castingTime: '1 action',
+        range: '30 feet',
+        components: ['V', 'S'],
+        duration: 'Instantaneous',
+        classes: ['Wizard'],
+        mechanics: { damage: [{ dice: '1d4', type: 'extra' }] },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [spell] })),
+    ).toThrow(/damage\[0\]\.type must be a canonical SRD damage type/);
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...spell,
+              data: {
+                ...spell.data,
+                mechanics: {
+                  damage: [{ dice: '1d4', type: 'fire' }],
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('accepts spell weaponDamageModifiers and rejects an unknown operation (eshyra-erf5.4)', () => {
+    const spell = record('spell:enlarge-reduce', {
+      kind: 'spell',
+      name: 'Enlarge/Reduce',
+      data: {
+        level: 2,
+        school: 'transmutation',
+        castingTime: '1 action',
+        range: '30 feet',
+        components: ['V', 'S', 'M'],
+        duration: 'Concentration, up to 1 minute',
+        classes: ['Sorcerer', 'Wizard'],
+        mechanics: {
+          weaponDamageModifiers: [{ dice: '1d4', operation: 'increase' }],
+        },
+      },
+    });
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [spell] })),
+    ).not.toThrow();
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            {
+              ...spell,
+              data: {
+                ...spell.data,
+                mechanics: {
+                  weaponDamageModifiers: [{ dice: '1d4', operation: 'more' }],
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    ).toThrow(/weaponDamageModifiers\[0\]\.operation/);
+  });
+
   it('rejects dnd5e action records missing a description', () => {
     const pack = validRulesPack({
       records: [

@@ -92463,14 +92463,14 @@
             "ability": "constitution"
           }
         ],
-        "damage": [
+        "weaponDamageModifiers": [
           {
             "dice": "1d4",
-            "type": "extra"
+            "operation": "increase"
           },
           {
             "dice": "1d4",
-            "type": "less"
+            "operation": "decrease"
           }
         ]
       },

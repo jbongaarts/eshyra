@@ -145,3 +145,39 @@ describe('condition relation classification (eshyra-qqyj)', () => {
     ]);
   });
 });
+
+describe('damage type canonicalization (eshyra-erf5.4)', () => {
+  it('excludes a "<dice> <word> damage" match whose word is not a canonical SRD damage type', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'While these weapons are enlarged, the target’s attacks with them deal 1d4 extra damage.',
+      }),
+    );
+    expect(mechanics.damage).toBeUndefined();
+  });
+
+  it('still captures a genuine canonical-type damage phrase', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description: 'The target takes 8d6 fire damage.',
+      }),
+    );
+    expect(mechanics.damage).toEqual([{ dice: '8d6', type: 'fire' }]);
+  });
+
+  it('models Enlarge/Reduce style weapon-damage deltas as weaponDamageModifiers, not damage', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'While these weapons are enlarged, the target’s attacks with them deal 1d4 extra damage. ' +
+          'While these weapons are reduced, the target’s attacks with them deal 1d4 less damage.',
+      }),
+    );
+    expect(mechanics.damage).toBeUndefined();
+    expect(mechanics.weaponDamageModifiers).toEqual([
+      { dice: '1d4', operation: 'increase' },
+      { dice: '1d4', operation: 'decrease' },
+    ]);
+  });
+});

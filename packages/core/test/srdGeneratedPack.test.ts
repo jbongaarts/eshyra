@@ -3012,6 +3012,23 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       );
     });
 
+    // eshyra-erf5.4: the only name shared across the equipment/magic-item
+    // kinds. Each spelling is independently source-accurate for its own
+    // physical location — the Adventuring Gear table row prints item names
+    // in sentence case ("Potion of healing", p69), while the Magic Items A-Z
+    // section prints named entries as Title Case headings ("Potion of
+    // Healing", p234) — so this is NOT normalized to one spelling: doing so
+    // would misquote whichever source location it no longer matches.
+    it('keeps Potion of Healing at each kind’s own source capitalization (eshyra-erf5.4)', () => {
+      expect(
+        pack.records.find((r) => r.key === 'equipment:potion-of-healing')?.name,
+      ).toBe('Potion of healing');
+      expect(
+        pack.records.find((r) => r.key === 'magic-item:potion-of-healing')
+          ?.name,
+      ).toBe('Potion of Healing');
+    });
+
     it('imports Mounts and Vehicles with per-table categories (loreweaver-4zu)', () => {
       expect(
         pack.records.find((r) => r.key === 'equipment:warhorse')?.data,

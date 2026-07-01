@@ -673,6 +673,25 @@ function optProficiencyNotes(parent: Obj, key: string, path: string): void {
   });
 }
 
+// The 13 canonical SRD 5.1 damage types (PH ch. 9 "Damage Types"). Shared
+// with the importer's own copy in mechanicsProjections.ts, which is what
+// keeps `parseDamage` from capturing non-damage adjectives (eshyra-erf5.4).
+const SRD_5_1_DAMAGE_TYPES: ReadonlySet<string> = new Set([
+  'acid',
+  'bludgeoning',
+  'cold',
+  'fire',
+  'force',
+  'lightning',
+  'necrotic',
+  'piercing',
+  'poison',
+  'psychic',
+  'radiant',
+  'slashing',
+  'thunder',
+]);
+
 function optMechanics(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -727,14 +746,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       }
     });
   }
-  for (const arrayKey of [
-    'attacks',
-    'saves',
-    'damage',
-    'resources',
-    'effects',
-    'hitDamage',
-  ]) {
+  for (const arrayKey of ['attacks', 'saves', 'resources', 'effects']) {
     const entries = objArray(mechanics, arrayKey, `${path}.${key}`);
     if (entries === undefined) continue;
     if (entries.length === 0) {
@@ -742,6 +754,53 @@ function optMechanics(parent: Obj, key: string, path: string): void {
         `${path}.${key}.${arrayKey} must not be empty when present`,
       );
     }
+  }
+  // `damage`/`hitDamage` entries are dealt damage, so `type` must be one of
+  // the 13 canonical SRD damage types — not any "<dice> <word> damage" match,
+  // which would also capture non-damage adjectives like Enlarge/Reduce's
+  // "1d4 extra damage" weapon-size flavor text (eshyra-erf5.4). That case is
+  // instead modeled as `weaponDamageModifiers` below.
+  for (const damageKey of ['damage', 'hitDamage']) {
+    const entries = objArray(mechanics, damageKey, `${path}.${key}`);
+    if (entries === undefined) continue;
+    if (entries.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.${damageKey} must not be empty when present`,
+      );
+    }
+    entries.forEach((entry, i) => {
+      const entryPath = `${path}.${key}.${damageKey}[${i}]`;
+      reqStr(entry, 'dice', entryPath);
+      const type = reqStr(entry, 'type', entryPath);
+      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+        throw new RulesPackError(
+          `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+        );
+      }
+    });
+  }
+  // A weapon-damage-die MODIFIER (Enlarge/Reduce), not damage dealt directly.
+  const weaponDamageModifiers = objArray(
+    mechanics,
+    'weaponDamageModifiers',
+    `${path}.${key}`,
+  );
+  if (weaponDamageModifiers !== undefined) {
+    if (weaponDamageModifiers.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.weaponDamageModifiers must not be empty when present`,
+      );
+    }
+    weaponDamageModifiers.forEach((entry, i) => {
+      const entryPath = `${path}.${key}.weaponDamageModifiers[${i}]`;
+      reqStr(entry, 'dice', entryPath);
+      const operation = reqStr(entry, 'operation', entryPath);
+      if (operation !== 'increase' && operation !== 'decrease') {
+        throw new RulesPackError(
+          `${entryPath}.operation must be "increase" or "decrease", got ${JSON.stringify(operation)}`,
+        );
+      }
+    });
   }
   const scaling = mechanics.scaling;
   if (scaling !== undefined) {
