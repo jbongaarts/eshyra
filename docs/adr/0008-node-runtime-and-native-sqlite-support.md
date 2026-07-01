@@ -1,8 +1,16 @@
 # ADR 0008: Node Runtime and Native SQLite Support
 
-Status: accepted
+Status: superseded by [ADR 0016](0016-native-dependency-install-policy-by-environment.md)
 
 Date: 2026-05-29
+
+> **Superseded.** ADR 0016 keeps the Node 24 LTS / `better-sqlite3` 12.x pin
+> and the Node-major guard below unchanged, as the developer/workspace install
+> layer, but splits out release-CI native-build policy and end-user artifact
+> install policy as their own explicit layers — distinctions this ADR did not
+> make because it predates the self-contained release-artifact distribution
+> model (ADR 0003/0011). Read ADR 0016 for the current, complete policy; this
+> ADR remains accurate for the dev/workspace layer.
 
 ## Context
 

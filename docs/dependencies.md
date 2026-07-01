@@ -71,10 +71,18 @@ with the supported Node runtime:
   supported CI and release platforms.
 
 If an update causes `better-sqlite3` to fall back to `node-gyp` source
-compilation in CI, treat that as a regression unless a bead explicitly changes
-the runtime/native support policy. See
-`docs/adr/0008-node-runtime-and-native-sqlite-support.md` and the header
-comment in `.github/workflows/ci.yml` for the full rationale.
+compilation in the dev/test CI workflow (`.github/workflows/ci.yml`), treat
+that as a regression unless a bead explicitly changes the runtime/native
+support policy — contributor machines are not guaranteed to have a working
+toolchain. Release CI (`.github/workflows/release.yml`) is not held to the
+same hard-fail rule: its runners are fixed, toolchain-equipped images for the
+supported release targets, so a controlled source-compile fallback there is
+an accepted last resort (ADR 0016). Either way, the end-user artifact never
+compiles anything — it bundles whichever `.node` binary release CI produced.
+See `docs/adr/0008-node-runtime-and-native-sqlite-support.md` (Node 24 /
+`better-sqlite3` pin), `docs/adr/0016-native-dependency-install-policy-by-environment.md`
+(dev/release-CI/end-user policy split), and the header comment in
+`.github/workflows/ci.yml` for the full rationale.
 
 ## Category-Specific Notes
 

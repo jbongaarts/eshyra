@@ -49,12 +49,20 @@ root/workspace engines at `>=24 <25`. Keep `@types/node` on 24.x while that
 engine range is in force. The workspace uses `better-sqlite3` 12.x because that
 line ships Node 24 prebuilds. CI pins Node 24, sets
 `npm_config_build_from_source=false`, and runs the CLI install smoke on Linux,
-Windows, and macOS. A `better-sqlite3` source-build fallback is a regression
-unless a bead explicitly changes the runtime/native support policy. Fallback
-for local development: install a C++ toolchain and `npm rebuild better-sqlite3`.
-Full rationale:
-`docs/adr/0008-node-runtime-and-native-sqlite-support.md` and the header
-comment in `.github/workflows/ci.yml`.
+Windows, and macOS. In the dev/test workflow (`ci.yml`), a `better-sqlite3`
+source-build fallback is a regression unless a bead explicitly changes the
+runtime/native support policy — fallback for local development is to install a
+C++ toolchain and `npm rebuild better-sqlite3`. Release CI (`release.yml`) is
+a different layer with a different rule: a controlled source-compile fallback
+there is an accepted last resort (ADR 0016), because release runners are
+fixed toolchain-equipped images and the end-user artifact never compiles
+anything regardless of how release CI produced the bundled `.node` binary.
+`prebuild-install`'s own npm deprecation warning is accepted, tracked
+cosmetic noise (not a regression) as long as it keeps fetching a working
+prebuild. Full rationale:
+`docs/adr/0008-node-runtime-and-native-sqlite-support.md`,
+`docs/adr/0016-native-dependency-install-policy-by-environment.md`, and the
+header comment in `.github/workflows/ci.yml`.
 
 ## Dependency Updates
 

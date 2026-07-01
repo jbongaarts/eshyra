@@ -171,8 +171,12 @@ Node 24 LTS is the supported runtime. The bundled Node binary is the one
 running the `release:build` script (the CI matrix runner's Node 24 binary).
 The `better-sqlite3` prebuild is the one npm installed for that exact ABI.
 
-See [ADR 0008](adr/0008-node-runtime-and-native-sqlite-support.md) for the
-full rationale.
+Released archives never run `npm install` or any compiler on the end-user
+machine — the installer only downloads, checksum-verifies, and unpacks an
+archive containing the bundled runtime and native addon. See
+[ADR 0008](adr/0008-node-runtime-and-native-sqlite-support.md) for the Node
+24 / `better-sqlite3` pin and [ADR 0016](adr/0016-native-dependency-install-policy-by-environment.md)
+for the full dev/release-CI/end-user policy split.
 
 ## Dolt (checkpoints)
 
