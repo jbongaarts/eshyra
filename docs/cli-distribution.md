@@ -108,8 +108,7 @@ and validated by `scripts/release/validate-release-artifact.mjs`.
 ## Why self-contained, not npm
 
 - Eliminates system Node and npm as prerequisites for end users.
-- Pins the Node ABI exactly to the `better-sqlite3` native addon compiled
-  during that release build.
+- Pins the Node ABI exactly to the `better-sqlite3` native prebuild.
 - Ensures the CLI is reproducibly runnable from the installed archive without
   any post-install build steps.
 - Keeps `@eshyra/core` private and not exposed as a public SDK, consistent
@@ -170,15 +169,10 @@ npm run release:build -- --edition codex --version 0.1.0
 
 Node 24 LTS is the supported runtime. The bundled Node binary is the one
 running the `release:build` script (the CI matrix runner's Node 24 binary).
-The `better-sqlite3` native addon is compiled from source during that same
-build (root `.npmrc`, `build-from-source=true`) against that exact ABI.
+The `better-sqlite3` prebuild is the one npm installed for that exact ABI.
 
-Released archives never run `npm install` or any compiler on the end-user
-machine — the installer only downloads, checksum-verifies, and unpacks an
-archive containing the bundled runtime and native addon. See
-[ADR 0008](adr/0008-node-runtime-and-native-sqlite-support.md) for the Node
-24 / `better-sqlite3` pin and [ADR 0016](adr/0016-native-dependency-install-policy-by-environment.md)
-for the full dev/release-CI/end-user policy split.
+See [ADR 0008](adr/0008-node-runtime-and-native-sqlite-support.md) for the
+full rationale.
 
 ## Dolt (checkpoints)
 

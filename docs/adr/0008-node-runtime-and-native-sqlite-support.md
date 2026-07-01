@@ -1,19 +1,8 @@
 # ADR 0008: Node Runtime and Native SQLite Support
 
-Status: superseded by [ADR 0016](0016-native-dependency-install-policy-by-environment.md)
+Status: accepted
 
 Date: 2026-05-29
-
-> **Superseded.** ADR 0016 keeps the Node 24 LTS / `better-sqlite3` 12.x pin
-> and the Node-major guard below unchanged, but **reverses** this ADR's
-> prebuilt-first install decision for the developer/workspace and release-CI
-> layers: the repo now compiles `better-sqlite3` from source by default (root
-> `.npmrc`, `build-from-source=true`) instead of downloading a
-> `prebuild-install` prebuilt binary, and adds an explicit end-user-artifact
-> layer that this ADR predates (ADR 0003/0011's self-contained release
-> archives). Read ADR 0016 for the current, complete policy; this ADR remains
-> accurate only for the Node 24 / `better-sqlite3` 12.x pin and the Node-major
-> guard, not for the "prebuilt binary, no compiler required" strategy below.
 
 ## Context
 
@@ -46,10 +35,17 @@ Node 24 LTS is the supported runtime for the first local CLI release.
 The workspace uses `better-sqlite3` 12.x for Node 24 native prebuild support.
 The root package and both workspaces declare `>=24 <25`, and CI runs on Node 24.
 
-CI and release jobs must keep `npm_config_build_from_source=false` when
-installing dependencies so prebuild-install does not intentionally skip native
-prebuilds. If the selected Node runtime and `better-sqlite3` line diverge, the
-fix is to update them together rather than relying on source compilation.
+CI and release jobs keep `npm_config_build_from_source=false` when installing
+dependencies so prebuild-install does not intentionally skip native prebuilds.
+If the selected Node runtime and `better-sqlite3` line diverge, the fix is to
+update them together rather than relying on source compilation.
+
+> **Note (ADR 0016).** This prebuilt-first default remains in force, but
+> [ADR 0016](0016-native-dependency-install-policy-by-environment.md) splits
+> install policy into dev/workspace, release-CI, and end-user-artifact layers
+> and pre-authorizes opting the first two layers into source-build-first
+> (`build_from_source=true`) as an implementation choice — without a new
+> policy decision — subject to the conditions it lists.
 
 Moving to another Node major requires a dependency decision that, at minimum:
 

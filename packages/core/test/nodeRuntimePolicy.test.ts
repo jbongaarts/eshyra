@@ -70,8 +70,9 @@ describe('Node runtime policy', () => {
     );
     expect(ci).toContain('npm ci --foreground-scripts');
     expect(ci).toContain('npm run smoke:cli-install');
-    expect(ci).toContain('gyp info ok');
-    expect(ci).toContain('Successfully installed prebuilt binary!');
+    expect(ci).toContain('gyp info');
+    expect(ci).toContain('CXX\\(target\\)');
+    expect(ci).toContain('prebuild-install WARN install');
     expect(ci).toContain('node-gyp rebuild');
   });
 
@@ -83,7 +84,7 @@ describe('Node runtime policy', () => {
     expect(agents).toContain('`better-sqlite3` 12.x');
     expect(agents).toContain('`@types/node`');
     expect(agents).toMatch(/Linux,\s+Windows, and macOS/);
-    expect(agents).toMatch(/build-from-source=true/);
+    expect(agents).toMatch(/source-build fallback.*regression/i);
     expect(agents).not.toMatch(/Node 22|11\.x/);
   });
 

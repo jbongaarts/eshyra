@@ -3,40 +3,37 @@
 #
 # WHY THIS IS PINNED THE WAY IT IS (better-sqlite3 native binary):
 #
-#   better-sqlite3 is the only native/compiled dependency. Its install script
-#   is `prebuild-install || node-gyp rebuild`: by default it first tries to
-#   download a precompiled `.node` binary matching the Node ABI
-#   (NODE_MODULE_VERSION), falling back to compiling from source with
-#   node-gyp + a C/C++ toolchain (MSVC / build-essential / Xcode CLT) only if
-#   no prebuild is available.
+#   better-sqlite3 is the only native/compiled dependency. It is installed via
+#   `prebuild-install || node-gyp rebuild`: it first tries to download a
+#   precompiled `.node` binary matching the Node ABI (NODE_MODULE_VERSION); if
+#   none exists it falls back to compiling from source with node-gyp + a C++
+#   toolchain (MSVC / build-essential).
 #
-#   STRATEGY (primary path = compile from source; ADR 0016):
-#   The root `.npmrc` sets `build-from-source=true`, so every `npm ci`/
-#   `npm install` in this repo -- contributor machines, this workflow, and
-#   release CI -- compiles better-sqlite3 from source instead of downloading
-#   a prebuild-install prebuilt binary. This decouples the install path from
-#   `prebuild-install`'s continued operation (it is deprecated upstream with
-#   no maintained successor) and from whether upstream ever ships a Node-24
-#   prebuild for a given `better-sqlite3` release. The tradeoff, accepted by
-#   ADR 0016: every install now requires a working C/C++ toolchain, and there
-#   is currently no automatic fallback to a downloaded prebuild if the
-#   compile fails (better-sqlite3's install script cannot be reordered
-#   without custom wrapper tooling, which ADR 0016 leaves as a future option
-#   rather than requiring now).
+#   FAILURE MODE (the risk this workflow exists to prevent):
+#   Native source compilation makes CI and release installs depend on local C++
+#   toolchains instead of package release artifacts. The Node runtime and
+#   better-sqlite3 line must therefore move together.
+#
+#   STRATEGY (primary path = prebuilt binary, no compiler required):
 #   - Run the full build/test gate on Node 24 LTS.
 #   - Run focused install/smoke coverage on Node 24 LTS across Linux, Windows,
-#     and macOS (the CLI is not Linux-only) and assert the log shows genuine
-#     evidence of a source compile, not a silently-downloaded prebuild.
-#   - Use better-sqlite3 12.x on Node 24, per ADR 0008.
+#     and macOS because the CLI is not Linux-only.
+#   - Use better-sqlite3 12.x, whose release line includes Node 24 prebuilds.
+#   - Set npm_config_build_from_source=false so prebuild-install does not
+#     intentionally skip native prebuilds.
+#   - Capture npm ci logs in the cross-OS smoke job and fail if they show
+#     better-sqlite3 falling back to node-gyp/source compilation.
 #
 #   NODE SUPPORT DECISION (intentional, documented):
 #   ADR 0008 makes Node 24 LTS the supported runtime. The root and workspace
 #   package engines stay at >=24 <25, CI uses Node 24, and better-sqlite3 stays
-#   on the 12.x line for Node 24. ADR 0016 layers the source-build-first
-#   install policy above that pin.
+#   on the 12.x line for Node 24 native prebuild support.
 #
-#   TOOLCHAIN MISSING LOCALLY? See AGENTS.md "Build & Test" -> better-sqlite3
-#   native binary, and README.md prerequisites, for what to install.
+#   DOCUMENTED FALLBACK (if a prebuilt is ever unavailable for the chosen
+#   Node/OS): see AGENTS.md "Build & Test" -> better-sqlite3 native binary.
+#   In short: either provision build tools on the runner and run
+#   `npm rebuild better-sqlite3`, or upgrade better-sqlite3 to a version whose
+#   prebuilds cover the target Node ABI.
 
 name: CI
 
@@ -51,6 +48,12 @@ permissions:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    env:
+      # Keep prebuild-install on the prebuilt-first path. better-sqlite3 still
+      # has a node-gyp fallback, so dependency/runtime changes must be reviewed
+      # against install output and CI results rather than assuming this env var
+      # alone forbids source compilation.
+      npm_config_build_from_source: "false"
     steps:
       - uses: actions/checkout@v7
 
@@ -97,6 +100,8 @@ jobs:
 
       - name: Install dependencies and check native install path
         shell: pwsh
+        env:
+          npm_config_build_from_source: "false"
         run: |
           $ErrorActionPreference = "Stop"
           if (Get-Variable PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue) {
@@ -114,26 +119,29 @@ jobs:
             exit $npmExit
           }
 
-          # ADR 0016: the root .npmrc sets build-from-source=true, so every
-          # install must compile better-sqlite3 from source. Fail if the log
-          # instead shows a downloaded prebuilt binary (the policy silently not
-          # taking effect), and fail if it shows no evidence of a real compile
-          # (defense-in-depth against a silently-cached or skipped build).
-          # "gyp info ok" is node-gyp's own success line, printed identically
-          # by node-gyp's JS logging on Linux (make), macOS (make), and Windows
-          # (MSBuild) -- unlike compiler invocation lines (CXX(target),
-          # "Building the projects..."), which are compiler/generator-specific
-          # and not reliably present in every node-gyp/MSVC version's output.
           $log = Get-Content npm-ci.log -Raw
-
-          if ($log -match "(?m)^.*Successfully installed prebuilt binary!") {
-            Write-Error "npm ci log shows a downloaded better-sqlite3 prebuilt binary, but ADR 0016 requires build-from-source=true to take effect"
-            exit 1
+          $sourceBuildPatterns = @(
+            "(?m)^gyp info",
+            "(?m)^gyp verb",
+            "(?m)^make: Entering directory.*better-sqlite3",
+            "(?m)^\s*CXX\(target\)",
+            "(?m)^.*prebuild-install WARN install No prebuilt binaries found",
+            "(?m)^.*prebuild-install WARN install .*node-gyp",
+            "(?m)^.*Building the projects in this solution"
+          )
+          foreach ($pattern in $sourceBuildPatterns) {
+            if ($log -match $pattern) {
+              Write-Error "npm ci log indicates better-sqlite3 source-build fallback: $pattern"
+              exit 1
+            }
           }
 
-          if ($log -notmatch "(?m)^gyp info ok") {
-            Write-Error "npm ci log is missing the expected 'gyp info ok' better-sqlite3 source-build evidence; ADR 0016's build-from-source=true policy may not be taking effect"
-            exit 1
+          $nodeGypRebuildLines = Select-String -Path npm-ci.log -Pattern "node-gyp rebuild"
+          foreach ($line in $nodeGypRebuildLines) {
+            if ($line.Line -notmatch "prebuild-install\s+\|\|\s+node-gyp rebuild") {
+              Write-Error "npm ci log contains unexpected node-gyp rebuild invocation: $($line.Line)"
+              exit 1
+            }
           }
 
       - name: CLI install smoke

@@ -46,26 +46,20 @@ use `npm run typecheck` (`--force`). CI uses `--force` for this reason.
 **Native dep — `better-sqlite3` (the only compiled dependency):** use
 **Node 24 LTS**. ADR 0008 makes Node 24 the supported runtime and keeps the
 root/workspace engines at `>=24 <25`. Keep `@types/node` on 24.x while that
-engine range is in force. The workspace uses `better-sqlite3` 12.x for Node 24
-support, and CI runs the cross-platform install smoke coverage on Linux,
-Windows, and macOS. The root `.npmrc` sets `build-from-source=true`, so **every**
-`npm ci`/`npm install` — contributor machines, `ci.yml`, and `release.yml`
-alike — compiles `better-sqlite3` from source instead of downloading a
-`prebuild-install` prebuilt binary (ADR 0016, reversing ADR 0008's original
-prebuilt-first choice). This requires a working C/C++ toolchain everywhere
-`npm ci` runs; it is no longer an "only if a prebuild is unavailable" fallback.
-There is currently no automatic fallback to a downloaded prebuild if the
-compile fails — `better-sqlite3`'s install script can't be reordered without
-custom wrapper tooling, which ADR 0016 leaves as a future option rather than
-requiring now. `prebuild-install`'s own npm deprecation warning is accepted,
-tracked cosmetic noise either way: it remains a declared dependency of
-`better-sqlite3` and npm still prints the warning regardless of which install
-path actually runs. The end-user release artifact is unaffected either way —
-it bundles whichever `.node` binary the release build produced and never
-compiles anything on the end-user's machine. Full rationale:
-`docs/adr/0008-node-runtime-and-native-sqlite-support.md`,
-`docs/adr/0016-native-dependency-install-policy-by-environment.md`, and the
-header comment in `.github/workflows/ci.yml`.
+engine range is in force. The workspace uses `better-sqlite3` 12.x because that
+line ships Node 24 prebuilds. CI pins Node 24, sets
+`npm_config_build_from_source=false`, and runs the CLI install smoke on Linux,
+Windows, and macOS. A `better-sqlite3` source-build fallback is a regression
+unless a bead explicitly changes the runtime/native support policy. Fallback
+for local development: install a C++ toolchain and `npm rebuild better-sqlite3`.
+Full rationale:
+`docs/adr/0008-node-runtime-and-native-sqlite-support.md` and the header
+comment in `.github/workflows/ci.yml`. ADR 0016
+(`docs/adr/0016-native-dependency-install-policy-by-environment.md`) splits
+this into dev/workspace, release-CI, and end-user-artifact layers and
+pre-authorizes deliberately switching the first two to source-build-first
+(distinct from an accidental fallback) without a new policy decision, subject
+to the conditions it lists.
 
 ## Dependency Updates
 
