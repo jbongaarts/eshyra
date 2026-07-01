@@ -292,6 +292,48 @@ describe('Release installer policy', () => {
     expect(wf).toContain('validate-installer-scripts');
   });
 
+  it('release workflow gates publication on a clean-env (no-toolchain) smoke', () => {
+    const wf = readText('.github/workflows/release.yml');
+
+    // The job exists, downloads the linux-x64 artifact, and runs the smoke.
+    expect(wf).toContain('clean-env-smoke:');
+    expect(wf).toContain('eshyra-cli-api-ubuntu-latest');
+    expect(wf).toContain('bash scripts/release/clean-env-smoke.sh');
+
+    // The tag-gated release job must depend on it, so a toolchain-dependent
+    // artifact can never ship (ADR 0016 layer 3 / bead eshyra-w7bp).
+    expect(wf).toMatch(
+      /needs:\s*\[build,\s*validate-installer-scripts,\s*installer-smoke,\s*clean-env-smoke\]/,
+    );
+  });
+
+  it('clean-env smoke script exists and proves a toolchain-free run', () => {
+    const path = 'scripts/release/clean-env-smoke.sh';
+    expect(existsSync(join(process.cwd(), path)), `${path} must exist`).toBe(
+      true,
+    );
+    const sh = readText(path);
+    // Runs the bundled launcher inside a container and asserts the no-config
+    // behavior the release validator checks.
+    expect(sh).toContain('/artifact/bin/eshyra');
+    expect(sh).toContain('ANTHROPIC_API_KEY');
+    // Self-checks that the container genuinely lacks a build toolchain, so the
+    // proof fails loudly if the base image ever ships one.
+    expect(sh).toMatch(/command -v .*tool/);
+    expect(sh).toContain('gcc');
+    expect(sh).toContain('python3');
+  });
+
+  it('package.json provides release:smoke-clean-env script', () => {
+    interface PackageJson {
+      scripts?: Record<string, string>;
+    }
+    const pkg = JSON.parse(readText('package.json')) as PackageJson;
+    expect(pkg.scripts?.['release:smoke-clean-env']).toBe(
+      'bash scripts/release/clean-env-smoke.sh',
+    );
+  });
+
   it('package.json provides release:checksums script', () => {
     interface PackageJson {
       scripts?: Record<string, string>;

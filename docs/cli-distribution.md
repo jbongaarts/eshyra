@@ -123,7 +123,13 @@ Release builds run in CI via `.github/workflows/release.yml`:
    `--edition`/`ESHYRA_EDITION` on its target runner.
 2. Each artifact is validated (`npm run release:validate`) before upload; the
    validator also checks the packed provider set matches the encoded edition.
-3. On a `v*` tag, the `release` job downloads all artifacts, generates
+3. The `clean-env-smoke` job runs the linux-x64 artifact's bundled launcher
+   inside a minimal, toolchain-free Debian container
+   (`scripts/release/clean-env-smoke.sh`) to prove it runs on a machine with no
+   `gcc`/`make`/`python3`/system-Node — ADR 0016's "end users need no
+   toolchain" claim, which the toolchain-equipped GitHub-hosted runners cannot
+   otherwise exercise. It gates the tag-release job.
+4. On a `v*` tag, the `release` job downloads all artifacts, generates
    `sha256sums.txt`, and uploads archives + checksums + installer scripts to
    the GitHub Release.
 
