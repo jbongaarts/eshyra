@@ -688,11 +688,18 @@ function spellPreparationFromOverlay(classKey: string): unknown {
     ...(overlay.spellbookStartingSpells === undefined
       ? {}
       : { spellbookStartingSpells: overlay.spellbookStartingSpells }),
+    // The overlay itself carries preparationFormula for prepared casters
+    // (cleric/druid/paladin/wizard); omitting it here made the generated
+    // pack's source-backed preparationFormula field look like an unexpected
+    // mismatch instead of an already-modeled overlay fact (eshyra-jk4d).
+    ...(overlay.preparationFormula === undefined
+      ? {}
+      : { preparationFormula: overlay.preparationFormula }),
     sourceText: overlay.sourceText,
   };
 }
 
-function buildOverlayParityReport(pack: RulesPack): {
+export function buildOverlayParityReport(pack: RulesPack): {
   readonly summary: {
     readonly checkedFacts: number;
     readonly matchedFacts: number;

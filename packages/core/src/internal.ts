@@ -387,7 +387,10 @@ export type {
 export {
   getAncestryCreationChoices,
   getBackgroundCreationFacts,
+  SRD_5_1_ARTISAN_TOOLS,
+  SRD_5_1_MUSICAL_INSTRUMENTS,
   SRD_5_1_SKILLS,
+  SRD_5_1_STANDARD_LANGUAGES,
 } from './character/srdCreationChoices.js';
 export type { EquipmentPackContent } from './character/srdEquipmentPacks.js';
 export { readEquipmentPackContents } from './character/srdEquipmentPacks.js';
@@ -803,6 +806,15 @@ export {
   FEATURE_CHOICE_CATEGORIES,
   isFeatureChoiceCategory,
 } from './rules/featureChoices.js';
+export type {
+  InlineFeatureOption,
+  InlineFeatureOptionIndex,
+} from './rules/inlineFeatureOptions.js';
+export {
+  buildInlineFeatureOptionIndex,
+  buildInlineFeatureOptionIndexForPack,
+  resolveInlineFeatureOption,
+} from './rules/inlineFeatureOptions.js';
 export { validateRecordKindSchema } from './rules/kindSchemas.js';
 export type { RulesPackUsePolicy } from './rules/license.js';
 export {
@@ -820,6 +832,11 @@ export {
   PACK_RECORDS_FILE,
 } from './rules/packLoader.js';
 export { PATHFINDER2E_REMASTER_RULES_PACK } from './rules/pathfinder2eRemaster.js';
+export type { FeatureChoiceInstance } from './rules/repeatedFeatureChoices.js';
+export {
+  deriveFeatureChoiceInstances,
+  featureGrantLevels,
+} from './rules/repeatedFeatureChoices.js';
 export type {
   SrdAuditCategory,
   SrdAuditFinding,

@@ -18,6 +18,16 @@ type Obj = Record<string, unknown>;
 type Validator = (record: RulesRecord, path: string) => void;
 type Scalar = string | number | boolean | null;
 
+const CONDITION_RELATIONS = new Set([
+  'applies',
+  'removes',
+  'immune',
+  'advantage',
+  'disadvantage',
+  'exclusion',
+  'mention',
+]);
+
 function dataObj(record: RulesRecord, path: string): Obj {
   const value = record.data;
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -480,6 +490,16 @@ function optLanguageGrantArray(parent: Obj, key: string, path: string): void {
   entries.forEach((entry, i) => {
     reqStrArray(entry, 'fixed', `${path}.${key}[${i}]`);
     optInt(entry, 'choose', `${path}.${key}[${i}]`, 1);
+    // The enumerable option domain for `choose` (eshyra-8r8f) — e.g. the
+    // Standard Languages table for a Half-Elf/Human/Acolyte "extra language".
+    if (entry.from !== undefined) {
+      optStrArray(entry, 'from', `${path}.${key}[${i}]`);
+      if ((entry.from as unknown[]).length === 0) {
+        throw new RulesPackError(
+          `${path}.${key}[${i}].from must not be empty when present`,
+        );
+      }
+    }
     reqStr(entry, 'sourceText', `${path}.${key}[${i}]`);
   });
 }
@@ -631,11 +651,33 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       }
     });
   }
+  // `conditions` entries carry a `relation` alongside the bare condition name
+  // (eshyra-qqyj): a raw condition-name match conflates "this effect applies
+  // the condition" with advantage/immunity clauses, targeting exclusions, and
+  // incidental mentions. Only `applies`/`removes` are authoritative state
+  // mutations; consumers must not treat any other relation as one.
+  const conditions = objArray(mechanics, 'conditions', `${path}.${key}`);
+  if (conditions !== undefined) {
+    if (conditions.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.conditions must not be empty when present`,
+      );
+    }
+    conditions.forEach((entry, i) => {
+      const entryPath = `${path}.${key}.conditions[${i}]`;
+      reqStr(entry, 'condition', entryPath);
+      const relation = reqStr(entry, 'relation', entryPath);
+      if (!CONDITION_RELATIONS.has(relation)) {
+        throw new RulesPackError(
+          `${entryPath}.relation must be one of ${[...CONDITION_RELATIONS].join(', ')}, got ${JSON.stringify(relation)}`,
+        );
+      }
+    });
+  }
   for (const arrayKey of [
     'attacks',
     'saves',
     'damage',
-    'conditions',
     'resources',
     'effects',
     'hitDamage',

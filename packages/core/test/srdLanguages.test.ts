@@ -97,6 +97,7 @@ describe('language oracle', () => {
     expect(acolyte).toEqual({
       fixed: [],
       choose: 2,
+      from: SRD_STANDARD_LANGUAGES,
       sourceText: 'Two of your choice',
     });
     const actual = resolver.resolveBackground('background:acolyte');

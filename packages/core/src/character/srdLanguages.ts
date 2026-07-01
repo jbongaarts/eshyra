@@ -31,6 +31,8 @@ export interface LanguageGrant {
   readonly fixed: readonly string[];
   /** Number of free-choice languages, present only when the source grants any. */
   readonly choose?: number;
+  /** Enumerable option domain for `choose` (eshyra-8r8f). Present iff `choose` is. */
+  readonly from?: readonly string[];
   /** Verbatim SRD language prose this entry was authored from. */
   readonly sourceText: string;
 }
@@ -40,13 +42,17 @@ function known(sourceText: string, ...fixed: readonly string[]): LanguageGrant {
   return { fixed, sourceText };
 }
 
-/** Build a grant with a fixed set plus N free choices. */
+/**
+ * Build a grant with a fixed set plus N free choices, drawn from the Standard
+ * Languages table (eshyra-8r8f) — every SRD 5.1 base-game "extra language of
+ * your choice" uses that same domain (see `rule:languages`'s precedence).
+ */
 function choose(
   sourceText: string,
   count: number,
   ...fixed: readonly string[]
 ): LanguageGrant {
-  return { fixed, choose: count, sourceText };
+  return { fixed, choose: count, from: SRD_STANDARD_LANGUAGES, sourceText };
 }
 
 /**

@@ -41,6 +41,7 @@
  * Everything is pure and deterministic; findings are sorted for diffable output.
  */
 
+import { buildInlineFeatureOptionIndex } from './inlineFeatureOptions.js';
 import type { RulesPack, RulesRecord } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -53,7 +54,8 @@ export type SrdPlayabilityCategory =
   | 'missing-class-feature-record'
   | 'overlay-dependence'
   | 'proficiency-note-bleed'
-  | 'choice-coverage';
+  | 'choice-coverage'
+  | 'unresolvable-inline-option-ref';
 
 export interface SrdPlayabilityFinding {
   readonly category: SrdPlayabilityCategory;
@@ -662,6 +664,77 @@ function checkChoiceCoverage(pack: RulesPack): SrdPlayabilityFinding[] {
   return findings;
 }
 
+/**
+ * Two field shapes reference an inline option (`feature.choices[].options[]`)
+ * from outside the choice that defines it: an Eldritch Invocation option's
+ * structured `pactBoon` prerequisite clause, and a follow-up choice's
+ * `from.requiresFeatureOption` filter (eshyra-ldqb). Both carry a
+ * `<category>:<slug>` address; this resolves each address against the
+ * pack-wide inline-option index and flags any that point at nothing.
+ *
+ * Deliberately NOT checked here (exempted by construction, not by an
+ * allowlist): an option's own `options[].id` is the option's definition, not
+ * a reference, and a choice's `from: string[]` self-list is the same choice
+ * restating the ids of the options it just defined — neither one points
+ * outside its own choice, so there is nothing to resolve.
+ */
+function checkInlineOptionRefResolution(
+  pack: RulesPack,
+): SrdPlayabilityFinding[] {
+  const index = buildInlineFeatureOptionIndex(pack.records);
+  const findings: SrdPlayabilityFinding[] = [];
+  const flag = (record: RulesRecord, field: string, ref: string): void => {
+    if (index.has(ref)) return;
+    findings.push({
+      category: 'unresolvable-inline-option-ref',
+      key: record.key,
+      kind: record.kind,
+      name: record.name,
+      bead: 'eshyra-ldqb',
+      detail: `${field} references inline option id '${ref}', which no feature choice offers`,
+    });
+  };
+  for (const record of pack.records) {
+    if (record.kind !== 'feature') continue;
+    const data = dataObject(record);
+    const choices = data === null ? null : data.choices;
+    if (!Array.isArray(choices)) continue;
+    choices.forEach((choiceValue, choiceIndex) => {
+      const choice = asObject(choiceValue);
+      if (choice === null) return;
+      const from = asObject(choice.from);
+      const requiresFeatureOption =
+        from === null ? null : asString(from.requiresFeatureOption);
+      if (requiresFeatureOption !== null) {
+        flag(
+          record,
+          `choices[${choiceIndex}].from.requiresFeatureOption`,
+          requiresFeatureOption,
+        );
+      }
+      const options = choice.options;
+      if (!Array.isArray(options)) return;
+      options.forEach((optionValue, optionIndex) => {
+        const option = asObject(optionValue);
+        const prerequisites = option === null ? null : option.prerequisites;
+        if (!Array.isArray(prerequisites)) return;
+        prerequisites.forEach((clauseValue, clauseIndex) => {
+          const clause = asObject(clauseValue);
+          if (clause === null || clause.kind !== 'pactBoon') return;
+          const ref = asString(clause.ref);
+          if (ref === null) return;
+          flag(
+            record,
+            `choices[${choiceIndex}].options[${optionIndex}].prerequisites[${clauseIndex}]`,
+            ref,
+          );
+        });
+      });
+    });
+  }
+  return findings;
+}
+
 // ---------------------------------------------------------------------------
 // Aggregate + reporting
 // ---------------------------------------------------------------------------
@@ -684,6 +757,7 @@ export function auditSrdPlayability(
   findings.push(...checkMissingClassFeatureRecords(pack));
   findings.push(...checkChoiceCoverage(pack));
   findings.push(...checkSubclassChoiceCoverage(pack));
+  findings.push(...checkInlineOptionRefResolution(pack));
   return sortFindings(findings);
 }
 
@@ -705,6 +779,7 @@ export function countSrdPlayabilityByCategory(
     'overlay-dependence': 0,
     'proficiency-note-bleed': 0,
     'choice-coverage': 0,
+    'unresolvable-inline-option-ref': 0,
   };
   for (const finding of findings) {
     counts[finding.category] += 1;

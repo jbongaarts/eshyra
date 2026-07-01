@@ -129,7 +129,8 @@
       "mechanics": {
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "exclusion"
           }
         ]
       }
@@ -880,6 +881,16 @@
             "Elvish"
           ],
           "choose": 1,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "You can speak, read, and write Common, Elvish, and one extra language of your choice."
         }
       ],
@@ -1288,6 +1299,16 @@
           "category": "language",
           "prompt": "Choose one extra language.",
           "choose": 1,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "You can speak, read, and write one extra language of your choice."
         }
       ]
@@ -1540,6 +1561,16 @@
             "Common"
           ],
           "choose": 1,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "You can speak, read, and write Common and one extra language of your choice."
         }
       ]
@@ -1934,6 +1965,16 @@
         {
           "fixed": [],
           "choose": 2,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc"
+          ],
           "sourceText": "Two of your choice"
         }
       ],
@@ -2667,7 +2708,19 @@
       "toolProficiencyChoices": [
         {
           "text": "Three musical instruments of your choice",
-          "choose": 3
+          "choose": 3,
+          "from": [
+            "Bagpipes",
+            "Drum",
+            "Dulcimer",
+            "Flute",
+            "Horn",
+            "Lute",
+            "Lyre",
+            "Pan flute",
+            "Shawm",
+            "Viol"
+          ]
         }
       ],
       "skillChoices": [
@@ -5142,7 +5195,36 @@
       "toolProficiencyChoices": [
         {
           "text": "Choose one type of artisan’s tools or one musical instrument",
-          "choose": 1
+          "choose": 1,
+          "from": [
+            "Alchemist’s supplies",
+            "Brewer’s supplies",
+            "Calligrapher's supplies",
+            "Carpenter’s tools",
+            "Cartographer’s tools",
+            "Cobbler’s tools",
+            "Cook’s utensils",
+            "Glassblower’s tools",
+            "Jeweler’s tools",
+            "Leatherworker’s tools",
+            "Mason’s tools",
+            "Painter’s supplies",
+            "Potter’s tools",
+            "Smith’s tools",
+            "Tinker’s tools",
+            "Weaver’s tools",
+            "Woodcarver’s tools",
+            "Bagpipes",
+            "Drum",
+            "Dulcimer",
+            "Flute",
+            "Horn",
+            "Lute",
+            "Lyre",
+            "Pan flute",
+            "Shawm",
+            "Viol"
+          ]
         }
       ],
       "skillChoices": [
@@ -10175,7 +10257,8 @@
             ],
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "mention"
               }
             ]
           }
@@ -10205,7 +10288,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "charmed"
+                  "condition": "charmed",
+                  "relation": "mention"
                 }
               ]
             }
@@ -10478,7 +10562,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -10490,7 +10575,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -10538,7 +10623,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -10720,7 +10806,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -10732,7 +10819,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -10780,7 +10867,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -10952,7 +11040,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -10964,7 +11053,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -10999,7 +11088,8 @@
             ],
             "conditions": [
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -11035,7 +11125,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -11211,7 +11302,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -11223,7 +11315,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -11293,7 +11385,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -11465,7 +11558,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -11477,7 +11571,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -11543,7 +11637,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -11719,7 +11814,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -11731,7 +11827,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -11801,7 +11897,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -11988,7 +12085,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -12000,7 +12098,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -12048,7 +12146,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -12230,7 +12329,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -12242,7 +12342,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -12290,7 +12390,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -12461,7 +12562,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -12473,7 +12575,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -12508,7 +12610,8 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -12548,7 +12651,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -12735,7 +12839,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -12747,7 +12852,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -12795,7 +12900,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -12903,7 +13009,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 4,
-              "maximum": 4
+              "maximum": 6
             },
             "saves": [
               {
@@ -12925,7 +13031,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -13110,7 +13217,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -13122,7 +13230,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -13170,7 +13278,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -13352,7 +13461,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -13364,7 +13474,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -13412,7 +13522,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -13584,7 +13695,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -13596,7 +13708,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -13631,7 +13743,8 @@
             ],
             "conditions": [
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -13671,7 +13784,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -13847,7 +13961,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -13859,7 +13974,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -13929,7 +14044,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -14101,7 +14217,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -14113,7 +14230,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -14183,7 +14300,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -14359,7 +14477,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -14371,7 +14490,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -14441,7 +14560,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -14628,7 +14748,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -14640,7 +14761,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -14688,7 +14809,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -14870,7 +14992,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -14882,7 +15005,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -14930,7 +15053,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -15101,7 +15225,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -15113,7 +15238,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -15148,7 +15273,8 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -15188,7 +15314,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -15375,7 +15502,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -15387,7 +15515,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -15435,7 +15563,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "applies"
                 }
               ]
             }
@@ -15561,7 +15690,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -15578,13 +15708,16 @@
             ],
             "conditions": [
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "applies"
               },
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "mention"
               },
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -15608,7 +15741,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -15696,10 +15830,12 @@
             ],
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -15831,7 +15967,8 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               }
             ]
           }
@@ -15860,7 +15997,8 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               }
             ]
           }
@@ -16152,7 +16290,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -16684,7 +16823,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -17432,13 +17572,16 @@
             ],
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "mention"
               },
               {
-                "condition": "petrified"
+                "condition": "petrified",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -17540,7 +17683,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "mention"
               }
             ]
           }
@@ -17626,7 +17770,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -17656,7 +17801,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -17798,10 +17944,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -17813,7 +17961,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -17849,13 +17997,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "removes"
               }
             ]
           }
@@ -18175,7 +18326,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -18407,7 +18558,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 4,
-              "maximum": 4
+              "maximum": 6
             }
           }
         }
@@ -18474,7 +18625,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -18615,7 +18767,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -18701,7 +18853,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -18885,7 +19038,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -18985,7 +19139,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -19020,7 +19174,8 @@
             ],
             "conditions": [
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -19126,7 +19281,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -19519,7 +19674,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -19935,13 +20091,16 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "exclusion"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -19960,7 +20119,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -20112,7 +20272,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -20225,7 +20385,8 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               }
             ]
           }
@@ -20242,13 +20403,16 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               },
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -20375,7 +20539,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         }
@@ -20462,7 +20626,8 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "advantage"
               }
             ]
           }
@@ -20492,7 +20657,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -20695,10 +20861,12 @@
             ],
             "conditions": [
               {
-                "condition": "petrified"
+                "condition": "petrified",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -20860,10 +21028,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -20963,7 +21133,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -21085,10 +21255,12 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -21106,10 +21278,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -21261,10 +21435,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -21327,10 +21503,12 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               },
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "advantage"
               }
             ]
           }
@@ -21417,10 +21595,12 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               },
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "advantage"
               }
             ]
           }
@@ -21499,7 +21679,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "mention"
               }
             ]
           }
@@ -21523,7 +21704,8 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "advantage"
               }
             ]
           }
@@ -21589,22 +21771,28 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "advantage"
               },
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               },
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "advantage"
               },
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "advantage"
               },
               {
-                "condition": "stunned"
+                "condition": "stunned",
+                "relation": "advantage"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "advantage"
               }
             ]
           }
@@ -21649,7 +21837,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -21924,7 +22113,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -21965,7 +22155,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -22080,7 +22271,8 @@
             ],
             "conditions": [
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -22418,7 +22610,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -22430,7 +22623,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -22575,7 +22768,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -22638,7 +22832,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               }
             ]
           }
@@ -22943,7 +23138,8 @@
             ],
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "mention"
               }
             ]
           }
@@ -23005,10 +23201,12 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               },
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "advantage"
               }
             ]
           }
@@ -23109,7 +23307,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "invisible"
+                "condition": "invisible",
+                "relation": "applies"
               }
             ]
           }
@@ -23184,7 +23383,8 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               }
             ]
           }
@@ -23225,7 +23425,8 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               }
             ]
           }
@@ -23613,7 +23814,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -23661,7 +23863,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "mention"
               }
             ]
           }
@@ -23723,7 +23926,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               }
             ]
           }
@@ -23803,10 +24007,12 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "mention"
               }
             ]
           }
@@ -23873,7 +24079,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -23921,7 +24128,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "mention"
               }
             ]
           }
@@ -24102,7 +24310,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -24207,7 +24416,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -24247,11 +24457,12 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "conditions": [
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -24313,22 +24524,28 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "advantage"
               },
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               },
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "advantage"
               },
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "advantage"
               },
               {
-                "condition": "stunned"
+                "condition": "stunned",
+                "relation": "advantage"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "advantage"
               }
             ]
           }
@@ -24912,10 +25129,12 @@
             ],
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -25364,7 +25583,8 @@
             ],
             "conditions": [
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -25437,7 +25657,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -25495,7 +25716,8 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -25617,7 +25839,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -25639,13 +25862,16 @@
             ],
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "immune"
               },
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "immune"
               },
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               }
             ]
           }
@@ -25752,7 +25978,8 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -26046,7 +26273,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "mention"
               }
             ]
           }
@@ -26139,7 +26367,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -26253,10 +26482,12 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               },
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "mention"
               }
             ]
           }
@@ -26339,10 +26570,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -26433,7 +26666,8 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               }
             ]
           }
@@ -26528,10 +26762,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -26570,10 +26806,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -26760,7 +26998,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -26808,7 +27047,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "mention"
               }
             ]
           }
@@ -26975,10 +27215,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -26996,13 +27238,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "removes"
               }
             ]
           }
@@ -27076,7 +27321,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -27087,7 +27333,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "advantage"
               }
             ]
           }
@@ -27381,10 +27628,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -27640,7 +27889,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -27763,7 +28013,8 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               }
             ]
           }
@@ -27862,7 +28113,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -28083,10 +28335,12 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               },
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "mention"
               }
             ]
           }
@@ -28098,11 +28352,12 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "conditions": [
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -28207,10 +28462,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -28228,13 +28485,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "removes"
               }
             ]
           }
@@ -28301,7 +28561,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -28444,10 +28705,12 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               },
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "mention"
               }
             ]
           }
@@ -28627,10 +28890,12 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               },
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "mention"
               }
             ]
           }
@@ -28712,7 +28977,8 @@
             ],
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "mention"
               }
             ]
           }
@@ -28742,7 +29008,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -28754,7 +29021,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -28764,7 +29031,8 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               }
             ]
           }
@@ -28868,7 +29136,8 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               }
             ]
           }
@@ -28960,7 +29229,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "advantage"
               }
             ]
           }
@@ -29036,7 +29306,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -29302,7 +29573,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -29376,7 +29648,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -29387,7 +29660,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "advantage"
               }
             ]
           }
@@ -29639,7 +29913,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -29738,7 +30012,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -29808,7 +30083,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -29818,10 +30093,12 @@
             ],
             "conditions": [
               {
-                "condition": "petrified"
+                "condition": "petrified",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -30047,7 +30324,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -30170,7 +30447,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "invisible"
+                "condition": "invisible",
+                "relation": "applies"
               }
             ]
           }
@@ -30469,7 +30747,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "mention"
               }
             ]
           }
@@ -31007,7 +31286,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -31147,10 +31426,12 @@
             ],
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "applies"
               },
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               }
             ]
           }
@@ -31289,7 +31570,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -31341,7 +31623,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -31431,7 +31713,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -31789,7 +32072,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "mention"
               }
             ]
           }
@@ -31936,10 +32220,12 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "mention"
               }
             ]
           }
@@ -32258,22 +32544,28 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "advantage"
               },
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "advantage"
               },
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "advantage"
               },
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "advantage"
               },
               {
-                "condition": "stunned"
+                "condition": "stunned",
+                "relation": "advantage"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "advantage"
               }
             ]
           }
@@ -32377,7 +32669,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -32626,7 +32919,8 @@
             ],
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               }
             ]
           }
@@ -32882,7 +33176,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "invisible"
+                "condition": "invisible",
+                "relation": "applies"
               }
             ]
           }
@@ -32948,7 +33243,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "invisible"
+                "condition": "invisible",
+                "relation": "applies"
               }
             ]
           }
@@ -33209,7 +33505,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -33288,7 +33585,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "mention"
               }
             ]
           }
@@ -33389,7 +33687,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "advantage"
               }
             ]
           }
@@ -33465,7 +33764,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "exclusion"
               }
             ]
           }
@@ -33537,7 +33837,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -33667,10 +33968,12 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -33724,16 +34027,20 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "removes"
               }
             ]
           }
@@ -33766,10 +34073,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -33793,10 +34102,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -34159,7 +34470,8 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -34188,7 +34500,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "frightened"
+                  "condition": "frightened",
+                  "relation": "applies"
                 }
               ]
             }
@@ -34274,7 +34587,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -34291,7 +34605,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -34994,7 +35309,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -35042,7 +35358,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "mention"
               }
             ]
           }
@@ -35312,10 +35629,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -35421,7 +35740,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -35490,13 +35810,16 @@
             ],
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "mention"
               },
               {
-                "condition": "petrified"
+                "condition": "petrified",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -35906,7 +36229,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               }
             ]
           }
@@ -35921,7 +36245,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "advantage"
               }
             ]
           }
@@ -36064,7 +36389,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -36210,7 +36536,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -36333,7 +36660,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "advantage"
               }
             ]
           }
@@ -36486,10 +36814,12 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               },
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "mention"
               }
             ]
           }
@@ -36626,10 +36956,12 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               },
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "mention"
               }
             ]
           }
@@ -36654,7 +36986,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "blinded"
+                  "condition": "blinded",
+                  "relation": "applies"
                 }
               ]
             }
@@ -36671,7 +37004,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "stunned"
+                  "condition": "stunned",
+                  "relation": "applies"
                 }
               ]
             }
@@ -36686,19 +37020,24 @@
             "mechanics": {
               "conditions": [
                 {
-                  "condition": "grappled"
+                  "condition": "grappled",
+                  "relation": "immune"
                 },
                 {
-                  "condition": "petrified"
+                  "condition": "petrified",
+                  "relation": "immune"
                 },
                 {
-                  "condition": "prone"
+                  "condition": "prone",
+                  "relation": "immune"
                 },
                 {
-                  "condition": "restrained"
+                  "condition": "restrained",
+                  "relation": "immune"
                 },
                 {
-                  "condition": "stunned"
+                  "condition": "stunned",
+                  "relation": "immune"
                 }
               ]
             }
@@ -36835,7 +37174,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -36845,7 +37184,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -37338,7 +37678,8 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               }
             ]
           }
@@ -37903,7 +38244,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -37946,10 +38288,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "mention"
               }
             ]
           }
@@ -37973,10 +38317,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "stunned"
+                "condition": "stunned",
+                "relation": "applies"
               }
             ]
           }
@@ -38227,7 +38573,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -38461,10 +38808,12 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               },
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "mention"
               }
             ]
           }
@@ -38540,10 +38889,12 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               },
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               }
             ]
           }
@@ -38605,7 +38956,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -39417,10 +39769,12 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -39526,13 +39880,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "removes"
               }
             ]
           }
@@ -39672,7 +40029,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -39689,7 +40047,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -39700,7 +40059,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "invisible"
+                "condition": "invisible",
+                "relation": "applies"
               }
             ]
           }
@@ -40123,7 +40483,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -40198,7 +40558,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -40343,10 +40704,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -40370,13 +40733,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "removes"
               }
             ]
           }
@@ -40450,7 +40816,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -40682,10 +41049,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -40794,10 +41163,12 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -40808,7 +41179,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               }
             ]
           }
@@ -40879,10 +41251,12 @@
             ],
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -40893,7 +41267,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               }
             ]
           }
@@ -40917,13 +41292,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "mention"
               },
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -41095,7 +41473,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -41497,10 +41876,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -41906,7 +42287,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -41953,7 +42335,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "mention"
               }
             ]
           }
@@ -42166,7 +42549,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               }
             ]
           }
@@ -42218,13 +42602,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "mention"
               }
             ]
           }
@@ -42491,7 +42878,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -42526,7 +42913,8 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -42872,7 +43260,8 @@
               ],
               "conditions": [
                 {
-                  "condition": "blinded"
+                  "condition": "blinded",
+                  "relation": "applies"
                 }
               ]
             }
@@ -43234,10 +43623,12 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -43260,7 +43651,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "invisible"
+                "condition": "invisible",
+                "relation": "applies"
               }
             ]
           }
@@ -43327,7 +43719,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -43715,7 +44108,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -43842,7 +44236,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -43990,7 +44384,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -44066,7 +44460,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "mention"
               }
             ]
           }
@@ -44117,7 +44512,8 @@
             ],
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "mention"
               }
             ]
           }
@@ -44141,7 +44537,8 @@
             ],
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "mention"
               }
             ]
           }
@@ -44209,7 +44606,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "deafened"
+                "condition": "deafened",
+                "relation": "mention"
               }
             ]
           }
@@ -44819,10 +45217,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -44917,7 +45317,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -44934,7 +45335,8 @@
             ],
             "conditions": [
               {
-                "condition": "frightened"
+                "condition": "frightened",
+                "relation": "applies"
               }
             ]
           }
@@ -44958,13 +45360,16 @@
             ],
             "conditions": [
               {
-                "condition": "blinded"
+                "condition": "blinded",
+                "relation": "applies"
               },
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "removes"
               }
             ]
           }
@@ -45044,7 +45449,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -45167,7 +45573,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -45416,7 +45823,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -45531,7 +45939,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -45579,7 +45988,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "mention"
               }
             ]
           }
@@ -45791,10 +46201,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -45898,7 +46310,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -46068,10 +46481,12 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "mention"
               },
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "mention"
               }
             ]
           }
@@ -46102,10 +46517,12 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               },
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -46151,13 +46568,16 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "mention"
               }
             ]
           }
@@ -46174,7 +46594,8 @@
             ],
             "conditions": [
               {
-                "condition": "charmed"
+                "condition": "charmed",
+                "relation": "applies"
               }
             ]
           }
@@ -46282,7 +46703,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "applies"
               }
             ]
           }
@@ -46328,13 +46750,16 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "applies"
               },
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "mention"
               }
             ]
           }
@@ -46718,7 +47143,8 @@
             ],
             "conditions": [
               {
-                "condition": "poisoned"
+                "condition": "poisoned",
+                "relation": "applies"
               }
             ]
           }
@@ -46735,7 +47161,8 @@
             ],
             "conditions": [
               {
-                "condition": "stunned"
+                "condition": "stunned",
+                "relation": "applies"
               }
             ]
           }
@@ -46802,7 +47229,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -46899,7 +47327,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -47124,7 +47553,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 4,
-              "maximum": 4
+              "maximum": 6
             },
             "saves": [
               {
@@ -47146,10 +47575,12 @@
             ],
             "conditions": [
               {
-                "condition": "grappled"
+                "condition": "grappled",
+                "relation": "mention"
               },
               {
-                "condition": "restrained"
+                "condition": "restrained",
+                "relation": "applies"
               }
             ]
           }
@@ -47463,7 +47894,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -47751,7 +48183,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -48123,7 +48556,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -48400,7 +48833,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "invisible"
+                "condition": "invisible",
+                "relation": "applies"
               }
             ]
           }
@@ -48467,7 +48901,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -48512,7 +48947,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -48524,7 +48960,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -48603,7 +49039,8 @@
           "mechanics": {
             "conditions": [
               {
-                "condition": "incapacitated"
+                "condition": "incapacitated",
+                "relation": "advantage"
               }
             ]
           }
@@ -48644,7 +49081,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -48740,7 +49178,8 @@
             ],
             "conditions": [
               {
-                "condition": "prone"
+                "condition": "prone",
+                "relation": "applies"
               }
             ]
           }
@@ -49233,7 +49672,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -49387,7 +49826,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -49531,7 +49970,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -49566,7 +50005,8 @@
             ],
             "conditions": [
               {
-                "condition": "unconscious"
+                "condition": "unconscious",
+                "relation": "applies"
               }
             ]
           }
@@ -49704,7 +50144,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -49866,7 +50306,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -50034,7 +50474,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -50213,7 +50653,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -50367,7 +50807,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -50510,7 +50950,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             }
           }
         },
@@ -50545,7 +50985,8 @@
             ],
             "conditions": [
               {
-                "condition": "paralyzed"
+                "condition": "paralyzed",
+                "relation": "applies"
               }
             ]
           }
@@ -50694,7 +51135,7 @@
             "recharge": {
               "roll": "d6",
               "minimum": 5,
-              "maximum": 5
+              "maximum": 6
             },
             "saves": [
               {
@@ -67063,7 +67504,8 @@
         ],
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           }
         ]
       }
@@ -67167,7 +67609,8 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "applies"
           }
         ]
       }
@@ -67260,13 +67703,16 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "mention"
           },
           {
-            "condition": "paralyzed"
+            "condition": "paralyzed",
+            "relation": "applies"
           },
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           }
         ]
       }
@@ -67312,10 +67758,12 @@
         ],
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           },
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "mention"
           }
         ]
       }
@@ -67361,10 +67809,12 @@
         ],
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           },
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       }
@@ -67409,10 +67859,12 @@
         ],
         "conditions": [
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           },
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "mention"
           }
         ]
       }
@@ -67505,10 +67957,12 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           },
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           }
         ]
       }
@@ -67602,10 +68056,12 @@
         ],
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           },
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       }
@@ -67663,7 +68119,8 @@
         ],
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           }
         ]
       }
@@ -67819,7 +68276,8 @@
         ],
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           }
         ]
       }
@@ -67872,7 +68330,8 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "mention"
           }
         ]
       }
@@ -67924,7 +68383,8 @@
         ],
         "conditions": [
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           }
         ]
       }
@@ -67977,7 +68437,8 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "mention"
           }
         ]
       }
@@ -68060,7 +68521,8 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           }
         ]
       }
@@ -68138,10 +68600,12 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "applies"
           },
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           }
         ]
       }
@@ -68187,7 +68651,8 @@
         ],
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "applies"
           }
         ]
       }
@@ -68240,7 +68705,8 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "mention"
           }
         ]
       }
@@ -86798,7 +87264,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -86906,7 +87373,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       }
@@ -87113,7 +87581,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -87172,7 +87641,8 @@
         ],
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "applies"
           }
         ]
       },
@@ -87225,7 +87695,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -87486,7 +87957,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       },
@@ -87589,7 +88061,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       },
@@ -87704,7 +88177,8 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -87931,7 +88405,8 @@
         ],
         "conditions": [
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       },
@@ -88164,10 +88639,12 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "mention"
           },
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "mention"
           }
         ],
         "scaling": {
@@ -88320,7 +88797,8 @@
         ],
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -88504,10 +88982,12 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           },
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "mention"
           }
         ]
       }
@@ -88631,7 +89111,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -88809,7 +89290,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -88973,10 +89455,12 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           },
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "exclusion"
           }
         ],
         "scaling": {
@@ -89037,7 +89521,8 @@
         ],
         "conditions": [
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -89246,7 +89731,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       }
@@ -89777,10 +90263,12 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "disadvantage"
           },
           {
-            "condition": "stunned"
+            "condition": "stunned",
+            "relation": "applies"
           }
         ]
       }
@@ -91082,10 +91570,12 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           },
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "mention"
           }
         ]
       },
@@ -91295,13 +91785,16 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "mention"
           },
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "mention"
           },
           {
-            "condition": "stunned"
+            "condition": "stunned",
+            "relation": "mention"
           }
         ]
       }
@@ -91358,7 +91851,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       },
@@ -91418,7 +91912,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       },
@@ -91477,7 +91972,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       },
@@ -91650,7 +92146,8 @@
         ],
         "conditions": [
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           }
         ]
       },
@@ -91758,7 +92255,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "mention"
           }
         ],
         "scaling": {
@@ -91883,7 +92381,8 @@
         ],
         "conditions": [
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       }
@@ -91940,10 +92439,12 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           },
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "exclusion"
           }
         ]
       }
@@ -92101,10 +92602,12 @@
         ],
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "applies"
           },
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       }
@@ -92206,7 +92709,8 @@
         ],
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "advantage"
           }
         ]
       }
@@ -92264,7 +92768,8 @@
         ],
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "applies"
           }
         ]
       },
@@ -92378,7 +92883,8 @@
         ],
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "applies"
           }
         ]
       },
@@ -93220,10 +93726,12 @@
         ],
         "conditions": [
           {
-            "condition": "petrified"
+            "condition": "petrified",
+            "relation": "mention"
           },
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       },
@@ -93485,7 +93993,8 @@
         ],
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -93592,13 +94101,16 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "grappled"
+            "condition": "grappled",
+            "relation": "mention"
           },
           {
-            "condition": "paralyzed"
+            "condition": "paralyzed",
+            "relation": "immune"
           },
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "immune"
           }
         ]
       },
@@ -93716,10 +94228,12 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "mention"
           },
           {
-            "condition": "stunned"
+            "condition": "stunned",
+            "relation": "mention"
           }
         ]
       },
@@ -93835,7 +94349,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       },
@@ -94087,7 +94602,8 @@
         ],
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -94195,7 +94711,8 @@
         ],
         "conditions": [
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           }
         ]
       },
@@ -94249,7 +94766,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "applies"
           }
         ]
       }
@@ -94303,10 +94821,12 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "mention"
           },
           {
-            "condition": "petrified"
+            "condition": "petrified",
+            "relation": "mention"
           }
         ]
       },
@@ -94621,10 +95141,12 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "removes"
           },
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "applies"
           }
         ]
       },
@@ -95056,7 +95578,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "immune"
           }
         ]
       },
@@ -95109,7 +95632,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "immune"
           }
         ],
         "scaling": {
@@ -95171,10 +95695,12 @@
         ],
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "mention"
           },
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           }
         ]
       },
@@ -95235,7 +95761,8 @@
         ],
         "conditions": [
           {
-            "condition": "paralyzed"
+            "condition": "paralyzed",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -95302,7 +95829,8 @@
         ],
         "conditions": [
           {
-            "condition": "paralyzed"
+            "condition": "paralyzed",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -95364,7 +95892,8 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           }
         ]
       },
@@ -95470,10 +95999,12 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           },
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "applies"
           }
         ]
       },
@@ -95701,7 +96232,8 @@
         ],
         "conditions": [
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       },
@@ -95933,7 +96465,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -95990,7 +96523,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -96051,7 +96585,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       }
@@ -96254,16 +96789,20 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           },
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "mention"
           },
           {
-            "condition": "paralyzed"
+            "condition": "paralyzed",
+            "relation": "mention"
           },
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "mention"
           }
         ]
       }
@@ -96806,10 +97345,12 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           },
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "mention"
           }
         ]
       },
@@ -97072,7 +97613,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "applies"
           }
         ]
       },
@@ -97225,10 +97767,12 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "mention"
           },
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "mention"
           }
         ]
       }
@@ -97333,7 +97877,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       },
@@ -97439,7 +97984,8 @@
         ],
         "conditions": [
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           }
         ]
       },
@@ -97656,7 +98202,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "immune"
           }
         ]
       }
@@ -97853,13 +98400,16 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           },
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "mention"
           },
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "applies"
           }
         ]
       }
@@ -97963,10 +98513,12 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           },
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "applies"
           }
         ]
       },
@@ -98289,7 +98841,8 @@
         ],
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -98668,7 +99221,8 @@
         ],
         "conditions": [
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       },
@@ -98775,7 +99329,8 @@
         ],
         "conditions": [
           {
-            "condition": "stunned"
+            "condition": "stunned",
+            "relation": "applies"
           }
         ]
       }
@@ -98949,13 +99504,16 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           },
           {
-            "condition": "petrified"
+            "condition": "petrified",
+            "relation": "mention"
           },
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       }
@@ -99033,13 +99591,16 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           },
           {
-            "condition": "petrified"
+            "condition": "petrified",
+            "relation": "mention"
           },
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       }
@@ -99242,10 +99803,12 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           },
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "mention"
           }
         ]
       },
@@ -99351,10 +99914,12 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           },
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "mention"
           }
         ]
       },
@@ -99409,7 +99974,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "poisoned"
+            "condition": "poisoned",
+            "relation": "advantage"
           }
         ]
       }
@@ -100070,7 +100636,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -100299,7 +100866,8 @@
         ],
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -100405,7 +100973,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -100561,7 +101130,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "applies"
           }
         ]
       },
@@ -100615,7 +101185,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       },
@@ -100734,7 +101305,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       }
@@ -100937,7 +101509,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "immune"
           }
         ]
       },
@@ -101090,10 +101663,12 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "immune"
           },
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ],
         "scaling": {
@@ -101157,7 +101732,8 @@
         ],
         "conditions": [
           {
-            "condition": "prone"
+            "condition": "prone",
+            "relation": "applies"
           }
         ]
       },
@@ -101409,7 +101985,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "mention"
           }
         ]
       }
@@ -101865,7 +102442,8 @@
         ],
         "conditions": [
           {
-            "condition": "deafened"
+            "condition": "deafened",
+            "relation": "applies"
           }
         ]
       }
@@ -101924,7 +102502,8 @@
         ],
         "conditions": [
           {
-            "condition": "charmed"
+            "condition": "charmed",
+            "relation": "applies"
           }
         ]
       },
@@ -101990,7 +102569,8 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           }
         ]
       },
@@ -102056,7 +102636,8 @@
         ],
         "conditions": [
           {
-            "condition": "blinded"
+            "condition": "blinded",
+            "relation": "applies"
           }
         ]
       },
@@ -102122,19 +102703,24 @@
         ],
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "applies"
           },
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "applies"
           },
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           },
           {
-            "condition": "stunned"
+            "condition": "stunned",
+            "relation": "applies"
           },
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       },
@@ -102187,7 +102773,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       }
@@ -102749,7 +103336,8 @@
         ],
         "conditions": [
           {
-            "condition": "unconscious"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       },
@@ -102953,7 +103541,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -103189,7 +103778,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "invisible"
+            "condition": "invisible",
+            "relation": "mention"
           }
         ]
       },
@@ -103589,7 +104179,8 @@
         ],
         "conditions": [
           {
-            "condition": "restrained"
+            "condition": "restrained",
+            "relation": "applies"
           }
         ]
       },
@@ -103652,7 +104243,8 @@
         ],
         "conditions": [
           {
-            "condition": "frightened"
+            "condition": "frightened",
+            "relation": "applies"
           }
         ]
       }
@@ -103704,7 +104296,8 @@
         "spellAttack": false,
         "conditions": [
           {
-            "condition": "incapacitated"
+            "condition": "incapacitated",
+            "relation": "applies"
           }
         ]
       },
