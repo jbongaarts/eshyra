@@ -70,8 +70,7 @@ describe('Node runtime policy', () => {
     );
     expect(ci).toContain('npm ci --foreground-scripts');
     expect(ci).toContain('npm run smoke:cli-install');
-    expect(ci).toContain('gyp info');
-    expect(ci).toContain('CXX\\(target\\)');
+    expect(ci).toContain('gyp info ok');
     expect(ci).toContain('Successfully installed prebuilt binary!');
     expect(ci).toContain('node-gyp rebuild');
   });

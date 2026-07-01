@@ -119,6 +119,11 @@ jobs:
           # instead shows a downloaded prebuilt binary (the policy silently not
           # taking effect), and fail if it shows no evidence of a real compile
           # (defense-in-depth against a silently-cached or skipped build).
+          # "gyp info ok" is node-gyp's own success line, printed identically
+          # by node-gyp's JS logging on Linux (make), macOS (make), and Windows
+          # (MSBuild) -- unlike compiler invocation lines (CXX(target),
+          # "Building the projects..."), which are compiler/generator-specific
+          # and not reliably present in every node-gyp/MSVC version's output.
           $log = Get-Content npm-ci.log -Raw
 
           if ($log -match "(?m)^.*Successfully installed prebuilt binary!") {
@@ -126,15 +131,9 @@ jobs:
             exit 1
           }
 
-          $sourceBuildEvidence = @(
-            "(?m)^gyp info ok",
-            "(?m)^\s*CXX\(target\)|^\s*CC\(target\)|^.*Building the projects in this solution"
-          )
-          foreach ($pattern in $sourceBuildEvidence) {
-            if ($log -notmatch $pattern) {
-              Write-Error "npm ci log is missing expected better-sqlite3 source-build evidence ($pattern); ADR 0016's build-from-source=true policy may not be taking effect"
-              exit 1
-            }
+          if ($log -notmatch "(?m)^gyp info ok") {
+            Write-Error "npm ci log is missing the expected 'gyp info ok' better-sqlite3 source-build evidence; ADR 0016's build-from-source=true policy may not be taking effect"
+            exit 1
           }
 
       - name: CLI install smoke
