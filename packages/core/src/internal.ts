@@ -861,6 +861,16 @@ export {
   srdChoiceProseHasFindings,
 } from './rules/srdChoiceProseAudit.js';
 export type {
+  EquipmentResolutionResult,
+  EquipmentResolutionSource,
+} from './rules/srdEquipmentResolutionAudit.js';
+export {
+  assertEquipmentResolution,
+  auditEquipmentResolution,
+  EquipmentResolutionEmptyError,
+  UnresolvedProficiencyPhraseError,
+} from './rules/srdEquipmentResolutionAudit.js';
+export type {
   SrdPlayabilityAudit,
   SrdPlayabilityCategory,
   SrdPlayabilityFinding,
