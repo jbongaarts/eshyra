@@ -54,7 +54,12 @@ unless a bead explicitly changes the runtime/native support policy. Fallback
 for local development: install a C++ toolchain and `npm rebuild better-sqlite3`.
 Full rationale:
 `docs/adr/0008-node-runtime-and-native-sqlite-support.md` and the header
-comment in `.github/workflows/ci.yml`.
+comment in `.github/workflows/ci.yml`. ADR 0016
+(`docs/adr/0016-native-dependency-install-policy-by-environment.md`) splits
+this into dev/workspace, release-CI, and end-user-artifact layers and
+pre-authorizes deliberately switching the first two to source-build-first
+(distinct from an accidental fallback) without a new policy decision, subject
+to the conditions it lists.
 
 ## Dependency Updates
 
