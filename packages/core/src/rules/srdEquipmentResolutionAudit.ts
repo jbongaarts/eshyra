@@ -125,8 +125,11 @@ function armorCandidates(equipment: readonly RulesRecord[]): readonly string[] {
     .sort();
 }
 
-function namedItemCandidates(key: string): readonly string[] {
-  return [key];
+function namedItemCandidates(
+  equipment: readonly RulesRecord[],
+  key: string,
+): readonly string[] {
+  return equipment.some((r) => r.key === key) ? [key] : [];
 }
 
 // ---------------------------------------------------------------------------
@@ -229,25 +232,25 @@ const PROFICIENCY_PHRASE_RESOLVERS: ReadonlyMap<string, ProficiencyResolver> =
     ['Simple weapons', (eq) => weaponCandidates(eq, 'simple')],
     ['martial weapons', (eq) => weaponCandidates(eq, 'martial')],
     // Named single-weapon proficiencies (Druid/Rogue/Ranger/Bard subsets).
-    ['Clubs', () => namedItemCandidates('equipment:club')],
-    ['Daggers', () => namedItemCandidates('equipment:dagger')],
-    ['daggers', () => namedItemCandidates('equipment:dagger')],
-    ['darts', () => namedItemCandidates('equipment:dart')],
-    ['hand crossbows', () => namedItemCandidates('equipment:crossbow-hand')],
-    ['javelins', () => namedItemCandidates('equipment:javelin')],
-    ['light crossbows', () => namedItemCandidates('equipment:crossbow-light')],
-    ['longswords', () => namedItemCandidates('equipment:longsword')],
-    ['maces', () => namedItemCandidates('equipment:mace')],
-    ['quarterstaffs', () => namedItemCandidates('equipment:quarterstaff')],
-    ['rapiers', () => namedItemCandidates('equipment:rapier')],
-    ['scimitars', () => namedItemCandidates('equipment:scimitar')],
-    ['shortswords', () => namedItemCandidates('equipment:shortsword')],
-    ['sickles', () => namedItemCandidates('equipment:sickle')],
-    ['slings', () => namedItemCandidates('equipment:sling')],
-    ['spears', () => namedItemCandidates('equipment:spear')],
+    ['Clubs', (eq) => namedItemCandidates(eq, 'equipment:club')],
+    ['Daggers', (eq) => namedItemCandidates(eq, 'equipment:dagger')],
+    ['daggers', (eq) => namedItemCandidates(eq, 'equipment:dagger')],
+    ['darts', (eq) => namedItemCandidates(eq, 'equipment:dart')],
+    ['hand crossbows', (eq) => namedItemCandidates(eq, 'equipment:crossbow-hand')],
+    ['javelins', (eq) => namedItemCandidates(eq, 'equipment:javelin')],
+    ['light crossbows', (eq) => namedItemCandidates(eq, 'equipment:crossbow-light')],
+    ['longswords', (eq) => namedItemCandidates(eq, 'equipment:longsword')],
+    ['maces', (eq) => namedItemCandidates(eq, 'equipment:mace')],
+    ['quarterstaffs', (eq) => namedItemCandidates(eq, 'equipment:quarterstaff')],
+    ['rapiers', (eq) => namedItemCandidates(eq, 'equipment:rapier')],
+    ['scimitars', (eq) => namedItemCandidates(eq, 'equipment:scimitar')],
+    ['shortswords', (eq) => namedItemCandidates(eq, 'equipment:shortsword')],
+    ['sickles', (eq) => namedItemCandidates(eq, 'equipment:sickle')],
+    ['slings', (eq) => namedItemCandidates(eq, 'equipment:sling')],
+    ['spears', (eq) => namedItemCandidates(eq, 'equipment:spear')],
     // Named tool proficiencies.
-    ['Herbalism kit', () => namedItemCandidates('equipment:herbalism-kit')],
-    ['Thieves’ tools', () => namedItemCandidates('equipment:thieves-tools')],
+    ['Herbalism kit', (eq) => namedItemCandidates(eq, 'equipment:herbalism-kit')],
+    ['Thieves’ tools', (eq) => namedItemCandidates(eq, 'equipment:thieves-tools')],
   ]);
 
 function resolveClassProficiencies(
