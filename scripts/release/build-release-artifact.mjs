@@ -166,6 +166,39 @@ function pruneAgentSdks(stageDir, edition) {
 }
 
 /**
+ * better-sqlite3 is now compiled from source during this build (ADR 0016)
+ * instead of installed from a prebuild-install prebuilt binary. A full
+ * `node-gyp rebuild` leaves ~18 MB of intermediate byproducts under `build/`
+ * -- Makefiles, `.deps/`, `obj.target/` object files, and a
+ * `test_extension.node` helper addon that better-sqlite3's own `binding.gyp`
+ * builds alongside the real one. None of it is needed at runtime (the
+ * `bindings` package resolves `build/Release/better_sqlite3.node` directly,
+ * verified by loading a pruned copy), and `test_extension.node` trips
+ * `validate-release-artifact.mjs`'s "no stray `.node` files" check. Keep only
+ * the one runtime binary. Returns the pruned package directories.
+ */
+function pruneNativeBuildByproducts(stageDir) {
+  const appDir = join(stageDir, 'app');
+  const pruned = [];
+  for (const pkg of walkInstalledPackages(appDir)) {
+    if (pkg.name !== 'better-sqlite3') continue;
+    const buildDir = join(pkg.dir, 'build');
+    const releaseDir = join(buildDir, 'Release');
+    if (!existsSync(releaseDir)) continue;
+    for (const entry of readdirSync(releaseDir)) {
+      if (entry === 'better_sqlite3.node') continue;
+      rmSync(join(releaseDir, entry), { recursive: true, force: true });
+    }
+    for (const entry of readdirSync(buildDir)) {
+      if (entry === 'Release') continue;
+      rmSync(join(buildDir, entry), { recursive: true, force: true });
+    }
+    pruned.push(pkg.dir);
+  }
+  return pruned;
+}
+
+/**
  * Remove the `.bin` launcher shims a package owns, in the `node_modules/.bin`
  * dir that sibling-hosts it. Shim names come from the package's `bin` field
  * (string → the package's unscoped name; object → its keys). Also clears the
@@ -593,6 +626,13 @@ function main() {
     cpSync(installedModules, join(stageDir, 'app', 'node_modules'), {
       recursive: true,
     });
+
+    const nativeBuildPruned = pruneNativeBuildByproducts(stageDir);
+    if (nativeBuildPruned.length) {
+      console.log(
+        `• pruned better-sqlite3 node-gyp build byproducts (${nativeBuildPruned.length} package dir(s))`,
+      );
+    }
 
     // Edition prune: drop the agent-SDK provider packages this edition excludes
     // from the staged module tree (ADR 0011). The api edition removes both heavy
