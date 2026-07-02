@@ -534,7 +534,11 @@ export interface CreatureVariant {
  *   - `speed` maps movement modes to feet, the unlabeled base speed keyed as
  *     `walk` ({ walk: 30, climb: 30 });
  *   - `challengeRating` is the bare fraction/integer string ("1/4", "6"),
- *     without the XP parenthetical.
+ *     without the XP parenthetical;
+ *   - `experiencePoints` is the printed XP award from that parenthetical
+ *     ("Challenge 1/4 (50 XP)" → 50). Captured per creature because the
+ *     CR-to-XP table cannot reconstruct CR 0, which the source prints as
+ *     either 0 or 10 XP (eshyra-o9bd.18.5).
  */
 export interface CreatureExtraction {
   readonly name: string;
@@ -558,6 +562,7 @@ export interface CreatureExtraction {
   readonly hitPoints: number;
   readonly speed: Readonly<Record<string, number>>;
   readonly challengeRating: string;
+  readonly experiencePoints: number;
   readonly abilityScores: CreatureAbilityScores;
   // Keyed defensive / sense fields the SRD prints between the ability-score row
   // and the Challenge line (eshyra-ez6v / eshyra-4a7.5). Each is preserved
@@ -823,7 +828,11 @@ type PrerequisiteClause =
       readonly classRef: string;
       readonly level: number;
     }
-  | { readonly kind: 'pactBoon'; readonly ref: string }
+  | {
+      readonly kind: 'pactBoon';
+      readonly featureRef: string;
+      readonly ref: string;
+    }
   | { readonly kind: 'cantrip'; readonly ref: string };
 
 export interface FeatureExtraction {

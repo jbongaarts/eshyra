@@ -309,7 +309,10 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     ? { sourceText: spell.higherLevels }
     : undefined;
   return compact({
-    concentration: /^Concentration,/i.test(spell.duration),
+    // The comma is optional: SRD 5.1 p. 173 prints Protection from Evil and
+    // Good's duration as "Concentration up to 10 minutes" (a source typo for
+    // the usual "Concentration, up to ..." form).
+    concentration: /^Concentration,? up to\b/i.test(spell.duration),
     spellAttack: /\b(?:ranged|melee) spell attack\b/i.test(text),
     saves: save === undefined ? undefined : [save],
     damage,

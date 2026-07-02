@@ -251,6 +251,48 @@ describe('parseRules (heading-hierarchy path)', () => {
     });
   });
 
+  it('re-flows prose that resumes after an excluded bullet-scaffolding caption into the enclosing rule (eshyra-o9bd.18.1)', () => {
+    // Mirrors the SRD p. 78 "Skills" layout: the per-ability bullet captions
+    // are excluded (skillsByAbility enrichment owns the mapping), but the
+    // section's prose resumes after the final Charisma bullet with the
+    // skill-proficiency paragraphs — those must land back in rule:skills, not
+    // vanish with the excluded caption.
+    const rules = parseRules([
+      pageH(78, [
+        ['Skills', SUBSUB_H],
+        ['Each ability covers several skills.', BODY_H],
+        ['Strength', LEAF_H],
+        ['• Athletics', BODY_H],
+        ['Charisma', LEAF_H],
+        ['• Deception', BODY_H],
+        ['• Persuasion', BODY_H],
+        [
+          'In either case, proficiency in a skill means an individual can add his or her',
+          BODY_H,
+        ],
+        [
+          'proficiency bonus to ability checks that involve that skill.',
+          BODY_H,
+        ],
+        ['Variant: Skills with Different Abilities', LEAF_H],
+        ['Normally you use a fixed ability for a skill.', BODY_H],
+      ]),
+    ]);
+    const names = rules.map((r) => r.name);
+    expect(names).not.toContain('Strength');
+    expect(names).not.toContain('Charisma');
+    const skills = rules.find((r) => r.name === 'Skills');
+    expect(skills?.text).toContain(
+      'proficiency in a skill means an individual can add his or her proficiency bonus',
+    );
+    expect(skills?.text).not.toContain('• Deception');
+    expect(skills?.text).not.toContain('Athletics');
+    const variant = rules.find(
+      (r) => r.name === 'Variant: Skills with Different Abilities',
+    );
+    expect(variant?.text).toBe('Normally you use a fixed ability for a skill.');
+  });
+
   it('captures a sub-leaf callout box and does not bleed it into the prior rule', () => {
     // A gray callout box heading renders at h≈10.8 (below the h≈12 leaf tier).
     // It must still be a heading, or its body is swallowed into the preceding

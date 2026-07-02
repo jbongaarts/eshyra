@@ -52,6 +52,8 @@ export type SrdAuditCategory =
   | 'table-reachability'
   | 'reference-integrity'
   | 'creature-stat-block-prose-bleed'
+  | 'spell-concentration-flag'
+  | 'creature-cr-xp'
   | 'missing-coverage';
 
 export interface SrdAuditFinding {
@@ -817,14 +819,12 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
   }
 
   if (Array.isArray(data.choices)) {
-    for (const choice of data.choices) {
+    data.choices.forEach((choice, choiceIndex) => {
       const c = choice as {
         from?: unknown;
         category?: unknown;
         options?: unknown;
       } | null;
-      const from = c?.from;
-      if (!Array.isArray(from)) continue;
       const inlineOptionIds = new Set<string>();
       if (Array.isArray(c?.options)) {
         for (const option of c.options) {
@@ -832,15 +832,48 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
           if (typeof id === 'string') inlineOptionIds.add(id);
         }
       }
-      // A feature's subclass choice lists `subclass:` option keys; an ancestry
-      // cantrip choice (eshyra-ngcj.5) lists `spell:` cantrip keys. Other
-      // categories (tool/skill) list free-text labels, skipped by isRecordKey.
-      const targets = c?.category === 'cantrip' ? ['spell'] : ['subclass'];
-      for (const entry of from) {
-        if (typeof entry === 'string' && inlineOptionIds.has(entry)) continue;
-        push(entry, targets, 'choices[].from');
+      const from = c?.from;
+      if (Array.isArray(from)) {
+        // A feature's subclass choice lists `subclass:` option keys; an
+        // ancestry cantrip choice (eshyra-ngcj.5) lists `spell:` cantrip keys.
+        // Other categories (tool/skill) list free-text labels, skipped by
+        // isRecordKey.
+        const targets = c?.category === 'cantrip' ? ['spell'] : ['subclass'];
+        for (const entry of from) {
+          if (typeof entry === 'string' && inlineOptionIds.has(entry)) continue;
+          push(entry, targets, 'choices[].from');
+        }
       }
-    }
+      // Structured prerequisite clauses on inline options (eshyra-o9bd.18.4):
+      // `level.classRef` and `pactBoon.featureRef` are record keys; a
+      // `cantrip.ref` is a spell key. A `pactBoon.ref` is an inline option id,
+      // not a record key — its resolution (including that `featureRef`'s own
+      // choices actually offer it) is the `unresolvable-inline-option-ref`
+      // gate in srdPlayabilityAudit.ts. Field labels carry the full JSON path
+      // so a dangling nested ref is locatable directly.
+      if (!Array.isArray(c?.options)) return;
+      c.options.forEach((option, optionIndex) => {
+        const prerequisites = (option as { prerequisites?: unknown } | null)
+          ?.prerequisites;
+        if (!Array.isArray(prerequisites)) return;
+        prerequisites.forEach((clauseValue, clauseIndex) => {
+          const clause = clauseValue as {
+            kind?: unknown;
+            classRef?: unknown;
+            featureRef?: unknown;
+            ref?: unknown;
+          } | null;
+          const at = `choices[${choiceIndex}].options[${optionIndex}].prerequisites[${clauseIndex}]`;
+          if (clause?.kind === 'level') {
+            push(clause.classRef, ['class'], `${at}.classRef`);
+          } else if (clause?.kind === 'pactBoon') {
+            push(clause.featureRef, ['feature'], `${at}.featureRef`);
+          } else if (clause?.kind === 'cantrip') {
+            push(clause.ref, ['spell'], `${at}.ref`);
+          }
+        });
+      });
+    });
   }
 
   if (Array.isArray(data.progression)) {
@@ -1032,6 +1065,131 @@ function checkCreatureStatBlockProseBleed(
   return findings;
 }
 
+// ---------------------------------------------------------------------------
+// Spell concentration flag vs duration semantics
+// ---------------------------------------------------------------------------
+
+// SRD 5.1 durations mark concentration with a leading "Concentration, up to
+// ...", except Protection from Evil and Good (p. 173), which the source prints
+// without the comma. Both forms require concentration, so the derived
+// mechanics.concentration flag must agree with the duration text; a mismatch
+// in either direction would let a concentration tracker stack spells the SRD
+// forbids (or forbid ones it allows).
+const CONCENTRATION_DURATION = /^Concentration\b/i;
+
+function checkSpellConcentrationFlag(record: RulesRecord): SrdAuditFinding[] {
+  if (record.kind !== 'spell') return [];
+  const data = dataObject(record);
+  if (data === null) return [];
+  const duration = asString(data.duration);
+  if (duration === null) return [];
+  const mechanics = data.mechanics;
+  const flag =
+    typeof mechanics === 'object' &&
+    mechanics !== null &&
+    (mechanics as Record<string, unknown>).concentration === true;
+  const expected = CONCENTRATION_DURATION.test(duration);
+  if (flag === expected) return [];
+  return [
+    {
+      category: 'spell-concentration-flag',
+      key: record.key,
+      kind: record.kind,
+      name: record.name,
+      detail: `data.mechanics.concentration is ${flag} but data.duration "${snippet(duration)}" ${expected ? 'is' : 'is not'} a concentration duration`,
+    },
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Creature CR / XP round-trip (eshyra-o9bd.18.5)
+// ---------------------------------------------------------------------------
+
+// The SRD 5.1 "Experience Points by Challenge Rating" table. CR 0 is the one
+// underdetermined row: the source prints "0 (0 XP)" for harmless creatures and
+// "0 (10 XP)" for ones with attacks, so both values are legal there and the
+// per-creature printed value is authoritative.
+const SRD_5_1_XP_BY_CR: Readonly<Record<string, number>> = Object.freeze({
+  '1/8': 25,
+  '1/4': 50,
+  '1/2': 100,
+  '1': 200,
+  '2': 450,
+  '3': 700,
+  '4': 1100,
+  '5': 1800,
+  '6': 2300,
+  '7': 2900,
+  '8': 3900,
+  '9': 5000,
+  '10': 5900,
+  '11': 7200,
+  '12': 8400,
+  '13': 10000,
+  '14': 11500,
+  '15': 13000,
+  '16': 15000,
+  '17': 18000,
+  '18': 20000,
+  '19': 22000,
+  '20': 25000,
+  '21': 33000,
+  '22': 41000,
+  '23': 50000,
+  '24': 62000,
+  '25': 75000,
+  '26': 90000,
+  '27': 105000,
+  '28': 120000,
+  '29': 135000,
+  '30': 155000,
+});
+
+const CR_0_XP_VALUES: ReadonlySet<number> = new Set([0, 10]);
+
+function checkCreatureCrXp(record: RulesRecord): SrdAuditFinding[] {
+  if (record.kind !== 'creature') return [];
+  const data = dataObject(record);
+  if (data === null) return [];
+  const cr = asString(data.challengeRating);
+  if (cr === null) return [];
+  const finding = (detail: string): SrdAuditFinding => ({
+    category: 'creature-cr-xp',
+    key: record.key,
+    kind: record.kind,
+    name: record.name,
+    detail,
+  });
+  const xp = data.experiencePoints;
+  if (typeof xp !== 'number') {
+    return [
+      finding(
+        `data.experiencePoints is missing; the SRD prints an XP award for every creature (challengeRating "${cr}")`,
+      ),
+    ];
+  }
+  if (cr === '0') {
+    return CR_0_XP_VALUES.has(xp)
+      ? []
+      : [
+          finding(
+            `data.experiencePoints ${xp} is not a legal CR 0 award (the SRD prints 0 or 10 XP)`,
+          ),
+        ];
+  }
+  const expected = SRD_5_1_XP_BY_CR[cr];
+  if (expected === undefined) {
+    return [finding(`data.challengeRating "${cr}" is not an SRD 5.1 CR`)];
+  }
+  return xp === expected
+    ? []
+    : [
+        finding(
+          `data.experiencePoints ${xp} does not match the SRD XP-by-CR table value ${expected} for CR ${cr}`,
+        ),
+      ];
+}
+
 /**
  * Run every structure-aware check over a loaded SRD pack. Output is sorted for
  * diffable reports.
@@ -1045,6 +1203,8 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
     findings.push(...checkAncestryTraits(record));
     findings.push(...checkAncestryUnlinkedTable(record));
     findings.push(...checkCreatureStatBlockProseBleed(record));
+    findings.push(...checkSpellConcentrationFlag(record));
+    findings.push(...checkCreatureCrXp(record));
   }
   findings.push(...checkSpellTableLinks(pack));
   findings.push(...checkTableOwnerLinks(pack));

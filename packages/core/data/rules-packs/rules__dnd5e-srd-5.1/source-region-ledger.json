@@ -3,8 +3,8 @@
     "entries": 2685,
     "proseRegions": 2658,
     "pureStructure": 27,
-    "record": 2122,
-    "childOf": 450,
+    "record": 2123,
+    "childOf": 449,
     "intentionallyIgnored": {
       "deity-table-column-header": 1,
       "front-matter": 2,
@@ -12075,8 +12075,9 @@
       "firstPhrase": "an individual can add his or her proficiency bonus to ability checks that involve",
       "lastPhrase": "If the character lacks that proficiency, he or she just makes a Strength check.",
       "normalizedCharCount": 482,
-      "classification": "child-of:rule:skills",
-      "targetKey": "rule:skills"
+      "classification": "record:rule:skills",
+      "targetKey": "rule:skills",
+      "guardNotes": "Region text is contained in generated record data; heading status alone was not used."
     },
     {
       "id": "p78-l57-prose",

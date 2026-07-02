@@ -1142,6 +1142,52 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  describe('creature experience points (eshyra-o9bd.18.5)', () => {
+    const creatures = pack.records.filter((r) => r.kind === 'creature');
+    const xpOf = (key: string): unknown =>
+      (
+        creatures.find((r) => r.key === key)?.data as {
+          experiencePoints?: unknown;
+        }
+      )?.experiencePoints;
+
+    it('every creature carries its printed XP award', () => {
+      expect(creatures).toHaveLength(317);
+      expect(
+        creatures.filter(
+          (r) =>
+            typeof (r.data as { experiencePoints?: unknown })
+              .experiencePoints !== 'number',
+        ),
+      ).toEqual([]);
+    });
+
+    it('distinguishes the two printed CR 0 awards', () => {
+      // Source-verified: the SRD prints "Challenge 0 (10 XP)" for 27 creatures
+      // and "Challenge 0 (0 XP)" for exactly two (Frog, Sea Horse).
+      expect(xpOf('creature:baboon')).toBe(10);
+      expect(xpOf('creature:shrieker')).toBe(10);
+      expect(xpOf('creature:frog')).toBe(0);
+      expect(xpOf('creature:sea-horse')).toBe(0);
+      const cr0 = creatures.filter(
+        (r) =>
+          (r.data as { challengeRating?: unknown }).challengeRating === '0',
+      );
+      expect(cr0).toHaveLength(29);
+      expect(
+        cr0.filter(
+          (r) =>
+            (r.data as { experiencePoints?: unknown }).experiencePoints === 0,
+        ),
+      ).toHaveLength(2);
+    });
+
+    it('round-trips a comma-separated printed XP value', () => {
+      expect(xpOf('creature:aboleth')).toBe(5900);
+      expect(xpOf('creature:tarrasque')).toBe(155000);
+    });
+  });
+
   describe('creature/NPC lore boundary regression (eshyra-76b7)', () => {
     const creatures = pack.records.filter((r) => r.kind === 'creature');
     function creatureData(key: string): Record<string, unknown> {
@@ -6134,29 +6180,53 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     it('parses the five wrapped pact-feature prerequisites into clauses', () => {
       expect(
         byId.get('eldritch-invocation:book-of-ancient-secrets')?.prerequisites,
-      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' }]);
+      ).toEqual([
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-tome',
+        },
+      ]);
       expect(
         byId.get('eldritch-invocation:chains-of-carceri')?.prerequisites,
       ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 15 },
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-chain',
+        },
       ]);
       expect(
         byId.get('eldritch-invocation:lifedrinker')?.prerequisites,
       ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 12 },
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-blade',
+        },
       ]);
       expect(
         byId.get('eldritch-invocation:thirsting-blade')?.prerequisites,
       ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 5 },
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-blade',
+        },
       ]);
       expect(
         byId.get('eldritch-invocation:voice-of-the-chain-master')
           ?.prerequisites,
-      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' }]);
+      ).toEqual([
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-chain',
+        },
+      ]);
     });
 
     it('parses a cantrip prerequisite into a resolvable spell ref', () => {

@@ -448,6 +448,29 @@ describe('spellExtractionsToRecords — record shape', () => {
     });
   });
 
+  it('derives concentration from the no-comma SRD duration typo (eshyra-o9bd.18.2)', () => {
+    // SRD 5.1 p. 173 prints Protection from Evil and Good's duration as
+    // "Concentration up to 10 minutes" — no comma. The detector must accept
+    // both that form and the standard "Concentration, up to ..." form.
+    const protection: SpellExtraction = {
+      name: 'Protection from Evil and Good',
+      level: 1,
+      school: 'abjuration',
+      ritual: false,
+      castingTime: '1 action',
+      range: 'Touch',
+      components: ['V', 'S', 'M'],
+      duration: 'Concentration up to 10 minutes',
+      description:
+        'Until the spell ends, one willing creature you touch is protected against certain types of creatures.',
+      sourcePage: 173,
+    };
+    const [record] = spellExtractionsToRecords([protection], new Map());
+    expect(record.data).toMatchObject({
+      mechanics: { concentration: true },
+    });
+  });
+
   it('marks non-concentration spells without inventing prose mechanics', () => {
     const [record] = spellExtractionsToRecords([AID], new Map());
     expect(record.data).toMatchObject({
@@ -478,6 +501,7 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
     hitPoints: 135,
     speed: { walk: 10, swim: 40 },
     challengeRating: '10',
+    experiencePoints: 5900,
     abilityScores: baseAbilities,
     savingThrows: 'Con +6, Int +8, Wis +6',
     skills: 'History +12, Perception +10',
@@ -506,6 +530,7 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
       'hitPoints',
       'speed',
       'challengeRating',
+      'experiencePoints',
       'abilityScores',
       'savingThrows',
       'skills',
@@ -601,6 +626,7 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
       hitPoints: 19,
       speed: { walk: 40, climb: 30 },
       challengeRating: '1/2',
+      experiencePoints: 100,
       abilityScores: baseAbilities,
       skills: 'Perception +3',
       senses: 'passive Perception 13',

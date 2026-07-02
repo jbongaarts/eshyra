@@ -716,6 +716,81 @@ describe('unresolvable-inline-option-ref gate (eshyra-ldqb)', () => {
     expect(findings[0].detail).toContain('pact-boon:pact-of-the-tome');
   });
 
+  it('fires when a pactBoon ref resolves, but not on the clause featureRef (eshyra-o9bd.18.4)', () => {
+    // The option id exists pack-wide (offered by a different feature), so the
+    // bare-resolution check passes — the ownership check must still fire.
+    const wrongOwner = feature(
+      'feature:warlock:other-boons',
+      'A different boon list.',
+      'class:warlock',
+      {
+        choices: [
+          {
+            id: 'other-boons',
+            category: 'other',
+            prompt: 'Choose a boon.',
+            level: 3,
+            choose: 1,
+            from: ['pact-boon:pact-of-the-blade'],
+            options: [
+              {
+                id: 'pact-boon:pact-of-the-blade',
+                name: 'Pact of the Blade',
+                text: 'You can create a pact weapon.',
+                source: 'SRD 5.1 p. 47',
+              },
+            ],
+          },
+        ],
+      },
+    );
+    const invocations = feature(
+      'feature:warlock:eldritch-invocations',
+      'Choose two invocations.',
+      'class:warlock',
+      {
+        choices: [
+          {
+            id: 'eldritch-invocations',
+            category: 'invocation',
+            prompt: 'Choose two Eldritch Invocations.',
+            level: 2,
+            choose: 2,
+            from: ['eldritch-invocation:thirsting-blade'],
+            options: [
+              {
+                id: 'eldritch-invocation:thirsting-blade',
+                name: 'Thirsting Blade',
+                text: 'You can attack twice with your pact weapon.',
+                prerequisite: '5th level, Pact of the Blade feature',
+                prerequisites: [
+                  {
+                    kind: 'pactBoon',
+                    featureRef: 'feature:warlock:pact-boon',
+                    ref: 'pact-boon:pact-of-the-blade',
+                  },
+                ],
+                source: 'SRD 5.1 p. 50',
+              },
+            ],
+          },
+        ],
+      },
+    );
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([wrongOwner, invocations])),
+      'unresolvable-inline-option-ref',
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].bead).toBe('eshyra-o9bd.18.4');
+    expect(findings[0].detail).toContain(
+      "requires option 'pact-boon:pact-of-the-blade' from 'feature:warlock:pact-boon'",
+    );
+    expect(findings[0].detail).toContain(
+      'choices[0].options[0].prerequisites[0]',
+    );
+  });
+
   it('is silent when the referenced inline option id is offered by some choice', () => {
     const pactBoon = feature(
       'feature:warlock:pact-boon',

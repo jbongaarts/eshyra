@@ -407,7 +407,7 @@ function collectHeadingEntries(
       // after the rows are the enclosing section's text resuming below the
       // printed table, so they re-flow into the most recent emitted rule as a
       // fresh paragraph instead of being swallowed with the caption
-      // (eshyra-0m9.22). Bullet scaffolding keeps its drop-everything behavior.
+      // (eshyra-0m9.22).
       if (isTableCaptionHeading(cur.line, cur.tier) && entries.length > 0) {
         const resumingProse = body
           .filter((b) => (b.height ?? 0) >= BODY_PROSE_MIN_H)
@@ -423,6 +423,31 @@ function collectHeadingEntries(
                 : ['']),
               ...resumingProse,
             ],
+          };
+        }
+      } else if (bodyLeadsWithBullet(bodyLines) && entries.length > 0) {
+        // An excluded BULLET-SCAFFOLDING caption (the per-ability "Skills"
+        // list captions) owns only its bullet items, which structured
+        // enrichment carries (`skillsByAbility`). But the enclosing section's
+        // prose can resume after the final bullet — the SRD "Skills" rule's
+        // p. 78 skill-proficiency paragraphs follow the last Charisma bullet
+        // — so lines after the final bullet re-flow into the most recent
+        // emitted rule the same way (eshyra-o9bd.18.1). Only the bullets
+        // themselves are dropped.
+        let lastBullet = -1;
+        body.forEach((b, idx) => {
+          const line = b.line.trim();
+          if (/^[•*]\s/.test(line) || /^-\s/.test(line)) lastBullet = idx;
+        });
+        const resumingProse = body
+          .slice(lastBullet + 1)
+          .filter((b) => (b.height ?? 0) >= BODY_PROSE_MIN_H)
+          .map((b) => b.line);
+        if (resumingProse.length > 0) {
+          const prev = entries[entries.length - 1];
+          entries[entries.length - 1] = {
+            ...prev,
+            bodyLines: [...prev.bodyLines, '', ...resumingProse],
           };
         }
       }

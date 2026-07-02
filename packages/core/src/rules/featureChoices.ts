@@ -67,7 +67,13 @@ export interface FeatureChoiceOption {
         readonly classRef: string;
         readonly level: number;
       }
-    | { readonly kind: 'pactBoon'; readonly ref: string }
+    | {
+        readonly kind: 'pactBoon';
+        /** The `feature:` record whose choice offers the required option. */
+        readonly featureRef: string;
+        /** The required option's inline id within that feature's choices. */
+        readonly ref: string;
+      }
     | { readonly kind: 'cantrip'; readonly ref: string }
   )[];
   /** Human-readable source label for this option's source text. */

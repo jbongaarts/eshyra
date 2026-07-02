@@ -86,7 +86,13 @@ type PrerequisiteClause =
       readonly classRef: string;
       readonly level: number;
     }
-  | { readonly kind: 'pactBoon'; readonly ref: string }
+  | {
+      readonly kind: 'pactBoon';
+      /** The `feature:` record whose choice offers the required option. */
+      readonly featureRef: string;
+      /** The required option's inline id within that feature's choices. */
+      readonly ref: string;
+    }
   | { readonly kind: 'cantrip'; readonly ref: string };
 
 interface DerivedChoiceOption {
@@ -1041,7 +1047,15 @@ function parsePrerequisiteClauses(
     }
     const pact = /^Pact of the (Blade|Chain|Tome) feature$/.exec(clause);
     if (pact !== null) {
-      clauses.push({ kind: 'pactBoon', ref: PACT_BOON_PREREQ_REF[pact[1]] });
+      // The ref is an inline option id, not a record key; featureRef names
+      // the record whose choice offers it so the address is resolvable
+      // without pack-wide scanning (eshyra-o9bd.18.4). The Pact Boon feature
+      // key follows the class's feature-key convention.
+      clauses.push({
+        kind: 'pactBoon',
+        featureRef: `feature:${classRef.replace(/^class:/, '')}:pact-boon`,
+        ref: PACT_BOON_PREREQ_REF[pact[1]],
+      });
       continue;
     }
     const cantrip = /^(.+?) cantrip$/.exec(clause);

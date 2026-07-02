@@ -657,7 +657,13 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
         'eldritch-invocation:book-of-ancient-secrets',
         'Pact of the Tome feature',
         'You can inscribe',
-        [{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' }],
+        [
+          {
+            kind: 'pactBoon',
+            featureRef: 'feature:warlock:pact-boon',
+            ref: 'pact-boon:pact-of-the-tome',
+          },
+        ],
       ],
       [
         'eldritch-invocation:chains-of-carceri',
@@ -665,7 +671,11 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
         'You can cast hold monster',
         [
           { kind: 'level', classRef: 'class:warlock', level: 15 },
-          { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
+          {
+            kind: 'pactBoon',
+            featureRef: 'feature:warlock:pact-boon',
+            ref: 'pact-boon:pact-of-the-chain',
+          },
         ],
       ],
       [
@@ -674,7 +684,11 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
         'You deal extra necrotic damage',
         [
           { kind: 'level', classRef: 'class:warlock', level: 12 },
-          { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+          {
+            kind: 'pactBoon',
+            featureRef: 'feature:warlock:pact-boon',
+            ref: 'pact-boon:pact-of-the-blade',
+          },
         ],
       ],
       [
@@ -683,14 +697,24 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
         'You can attack twice',
         [
           { kind: 'level', classRef: 'class:warlock', level: 5 },
-          { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+          {
+            kind: 'pactBoon',
+            featureRef: 'feature:warlock:pact-boon',
+            ref: 'pact-boon:pact-of-the-blade',
+          },
         ],
       ],
       [
         'eldritch-invocation:voice-of-the-chain-master',
         'Pact of the Chain feature',
         'You can communicate telepathically',
-        [{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' }],
+        [
+          {
+            kind: 'pactBoon',
+            featureRef: 'feature:warlock:pact-boon',
+            ref: 'pact-boon:pact-of-the-chain',
+          },
+        ],
       ],
     ];
     for (const [id, prerequisite, bodyStart, clauses] of expectations) {
