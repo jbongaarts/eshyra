@@ -60,6 +60,17 @@ export const FROZEN_EXACT_PATHS: readonly string[] = [
 
 export const THAW_NOTES_PREFIX = 'docs/audits/dnd5e-srd-5.1-final/thaw-notes/';
 
+/**
+ * Temporary switch (eshyra-nsd1): the per-PR thaw-note requirement is
+ * suspended while the eshyra-o9bd re-audit epic is in flight — the artifact is
+ * already in `thawed-reaudit` status, and per-change thaw notes add churn
+ * without value until the post-epic re-freeze. The hash-manifest check is NOT
+ * affected. Flip back to `true` at re-freeze (eshyra-2zyy), which establishes
+ * a new baseline and squashes the thaw notes accumulated since the umbrella
+ * freeze note.
+ */
+export const THAW_NOTE_CHECK_ENABLED = false;
+
 // Files inside thaw-notes/ that are policy/template documents, not active thaw notes.
 const THAW_NOTE_EXCLUDE = new Set(['README.md', 'TEMPLATE.md']);
 

@@ -15,8 +15,14 @@
 #      docs/audits/dnd5e-srd-5.1-final/thaw-notes/<date>-<reason>.md. The
 #      freeze guard reads GITHUB_BASE_REF and runs `git diff --name-only
 #      origin/${GITHUB_BASE_REF}...HEAD` to enumerate changed paths.
+#      TEMPORARILY SUSPENDED (eshyra-nsd1): while the o9bd re-audit epic is in
+#      flight the artifact is in `thawed-reaudit` status and per-PR thaw notes
+#      are not required. THAW_NOTE_CHECK_ENABLED in
+#      packages/core/scripts/verify-dnd5e-srd-freeze/freeze.ts is the switch;
+#      it is flipped back on at re-freeze (eshyra-2zyy).
 #
-# When a change to a frozen path is intended:
+# When a change to a frozen path is intended (while the thaw-note check is
+# suspended, skip step 1):
 #   1. Add a thaw note (copy TEMPLATE.md, name it <date>-<reason>.md).
 #   2. Make the change and regenerate affected artifacts.
 #   3. Update freeze-manifest.json with the new hashes.
