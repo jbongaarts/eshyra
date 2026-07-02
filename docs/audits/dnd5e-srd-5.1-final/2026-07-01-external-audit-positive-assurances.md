@@ -38,10 +38,14 @@ these areas as a regression, not a pre-existing gap.
   round and has since been fixed (`eshyra-o9bd.18.2`, PR #383).
 - **Class spell lists** (pp. 105–113): exact bidirectional parity — 70
   class/level groups, 778 memberships, 0 discrepancies in either direction.
-- **Every creature** (317 records): all ability scores, speeds, saving
-  throws, skills, senses, languages, damage immunities/resistances,
-  challenge rating, and trait/action/reaction/legendary-action text verified;
-  attack average/dice/DC internal consistency clean pack-wide.
+- **Every creature** (317 records): ability scores, emitted flat speed
+  fields, saving throws, skills, senses, languages, damage
+  immunities/resistances, challenge rating, and
+  trait/action/reaction/legendary-action text verified; attack
+  average/dice/DC internal consistency clean pack-wide. This does not close
+  the separate creature statline modeling findings for AC parentheticals, HP
+  formulas, hover, or form-/condition-specific AC and speeds tracked under
+  `eshyra-o9bd.18.6`.
 - **Every equipment row, magic item** (type/rarity/attunement/description),
   **table record**, **condition/rule/feature/hazard/background/ancestry**
   reviewed; numeric fidelity (every digit-bearing token) reported as
