@@ -66321,6 +66321,7 @@
               "prerequisites": [
                 {
                   "kind": "pactBoon",
+                  "featureRef": "feature:warlock:pact-boon",
                   "ref": "pact-boon:pact-of-the-tome"
                 }
               ],
@@ -66339,6 +66340,7 @@
                 },
                 {
                   "kind": "pactBoon",
+                  "featureRef": "feature:warlock:pact-boon",
                   "ref": "pact-boon:pact-of-the-chain"
                 }
               ],
@@ -66414,6 +66416,7 @@
                 },
                 {
                   "kind": "pactBoon",
+                  "featureRef": "feature:warlock:pact-boon",
                   "ref": "pact-boon:pact-of-the-blade"
                 }
               ],
@@ -66561,6 +66564,7 @@
                 },
                 {
                   "kind": "pactBoon",
+                  "featureRef": "feature:warlock:pact-boon",
                   "ref": "pact-boon:pact-of-the-blade"
                 }
               ],
@@ -66588,6 +66592,7 @@
               "prerequisites": [
                 {
                   "kind": "pactBoon",
+                  "featureRef": "feature:warlock:pact-boon",
                   "ref": "pact-boon:pact-of-the-chain"
                 }
               ],

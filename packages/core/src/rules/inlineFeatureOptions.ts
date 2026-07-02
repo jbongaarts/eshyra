@@ -10,7 +10,8 @@
  * offers it), but other parts of the same pack reference those options by id
  * across feature boundaries: an Eldritch Invocation's structured
  * `prerequisites[]` can require a specific Pact Boon
- * (`{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' }`), and a
+ * (`{ kind: 'pactBoon', featureRef: 'feature:warlock:pact-boon', ref:
+ * 'pact-boon:pact-of-the-blade' }` — eshyra-o9bd.18.4), and a
  * follow-up spell choice can require a specific prior pick
  * (`from.requiresFeatureOption: 'pact-boon:pact-of-the-tome'`).
  *

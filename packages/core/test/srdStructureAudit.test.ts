@@ -736,6 +736,135 @@ describe('cross-record reference integrity (eshyra-o9bd.10)', () => {
     expect(findings[0].detail).toContain('subclass:missing');
   });
 
+  it('flags dangling nested prerequisite refs with their full JSON path (eshyra-o9bd.18.4)', () => {
+    const invocations = record({
+      kind: 'feature',
+      key: 'feature:warlock:eldritch-invocations',
+      name: 'Eldritch Invocations',
+      data: {
+        source: 'class:warlock',
+        level: 2,
+        description: 'x',
+        choices: [
+          {
+            id: 'eldritch-invocations',
+            category: 'invocation',
+            prompt: 'Choose.',
+            level: 2,
+            choose: 2,
+            options: [
+              {
+                id: 'eldritch-invocation:thirsting-blade',
+                name: 'Thirsting Blade',
+                text: 'x',
+                prerequisites: [
+                  { kind: 'level', classRef: 'class:missing', level: 5 },
+                  {
+                    kind: 'pactBoon',
+                    featureRef: 'feature:warlock:missing',
+                    ref: 'pact-boon:pact-of-the-blade',
+                  },
+                ],
+                source: 'SRD 5.1 p. 50',
+              },
+              {
+                id: 'eldritch-invocation:agonizing-blast',
+                name: 'Agonizing Blast',
+                text: 'x',
+                prerequisites: [{ kind: 'cantrip', ref: 'spell:missing' }],
+                source: 'SRD 5.1 p. 48',
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const sentinelClass = record({
+      kind: 'class',
+      key: 'class:warlock',
+      name: 'Warlock',
+      data: {},
+    });
+    const sentinelSpell = record({
+      kind: 'spell',
+      key: 'spell:eldritch-blast',
+      name: 'Eldritch Blast',
+      data: { level: 0, description: 'x' },
+    });
+    const findings = refFindings([invocations, sentinelClass, sentinelSpell]);
+    const details = findings.map((f) => f.detail);
+    expect(details).toHaveLength(3);
+    expect(details.join('\n')).toContain(
+      "choices[0].options[0].prerequisites[0].classRef references 'class:missing'",
+    );
+    expect(details.join('\n')).toContain(
+      "choices[0].options[0].prerequisites[1].featureRef references 'feature:warlock:missing'",
+    );
+    expect(details.join('\n')).toContain(
+      "choices[0].options[1].prerequisites[0].ref references 'spell:missing'",
+    );
+  });
+
+  it('is silent on nested prerequisite refs that resolve to the right kinds', () => {
+    const pactBoonFeature = record({
+      kind: 'feature',
+      key: 'feature:warlock:pact-boon',
+      name: 'Pact Boon',
+      data: { source: 'class:warlock', level: 3, description: 'x' },
+    });
+    const sentinelClass = record({
+      kind: 'class',
+      key: 'class:warlock',
+      name: 'Warlock',
+      data: {},
+    });
+    const sentinelSpell = record({
+      kind: 'spell',
+      key: 'spell:eldritch-blast',
+      name: 'Eldritch Blast',
+      data: { level: 0, description: 'x' },
+    });
+    const invocations = record({
+      kind: 'feature',
+      key: 'feature:warlock:eldritch-invocations',
+      name: 'Eldritch Invocations',
+      data: {
+        source: 'class:warlock',
+        level: 2,
+        description: 'x',
+        choices: [
+          {
+            id: 'eldritch-invocations',
+            category: 'invocation',
+            prompt: 'Choose.',
+            level: 2,
+            choose: 2,
+            options: [
+              {
+                id: 'eldritch-invocation:thirsting-blade',
+                name: 'Thirsting Blade',
+                text: 'x',
+                prerequisites: [
+                  { kind: 'level', classRef: 'class:warlock', level: 5 },
+                  {
+                    kind: 'pactBoon',
+                    featureRef: 'feature:warlock:pact-boon',
+                    ref: 'pact-boon:pact-of-the-blade',
+                  },
+                  { kind: 'cantrip', ref: 'spell:eldritch-blast' },
+                ],
+                source: 'SRD 5.1 p. 50',
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(
+      refFindings([invocations, pactBoonFeature, sentinelClass, sentinelSpell]),
+    ).toEqual([]);
+  });
+
   it('flags a dangling progression featureGrant ref', () => {
     const cls = record({
       kind: 'class',

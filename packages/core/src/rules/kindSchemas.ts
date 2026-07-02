@@ -314,9 +314,10 @@ function optFeatureChoiceOptions(entry: Obj, key: string, path: string): void {
 }
 
 // Structured prerequisite clauses on an option (eshyra-vk23.9): each is a typed
-// `level` (class-scoped minimum level), `pactBoon` (required Pact Boon ref), or
-// `cantrip` (required spell ref). The verbatim `prerequisite` prose is retained
-// alongside; this is its machine-readable parse.
+// `level` (class-scoped minimum level), `pactBoon` (required Pact Boon inline
+// option, addressed by the owning `featureRef` record plus the option's inline
+// `ref` id — eshyra-o9bd.18.4), or `cantrip` (required spell ref). The verbatim
+// `prerequisite` prose is retained alongside; this is its machine-readable parse.
 function optPrerequisiteClauses(parent: Obj, key: string, path: string): void {
   const clauses = objArray(parent, key, path);
   if (clauses === undefined) return;
@@ -330,6 +331,12 @@ function optPrerequisiteClauses(parent: Obj, key: string, path: string): void {
       reqStr(clause, 'classRef', at);
       reqInt(clause, 'level', at, 1);
     } else if (kind === 'pactBoon') {
+      const featureRef = reqStr(clause, 'featureRef', at);
+      if (!featureRef.startsWith('feature:')) {
+        throw new RulesPackError(
+          `${at}.featureRef must be a 'feature:' record key, got ${JSON.stringify(featureRef)}`,
+        );
+      }
       const ref = reqStr(clause, 'ref', at);
       if (!ref.startsWith('pact-boon:')) {
         throw new RulesPackError(

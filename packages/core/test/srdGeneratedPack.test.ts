@@ -6134,29 +6134,53 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     it('parses the five wrapped pact-feature prerequisites into clauses', () => {
       expect(
         byId.get('eldritch-invocation:book-of-ancient-secrets')?.prerequisites,
-      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-tome' }]);
+      ).toEqual([
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-tome',
+        },
+      ]);
       expect(
         byId.get('eldritch-invocation:chains-of-carceri')?.prerequisites,
       ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 15 },
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' },
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-chain',
+        },
       ]);
       expect(
         byId.get('eldritch-invocation:lifedrinker')?.prerequisites,
       ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 12 },
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-blade',
+        },
       ]);
       expect(
         byId.get('eldritch-invocation:thirsting-blade')?.prerequisites,
       ).toEqual([
         { kind: 'level', classRef: 'class:warlock', level: 5 },
-        { kind: 'pactBoon', ref: 'pact-boon:pact-of-the-blade' },
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-blade',
+        },
       ]);
       expect(
         byId.get('eldritch-invocation:voice-of-the-chain-master')
           ?.prerequisites,
-      ).toEqual([{ kind: 'pactBoon', ref: 'pact-boon:pact-of-the-chain' }]);
+      ).toEqual([
+        {
+          kind: 'pactBoon',
+          featureRef: 'feature:warlock:pact-boon',
+          ref: 'pact-boon:pact-of-the-chain',
+        },
+      ]);
     });
 
     it('parses a cantrip prerequisite into a resolvable spell ref', () => {

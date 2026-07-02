@@ -823,7 +823,11 @@ type PrerequisiteClause =
       readonly classRef: string;
       readonly level: number;
     }
-  | { readonly kind: 'pactBoon'; readonly ref: string }
+  | {
+      readonly kind: 'pactBoon';
+      readonly featureRef: string;
+      readonly ref: string;
+    }
   | { readonly kind: 'cantrip'; readonly ref: string };
 
 export interface FeatureExtraction {

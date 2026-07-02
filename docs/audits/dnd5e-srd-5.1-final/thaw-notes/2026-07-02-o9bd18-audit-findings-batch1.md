@@ -23,12 +23,26 @@ bundle commit beb9a21). Each bead lands as its own commit on this branch:
   `mechanics.concentration` against its duration semantics in both
   directions.
 
+- **eshyra-o9bd.18.4:** the five `pact-boon:*` prerequisite refs in
+  `feature:warlock:eldritch-invocations` are inline option ids (the
+  eshyra-ldqb addressing scheme), not record keys — the 2026-07-01 audits
+  read them as dangling record refs. Each `pactBoon` clause now also carries
+  `featureRef: 'feature:warlock:pact-boon'`, making it a structured predicate
+  resolvable without pack-wide scanning: the kind schema requires the field,
+  the `unresolvable-inline-option-ref` gate additionally verifies the option
+  is offered by that specific feature's choices (not merely by *some*
+  choice), and `reference-integrity` now traverses
+  `choices[].options[].prerequisites[]` (`level.classRef`,
+  `pactBoon.featureRef`, `cantrip.ref`) reporting the full JSON path of any
+  dangling nested ref.
+
 ## Expected file changes
 
 - [ ] `packages/core/sources/dnd5e-srd-5.1/`
 - [x] `packages/core/scripts/importers/dnd5e-srd-5.1/` -
       `mechanicsProjections.ts` (comma made optional in the concentration
-      duration detector).
+      duration detector); `deriveFeatureChoices.ts` / `types.ts` (`pactBoon`
+      prerequisite clauses gain `featureRef`).
 - [x] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json` -
       regenerated through the importer.
 - [ ] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json`
@@ -36,10 +50,14 @@ bundle commit beb9a21). Each bead lands as its own commit on this branch:
 - [x] `docs/audits/dnd5e-srd-5.1-final/` - this thaw note and refreshed
       `freeze-manifest.json` hashes.
 - [x] Other: `packages/core/src/rules/srdAudit.ts` (new
-      `spell-concentration-flag` structure check);
-      `packages/core/test/srdStructureAudit.test.ts` and
-      `packages/core/test/importers/dnd5e-srd-5.1/emit.test.ts` regression
-      coverage.
+      `spell-concentration-flag` structure check; nested prerequisite
+      traversal in `reference-integrity`);
+      `packages/core/src/rules/kindSchemas.ts`, `featureChoices.ts`,
+      `inlineFeatureOptions.ts`, `srdPlayabilityAudit.ts` (pactBoon
+      `featureRef` schema + ownership gate); regression coverage in
+      `packages/core/test/srdStructureAudit.test.ts`,
+      `srdPlayabilityAudit.test.ts`, `srdGeneratedPack.test.ts`, and
+      `packages/core/test/importers/dnd5e-srd-5.1/` tests.
 
 ## Source PDF changed?
 
@@ -78,9 +96,9 @@ the PR summary.
 ## Freeze manifest updated?
 
 - [x] `docs/audits/dnd5e-srd-5.1-final/freeze-manifest.json` updated with the
-      new `records.json` SHA-256 per commit (final:
-      `6aebca1f0d78a4ff13e6096fe186c5788979f7800408cf2836061730d322ebd0`);
-      all other pinned hashes unchanged.
+      new `records.json` SHA-256 at each commit in this batch (final value is
+      the one committed with this note); all other pinned pack hashes
+      unchanged.
 
 ## Audit bundle path
 

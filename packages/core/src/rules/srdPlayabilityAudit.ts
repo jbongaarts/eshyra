@@ -723,11 +723,28 @@ function checkInlineOptionRefResolution(
           if (clause === null || clause.kind !== 'pactBoon') return;
           const ref = asString(clause.ref);
           if (ref === null) return;
-          flag(
-            record,
-            `choices[${choiceIndex}].options[${optionIndex}].prerequisites[${clauseIndex}]`,
-            ref,
-          );
+          const at = `choices[${choiceIndex}].options[${optionIndex}].prerequisites[${clauseIndex}]`;
+          flag(record, at, ref);
+          // Beyond bare resolution, the clause names the owning feature
+          // (eshyra-o9bd.18.4): the option must be offered by a choice on
+          // that specific record, or a prerequisite could silently bind to a
+          // same-named option elsewhere in the pack.
+          const featureRef = asString(clause.featureRef);
+          const occurrences = index.get(ref);
+          if (
+            featureRef !== null &&
+            occurrences !== undefined &&
+            !occurrences.some((o) => o.featureKey === featureRef)
+          ) {
+            findings.push({
+              category: 'unresolvable-inline-option-ref',
+              key: record.key,
+              kind: record.kind,
+              name: record.name,
+              bead: 'eshyra-o9bd.18.4',
+              detail: `${at} requires option '${ref}' from '${featureRef}', but that feature's choices do not offer it (offered by: ${occurrences.map((o) => o.featureKey).join(', ')})`,
+            });
+          }
         });
       });
     });

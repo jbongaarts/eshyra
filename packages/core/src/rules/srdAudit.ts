@@ -818,14 +818,12 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
   }
 
   if (Array.isArray(data.choices)) {
-    for (const choice of data.choices) {
+    data.choices.forEach((choice, choiceIndex) => {
       const c = choice as {
         from?: unknown;
         category?: unknown;
         options?: unknown;
       } | null;
-      const from = c?.from;
-      if (!Array.isArray(from)) continue;
       const inlineOptionIds = new Set<string>();
       if (Array.isArray(c?.options)) {
         for (const option of c.options) {
@@ -833,15 +831,48 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
           if (typeof id === 'string') inlineOptionIds.add(id);
         }
       }
-      // A feature's subclass choice lists `subclass:` option keys; an ancestry
-      // cantrip choice (eshyra-ngcj.5) lists `spell:` cantrip keys. Other
-      // categories (tool/skill) list free-text labels, skipped by isRecordKey.
-      const targets = c?.category === 'cantrip' ? ['spell'] : ['subclass'];
-      for (const entry of from) {
-        if (typeof entry === 'string' && inlineOptionIds.has(entry)) continue;
-        push(entry, targets, 'choices[].from');
+      const from = c?.from;
+      if (Array.isArray(from)) {
+        // A feature's subclass choice lists `subclass:` option keys; an
+        // ancestry cantrip choice (eshyra-ngcj.5) lists `spell:` cantrip keys.
+        // Other categories (tool/skill) list free-text labels, skipped by
+        // isRecordKey.
+        const targets = c?.category === 'cantrip' ? ['spell'] : ['subclass'];
+        for (const entry of from) {
+          if (typeof entry === 'string' && inlineOptionIds.has(entry)) continue;
+          push(entry, targets, 'choices[].from');
+        }
       }
-    }
+      // Structured prerequisite clauses on inline options (eshyra-o9bd.18.4):
+      // `level.classRef` and `pactBoon.featureRef` are record keys; a
+      // `cantrip.ref` is a spell key. A `pactBoon.ref` is an inline option id,
+      // not a record key — its resolution (including that `featureRef`'s own
+      // choices actually offer it) is the `unresolvable-inline-option-ref`
+      // gate in srdPlayabilityAudit.ts. Field labels carry the full JSON path
+      // so a dangling nested ref is locatable directly.
+      if (!Array.isArray(c?.options)) return;
+      c.options.forEach((option, optionIndex) => {
+        const prerequisites = (option as { prerequisites?: unknown } | null)
+          ?.prerequisites;
+        if (!Array.isArray(prerequisites)) return;
+        prerequisites.forEach((clauseValue, clauseIndex) => {
+          const clause = clauseValue as {
+            kind?: unknown;
+            classRef?: unknown;
+            featureRef?: unknown;
+            ref?: unknown;
+          } | null;
+          const at = `choices[${choiceIndex}].options[${optionIndex}].prerequisites[${clauseIndex}]`;
+          if (clause?.kind === 'level') {
+            push(clause.classRef, ['class'], `${at}.classRef`);
+          } else if (clause?.kind === 'pactBoon') {
+            push(clause.featureRef, ['feature'], `${at}.featureRef`);
+          } else if (clause?.kind === 'cantrip') {
+            push(clause.ref, ['spell'], `${at}.ref`);
+          }
+        });
+      });
+    });
   }
 
   if (Array.isArray(data.progression)) {
