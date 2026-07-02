@@ -52,6 +52,7 @@ export type SrdAuditCategory =
   | 'table-reachability'
   | 'reference-integrity'
   | 'creature-stat-block-prose-bleed'
+  | 'spell-concentration-flag'
   | 'missing-coverage';
 
 export interface SrdAuditFinding {
@@ -1032,6 +1033,42 @@ function checkCreatureStatBlockProseBleed(
   return findings;
 }
 
+// ---------------------------------------------------------------------------
+// Spell concentration flag vs duration semantics
+// ---------------------------------------------------------------------------
+
+// SRD 5.1 durations mark concentration with a leading "Concentration, up to
+// ...", except Protection from Evil and Good (p. 173), which the source prints
+// without the comma. Both forms require concentration, so the derived
+// mechanics.concentration flag must agree with the duration text; a mismatch
+// in either direction would let a concentration tracker stack spells the SRD
+// forbids (or forbid ones it allows).
+const CONCENTRATION_DURATION = /^Concentration\b/i;
+
+function checkSpellConcentrationFlag(record: RulesRecord): SrdAuditFinding[] {
+  if (record.kind !== 'spell') return [];
+  const data = dataObject(record);
+  if (data === null) return [];
+  const duration = asString(data.duration);
+  if (duration === null) return [];
+  const mechanics = data.mechanics;
+  const flag =
+    typeof mechanics === 'object' &&
+    mechanics !== null &&
+    (mechanics as Record<string, unknown>).concentration === true;
+  const expected = CONCENTRATION_DURATION.test(duration);
+  if (flag === expected) return [];
+  return [
+    {
+      category: 'spell-concentration-flag',
+      key: record.key,
+      kind: record.kind,
+      name: record.name,
+      detail: `data.mechanics.concentration is ${flag} but data.duration "${snippet(duration)}" ${expected ? 'is' : 'is not'} a concentration duration`,
+    },
+  ];
+}
+
 /**
  * Run every structure-aware check over a loaded SRD pack. Output is sorted for
  * diffable reports.
@@ -1045,6 +1082,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
     findings.push(...checkAncestryTraits(record));
     findings.push(...checkAncestryUnlinkedTable(record));
     findings.push(...checkCreatureStatBlockProseBleed(record));
+    findings.push(...checkSpellConcentrationFlag(record));
   }
   findings.push(...checkSpellTableLinks(pack));
   findings.push(...checkTableOwnerLinks(pack));

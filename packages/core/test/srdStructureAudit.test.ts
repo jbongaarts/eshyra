@@ -942,6 +942,70 @@ describe('creature stat-block prose bleed (eshyra-76b7)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Spell concentration flag vs duration semantics
+// ---------------------------------------------------------------------------
+
+describe('spell concentration flag vs duration (eshyra-o9bd.18.2)', () => {
+  function spell(
+    duration: string,
+    concentration: boolean | undefined,
+  ): RulesRecord {
+    return record({
+      kind: 'spell',
+      key: 'spell:protection-from-evil-and-good',
+      name: 'Protection from Evil and Good',
+      data: {
+        level: 1,
+        school: 'abjuration',
+        duration,
+        description: 'One willing creature you touch is protected.',
+        ...(concentration === undefined
+          ? {}
+          : { mechanics: { concentration } }),
+      },
+    });
+  }
+
+  function concentrationFindings(rec: RulesRecord) {
+    return auditSrdStructure(pack([rec])).filter(
+      (f) => f.category === 'spell-concentration-flag',
+    );
+  }
+
+  it('flags a no-comma concentration duration whose flag is false', () => {
+    // The exact SRD 5.1 p. 173 source-typo form.
+    const findings = concentrationFindings(
+      spell('Concentration up to 10 minutes', false),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('is a concentration duration');
+  });
+
+  it('flags a standard concentration duration whose flag is missing', () => {
+    const findings = concentrationFindings(
+      spell('Concentration, up to 1 minute', undefined),
+    );
+    expect(findings).toHaveLength(1);
+  });
+
+  it('flags a non-concentration duration whose flag is true', () => {
+    const findings = concentrationFindings(spell('8 hours', true));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('is not a concentration duration');
+  });
+
+  it('is silent when flag and duration agree in both directions', () => {
+    expect(
+      concentrationFindings(spell('Concentration, up to 10 minutes', true)),
+    ).toEqual([]);
+    expect(
+      concentrationFindings(spell('Concentration up to 10 minutes', true)),
+    ).toEqual([]);
+    expect(concentrationFindings(spell('Instantaneous', false))).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Coverage
 // ---------------------------------------------------------------------------
 

@@ -27,6 +27,19 @@ extraction, which can interleave two-column layouts.
 - **higherLevels**: "If you cast this spell using a spell slot of **3nd level**
   or higher…" — the source prints "3nd level" (should be "3rd level"). Faithful.
 
+## Confirmed against the source PDF (p. 173)
+
+### `spell:protection-from-evil-and-good`
+
+- **duration**: "**Concentration up to 10 minutes**" — the source omits the
+  comma of the standard "Concentration, up to …" form. Faithful; the extracted
+  page text shows the identical no-comma string. This is the only spell in the
+  pack with the non-standard form. Because derived mechanics must still be
+  *correct* (not merely faithful), the concentration detector accepts both
+  forms and the `spell-concentration-flag` audit check compares every spell's
+  `mechanics.concentration` against its duration semantics
+  (eshyra-o9bd.18.2).
+
 ## Why these are not blockers
 
 The frozen-artifact standard treats *importer-introduced* garble/omission as a
