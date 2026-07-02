@@ -7,6 +7,7 @@
 // baseline check, so a new importer can ship records before its deeper schemas
 // exist.
 
+import { CONDITION_RELATION_VALUES } from './conditionRelations.js';
 import {
   FEATURE_CHOICE_CATEGORIES,
   isFeatureChoiceCategory,
@@ -18,15 +19,9 @@ type Obj = Record<string, unknown>;
 type Validator = (record: RulesRecord, path: string) => void;
 type Scalar = string | number | boolean | null;
 
-const CONDITION_RELATIONS = new Set([
-  'applies',
-  'removes',
-  'immune',
-  'advantage',
-  'disadvantage',
-  'exclusion',
-  'mention',
-]);
+// Closed relation vocabulary shared with the classifier and the
+// condition-relation-safety audit gate (see conditionRelations.ts).
+const CONDITION_RELATIONS = new Set<string>(CONDITION_RELATION_VALUES);
 
 function dataObj(record: RulesRecord, path: string): Obj {
   const value = record.data;

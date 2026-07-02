@@ -1209,6 +1209,97 @@ describe('creature CR/XP round-trip (eshyra-o9bd.18.5)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Condition relation safety
+// ---------------------------------------------------------------------------
+
+describe('condition relation safety (eshyra-o9bd.18.3)', () => {
+  function spellRec(
+    description: string,
+    conditions: readonly { condition: string; relation: string }[],
+  ): RulesRecord {
+    return record({
+      kind: 'spell',
+      key: 'spell:test-spell',
+      name: 'Test Spell',
+      data: {
+        level: 2,
+        school: 'evocation',
+        duration: 'Instantaneous',
+        description,
+        mechanics: { conditions },
+      },
+    });
+  }
+
+  function relationFindings(rec: RulesRecord) {
+    return auditSrdStructure(pack([rec])).filter(
+      (f) => f.category === 'condition-relation-safety',
+    );
+  }
+
+  it('flags a prevention phrase recorded as relation "applies" (the Branding Smite defect)', () => {
+    const findings = relationFindings(
+      spellRec(
+        "The target becomes visible if it's invisible, and can't become invisible until the spell ends.",
+        [{ condition: 'invisible', relation: 'applies' }],
+      ),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain(
+      'invisible relation "applies" but the source text derives "prevents"',
+    );
+  });
+
+  it('flags a removal list recorded as relation "applies"', () => {
+    const findings = relationFindings(
+      spellRec('The condition can be blinded, deafened, or poisoned.', [
+        { condition: 'blinded', relation: 'applies' },
+      ]),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('derives "removes"');
+  });
+
+  it('checks nested creature entry mechanics against the entry text', () => {
+    const findings = auditSrdStructure(
+      pack([
+        record({
+          kind: 'creature',
+          key: 'creature:test-devil',
+          name: 'Test Devil',
+          data: {
+            traits: [
+              {
+                name: 'Steadfast',
+                text: 'The devil can’t be frightened while it can see an allied creature within 30 feet of it.',
+                mechanics: {
+                  conditions: [
+                    { condition: 'frightened', relation: 'applies' },
+                  ],
+                },
+              },
+            ],
+          },
+        }),
+      ]),
+    ).filter((f) => f.category === 'condition-relation-safety');
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('derives "prevents"');
+  });
+
+  it('is silent when every stored relation matches the source text', () => {
+    expect(
+      relationFindings(
+        spellRec(
+          'The target must succeed on a Wisdom saving throw or be paralyzed for the duration.',
+          [{ condition: 'paralyzed', relation: 'applies' }],
+        ),
+      ),
+    ).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Coverage
 // ---------------------------------------------------------------------------
 

@@ -910,6 +910,17 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       );
       expect(findings).toEqual([]);
     });
+
+    it('every mechanics.conditions relation re-derives from its source text (eshyra-o9bd.18.3)', () => {
+      // Pack-wide condition-relation safety: the audit re-runs the shared
+      // classifier over every record's prose and flags any stored relation
+      // that disagrees, so prevention/removal/suppression/gating phrasing
+      // can never sit in the pack as relation "applies".
+      const findings = auditSrdStructure(pack).filter(
+        (f) => f.category === 'condition-relation-safety',
+      );
+      expect(findings).toEqual([]);
+    });
   });
 
   describe('category counts', () => {
