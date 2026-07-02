@@ -32,6 +32,8 @@ import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
   cpSync,
+  createReadStream,
+  createWriteStream,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -44,7 +46,9 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
+import { createGzip } from 'node:zlib';
 import {
   DEFAULT_EDITION,
   editionPackages,
@@ -162,6 +166,106 @@ function pruneAgentSdks(stageDir, edition) {
     removed: [...new Set(removed)].sort(),
     prunedBins: [...new Set(prunedBins)].sort(),
   };
+}
+
+const RELEASE_PRUNE_DIR_NAMES = new Set([
+  '.github',
+  'benchmark',
+  'benchmarks',
+  'coverage',
+  'doc',
+  'docs',
+  'example',
+  'examples',
+  'test',
+  'tests',
+  '__tests__',
+]);
+
+function shouldPruneReleaseFile(file) {
+  return (
+    file.endsWith('.map') ||
+    file.endsWith('.tsbuildinfo') ||
+    file.endsWith('.d.ts') ||
+    file.endsWith('.d.mts') ||
+    file.endsWith('.d.cts') ||
+    file.endsWith('.ts') ||
+    file.endsWith('.tsx')
+  );
+}
+
+function pathSize(path) {
+  const st = lstatSync(path);
+  if (!st.isDirectory()) return st.size;
+  let total = 0;
+  for (const entry of readdirSync(path)) {
+    total += pathSize(join(path, entry));
+  }
+  return total;
+}
+
+function isInstalledPackageRoot(dir) {
+  const parent = dirname(dir);
+  if (basename(parent) === 'node_modules') return true;
+  return (
+    basename(dirname(parent)) === 'node_modules' &&
+    basename(parent).startsWith('@')
+  );
+}
+
+/**
+ * Remove payload that is useful in an npm developer install but not in the
+ * self-contained runtime artifact. Keep package manifests and license/notice
+ * files intact; those are part of redistribution compliance and diagnostics.
+ */
+function pruneReleasePayload(stageDir) {
+  const appModules = join(stageDir, 'app', 'node_modules');
+  if (!existsSync(appModules))
+    return { removedFiles: 0, removedDirs: 0, bytes: 0 };
+
+  const removed = { removedFiles: 0, removedDirs: 0, bytes: 0 };
+  const removePath = (path, dir) => {
+    if (!existsSync(path) && !isSymlink(path)) return;
+    removed.bytes += pathSize(path);
+    rmSync(path, { recursive: dir, force: true });
+    if (dir) removed.removedDirs += 1;
+    else removed.removedFiles += 1;
+  };
+
+  const pruneDir = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (
+          RELEASE_PRUNE_DIR_NAMES.has(entry.name) &&
+          !isInstalledPackageRoot(full)
+        ) {
+          removePath(full, true);
+          continue;
+        }
+        pruneDir(full);
+      } else if (entry.isFile() && shouldPruneReleaseFile(entry.name)) {
+        removePath(full, false);
+      }
+    }
+  };
+
+  pruneDir(appModules);
+
+  // The artifact already contains the ABI-matched better_sqlite3.node binary.
+  // Its C/C++ source and vendored SQLite source are install/rebuild inputs, not
+  // runtime inputs for the self-contained release.
+  for (const pkg of walkInstalledPackages(join(stageDir, 'app'))) {
+    if (pkg.name !== 'better-sqlite3') continue;
+    for (const rel of ['deps', 'src', 'binding.gyp']) {
+      const target = join(pkg.dir, rel);
+      if (existsSync(target) || isSymlink(target)) {
+        removePath(target, statSync(target).isDirectory());
+      }
+    }
+  }
+
+  return removed;
 }
 
 /**
@@ -518,7 +622,19 @@ function dirSize(dir) {
   return total;
 }
 
-function main() {
+async function writePosixTarGzArchive(scratch, baseName, archive) {
+  const tarPath = join(scratch, `${baseName}.tar`);
+  rmSync(tarPath, { force: true });
+  run('tar', ['-cf', tarPath, '-C', scratch, baseName]);
+  await pipeline(
+    createReadStream(tarPath),
+    createGzip({ level: 9 }),
+    createWriteStream(archive),
+  );
+  rmSync(tarPath, { force: true });
+}
+
+async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const target = targetName();
   const version = resolveVersion(opts.version);
@@ -604,6 +720,13 @@ function main() {
       }${prunedBins.length ? ` (+ .bin shims: ${prunedBins.join(', ')})` : ''}`,
     );
 
+    const payloadPrune = pruneReleasePayload(stageDir);
+    console.log(
+      `• release payload prune: removed ${payloadPrune.removedFiles} files, ` +
+        `${payloadPrune.removedDirs} dirs, ` +
+        `${(payloadPrune.bytes / 1e6).toFixed(1)} MB`,
+    );
+
     // runtime/: the Node binary running this script (ABI-matched to the
     // better-sqlite3 prebuild we just installed). Official Node builds are
     // self-contained single binaries.
@@ -656,7 +779,7 @@ function main() {
       // bsdtar (`tar.exe`) ships with Windows 10+ and infers zip from -a.
       run('tar', ['-a', '-c', '-f', archive, '-C', scratch, baseName]);
     } else {
-      run('tar', ['-czf', archive, '-C', scratch, baseName]);
+      await writePosixTarGzArchive(scratch, baseName, archive);
     }
 
     const meta = {
@@ -712,6 +835,7 @@ function packWorkspace(workspace, packDir, cache) {
 
 export {
   normalizeVersion,
+  pruneReleasePayload,
   removeBinShimsFor,
   renderPosixLauncher,
   renderWindowsLauncher,
@@ -725,5 +849,8 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  main();
+  main().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
 }

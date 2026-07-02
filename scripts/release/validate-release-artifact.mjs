@@ -20,6 +20,7 @@ import { spawnSync } from 'node:child_process';
 import {
   existsSync,
   lstatSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -264,6 +265,8 @@ function validate(archive) {
   try {
     unpack(archive, dest);
     const appRoot = artifactRoot(dest);
+    const cleanHome = join(dest, 'home');
+    mkdirSync(cleanHome, { recursive: true });
     const files = walk(appRoot);
     const relPaths = files.filter((f) => !f.dir).map((f) => f.rel);
 
@@ -288,6 +291,26 @@ function validate(archive) {
     }
     if (!relPaths.some((p) => basename(p) === 'better_sqlite3.node')) {
       fail('bundled better-sqlite3 native binding missing');
+    }
+    const sqliteSmoke = spawnSync(
+      node,
+      [
+        '--input-type=commonjs',
+        '-e',
+        [
+          "const Database = require('./app/node_modules/@eshyra/core/node_modules/better-sqlite3');",
+          "const db = new Database(':memory:');",
+          "console.log(db.prepare('select 42 as value').get().value);",
+          'db.close();',
+        ].join(' '),
+      ],
+      { cwd: appRoot, encoding: 'utf8', env: { PATH: systemBinDirs() } },
+    );
+    if (sqliteSmoke.status !== 0 || sqliteSmoke.stdout.trim() !== '42') {
+      fail(
+        'bundled better-sqlite3 native binding failed runtime smoke:\n' +
+          `${sqliteSmoke.stdout ?? ''}${sqliteSmoke.stderr ?? ''}`,
+      );
     }
     const launcher = isWindows ? 'bin/eshyra.cmd' : 'bin/eshyra';
     if (!existsSync(join(appRoot, launcher)))
@@ -353,7 +376,12 @@ function validate(archive) {
       delimiter,
     );
     // Fresh env (no inherited ANTHROPIC_API_KEY) forces the no-config path.
-    const env = { PATH: sanitizedPath, SystemRoot: process.env.SystemRoot };
+    const env = {
+      HOME: cleanHome,
+      PATH: sanitizedPath,
+      SystemRoot: process.env.SystemRoot,
+      USERPROFILE: cleanHome,
+    };
     const run = spawnSync(node, [entry], {
       cwd: dest,
       encoding: 'utf8',
@@ -387,7 +415,11 @@ function validate(archive) {
           encoding: 'utf8',
           // Only system bin dirs on PATH (for dirname/readlink); the launcher
           // adds runtime/ itself. No system node is reachable.
-          env: { PATH: systemBinDirs() },
+          env: {
+            HOME: cleanHome,
+            PATH: systemBinDirs(),
+            USERPROFILE: cleanHome,
+          },
         });
         const launcherOut = `${launcherRun.stdout ?? ''}${launcherRun.stderr ?? ''}`;
         if (launcherRun.status !== 1) {
