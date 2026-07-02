@@ -9591,7 +9591,31 @@
       "effects": [
         "A blinded creature can’t see and automatically fails any ability check that requires sight.",
         "Attack rolls against the creature have advantage, and the creature’s attack rolls have disadvantage."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "cannotSee",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "autoFailCheck",
+            "subject": "conditioned",
+            "roll": "ability-check",
+            "requiredSense": "sight"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "advantage"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9625,7 +9649,24 @@
       "effects": [
         "A charmed creature can’t attack the charmer or target the charmer with harmful abilities or magical effects.",
         "The charmer has advantage on any ability check to interact socially with the creature."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "cannotAttackOrTarget",
+            "subject": "conditioned",
+            "target": "charmer",
+            "harmfulOnly": true
+          },
+          {
+            "kind": "abilityCheckModifier",
+            "subject": "charmer",
+            "target": "conditioned",
+            "mode": "advantage",
+            "context": "social-interaction"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9658,7 +9699,21 @@
       "description": "A deafened creature can’t hear and automatically fails any ability check that requires hearing.",
       "effects": [
         "A deafened creature can’t hear and automatically fails any ability check that requires hearing."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "cannotHear",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "autoFailCheck",
+            "subject": "conditioned",
+            "roll": "ability-check",
+            "requiredSense": "hearing"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9714,7 +9769,77 @@
           "level": 6,
           "effect": "Death"
         }
-      ]
+      ],
+      "mechanics": {
+        "levelApplication": "current-and-lower",
+        "levels": [
+          {
+            "level": 1,
+            "effects": [
+              {
+                "kind": "abilityCheckModifier",
+                "subject": "conditioned",
+                "mode": "disadvantage"
+              }
+            ]
+          },
+          {
+            "level": 2,
+            "effects": [
+              {
+                "kind": "speedMultiplier",
+                "subject": "conditioned",
+                "multiplier": 0.5
+              }
+            ]
+          },
+          {
+            "level": 3,
+            "effects": [
+              {
+                "kind": "attackRollModifier",
+                "subject": "conditioned",
+                "mode": "disadvantage"
+              },
+              {
+                "kind": "savingThrowModifier",
+                "subject": "conditioned",
+                "mode": "disadvantage",
+                "roll": "saving-throw"
+              }
+            ]
+          },
+          {
+            "level": 4,
+            "effects": [
+              {
+                "kind": "hitPointMaximumMultiplier",
+                "subject": "conditioned",
+                "multiplier": 0.5
+              }
+            ]
+          },
+          {
+            "level": 5,
+            "effects": [
+              {
+                "kind": "speedSet",
+                "subject": "conditioned",
+                "speed": 0
+              }
+            ]
+          },
+          {
+            "level": 6,
+            "effects": [
+              {
+                "kind": "death",
+                "subject": "conditioned"
+              }
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9748,7 +9873,29 @@
       "effects": [
         "A frightened creature has disadvantage on ability checks and attack rolls while the source of its fear is within line of sight.",
         "The creature can’t willingly move closer to the source of its fear."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "abilityCheckModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage",
+            "context": "fear-source-in-line-of-sight"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage",
+            "context": "fear-source-in-line-of-sight"
+          },
+          {
+            "kind": "movementRestriction",
+            "subject": "conditioned",
+            "restriction": "cannot-willingly-move-closer",
+            "target": "fear-source"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9783,7 +9930,30 @@
         "A grappled creature’s speed becomes 0, and it can’t benefit from any bonus to its speed.",
         "The condition ends if the grappler is incapacitated (see the condition).",
         "The condition also ends if an effect removes the grappled creature from the reach of the grappler or grappling effect, such as when a creature is hurled away by the thunder-wave spell."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "speedSet",
+            "subject": "conditioned",
+            "speed": 0
+          },
+          {
+            "kind": "speedBonusSuppressed",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "conditionEndsWhen",
+            "condition": "grappled",
+            "trigger": "grappler-incapacitated"
+          },
+          {
+            "kind": "conditionEndsWhen",
+            "condition": "grappled",
+            "trigger": "removed-from-grappler-reach"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9816,7 +9986,19 @@
       "description": "An incapacitated creature can’t take actions or reactions.",
       "effects": [
         "An incapacitated creature can’t take actions or reactions."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "cannotTakeActions",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "cannotTakeReactions",
+            "subject": "conditioned"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9850,7 +10032,44 @@
       "effects": [
         "An invisible creature is impossible to see without the aid of magic or a special sense. For the purpose of hiding, the creature is heavily obscured. The creature’s location can be detected by any noise it makes or any tracks it leaves.",
         "Attack rolls against the creature have disadvantage, and the creature’s attack rolls have advantage."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "visibility",
+            "subject": "conditioned",
+            "state": "impossible-to-see",
+            "exceptions": [
+              "magic",
+              "special-sense"
+            ]
+          },
+          {
+            "kind": "obscurement",
+            "subject": "conditioned",
+            "degree": "heavily-obscured",
+            "context": "hiding"
+          },
+          {
+            "kind": "locationDetectableBy",
+            "subject": "conditioned",
+            "clues": [
+              "noise",
+              "tracks"
+            ]
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "disadvantage"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "conditioned",
+            "mode": "advantage"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9886,7 +10105,43 @@
         "The creature automatically fails Strength and Dexterity saving throws.",
         "Attack rolls against the creature have advantage.",
         "Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "impliesCondition",
+            "subject": "conditioned",
+            "condition": "incapacitated"
+          },
+          {
+            "kind": "cannotMove",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "cannotSpeak",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "autoFailSave",
+            "subject": "conditioned",
+            "roll": "saving-throw",
+            "abilities": [
+              "strength",
+              "dexterity"
+            ]
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "advantage"
+          },
+          {
+            "kind": "criticalHitOnHit",
+            "subject": "against-conditioned",
+            "attackerWithinFeet": 5
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 358",
     "license": {
@@ -9924,7 +10179,70 @@
         "The creature automatically fails Strength and Dexterity saving throws.",
         "The creature has resistance to all damage.",
         "The creature is immune to poison and disease, although a poison or disease already in its system is suspended, not neutralized."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "transformed",
+            "subject": "conditioned",
+            "form": "solid-inanimate-substance"
+          },
+          {
+            "kind": "weightMultiplier",
+            "subject": "conditioned",
+            "multiplier": 10
+          },
+          {
+            "kind": "stopsAging",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "impliesCondition",
+            "subject": "conditioned",
+            "condition": "incapacitated"
+          },
+          {
+            "kind": "cannotMove",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "cannotSpeak",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "unaware",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "advantage"
+          },
+          {
+            "kind": "autoFailSave",
+            "subject": "conditioned",
+            "roll": "saving-throw",
+            "abilities": [
+              "strength",
+              "dexterity"
+            ]
+          },
+          {
+            "kind": "damageResistance",
+            "subject": "conditioned",
+            "damage": "all"
+          },
+          {
+            "kind": "immunity",
+            "subject": "conditioned",
+            "targets": [
+              "poison",
+              "disease"
+            ],
+            "existingEffects": "suspended-not-neutralized"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 359",
     "license": {
@@ -9957,7 +10275,21 @@
       "description": "A poisoned creature has disadvantage on attack rolls and ability checks.",
       "effects": [
         "A poisoned creature has disadvantage on attack rolls and ability checks."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "attackRollModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage"
+          },
+          {
+            "kind": "abilityCheckModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 359",
     "license": {
@@ -9992,7 +10324,34 @@
         "A prone creature’s only movement option is to crawl, unless it stands up and thereby ends the condition.",
         "The creature has disadvantage on attack rolls.",
         "An attack roll against the creature has advantage if the attacker is within 5 feet of the creature. Otherwise, the attack roll has disadvantage."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "movementRestriction",
+            "subject": "conditioned",
+            "restriction": "crawl-only",
+            "endsBy": "stand-up"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "advantage",
+            "attackerWithinFeet": 5
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "disadvantage",
+            "attackerBeyondFeet": 5
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 359",
     "license": {
@@ -10027,7 +10386,39 @@
         "A restrained creature’s speed becomes 0, and it can’t benefit from any bonus to its speed.",
         "Attack rolls against the creature have advantage, and the creature’s attack rolls have disadvantage.",
         "The creature has disadvantage on Dexterity saving throws."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "speedSet",
+            "subject": "conditioned",
+            "speed": 0
+          },
+          {
+            "kind": "speedBonusSuppressed",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "advantage"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage"
+          },
+          {
+            "kind": "savingThrowModifier",
+            "subject": "conditioned",
+            "mode": "disadvantage",
+            "roll": "saving-throw",
+            "abilities": [
+              "dexterity"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 359",
     "license": {
@@ -10062,7 +10453,39 @@
         "A stunned creature is incapacitated (see the condition), can’t move, and can speak only falteringly.",
         "The creature automatically fails Strength and Dexterity saving throws.",
         "Attack rolls against the creature have advantage."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "impliesCondition",
+            "subject": "conditioned",
+            "condition": "incapacitated"
+          },
+          {
+            "kind": "cannotMove",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "speechRestricted",
+            "subject": "conditioned",
+            "restriction": "faltering-only"
+          },
+          {
+            "kind": "autoFailSave",
+            "subject": "conditioned",
+            "roll": "saving-throw",
+            "abilities": [
+              "strength",
+              "dexterity"
+            ]
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "advantage"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 359",
     "license": {
@@ -10099,7 +10522,56 @@
         "The creature automatically fails Strength and Dexterity saving throws.",
         "Attack rolls against the creature have advantage.",
         "Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."
-      ]
+      ],
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "impliesCondition",
+            "subject": "conditioned",
+            "condition": "incapacitated"
+          },
+          {
+            "kind": "cannotMove",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "cannotSpeak",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "unaware",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "dropHeldObjects",
+            "subject": "conditioned"
+          },
+          {
+            "kind": "imposesCondition",
+            "subject": "conditioned",
+            "condition": "prone"
+          },
+          {
+            "kind": "autoFailSave",
+            "subject": "conditioned",
+            "roll": "saving-throw",
+            "abilities": [
+              "strength",
+              "dexterity"
+            ]
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "against-conditioned",
+            "mode": "advantage"
+          },
+          {
+            "kind": "criticalHitOnHit",
+            "subject": "against-conditioned",
+            "attackerWithinFeet": 5
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 359",
     "license": {

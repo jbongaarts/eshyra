@@ -18,6 +18,7 @@ import {
   actionExtractionsToRecords,
   ancestryExtractionsToRecords,
   buildPack,
+  conditionExtractionsToRecords,
   creatureExtractionsToRecords,
   diseaseExtractionsToRecords,
   equipmentExtractionsToRecords,
@@ -35,6 +36,7 @@ import {
 import type {
   ActionExtraction,
   AncestryExtraction,
+  ConditionExtraction,
   CreatureExtraction,
   DiseaseExtraction,
   EquipmentExtraction,
@@ -77,6 +79,33 @@ const ACID_SPLASH: SpellExtraction = {
   higherLevels:
     "This spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6).",
   sourcePage: 211,
+};
+
+const BLINDED_CONDITION: ConditionExtraction = {
+  name: 'Blinded',
+  description:
+    "A blinded creature can't see and automatically fails any ability check that requires sight. Attack rolls against the creature have advantage, and the creature's attack rolls have disadvantage.",
+  effects: [
+    "A blinded creature can't see and automatically fails any ability check that requires sight.",
+    "Attack rolls against the creature have advantage, and the creature's attack rolls have disadvantage.",
+  ],
+  sourcePage: 358,
+};
+
+const EXHAUSTION_CONDITION: ConditionExtraction = {
+  name: 'Exhaustion',
+  description:
+    'Exhaustion is measured in six levels. A creature suffers the effect of its current level of exhaustion as well as all lower levels.',
+  effects: [],
+  levels: [
+    { level: 1, effect: 'Disadvantage on ability checks' },
+    { level: 2, effect: 'Speed halved' },
+    { level: 3, effect: 'Disadvantage on attack rolls and saving throws' },
+    { level: 4, effect: 'Hit point maximum halved' },
+    { level: 5, effect: 'Speed reduced to 0' },
+    { level: 6, effect: 'Death' },
+  ],
+  sourcePage: 359,
 };
 
 const MAGIC_MISSILE: SpellExtraction = {
@@ -479,6 +508,71 @@ describe('spellExtractionsToRecords — record shape', () => {
     expect(
       (record.data as { mechanics: Record<string, unknown> }).mechanics,
     ).not.toHaveProperty('saves');
+  });
+});
+
+describe('conditionExtractionsToRecords — typed mechanics', () => {
+  it('projects attack-roll and ability-check effects for blinded without parsing prose', () => {
+    const [record] = conditionExtractionsToRecords([BLINDED_CONDITION]);
+    const mechanics = (record.data as { mechanics?: { effects?: unknown[] } })
+      .mechanics;
+
+    expect(mechanics?.effects).toEqual(
+      expect.arrayContaining([
+        {
+          kind: 'autoFailCheck',
+          subject: 'conditioned',
+          roll: 'ability-check',
+          requiredSense: 'sight',
+        },
+        {
+          kind: 'attackRollModifier',
+          subject: 'against-conditioned',
+          mode: 'advantage',
+        },
+        {
+          kind: 'attackRollModifier',
+          subject: 'conditioned',
+          mode: 'disadvantage',
+        },
+      ]),
+    );
+  });
+
+  it('projects exhaustion level mechanics as typed per-level effects', () => {
+    const [record] = conditionExtractionsToRecords([EXHAUSTION_CONDITION]);
+    const levels = (
+      record.data as {
+        mechanics?: {
+          levelApplication?: string;
+          levels?: readonly {
+            level: number;
+            effects: readonly Record<string, unknown>[];
+          }[];
+        };
+      }
+    ).mechanics?.levels;
+    const levelApplication = (
+      record.data as { mechanics?: { levelApplication?: string } }
+    ).mechanics?.levelApplication;
+
+    expect(levelApplication).toBe('current-and-lower');
+    expect(levels?.find((level) => level.level === 3)?.effects).toEqual([
+      {
+        kind: 'attackRollModifier',
+        subject: 'conditioned',
+        mode: 'disadvantage',
+      },
+      {
+        kind: 'savingThrowModifier',
+        subject: 'conditioned',
+        mode: 'disadvantage',
+        roll: 'saving-throw',
+      },
+    ]);
+    expect(levels?.find((level) => level.level === 6)?.effects).toEqual([
+      { kind: 'death', subject: 'conditioned' },
+    ]);
   });
 });
 

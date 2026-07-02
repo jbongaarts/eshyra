@@ -23,6 +23,47 @@ type Scalar = string | number | boolean | null;
 // condition-relation-safety audit gate (see conditionRelations.ts).
 const CONDITION_RELATIONS = new Set<string>(CONDITION_RELATION_VALUES);
 
+const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
+  'abilityCheckModifier',
+  'advantage',
+  'attackRollModifier',
+  'autoFailCheck',
+  'autoFailSave',
+  'cannotAttackOrTarget',
+  'cannotHear',
+  'cannotMove',
+  'cannotSee',
+  'cannotSpeak',
+  'cannotTakeActions',
+  'cannotTakeReactions',
+  'conditionEndsWhen',
+  'criticalHitOnHit',
+  'criticalRange',
+  'damageResistance',
+  'death',
+  'dropHeldObjects',
+  'extraAttack',
+  'hitPointMaximumMultiplier',
+  'immunity',
+  'impliesCondition',
+  'imposesCondition',
+  'locationDetectableBy',
+  'movementRestriction',
+  'obscurement',
+  'proficiency',
+  'resistance',
+  'savingThrowModifier',
+  'speechRestricted',
+  'speedBonusSuppressed',
+  'speedMultiplier',
+  'speedSet',
+  'stopsAging',
+  'transformed',
+  'unaware',
+  'visibility',
+  'weightMultiplier',
+]);
+
 function dataObj(record: RulesRecord, path: string): Obj {
   const value = record.data;
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -748,7 +789,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       }
     });
   }
-  for (const arrayKey of ['attacks', 'saves', 'resources', 'effects']) {
+  for (const arrayKey of ['attacks', 'saves', 'resources']) {
     const entries = objArray(mechanics, arrayKey, `${path}.${key}`);
     if (entries === undefined) continue;
     if (entries.length === 0) {
@@ -756,6 +797,49 @@ function optMechanics(parent: Obj, key: string, path: string): void {
         `${path}.${key}.${arrayKey} must not be empty when present`,
       );
     }
+  }
+  const effects = objArray(mechanics, 'effects', `${path}.${key}`);
+  if (effects !== undefined) {
+    if (effects.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.effects must not be empty when present`,
+      );
+    }
+    effects.forEach((effect, i) => {
+      validateMechanicsEffect(effect, `${path}.${key}.effects[${i}]`);
+    });
+  }
+  const levelApplication = mechanics.levelApplication;
+  if (
+    levelApplication !== undefined &&
+    levelApplication !== 'current-and-lower'
+  ) {
+    throw new RulesPackError(
+      `${path}.${key}.levelApplication must be "current-and-lower" when present`,
+    );
+  }
+  const levels = objArray(mechanics, 'levels', `${path}.${key}`);
+  if (levels !== undefined) {
+    if (levels.length === 0) {
+      throw new RulesPackError(
+        `${path}.${key}.levels must not be empty when present`,
+      );
+    }
+    levels.forEach((level, i) => {
+      const levelPath = `${path}.${key}.levels[${i}]`;
+      reqInt(level, 'level', levelPath, 1);
+      const levelEffects = objArray(level, 'effects', levelPath);
+      if (levelEffects === undefined || levelEffects.length === 0) {
+        throw new RulesPackError(`${levelPath}.effects must be non-empty`);
+      }
+      levelEffects.forEach((effect, j) => {
+        validateMechanicsEffect(effect, `${levelPath}.effects[${j}]`);
+      });
+    });
+  } else if (levelApplication !== undefined) {
+    throw new RulesPackError(
+      `${path}.${key}.levelApplication requires ${path}.${key}.levels`,
+    );
   }
   // `damage`/`hitDamage` entries are dealt damage, so `type` must be one of
   // the 13 canonical SRD damage types — not any "<dice> <word> damage" match,
@@ -828,6 +912,15 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     reqStr(obj, 'roll', `${path}.${key}.recharge`);
     reqInt(obj, 'minimum', `${path}.${key}.recharge`, 1);
     reqInt(obj, 'maximum', `${path}.${key}.recharge`, 1);
+  }
+}
+
+function validateMechanicsEffect(effect: Obj, path: string): void {
+  const kind = reqStr(effect, 'kind', path);
+  if (!MECHANICS_EFFECT_KINDS.has(kind)) {
+    throw new RulesPackError(
+      `${path}.kind has unsupported mechanics effect kind ${JSON.stringify(kind)}`,
+    );
   }
 }
 
@@ -1502,6 +1595,7 @@ function validateDnd5eCondition(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   reqStr(data, 'description', `${path}.data`);
   optStrArray(data, 'effects', `${path}.data`);
+  optMechanics(data, 'mechanics', `${path}.data`);
 }
 
 function validateDnd5eFeat(record: RulesRecord, path: string): void {

@@ -921,6 +921,131 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       );
       expect(findings).toEqual([]);
     });
+
+    it('exposes typed mechanics for all condition records (eshyra-o9bd.18.7.1)', () => {
+      const conditions = pack.records.filter((r) => r.kind === 'condition');
+      expect(conditions).toHaveLength(15);
+      for (const condition of conditions) {
+        const mechanics = (condition.data as { mechanics?: unknown }).mechanics;
+        expect(mechanics, condition.key).toBeDefined();
+      }
+    });
+
+    it('queries representative condition mechanics without parsing prose (eshyra-o9bd.18.7.1)', () => {
+      function conditionMechanics(key: string): {
+        effects?: readonly Record<string, unknown>[];
+        levelApplication?: string;
+        levels?: readonly {
+          level: number;
+          effects: readonly Record<string, unknown>[];
+        }[];
+      } {
+        const record = pack.records.find((r) => r.key === key);
+        if (record === undefined) {
+          throw new Error(`missing ${key}`);
+        }
+        return (record.data as { mechanics: Record<string, unknown> })
+          .mechanics as {
+          effects?: readonly Record<string, unknown>[];
+          levelApplication?: string;
+          levels?: readonly {
+            level: number;
+            effects: readonly Record<string, unknown>[];
+          }[];
+        };
+      }
+
+      expect(conditionMechanics('condition:blinded').effects).toEqual(
+        expect.arrayContaining([
+          {
+            kind: 'autoFailCheck',
+            subject: 'conditioned',
+            roll: 'ability-check',
+            requiredSense: 'sight',
+          },
+          {
+            kind: 'attackRollModifier',
+            subject: 'conditioned',
+            mode: 'disadvantage',
+          },
+        ]),
+      );
+      expect(conditionMechanics('condition:restrained').effects).toContainEqual(
+        {
+          kind: 'savingThrowModifier',
+          subject: 'conditioned',
+          mode: 'disadvantage',
+          roll: 'saving-throw',
+          abilities: ['dexterity'],
+        },
+      );
+      expect(
+        conditionMechanics('condition:exhaustion').levels?.find(
+          (level) => level.level === 5,
+        )?.effects,
+      ).toEqual([{ kind: 'speedSet', subject: 'conditioned', speed: 0 }]);
+    });
+
+    it('represents exhaustion as current level plus lower levels without parsing prose (eshyra-o9bd.18.7.1)', () => {
+      const exhaustion = pack.records.find(
+        (r) => r.key === 'condition:exhaustion',
+      );
+      if (exhaustion === undefined) {
+        throw new Error('missing condition:exhaustion');
+      }
+      const mechanics = (
+        exhaustion.data as {
+          mechanics: {
+            levelApplication?: string;
+            levels: readonly {
+              level: number;
+              effects: readonly Record<string, unknown>[];
+            }[];
+          };
+        }
+      ).mechanics;
+
+      expect(mechanics.levelApplication).toBe('current-and-lower');
+
+      const activeLevel5Effects =
+        mechanics.levelApplication === 'current-and-lower'
+          ? mechanics.levels
+              .filter((level) => level.level <= 5)
+              .flatMap((level) => level.effects)
+          : [];
+
+      expect(activeLevel5Effects).toEqual(
+        expect.arrayContaining([
+          {
+            kind: 'abilityCheckModifier',
+            subject: 'conditioned',
+            mode: 'disadvantage',
+          },
+          {
+            kind: 'speedMultiplier',
+            subject: 'conditioned',
+            multiplier: 0.5,
+          },
+          {
+            kind: 'attackRollModifier',
+            subject: 'conditioned',
+            mode: 'disadvantage',
+          },
+          {
+            kind: 'savingThrowModifier',
+            subject: 'conditioned',
+            mode: 'disadvantage',
+            roll: 'saving-throw',
+          },
+          {
+            kind: 'hitPointMaximumMultiplier',
+            subject: 'conditioned',
+            multiplier: 0.5,
+          },
+          { kind: 'speedSet', subject: 'conditioned', speed: 0 },
+        ]),
+      );
+    });
   });
 
   describe('category counts', () => {
