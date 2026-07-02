@@ -65,6 +65,7 @@ function creatureData(): Record<string, unknown> {
     hitPoints: 7,
     speed: { walk: 30 },
     challengeRating: '1/4',
+    experiencePoints: 50,
     abilityScores: {
       strength: 8,
       dexterity: 14,

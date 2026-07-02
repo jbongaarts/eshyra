@@ -36,13 +36,25 @@ bundle commit beb9a21). Each bead lands as its own commit on this branch:
   `pactBoon.featureRef`, `cantrip.ref`) reporting the full JSON path of any
   dangling nested ref.
 
+- **eshyra-o9bd.18.5:** CR-0 experience points were underdetermined: the
+  creature kind stored only `challengeRating`, and the CR-to-XP table cannot
+  reconstruct CR 0, which the source prints per creature as either "(0 XP)"
+  or "(10 XP)". The creature parser now captures the printed XP award from
+  every Challenge line (failing closed when a Challenge line lacks one), all
+  317 creature records emit `experiencePoints` (source-verified: 27 CR-0
+  creatures print 10 XP; Frog and Sea Horse print 0 XP), the creature kind
+  schema requires the field, and a new `creature-cr-xp` audit check
+  round-trips every creature's XP against the SRD XP-by-CR table (CR 0
+  allowing exactly 0 or 10).
+
 ## Expected file changes
 
 - [ ] `packages/core/sources/dnd5e-srd-5.1/`
 - [x] `packages/core/scripts/importers/dnd5e-srd-5.1/` -
       `mechanicsProjections.ts` (comma made optional in the concentration
       duration detector); `deriveFeatureChoices.ts` / `types.ts` (`pactBoon`
-      prerequisite clauses gain `featureRef`).
+      prerequisite clauses gain `featureRef`); `parseCreatures.ts` /
+      `types.ts` / `emit.ts` (printed creature XP captured and emitted).
 - [x] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json` -
       regenerated through the importer.
 - [ ] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json`

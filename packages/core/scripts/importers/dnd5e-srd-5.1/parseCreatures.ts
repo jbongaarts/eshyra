@@ -86,7 +86,11 @@ const META_PATTERN = new RegExp(
 export const AC_PATTERN = /^Armor Class\s+(\d+)/;
 const HP_PATTERN = /^Hit Points\s+(\d+)/;
 export const SPEED_PATTERN = /^Speed\s+(.+)$/;
-const CHALLENGE_PATTERN = /^Challenge\s+([0-9/]+)/;
+// Every SRD 5.1 creature prints its XP award alongside the CR ("Challenge 1/4
+// (50 XP)"); the value is captured so encounter tooling never has to derive it
+// — the CR-to-XP table alone cannot reconstruct CR 0, which the source prints
+// as either "(0 XP)" or "(10 XP)" per creature (eshyra-o9bd.18.5).
+const CHALLENGE_PATTERN = /^Challenge\s+([0-9/]+)(?:\s*\(([\d,]+)\s*XP\))?/;
 const ABILITY_HEADER_PATTERN = /^STR\s+DEX\s+CON\s+INT\s+WIS\s+CHA$/i;
 // Six "score (modifier)" cells, e.g. "8 (−1) 14 (+2) 10 (+0) …". Only the
 // scores are captured; the parenthesized modifier may use a Unicode minus.
@@ -811,6 +815,7 @@ interface StatBlockFields {
   readonly hitPoints?: number;
   readonly speed?: Record<string, number>;
   readonly challengeRating?: string;
+  readonly experiencePoints?: number;
   readonly abilityScores?: CreatureAbilityScores;
 }
 
@@ -927,6 +932,7 @@ function readStatBlock(lines: readonly string[]): StatBlockFields {
   let hitPoints: number | undefined;
   let speed: Record<string, number> | undefined;
   let challengeRating: string | undefined;
+  let experiencePoints: number | undefined;
   let abilityScores: CreatureAbilityScores | undefined;
 
   for (let i = 0; i < lines.length; i++) {
@@ -969,11 +975,21 @@ function readStatBlock(lines: readonly string[]): StatBlockFields {
       const m = CHALLENGE_PATTERN.exec(line);
       if (m !== null) {
         challengeRating = m[1];
+        if (m[2] !== undefined) {
+          experiencePoints = Number.parseInt(m[2].replaceAll(',', ''), 10);
+        }
       }
     }
   }
 
-  return { armorClass, hitPoints, speed, challengeRating, abilityScores };
+  return {
+    armorClass,
+    hitPoints,
+    speed,
+    challengeRating,
+    experiencePoints,
+    abilityScores,
+  };
 }
 
 /**
@@ -1093,6 +1109,13 @@ export function parseCreatures(
         `creature "${candidate.name}" at page ${sourcePage} is missing a Challenge line`,
       );
     }
+    // Every SRD creature Challenge line prints its XP award; a missing value
+    // means the line was mis-extracted, so fail closed (eshyra-o9bd.18.5).
+    if (fields.experiencePoints === undefined) {
+      throw new Error(
+        `creature "${candidate.name}" at page ${sourcePage} has a Challenge line without an XP award`,
+      );
+    }
 
     const keyed = extractCreatureKeyedFields(body);
     const narrative = parseNarrativeSections(bodyLines);
@@ -1110,6 +1133,7 @@ export function parseCreatures(
       hitPoints: fields.hitPoints,
       speed: fields.speed,
       challengeRating: fields.challengeRating,
+      experiencePoints: fields.experiencePoints,
       abilityScores: fields.abilityScores,
       ...keyed,
       ...narrative,

@@ -53,6 +53,7 @@ export type SrdAuditCategory =
   | 'reference-integrity'
   | 'creature-stat-block-prose-bleed'
   | 'spell-concentration-flag'
+  | 'creature-cr-xp'
   | 'missing-coverage';
 
 export interface SrdAuditFinding {
@@ -1100,6 +1101,95 @@ function checkSpellConcentrationFlag(record: RulesRecord): SrdAuditFinding[] {
   ];
 }
 
+// ---------------------------------------------------------------------------
+// Creature CR / XP round-trip (eshyra-o9bd.18.5)
+// ---------------------------------------------------------------------------
+
+// The SRD 5.1 "Experience Points by Challenge Rating" table. CR 0 is the one
+// underdetermined row: the source prints "0 (0 XP)" for harmless creatures and
+// "0 (10 XP)" for ones with attacks, so both values are legal there and the
+// per-creature printed value is authoritative.
+const SRD_5_1_XP_BY_CR: Readonly<Record<string, number>> = Object.freeze({
+  '1/8': 25,
+  '1/4': 50,
+  '1/2': 100,
+  '1': 200,
+  '2': 450,
+  '3': 700,
+  '4': 1100,
+  '5': 1800,
+  '6': 2300,
+  '7': 2900,
+  '8': 3900,
+  '9': 5000,
+  '10': 5900,
+  '11': 7200,
+  '12': 8400,
+  '13': 10000,
+  '14': 11500,
+  '15': 13000,
+  '16': 15000,
+  '17': 18000,
+  '18': 20000,
+  '19': 22000,
+  '20': 25000,
+  '21': 33000,
+  '22': 41000,
+  '23': 50000,
+  '24': 62000,
+  '25': 75000,
+  '26': 90000,
+  '27': 105000,
+  '28': 120000,
+  '29': 135000,
+  '30': 155000,
+});
+
+const CR_0_XP_VALUES: ReadonlySet<number> = new Set([0, 10]);
+
+function checkCreatureCrXp(record: RulesRecord): SrdAuditFinding[] {
+  if (record.kind !== 'creature') return [];
+  const data = dataObject(record);
+  if (data === null) return [];
+  const cr = asString(data.challengeRating);
+  if (cr === null) return [];
+  const finding = (detail: string): SrdAuditFinding => ({
+    category: 'creature-cr-xp',
+    key: record.key,
+    kind: record.kind,
+    name: record.name,
+    detail,
+  });
+  const xp = data.experiencePoints;
+  if (typeof xp !== 'number') {
+    return [
+      finding(
+        `data.experiencePoints is missing; the SRD prints an XP award for every creature (challengeRating "${cr}")`,
+      ),
+    ];
+  }
+  if (cr === '0') {
+    return CR_0_XP_VALUES.has(xp)
+      ? []
+      : [
+          finding(
+            `data.experiencePoints ${xp} is not a legal CR 0 award (the SRD prints 0 or 10 XP)`,
+          ),
+        ];
+  }
+  const expected = SRD_5_1_XP_BY_CR[cr];
+  if (expected === undefined) {
+    return [finding(`data.challengeRating "${cr}" is not an SRD 5.1 CR`)];
+  }
+  return xp === expected
+    ? []
+    : [
+        finding(
+          `data.experiencePoints ${xp} does not match the SRD XP-by-CR table value ${expected} for CR ${cr}`,
+        ),
+      ];
+}
+
 /**
  * Run every structure-aware check over a loaded SRD pack. Output is sorted for
  * diffable reports.
@@ -1114,6 +1204,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
     findings.push(...checkAncestryUnlinkedTable(record));
     findings.push(...checkCreatureStatBlockProseBleed(record));
     findings.push(...checkSpellConcentrationFlag(record));
+    findings.push(...checkCreatureCrXp(record));
   }
   findings.push(...checkSpellTableLinks(pack));
   findings.push(...checkTableOwnerLinks(pack));

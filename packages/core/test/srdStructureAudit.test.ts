@@ -1135,6 +1135,80 @@ describe('spell concentration flag vs duration (eshyra-o9bd.18.2)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Creature CR / XP round-trip
+// ---------------------------------------------------------------------------
+
+describe('creature CR/XP round-trip (eshyra-o9bd.18.5)', () => {
+  function creatureRec(
+    challengeRating: string,
+    experiencePoints: number | undefined,
+  ): RulesRecord {
+    return record({
+      kind: 'creature',
+      key: 'creature:test-subject',
+      name: 'Test Subject',
+      data: {
+        size: 'Small',
+        type: 'beast',
+        alignment: 'unaligned',
+        armorClass: 12,
+        hitPoints: 7,
+        speed: { walk: 30 },
+        challengeRating,
+        ...(experiencePoints === undefined ? {} : { experiencePoints }),
+        abilityScores: {
+          strength: 8,
+          dexterity: 14,
+          constitution: 10,
+          intelligence: 2,
+          wisdom: 8,
+          charisma: 4,
+        },
+      },
+    });
+  }
+
+  function xpFindings(rec: RulesRecord) {
+    return auditSrdStructure(pack([rec])).filter(
+      (f) => f.category === 'creature-cr-xp',
+    );
+  }
+
+  it('flags a creature with no experiencePoints', () => {
+    const findings = xpFindings(creatureRec('1/4', undefined));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('experiencePoints is missing');
+  });
+
+  it('flags an XP value that contradicts the SRD XP-by-CR table', () => {
+    const findings = xpFindings(creatureRec('1/4', 100));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain(
+      'does not match the SRD XP-by-CR table value 50 for CR 1/4',
+    );
+  });
+
+  it('accepts both printed CR 0 awards and rejects any other', () => {
+    expect(xpFindings(creatureRec('0', 0))).toEqual([]);
+    expect(xpFindings(creatureRec('0', 10))).toEqual([]);
+    const findings = xpFindings(creatureRec('0', 25));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('not a legal CR 0 award');
+  });
+
+  it('flags a challengeRating outside the SRD table', () => {
+    const findings = xpFindings(creatureRec('31', 200000));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('is not an SRD 5.1 CR');
+  });
+
+  it('is silent when the XP matches the table', () => {
+    expect(xpFindings(creatureRec('1/2', 100))).toEqual([]);
+    expect(xpFindings(creatureRec('30', 155000))).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Coverage
 // ---------------------------------------------------------------------------
 

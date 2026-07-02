@@ -338,6 +338,7 @@ function buildCreatureData(
   data.hitPoints = creature.hitPoints;
   data.speed = { ...creature.speed };
   data.challengeRating = creature.challengeRating;
+  data.experiencePoints = creature.experiencePoints;
   data.abilityScores = {
     strength: creature.abilityScores.strength,
     dexterity: creature.abilityScores.dexterity,

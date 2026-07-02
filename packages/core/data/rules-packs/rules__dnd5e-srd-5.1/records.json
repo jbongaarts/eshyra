@@ -10139,6 +10139,7 @@
         "swim": 40
       },
       "challengeRating": "10",
+      "experiencePoints": 5900,
       "abilityScores": {
         "strength": 21,
         "dexterity": 9,
@@ -10335,6 +10336,7 @@
         "walk": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 10,
         "dexterity": 10,
@@ -10428,6 +10430,7 @@
         "swim": 40
       },
       "challengeRating": "14",
+      "experiencePoints": 11500,
       "abilityScores": {
         "strength": 23,
         "dexterity": 14,
@@ -10676,6 +10679,7 @@
         "fly": 80
       },
       "challengeRating": "16",
+      "experiencePoints": 15000,
       "abilityScores": {
         "strength": 25,
         "dexterity": 10,
@@ -10920,6 +10924,7 @@
         "fly": 80
       },
       "challengeRating": "13",
+      "experiencePoints": 10000,
       "abilityScores": {
         "strength": 23,
         "dexterity": 10,
@@ -11178,6 +11183,7 @@
         "swim": 40
       },
       "challengeRating": "15",
+      "experiencePoints": 13000,
       "abilityScores": {
         "strength": 25,
         "dexterity": 10,
@@ -11438,6 +11444,7 @@
         "fly": 80
       },
       "challengeRating": "14",
+      "experiencePoints": 11500,
       "abilityScores": {
         "strength": 23,
         "dexterity": 12,
@@ -11690,6 +11697,7 @@
         "swim": 40
       },
       "challengeRating": "17",
+      "experiencePoints": 18000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 14,
@@ -11950,6 +11958,7 @@
         "swim": 40
       },
       "challengeRating": "15",
+      "experiencePoints": 13000,
       "abilityScores": {
         "strength": 23,
         "dexterity": 12,
@@ -12199,6 +12208,7 @@
         "fly": 80
       },
       "challengeRating": "17",
+      "experiencePoints": 18000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 10,
@@ -12442,6 +12452,7 @@
         "fly": 80
       },
       "challengeRating": "16",
+      "experiencePoints": 15000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 10,
@@ -12705,6 +12716,7 @@
         "swim": 40
       },
       "challengeRating": "13",
+      "experiencePoints": 10000,
       "abilityScores": {
         "strength": 22,
         "dexterity": 10,
@@ -12950,6 +12962,7 @@
         "fly": 90
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 14,
         "dexterity": 20,
@@ -13083,6 +13096,7 @@
         "swim": 40
       },
       "challengeRating": "21",
+      "experiencePoints": 33000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 14,
@@ -13331,6 +13345,7 @@
         "fly": 80
       },
       "challengeRating": "23",
+      "experiencePoints": 50000,
       "abilityScores": {
         "strength": 29,
         "dexterity": 10,
@@ -13575,6 +13590,7 @@
         "fly": 80
       },
       "challengeRating": "20",
+      "experiencePoints": 25000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 10,
@@ -13837,6 +13853,7 @@
         "swim": 40
       },
       "challengeRating": "22",
+      "experiencePoints": 41000,
       "abilityScores": {
         "strength": 29,
         "dexterity": 10,
@@ -14097,6 +14114,7 @@
         "fly": 80
       },
       "challengeRating": "21",
+      "experiencePoints": 33000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 12,
@@ -14353,6 +14371,7 @@
         "swim": 40
       },
       "challengeRating": "24",
+      "experiencePoints": 62000,
       "abilityScores": {
         "strength": 30,
         "dexterity": 14,
@@ -14613,6 +14632,7 @@
         "swim": 40
       },
       "challengeRating": "22",
+      "experiencePoints": 41000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 12,
@@ -14862,6 +14882,7 @@
         "fly": 80
       },
       "challengeRating": "24",
+      "experiencePoints": 62000,
       "abilityScores": {
         "strength": 30,
         "dexterity": 10,
@@ -15105,6 +15126,7 @@
         "fly": 80
       },
       "challengeRating": "23",
+      "experiencePoints": 50000,
       "abilityScores": {
         "strength": 30,
         "dexterity": 10,
@@ -15368,6 +15390,7 @@
         "swim": 40
       },
       "challengeRating": "20",
+      "experiencePoints": 25000,
       "abilityScores": {
         "strength": 26,
         "dexterity": 10,
@@ -15613,6 +15636,7 @@
         "fly": 60
       },
       "challengeRating": "17",
+      "experiencePoints": 18000,
       "abilityScores": {
         "strength": 22,
         "dexterity": 10,
@@ -15806,6 +15830,7 @@
         "walk": 25
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 14,
         "dexterity": 11,
@@ -15918,6 +15943,7 @@
         "burrow": 10
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 17,
         "dexterity": 11,
@@ -16043,6 +16069,7 @@
         "climb": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 16,
         "dexterity": 14,
@@ -16158,6 +16185,7 @@
         "walk": 30
       },
       "challengeRating": "12",
+      "experiencePoints": 8400,
       "abilityScores": {
         "strength": 10,
         "dexterity": 14,
@@ -16255,6 +16283,7 @@
         "walk": 30
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 11,
         "dexterity": 16,
@@ -16433,6 +16462,7 @@
         "walk": 20
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 3,
         "dexterity": 8,
@@ -16506,6 +16536,7 @@
         "walk": 20
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 19,
         "dexterity": 6,
@@ -16593,6 +16624,7 @@
         "walk": 50
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 14,
         "dexterity": 12,
@@ -16672,6 +16704,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 17,
         "dexterity": 12,
@@ -16806,6 +16839,7 @@
         "climb": 30
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 8,
         "dexterity": 14,
@@ -16885,6 +16919,7 @@
         "burrow": 5
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 4,
         "dexterity": 11,
@@ -16959,6 +16994,7 @@
         "fly": 80
       },
       "challengeRating": "19",
+      "experiencePoints": 22000,
       "abilityScores": {
         "strength": 26,
         "dexterity": 15,
@@ -17151,6 +17187,7 @@
         "walk": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 11,
         "dexterity": 12,
@@ -17258,6 +17295,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 15,
         "dexterity": 16,
@@ -17384,6 +17422,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 16,
         "dexterity": 17,
@@ -17549,6 +17588,7 @@
         "walk": 20
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 16,
         "dexterity": 8,
@@ -17666,6 +17706,7 @@
         "fly": 30
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 15,
@@ -17741,6 +17782,7 @@
         "walk": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 16,
         "dexterity": 15,
@@ -17881,6 +17923,7 @@
         "climb": 40
       },
       "challengeRating": "11",
+      "experiencePoints": 7200,
       "abilityScores": {
         "strength": 23,
         "dexterity": 16,
@@ -18051,6 +18094,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 16,
         "dexterity": 12,
@@ -18137,6 +18181,7 @@
         "climb": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 15,
         "dexterity": 10,
@@ -18261,6 +18306,7 @@
         "swim": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 15,
         "dexterity": 14,
@@ -18386,6 +18432,7 @@
         "climb": 20
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 16,
         "dexterity": 5,
@@ -18505,6 +18552,7 @@
         "walk": 40
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 12,
         "dexterity": 17,
@@ -18603,6 +18651,7 @@
         "fly": 60
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 6,
         "dexterity": 14,
@@ -18708,6 +18757,7 @@
         "fly": 60
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 17,
         "dexterity": 10,
@@ -18823,6 +18873,7 @@
         "walk": 40
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 13,
         "dexterity": 11,
@@ -18936,6 +18987,7 @@
         "fly": 40
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 18,
         "dexterity": 16,
@@ -19090,6 +19142,7 @@
         "fly": 60
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 15,
         "dexterity": 10,
@@ -19226,6 +19279,7 @@
         "swim": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 17,
         "dexterity": 10,
@@ -19356,6 +19410,7 @@
         "climb": 30
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -19473,6 +19528,7 @@
         "walk": 30
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 15,
         "dexterity": 14,
@@ -19605,6 +19661,7 @@
         "burrow": 40
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 19,
         "dexterity": 11,
@@ -19719,6 +19776,7 @@
         "walk": 50
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 16,
         "dexterity": 8,
@@ -19798,6 +19856,7 @@
         "climb": 30
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 3,
         "dexterity": 15,
@@ -19869,6 +19928,7 @@
         "walk": 50
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 14,
@@ -20029,6 +20089,7 @@
         "walk": 30
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -20165,6 +20226,7 @@
         "fly": 60
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 19,
         "dexterity": 11,
@@ -20329,6 +20391,7 @@
         "swim": 30
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -20459,6 +20522,7 @@
         "walk": 20
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 20,
         "dexterity": 9,
@@ -20583,6 +20647,7 @@
         "fly": 40
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 17,
         "dexterity": 15,
@@ -20705,6 +20770,7 @@
         "walk": 40
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 27,
         "dexterity": 10,
@@ -20831,6 +20897,7 @@
         "fly": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 6,
         "dexterity": 12,
@@ -20911,6 +20978,7 @@
         "walk": 30
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 10,
         "dexterity": 10,
@@ -20991,6 +21059,7 @@
         "swim": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 15,
         "dexterity": 14,
@@ -21084,6 +21153,7 @@
         "fly": 60
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 15,
         "dexterity": 12,
@@ -21208,6 +21278,7 @@
         "fly": 90
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 16,
         "dexterity": 20,
@@ -21332,6 +21403,7 @@
         "swim": 20
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 11,
@@ -21404,6 +21476,7 @@
         "swim": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 15,
         "dexterity": 10,
@@ -21485,6 +21558,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 11,
         "dexterity": 14,
@@ -21577,6 +21651,7 @@
         "walk": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 11,
         "dexterity": 12,
@@ -21661,6 +21736,7 @@
         "fly": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 16,
         "dexterity": 12,
@@ -21753,6 +21829,7 @@
         "walk": 40
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 15,
         "dexterity": 14,
@@ -21883,6 +21960,7 @@
         "walk": 50
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 11,
         "dexterity": 16,
@@ -21965,6 +22043,7 @@
         "fly": 90
       },
       "challengeRating": "10",
+      "experiencePoints": 5900,
       "abilityScores": {
         "strength": 18,
         "dexterity": 18,
@@ -22091,6 +22170,7 @@
         "walk": 50
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 17,
         "dexterity": 15,
@@ -22204,6 +22284,7 @@
         "fly": 90
       },
       "challengeRating": "11",
+      "experiencePoints": 7200,
       "abilityScores": {
         "strength": 21,
         "dexterity": 15,
@@ -22316,6 +22397,7 @@
         "walk": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 11,
         "dexterity": 18,
@@ -22418,6 +22500,7 @@
         "walk": 40
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 18,
         "dexterity": 10,
@@ -22497,6 +22580,7 @@
         "swim": 40
       },
       "challengeRating": "17",
+      "experiencePoints": 18000,
       "abilityScores": {
         "strength": 25,
         "dexterity": 10,
@@ -22682,6 +22766,7 @@
         "walk": 20
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 11,
         "dexterity": 11,
@@ -22814,6 +22899,7 @@
         "climb": 30
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 16,
         "dexterity": 16,
@@ -22997,6 +23083,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 10,
         "dexterity": 12,
@@ -23078,6 +23165,7 @@
         "walk": 30
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 10,
         "dexterity": 12,
@@ -23183,6 +23271,7 @@
         "walk": 25
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 14,
         "dexterity": 11,
@@ -23356,6 +23445,7 @@
         "fly": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 5,
         "dexterity": 14,
@@ -23471,6 +23561,7 @@
         "fly": 60
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 6,
         "dexterity": 15,
@@ -23560,6 +23651,7 @@
         "burrow": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 20,
         "dexterity": 8,
@@ -23660,6 +23752,7 @@
         "fly": 60
       },
       "challengeRating": "11",
+      "experiencePoints": 7200,
       "abilityScores": {
         "strength": 22,
         "dexterity": 12,
@@ -23791,6 +23884,7 @@
         "walk": 40
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 22,
         "dexterity": 9,
@@ -23908,6 +24002,7 @@
         "walk": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 10,
         "dexterity": 14,
@@ -24056,6 +24151,7 @@
         "walk": 50
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 16,
         "dexterity": 10,
@@ -24177,6 +24273,7 @@
         "fly": 60
       },
       "challengeRating": "12",
+      "experiencePoints": 8400,
       "abilityScores": {
         "strength": 18,
         "dexterity": 16,
@@ -24362,6 +24459,7 @@
         "climb": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 14,
         "dexterity": 15,
@@ -24506,6 +24604,7 @@
         "walk": 40
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 21,
         "dexterity": 8,
@@ -24658,6 +24757,7 @@
         "walk": 50
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 10,
         "dexterity": 17,
@@ -24784,6 +24884,7 @@
         "walk": 30
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 25,
         "dexterity": 9,
@@ -24903,6 +25004,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 19,
         "dexterity": 9,
@@ -25015,6 +25117,7 @@
         "swim": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 4,
         "dexterity": 18,
@@ -25104,6 +25207,7 @@
         "fly": 50
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 12,
         "dexterity": 15,
@@ -25213,6 +25317,7 @@
         "swim": 20
       },
       "challengeRating": "0",
+      "experiencePoints": 0,
       "abilityScores": {
         "strength": 1,
         "dexterity": 13,
@@ -25276,6 +25381,7 @@
         "walk": 40
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 23,
         "dexterity": 9,
@@ -25393,6 +25499,7 @@
         "fly": 60
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 15,
         "dexterity": 11,
@@ -25515,6 +25622,7 @@
         "walk": 15
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 14,
         "dexterity": 3,
@@ -25631,6 +25739,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 16,
         "dexterity": 17,
@@ -25762,6 +25871,7 @@
         "fly": 40
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 7,
         "dexterity": 13,
@@ -25918,6 +26028,7 @@
         "walk": 30
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 13,
         "dexterity": 15,
@@ -26024,6 +26135,7 @@
         "climb": 40
       },
       "challengeRating": "7",
+      "experiencePoints": 2900,
       "abilityScores": {
         "strength": 23,
         "dexterity": 14,
@@ -26139,6 +26251,7 @@
         "burrow": 10
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 13,
         "dexterity": 10,
@@ -26256,6 +26369,7 @@
         "fly": 60
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 15,
         "dexterity": 16,
@@ -26337,6 +26451,7 @@
         "walk": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 17,
         "dexterity": 10,
@@ -26447,6 +26562,7 @@
         "climb": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 5,
         "dexterity": 14,
@@ -26532,6 +26648,7 @@
         "swim": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 19,
         "dexterity": 14,
@@ -26620,6 +26737,7 @@
         "swim": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 13,
         "dexterity": 15,
@@ -26712,6 +26830,7 @@
         "swim": 50
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 21,
         "dexterity": 9,
@@ -26856,6 +26975,7 @@
         "fly": 80
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 16,
         "dexterity": 17,
@@ -26974,6 +27094,7 @@
         "walk": 60
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 19,
         "dexterity": 16,
@@ -27093,6 +27214,7 @@
         "walk": 30
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 8,
         "dexterity": 10,
@@ -27165,6 +27287,7 @@
         "swim": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 12,
         "dexterity": 13,
@@ -27291,6 +27414,7 @@
         "walk": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 17,
         "dexterity": 11,
@@ -27408,6 +27532,7 @@
         "walk": 50
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 16,
         "dexterity": 14,
@@ -27494,6 +27619,7 @@
         "climb": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 15,
         "dexterity": 12,
@@ -27574,6 +27700,7 @@
         "swim": 60
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 17,
         "dexterity": 13,
@@ -27682,6 +27809,7 @@
         "fly": 60
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 13,
         "dexterity": 15,
@@ -27773,6 +27901,7 @@
         "swim": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 10,
         "dexterity": 18,
@@ -27868,6 +27997,7 @@
         "walk": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 7,
         "dexterity": 15,
@@ -27970,6 +28100,7 @@
         "walk": 40
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 15,
         "dexterity": 13,
@@ -28083,6 +28214,7 @@
         "swim": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 12,
         "dexterity": 15,
@@ -28194,6 +28326,7 @@
         "swim": 50
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 23,
         "dexterity": 11,
@@ -28285,6 +28418,7 @@
         "climb": 30
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 14,
         "dexterity": 16,
@@ -28403,6 +28537,7 @@
         "swim": 40
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 15,
         "dexterity": 13,
@@ -28539,6 +28674,7 @@
         "fly": 60
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 15,
         "dexterity": 10,
@@ -28670,6 +28806,7 @@
         "fly": 50
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 10,
         "dexterity": 14,
@@ -28754,6 +28891,7 @@
         "walk": 40
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 11,
         "dexterity": 16,
@@ -28840,6 +28978,7 @@
         "climb": 40
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 12,
         "dexterity": 16,
@@ -28941,6 +29080,7 @@
         "swim": 10
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 10,
         "dexterity": 8,
@@ -29079,6 +29219,7 @@
         "walk": 40
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 20,
         "dexterity": 15,
@@ -29210,6 +29351,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -29358,6 +29500,7 @@
         "walk": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 14,
         "dexterity": 12,
@@ -29500,6 +29643,7 @@
         "walk": 20
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 15,
         "dexterity": 14,
@@ -29618,6 +29762,7 @@
         "walk": 40
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 12,
         "dexterity": 10,
@@ -29735,6 +29880,7 @@
         "walk": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 8,
         "dexterity": 14,
@@ -29858,6 +30004,7 @@
         "swim": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 19,
         "dexterity": 14,
@@ -29987,6 +30134,7 @@
         "walk": 40
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 20,
         "dexterity": 11,
@@ -30146,6 +30294,7 @@
         "climb": 10
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 12,
         "dexterity": 6,
@@ -30258,6 +30407,7 @@
         "swim": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 15,
         "dexterity": 12,
@@ -30383,6 +30533,7 @@
         "walk": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 18,
         "dexterity": 12,
@@ -30493,6 +30644,7 @@
         "climb": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 14,
         "dexterity": 14,
@@ -30611,6 +30763,7 @@
         "fly": 80
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -30728,6 +30881,7 @@
         "walk": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 16,
         "dexterity": 12,
@@ -30841,6 +30995,7 @@
         "walk": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 13,
         "dexterity": 12,
@@ -30938,6 +31093,7 @@
         "walk": 40
       },
       "challengeRating": "10",
+      "experiencePoints": 5900,
       "abilityScores": {
         "strength": 19,
         "dexterity": 18,
@@ -31048,6 +31204,7 @@
         "fly": 60
       },
       "challengeRating": "11",
+      "experiencePoints": 7200,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -31165,6 +31322,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 16,
         "dexterity": 13,
@@ -31343,6 +31501,7 @@
         "fly": 40
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 12,
         "dexterity": 13,
@@ -31476,6 +31635,7 @@
         "fly": 60
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 5,
         "dexterity": 16,
@@ -31547,6 +31707,7 @@
         "walk": 50
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 17,
         "dexterity": 12,
@@ -31682,6 +31843,7 @@
         "walk": 30
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 19,
         "dexterity": 17,
@@ -31823,6 +31985,7 @@
         "walk": 40
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 21,
         "dexterity": 8,
@@ -31938,6 +32101,7 @@
         "fly": 60
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 17,
         "dexterity": 13,
@@ -32055,6 +32219,7 @@
         "walk": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 13,
         "dexterity": 12,
@@ -32189,6 +32354,7 @@
         "fly": 40
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 4,
         "dexterity": 15,
@@ -32273,6 +32439,7 @@
         "fly": 60
       },
       "challengeRating": "11",
+      "experiencePoints": 7200,
       "abilityScores": {
         "strength": 22,
         "dexterity": 17,
@@ -32431,6 +32598,7 @@
         "swim": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 13,
@@ -32522,6 +32690,7 @@
         "swim": 30
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 20,
         "dexterity": 12,
@@ -32651,6 +32820,7 @@
         "walk": 50
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 11,
         "dexterity": 13,
@@ -32747,6 +32917,7 @@
         "walk": 40
       },
       "challengeRating": "14",
+      "experiencePoints": 11500,
       "abilityScores": {
         "strength": 21,
         "dexterity": 14,
@@ -32968,6 +33139,7 @@
         "fly": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 7,
         "dexterity": 13,
@@ -33097,6 +33269,7 @@
         "fly": 40
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 6,
         "dexterity": 17,
@@ -33222,6 +33395,7 @@
         "fly": 50
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 16,
         "dexterity": 19,
@@ -33329,6 +33503,7 @@
         "walk": 30
       },
       "challengeRating": "16",
+      "experiencePoints": 15000,
       "abilityScores": {
         "strength": 24,
         "dexterity": 9,
@@ -33483,6 +33658,7 @@
         "walk": 40
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 8,
         "dexterity": 15,
@@ -33567,6 +33743,7 @@
         "swim": 60
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -33669,6 +33846,7 @@
         "walk": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 16,
         "dexterity": 11,
@@ -33816,6 +33994,7 @@
         "walk": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 7,
         "dexterity": 15,
@@ -33944,6 +34123,7 @@
         "swim": 60
       },
       "challengeRating": "23",
+      "experiencePoints": 50000,
       "abilityScores": {
         "strength": 30,
         "dexterity": 11,
@@ -34202,6 +34382,7 @@
         "walk": 30
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 16,
         "dexterity": 13,
@@ -34326,6 +34507,7 @@
         "walk": 15
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 10,
         "dexterity": 5,
@@ -34417,6 +34599,7 @@
         "walk": 30
       },
       "challengeRating": "21",
+      "experiencePoints": 33000,
       "abilityScores": {
         "strength": 11,
         "dexterity": 16,
@@ -34565,6 +34748,7 @@
         "walk": 50
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 17,
         "dexterity": 15,
@@ -34713,6 +34897,7 @@
         "climb": 20
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 11,
@@ -34778,6 +34963,7 @@
         "swim": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 15,
         "dexterity": 10,
@@ -34956,6 +35142,7 @@
         "walk": 30
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 9,
         "dexterity": 14,
@@ -35051,6 +35238,7 @@
         "fly": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 8,
         "dexterity": 12,
@@ -35176,6 +35364,7 @@
         "walk": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 7,
         "dexterity": 15,
@@ -35286,6 +35475,7 @@
         "walk": 40
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 24,
         "dexterity": 9,
@@ -35405,6 +35595,7 @@
         "fly": 50
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 17,
         "dexterity": 16,
@@ -35555,6 +35746,7 @@
         "walk": 40
       },
       "challengeRating": "16",
+      "experiencePoints": 15000,
       "abilityScores": {
         "strength": 18,
         "dexterity": 20,
@@ -35688,6 +35880,7 @@
         "walk": 40
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 13,
         "dexterity": 14,
@@ -35786,6 +35979,7 @@
         "walk": 30
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 10,
         "dexterity": 15,
@@ -35957,6 +36151,7 @@
         "swim": 40
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 10,
         "dexterity": 13,
@@ -36057,6 +36252,7 @@
         "swim": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 10,
@@ -36205,6 +36401,7 @@
         "walk": 15
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 17,
         "dexterity": 12,
@@ -36358,6 +36555,7 @@
         "walk": 40
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 18,
         "dexterity": 11,
@@ -36503,6 +36701,7 @@
         "walk": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 11,
@@ -36639,6 +36838,7 @@
         "walk": 40
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 14,
         "dexterity": 10,
@@ -36738,6 +36938,7 @@
         "walk": 20
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 16,
         "dexterity": 8,
@@ -36866,6 +37067,7 @@
         "walk": 20
       },
       "challengeRating": "15",
+      "experiencePoints": 13000,
       "abilityScores": {
         "strength": 18,
         "dexterity": 10,
@@ -37086,6 +37288,7 @@
         "fly": 30
       },
       "challengeRating": "13",
+      "experiencePoints": 10000,
       "abilityScores": {
         "strength": 21,
         "dexterity": 10,
@@ -37236,6 +37439,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -37336,6 +37540,7 @@
         "fly": 90
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -37440,6 +37645,7 @@
         "walk": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 11,
         "dexterity": 12,
@@ -37530,6 +37736,7 @@
         "climb": 10
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 15,
         "dexterity": 6,
@@ -37638,6 +37845,7 @@
         "swim": 30
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 4,
         "dexterity": 15,
@@ -37727,6 +37935,7 @@
         "walk": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 19,
         "dexterity": 8,
@@ -37840,6 +38049,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 19,
         "dexterity": 6,
@@ -37935,6 +38145,7 @@
         "fly": 30
       },
       "challengeRating": "7",
+      "experiencePoints": 2900,
       "abilityScores": {
         "strength": 19,
         "dexterity": 11,
@@ -38071,6 +38282,7 @@
         "walk": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 16,
         "dexterity": 12,
@@ -38188,6 +38400,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 16,
         "dexterity": 11,
@@ -38367,6 +38580,7 @@
         "fly": 60
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 3,
         "dexterity": 13,
@@ -38442,6 +38656,7 @@
         "walk": 40
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 20,
         "dexterity": 12,
@@ -38545,6 +38760,7 @@
         "climb": 40
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 14,
         "dexterity": 15,
@@ -38677,6 +38893,7 @@
         "fly": 90
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -38758,6 +38975,7 @@
         "climb": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 15,
         "dexterity": 15,
@@ -38862,6 +39080,7 @@
         "fly": 60
       },
       "challengeRating": "20",
+      "experiencePoints": 25000,
       "abilityScores": {
         "strength": 26,
         "dexterity": 14,
@@ -39099,6 +39318,7 @@
         "fly": 120
       },
       "challengeRating": "16",
+      "experiencePoints": 15000,
       "abilityScores": {
         "strength": 24,
         "dexterity": 20,
@@ -39229,6 +39449,7 @@
         "swim": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 15,
@@ -39315,6 +39536,7 @@
         "swim": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 2,
         "dexterity": 16,
@@ -39400,6 +39622,7 @@
         "swim": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 20,
         "dexterity": 10,
@@ -39517,6 +39740,7 @@
         "walk": 40
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 15,
         "dexterity": 10,
@@ -39596,6 +39820,7 @@
         "walk": 25
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 10,
         "dexterity": 10,
@@ -39696,6 +39921,7 @@
         "fly": 60
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 6,
         "dexterity": 15,
@@ -39819,6 +40045,7 @@
         "burrow": 30
       },
       "challengeRating": "15",
+      "experiencePoints": 13000,
       "abilityScores": {
         "strength": 28,
         "dexterity": 7,
@@ -39960,6 +40187,7 @@
         "walk": 40
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 5,
         "dexterity": 17,
@@ -40105,6 +40333,7 @@
         "swim": 40
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 16,
@@ -40180,6 +40409,7 @@
         "walk": 40
       },
       "challengeRating": "13",
+      "experiencePoints": 10000,
       "abilityScores": {
         "strength": 14,
         "dexterity": 17,
@@ -40275,6 +40505,7 @@
         "walk": 20
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 11,
@@ -40346,6 +40577,7 @@
         "fly": 50
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 14,
@@ -40424,6 +40656,7 @@
         "fly": 60
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -40540,6 +40773,7 @@
         "swim": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 14,
         "dexterity": 13,
@@ -40639,6 +40873,7 @@
         "burrow": 20
       },
       "challengeRating": "11",
+      "experiencePoints": 7200,
       "abilityScores": {
         "strength": 24,
         "dexterity": 13,
@@ -40786,6 +41021,7 @@
         "walk": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 21,
         "dexterity": 8,
@@ -40891,6 +41127,7 @@
         "walk": 60
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 16,
         "dexterity": 10,
@@ -40970,6 +41207,7 @@
         "fly": 120
       },
       "challengeRating": "11",
+      "experiencePoints": 7200,
       "abilityScores": {
         "strength": 28,
         "dexterity": 10,
@@ -41099,6 +41337,7 @@
         "climb": 10
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 8,
@@ -41227,6 +41466,7 @@
         "walk": 10
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 17,
         "dexterity": 14,
@@ -41345,6 +41585,7 @@
         "walk": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 13,
         "dexterity": 12,
@@ -41445,6 +41686,7 @@
         "walk": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 18,
         "dexterity": 14,
@@ -41577,6 +41819,7 @@
         "swim": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 13,
         "dexterity": 11,
@@ -41744,6 +41987,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 14,
@@ -41925,6 +42169,7 @@
         "walk": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 12,
         "dexterity": 16,
@@ -42069,6 +42314,7 @@
         "walk": 10
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 11,
@@ -42139,6 +42385,7 @@
         "walk": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 11,
         "dexterity": 14,
@@ -42260,6 +42507,7 @@
         "swim": 40
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 16,
         "dexterity": 13,
@@ -42385,6 +42633,7 @@
         "swim": 20
       },
       "challengeRating": "0",
+      "experiencePoints": 0,
       "abilityScores": {
         "strength": 1,
         "dexterity": 12,
@@ -42439,6 +42688,7 @@
         "walk": 40
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 6,
         "dexterity": 14,
@@ -42522,6 +42772,7 @@
         "swim": 20
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 8,
@@ -42655,6 +42906,7 @@
         "walk": 30
       },
       "challengeRating": "7",
+      "experiencePoints": 2900,
       "abilityScores": {
         "strength": 18,
         "dexterity": 8,
@@ -42762,6 +43014,7 @@
         "walk": 0
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 1,
         "dexterity": 1,
@@ -42829,6 +43082,7 @@
         "fly": 60
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -42961,6 +43215,7 @@
         "walk": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 10,
         "dexterity": 14,
@@ -43077,6 +43332,7 @@
         "fly": 150
       },
       "challengeRating": "21",
+      "experiencePoints": 33000,
       "abilityScores": {
         "strength": 26,
         "dexterity": 22,
@@ -43307,6 +43563,7 @@
         "fly": 50
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 1,
         "dexterity": 14,
@@ -43399,6 +43656,7 @@
         "climb": 20
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 2,
         "dexterity": 14,
@@ -43486,6 +43744,7 @@
         "walk": 40
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 18,
         "dexterity": 17,
@@ -43574,6 +43833,7 @@
         "fly": 40
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 3,
         "dexterity": 18,
@@ -43697,6 +43957,7 @@
         "walk": 30
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 10,
         "dexterity": 15,
@@ -43834,6 +44095,7 @@
         "fly": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 5,
         "dexterity": 11,
@@ -43954,6 +44216,7 @@
         "fly": 40
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 4,
         "dexterity": 16,
@@ -44020,6 +44283,7 @@
         "walk": 40
       },
       "challengeRating": "7",
+      "experiencePoints": 2900,
       "abilityScores": {
         "strength": 23,
         "dexterity": 15,
@@ -44170,6 +44434,7 @@
         "walk": 30
       },
       "challengeRating": "10",
+      "experiencePoints": 5900,
       "abilityScores": {
         "strength": 22,
         "dexterity": 9,
@@ -44289,6 +44554,7 @@
         "swim": 50
       },
       "challengeRating": "13",
+      "experiencePoints": 10000,
       "abilityScores": {
         "strength": 29,
         "dexterity": 14,
@@ -44441,6 +44707,7 @@
         "fly": 60
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 8,
         "dexterity": 17,
@@ -44587,6 +44854,7 @@
         "fly": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 5,
         "dexterity": 15,
@@ -44680,6 +44948,7 @@
         "climb": 20
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 3,
         "dexterity": 13,
@@ -44783,6 +45052,7 @@
         "swim": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 8,
         "dexterity": 18,
@@ -44871,6 +45141,7 @@
         "swim": 40
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 13,
         "dexterity": 16,
@@ -44955,6 +45226,7 @@
         "walk": 30
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 9,
         "dexterity": 11,
@@ -45056,6 +45328,7 @@
         "fly": 50
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 6,
         "dexterity": 14,
@@ -45153,6 +45426,7 @@
         "walk": 40
       },
       "challengeRating": "30",
+      "experiencePoints": 155000,
       "abilityScores": {
         "strength": 30,
         "dexterity": 11,
@@ -45431,6 +45705,7 @@
         "walk": 30
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 15,
         "dexterity": 11,
@@ -45545,6 +45820,7 @@
         "walk": 40
       },
       "challengeRating": "1",
+      "experiencePoints": 200,
       "abilityScores": {
         "strength": 17,
         "dexterity": 15,
@@ -45676,6 +45952,7 @@
         "walk": 30
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 23,
         "dexterity": 8,
@@ -45806,6 +46083,7 @@
         "walk": 30
       },
       "challengeRating": "1/8",
+      "experiencePoints": 25,
       "abilityScores": {
         "strength": 13,
         "dexterity": 11,
@@ -45916,6 +46194,7 @@
         "walk": 50
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 22,
         "dexterity": 9,
@@ -46033,6 +46312,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 13,
@@ -46157,6 +46437,7 @@
         "walk": 50
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 25,
         "dexterity": 10,
@@ -46278,6 +46559,7 @@
         "walk": 50
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 14,
@@ -46453,6 +46735,7 @@
         "walk": 30
       },
       "challengeRating": "13",
+      "experiencePoints": 10000,
       "abilityScores": {
         "strength": 18,
         "dexterity": 18,
@@ -46663,6 +46946,7 @@
         "walk": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 16,
         "dexterity": 16,
@@ -46804,6 +47088,7 @@
         "walk": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 16,
         "dexterity": 13,
@@ -46960,6 +47245,7 @@
         "walk": 5
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 3,
         "dexterity": 1,
@@ -47038,6 +47324,7 @@
         "fly": 60
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 17,
         "dexterity": 15,
@@ -47207,6 +47494,7 @@
         "fly": 50
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 7,
         "dexterity": 10,
@@ -47304,6 +47592,7 @@
         "walk": 60
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 18,
         "dexterity": 12,
@@ -47405,6 +47694,7 @@
         "walk": 60
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 18,
         "dexterity": 12,
@@ -47490,6 +47780,7 @@
         "swim": 90
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 18,
         "dexterity": 14,
@@ -47624,6 +47915,7 @@
         "walk": 30
       },
       "challengeRating": "0",
+      "experiencePoints": 10,
       "abilityScores": {
         "strength": 3,
         "dexterity": 16,
@@ -47699,6 +47991,7 @@
         "climb": 30
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -47858,6 +48151,7 @@
         "walk": 30
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 17,
         "dexterity": 10,
@@ -48014,6 +48308,7 @@
         "walk": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 10,
         "dexterity": 15,
@@ -48150,6 +48445,7 @@
         "walk": 30
       },
       "challengeRating": "4",
+      "experiencePoints": 1100,
       "abilityScores": {
         "strength": 17,
         "dexterity": 15,
@@ -48358,6 +48654,7 @@
         "walk": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 15,
         "dexterity": 13,
@@ -48497,6 +48794,7 @@
         "swim": 30
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 14,
         "dexterity": 10,
@@ -48612,6 +48910,7 @@
         "walk": 30
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 15,
         "dexterity": 14,
@@ -48765,6 +49064,7 @@
         "fly": 50
       },
       "challengeRating": "2",
+      "experiencePoints": 450,
       "abilityScores": {
         "strength": 1,
         "dexterity": 28,
@@ -48878,6 +49178,7 @@
         "walk": 50
       },
       "challengeRating": "3",
+      "experiencePoints": 700,
       "abilityScores": {
         "strength": 18,
         "dexterity": 13,
@@ -49017,6 +49318,7 @@
         "walk": 40
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 12,
         "dexterity": 15,
@@ -49126,6 +49428,7 @@
         "walk": 50
       },
       "challengeRating": "1/2",
+      "experiencePoints": 100,
       "abilityScores": {
         "strength": 16,
         "dexterity": 13,
@@ -49225,6 +49528,7 @@
         "fly": 60
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 6,
         "dexterity": 16,
@@ -49321,6 +49625,7 @@
         "fly": 80
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -49442,6 +49747,7 @@
         "burrow": 20
       },
       "challengeRating": "5",
+      "experiencePoints": 1800,
       "abilityScores": {
         "strength": 17,
         "dexterity": 10,
@@ -49575,6 +49881,7 @@
         "swim": 40
       },
       "challengeRating": "7",
+      "experiencePoints": 2900,
       "abilityScores": {
         "strength": 19,
         "dexterity": 14,
@@ -49735,6 +50042,7 @@
         "fly": 80
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 21,
         "dexterity": 10,
@@ -49889,6 +50197,7 @@
         "fly": 80
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 19,
         "dexterity": 10,
@@ -50057,6 +50366,7 @@
         "swim": 40
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 21,
         "dexterity": 10,
@@ -50225,6 +50535,7 @@
         "fly": 80
       },
       "challengeRating": "7",
+      "experiencePoints": 2900,
       "abilityScores": {
         "strength": 19,
         "dexterity": 12,
@@ -50387,6 +50698,7 @@
         "swim": 40
       },
       "challengeRating": "10",
+      "experiencePoints": 5900,
       "abilityScores": {
         "strength": 23,
         "dexterity": 14,
@@ -50555,6 +50867,7 @@
         "swim": 40
       },
       "challengeRating": "8",
+      "experiencePoints": 3900,
       "abilityScores": {
         "strength": 19,
         "dexterity": 12,
@@ -50716,6 +51029,7 @@
         "fly": 80
       },
       "challengeRating": "10",
+      "experiencePoints": 5900,
       "abilityScores": {
         "strength": 23,
         "dexterity": 10,
@@ -50869,6 +51183,7 @@
         "fly": 80
       },
       "challengeRating": "9",
+      "experiencePoints": 5000,
       "abilityScores": {
         "strength": 23,
         "dexterity": 10,
@@ -51038,6 +51353,7 @@
         "swim": 40
       },
       "challengeRating": "6",
+      "experiencePoints": 2300,
       "abilityScores": {
         "strength": 18,
         "dexterity": 10,
@@ -51194,6 +51510,7 @@
         "walk": 20
       },
       "challengeRating": "1/4",
+      "experiencePoints": 50,
       "abilityScores": {
         "strength": 13,
         "dexterity": 6,

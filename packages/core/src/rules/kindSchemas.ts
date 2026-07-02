@@ -1249,6 +1249,10 @@ function validateDnd5eCreature(record: RulesRecord, path: string): void {
   reqInt(data, 'hitPoints', `${path}.data`, 0);
   reqObj(data, 'speed', `${path}.data`);
   reqStr(data, 'challengeRating', `${path}.data`);
+  // The printed XP award from the Challenge parenthetical (eshyra-o9bd.18.5).
+  // Required: every SRD creature prints one, and CR 0 is source-underdetermined
+  // (0 or 10 XP) so the value cannot be derived from challengeRating alone.
+  reqInt(data, 'experiencePoints', `${path}.data`, 0);
   const abilities = reqObj(data, 'abilityScores', `${path}.data`);
   for (const key of [
     'strength',

@@ -137,6 +137,19 @@ describe('parseCreatures — Goblin (small humanoid)', () => {
     expect(goblin.challengeRating).toBe('1/4');
   });
 
+  it('parses the printed XP award from the Challenge parenthetical (eshyra-o9bd.18.5)', () => {
+    expect(goblin.experiencePoints).toBe(50);
+  });
+
+  it('throws when a Challenge line carries no XP award (eshyra-o9bd.18.5)', () => {
+    const noXp = GOBLIN_LINES.map((l) =>
+      l.startsWith('Challenge') ? 'Challenge 1/4' : l,
+    );
+    expect(() => parseCreatures([page(310, noXp)])).toThrow(
+      /Challenge line without an XP award/,
+    );
+  });
+
   it('parses all six ability scores (score, not modifier)', () => {
     expect(goblin.abilityScores).toEqual({
       strength: 8,
