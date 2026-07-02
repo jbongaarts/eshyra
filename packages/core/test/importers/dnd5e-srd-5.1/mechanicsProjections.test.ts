@@ -146,6 +146,165 @@ describe('condition relation classification (eshyra-qqyj)', () => {
   });
 });
 
+describe('condition relation prevention/removal semantics (eshyra-o9bd.18.3)', () => {
+  // SRD 5.1 p. 123: the target becomes visible and CANNOT become invisible —
+  // recording relation "applies" would make a deterministic tool do the
+  // opposite of the spell.
+  it('spell:branding-smite — "can\'t become invisible" is prevents, not applies', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          "The next time you hit a creature with a weapon attack before this spell ends, the weapon gleams with astral radiance as you strike. The attack deals an extra 2d6 radiant damage to the target, which becomes visible if it's invisible, and the target sheds dim light in a 5-foot radius and can't become invisible until the spell ends.",
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'invisible', relation: 'prevents' },
+    ]);
+  });
+
+  it('spell:calm-emotions — suppressing charmed/frightened is suppresses, not applies', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'You attempt to suppress strong emotions in a group of people. You can suppress any effect causing a target to be charmed or frightened.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'charmed', relation: 'suppresses' },
+      { condition: 'frightened', relation: 'suppresses' },
+    ]);
+  });
+
+  it('spell:lesser-restoration — the whole removable-condition list is removes, not applies', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'You touch a creature and can end either one disease or one condition afflicting it. The condition can be blinded, deafened, paralyzed, or poisoned.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'blinded', relation: 'removes' },
+      { condition: 'deafened', relation: 'removes' },
+      { condition: 'paralyzed', relation: 'removes' },
+      { condition: 'poisoned', relation: 'removes' },
+    ]);
+  });
+
+  it('spell:protection-from-evil-and-good — "can\'t be charmed, frightened, or possessed" is prevents for every listed condition', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'The target also can’t be charmed, frightened, or possessed by them. If the target is already charmed, frightened, or possessed by such a creature, the target has advantage on any new saving throw against the relevant effect.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'charmed', relation: 'prevents' },
+      { condition: 'frightened', relation: 'prevents' },
+    ]);
+  });
+
+  it('spell:hold-person — a true condition-inflicting spell still classifies as applies (no overcorrection)', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'paralyzed', relation: 'applies' },
+    ]);
+  });
+
+  it('creature grapple riders and save-or-suffer clauses still classify as applies (no overcorrection)', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Tentacle',
+      'If the target is a Large or smaller creature, it is grappled (escape DC 13). Until this grapple ends, the target is restrained, and the creature must succeed on a DC 12 Constitution saving throw or be poisoned for 1 minute.',
+    );
+    expect(mechanics.conditions).toEqual(
+      expect.arrayContaining([
+        { condition: 'grappled', relation: 'applies' },
+        { condition: 'restrained', relation: 'applies' },
+        { condition: 'poisoned', relation: 'applies' },
+      ]),
+    );
+  });
+
+  it("spell:suggestion — a can't-be-charmed immunity gate is gates, not applies or prevents", () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'You suggest a course of activity and magically influence a creature. Creatures that can’t be charmed are immune to this effect.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'charmed', relation: 'gates' },
+    ]);
+  });
+
+  it('spell:dispel-evil-and-good — removal outranks the touch-target gating clause', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'As your action, you touch a creature you can reach that is charmed, frightened, or possessed by a celestial, an elemental, a fey, a fiend, or an undead. The creature you touch is no longer charmed, frightened, or possessed by such creatures.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'charmed', relation: 'removes' },
+      { condition: 'frightened', relation: 'removes' },
+    ]);
+  });
+
+  it('spell:polymorph — a negated "isn\'t knocked unconscious" is not applies', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'As long as the excess damage doesn’t reduce the creature’s normal form to 0 hit points, it isn’t knocked unconscious.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'unconscious', relation: 'mention' },
+    ]);
+  });
+
+  it('creature:kraken Freedom of Movement — negated causation is prevents, not applies', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Freedom of Movement',
+      'The kraken ignores difficult terrain, and magical effects can’t reduce its speed or cause it to be restrained.',
+    );
+    expect(mechanics.conditions).toEqual([
+      { condition: 'restrained', relation: 'prevents' },
+    ]);
+  });
+
+  it('creature:vampire stake trait — a while-incapacitated precondition is gates; the applied paralysis stays applies', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Stake to the Heart',
+      'If a piercing weapon made of wood is driven into the vampire’s heart while the vampire is incapacitated in its resting place, the vampire is paralyzed until the stake is removed.',
+    );
+    expect(mechanics.conditions).toEqual(
+      expect.arrayContaining([
+        { condition: 'incapacitated', relation: 'gates' },
+        { condition: 'paralyzed', relation: 'applies' },
+      ]),
+    );
+  });
+
+  it('spell:hallow — a condition that is removed, prevented, AND inflicted aggregates to the state mutation applies', () => {
+    const mechanics = deriveSpellMechanics(
+      spell({
+        description:
+          'Any creature charmed, frightened, or possessed by such a creature is no longer charmed, frightened, or possessed upon entering the area. Courage. Affected creatures can’t be frightened while in the area. Fear. Affected creatures are frightened while in the area.',
+      }),
+    );
+    expect(mechanics.conditions).toEqual(
+      expect.arrayContaining([
+        { condition: 'frightened', relation: 'applies' },
+        { condition: 'charmed', relation: 'removes' },
+      ]),
+    );
+  });
+});
+
 describe('damage type canonicalization (eshyra-erf5.4)', () => {
   it('excludes a "<dice> <word> damage" match whose word is not a canonical SRD damage type', () => {
     const mechanics = deriveSpellMechanics(

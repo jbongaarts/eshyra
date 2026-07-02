@@ -1,3 +1,4 @@
+import { deriveConditionMechanics } from '../../../src/rules/conditionRelations.js';
 import type {
   ActionExtraction,
   FeatExtraction,
@@ -118,147 +119,16 @@ function parseSave(text: string): Mechanics | undefined {
   });
 }
 
-const CONDITION_NAMES = [
-  'blinded',
-  'charmed',
-  'deafened',
-  'frightened',
-  'grappled',
-  'incapacitated',
-  'invisible',
-  'paralyzed',
-  'petrified',
-  'poisoned',
-  'prone',
-  'restrained',
-  'stunned',
-  'unconscious',
-] as const;
-
 /**
- * What a sentence says about a condition mention, not just that it was
- * mentioned. Raw condition-name matches conflate "this effect applies the
- * condition" with advantage clauses, immunity clauses, targeting exclusions,
- * and incidental prose (eshyra-qqyj) — unsafe for deterministic game-state
- * logic. Only `applies`/`removes` are state mutations; every other relation
- * is a non-authoritative mention a consumer must not act on without the
- * source text.
+ * Condition-relation classification lives in the shared
+ * `src/rules/conditionRelations.ts` module so the importer projection, the
+ * `kindSchemas` relation enum, and the `condition-relation-safety` audit gate
+ * in `srdAudit.ts` share one implementation and cannot drift
+ * (eshyra-qqyj, eshyra-o9bd.18.3). See that module for the closed relation
+ * vocabulary and its contract for deterministic consumers.
  */
-type ConditionRelation =
-  | 'applies'
-  | 'removes'
-  | 'immune'
-  | 'advantage'
-  | 'disadvantage'
-  | 'exclusion'
-  | 'mention';
-
-// Checked in this order per sentence; the first matching relation wins. Order
-// matters: e.g. an advantage-against-conditions list ("...or knocked
-// unconscious") must be classified `advantage`, not `applies`, even though it
-// also matches an applies-shaped phrase ("knocked unconscious").
-const RELATION_PATTERNS: readonly {
-  readonly relation: ConditionRelation;
-  readonly test: (sentence: string, condition: string) => boolean;
-}[] = [
-  {
-    relation: 'removes',
-    test: (s, c) =>
-      new RegExp(`\\bno longer\\s+(?:being\\s+)?${c}\\b`, 'i').test(s) ||
-      new RegExp(`\\bceases?\\s+to\\s+be\\s+${c}\\b`, 'i').test(s) ||
-      new RegExp(`\\b${c}\\s+condition\\s+(?:also\\s+)?ends\\b`, 'i').test(s) ||
-      new RegExp(`\\bremoves?\\s+the\\s+${c}\\b`, 'i').test(s),
-  },
-  {
-    relation: 'immune',
-    // Broad like `advantage` below: SRD immunity clauses are often a list
-    // ("immunity to being charmed and frightened"), so the condition can sit
-    // several words after "immune"/"immunity", not immediately after it.
-    test: (s, c) =>
-      new RegExp(`\\bimmun(?:e|ity)\\b[^.]*\\b${c}\\b`, 'i').test(s) ||
-      new RegExp(`\\bunaffected\\s+by\\b[^.]*\\b${c}\\b`, 'i').test(s),
-  },
-  {
-    relation: 'advantage',
-    test: (s, c) => new RegExp(`\\badvantage\\b[^.]*\\b${c}\\b`, 'i').test(s),
-  },
-  {
-    relation: 'disadvantage',
-    test: (s, c) =>
-      new RegExp(`\\bdisadvantage\\b[^.]*\\b${c}\\b`, 'i').test(s),
-  },
-  {
-    relation: 'exclusion',
-    test: (s, c) =>
-      new RegExp(`\\bignoring\\s+(?:\\w+\\s+){0,2}${c}\\b`, 'i').test(s) ||
-      new RegExp(
-        `\\bif\\s+(?:\\w+\\s+){0,3}(?:are|is)\\s+(?:already\\s+)?${c}\\b`,
-        'i',
-      ).test(s) ||
-      new RegExp(`\\balready\\s+${c}\\b`, 'i').test(s),
-  },
-  {
-    relation: 'applies',
-    test: (s, c) =>
-      new RegExp(`\\bbecomes?\\s+${c}\\b`, 'i').test(s) ||
-      new RegExp(`\\bfalls?\\s+${c}\\b`, 'i').test(s) ||
-      new RegExp(`\\bbe\\s+${c}\\b`, 'i').test(s) ||
-      new RegExp(`\\b(?:is|are)\\s+${c}\\b`, 'i').test(s) ||
-      new RegExp(`\\bknocked\\s+${c}\\b`, 'i').test(s),
-  },
-];
-
-// A condition can be mentioned in more than one sentence with different
-// relations (sleep's "ignoring unconscious creatures" exclusion clause vs.
-// its "falls unconscious" effect clause). When that happens, the state
-// mutation the source text actually performs is what matters most to a
-// deterministic consumer, so `applies`/`removes` outrank the merely
-// descriptive relations — independent of RELATION_PATTERNS' per-sentence
-// match order, which is tuned to avoid false positives within one sentence.
-const AGGREGATION_PRIORITY: readonly ConditionRelation[] = [
-  'applies',
-  'removes',
-  'immune',
-  'advantage',
-  'disadvantage',
-  'exclusion',
-  'mention',
-];
-
-function splitSentences(text: string): readonly string[] {
-  return text.split(/(?<=[.!?])\s+/).filter((sentence) => sentence.length > 0);
-}
-
-function classifyConditionRelation(
-  sentences: readonly string[],
-  condition: string,
-): ConditionRelation {
-  const found = new Set<ConditionRelation>();
-  for (const sentence of sentences) {
-    if (!new RegExp(`\\b${condition}\\b`, 'i').test(sentence)) continue;
-    const match = RELATION_PATTERNS.find(({ test }) =>
-      test(sentence, condition),
-    );
-    found.add(match?.relation ?? 'mention');
-  }
-  for (const relation of AGGREGATION_PRIORITY) {
-    if (found.has(relation)) return relation;
-  }
-  return 'mention';
-}
-
 function parseConditions(text: string): readonly Mechanics[] {
-  const sentences = splitSentences(text);
-  const out: Mechanics[] = [];
-  for (const condition of CONDITION_NAMES) {
-    if (new RegExp(`\\b${condition}\\b`, 'i').test(text)) {
-      out.push({
-        condition,
-        relation: classifyConditionRelation(sentences, condition),
-      });
-    }
-  }
-  return out;
+  return deriveConditionMechanics(text).map((entry) => ({ ...entry }));
 }
 
 function parseAttack(text: string): Mechanics | undefined {

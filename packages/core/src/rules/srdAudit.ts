@@ -35,6 +35,10 @@
  * diffable across runs. SRD-specific knowledge lives here, never in `audit.ts`.
  */
 
+import {
+  classifyConditionRelation,
+  splitConditionSentences,
+} from './conditionRelations.js';
 import type { RulesPack, RulesRecord } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -54,6 +58,7 @@ export type SrdAuditCategory =
   | 'creature-stat-block-prose-bleed'
   | 'spell-concentration-flag'
   | 'creature-cr-xp'
+  | 'condition-relation-safety'
   | 'missing-coverage';
 
 export interface SrdAuditFinding {
@@ -1190,6 +1195,93 @@ function checkCreatureCrXp(record: RulesRecord): SrdAuditFinding[] {
       ];
 }
 
+// ---------------------------------------------------------------------------
+// Condition relation safety (eshyra-o9bd.18.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Re-derive every `mechanics.conditions[].relation` from the record's own
+ * source text via the shared classifier in `conditionRelations.ts` and flag
+ * any disagreement. Because the classifier is the single implementation used
+ * by the importer projection, this is a drift/hand-edit guard with one
+ * safety-critical corollary: prevention, removal, suppression, and
+ * immunity-gate phrasings can never survive in the pack as
+ * `relation: "applies"` (the class of defect where a deterministic tool would
+ * apply the opposite of the SRD effect — e.g. Branding Smite's "can't become
+ * invisible" recorded as applying Invisible).
+ *
+ * The walk pairs each `mechanics` object with the sibling prose it was
+ * derived from: `description` (+ `higherLevels` for spells) on the record
+ * data, `text` on nested creature trait/action/reaction/legendary entries.
+ * A conditions array with no sibling prose is skipped — there is nothing to
+ * re-derive against, and no SRD record shape emits one.
+ */
+function checkConditionRelationSafety(record: RulesRecord): SrdAuditFinding[] {
+  const findings: SrdAuditFinding[] = [];
+  const data = dataObject(record);
+  if (data === null) return findings;
+
+  const checkMechanics = (
+    mechanics: Record<string, unknown>,
+    text: string,
+    path: string,
+  ): void => {
+    const conditions = mechanics.conditions;
+    if (!Array.isArray(conditions)) return;
+    const sentences = splitConditionSentences(text);
+    for (const entry of conditions) {
+      if (typeof entry !== 'object' || entry === null) continue;
+      const { condition, relation } = entry as Record<string, unknown>;
+      if (typeof condition !== 'string' || typeof relation !== 'string') {
+        continue;
+      }
+      const derived = classifyConditionRelation(sentences, condition);
+      if (derived !== relation) {
+        findings.push({
+          category: 'condition-relation-safety',
+          key: record.key,
+          kind: record.kind,
+          name: record.name,
+          detail: `${path}.conditions has ${condition} relation "${relation}" but the source text derives "${derived}"`,
+        });
+      }
+    }
+  };
+
+  const visit = (node: unknown, path: string): void => {
+    if (typeof node !== 'object' || node === null) return;
+    if (Array.isArray(node)) {
+      for (const [index, item] of node.entries()) {
+        visit(item, `${path}[${index}]`);
+      }
+      return;
+    }
+    const obj = node as Record<string, unknown>;
+    const prose = [obj.description, obj.text, obj.higherLevels]
+      .filter((value): value is string => typeof value === 'string')
+      .join(' ');
+    const mechanics = obj.mechanics;
+    if (
+      prose.length > 0 &&
+      typeof mechanics === 'object' &&
+      mechanics !== null &&
+      !Array.isArray(mechanics)
+    ) {
+      checkMechanics(
+        mechanics as Record<string, unknown>,
+        prose,
+        `${path}.mechanics`,
+      );
+    }
+    for (const [key, value] of Object.entries(obj)) {
+      if (key !== 'mechanics') visit(value, `${path}.${key}`);
+    }
+  };
+
+  visit(data, 'data');
+  return findings;
+}
+
 /**
  * Run every structure-aware check over a loaded SRD pack. Output is sorted for
  * diffable reports.
@@ -1205,6 +1297,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
     findings.push(...checkCreatureStatBlockProseBleed(record));
     findings.push(...checkSpellConcentrationFlag(record));
     findings.push(...checkCreatureCrXp(record));
+    findings.push(...checkConditionRelationSafety(record));
   }
   findings.push(...checkSpellTableLinks(pack));
   findings.push(...checkTableOwnerLinks(pack));

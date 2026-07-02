@@ -17813,7 +17813,7 @@
             "conditions": [
               {
                 "condition": "frightened",
-                "relation": "applies"
+                "relation": "prevents"
               }
             ]
           }
@@ -33091,7 +33091,7 @@
             "conditions": [
               {
                 "condition": "incapacitated",
-                "relation": "applies"
+                "relation": "gates"
               }
             ]
           }
@@ -34153,7 +34153,7 @@
               },
               {
                 "condition": "restrained",
-                "relation": "applies"
+                "relation": "prevents"
               }
             ]
           }
@@ -39113,7 +39113,7 @@
               },
               {
                 "condition": "incapacitated",
-                "relation": "applies"
+                "relation": "gates"
               }
             ]
           }
@@ -46801,7 +46801,7 @@
             "conditions": [
               {
                 "condition": "incapacitated",
-                "relation": "applies"
+                "relation": "gates"
               },
               {
                 "condition": "paralyzed",
@@ -46852,7 +46852,7 @@
             "conditions": [
               {
                 "condition": "grappled",
-                "relation": "applies"
+                "relation": "gates"
               },
               {
                 "condition": "incapacitated",
@@ -46988,7 +46988,7 @@
             "conditions": [
               {
                 "condition": "incapacitated",
-                "relation": "applies"
+                "relation": "gates"
               }
             ]
           }
@@ -47035,7 +47035,7 @@
             "conditions": [
               {
                 "condition": "grappled",
-                "relation": "applies"
+                "relation": "gates"
               },
               {
                 "condition": "incapacitated",
@@ -87898,7 +87898,7 @@
         "conditions": [
           {
             "condition": "unconscious",
-            "relation": "applies"
+            "relation": "mention"
           }
         ]
       }
@@ -89322,7 +89322,7 @@
         "conditions": [
           {
             "condition": "invisible",
-            "relation": "applies"
+            "relation": "prevents"
           }
         ],
         "scaling": {
@@ -89507,11 +89507,11 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "suppresses"
           },
           {
             "condition": "frightened",
-            "relation": "mention"
+            "relation": "suppresses"
           }
         ]
       }
@@ -90256,7 +90256,7 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "gates"
           }
         ]
       }
@@ -92095,11 +92095,11 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "removes"
           },
           {
             "condition": "frightened",
-            "relation": "mention"
+            "relation": "removes"
           }
         ]
       },
@@ -92964,7 +92964,7 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "gates"
           },
           {
             "condition": "incapacitated",
@@ -97110,7 +97110,7 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "gates"
           }
         ]
       }
@@ -97314,19 +97314,19 @@
         "conditions": [
           {
             "condition": "blinded",
-            "relation": "applies"
+            "relation": "removes"
           },
           {
             "condition": "deafened",
-            "relation": "mention"
+            "relation": "removes"
           },
           {
             "condition": "paralyzed",
-            "relation": "mention"
+            "relation": "removes"
           },
           {
             "condition": "poisoned",
-            "relation": "mention"
+            "relation": "removes"
           }
         ]
       }
@@ -97870,11 +97870,11 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "prevents"
           },
           {
             "condition": "frightened",
-            "relation": "mention"
+            "relation": "prevents"
           }
         ]
       },
@@ -98402,7 +98402,7 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "gates"
           }
         ]
       },
@@ -99746,7 +99746,7 @@
         "conditions": [
           {
             "condition": "unconscious",
-            "relation": "applies"
+            "relation": "mention"
           }
         ]
       },
@@ -100439,11 +100439,11 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "prevents"
           },
           {
             "condition": "frightened",
-            "relation": "mention"
+            "relation": "prevents"
           }
         ]
       },
@@ -101710,7 +101710,7 @@
         "conditions": [
           {
             "condition": "unconscious",
-            "relation": "applies"
+            "relation": "mention"
           }
         ]
       },
@@ -103027,7 +103027,7 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "gates"
           }
         ]
       },
@@ -103861,7 +103861,7 @@
         "conditions": [
           {
             "condition": "unconscious",
-            "relation": "applies"
+            "relation": "mention"
           }
         ]
       },
