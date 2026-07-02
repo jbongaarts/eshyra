@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  pruneReleasePayload,
   removeBinShimsFor,
   resolveEdition,
   // @ts-expect-error - .mjs tooling script without type declarations
@@ -143,6 +144,79 @@ describe('provider pruning targets (heavy binary, not just the wrapper)', () => 
       isRemovablePackage('@anthropic-ai/claude-agent-sdk-linux-x64', ['codex']),
     ).toBe(false);
     expect(isRemovablePackage('@openai/codex', ['claude'])).toBe(false);
+  });
+});
+
+describe('release payload pruning', () => {
+  let temp: string | undefined;
+
+  beforeEach(() => {
+    temp = mkdtempSync(join(tmpdir(), 'eshyra-release-prune-'));
+  });
+
+  afterEach(() => {
+    if (temp) {
+      rmSync(temp, { recursive: true, force: true });
+      temp = undefined;
+    }
+  });
+
+  it('removes developer-only payload while preserving runtime and license files', () => {
+    if (!temp) throw new Error('missing temp dir');
+    const pkg = join(temp, 'app/node_modules/example');
+    mkdirSync(join(pkg, 'dist'), { recursive: true });
+    mkdirSync(join(pkg, 'test'), { recursive: true });
+    writeFileSync(join(pkg, 'package.json'), '{"name":"example"}\n');
+    writeFileSync(join(pkg, 'LICENSE'), 'license text\n');
+    writeFileSync(join(pkg, 'dist/index.js'), 'export const value = 1;\n');
+    writeFileSync(join(pkg, 'dist/index.js.map'), '{}\n');
+    writeFileSync(join(pkg, 'dist/index.d.ts'), 'export const value: 1;\n');
+    writeFileSync(join(pkg, 'test/example.test.js'), 'throw new Error();\n');
+
+    const result = pruneReleasePayload(temp);
+
+    expect(result.removedFiles).toBeGreaterThanOrEqual(2);
+    expect(result.removedDirs).toBeGreaterThanOrEqual(1);
+    expect(result.bytes).toBeGreaterThan(0);
+    expect(readFileSync(join(pkg, 'dist/index.js'), 'utf8')).toContain('value');
+    expect(readFileSync(join(pkg, 'LICENSE'), 'utf8')).toContain('license');
+    expect(() => readFileSync(join(pkg, 'dist/index.js.map'), 'utf8')).toThrow(
+      /ENOENT/,
+    );
+    expect(() => readFileSync(join(pkg, 'dist/index.d.ts'), 'utf8')).toThrow(
+      /ENOENT/,
+    );
+    expect(() =>
+      readFileSync(join(pkg, 'test/example.test.js'), 'utf8'),
+    ).toThrow(/ENOENT/);
+  });
+
+  it('removes better-sqlite3 rebuild inputs but keeps the native binding', () => {
+    if (!temp) throw new Error('missing temp dir');
+    const pkg = join(temp, 'app/node_modules/better-sqlite3');
+    mkdirSync(join(pkg, 'build/Release'), { recursive: true });
+    mkdirSync(join(pkg, 'deps/sqlite3'), { recursive: true });
+    mkdirSync(join(pkg, 'src'), { recursive: true });
+    writeFileSync(join(pkg, 'package.json'), '{"name":"better-sqlite3"}\n');
+    writeFileSync(join(pkg, 'build/Release/better_sqlite3.node'), 'native\n');
+    writeFileSync(join(pkg, 'deps/sqlite3/sqlite3.c'), 'source\n');
+    writeFileSync(join(pkg, 'src/better_sqlite3.cpp'), 'source\n');
+    writeFileSync(join(pkg, 'binding.gyp'), '{}\n');
+
+    pruneReleasePayload(temp);
+
+    expect(
+      readFileSync(join(pkg, 'build/Release/better_sqlite3.node'), 'utf8'),
+    ).toBe('native\n');
+    expect(() =>
+      readFileSync(join(pkg, 'deps/sqlite3/sqlite3.c'), 'utf8'),
+    ).toThrow(/ENOENT/);
+    expect(() =>
+      readFileSync(join(pkg, 'src/better_sqlite3.cpp'), 'utf8'),
+    ).toThrow(/ENOENT/);
+    expect(() => readFileSync(join(pkg, 'binding.gyp'), 'utf8')).toThrow(
+      /ENOENT/,
+    );
   });
 });
 
