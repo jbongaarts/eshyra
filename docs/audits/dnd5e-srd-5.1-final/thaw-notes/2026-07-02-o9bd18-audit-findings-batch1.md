@@ -47,6 +47,22 @@ bundle commit beb9a21). Each bead lands as its own commit on this branch:
   round-trips every creature's XP against the SRD XP-by-CR table (CR 0
   allowing exactly 0 or 10).
 
+- **eshyra-o9bd.18.1:** `rule:skills` silently dropped the p. 78 prose that
+  resumes after the embedded per-ability skill list — the SRD's operative
+  statement that skill proficiency adds the proficiency bonus, plus the
+  climbing-a-cliff example. The per-ability bullet captions are excluded from
+  becoming their own rules (`skillsByAbility` enrichment owns the mapping),
+  but the exclusion dropped the caption's *entire* body, swallowing the
+  section prose that follows the final Charisma bullet. `parseRules` now
+  re-flows post-bullet prose from an excluded bullet-scaffolding caption into
+  the most recent emitted rule — the same mechanism table-caption exclusions
+  already use (eshyra-0m9.22). The source-region ledger reclassifies that
+  region from `child-of:rule:skills` (heading-owned) to `record:rule:skills`
+  with a text-containment guard note, so the region is now accounted by
+  emitted prose, not by heading ownership alone. The general
+  owned-region-requires-emitted-prose gate is tracked separately as
+  eshyra-o9bd.18.9.2.
+
 ## Expected file changes
 
 - [ ] `packages/core/sources/dnd5e-srd-5.1/`
@@ -54,11 +70,17 @@ bundle commit beb9a21). Each bead lands as its own commit on this branch:
       `mechanicsProjections.ts` (comma made optional in the concentration
       duration detector); `deriveFeatureChoices.ts` / `types.ts` (`pactBoon`
       prerequisite clauses gain `featureRef`); `parseCreatures.ts` /
-      `types.ts` / `emit.ts` (printed creature XP captured and emitted).
+      `types.ts` / `emit.ts` (printed creature XP captured and emitted);
+      `parseRules.ts` (post-bullet prose resumption for excluded
+      bullet-scaffolding captions).
 - [x] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json` -
       regenerated through the importer.
 - [ ] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json`
-- [ ] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-*.json`
+- [x] `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-*.json` -
+      `source-region-ledger.json` regenerated for eshyra-o9bd.18.1 (the p78
+      skill-proficiency region reclassifies `child-of:rule:skills` →
+      `record:rule:skills` with a containment guard note).
+      `source-inventory.json` and `source-coverage.json` unchanged.
 - [x] `docs/audits/dnd5e-srd-5.1-final/` - this thaw note and refreshed
       `freeze-manifest.json` hashes.
 - [x] Other: `packages/core/src/rules/srdAudit.ts` (new

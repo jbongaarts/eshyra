@@ -64,4 +64,22 @@ describe('rule:skills — skillsByAbility', () => {
     }
     expect(owners.size).toBe(SRD_5_1_SKILLS.length);
   });
+
+  it('carries the p. 78 skill-proficiency prose that resumes after the embedded list (eshyra-o9bd.18.1)', () => {
+    // The SRD's operative statement of what skill proficiency does, printed
+    // after the final Charisma bullet: it must survive the excluded bullet
+    // captions and land back in rule:skills.
+    const text = String((rulesSkills?.data as { text?: unknown }).text);
+    expect(text).toContain(
+      'proficiency in a skill means an individual can add his or her proficiency bonus to ability checks that involve that skill',
+    );
+    expect(text).toContain(
+      'Without proficiency in the skill, the individual makes a normal ability check',
+    );
+    expect(text).toContain(
+      'if a character attempts to climb up a dangerous cliff',
+    );
+    // The prose still ends before the following "Variant:" rule.
+    expect(text).not.toContain('Skills with Different Abilities');
+  });
 });
