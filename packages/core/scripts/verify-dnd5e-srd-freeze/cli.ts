@@ -11,9 +11,12 @@
  *      GITHUB_BASE_REF env var in GitHub Actions), any changed frozen path
  *      requires an active thaw note committed in the same diff under
  *      `docs/audits/dnd5e-srd-5.1-final/thaw-notes/`.
+ *      TEMPORARILY SUSPENDED (eshyra-nsd1) while the o9bd re-audit epic is in
+ *      flight; see THAW_NOTE_CHECK_ENABLED in freeze.ts. Re-enabled at
+ *      re-freeze (eshyra-2zyy).
  *
  * The hash check always runs. The thaw-note check runs only when a base ref
- * is resolvable. A PR that passes the thaw-note check (i.e. has a thaw note)
+ * is resolvable and THAW_NOTE_CHECK_ENABLED is true. A PR that passes the thaw-note check (i.e. has a thaw note)
  * still runs the full hash check — the reviewer must also update the freeze
  * manifest and audit evidence consistently.
  *
@@ -36,6 +39,7 @@ import {
   checkThawPolicy,
   type FreezeManifest,
   getChangedFiles,
+  THAW_NOTE_CHECK_ENABLED,
 } from './freeze.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -80,7 +84,15 @@ async function main(): Promise<void> {
     base ??
     (ciBase !== undefined && ciBase !== '' ? `origin/${ciBase}` : undefined);
 
-  if (effectiveBase !== undefined) {
+  if (!THAW_NOTE_CHECK_ENABLED) {
+    console.log(
+      'Changed-path (thaw-note) check: SKIPPED — temporarily disabled during',
+    );
+    console.log(
+      '  the o9bd re-audit epic (eshyra-nsd1); re-enabled at re-freeze (eshyra-2zyy).',
+    );
+    console.log('');
+  } else if (effectiveBase !== undefined) {
     console.log(`Changed-path check (base: ${effectiveBase})`);
 
     let changedFiles: string[];
