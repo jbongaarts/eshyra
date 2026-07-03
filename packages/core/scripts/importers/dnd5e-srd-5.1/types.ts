@@ -266,6 +266,11 @@ export interface TableExtraction {
   readonly columns: readonly string[];
   readonly rows: readonly (readonly unknown[])[];
   /**
+   * Source table legend/footnote lines that explain markers retained in row
+   * cells, for example Deck of Many Things asterisks.
+   */
+  readonly legend?: readonly string[];
+  /**
    * Optional semantic projection of reviewed table rows. The source-preserving
    * `columns`/`rows` stay authoritative; projections expose a narrow typed view
    * for gameplay systems that need to apply the table mechanically.

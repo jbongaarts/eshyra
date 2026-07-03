@@ -927,6 +927,43 @@ describe('parseDocumentTables — magic-item embedded content', () => {
       ['Jokers (2)', 'You (the deck’s owner)'],
     ]);
   });
+
+  it('keeps a table legend when row cells retain its marker', () => {
+    const page = tieredPage(217, [
+      ['Deck of Many Things', LEAF],
+      ['Wondrous item, legendary', BODY],
+      ['Playing Card Card', CELL],
+      ['Ace of diamonds Vizier*', CELL],
+      ['King of diamonds Sun', CELL],
+      ['Queen of diamonds Moon', CELL],
+      ['Jack of diamonds Star', CELL],
+      ['Two of diamonds Comet*', CELL],
+      ['Ace of hearts The Fates*', CELL],
+      ['King of hearts Throne', CELL],
+      ['Queen of hearts Key', CELL],
+      ['Jack of hearts Knight', CELL],
+      ['Two of hearts Gem', CELL],
+      ['Ace of clubs Talons', CELL],
+      ['King of clubs The Void', CELL],
+      ['Queen of clubs Flames', CELL],
+      ['Jack of clubs Skull', CELL],
+      ['Two of clubs Idiot', CELL],
+      ['Ace of spades Donjon', CELL],
+      ['King of spades Ruin', CELL],
+      ['Queen of spades Euryale', CELL],
+      ['Jack of spades Rogue', CELL],
+      ['Two of spades Balance', CELL],
+      ['Joker (with TM) Fool', CELL],
+      ['Joker (without TM) Jester', CELL],
+      ['*Found only in a deck with twenty-two cards', CELL],
+    ]);
+
+    const table = byName([page]).get('Deck of Many Things');
+    expect(table?.rows).toContainEqual(['Ace of diamonds', 'Vizier*']);
+    expect(table?.legend).toEqual([
+      '*Found only in a deck with twenty-two cards',
+    ]);
+  });
 });
 
 // ---------------------------------------------------------------------------

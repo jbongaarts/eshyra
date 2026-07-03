@@ -93,6 +93,18 @@ interface PdfTextContent {
  * and em-dash (U+2014) are deliberately NOT in the class and are preserved.
  */
 const PDF_HYPHEN_CLUSTER_OR_HYPHEN_RUN = /[-\u00AD\u2010\u2011]+/g;
+const PDF_HYPHENATED_LINE_BREAK_ARTIFACT = /\b([A-Za-z0-9]+)- (?=([a-z]+)\b)/g;
+
+function normalizePdfHyphenatedLineBreakArtifact(
+  _match: string,
+  previousToken: string,
+  nextToken: string,
+): string {
+  if (/^\d+$/.test(previousToken) && nextToken === 'to') {
+    return `${previousToken}- `;
+  }
+  return `${previousToken}-`;
+}
 
 /**
  * Collapse PDF hyphen presentation clusters in `text` to a single ASCII
@@ -101,7 +113,12 @@ const PDF_HYPHEN_CLUSTER_OR_HYPHEN_RUN = /[-\u00AD\u2010\u2011]+/g;
  * re-spelling the character class. Idempotent.
  */
 export function normalizePdfHyphenCluster(text: string): string {
-  return text.replace(PDF_HYPHEN_CLUSTER_OR_HYPHEN_RUN, '-');
+  return text
+    .replace(PDF_HYPHEN_CLUSTER_OR_HYPHEN_RUN, '-')
+    .replace(
+      PDF_HYPHENATED_LINE_BREAK_ARTIFACT,
+      normalizePdfHyphenatedLineBreakArtifact,
+    );
 }
 
 /** Round y to this many decimal places when grouping items into lines. */

@@ -1015,6 +1015,9 @@ export function tableExtractionsToRecords(
       columns: [...table.columns],
       rows: table.rows.map((row) => [...row]),
     };
+    if (table.legend !== undefined && table.legend.length > 0) {
+      data.legend = [...table.legend];
+    }
     if (table.projection !== undefined) {
       data.projection = table.projection;
     }
@@ -1566,9 +1569,28 @@ function uniqueKindsOf(records: readonly RulesRecord[]): readonly string[] {
   return [...set].sort();
 }
 
+const PDF_HYPHENATED_LINE_BREAK_ARTIFACT = /\b([A-Za-z0-9]+)- (?=([a-z]+)\b)/g;
+
+function normalizeGeneratedString(value: string): string {
+  return value.replace(
+    PDF_HYPHENATED_LINE_BREAK_ARTIFACT,
+    (_match, previousToken: string, nextToken: string) => {
+      if (/^\d+$/.test(previousToken) && nextToken === 'to') {
+        return `${previousToken}- `;
+      }
+      return `${previousToken}-`;
+    },
+  );
+}
+
 /** Stable JSON serialization: 2-space indent, trailing newline. */
 function stringify(value: unknown): string {
-  return `${JSON.stringify(value, null, 2)}\n`;
+  return `${JSON.stringify(
+    value,
+    (_key, child: unknown) =>
+      typeof child === 'string' ? normalizeGeneratedString(child) : child,
+    2,
+  )}\n`;
 }
 
 export interface WritePackOptions {
