@@ -16,7 +16,7 @@ import {
 
 export type ToolResult =
   | { ok: true; data: unknown }
-  | { ok: false; code: string; message: string };
+  | { ok: false; code: string; message: string; data?: unknown };
 
 export interface ToolContext {
   db: import('../persistence/db.js').Db;
@@ -75,8 +75,15 @@ export function ok(data: unknown): ToolResult {
   return { ok: true, data };
 }
 
-export function err(code: string, message: string): ToolResult {
-  return { ok: false, code, message };
+/**
+ * `data` carries a structured payload alongside a failure (e.g. an
+ * `ambiguous` lookup's candidate keys) so callers can act on it
+ * programmatically instead of parsing the free-text `message`.
+ */
+export function err(code: string, message: string, data?: unknown): ToolResult {
+  return data === undefined
+    ? { ok: false, code, message }
+    : { ok: false, code, message, data };
 }
 
 export function asRecord(args: unknown): Record<string, unknown> | undefined {

@@ -10,6 +10,7 @@ import {
 } from '../rules/bundledSrdPack.js';
 import { lookupRulesRecord } from '../rules/lookup.js';
 import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
+import { buildRulesRecordCard } from '../rules/recordCard.js';
 import type { ResolvedRulesStack } from '../rules/stack.js';
 import { resolveRulesStack } from '../rules/stack.js';
 import type { RulesPack, RulesRecordKind } from '../rules/types.js';
@@ -70,7 +71,10 @@ export const lookupRulesTool: Tool = {
     'Omit systemId to use the campaign binding; pass it to query a specific ' +
     'bundled rules system (e.g. "dnd5e-srd", "pathfinder2e-remaster"). ' +
     'If a name matches multiple records of the same kind, the result is an ' +
-    'ambiguous error listing candidate keys; re-query by ref with one of them.',
+    'ambiguous error listing candidate keys (also in structured data.candidateKeys); ' +
+    're-query by ref with one of them. A successful result includes a `card` ' +
+    'summary (key, kind, name, source locator, grantor/parent ref) to ' +
+    'disambiguate same- or cross-kind duplicate names without parsing the raw record.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -173,15 +177,26 @@ export const lookupRulesTool: Tool = {
       if (result.ok) {
         return ok({
           record: result.record,
+          // Kind-aware disambiguating summary (key, kind, name, source
+          // locator, grantor/parent ref) so the DM doesn't have to parse an
+          // arbitrary per-kind `data` shape to tell same- or cross-kind
+          // duplicate names apart (eshyra-o9bd.18.8.6).
+          card: buildRulesRecordCard(result.record),
           sourcePack: result.pack,
           license: result.license,
           overrideChain: result.overrideChain,
         });
       }
-      // For `ambiguous`, the candidate keys are embedded in the message so the
-      // DM can re-query by an exact key (the ToolResult error shape carries no
-      // structured payload). See lookupRulesRecord (ADR 0013).
-      return err(result.code, result.message);
+      // For `ambiguous`, the candidate keys are both embedded in the message
+      // (for narration) and carried as structured `data` so the DM can
+      // re-query by an exact key without parsing free text (ADR 0013).
+      return err(
+        result.code,
+        result.message,
+        result.code === 'ambiguous'
+          ? { candidateKeys: result.candidateKeys }
+          : undefined,
+      );
     } catch (e) {
       if (e instanceof RulesPackError) {
         return err('rules_pack_error', e.message);

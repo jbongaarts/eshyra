@@ -833,6 +833,11 @@ export {
   PACK_RECORDS_FILE,
 } from './rules/packLoader.js';
 export { PATHFINDER2E_REMASTER_RULES_PACK } from './rules/pathfinder2eRemaster.js';
+export type {
+  RulesRecordCard,
+  RulesRecordCardParent,
+} from './rules/recordCard.js';
+export { buildRulesRecordCard } from './rules/recordCard.js';
 export type { FeatureChoiceInstance } from './rules/repeatedFeatureChoices.js';
 export {
   deriveFeatureChoiceInstances,
