@@ -129,6 +129,28 @@ describe('enrichProvenanceFromRegionLedger', () => {
     expect(enriched.provenance.locator).toBe('pp. 93, 94');
   });
 
+  it('updates an SRD 5.1 display source when it widens the locator', () => {
+    const srdRecord = {
+      ...record('action:ready', 'p. 93'),
+      source: 'SRD 5.1 p. 93',
+    };
+    const [enriched] = enrichProvenanceFromRegionLedger(
+      [srdRecord],
+      ledger([{ targetKey: 'action:ready', pageStart: 93, pageEnd: 94 }]),
+    );
+    expect(enriched.source).toBe('SRD 5.1 pp. 93, 94');
+    expect(enriched.provenance.locator).toBe('pp. 93, 94');
+  });
+
+  it('leaves a non-SRD display source alone when it widens the locator', () => {
+    const [enriched] = enrichProvenanceFromRegionLedger(
+      [record('action:ready', 'p. 93')],
+      ledger([{ targetKey: 'action:ready', pageStart: 93, pageEnd: 94 }]),
+    );
+    expect(enriched.source).toBe('fixture');
+    expect(enriched.provenance.locator).toBe('pp. 93, 94');
+  });
+
   it('leaves a single-page record alone when the ledger has no evidence for it', () => {
     const [enriched] = enrichProvenanceFromRegionLedger(
       [record('rule:solo', 'p. 10')],
@@ -224,6 +246,32 @@ describe('committed SRD 5.1 pack — provenance matches the committed region led
     expect(byKey.get('rule:wizard-your-spellbook')?.provenance.locator).toBe(
       'pp. 54, 55',
     );
+  });
+
+  it('keeps SRD 5.1 display sources aligned with provenance locators', () => {
+    const mismatches = pack.records.filter(
+      (r) =>
+        r.provenance.locator !== undefined &&
+        r.source !== `SRD 5.1 ${r.provenance.locator}`,
+    );
+    expect(mismatches.map((r) => r.key)).toEqual([]);
+  });
+
+  it('pins eshyra-o9bd.18.8.5 examples to aligned source and provenance labels', () => {
+    const byKey = new Map(pack.records.map((r) => [r.key, r] as const));
+    const expected = {
+      'feature:warlock:eldritch-invocations': 'pp. 47, 48, 49, 50',
+      'feature:druid:wild-shape': 'p. 20',
+      'feature:sorcerer:font-of-magic': 'p. 43',
+      'spell:scrying': 'p. 176',
+      'rule:half-dragon-template': 'p. 320',
+      'rule:hit-points': 'p. 255',
+      'equipment:crystal': 'pp. 66, 69',
+    } as const;
+    for (const [key, locator] of Object.entries(expected)) {
+      expect(byKey.get(key)?.provenance.locator, key).toBe(locator);
+      expect(byKey.get(key)?.source, key).toBe(`SRD 5.1 ${locator}`);
+    }
   });
 
   it('never emits a page span wider than the continuation gap for any record', () => {

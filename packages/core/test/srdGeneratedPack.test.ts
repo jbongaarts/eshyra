@@ -2434,7 +2434,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const orbRecord = magicItems.find(
         (record) => record.key === 'magic-item:orb-of-dragonkind',
       );
-      expect(orbRecord?.source).toBe('SRD 5.1 p. 252');
+      expect(orbRecord?.source).toBe('SRD 5.1 pp. 252, 253');
     });
 
     it('keeps page 226 magic-item bodies in source column order', () => {

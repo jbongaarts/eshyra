@@ -48,6 +48,7 @@ import type { RulesRecord } from '../../../src/rules/types.js';
 import type { SourceRegionLedger } from './sourceRegionLedger.js';
 
 const SINGLE_PAGE_LOCATOR = /^p\. (\d+)$/;
+const SRD_5_1_SINGLE_PAGE_SOURCE = /^SRD 5\.1 p\. (\d+)$/;
 export const MAX_CONTINUATION_GAP = 3;
 
 /** Every page each record key's prose or child data occupies, per the ledger. */
@@ -100,11 +101,16 @@ export function enrichProvenanceFromRegionLedger(
       (a, b) => a - b,
     );
     if (allPages.length <= 1) return record;
+    const locator = `pp. ${allPages.join(', ')}`;
     return {
       ...record,
+      source:
+        SRD_5_1_SINGLE_PAGE_SOURCE.exec(record.source)?.[1] === match[1]
+          ? `SRD 5.1 ${locator}`
+          : record.source,
       provenance: {
         ...record.provenance,
-        locator: `pp. ${allPages.join(', ')}`,
+        locator,
       },
     };
   });
