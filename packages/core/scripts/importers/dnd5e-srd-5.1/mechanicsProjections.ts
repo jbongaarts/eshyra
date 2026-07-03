@@ -7,6 +7,12 @@ import type {
 } from './types.js';
 
 type Mechanics = Record<string, unknown>;
+type ActionMechanicsProjection = {
+  readonly actionEconomy: {
+    readonly cost: 'action';
+  };
+  readonly effects: readonly Mechanics[];
+};
 
 /**
  * Resolves a free-text spell name fragment captured from feature prose to a
@@ -131,6 +137,191 @@ function parseConditions(text: string): readonly Mechanics[] {
   return deriveConditionMechanics(text).map((entry) => ({ ...entry }));
 }
 
+const STANDARD_ACTION_MECHANICS: ReadonlyMap<
+  string,
+  ActionMechanicsProjection
+> = new Map([
+  [
+    'attack',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'makeAttack',
+          count: 1,
+          attackKinds: ['melee', 'ranged'],
+          ruleRef: 'rule:making-an-attack',
+          extraAttacksFromFeatures: true,
+        },
+      ],
+    },
+  ],
+  [
+    'cast a spell',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'castSpell',
+          castingTime: '1 action',
+          ruleRef: 'rule:casting-a-spell',
+          note: 'Only spells with a casting time of 1 action use this action in combat.',
+        },
+      ],
+    },
+  ],
+  [
+    'dash',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'extraMovement',
+          amount: 'speed-after-modifiers',
+          duration: 'current-turn',
+        },
+      ],
+    },
+  ],
+  [
+    'disengage',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'preventOpportunityAttacks',
+          scope: 'your-movement',
+          duration: 'rest-of-turn',
+          ruleRef: 'rule:opportunity-attacks',
+        },
+      ],
+    },
+  ],
+  [
+    'dodge',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'attackRollModifier',
+          subject: 'against-actor',
+          mode: 'disadvantage',
+          condition: 'you-can-see-the-attacker',
+          duration: 'until-start-of-your-next-turn',
+        },
+        {
+          kind: 'savingThrowModifier',
+          subject: 'actor',
+          mode: 'advantage',
+          roll: 'saving-throw',
+          abilities: ['dexterity'],
+          duration: 'until-start-of-your-next-turn',
+        },
+        {
+          kind: 'benefitEndsWhen',
+          conditions: ['you-are-incapacitated', 'your-speed-is-0'],
+        },
+      ],
+    },
+  ],
+  [
+    'help',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'abilityCheckModifier',
+          subject: 'helped-creature',
+          mode: 'advantage',
+          timing: 'next-ability-check-before-start-of-your-next-turn',
+          constraint: 'check-must-perform-the-task-you-helped-with',
+        },
+        {
+          kind: 'attackRollModifier',
+          subject: 'helped-friendly-creature',
+          mode: 'advantage',
+          timing: 'before-your-next-turn',
+          targetConstraint: 'target-creature-within-5-feet-of-you',
+        },
+      ],
+    },
+  ],
+  [
+    'hide',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'makeAbilityCheck',
+          ability: 'dexterity',
+          skill: 'stealth',
+          purpose: 'hide',
+          ruleRef: 'rule:hiding',
+        },
+        {
+          kind: 'gainRuleBenefitsOnSuccess',
+          ruleRef: 'rule:unseen-attackers-and-targets',
+        },
+      ],
+    },
+  ],
+  [
+    'ready',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'readyAction',
+          trigger: 'perceivable-circumstance',
+          responseOptions: ['action', 'move-up-to-speed'],
+          releaseCost: 'reaction',
+          timing: 'after-trigger-finishes-before-start-of-your-next-turn',
+          mayIgnoreTrigger: true,
+          ruleRef: 'rule:ready',
+        },
+        {
+          kind: 'readySpell',
+          spellCastingTime: '1 action',
+          heldByConcentration: true,
+          releaseCost: 'reaction',
+          failure: 'spell-dissipates-if-concentration-breaks',
+          ruleRef: 'rule:concentration',
+        },
+      ],
+    },
+  ],
+  [
+    'search',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'makeAbilityCheck',
+          abilityOptions: ['wisdom', 'intelligence'],
+          skillOptions: ['perception', 'investigation'],
+          purpose: 'find-something',
+          chosenBy: 'gm',
+          ruleRef: 'rule:ability-checks',
+        },
+      ],
+    },
+  ],
+  [
+    'use an object',
+    {
+      actionEconomy: { cost: 'action' },
+      effects: [
+        {
+          kind: 'objectInteraction',
+          useWhen: 'object-requires-your-action',
+          alsoUseWhen: 'interact-with-more-than-one-object-on-your-turn',
+          ordinaryInteractionRuleRef: 'rule:interacting-with-objects',
+        },
+      ],
+    },
+  ],
+]);
+
 function parseAttack(text: string): Mechanics | undefined {
   const match =
     /\b(Melee|Ranged|Melee or Ranged) (Weapon|Spell) Attack:\s*([+-]\d+) to hit,\s*(.*?target.*?)\.\s*Hit:\s*([^.]*)\./i.exec(
@@ -193,10 +384,14 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
 }
 
 export function deriveActionMechanics(action: ActionExtraction): Mechanics {
+  const standardAction = STANDARD_ACTION_MECHANICS.get(
+    action.name.toLowerCase(),
+  );
   const attack = parseAttack(action.description);
   const save = parseSave(action.description);
   const damage = parseDamage(action.description);
   return compact({
+    ...standardAction,
     attacks: attack === undefined ? undefined : [attack],
     saves: save === undefined ? undefined : [save],
     damage,

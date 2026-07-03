@@ -4,7 +4,10 @@ import {
   deriveCreatureEntryMechanics,
   deriveSpellMechanics,
 } from '../../../scripts/importers/dnd5e-srd-5.1/mechanicsProjections.js';
-import type { SpellExtraction } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
+import type {
+  ActionExtraction,
+  SpellExtraction,
+} from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
 
 describe('deriveCreatureEntryMechanics recharge parsing (eshyra-54di)', () => {
   it('parses an en-dash recharge range as minimum..maximum, not minimum..minimum', () => {
@@ -54,6 +57,187 @@ function spell(partial: Pick<SpellExtraction, 'description'>): SpellExtraction {
     ...partial,
   };
 }
+
+function action(
+  name: string,
+  description: string = `${name} description.`,
+): ActionExtraction {
+  return {
+    name,
+    description,
+    sourcePage: 1,
+  };
+}
+
+describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)', () => {
+  it('projects action economy for every canonical combat action', () => {
+    for (const name of [
+      'Attack',
+      'Cast a Spell',
+      'Dash',
+      'Disengage',
+      'Dodge',
+      'Help',
+      'Hide',
+      'Ready',
+      'Search',
+      'Use an Object',
+    ]) {
+      expect(deriveActionMechanics(action(name)).actionEconomy, name).toEqual({
+        cost: 'action',
+      });
+    }
+  });
+
+  it('Attack records one melee or ranged attack and the Extra Attack boundary', () => {
+    expect(deriveActionMechanics(action('Attack')).effects).toEqual([
+      {
+        kind: 'makeAttack',
+        count: 1,
+        attackKinds: ['melee', 'ranged'],
+        ruleRef: 'rule:making-an-attack',
+        extraAttacksFromFeatures: true,
+      },
+    ]);
+  });
+
+  it('Cast a Spell links the action to 1-action casting times only', () => {
+    expect(deriveActionMechanics(action('Cast a Spell')).effects).toEqual([
+      {
+        kind: 'castSpell',
+        castingTime: '1 action',
+        ruleRef: 'rule:casting-a-spell',
+        note: 'Only spells with a casting time of 1 action use this action in combat.',
+      },
+    ]);
+  });
+
+  it('Dash records extra movement equal to current speed after modifiers', () => {
+    expect(deriveActionMechanics(action('Dash')).effects).toEqual([
+      {
+        kind: 'extraMovement',
+        amount: 'speed-after-modifiers',
+        duration: 'current-turn',
+      },
+    ]);
+  });
+
+  it('Disengage prevents opportunity attacks from your movement for the turn', () => {
+    expect(deriveActionMechanics(action('Disengage')).effects).toEqual([
+      {
+        kind: 'preventOpportunityAttacks',
+        scope: 'your-movement',
+        duration: 'rest-of-turn',
+        ruleRef: 'rule:opportunity-attacks',
+      },
+    ]);
+  });
+
+  it('Dodge keeps attack disadvantage, Dexterity-save advantage, and loss conditions typed', () => {
+    expect(deriveActionMechanics(action('Dodge')).effects).toEqual([
+      {
+        kind: 'attackRollModifier',
+        subject: 'against-actor',
+        mode: 'disadvantage',
+        condition: 'you-can-see-the-attacker',
+        duration: 'until-start-of-your-next-turn',
+      },
+      {
+        kind: 'savingThrowModifier',
+        subject: 'actor',
+        mode: 'advantage',
+        roll: 'saving-throw',
+        abilities: ['dexterity'],
+        duration: 'until-start-of-your-next-turn',
+      },
+      {
+        kind: 'benefitEndsWhen',
+        conditions: ['you-are-incapacitated', 'your-speed-is-0'],
+      },
+    ]);
+  });
+
+  it('Help models both aided checks and friendly attack timing constraints', () => {
+    expect(deriveActionMechanics(action('Help')).effects).toEqual([
+      {
+        kind: 'abilityCheckModifier',
+        subject: 'helped-creature',
+        mode: 'advantage',
+        timing: 'next-ability-check-before-start-of-your-next-turn',
+        constraint: 'check-must-perform-the-task-you-helped-with',
+      },
+      {
+        kind: 'attackRollModifier',
+        subject: 'helped-friendly-creature',
+        mode: 'advantage',
+        timing: 'before-your-next-turn',
+        targetConstraint: 'target-creature-within-5-feet-of-you',
+      },
+    ]);
+  });
+
+  it('Hide links the Dexterity Stealth check to hiding and unseen-attacker rules', () => {
+    expect(deriveActionMechanics(action('Hide')).effects).toEqual([
+      {
+        kind: 'makeAbilityCheck',
+        ability: 'dexterity',
+        skill: 'stealth',
+        purpose: 'hide',
+        ruleRef: 'rule:hiding',
+      },
+      {
+        kind: 'gainRuleBenefitsOnSuccess',
+        ruleRef: 'rule:unseen-attackers-and-targets',
+      },
+    ]);
+  });
+
+  it('Ready models trigger choice, reaction release, and spell concentration caveat', () => {
+    expect(deriveActionMechanics(action('Ready')).effects).toEqual([
+      {
+        kind: 'readyAction',
+        trigger: 'perceivable-circumstance',
+        responseOptions: ['action', 'move-up-to-speed'],
+        releaseCost: 'reaction',
+        timing: 'after-trigger-finishes-before-start-of-your-next-turn',
+        mayIgnoreTrigger: true,
+        ruleRef: 'rule:ready',
+      },
+      {
+        kind: 'readySpell',
+        spellCastingTime: '1 action',
+        heldByConcentration: true,
+        releaseCost: 'reaction',
+        failure: 'spell-dissipates-if-concentration-breaks',
+        ruleRef: 'rule:concentration',
+      },
+    ]);
+  });
+
+  it('Search links GM-selected Perception or Investigation checks', () => {
+    expect(deriveActionMechanics(action('Search')).effects).toEqual([
+      {
+        kind: 'makeAbilityCheck',
+        abilityOptions: ['wisdom', 'intelligence'],
+        skillOptions: ['perception', 'investigation'],
+        purpose: 'find-something',
+        chosenBy: 'gm',
+        ruleRef: 'rule:ability-checks',
+      },
+    ]);
+  });
+
+  it('Use an Object distinguishes action-required use from ordinary object interaction', () => {
+    expect(deriveActionMechanics(action('Use an Object')).effects).toEqual([
+      {
+        kind: 'objectInteraction',
+        useWhen: 'object-requires-your-action',
+        alsoUseWhen: 'interact-with-more-than-one-object-on-your-turn',
+        ordinaryInteractionRuleRef: 'rule:interacting-with-objects',
+      },
+    ]);
+  });
+});
 
 describe('condition relation classification (eshyra-qqyj)', () => {
   it('spell:shield — "An invisible barrier" describes the barrier, not an applied condition', () => {

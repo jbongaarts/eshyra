@@ -456,10 +456,6 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   readonly missingCount: number;
   readonly totalInKind: number;
 }> = [
-  // First-pass mechanics projections (eshyra-ngcj.6) are optional and
-  // source-pattern gated. Only Dodge has an explicit condition effect among the
-  // ten top-level combat actions; other action records remain prose-only.
-  { kind: 'action', field: 'mechanics', missingCount: 9, totalInKind: 10 },
   // Ancestry creation choices (eshyra-ngcj.5): genuinely optional — only the 5
   // ancestries with a prose-bound build choice (Dragonborn draconic ancestry,
   // Dwarf/Hill Dwarf tool, Half-Elf skills, High Elf cantrip + language) carry
@@ -929,6 +925,115 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         const mechanics = (condition.data as { mechanics?: unknown }).mechanics;
         expect(mechanics, condition.key).toBeDefined();
       }
+    });
+
+    it('exposes typed action economy and effects for all action records (eshyra-o9bd.18.7.2)', () => {
+      const actions = pack.records.filter((r) => r.kind === 'action');
+      expect(actions.map((action) => action.key).sort()).toEqual([
+        'action:attack',
+        'action:cast-a-spell',
+        'action:dash',
+        'action:disengage',
+        'action:dodge',
+        'action:help',
+        'action:hide',
+        'action:ready',
+        'action:search',
+        'action:use-an-object',
+      ]);
+      for (const action of actions) {
+        const mechanics = (
+          action.data as {
+            mechanics?: {
+              actionEconomy?: Record<string, unknown>;
+              effects?: readonly Record<string, unknown>[];
+            };
+          }
+        ).mechanics;
+        expect(mechanics?.actionEconomy, action.key).toEqual({
+          cost: 'action',
+        });
+        expect(mechanics?.effects?.length, action.key).toBeGreaterThan(0);
+      }
+    });
+
+    it('queries representative action mechanics without parsing prose (eshyra-o9bd.18.7.2)', () => {
+      function actionEffects(key: string): readonly Record<string, unknown>[] {
+        const record = pack.records.find((r) => r.key === key);
+        if (record === undefined) {
+          throw new Error(`missing ${key}`);
+        }
+        return (
+          record.data as {
+            mechanics: { effects: readonly Record<string, unknown>[] };
+          }
+        ).mechanics.effects;
+      }
+
+      expect(actionEffects('action:dash')).toEqual([
+        {
+          kind: 'extraMovement',
+          amount: 'speed-after-modifiers',
+          duration: 'current-turn',
+        },
+      ]);
+      expect(actionEffects('action:disengage')).toContainEqual({
+        kind: 'preventOpportunityAttacks',
+        scope: 'your-movement',
+        duration: 'rest-of-turn',
+        ruleRef: 'rule:opportunity-attacks',
+      });
+      expect(actionEffects('action:help')).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'abilityCheckModifier',
+            subject: 'helped-creature',
+            mode: 'advantage',
+            timing: 'next-ability-check-before-start-of-your-next-turn',
+          }),
+          expect.objectContaining({
+            kind: 'attackRollModifier',
+            subject: 'helped-friendly-creature',
+            mode: 'advantage',
+            targetConstraint: 'target-creature-within-5-feet-of-you',
+          }),
+        ]),
+      );
+      expect(actionEffects('action:ready')).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'readyAction',
+            releaseCost: 'reaction',
+            trigger: 'perceivable-circumstance',
+          }),
+          expect.objectContaining({
+            kind: 'readySpell',
+            heldByConcentration: true,
+            failure: 'spell-dissipates-if-concentration-breaks',
+          }),
+        ]),
+      );
+      expect(actionEffects('action:hide')).toContainEqual({
+        kind: 'makeAbilityCheck',
+        ability: 'dexterity',
+        skill: 'stealth',
+        purpose: 'hide',
+        ruleRef: 'rule:hiding',
+      });
+      expect(actionEffects('action:search')).toContainEqual({
+        kind: 'makeAbilityCheck',
+        abilityOptions: ['wisdom', 'intelligence'],
+        skillOptions: ['perception', 'investigation'],
+        purpose: 'find-something',
+        chosenBy: 'gm',
+        ruleRef: 'rule:ability-checks',
+      });
+      expect(actionEffects('action:use-an-object')).toContainEqual({
+        kind: 'objectInteraction',
+        useWhen: 'object-requires-your-action',
+        alsoUseWhen: 'interact-with-more-than-one-object-on-your-turn',
+        ordinaryInteractionRuleRef: 'rule:interacting-with-objects',
+      });
     });
 
     it('queries representative condition mechanics without parsing prose (eshyra-o9bd.18.7.1)', () => {
