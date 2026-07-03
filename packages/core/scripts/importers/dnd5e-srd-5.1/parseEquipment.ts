@@ -668,6 +668,9 @@ const GEAR_LEFT_VALUE = new RegExp(
 // The literal left column-header that prefixes the first interleaved line
 // ("Cost Weight Hourglass 25 gp 1 lb.").
 const GEAR_COST_WEIGHT_HEADER = /^Cost Weight\s*/;
+const BACKPACK_STRAP_FOOTNOTE =
+  /^\*?\s*You can also strap items, such as a bedroll or a coil of rope,/;
+const BACKPACK_STRAP_FOOTNOTE_END = /^to the outside of a backpack\.$/;
 // A Container Capacity row: "<name>[*] <capacity>", where the capacity cell
 // carries a volume/mass-of-contents phrase and (unlike a gear row) no cost.
 const CONTAINER_ROW =
@@ -726,6 +729,12 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
   const leftValues: GearLeftValue[] = [];
   const rightRows: EquipmentExtraction[] = [];
   const capacities = new Map<string, string>();
+  let backpackStrapFootnote:
+    | { readonly text: string; readonly page: number }
+    | undefined;
+  let backpackStrapFootnoteParts:
+    | { readonly parts: string[]; readonly page: number }
+    | undefined;
   for (let j = i; j < regionEnd; j++) {
     const { line, page } = flat[j];
     if (line.length === 0) continue;
@@ -769,6 +778,25 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
       const name = container[1].trim();
       const resolved = CONTAINER_NAME_ALIASES.get(name) ?? name;
       capacities.set(resolved, normalize(container[2]));
+      continue;
+    }
+    if (BACKPACK_STRAP_FOOTNOTE.test(rest)) {
+      backpackStrapFootnoteParts = {
+        parts: [rest.replace(/^\*\s*/, '')],
+        page,
+      };
+      continue;
+    }
+    if (
+      backpackStrapFootnoteParts !== undefined &&
+      BACKPACK_STRAP_FOOTNOTE_END.test(rest)
+    ) {
+      backpackStrapFootnoteParts.parts.push(rest);
+      backpackStrapFootnote = {
+        text: normalize(backpackStrapFootnoteParts.parts.join(' ')),
+        page: backpackStrapFootnoteParts.page,
+      };
+      backpackStrapFootnoteParts = undefined;
     }
   }
 
@@ -801,6 +829,18 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
       throw new ContainerCapacityError(name);
     }
     gear[idx] = { ...gear[idx], capacity };
+  }
+
+  if (backpackStrapFootnote !== undefined) {
+    const idx = byName.get('Backpack');
+    if (idx === undefined) {
+      throw new ContainerCapacityError('Backpack');
+    }
+    gear[idx] = {
+      ...gear[idx],
+      description: backpackStrapFootnote.text,
+      descriptionSourcePage: backpackStrapFootnote.page,
+    };
   }
 
   return gear;

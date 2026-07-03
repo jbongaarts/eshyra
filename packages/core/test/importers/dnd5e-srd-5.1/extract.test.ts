@@ -27,6 +27,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   extractPdfText,
   joinRowText,
+  normalizePdfHyphenCluster,
   type PdfTextItem,
 } from '../../../scripts/importers/dnd5e-srd-5.1/extract.js';
 import type { PageText } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
@@ -50,6 +51,22 @@ function makeTmpDir(): string {
   tmpDirs.push(dir);
   return dir;
 }
+
+describe('normalizePdfHyphenCluster', () => {
+  it('removes spaces introduced by PDF line-break hyphenation artifacts', () => {
+    expect(
+      normalizePdfHyphenCluster(
+        'six 1st- level wizard spells and a self- expression clause',
+      ),
+    ).toBe('six 1st-level wizard spells and a self-expression clause');
+  });
+
+  it('preserves suspended hyphen ranges such as 5- to 20-foot', () => {
+    expect(normalizePdfHyphenCluster('a 5- to 20-foot radius')).toBe(
+      'a 5- to 20-foot radius',
+    );
+  });
+});
 
 interface TextOp {
   readonly text: string;

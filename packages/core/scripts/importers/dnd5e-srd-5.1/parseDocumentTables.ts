@@ -141,6 +141,10 @@ export interface DocumentTableSpec {
   readonly expectedRows: number;
   /** Owning record for a table embedded inside another source entry. */
   readonly ownerRecordKey?: string;
+  /** Optional legend/footnote line(s) immediately after the table row run. */
+  readonly legend?: {
+    readonly pattern: RegExp;
+  };
 }
 
 const ORDINAL_LEVEL = String.raw`\d{1,2}(?:st|nd|rd|th)`;
@@ -871,6 +875,9 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
         /^((?:(?:Ace|King|Queen|Jack|Two) of (?:diamonds|hearts|clubs|spades))|Joker \((?:with|without) TM\)) (.+)$/,
     },
     expectedRows: 22,
+    legend: {
+      pattern: /^\*Found only in a deck with twenty-two cards\.?$/,
+    },
   },
   {
     name: 'Dragon Scale Mail',
@@ -1473,10 +1480,17 @@ function parseSpec(
       .slice(spanStart, spanEnd)
       .map((row) => row.text)
       .join(' ');
+    const legend =
+      spec.legend === undefined
+        ? undefined
+        : run
+            .map((row) => normalizeWhitespace(row.text))
+            .filter((text) => spec.legend?.pattern.test(text));
     return {
       name: spec.name,
       columns: [...spec.columns],
       rows: tableRows,
+      ...(legend === undefined || legend.length === 0 ? {} : { legend }),
       sourcePage: rows[headerIdx].page,
       ownerRecordKey:
         spec.ownerRecordKey ?? EMBEDDED_TABLE_PROSE_OWNERS[spec.name],

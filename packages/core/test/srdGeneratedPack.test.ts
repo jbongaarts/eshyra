@@ -622,7 +622,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'equipment',
     field: 'description',
-    missingCount: 110,
+    missingCount: 109,
     totalInKind: 218,
   },
   // eshyra-erf5.3.2: the 41 items in a named SRD equipment group (5 arcane
@@ -839,6 +839,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     field: 'spellTableRefs',
     missingCount: 8,
     totalInKind: 12,
+  },
+  // eshyra-o9bd.18.8.2: Deck of Many Things keeps a source legend explaining
+  // the asterisks retained in its table cells; other tables have no legend.
+  {
+    kind: 'table',
+    field: 'legend',
+    missingCount: 107,
+    totalInKind: 108,
   },
   // Semantic table projections. The first slice (eshyra-o9bd.7) projected the
   // feature-owned Destroy Undead / Beast Shapes tables and the Races Draconic
@@ -2623,6 +2631,18 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(deck).toContain('Reaping Scythe');
       expect(deck).toContain('The Void');
 
+      const table = pack.records.find(
+        (record) => record.key === 'table:deck-of-many-things',
+      );
+      expect(table?.data).toMatchObject({
+        rows: expect.arrayContaining([
+          ['Ace of diamonds', 'Vizier*'],
+          ['Two of diamonds', 'Comet*'],
+          ['Ace of hearts', 'The Fates*'],
+        ]),
+        legend: ['*Found only in a deck with twenty-two cards'],
+      });
+
       const avatar = pack.records.find(
         (record) => record.key === 'stat-block:avatar-of-death',
       );
@@ -3323,6 +3343,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         cost: '2 gp',
         weight: '5 lb.',
         capacity: '1 cubic foot/30 pounds of gear',
+        description:
+          'You can also strap items, such as a bedroll or a coil of rope, to the outside of a backpack.',
       });
       // Right-column complete row.
       expect(
@@ -6700,6 +6722,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         expect(count).toBe(0);
       });
     }
+
+    it('contains no dehyphenation spaces except source-legitimate suspended ranges', () => {
+      const ledgerJson = readFileSync(
+        join(PACK_DIR, 'source-region-ledger.json'),
+        'utf8',
+      );
+      expect(`${recordsJson}\n${ledgerJson}`).not.toMatch(
+        /(?:[A-Za-z]+|\d+(?!- to\b))- (?=[a-z])/,
+      );
+    });
   });
 
   describe('source-manifest alignment with the vendored SRD artifact', () => {
