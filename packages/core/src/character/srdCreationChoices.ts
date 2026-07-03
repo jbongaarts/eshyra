@@ -14,10 +14,14 @@
  * and base-language choices in `languages[].choose` (both from creationFacts).
  * This module owns only the remaining prose-bound choices.
  *
- * The authored data is source-cited (each choice keeps the verbatim trait/source
- * text). It is shared by the importer (which attaches it to ancestry/background
- * records) and the runtime; ref/tableRef reachability is checked fail-closed by
- * an importer guard.
+ * The authored data is source-cited via each choice's `sourceText` — verbatim
+ * SRD prose for enumerable/prose-bound choices, but a constructed
+ * "<table name> (<die>)." pointer label for rolled-table choices (Acolyte's
+ * personality/ideal/bond/flaw), since those have no quotable sentence of
+ * their own (see `CreationChoice.sourceText`, eshyra-o9bd.18.8.7). It is
+ * shared by the importer (which attaches it to ancestry/background records)
+ * and the runtime; ref/tableRef reachability is checked fail-closed by an
+ * importer guard.
  */
 
 import type { StartingEquipmentFilterSelect } from './srdStartingEquipmentGrants.js';
@@ -65,7 +69,15 @@ export interface CreationChoice {
   readonly tableRef?: string;
   /** Dice for a rolled table, e.g. "1d8" (personality) or "1d6" (ideal/bond/flaw). */
   readonly roll?: string;
-  /** Verbatim source trait/prose text, for auditability. */
+  /**
+   * Source-cited display label, for auditability — NOT guaranteed verbatim
+   * SRD prose. Enumerable/prose-bound choices (draconicAncestry, tool, skill,
+   * cantrip, language) carry the actual SRD sentence. Rolled-table choices
+   * (personalityTrait, ideal, bond, flaw) instead carry a constructed
+   * "<table name> (<die>)." pointer built from the table's own title and
+   * `roll` (e.g. "Acolyte Bonds (d6)."), since the SRD prose for those is the
+   * table itself, not a quotable sentence. See eshyra-o9bd.18.8.7.
+   */
   readonly sourceText: string;
 }
 

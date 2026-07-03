@@ -1647,6 +1647,13 @@ const CREATION_CHOICE_CATEGORIES: ReadonlySet<string> = new Set([
  * Validate ancestry/background creation choices (eshyra-ngcj.5): each entry has
  * a kebab `id`, a closed-vocabulary `category`, a `prompt`, a positive `choose`,
  * a `sourceText`, and optional discrete `from` / `tableRef` / `roll`.
+ *
+ * `sourceText` is a source-cited display label, not guaranteed verbatim SRD
+ * prose: for the rolled-table categories (`personalityTrait`/`ideal`/`bond`/
+ * `flaw`) it is a constructed "<table name> (<die>)." pointer (e.g. "Acolyte
+ * Bonds (d6)."), since the SRD prose there is the referenced table itself.
+ * See `CreationChoice.sourceText` in `character/srdCreationChoices.ts` and
+ * eshyra-o9bd.18.8.7.
  */
 function optCreationChoices(parent: Obj, key: string, path: string): void {
   const entries = objArray(parent, key, path);
