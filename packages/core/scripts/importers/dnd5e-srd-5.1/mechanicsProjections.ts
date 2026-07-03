@@ -204,16 +204,17 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
       effects: [
         {
           kind: 'attackRollModifier',
-          modifier: 'disadvantage',
-          appliesTo: 'attack-rolls-against-you',
+          subject: 'against-actor',
+          mode: 'disadvantage',
           condition: 'you-can-see-the-attacker',
           duration: 'until-start-of-your-next-turn',
         },
         {
           kind: 'savingThrowModifier',
-          modifier: 'advantage',
-          ability: 'dexterity',
-          appliesTo: 'you',
+          subject: 'actor',
+          mode: 'advantage',
+          roll: 'saving-throw',
+          abilities: ['dexterity'],
           duration: 'until-start-of-your-next-turn',
         },
         {
@@ -230,15 +231,15 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
       effects: [
         {
           kind: 'abilityCheckModifier',
-          modifier: 'advantage',
-          appliesTo: 'creature-you-aid',
+          subject: 'helped-creature',
+          mode: 'advantage',
           timing: 'next-ability-check-before-start-of-your-next-turn',
           constraint: 'check-must-perform-the-task-you-helped-with',
         },
         {
           kind: 'attackRollModifier',
-          modifier: 'advantage',
-          appliesTo: 'friendly-creature-first-attack-roll',
+          subject: 'helped-friendly-creature',
+          mode: 'advantage',
           timing: 'before-your-next-turn',
           targetConstraint: 'target-creature-within-5-feet-of-you',
         },

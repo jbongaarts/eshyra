@@ -987,11 +987,14 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         expect.arrayContaining([
           expect.objectContaining({
             kind: 'abilityCheckModifier',
-            modifier: 'advantage',
+            subject: 'helped-creature',
+            mode: 'advantage',
             timing: 'next-ability-check-before-start-of-your-next-turn',
           }),
           expect.objectContaining({
             kind: 'attackRollModifier',
+            subject: 'helped-friendly-creature',
+            mode: 'advantage',
             targetConstraint: 'target-creature-within-5-feet-of-you',
           }),
         ]),
