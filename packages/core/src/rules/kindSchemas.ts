@@ -1361,15 +1361,86 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
   optMechanics(data, 'mechanics', `${path}.data`);
 }
 
+/**
+ * Validate a creature `armorClass` statline object (eshyra-o9bd.18.6.1):
+ * required base `value` + verbatim `sourceText`, optional armor `source`
+ * parenthetical, optional base `condition`, and optional conditional/alternate
+ * `variants` (each `{ value, source?, condition }`).
+ */
+function reqCreatureArmorClass(parent: Obj, path: string): void {
+  const ac = reqObj(parent, 'armorClass', path);
+  const acPath = `${path}.armorClass`;
+  reqInt(ac, 'value', acPath, 0);
+  optStr(ac, 'source', acPath);
+  optStr(ac, 'condition', acPath);
+  reqStr(ac, 'sourceText', acPath);
+  const variants = ac.variants;
+  if (variants !== undefined) {
+    if (!Array.isArray(variants) || variants.length === 0) {
+      throw new RulesPackError(
+        `${acPath}.variants must be a non-empty array when present`,
+      );
+    }
+    variants.forEach((entry, i) => {
+      if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+        throw new RulesPackError(`${acPath}.variants[${i}] must be an object`);
+      }
+      const variant = entry as Obj;
+      reqInt(variant, 'value', `${acPath}.variants[${i}]`, 0);
+      optStr(variant, 'source', `${acPath}.variants[${i}]`);
+      reqStr(variant, 'condition', `${acPath}.variants[${i}]`);
+    });
+  }
+}
+
+/**
+ * Validate optional form-/condition-specific speed variants
+ * (eshyra-o9bd.18.6.3): each `{ condition, speed }` where `speed` is a
+ * mode→feet object like the base `speed` map.
+ */
+function optCreatureSpeedVariants(parent: Obj, path: string): void {
+  const variants = parent.speedVariants;
+  if (variants === undefined) return;
+  if (!Array.isArray(variants) || variants.length === 0) {
+    throw new RulesPackError(
+      `${path}.speedVariants must be a non-empty array when present`,
+    );
+  }
+  variants.forEach((entry, i) => {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+      throw new RulesPackError(`${path}.speedVariants[${i}] must be an object`);
+    }
+    const variant = entry as Obj;
+    reqStr(variant, 'condition', `${path}.speedVariants[${i}]`);
+    reqObj(variant, 'speed', `${path}.speedVariants[${i}]`);
+  });
+}
+
 function validateDnd5eCreature(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   optNonEmptyStrArray(data, 'familyPath', `${path}.data`);
   reqStr(data, 'size', `${path}.data`);
   reqStr(data, 'type', `${path}.data`);
   reqStr(data, 'alignment', `${path}.data`);
-  reqInt(data, 'armorClass', `${path}.data`, 0);
-  reqInt(data, 'hitPoints', `${path}.data`, 0);
+  // Structured statline objects (eshyra-o9bd.18.6): the printed AC semantics
+  // (armor source, base condition, conditional/alternate values, verbatim
+  // text), the printed average + dice formula for hit points (matching the
+  // inline `stat-block` kind, which always modeled `hitPoints` as an object),
+  // and the Speed line's hover / form-conditional parentheticals.
+  reqCreatureArmorClass(data, `${path}.data`);
+  const hp = reqObj(data, 'hitPoints', `${path}.data`);
+  reqInt(hp, 'value', `${path}.data.hitPoints`, 0);
+  reqStr(hp, 'formula', `${path}.data.hitPoints`);
   reqObj(data, 'speed', `${path}.data`);
+  // `hover` is emitted only when the Speed line prints "(hover)", and only as
+  // literal true — false is expressed by omission, mirroring `category`.
+  if (data.hover !== undefined && data.hover !== true) {
+    throw new RulesPackError(
+      `${path}.data.hover must be literal true when present`,
+    );
+  }
+  optCreatureSpeedVariants(data, `${path}.data`);
+  reqStr(data, 'speedSourceText', `${path}.data`);
   reqStr(data, 'challengeRating', `${path}.data`);
   // The printed XP award from the Challenge parenthetical (eshyra-o9bd.18.5).
   // Required: every SRD creature prints one, and CR 0 is source-underdetermined

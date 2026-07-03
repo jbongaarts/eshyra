@@ -10788,12 +10788,20 @@
       "size": "Large",
       "type": "aberration",
       "alignment": "lawful evil",
-      "armorClass": 17,
-      "hitPoints": 135,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 135,
+        "formula": "18d10 + 36"
+      },
       "speed": {
         "walk": 10,
         "swim": 40
       },
+      "speedSourceText": "10 ft., swim 40 ft.",
       "challengeRating": "10",
       "experiencePoints": 5900,
       "abilityScores": {
@@ -10986,11 +10994,18 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 10,
-      "hitPoints": 9,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 9,
+        "formula": "2d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -11078,13 +11093,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 19,
-      "hitPoints": 195,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 195,
+        "formula": "17d12 + 85"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "14",
       "experiencePoints": 11500,
       "abilityScores": {
@@ -11327,13 +11350,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 19,
-      "hitPoints": 225,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 225,
+        "formula": "18d12 + 108"
+      },
       "speed": {
         "walk": 40,
         "burrow": 30,
         "fly": 80
       },
+      "speedSourceText": "40 ft., burrow 30 ft., fly 80 ft.",
       "challengeRating": "16",
       "experiencePoints": 15000,
       "abilityScores": {
@@ -11572,13 +11603,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 18,
-      "hitPoints": 172,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 172,
+        "formula": "15d12 + 75"
+      },
       "speed": {
         "walk": 40,
         "burrow": 30,
         "fly": 80
       },
+      "speedSourceText": "40 ft., burrow 30 ft., fly 80 ft.",
       "challengeRating": "13",
       "experiencePoints": 10000,
       "abilityScores": {
@@ -11831,13 +11870,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 19,
-      "hitPoints": 212,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 212,
+        "formula": "17d12 + 102"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "15",
       "experiencePoints": 13000,
       "abilityScores": {
@@ -12092,13 +12139,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 18,
-      "hitPoints": 184,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 184,
+        "formula": "16d12 + 80"
+      },
       "speed": {
         "walk": 40,
         "climb": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., climb 40 ft., fly 80 ft.",
       "challengeRating": "14",
       "experiencePoints": 11500,
       "abilityScores": {
@@ -12345,13 +12400,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 19,
-      "hitPoints": 256,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 256,
+        "formula": "19d12 + 133"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "17",
       "experiencePoints": 18000,
       "abilityScores": {
@@ -12606,13 +12669,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 19,
-      "hitPoints": 207,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 207,
+        "formula": "18d12 + 90"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "15",
       "experiencePoints": 13000,
       "abilityScores": {
@@ -12856,13 +12927,21 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 19,
-      "hitPoints": 256,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 256,
+        "formula": "19d12 + 133"
+      },
       "speed": {
         "walk": 40,
         "climb": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., climb 40 ft., fly 80 ft.",
       "challengeRating": "17",
       "experiencePoints": 18000,
       "abilityScores": {
@@ -13101,12 +13180,20 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 19,
-      "hitPoints": 243,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 243,
+        "formula": "18d12 + 126"
+      },
       "speed": {
         "walk": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., fly 80 ft.",
       "challengeRating": "16",
       "experiencePoints": 15000,
       "abilityScores": {
@@ -13363,14 +13450,22 @@
       "size": "Huge",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 18,
-      "hitPoints": 200,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 200,
+        "formula": "16d12 + 96"
+      },
       "speed": {
         "walk": 40,
         "burrow": 30,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., burrow 30 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "13",
       "experiencePoints": 10000,
       "abilityScores": {
@@ -13611,12 +13706,20 @@
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
-      "armorClass": 15,
-      "hitPoints": 90,
+      "armorClass": {
+        "value": 15,
+        "sourceText": "15"
+      },
+      "hitPoints": {
+        "value": 90,
+        "formula": "12d10 + 24"
+      },
       "speed": {
         "walk": 0,
         "fly": 90
       },
+      "hover": true,
+      "speedSourceText": "0 ft., fly 90 ft. (hover)",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -13744,13 +13847,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 22,
-      "hitPoints": 367,
+      "armorClass": {
+        "value": 22,
+        "source": "natural armor",
+        "sourceText": "22 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 367,
+        "formula": "21d20 + 147"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "21",
       "experiencePoints": 33000,
       "abilityScores": {
@@ -13993,13 +14104,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 22,
-      "hitPoints": 481,
+      "armorClass": {
+        "value": 22,
+        "source": "natural armor",
+        "sourceText": "22 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 481,
+        "formula": "26d20 + 208"
+      },
       "speed": {
         "walk": 40,
         "burrow": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., burrow 40 ft., fly 80 ft.",
       "challengeRating": "23",
       "experiencePoints": 50000,
       "abilityScores": {
@@ -14238,13 +14357,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 20,
-      "hitPoints": 297,
+      "armorClass": {
+        "value": 20,
+        "source": "natural armor",
+        "sourceText": "20 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 297,
+        "formula": "17d20 + 119"
+      },
       "speed": {
         "walk": 40,
         "burrow": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., burrow 40 ft., fly 80 ft.",
       "challengeRating": "20",
       "experiencePoints": 25000,
       "abilityScores": {
@@ -14501,13 +14628,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 22,
-      "hitPoints": 444,
+      "armorClass": {
+        "value": 22,
+        "source": "natural armor",
+        "sourceText": "22 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 444,
+        "formula": "24d20 + 192"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "22",
       "experiencePoints": 41000,
       "abilityScores": {
@@ -14762,13 +14897,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 21,
-      "hitPoints": 350,
+      "armorClass": {
+        "value": 21,
+        "source": "natural armor",
+        "sourceText": "21 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 350,
+        "formula": "20d20 + 140"
+      },
       "speed": {
         "walk": 40,
         "climb": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., climb 40 ft., fly 80 ft.",
       "challengeRating": "21",
       "experiencePoints": 33000,
       "abilityScores": {
@@ -15019,13 +15162,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 22,
-      "hitPoints": 546,
+      "armorClass": {
+        "value": 22,
+        "source": "natural armor",
+        "sourceText": "22 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 546,
+        "formula": "28d20 + 252"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "24",
       "experiencePoints": 62000,
       "abilityScores": {
@@ -15280,13 +15431,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 21,
-      "hitPoints": 385,
+      "armorClass": {
+        "value": 21,
+        "source": "natural armor",
+        "sourceText": "21 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 385,
+        "formula": "22d20 + 154"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "22",
       "experiencePoints": 41000,
       "abilityScores": {
@@ -15530,13 +15689,21 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 22,
-      "hitPoints": 546,
+      "armorClass": {
+        "value": 22,
+        "source": "natural armor",
+        "sourceText": "22 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 546,
+        "formula": "28d20 + 252"
+      },
       "speed": {
         "walk": 40,
         "climb": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., climb 40 ft., fly 80 ft.",
       "challengeRating": "24",
       "experiencePoints": 62000,
       "abilityScores": {
@@ -15775,12 +15942,20 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 22,
-      "hitPoints": 487,
+      "armorClass": {
+        "value": 22,
+        "source": "natural armor",
+        "sourceText": "22 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 487,
+        "formula": "25d20 + 225"
+      },
       "speed": {
         "walk": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., fly 80 ft.",
       "challengeRating": "23",
       "experiencePoints": 50000,
       "abilityScores": {
@@ -16037,14 +16212,22 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 20,
-      "hitPoints": 333,
+      "armorClass": {
+        "value": 20,
+        "source": "natural armor",
+        "sourceText": "20 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 333,
+        "formula": "18d20 + 144"
+      },
       "speed": {
         "walk": 40,
         "burrow": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., burrow 40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "20",
       "experiencePoints": 25000,
       "abilityScores": {
@@ -16285,12 +16468,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "lawful neutral",
-      "armorClass": 17,
-      "hitPoints": 199,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 199,
+        "formula": "19d10 + 95"
+      },
       "speed": {
         "walk": 40,
         "fly": 60
       },
+      "speedSourceText": "40 ft., fly 60 ft.",
       "challengeRating": "17",
       "experiencePoints": 18000,
       "abilityScores": {
@@ -16480,11 +16671,19 @@
       "size": "Medium",
       "type": "construct",
       "alignment": "unaligned",
-      "armorClass": 18,
-      "hitPoints": 33,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 33,
+        "formula": "6d8 + 6"
+      },
       "speed": {
         "walk": 25
       },
+      "speedSourceText": "25 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -16592,12 +16791,26 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 39,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "variants": [
+          {
+            "value": 11,
+            "condition": "while prone"
+          }
+        ],
+        "sourceText": "14 (natural armor), 11 while prone"
+      },
+      "hitPoints": {
+        "value": 39,
+        "formula": "6d10 + 6"
+      },
       "speed": {
         "walk": 30,
         "burrow": 10
       },
+      "speedSourceText": "30 ft., burrow 10 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -16718,12 +16931,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d8 + 6"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -16835,11 +17055,24 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 12,
-      "hitPoints": 99,
+      "armorClass": {
+        "value": 12,
+        "variants": [
+          {
+            "value": 15,
+            "condition": "with mage armor"
+          }
+        ],
+        "sourceText": "12 (15 with mage armor)"
+      },
+      "hitPoints": {
+        "value": 99,
+        "formula": "18d8 + 18"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "12",
       "experiencePoints": 8400,
       "abilityScores": {
@@ -16933,11 +17166,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any non-good alignment",
-      "armorClass": 15,
-      "hitPoints": 78,
+      "armorClass": {
+        "value": 15,
+        "source": "studded leather",
+        "sourceText": "15 (studded leather)"
+      },
+      "hitPoints": {
+        "value": 78,
+        "formula": "12d8 + 24"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -17112,11 +17353,18 @@
       "size": "Small",
       "type": "plant",
       "alignment": "unaligned",
-      "armorClass": 9,
-      "hitPoints": 10,
+      "armorClass": {
+        "value": 9,
+        "sourceText": "9"
+      },
+      "hitPoints": {
+        "value": 10,
+        "formula": "3d6"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -17186,11 +17434,19 @@
       "size": "Huge",
       "type": "plant",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 59,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 59,
+        "formula": "7d12 + 14"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -17274,11 +17530,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -17354,11 +17617,19 @@
       "size": "Medium",
       "type": "elemental",
       "alignment": "lawful neutral",
-      "armorClass": 17,
-      "hitPoints": 39,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor, shield",
+        "sourceText": "17 (natural armor, shield)"
+      },
+      "hitPoints": {
+        "value": 39,
+        "formula": "6d8 + 12"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -17488,12 +17759,19 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 3,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 3,
+        "formula": "1d6"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -17568,12 +17846,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 3,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 3,
+        "formula": "1d4 + 1"
+      },
       "speed": {
         "walk": 20,
         "burrow": 5
       },
+      "speedSourceText": "20 ft., burrow 5 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -17643,12 +17928,20 @@
       "size": "Huge",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
-      "armorClass": 19,
-      "hitPoints": 262,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 262,
+        "formula": "21d12 + 126"
+      },
       "speed": {
         "walk": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., fly 80 ft.",
       "challengeRating": "19",
       "experiencePoints": 22000,
       "abilityScores": {
@@ -17837,11 +18130,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any non-lawful",
-      "armorClass": 12,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 12,
+        "source": "leather armor",
+        "sourceText": "12 (leather armor)"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -17945,11 +18246,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any non-lawful",
-      "armorClass": 15,
-      "hitPoints": 65,
+      "armorClass": {
+        "value": 15,
+        "source": "studded leather",
+        "sourceText": "15 (studded leather)"
+      },
+      "hitPoints": {
+        "value": 65,
+        "formula": "10d8 + 20"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -18072,11 +18381,19 @@
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 15,
-      "hitPoints": 110,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 110,
+        "formula": "13d8 + 52"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -18238,11 +18555,19 @@
       "size": "Medium",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 15,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "8d8 + 16"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -18355,12 +18680,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 5,
         "fly": 30
       },
+      "speedSourceText": "5 ft., fly 30 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -18432,11 +18764,19 @@
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 13,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "8d8 + 16"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -18572,12 +18912,20 @@
       "size": "Huge",
       "type": "monstrosity",
       "alignment": "neutral evil",
-      "armorClass": 17,
-      "hitPoints": 168,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 168,
+        "formula": "16d12 + 64"
+      },
       "speed": {
         "walk": 50,
         "climb": 40
       },
+      "speedSourceText": "50 ft., climb 40 ft.",
       "challengeRating": "11",
       "experiencePoints": 7200,
       "abilityScores": {
@@ -18744,11 +19092,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any chaotic alignment",
-      "armorClass": 13,
-      "hitPoints": 67,
+      "armorClass": {
+        "value": 13,
+        "source": "hide armor",
+        "sourceText": "13 (hide armor)"
+      },
+      "hitPoints": {
+        "value": 67,
+        "formula": "9d8 + 27"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -18830,12 +19186,20 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d8 + 6"
+      },
       "speed": {
         "walk": 40,
         "climb": 30
       },
+      "speedSourceText": "40 ft., climb 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -18954,13 +19318,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 17,
-      "hitPoints": 33,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 33,
+        "formula": "6d8 + 6"
+      },
       "speed": {
         "walk": 30,
         "fly": 60,
         "swim": 30
       },
+      "speedSourceText": "30 ft., fly 60 ft., swim 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -19081,12 +19453,19 @@
       "size": "Large",
       "type": "ooze",
       "alignment": "unaligned",
-      "armorClass": 7,
-      "hitPoints": 85,
+      "armorClass": {
+        "value": 7,
+        "sourceText": "7"
+      },
+      "hitPoints": {
+        "value": 85,
+        "formula": "10d10 + 30"
+      },
       "speed": {
         "walk": 20,
         "climb": 20
       },
+      "speedSourceText": "20 ft., climb 20 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -19202,11 +19581,18 @@
       "size": "Medium",
       "type": "fey",
       "alignment": "lawful good",
-      "armorClass": 13,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "4d8 + 4"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -19300,12 +19686,19 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 7,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 7,
+        "formula": "2d6"
+      },
       "speed": {
         "walk": 10,
         "fly": 60
       },
+      "speedSourceText": "10 ft., fly 60 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -19405,13 +19798,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 17,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "8d8 + 16"
+      },
       "speed": {
         "walk": 30,
         "burrow": 15,
         "fly": 60
       },
+      "speedSourceText": "30 ft., burrow 15 ft., fly 60 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -19523,11 +19924,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -19636,12 +20045,20 @@
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 19,
-      "hitPoints": 142,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 142,
+        "formula": "15d10 + 60"
+      },
       "speed": {
         "walk": 40,
         "fly": 40
       },
+      "speedSourceText": "40 ft., fly 40 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -19790,13 +20207,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 16,
-      "hitPoints": 16,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 16,
+        "formula": "3d8 + 3"
+      },
       "speed": {
         "walk": 30,
         "burrow": 15,
         "fly": 60
       },
+      "speedSourceText": "30 ft., burrow 15 ft., fly 60 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -19927,13 +20352,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 17,
-      "hitPoints": 32,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 32,
+        "formula": "5d8 + 10"
+      },
       "speed": {
         "walk": 30,
         "fly": 60,
         "swim": 30
       },
+      "speedSourceText": "30 ft., fly 60 ft., swim 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -20059,12 +20492,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 34,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 34,
+        "formula": "4d10 + 12"
+      },
       "speed": {
         "walk": 40,
         "climb": 30
       },
+      "speedSourceText": "40 ft., climb 30 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -20178,11 +20619,19 @@
       "size": "Medium",
       "type": "humanoid (goblinoid)",
       "alignment": "chaotic evil",
-      "armorClass": 16,
-      "hitPoints": 27,
+      "armorClass": {
+        "value": 16,
+        "source": "hide armor, shield",
+        "sourceText": "16 (hide armor, shield)"
+      },
+      "hitPoints": {
+        "value": 27,
+        "formula": "5d8 + 5"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -20310,12 +20759,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 17,
-      "hitPoints": 94,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 94,
+        "formula": "9d10 + 45"
+      },
       "speed": {
         "walk": 40,
         "burrow": 40
       },
+      "speedSourceText": "40 ft., burrow 40 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -20426,11 +20883,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 9,
-      "hitPoints": 15,
+      "armorClass": {
+        "value": 9,
+        "sourceText": "9"
+      },
+      "hitPoints": {
+        "value": 15,
+        "formula": "2d10 + 4"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -20505,12 +20969,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 2,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 2,
+        "formula": "1d4"
+      },
       "speed": {
         "walk": 40,
         "climb": 30
       },
+      "speedSourceText": "40 ft., climb 30 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -20578,11 +21049,18 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "neutral good",
-      "armorClass": 12,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d10 + 12"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -20739,11 +21217,19 @@
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 16,
-      "hitPoints": 85,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 85,
+        "formula": "10d8 + 40"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -20875,12 +21361,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "chaotic evil",
-      "armorClass": 14,
-      "hitPoints": 114,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 114,
+        "formula": "12d10 + 48"
+      },
       "speed": {
         "walk": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., fly 60 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -21040,12 +21534,20 @@
       "size": "Large",
       "type": "aberration",
       "alignment": "chaotic evil",
-      "armorClass": 16,
-      "hitPoints": 93,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 93,
+        "formula": "11d10 + 33"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -21172,11 +21674,19 @@
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 133,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 133,
+        "formula": "14d10 + 56"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -21296,12 +21806,20 @@
       "size": "Large",
       "type": "aberration",
       "alignment": "chaotic neutral",
-      "armorClass": 14,
-      "hitPoints": 78,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 78,
+        "formula": "12d10 + 12"
+      },
       "speed": {
         "walk": 10,
         "fly": 40
       },
+      "speedSourceText": "10 ft., fly 40 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -21420,11 +21938,19 @@
       "size": "Huge",
       "type": "giant",
       "alignment": "neutral good (50%) or neutral evil (50%)",
-      "armorClass": 14,
-      "hitPoints": 200,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 200,
+        "formula": "16d12 + 96"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -21546,12 +22072,19 @@
       "size": "Small",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 27,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 27,
+        "formula": "6d6 + 6"
+      },
       "speed": {
         "walk": 20,
         "fly": 40
       },
+      "speedSourceText": "20 ft., fly 40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -21628,11 +22161,18 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 10,
-      "hitPoints": 4,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 4,
+        "formula": "1d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -21708,12 +22248,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "2d10 + 2"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -21801,13 +22348,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 16,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "4d8 + 4"
+      },
       "speed": {
         "walk": 30,
         "climb": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., climb 30 ft., fly 60 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -21927,12 +22482,20 @@
       "size": "Medium",
       "type": "celestial",
       "alignment": "lawful good",
-      "armorClass": 19,
-      "hitPoints": 97,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 97,
+        "formula": "13d8 + 39"
+      },
       "speed": {
         "walk": 30,
         "fly": 90
       },
+      "speedSourceText": "30 ft., fly 90 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -22052,12 +22615,20 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 2,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 2,
+        "formula": "1d4"
+      },
       "speed": {
         "walk": 20,
         "swim": 20
       },
+      "speedSourceText": "20 ft., swim 20 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -22125,12 +22696,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 20,
         "swim": 30
       },
+      "speedSourceText": "20 ft., swim 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -22208,11 +22787,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any non-good alignment",
-      "armorClass": 13,
-      "hitPoints": 33,
+      "armorClass": {
+        "value": 13,
+        "source": "leather armor",
+        "sourceText": "13 (leather armor)"
+      },
+      "hitPoints": {
+        "value": 33,
+        "formula": "6d8 + 6"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -22301,11 +22888,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any non-good alignment",
-      "armorClass": 12,
-      "hitPoints": 9,
+      "armorClass": {
+        "value": 12,
+        "source": "leather armor",
+        "sourceText": "12 (leather armor)"
+      },
+      "hitPoints": {
+        "value": 9,
+        "formula": "2d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -22385,12 +22980,19 @@
       "size": "Small",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d6 + 5"
+      },
       "speed": {
         "walk": 10,
         "fly": 30
       },
+      "speedSourceText": "10 ft., fly 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -22479,11 +23081,18 @@
       "size": "Medium",
       "type": "monstrosity",
       "alignment": "neutral evil",
-      "armorClass": 12,
-      "hitPoints": 39,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 39,
+        "formula": "6d8 + 12"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -22610,11 +23219,18 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 4,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 4,
+        "formula": "1d8"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -22692,12 +23308,20 @@
       "size": "Medium",
       "type": "celestial",
       "alignment": "lawful good",
-      "armorClass": 17,
-      "hitPoints": 136,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 136,
+        "formula": "16d8 + 64"
+      },
       "speed": {
         "walk": 30,
         "fly": 90
       },
+      "speedSourceText": "30 ft., fly 90 ft.",
       "challengeRating": "10",
       "experiencePoints": 5900,
       "abilityScores": {
@@ -22820,11 +23444,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 37,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 37,
+        "formula": "5d10 + 10"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -22933,12 +23565,20 @@
       "size": "Large",
       "type": "elemental",
       "alignment": "chaotic good",
-      "armorClass": 17,
-      "hitPoints": 161,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 161,
+        "formula": "14d10 + 84"
+      },
       "speed": {
         "walk": 30,
         "fly": 90
       },
+      "speedSourceText": "30 ft., fly 90 ft.",
       "challengeRating": "11",
       "experiencePoints": 7200,
       "abilityScores": {
@@ -23047,11 +23687,18 @@
       "size": "Medium",
       "type": "monstrosity (shapechanger)",
       "alignment": "neutral",
-      "armorClass": 14,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 14,
+        "sourceText": "14"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "8d8 + 16"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -23150,11 +23797,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -23229,12 +23883,20 @@
       "size": "Gargantuan",
       "type": "dragon",
       "alignment": "neutral",
-      "armorClass": 20,
-      "hitPoints": 341,
+      "armorClass": {
+        "value": 20,
+        "source": "natural armor",
+        "sourceText": "20 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 341,
+        "formula": "22d20 + 110"
+      },
       "speed": {
         "walk": 20,
         "swim": 40
       },
+      "speedSourceText": "20 ft., swim 40 ft.",
       "challengeRating": "17",
       "experiencePoints": 18000,
       "abilityScores": {
@@ -23416,11 +24078,19 @@
       "size": "Small",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
-      "armorClass": 11,
-      "hitPoints": 18,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 18,
+        "formula": "4d6 + 4"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -23548,12 +24218,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "chaotic evil",
-      "armorClass": 19,
-      "hitPoints": 123,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 123,
+        "formula": "13d10 + 52"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -23733,11 +24411,24 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 11,
-      "hitPoints": 27,
+      "armorClass": {
+        "value": 11,
+        "variants": [
+          {
+            "value": 16,
+            "condition": "with barkskin"
+          }
+        ],
+        "sourceText": "11 (16 with barkskin)"
+      },
+      "hitPoints": {
+        "value": 27,
+        "formula": "5d8 + 5"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -23815,11 +24506,24 @@
       "size": "Medium",
       "type": "fey",
       "alignment": "neutral",
-      "armorClass": 11,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 11,
+        "variants": [
+          {
+            "value": 16,
+            "condition": "with barkskin"
+          }
+        ],
+        "sourceText": "11 (16 with barkskin)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -23921,11 +24625,19 @@
       "size": "Medium",
       "type": "humanoid (dwarf)",
       "alignment": "lawful evil",
-      "armorClass": 16,
-      "hitPoints": 26,
+      "armorClass": {
+        "value": 16,
+        "source": "scale mail, shield",
+        "sourceText": "16 (scale mail, shield)"
+      },
+      "hitPoints": {
+        "value": 26,
+        "formula": "4d8 + 8"
+      },
       "speed": {
         "walk": 25
       },
+      "speedSourceText": "25 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -24094,12 +24806,19 @@
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
-      "armorClass": 12,
-      "hitPoints": 17,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 17,
+        "formula": "5d6"
+      },
       "speed": {
         "walk": 30,
         "fly": 30
       },
+      "speedSourceText": "30 ft., fly 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -24210,12 +24929,19 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 3,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 3,
+        "formula": "1d6"
+      },
       "speed": {
         "walk": 10,
         "fly": 60
       },
+      "speedSourceText": "10 ft., fly 60 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -24300,12 +25026,20 @@
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
-      "armorClass": 17,
-      "hitPoints": 126,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 126,
+        "formula": "12d10 + 60"
+      },
       "speed": {
         "walk": 30,
         "burrow": 30
       },
+      "speedSourceText": "30 ft., burrow 30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -24401,12 +25135,20 @@
       "size": "Large",
       "type": "elemental",
       "alignment": "lawful evil",
-      "armorClass": 17,
-      "hitPoints": 200,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 200,
+        "formula": "16d10 + 112"
+      },
       "speed": {
         "walk": 40,
         "fly": 60
       },
+      "speedSourceText": "40 ft., fly 60 ft.",
       "challengeRating": "11",
       "experiencePoints": 7200,
       "abilityScores": {
@@ -24534,11 +25276,19 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 76,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 76,
+        "formula": "8d12 + 24"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -24652,11 +25402,19 @@
       "size": "Medium",
       "type": "humanoid (elf)",
       "alignment": "neutral evil",
-      "armorClass": 15,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 15,
+        "source": "chain shirt",
+        "sourceText": "15 (chain shirt)"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "3d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -24801,11 +25559,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "2d10 + 2"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -24922,12 +25687,20 @@
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 18,
-      "hitPoints": 153,
+      "armorClass": {
+        "value": 18,
+        "source": "plate",
+        "sourceText": "18 (plate)"
+      },
+      "hitPoints": {
+        "value": 153,
+        "formula": "18d8 + 72"
+      },
       "speed": {
         "walk": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., fly 60 ft.",
       "challengeRating": "12",
       "experiencePoints": 8400,
       "abilityScores": {
@@ -25108,12 +25881,20 @@
       "size": "Medium",
       "type": "monstrosity",
       "alignment": "neutral evil",
-      "armorClass": 13,
-      "hitPoints": 44,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 44,
+        "formula": "8d8 + 8"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -25254,11 +26035,19 @@
       "size": "Large",
       "type": "giant",
       "alignment": "chaotic evil",
-      "armorClass": 12,
-      "hitPoints": 85,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 85,
+        "formula": "10d10 + 30"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -25407,11 +26196,18 @@
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
-      "armorClass": 13,
-      "hitPoints": 102,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 102,
+        "formula": "12d10 + 36"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -25534,11 +26330,19 @@
       "size": "Huge",
       "type": "giant",
       "alignment": "lawful evil",
-      "armorClass": 18,
-      "hitPoints": 162,
+      "armorClass": {
+        "value": 18,
+        "source": "plate",
+        "sourceText": "18 (plate)"
+      },
+      "hitPoints": {
+        "value": 162,
+        "formula": "13d12 + 78"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -25654,11 +26458,18 @@
       "size": "Medium",
       "type": "construct",
       "alignment": "neutral",
-      "armorClass": 9,
-      "hitPoints": 93,
+      "armorClass": {
+        "value": 9,
+        "sourceText": "9"
+      },
+      "hitPoints": {
+        "value": 93,
+        "formula": "11d8 + 44"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -25765,13 +26576,20 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 5,
+      "armorClass": {
+        "value": 14,
+        "sourceText": "14"
+      },
+      "hitPoints": {
+        "value": 5,
+        "formula": "2d4"
+      },
       "speed": {
         "walk": 30,
         "fly": 60,
         "swim": 30
       },
+      "speedSourceText": "30 ft., fly 60 ft., swim 30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -25856,12 +26674,21 @@
       "size": "Small",
       "type": "construct",
       "alignment": "unaligned",
-      "armorClass": 17,
-      "hitPoints": 17,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 17,
+        "formula": "5d6"
+      },
       "speed": {
         "walk": 0,
         "fly": 50
       },
+      "hover": true,
+      "speedSourceText": "0 ft., fly 50 ft. (hover)",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -25966,12 +26793,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 20,
         "swim": 20
       },
+      "speedSourceText": "20 ft., swim 20 ft.",
       "challengeRating": "0",
       "experiencePoints": 0,
       "abilityScores": {
@@ -26031,11 +26865,19 @@
       "size": "Huge",
       "type": "giant",
       "alignment": "neutral evil",
-      "armorClass": 15,
-      "hitPoints": 138,
+      "armorClass": {
+        "value": 15,
+        "source": "patchwork armor",
+        "sourceText": "15 (patchwork armor)"
+      },
+      "hitPoints": {
+        "value": 138,
+        "formula": "12d12 + 60"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -26148,12 +26990,20 @@
       "size": "Medium",
       "type": "elemental",
       "alignment": "chaotic evil",
-      "armorClass": 15,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "7d8 + 21"
+      },
       "speed": {
         "walk": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., fly 60 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -26272,11 +27122,18 @@
       "size": "Large",
       "type": "ooze",
       "alignment": "unaligned",
-      "armorClass": 6,
-      "hitPoints": 84,
+      "armorClass": {
+        "value": 6,
+        "sourceText": "6"
+      },
+      "hitPoints": {
+        "value": 84,
+        "formula": "8d10 + 40"
+      },
       "speed": {
         "walk": 15
       },
+      "speedSourceText": "15 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -26389,11 +27246,18 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "chaotic evil",
-      "armorClass": 13,
-      "hitPoints": 36,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 36,
+        "formula": "8d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -26520,12 +27384,20 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "any alignment",
-      "armorClass": 11,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "10d8"
+      },
       "speed": {
         "walk": 0,
         "fly": 40
       },
+      "hover": true,
+      "speedSourceText": "0 ft., fly 40 ft. (hover)",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -26678,11 +27550,18 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "chaotic evil",
-      "armorClass": 12,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -26784,12 +27663,19 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 157,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 157,
+        "formula": "15d12 + 60"
+      },
       "speed": {
         "walk": 40,
         "climb": 40
       },
+      "speedSourceText": "40 ft., climb 40 ft.",
       "challengeRating": "7",
       "experiencePoints": 2900,
       "abilityScores": {
@@ -26900,12 +27786,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "2d8 + 4"
+      },
       "speed": {
         "walk": 30,
         "burrow": 10
       },
+      "speedSourceText": "30 ft., burrow 10 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -27018,12 +27911,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "4d10"
+      },
       "speed": {
         "walk": 10,
         "fly": 60
       },
+      "speedSourceText": "10 ft., fly 60 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -27101,11 +28001,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 42,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 42,
+        "formula": "5d10 + 15"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -27211,12 +28119,20 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 4,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 4,
+        "formula": "1d6 + 1"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -27297,12 +28213,19 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 60,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 60,
+        "formula": "8d12 + 8"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -27386,12 +28309,20 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 15,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "3d8"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -27479,12 +28410,20 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 85,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 85,
+        "formula": "9d12 + 27"
+      },
       "speed": {
         "walk": 30,
         "swim": 50
       },
+      "speedSourceText": "30 ft., swim 50 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -27624,12 +28563,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "neutral good",
-      "armorClass": 13,
-      "hitPoints": 26,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 26,
+        "formula": "4d10 + 4"
+      },
       "speed": {
         "walk": 10,
         "fly": 80
       },
+      "speedSourceText": "10 ft., fly 80 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -27744,11 +28690,19 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 42,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 42,
+        "formula": "5d12 + 10"
+      },
       "speed": {
         "walk": 60
       },
+      "speedSourceText": "60 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -27864,11 +28818,19 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 4,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 4,
+        "formula": "1d6 + 1"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -27936,12 +28898,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 18,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 18,
+        "formula": "4d8"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -28064,11 +29033,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -28182,11 +29159,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d10 + 12"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -28268,12 +29252,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -28349,12 +29341,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "8d10 + 8"
+      },
       "speed": {
         "walk": 10,
         "swim": 60
       },
+      "speedSourceText": "10 ft., swim 60 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -28458,12 +29457,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "neutral",
-      "armorClass": 12,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 5,
         "fly": 60
       },
+      "speedSourceText": "5 ft., fly 60 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -28550,12 +29556,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 14,
+        "sourceText": "14"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -28647,11 +29660,18 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 7,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 7,
+        "formula": "2d6"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -28750,11 +29770,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 15,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "7d10 + 14"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -28863,12 +29891,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 16,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 16,
+        "formula": "3d10"
+      },
       "speed": {
         "walk": 0,
         "swim": 40
       },
+      "speedSourceText": "0 ft., swim 40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -28975,12 +30011,20 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 126,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 126,
+        "formula": "11d12 + 55"
+      },
       "speed": {
         "walk": 0,
         "swim": 50
       },
+      "speedSourceText": "0 ft., swim 50 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -29067,12 +30111,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 26,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 26,
+        "formula": "4d10 + 4"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -29186,12 +30238,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 39,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 39,
+        "formula": "6d10 + 6"
+      },
       "speed": {
         "walk": 20,
         "swim": 40
       },
+      "speedSourceText": "20 ft., swim 40 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -29323,12 +30382,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "neutral evil",
-      "armorClass": 10,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "3d10 + 6"
+      },
       "speed": {
         "walk": 10,
         "fly": 60
       },
+      "speedSourceText": "10 ft., fly 60 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -29455,12 +30521,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "3d8"
+      },
       "speed": {
         "walk": 10,
         "fly": 50
       },
+      "speedSourceText": "10 ft., fly 50 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -29541,11 +30614,18 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 9,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 9,
+        "formula": "2d8"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -29627,12 +30707,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 40,
         "climb": 40
       },
+      "speedSourceText": "40 ft., climb 40 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -29729,12 +30816,19 @@
       "size": "Medium",
       "type": "aberration",
       "alignment": "neutral",
-      "armorClass": 9,
-      "hitPoints": 67,
+      "armorClass": {
+        "value": 9,
+        "sourceText": "9"
+      },
+      "hitPoints": {
+        "value": 67,
+        "formula": "9d8 + 27"
+      },
       "speed": {
         "walk": 10,
         "swim": 10
       },
+      "speedSourceText": "10 ft., swim 10 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -29869,11 +30963,19 @@
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
-      "armorClass": 17,
-      "hitPoints": 157,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 157,
+        "formula": "15d10 + 75"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -30001,11 +31103,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 16,
-      "hitPoints": 112,
+      "armorClass": {
+        "value": 16,
+        "source": "studded leather, shield",
+        "sourceText": "16 (studded leather, shield)"
+      },
+      "hitPoints": {
+        "value": 112,
+        "formula": "15d8 + 45"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -30150,11 +31260,19 @@
       "size": "Medium",
       "type": "humanoid (gnoll)",
       "alignment": "chaotic evil",
-      "armorClass": 15,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 15,
+        "source": "hide armor, shield",
+        "sourceText": "15 (hide armor, shield)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -30293,11 +31411,19 @@
       "size": "Small",
       "type": "humanoid (gnome)",
       "alignment": "neutral good",
-      "armorClass": 15,
-      "hitPoints": 16,
+      "armorClass": {
+        "value": 15,
+        "source": "chain shirt",
+        "sourceText": "15 (chain shirt)"
+      },
+      "hitPoints": {
+        "value": 16,
+        "formula": "3d6 + 6"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -30412,11 +31538,18 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 4,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 4,
+        "formula": "1d8"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -30530,11 +31663,19 @@
       "size": "Small",
       "type": "humanoid (goblinoid)",
       "alignment": "neutral evil",
-      "armorClass": 15,
-      "hitPoints": 7,
+      "armorClass": {
+        "value": 15,
+        "source": "leather armor, shield",
+        "sourceText": "15 (leather armor, shield)"
+      },
+      "hitPoints": {
+        "value": 7,
+        "formula": "2d6"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -30652,13 +31793,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 17,
-      "hitPoints": 60,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 60,
+        "formula": "8d8 + 24"
+      },
       "speed": {
         "walk": 30,
         "fly": 60,
         "swim": 30
       },
+      "speedSourceText": "30 ft., fly 60 ft., swim 30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -30784,11 +31933,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 19,
-      "hitPoints": 114,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 114,
+        "formula": "12d10 + 48"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -30943,12 +32100,19 @@
       "size": "Medium",
       "type": "ooze",
       "alignment": "unaligned",
-      "armorClass": 8,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 8,
+        "sourceText": "8"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "3d8 + 9"
+      },
       "speed": {
         "walk": 10,
         "climb": 10
       },
+      "speedSourceText": "10 ft., climb 10 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -31055,13 +32219,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 17,
-      "hitPoints": 38,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 38,
+        "formula": "7d8 + 7"
+      },
       "speed": {
         "walk": 30,
         "fly": 60,
         "swim": 30
       },
+      "speedSourceText": "30 ft., fly 60 ft., swim 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -31183,11 +32355,19 @@
       "size": "Medium",
       "type": "fey",
       "alignment": "neutral evil",
-      "armorClass": 17,
-      "hitPoints": 82,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 82,
+        "formula": "11d8 + 33"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -31293,12 +32473,20 @@
       "size": "Medium",
       "type": "monstrosity",
       "alignment": "neutral",
-      "armorClass": 14,
-      "hitPoints": 27,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 27,
+        "formula": "6d8"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -31412,12 +32600,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 59,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 59,
+        "formula": "7d10 + 21"
+      },
       "speed": {
         "walk": 30,
         "fly": 80
       },
+      "speedSourceText": "30 ft., fly 80 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -31531,11 +32726,18 @@
       "size": "Medium",
       "type": "humanoid (grimlock)",
       "alignment": "neutral evil",
-      "armorClass": 11,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -31645,11 +32847,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 16,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 16,
+        "source": "chain shirt, shield",
+        "sourceText": "16 (chain shirt, shield)"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -31743,11 +32953,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "lawful good",
-      "armorClass": 18,
-      "hitPoints": 127,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 127,
+        "formula": "15d10 + 45"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "10",
       "experiencePoints": 5900,
       "abilityScores": {
@@ -31853,12 +33071,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "lawful neutral",
-      "armorClass": 17,
-      "hitPoints": 136,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 136,
+        "formula": "16d10 + 48"
+      },
       "speed": {
         "walk": 40,
         "fly": 60
       },
+      "speedSourceText": "40 ft., fly 60 ft.",
       "challengeRating": "11",
       "experiencePoints": 7200,
       "abilityScores": {
@@ -31972,11 +33198,19 @@
       "size": "Medium",
       "type": "humanoid (human)",
       "alignment": "any alignment",
-      "armorClass": 18,
-      "hitPoints": 65,
+      "armorClass": {
+        "value": 18,
+        "source": "plate",
+        "sourceText": "18 (plate)"
+      },
+      "hitPoints": {
+        "value": 65,
+        "formula": "10d8 + 20"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -32150,12 +33384,19 @@
       "size": "Medium",
       "type": "monstrosity",
       "alignment": "chaotic evil",
-      "armorClass": 11,
-      "hitPoints": 38,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 38,
+        "formula": "7d8 + 7"
+      },
       "speed": {
         "walk": 20,
         "fly": 40
       },
+      "speedSourceText": "20 ft., fly 40 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -32284,12 +33525,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 10,
         "fly": 60
       },
+      "speedSourceText": "10 ft., fly 60 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -32357,11 +33605,19 @@
       "size": "Medium",
       "type": "fiend",
       "alignment": "lawful evil",
-      "armorClass": 15,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "7d8 + 14"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -32493,11 +33749,19 @@
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
-      "armorClass": 16,
-      "hitPoints": 136,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 136,
+        "formula": "13d10 + 65"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -32635,11 +33899,19 @@
       "size": "Huge",
       "type": "giant",
       "alignment": "chaotic evil",
-      "armorClass": 13,
-      "hitPoints": 105,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 105,
+        "formula": "10d12 + 40"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -32750,12 +34022,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 40,
         "fly": 60
       },
+      "speedSourceText": "40 ft., fly 60 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -32869,11 +34148,19 @@
       "size": "Medium",
       "type": "humanoid (goblinoid)",
       "alignment": "lawful evil",
-      "armorClass": 18,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 18,
+        "source": "chain mail, shield",
+        "sourceText": "18 (chain mail, shield)"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -33003,12 +34290,20 @@
       "size": "Tiny",
       "type": "construct",
       "alignment": "neutral",
-      "armorClass": 13,
-      "hitPoints": 5,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 5,
+        "formula": "2d4"
+      },
       "speed": {
         "walk": 20,
         "fly": 40
       },
+      "speedSourceText": "20 ft., fly 40 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -33088,12 +34383,20 @@
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 18,
-      "hitPoints": 178,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 178,
+        "formula": "17d10 + 85"
+      },
       "speed": {
         "walk": 20,
         "fly": 60
       },
+      "speedSourceText": "20 ft., fly 60 ft.",
       "challengeRating": "11",
       "experiencePoints": 7200,
       "abilityScores": {
@@ -33247,12 +34550,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d10 + 12"
+      },
       "speed": {
         "walk": 0,
         "swim": 40
       },
+      "speedSourceText": "0 ft., swim 40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -33339,12 +34650,20 @@
       "size": "Huge",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 15,
-      "hitPoints": 172,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 172,
+        "formula": "15d12 + 75"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -33470,11 +34789,18 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 5,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 5,
+        "formula": "1d8 + 1"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -33567,11 +34893,19 @@
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 18,
-      "hitPoints": 180,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 180,
+        "formula": "19d10 + 76"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "14",
       "experiencePoints": 11500,
       "abilityScores": {
@@ -33788,12 +35122,19 @@
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
-      "armorClass": 11,
-      "hitPoints": 21,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 21,
+        "formula": "6d6"
+      },
       "speed": {
         "walk": 30,
         "fly": 30
       },
+      "speedSourceText": "30 ft., fly 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -33918,12 +35259,19 @@
       "size": "Tiny",
       "type": "fiend (devil, shapechanger)",
       "alignment": "lawful evil",
-      "armorClass": 13,
-      "hitPoints": 10,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 10,
+        "formula": "3d4 + 3"
+      },
       "speed": {
         "walk": 20,
         "fly": 40
       },
+      "speedSourceText": "20 ft., fly 40 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -34044,12 +35392,20 @@
       "size": "Medium",
       "type": "elemental",
       "alignment": "neutral",
-      "armorClass": 14,
-      "hitPoints": 104,
+      "armorClass": {
+        "value": 14,
+        "sourceText": "14"
+      },
+      "hitPoints": {
+        "value": 104,
+        "formula": "16d8 + 32"
+      },
       "speed": {
         "walk": 50,
         "fly": 50
       },
+      "hover": true,
+      "speedSourceText": "50 ft., fly 50 ft. (hover)",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -34153,11 +35509,19 @@
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
-      "armorClass": 20,
-      "hitPoints": 210,
+      "armorClass": {
+        "value": 20,
+        "source": "natural armor",
+        "sourceText": "20 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 210,
+        "formula": "20d10 + 100"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "16",
       "experiencePoints": 15000,
       "abilityScores": {
@@ -34308,11 +35672,18 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 3,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 3,
+        "formula": "1d6"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -34392,12 +35763,20 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 90,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 90,
+        "formula": "12d12 + 12"
+      },
       "speed": {
         "walk": 0,
         "swim": 60
       },
+      "speedSourceText": "0 ft., swim 60 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -34496,11 +35875,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 18,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 18,
+        "source": "plate",
+        "sourceText": "18 (plate)"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "8d8 + 16"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -34644,11 +36031,18 @@
       "size": "Small",
       "type": "humanoid (kobold)",
       "alignment": "lawful evil",
-      "armorClass": 12,
-      "hitPoints": 5,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 5,
+        "formula": "2d6 − 2"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -34772,12 +36166,20 @@
       "size": "Gargantuan",
       "type": "monstrosity (titan)",
       "alignment": "chaotic evil",
-      "armorClass": 18,
-      "hitPoints": 472,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 472,
+        "formula": "27d20 + 189"
+      },
       "speed": {
         "walk": 20,
         "swim": 60
       },
+      "speedSourceText": "20 ft., swim 60 ft.",
       "challengeRating": "23",
       "experiencePoints": 50000,
       "abilityScores": {
@@ -35032,11 +36434,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "chaotic evil",
-      "armorClass": 13,
-      "hitPoints": 97,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 97,
+        "formula": "13d10 + 26"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -35157,11 +36567,18 @@
       "size": "Medium",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 7,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 7,
+        "sourceText": "7"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "3d8"
+      },
       "speed": {
         "walk": 15
       },
+      "speedSourceText": "15 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -35249,11 +36666,19 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "any evil alignment",
-      "armorClass": 17,
-      "hitPoints": 135,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 135,
+        "formula": "18d8 + 54"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "21",
       "experiencePoints": 33000,
       "abilityScores": {
@@ -35398,11 +36823,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 26,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 26,
+        "formula": "4d10 + 4"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -35546,12 +36978,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 2,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 2,
+        "formula": "1d4"
+      },
       "speed": {
         "walk": 20,
         "climb": 20
       },
+      "speedSourceText": "20 ft., climb 20 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -35612,12 +37051,20 @@
       "size": "Medium",
       "type": "humanoid (lizardfolk)",
       "alignment": "neutral",
-      "armorClass": 15,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor, shield",
+        "sourceText": "15 (natural armor, shield)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "4d8 + 4"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -35792,11 +37239,24 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 12,
-      "hitPoints": 40,
+      "armorClass": {
+        "value": 12,
+        "variants": [
+          {
+            "value": 15,
+            "condition": "with mage armor"
+          }
+        ],
+        "sourceText": "12 (15 with mage armor)"
+      },
+      "hitPoints": {
+        "value": 40,
+        "formula": "9d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -35887,12 +37347,19 @@
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
-      "armorClass": 11,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d6 + 5"
+      },
       "speed": {
         "walk": 30,
         "fly": 30
       },
+      "speedSourceText": "30 ft., fly 30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -36014,11 +37481,19 @@
       "size": "Small",
       "type": "elemental",
       "alignment": "chaotic neutral",
-      "armorClass": 14,
-      "hitPoints": 9,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 9,
+        "formula": "2d6 + 2"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -36125,11 +37600,19 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 126,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 126,
+        "formula": "11d12 + 55"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -36244,12 +37727,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "lawful evil",
-      "armorClass": 14,
-      "hitPoints": 68,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 68,
+        "formula": "8d10 + 24"
+      },
       "speed": {
         "walk": 30,
         "fly": 50
       },
+      "speedSourceText": "30 ft., fly 50 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -36396,11 +37887,19 @@
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
-      "armorClass": 18,
-      "hitPoints": 189,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 189,
+        "formula": "18d10 + 90"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "16",
       "experiencePoints": 15000,
       "abilityScores": {
@@ -36530,11 +38029,18 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 5,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 5,
+        "formula": "1d8 + 1"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -36629,11 +38135,19 @@
       "size": "Medium",
       "type": "monstrosity",
       "alignment": "lawful evil",
-      "armorClass": 15,
-      "hitPoints": 127,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 127,
+        "formula": "17d8 + 51"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -36800,12 +38314,19 @@
       "size": "Medium",
       "type": "humanoid (merfolk)",
       "alignment": "neutral",
-      "armorClass": 11,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 10,
         "swim": 40
       },
+      "speedSourceText": "10 ft., swim 40 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -36901,12 +38422,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "chaotic evil",
-      "armorClass": 13,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d10 + 12"
+      },
       "speed": {
         "walk": 10,
         "swim": 40
       },
+      "speedSourceText": "10 ft., swim 40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -37051,11 +38580,19 @@
       "size": "Medium",
       "type": "monstrosity (shapechanger)",
       "alignment": "neutral",
-      "armorClass": 12,
-      "hitPoints": 58,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 58,
+        "formula": "9d8 + 18"
+      },
       "speed": {
         "walk": 15
       },
+      "speedSourceText": "15 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -37205,11 +38742,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "chaotic evil",
-      "armorClass": 14,
-      "hitPoints": 76,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 76,
+        "formula": "9d10 + 27"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -37351,11 +38896,19 @@
       "size": "Large",
       "type": "undead",
       "alignment": "lawful evil",
-      "armorClass": 12,
-      "hitPoints": 67,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 67,
+        "formula": "9d10 + 18"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -37488,11 +39041,18 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -37588,11 +39148,19 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "lawful evil",
-      "armorClass": 11,
-      "hitPoints": 58,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 58,
+        "formula": "9d8 + 18"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -37717,11 +39285,19 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "lawful evil",
-      "armorClass": 17,
-      "hitPoints": 97,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 97,
+        "formula": "13d8 + 39"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "15",
       "experiencePoints": 13000,
       "abilityScores": {
@@ -37937,12 +39513,20 @@
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
-      "armorClass": 18,
-      "hitPoints": 184,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 184,
+        "formula": "16d10 + 96"
+      },
       "speed": {
         "walk": 20,
         "fly": 30
       },
+      "speedSourceText": "20 ft., fly 30 ft.",
       "challengeRating": "13",
       "experiencePoints": 10000,
       "abilityScores": {
@@ -38089,11 +39673,19 @@
       "size": "Medium",
       "type": "fiend",
       "alignment": "neutral evil",
-      "armorClass": 17,
-      "hitPoints": 112,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 112,
+        "formula": "15d8 + 45"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -38189,12 +39781,20 @@
       "size": "Large",
       "type": "fiend",
       "alignment": "neutral evil",
-      "armorClass": 13,
-      "hitPoints": 68,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 68,
+        "formula": "8d10 + 24"
+      },
       "speed": {
         "walk": 60,
         "fly": 90
       },
+      "speedSourceText": "60 ft., fly 90 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -38295,11 +39895,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 15,
-      "hitPoints": 9,
+      "armorClass": {
+        "value": 15,
+        "source": "breastplate",
+        "sourceText": "15 (breastplate)"
+      },
+      "hitPoints": {
+        "value": 9,
+        "formula": "2d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -38385,12 +39993,19 @@
       "size": "Large",
       "type": "ooze",
       "alignment": "unaligned",
-      "armorClass": 8,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 8,
+        "sourceText": "8"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d10 + 12"
+      },
       "speed": {
         "walk": 10,
         "climb": 10
       },
+      "speedSourceText": "10 ft., climb 10 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -38494,12 +40109,19 @@
       "size": "Small",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 3,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 3,
+        "formula": "1d6"
+      },
       "speed": {
         "walk": 5,
         "swim": 30
       },
+      "speedSourceText": "5 ft., swim 30 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -38585,11 +40207,19 @@
       "size": "Large",
       "type": "giant",
       "alignment": "chaotic evil",
-      "armorClass": 11,
-      "hitPoints": 59,
+      "armorClass": {
+        "value": 11,
+        "source": "hide armor",
+        "sourceText": "11 (hide armor)"
+      },
+      "hitPoints": {
+        "value": 59,
+        "formula": "7d10 + 21"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -38699,11 +40329,18 @@
       "size": "Large",
       "type": "undead",
       "alignment": "neutral evil",
-      "armorClass": 8,
-      "hitPoints": 85,
+      "armorClass": {
+        "value": 8,
+        "sourceText": "8"
+      },
+      "hitPoints": {
+        "value": 85,
+        "formula": "9d10 + 36"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -38794,12 +40431,20 @@
       "size": "Large",
       "type": "giant",
       "alignment": "lawful evil",
-      "armorClass": 16,
-      "hitPoints": 110,
+      "armorClass": {
+        "value": 16,
+        "source": "chain mail",
+        "sourceText": "16 (chain mail)"
+      },
+      "hitPoints": {
+        "value": 110,
+        "formula": "13d10 + 39"
+      },
       "speed": {
         "walk": 30,
         "fly": 30
       },
+      "speedSourceText": "30 ft., fly 30 ft.",
       "challengeRating": "7",
       "experiencePoints": 2900,
       "abilityScores": {
@@ -38932,11 +40577,19 @@
       "size": "Medium",
       "type": "humanoid (orc)",
       "alignment": "chaotic evil",
-      "armorClass": 13,
-      "hitPoints": 15,
+      "armorClass": {
+        "value": 13,
+        "source": "hide armor",
+        "sourceText": "13 (hide armor)"
+      },
+      "hitPoints": {
+        "value": 15,
+        "formula": "2d8 + 6"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -39050,11 +40703,19 @@
       "size": "Large",
       "type": "aberration",
       "alignment": "neutral",
-      "armorClass": 14,
-      "hitPoints": 114,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 114,
+        "formula": "12d10 + 48"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -39229,12 +40890,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 5,
         "fly": 60
       },
+      "speedSourceText": "5 ft., fly 60 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -39306,11 +40974,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 59,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 59,
+        "formula": "7d10 + 21"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -39409,12 +41085,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "3d8"
+      },
       "speed": {
         "walk": 50,
         "climb": 40
       },
+      "speedSourceText": "50 ft., climb 40 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -39542,12 +41225,19 @@
       "size": "Large",
       "type": "celestial",
       "alignment": "chaotic good",
-      "armorClass": 12,
-      "hitPoints": 59,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 59,
+        "formula": "7d10 + 21"
+      },
       "speed": {
         "walk": 60,
         "fly": 90
       },
+      "speedSourceText": "60 ft., fly 90 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -39624,12 +41314,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 32,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 32,
+        "formula": "5d10 + 5"
+      },
       "speed": {
         "walk": 30,
         "climb": 30
       },
+      "speedSourceText": "30 ft., climb 30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -39729,12 +41427,20 @@
       "size": "Large",
       "type": "fiend (devil)",
       "alignment": "lawful evil",
-      "armorClass": 19,
-      "hitPoints": 300,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 300,
+        "formula": "24d10 + 168"
+      },
       "speed": {
         "walk": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., fly 60 ft.",
       "challengeRating": "20",
       "experiencePoints": 25000,
       "abilityScores": {
@@ -39967,12 +41673,20 @@
       "size": "Large",
       "type": "celestial",
       "alignment": "lawful good",
-      "armorClass": 19,
-      "hitPoints": 200,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 200,
+        "formula": "16d10 + 112"
+      },
       "speed": {
         "walk": 40,
         "fly": 120
       },
+      "speedSourceText": "40 ft., fly 120 ft.",
       "challengeRating": "16",
       "experiencePoints": 15000,
       "abilityScores": {
@@ -40098,12 +41812,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 68,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 68,
+        "formula": "8d10 + 24"
+      },
       "speed": {
         "walk": 20,
         "swim": 40
       },
+      "speedSourceText": "20 ft., swim 40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -40185,12 +41907,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 2,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 2,
+        "formula": "1d4"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -40271,12 +42000,20 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 42,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 42,
+        "formula": "5d10 + 15"
+      },
       "speed": {
         "walk": 40,
         "swim": 30
       },
+      "speedSourceText": "40 ft., swim 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -40390,11 +42127,18 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -40470,11 +42214,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 13,
-      "hitPoints": 27,
+      "armorClass": {
+        "value": 13,
+        "source": "chain shirt",
+        "sourceText": "13 (chain shirt)"
+      },
+      "hitPoints": {
+        "value": 27,
+        "formula": "5d8 + 5"
+      },
       "speed": {
         "walk": 25
       },
+      "speedSourceText": "25 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -40570,12 +42322,20 @@
       "size": "Tiny",
       "type": "dragon",
       "alignment": "neutral good",
-      "armorClass": 13,
-      "hitPoints": 7,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 7,
+        "formula": "2d4 + 2"
+      },
       "speed": {
         "walk": 15,
         "fly": 60
       },
+      "speedSourceText": "15 ft., fly 60 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -40694,12 +42454,20 @@
       "size": "Gargantuan",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 18,
-      "hitPoints": 247,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 247,
+        "formula": "15d20 + 90"
+      },
       "speed": {
         "walk": 50,
         "burrow": 30
       },
+      "speedSourceText": "50 ft., burrow 30 ft.",
       "challengeRating": "15",
       "experiencePoints": 13000,
       "abilityScores": {
@@ -40837,11 +42605,18 @@
       "size": "Tiny",
       "type": "fiend (demon, shapechanger)",
       "alignment": "chaotic evil",
-      "armorClass": 13,
-      "hitPoints": 7,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 7,
+        "formula": "3d4"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -40982,12 +42757,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 0,
         "swim": 40
       },
+      "speedSourceText": "0 ft., swim 40 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -41059,11 +42841,19 @@
       "size": "Medium",
       "type": "fiend",
       "alignment": "lawful evil",
-      "armorClass": 16,
-      "hitPoints": 110,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 110,
+        "formula": "13d8 + 52"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "13",
       "experiencePoints": 10000,
       "abilityScores": {
@@ -41155,11 +42945,18 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -41226,12 +43023,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 10,
         "fly": 50
       },
+      "speedSourceText": "10 ft., fly 50 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -41304,13 +43108,21 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 17,
-      "hitPoints": 75,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 75,
+        "formula": "10d8 + 30"
+      },
       "speed": {
         "walk": 30,
         "climb": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., climb 30 ft., fly 60 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -41422,12 +43234,20 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "4d8 + 4"
+      },
       "speed": {
         "walk": 0,
         "swim": 40
       },
+      "speedSourceText": "0 ft., swim 40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -41522,12 +43342,20 @@
       "size": "Huge",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 17,
-      "hitPoints": 195,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 195,
+        "formula": "17d12 + 85"
+      },
       "speed": {
         "walk": 30,
         "burrow": 20
       },
+      "speedSourceText": "30 ft., burrow 20 ft.",
       "challengeRating": "11",
       "experiencePoints": 7200,
       "abilityScores": {
@@ -41671,11 +43499,19 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d10 + 12"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -41777,11 +43613,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "2d10 + 2"
+      },
       "speed": {
         "walk": 60
       },
+      "speedSourceText": "60 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -41856,12 +43699,20 @@
       "size": "Gargantuan",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 15,
-      "hitPoints": 248,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 248,
+        "formula": "16d20 + 80"
+      },
       "speed": {
         "walk": 20,
         "fly": 120
       },
+      "speedSourceText": "20 ft., fly 120 ft.",
       "challengeRating": "11",
       "experiencePoints": 7200,
       "abilityScores": {
@@ -41986,12 +43837,20 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "neutral evil",
-      "armorClass": 20,
-      "hitPoints": 93,
+      "armorClass": {
+        "value": 20,
+        "source": "natural armor",
+        "sourceText": "20 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 93,
+        "formula": "11d10 + 33"
+      },
       "speed": {
         "walk": 10,
         "climb": 10
       },
+      "speedSourceText": "10 ft., climb 10 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -42116,11 +43975,18 @@
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 33,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 33,
+        "formula": "6d10"
+      },
       "speed": {
         "walk": 10
       },
+      "speedSourceText": "10 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -42235,11 +44101,19 @@
       "size": "Medium",
       "type": "monstrosity",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 27,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 27,
+        "formula": "5d8 + 5"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -42336,11 +44210,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "7d10 + 14"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -42468,12 +44349,20 @@
       "size": "Medium",
       "type": "humanoid (sahuagin)",
       "alignment": "lawful evil",
-      "armorClass": 12,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "4d8 + 4"
+      },
       "speed": {
         "walk": 30,
         "swim": 40
       },
+      "speedSourceText": "30 ft., swim 40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -42637,11 +44526,19 @@
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral evil",
-      "armorClass": 15,
-      "hitPoints": 90,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 90,
+        "formula": "12d10 + 24"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -42819,11 +44716,19 @@
       "size": "Medium",
       "type": "fey",
       "alignment": "chaotic neutral",
-      "armorClass": 14,
-      "hitPoints": 31,
+      "armorClass": {
+        "value": 14,
+        "source": "leather armor",
+        "sourceText": "14 (leather armor)"
+      },
+      "hitPoints": {
+        "value": 31,
+        "formula": "7d8"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -42964,11 +44869,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 11,
+        "source": "natural armor",
+        "sourceText": "11 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 10
       },
+      "speedSourceText": "10 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -43035,11 +44948,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 13,
-      "hitPoints": 16,
+      "armorClass": {
+        "value": 13,
+        "source": "leather armor",
+        "sourceText": "13 (leather armor)"
+      },
+      "hitPoints": {
+        "value": 16,
+        "formula": "3d8 + 3"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -43156,12 +45077,20 @@
       "size": "Medium",
       "type": "fey",
       "alignment": "chaotic evil",
-      "armorClass": 14,
-      "hitPoints": 52,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 52,
+        "formula": "7d8 + 21"
+      },
       "speed": {
         "walk": 30,
         "swim": 40
       },
+      "speedSourceText": "30 ft., swim 40 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -43282,12 +45211,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 0,
         "swim": 20
       },
+      "speedSourceText": "0 ft., swim 20 ft.",
       "challengeRating": "0",
       "experiencePoints": 0,
       "abilityScores": {
@@ -43338,11 +45274,18 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "chaotic evil",
-      "armorClass": 12,
-      "hitPoints": 16,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 16,
+        "formula": "3d8 + 3"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -43421,12 +45364,20 @@
       "size": "Large",
       "type": "plant",
       "alignment": "unaligned",
-      "armorClass": 15,
-      "hitPoints": 136,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 136,
+        "formula": "16d10 + 48"
+      },
       "speed": {
         "walk": 20,
         "swim": 20
       },
+      "speedSourceText": "20 ft., swim 20 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -43556,11 +45507,19 @@
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
-      "armorClass": 17,
-      "hitPoints": 142,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 142,
+        "formula": "15d10 + 60"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "7",
       "experiencePoints": 2900,
       "abilityScores": {
@@ -43664,11 +45623,18 @@
       "size": "Medium",
       "type": "plant",
       "alignment": "unaligned",
-      "armorClass": 5,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 5,
+        "sourceText": "5"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "3d8"
+      },
       "speed": {
         "walk": 0
       },
+      "speedSourceText": "0 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -43731,12 +45697,20 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 17,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d8 + 18"
+      },
       "speed": {
         "walk": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., fly 60 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -43865,11 +45839,19 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "lawful evil",
-      "armorClass": 13,
-      "hitPoints": 13,
+      "armorClass": {
+        "value": 13,
+        "source": "armor scraps",
+        "sourceText": "13 (armor scraps)"
+      },
+      "hitPoints": {
+        "value": 13,
+        "formula": "2d8 + 4"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -43981,12 +45963,20 @@
       "size": "Large",
       "type": "celestial",
       "alignment": "lawful good",
-      "armorClass": 21,
-      "hitPoints": 243,
+      "armorClass": {
+        "value": 21,
+        "source": "natural armor",
+        "sourceText": "21 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 243,
+        "formula": "18d10 + 144"
+      },
       "speed": {
         "walk": 50,
         "fly": 150
       },
+      "speedSourceText": "50 ft., fly 150 ft.",
       "challengeRating": "21",
       "experiencePoints": 33000,
       "abilityScores": {
@@ -44212,12 +46202,20 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "chaotic evil",
-      "armorClass": 12,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d8"
+      },
       "speed": {
         "walk": 0,
         "fly": 50
       },
+      "hover": true,
+      "speedSourceText": "0 ft., fly 50 ft. (hover)",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -44305,12 +46303,19 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 20,
         "climb": 20
       },
+      "speedSourceText": "20 ft., climb 20 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -44394,11 +46399,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "chaotic evil",
-      "armorClass": 15,
-      "hitPoints": 75,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 75,
+        "formula": "10d10 + 20"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -44482,12 +46495,20 @@
       "size": "Tiny",
       "type": "fey",
       "alignment": "neutral good",
-      "armorClass": 15,
-      "hitPoints": 2,
+      "armorClass": {
+        "value": 15,
+        "source": "leather armor",
+        "sourceText": "15 (leather armor)"
+      },
+      "hitPoints": {
+        "value": 2,
+        "formula": "1d4"
+      },
       "speed": {
         "walk": 10,
         "fly": 40
       },
+      "speedSourceText": "10 ft., fly 40 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -44607,11 +46628,18 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 12,
-      "hitPoints": 27,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 27,
+        "formula": "6d8"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -44744,12 +46772,19 @@
       "size": "Small",
       "type": "elemental",
       "alignment": "neutral evil",
-      "armorClass": 10,
-      "hitPoints": 21,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 21,
+        "formula": "6d6"
+      },
       "speed": {
         "walk": 30,
         "fly": 30
       },
+      "speedSourceText": "30 ft., fly 30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -44865,12 +46900,20 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 2,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 2,
+        "formula": "1d4"
+      },
       "speed": {
         "walk": 10,
         "fly": 40
       },
+      "speedSourceText": "10 ft., fly 40 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -44933,11 +46976,19 @@
       "size": "Huge",
       "type": "giant",
       "alignment": "neutral",
-      "armorClass": 17,
-      "hitPoints": 126,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 126,
+        "formula": "11d12 + 55"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "7",
       "experiencePoints": 2900,
       "abilityScores": {
@@ -45084,11 +47135,19 @@
       "size": "Large",
       "type": "construct",
       "alignment": "unaligned",
-      "armorClass": 17,
-      "hitPoints": 178,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 178,
+        "formula": "17d10 + 85"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "10",
       "experiencePoints": 5900,
       "abilityScores": {
@@ -45203,12 +47262,20 @@
       "size": "Huge",
       "type": "giant",
       "alignment": "chaotic good",
-      "armorClass": 16,
-      "hitPoints": 230,
+      "armorClass": {
+        "value": 16,
+        "source": "scale mail",
+        "sourceText": "16 (scale mail)"
+      },
+      "hitPoints": {
+        "value": 230,
+        "formula": "20d12 + 100"
+      },
       "speed": {
         "walk": 50,
         "swim": 50
       },
+      "speedSourceText": "50 ft., swim 50 ft.",
       "challengeRating": "13",
       "experiencePoints": 10000,
       "abilityScores": {
@@ -45356,12 +47423,20 @@
       "size": "Medium",
       "type": "fiend (shapechanger)",
       "alignment": "neutral evil",
-      "armorClass": 15,
-      "hitPoints": 66,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 66,
+        "formula": "12d8 + 12"
+      },
       "speed": {
         "walk": 30,
         "fly": 60
       },
+      "speedSourceText": "30 ft., fly 60 ft.",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -45503,12 +47578,19 @@
       "size": "Medium",
       "type": "swarm of Tiny beasts",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d8"
+      },
       "speed": {
         "walk": 0,
         "fly": 30
       },
+      "speedSourceText": "0 ft., fly 30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -45597,12 +47679,20 @@
       "size": "Medium",
       "type": "swarm of Tiny beasts",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 12,
+        "source": "natural armor",
+        "sourceText": "12 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "5d8"
+      },
       "speed": {
         "walk": 20,
         "climb": 20
       },
+      "speedSourceText": "20 ft., climb 20 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -45701,12 +47791,19 @@
       "size": "Medium",
       "type": "swarm of Tiny beasts",
       "alignment": "unaligned",
-      "armorClass": 14,
-      "hitPoints": 36,
+      "armorClass": {
+        "value": 14,
+        "sourceText": "14"
+      },
+      "hitPoints": {
+        "value": 36,
+        "formula": "8d8"
+      },
       "speed": {
         "walk": 30,
         "swim": 30
       },
+      "speedSourceText": "30 ft., swim 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -45790,12 +47887,19 @@
       "size": "Medium",
       "type": "swarm of Tiny beasts",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 28,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 28,
+        "formula": "8d8 − 8"
+      },
       "speed": {
         "walk": 0,
         "swim": 40
       },
+      "speedSourceText": "0 ft., swim 40 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -45876,11 +47980,18 @@
       "size": "Medium",
       "type": "swarm of Tiny beasts",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 24,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 24,
+        "formula": "7d8 − 7"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -45977,12 +48088,19 @@
       "size": "Medium",
       "type": "swarm of Tiny beasts",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 24,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 24,
+        "formula": "7d8 − 7"
+      },
       "speed": {
         "walk": 10,
         "fly": 50
       },
+      "speedSourceText": "10 ft., fly 50 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -46076,11 +48194,19 @@
       "size": "Gargantuan",
       "type": "monstrosity (titan)",
       "alignment": "unaligned",
-      "armorClass": 25,
-      "hitPoints": 676,
+      "armorClass": {
+        "value": 25,
+        "source": "natural armor",
+        "sourceText": "25 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 676,
+        "formula": "33d20 + 330"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "30",
       "experiencePoints": 155000,
       "abilityScores": {
@@ -46355,11 +48481,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any non-good alignment",
-      "armorClass": 11,
-      "hitPoints": 32,
+      "armorClass": {
+        "value": 11,
+        "source": "leather armor",
+        "sourceText": "11 (leather armor)"
+      },
+      "hitPoints": {
+        "value": 32,
+        "formula": "5d8 + 10"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -46470,11 +48604,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 12,
-      "hitPoints": 37,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 37,
+        "formula": "5d10 + 10"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1",
       "experiencePoints": 200,
       "abilityScores": {
@@ -46602,11 +48743,19 @@
       "size": "Huge",
       "type": "plant",
       "alignment": "chaotic good",
-      "armorClass": 16,
-      "hitPoints": 138,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 138,
+        "formula": "12d12 + 60"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -46733,11 +48882,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 12,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 12,
+        "source": "hide armor",
+        "sourceText": "12 (hide armor)"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "1/8",
       "experiencePoints": 25,
       "abilityScores": {
@@ -46844,11 +49001,19 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 95,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 95,
+        "formula": "10d12 + 30"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -46962,11 +49127,19 @@
       "size": "Large",
       "type": "giant",
       "alignment": "chaotic evil",
-      "armorClass": 15,
-      "hitPoints": 84,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 84,
+        "formula": "8d10 + 40"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -47087,11 +49260,19 @@
       "size": "Huge",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 136,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 136,
+        "formula": "13d12 + 52"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -47209,11 +49390,18 @@
       "size": "Large",
       "type": "celestial",
       "alignment": "lawful good",
-      "armorClass": 12,
-      "hitPoints": 67,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 67,
+        "formula": "9d10 + 18"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -47385,11 +49573,19 @@
       "size": "Medium",
       "type": "undead (shapechanger)",
       "alignment": "lawful evil",
-      "armorClass": 16,
-      "hitPoints": 144,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 144,
+        "formula": "17d8 + 68"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "13",
       "experiencePoints": 10000,
       "abilityScores": {
@@ -47596,11 +49792,19 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "neutral evil",
-      "armorClass": 15,
-      "hitPoints": 82,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 82,
+        "formula": "11d8 + 33"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -47738,11 +49942,19 @@
       "size": "Medium",
       "type": "humanoid (any race)",
       "alignment": "any alignment",
-      "armorClass": 17,
-      "hitPoints": 58,
+      "armorClass": {
+        "value": 17,
+        "source": "splint",
+        "sourceText": "17 (splint)"
+      },
+      "hitPoints": {
+        "value": 58,
+        "formula": "9d8 + 18"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -47895,11 +50107,18 @@
       "size": "Medium",
       "type": "plant",
       "alignment": "unaligned",
-      "armorClass": 5,
-      "hitPoints": 18,
+      "armorClass": {
+        "value": 5,
+        "sourceText": "5"
+      },
+      "hitPoints": {
+        "value": 18,
+        "formula": "4d8"
+      },
       "speed": {
         "walk": 5
       },
+      "speedSourceText": "5 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -47973,12 +50192,20 @@
       "size": "Large",
       "type": "fiend (demon)",
       "alignment": "chaotic evil",
-      "armorClass": 15,
-      "hitPoints": 104,
+      "armorClass": {
+        "value": 15,
+        "source": "natural armor",
+        "sourceText": "15 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 104,
+        "formula": "11d10 + 44"
+      },
       "speed": {
         "walk": 40,
         "fly": 60
       },
+      "speedSourceText": "40 ft., fly 60 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -48143,12 +50370,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 10,
-      "hitPoints": 5,
+      "armorClass": {
+        "value": 10,
+        "sourceText": "10"
+      },
+      "hitPoints": {
+        "value": 5,
+        "formula": "1d8 + 1"
+      },
       "speed": {
         "walk": 10,
         "fly": 50
       },
+      "speedSourceText": "10 ft., fly 50 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -48242,11 +50476,18 @@
       "size": "Large",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 11,
-      "hitPoints": 19,
+      "armorClass": {
+        "value": 11,
+        "sourceText": "11"
+      },
+      "hitPoints": {
+        "value": 19,
+        "formula": "3d10 + 3"
+      },
       "speed": {
         "walk": 60
       },
+      "speedSourceText": "60 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -48344,11 +50585,19 @@
       "size": "Large",
       "type": "undead",
       "alignment": "lawful evil",
-      "armorClass": 13,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 13,
+        "source": "barding scraps",
+        "sourceText": "13 (barding scraps)"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "3d10 + 6"
+      },
       "speed": {
         "walk": 60
       },
+      "speedSourceText": "60 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -48429,12 +50678,20 @@
       "size": "Large",
       "type": "elemental",
       "alignment": "neutral",
-      "armorClass": 14,
-      "hitPoints": 114,
+      "armorClass": {
+        "value": 14,
+        "source": "natural armor",
+        "sourceText": "14 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 114,
+        "formula": "12d10 + 48"
+      },
       "speed": {
         "walk": 30,
         "swim": 90
       },
+      "speedSourceText": "30 ft., swim 90 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -48565,11 +50822,18 @@
       "size": "Tiny",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 1,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 1,
+        "formula": "1d4 − 1"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "0",
       "experiencePoints": 10,
       "abilityScores": {
@@ -48640,12 +50904,35 @@
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "neutral",
-      "armorClass": 10,
-      "hitPoints": 135,
-      "speed": {
-        "walk": 30,
-        "climb": 30
+      "armorClass": {
+        "value": 10,
+        "condition": "in humanoid form",
+        "variants": [
+          {
+            "value": 11,
+            "source": "natural armor",
+            "condition": "in bear and hybrid form"
+          }
+        ],
+        "sourceText": "10 in humanoid form, 11 (natural armor) in bear and hybrid form"
       },
+      "hitPoints": {
+        "value": 135,
+        "formula": "18d8 + 54"
+      },
+      "speed": {
+        "walk": 30
+      },
+      "speedVariants": [
+        {
+          "condition": "in bear or hybrid form",
+          "speed": {
+            "walk": 40,
+            "climb": 30
+          }
+        }
+      ],
+      "speedSourceText": "30 ft. (40 ft., climb 30 ft. in bear or hybrid form)",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -48801,11 +51088,34 @@
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "neutral evil",
-      "armorClass": 10,
-      "hitPoints": 78,
+      "armorClass": {
+        "value": 10,
+        "condition": "in humanoid form",
+        "variants": [
+          {
+            "value": 11,
+            "source": "natural armor",
+            "condition": "in boar or hybrid form"
+          }
+        ],
+        "sourceText": "10 in humanoid form, 11 (natural armor) in boar or hybrid form"
+      },
+      "hitPoints": {
+        "value": 78,
+        "formula": "12d8 + 24"
+      },
       "speed": {
         "walk": 30
       },
+      "speedVariants": [
+        {
+          "condition": "in boar form",
+          "speed": {
+            "walk": 40
+          }
+        }
+      ],
+      "speedSourceText": "30 ft. (40 ft. in boar form)",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -48958,11 +51268,18 @@
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "lawful evil",
-      "armorClass": 12,
-      "hitPoints": 33,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 33,
+        "formula": "6d8 + 6"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -49095,11 +51412,26 @@
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "neutral",
-      "armorClass": 12,
-      "hitPoints": 120,
+      "armorClass": {
+        "value": 12,
+        "sourceText": "12"
+      },
+      "hitPoints": {
+        "value": 120,
+        "formula": "16d8 + 48"
+      },
       "speed": {
         "walk": 30
       },
+      "speedVariants": [
+        {
+          "condition": "in tiger form",
+          "speed": {
+            "walk": 40
+          }
+        }
+      ],
+      "speedSourceText": "30 ft. (40 ft. in tiger form)",
       "challengeRating": "4",
       "experiencePoints": 1100,
       "abilityScores": {
@@ -49304,11 +51636,34 @@
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
       "alignment": "chaotic",
-      "armorClass": 11,
-      "hitPoints": 58,
+      "armorClass": {
+        "value": 11,
+        "condition": "in humanoid form",
+        "variants": [
+          {
+            "value": 12,
+            "source": "natural armor",
+            "condition": "in wolf or hybrid form"
+          }
+        ],
+        "sourceText": "11 in humanoid form, 12 (natural armor) in wolf or hybrid form"
+      },
+      "hitPoints": {
+        "value": 58,
+        "formula": "9d8 + 18"
+      },
       "speed": {
         "walk": 30
       },
+      "speedVariants": [
+        {
+          "condition": "in wolf form",
+          "speed": {
+            "walk": 40
+          }
+        }
+      ],
+      "speedSourceText": "30 ft. (40 ft. in wolf form)",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -49441,14 +51796,22 @@
       "size": "Medium",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 16,
-      "hitPoints": 32,
+      "armorClass": {
+        "value": 16,
+        "source": "natural armor",
+        "sourceText": "16 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 32,
+        "formula": "5d8 + 10"
+      },
       "speed": {
         "walk": 30,
         "burrow": 15,
         "fly": 60,
         "swim": 30
       },
+      "speedSourceText": "30 ft., burrow 15 ft., fly 60 ft., swim 30 ft.",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -49560,11 +51923,19 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "neutral evil",
-      "armorClass": 14,
-      "hitPoints": 45,
+      "armorClass": {
+        "value": 14,
+        "source": "studded leather",
+        "sourceText": "14 (studded leather)"
+      },
+      "hitPoints": {
+        "value": 45,
+        "formula": "6d8 + 18"
+      },
       "speed": {
         "walk": 30
       },
+      "speedSourceText": "30 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -49713,12 +52084,20 @@
       "size": "Tiny",
       "type": "undead",
       "alignment": "chaotic evil",
-      "armorClass": 19,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 19,
+        "sourceText": "19"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "9d4"
+      },
       "speed": {
         "walk": 0,
         "fly": 50
       },
+      "hover": true,
+      "speedSourceText": "0 ft., fly 50 ft. (hover)",
       "challengeRating": "2",
       "experiencePoints": 450,
       "abilityScores": {
@@ -49828,11 +52207,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "neutral evil",
-      "armorClass": 13,
-      "hitPoints": 75,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 75,
+        "formula": "10d10 + 20"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "3",
       "experiencePoints": 700,
       "abilityScores": {
@@ -49968,11 +52355,19 @@
       "size": "Medium",
       "type": "beast",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 11,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 11,
+        "formula": "2d8 + 2"
+      },
       "speed": {
         "walk": 40
       },
+      "speedSourceText": "40 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {
@@ -50078,11 +52473,19 @@
       "size": "Large",
       "type": "monstrosity",
       "alignment": "neutral evil",
-      "armorClass": 13,
-      "hitPoints": 26,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 26,
+        "formula": "4d10 + 4"
+      },
       "speed": {
         "walk": 50
       },
+      "speedSourceText": "50 ft.",
       "challengeRating": "1/2",
       "experiencePoints": 100,
       "abilityScores": {
@@ -50177,12 +52580,20 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "neutral evil",
-      "armorClass": 13,
-      "hitPoints": 67,
+      "armorClass": {
+        "value": 13,
+        "sourceText": "13"
+      },
+      "hitPoints": {
+        "value": 67,
+        "formula": "9d8 + 27"
+      },
       "speed": {
         "walk": 0,
         "fly": 60
       },
+      "hover": true,
+      "speedSourceText": "0 ft., fly 60 ft. (hover)",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -50274,12 +52685,20 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "unaligned",
-      "armorClass": 13,
-      "hitPoints": 110,
+      "armorClass": {
+        "value": 13,
+        "source": "natural armor",
+        "sourceText": "13 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 110,
+        "formula": "13d10 + 39"
+      },
       "speed": {
         "walk": 20,
         "fly": 80
       },
+      "speedSourceText": "20 ft., fly 80 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -50396,12 +52815,20 @@
       "size": "Medium",
       "type": "elemental",
       "alignment": "neutral",
-      "armorClass": 19,
-      "hitPoints": 73,
+      "armorClass": {
+        "value": 19,
+        "source": "natural armor",
+        "sourceText": "19 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 73,
+        "formula": "7d8 + 42"
+      },
       "speed": {
         "walk": 20,
         "burrow": 20
       },
+      "speedSourceText": "20 ft., burrow 20 ft.",
       "challengeRating": "5",
       "experiencePoints": 1800,
       "abilityScores": {
@@ -50529,13 +52956,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 18,
-      "hitPoints": 127,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 127,
+        "formula": "15d10 + 45"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "7",
       "experiencePoints": 2900,
       "abilityScores": {
@@ -50690,13 +53125,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 18,
-      "hitPoints": 152,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 152,
+        "formula": "16d10 + 64"
+      },
       "speed": {
         "walk": 40,
         "burrow": 20,
         "fly": 80
       },
+      "speedSourceText": "40 ft., burrow 20 ft., fly 80 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -50845,13 +53288,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 17,
-      "hitPoints": 110,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 110,
+        "formula": "13d10 + 39"
+      },
       "speed": {
         "walk": 40,
         "burrow": 20,
         "fly": 80
       },
+      "speedSourceText": "40 ft., burrow 20 ft., fly 80 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -51014,13 +53465,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 18,
-      "hitPoints": 142,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 142,
+        "formula": "15d10 + 60"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -51183,13 +53642,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic good",
-      "armorClass": 17,
-      "hitPoints": 119,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 119,
+        "formula": "14d10 + 42"
+      },
       "speed": {
         "walk": 40,
         "climb": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., climb 40 ft., fly 80 ft.",
       "challengeRating": "7",
       "experiencePoints": 2900,
       "abilityScores": {
@@ -51346,13 +53813,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 18,
-      "hitPoints": 178,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 178,
+        "formula": "17d10 + 85"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "10",
       "experiencePoints": 5900,
       "abilityScores": {
@@ -51515,13 +53990,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful evil",
-      "armorClass": 18,
-      "hitPoints": 136,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 136,
+        "formula": "16d10 + 48"
+      },
       "speed": {
         "walk": 40,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "8",
       "experiencePoints": 3900,
       "abilityScores": {
@@ -51677,13 +54160,21 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 18,
-      "hitPoints": 178,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 178,
+        "formula": "17d10 + 85"
+      },
       "speed": {
         "walk": 40,
         "climb": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., climb 40 ft., fly 80 ft.",
       "challengeRating": "10",
       "experiencePoints": 5900,
       "abilityScores": {
@@ -51832,12 +54323,20 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "lawful good",
-      "armorClass": 18,
-      "hitPoints": 168,
+      "armorClass": {
+        "value": 18,
+        "source": "natural armor",
+        "sourceText": "18 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 168,
+        "formula": "16d10 + 80"
+      },
       "speed": {
         "walk": 40,
         "fly": 80
       },
+      "speedSourceText": "40 ft., fly 80 ft.",
       "challengeRating": "9",
       "experiencePoints": 5000,
       "abilityScores": {
@@ -52000,14 +54499,22 @@
       "size": "Large",
       "type": "dragon",
       "alignment": "chaotic evil",
-      "armorClass": 17,
-      "hitPoints": 133,
+      "armorClass": {
+        "value": 17,
+        "source": "natural armor",
+        "sourceText": "17 (natural armor)"
+      },
+      "hitPoints": {
+        "value": 133,
+        "formula": "14d10 + 56"
+      },
       "speed": {
         "walk": 40,
         "burrow": 20,
         "fly": 80,
         "swim": 40
       },
+      "speedSourceText": "40 ft., burrow 20 ft., fly 80 ft., swim 40 ft.",
       "challengeRating": "6",
       "experiencePoints": 2300,
       "abilityScores": {
@@ -52160,11 +54667,18 @@
       "size": "Medium",
       "type": "undead",
       "alignment": "neutral evil",
-      "armorClass": 8,
-      "hitPoints": 22,
+      "armorClass": {
+        "value": 8,
+        "sourceText": "8"
+      },
+      "hitPoints": {
+        "value": 22,
+        "formula": "3d8 + 9"
+      },
       "speed": {
         "walk": 20
       },
+      "speedSourceText": "20 ft.",
       "challengeRating": "1/4",
       "experiencePoints": 50,
       "abilityScores": {

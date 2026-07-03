@@ -58,6 +58,7 @@ export type SrdAuditCategory =
   | 'creature-stat-block-prose-bleed'
   | 'spell-concentration-flag'
   | 'creature-cr-xp'
+  | 'creature-statline-fidelity'
   | 'condition-relation-safety'
   | 'missing-coverage';
 
@@ -1196,6 +1197,235 @@ function checkCreatureCrXp(record: RulesRecord): SrdAuditFinding[] {
 }
 
 // ---------------------------------------------------------------------------
+// Creature statline fidelity (eshyra-o9bd.18.6.4)
+//
+// The importer preserves each creature's verbatim AC value text
+// (`armorClass.sourceText`) and Speed value text (`speedSourceText`), so this
+// gate can re-verify the structured statline fields against the printed line
+// without re-parsing the PDF:
+//   - Armor Class: every structured fragment (base value, armor-source
+//     parenthetical, base condition, each variant's value/source/condition)
+//     must appear in the verbatim text, and — the loss direction — removing
+//     all of them must leave NO residue (no digit, word, or parenthetical the
+//     model failed to carry). A dropped "(15 with mage armor)" or "11 while
+//     prone" fails here even if the parser regresses to flattening.
+//   - Hit Points: `formula` must be a printed dice expression and the printed
+//     average `value` must equal the formula's floored mean — an independent
+//     source-math oracle, not a parser echo.
+//   - Speed: re-rendering the base modes + "(hover)" + form-conditional
+//     variants must reproduce `speedSourceText` exactly, so a dropped hover
+//     flag, a dropped form clause, or a variant mode leaked into the base map
+//     (the Werebear `climb: 30` defect) all fail.
+// The verbatim texts themselves are produced by the importer, so this check
+// alone is a drift guard; the importer's fail-closed statline grammars plus
+// the reproducibility CI re-run against the vendored PDF supply the
+// independent source side (see `parseCreatures.ts`).
+// ---------------------------------------------------------------------------
+
+/**
+ * Blank the first whole-token occurrence of `fragment` in `text` (bounded by
+ * non-alphanumeric characters, so value "1" never matches inside "11").
+ * Returns null when the fragment does not occur.
+ */
+function blankFragment(text: string, fragment: string): string | null {
+  if (fragment.length === 0) return null;
+  let from = 0;
+  for (;;) {
+    const idx = text.indexOf(fragment, from);
+    if (idx < 0) return null;
+    const before = idx === 0 ? '' : text[idx - 1];
+    const afterIdx = idx + fragment.length;
+    const after = afterIdx >= text.length ? '' : text[afterIdx];
+    const boundary = (ch: string) => ch === '' || /[^A-Za-z0-9]/.test(ch);
+    if (boundary(before) && boundary(after)) {
+      return (
+        text.slice(0, idx) + ' '.repeat(fragment.length) + text.slice(afterIdx)
+      );
+    }
+    from = idx + 1;
+  }
+}
+
+const HP_FORMULA = /^(\d+)d(\d+)(?:\s*([+−-])\s*(\d+))?$/;
+
+/** Floored mean of a printed dice formula — the SRD's printed average. */
+function diceFormulaAverage(formula: string): number | null {
+  const match = HP_FORMULA.exec(formula);
+  if (match === null) return null;
+  const count = Number.parseInt(match[1], 10);
+  const die = Number.parseInt(match[2], 10);
+  const modifier = match[4] === undefined ? 0 : Number.parseInt(match[4], 10);
+  const sign = match[3] === '+' || match[3] === undefined ? 1 : -1;
+  return Math.floor((count * (die + 1)) / 2 + sign * modifier);
+}
+
+/** Render a mode→feet map the way the SRD prints it ("30 ft., fly 60 ft."). */
+function renderSpeedModes(speed: Record<string, unknown>): string | null {
+  const parts: string[] = [];
+  for (const [mode, feet] of Object.entries(speed)) {
+    if (typeof feet !== 'number') return null;
+    parts.push(mode === 'walk' ? `${feet} ft.` : `${mode} ${feet} ft.`);
+  }
+  return parts.length > 0 ? parts.join(', ') : null;
+}
+
+function checkCreatureStatlineFidelity(record: RulesRecord): SrdAuditFinding[] {
+  if (record.kind !== 'creature') return [];
+  const data = dataObject(record);
+  if (data === null) return [];
+  const findings: SrdAuditFinding[] = [];
+  const finding = (detail: string): SrdAuditFinding => ({
+    category: 'creature-statline-fidelity',
+    key: record.key,
+    kind: record.kind,
+    name: record.name,
+    detail,
+  });
+  const asObj = (value: unknown): Record<string, unknown> | null =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
+
+  // --- Armor Class ---
+  const ac = asObj(data.armorClass);
+  if (ac === null) {
+    findings.push(
+      finding('data.armorClass must be a structured statline object'),
+    );
+  } else {
+    const sourceText = asString(ac.sourceText);
+    if (sourceText === null) {
+      findings.push(finding('data.armorClass.sourceText is missing'));
+    } else {
+      const fragments: Array<{ label: string; text: string }> = [];
+      fragments.push({ label: 'value', text: String(ac.value) });
+      const source = asString(ac.source);
+      if (source !== null) fragments.push({ label: 'source', text: source });
+      const condition = asString(ac.condition);
+      if (condition !== null) {
+        fragments.push({ label: 'condition', text: condition });
+      }
+      if (Array.isArray(ac.variants)) {
+        ac.variants.forEach((entry, i) => {
+          const variant = asObj(entry);
+          if (variant === null) return;
+          fragments.push({
+            label: `variants[${i}].value`,
+            text: String(variant.value),
+          });
+          const vSource = asString(variant.source);
+          if (vSource !== null) {
+            fragments.push({ label: `variants[${i}].source`, text: vSource });
+          }
+          const vCondition = asString(variant.condition);
+          if (vCondition !== null) {
+            fragments.push({
+              label: `variants[${i}].condition`,
+              text: vCondition,
+            });
+          }
+        });
+      }
+      let residue: string = sourceText;
+      for (const fragment of fragments) {
+        const blanked = blankFragment(residue, fragment.text);
+        if (blanked === null) {
+          findings.push(
+            finding(
+              `data.armorClass.${fragment.label} "${fragment.text}" does not appear in sourceText "${sourceText}"`,
+            ),
+          );
+        } else {
+          residue = blanked;
+        }
+      }
+      if (/[^\s,()]/.test(residue)) {
+        findings.push(
+          finding(
+            `data.armorClass drops printed statline content: "${residue.trim()}" remains after matching the structured fields against sourceText "${sourceText}"`,
+          ),
+        );
+      }
+    }
+  }
+
+  // --- Hit Points ---
+  const hp = asObj(data.hitPoints);
+  if (hp === null) {
+    findings.push(
+      finding('data.hitPoints must be a structured { value, formula } object'),
+    );
+  } else {
+    const formula = asString(hp.formula);
+    if (formula === null) {
+      findings.push(
+        finding(
+          'data.hitPoints.formula is missing; the SRD prints a dice formula for every creature',
+        ),
+      );
+    } else {
+      const average = diceFormulaAverage(formula);
+      if (average === null) {
+        findings.push(
+          finding(
+            `data.hitPoints.formula "${formula}" is not a printed dice expression`,
+          ),
+        );
+      } else if (hp.value !== average) {
+        findings.push(
+          finding(
+            `data.hitPoints.value ${String(hp.value)} does not equal the floored mean ${average} of formula "${formula}"`,
+          ),
+        );
+      }
+    }
+  }
+
+  // --- Speed ---
+  const speedSourceText = asString(data.speedSourceText);
+  const speed = asObj(data.speed);
+  if (speedSourceText === null) {
+    findings.push(finding('data.speedSourceText is missing'));
+  } else if (speed === null) {
+    findings.push(finding('data.speed must be a mode→feet object'));
+  } else {
+    const base = renderSpeedModes(speed);
+    let rendered = base;
+    if (rendered !== null && data.hover === true) {
+      rendered = `${rendered} (hover)`;
+    }
+    if (rendered !== null && data.speedVariants !== undefined) {
+      if (!Array.isArray(data.speedVariants)) {
+        rendered = null;
+      } else {
+        for (const entry of data.speedVariants) {
+          const variant = asObj(entry);
+          const variantSpeed = variant === null ? null : asObj(variant.speed);
+          const condition =
+            variant === null ? null : asString(variant.condition);
+          const modes =
+            variantSpeed === null ? null : renderSpeedModes(variantSpeed);
+          if (modes === null || condition === null) {
+            rendered = null;
+            break;
+          }
+          rendered = `${rendered} (${modes} ${condition})`;
+        }
+      }
+    }
+    if (rendered === null || rendered !== speedSourceText) {
+      findings.push(
+        finding(
+          `data.speed/hover/speedVariants re-render "${rendered ?? '<unrenderable>'}" does not reproduce the printed Speed line "${speedSourceText}"`,
+        ),
+      );
+    }
+  }
+
+  return findings;
+}
+
+// ---------------------------------------------------------------------------
 // Condition relation safety (eshyra-o9bd.18.3)
 // ---------------------------------------------------------------------------
 
@@ -1297,6 +1527,7 @@ export function auditSrdStructure(pack: RulesPack): readonly SrdAuditFinding[] {
     findings.push(...checkCreatureStatBlockProseBleed(record));
     findings.push(...checkSpellConcentrationFlag(record));
     findings.push(...checkCreatureCrXp(record));
+    findings.push(...checkCreatureStatlineFidelity(record));
     findings.push(...checkConditionRelationSafety(record));
   }
   findings.push(...checkSpellTableLinks(pack));

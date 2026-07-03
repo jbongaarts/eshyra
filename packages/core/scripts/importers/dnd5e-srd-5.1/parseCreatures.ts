@@ -33,9 +33,13 @@ import { creatureTaxonomySpecForLine } from './creatureTaxonomy.js';
 import { classifyTier } from './sourceInventory.js';
 import type {
   CreatureAbilityScores,
+  CreatureArmorClass,
+  CreatureArmorClassVariant,
   CreatureCategory,
   CreatureExtraction,
+  CreatureHitPoints,
   CreatureLegendaryActions,
+  CreatureSpeedVariant,
   CreatureStatBlockEntry,
   CreatureVariant,
   PageText,
@@ -228,7 +232,11 @@ export function findPrecedingNameIdx(
  * Parse a Speed value ("30 ft., climb 30 ft.") into a mode→feet map. The
  * leading unlabeled segment keys as `walk`; subsequent labeled segments
  * (climb, fly, swim, burrow) key on their label. Any trailing parenthetical
- * such as "(hover)" is ignored.
+ * such as "(hover)" is ignored. This permissive form is used only by the
+ * abbreviated inline `stat-block` parser (`parseStatBlocks`); full creature
+ * statlines go through the strict `parseSpeedText` below, which preserves
+ * hover and form-conditional parentheticals and fails closed on residue
+ * (eshyra-o9bd.18.6.3).
  */
 export function parseSpeed(text: string): Record<string, number> {
   const speed: Record<string, number> = {};
@@ -242,6 +250,206 @@ export function parseSpeed(text: string): Record<string, number> {
     speed[key] = Number.parseInt(match[2], 10);
   }
   return speed;
+}
+
+// ---------------------------------------------------------------------------
+// Structured statline parsing (eshyra-o9bd.18.6). The AC / HP / Speed lines
+// carry semantics beyond their leading integer — armor-source parentheticals,
+// conditional/form-specific AC values, HP dice formulas, "(hover)", and
+// form-conditional speed sets. Each parser below consumes the ENTIRE value
+// text with anchored grammars and returns null on any residue, and
+// `parseCreatures` throws on a null for a confirmed creature — so a statline
+// shape the model cannot represent fails the import instead of being silently
+// flattened. That fail-closed contract is the source side of the
+// statline-completeness gate (eshyra-o9bd.18.6.4); the emitted `sourceText` /
+// `speedSourceText` fields let the pack-level `creature-statline-fidelity`
+// audit re-verify the structured fields against the printed line.
+// ---------------------------------------------------------------------------
+
+// One comma-separated AC segment: a value, an optional parenthetical, and an
+// optional trailing condition ("in humanoid form", "while prone"). A
+// condition must open with one of the reviewed SRD condition lead-ins so
+// arbitrary trailing prose can never be silently absorbed as a "condition".
+// The parenthetical is classified after the match: digits-first means an
+// alternate AC value ("15 with mage armor"), otherwise it is the armor source
+// ("natural armor", "chain mail, shield").
+const AC_CONDITION = '(?:in|while|when|with)\\s\\S.*';
+const AC_SEGMENT_PATTERN = new RegExp(
+  `^(\\d+)(?:\\s*\\(([^()]+)\\))?(?:\\s+(${AC_CONDITION}))?$`,
+);
+const AC_PAREN_VARIANT_PATTERN = new RegExp(`^(\\d+)\\s+(${AC_CONDITION})$`);
+
+/**
+ * Split AC value text into comma-separated value segments. Only a top-level
+ * comma followed by a digit starts a new segment, so a comma inside an armor
+ * parenthetical ("chain mail, shield") or inside a condition never splits.
+ */
+function splitAcSegments(text: string): string[] {
+  const segments: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    else if (ch === ',' && depth === 0 && /^,\s*\d/.test(text.slice(i))) {
+      segments.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  segments.push(text.slice(start));
+  return segments.map((s) => s.trim()).filter((s) => s.length > 0);
+}
+
+/**
+ * Parse a full Armor Class value text ("14 (natural armor), 11 while prone")
+ * into its structured form. Returns null when any part of the text falls
+ * outside the reviewed SRD statline grammar, so nothing can be dropped
+ * silently (eshyra-o9bd.18.6.1).
+ */
+export function parseArmorClassText(text: string): CreatureArmorClass | null {
+  const sourceText = text.trim().replace(/\s+/g, ' ');
+  if (sourceText.length === 0) return null;
+  const segments = splitAcSegments(sourceText);
+  if (segments.length === 0) return null;
+
+  let base: { value: number; source?: string; condition?: string } | undefined;
+  const variants: CreatureArmorClassVariant[] = [];
+
+  for (let i = 0; i < segments.length; i++) {
+    const match = AC_SEGMENT_PATTERN.exec(segments[i]);
+    if (match === null) return null;
+    const value = Number.parseInt(match[1], 10);
+    const paren = match[2]?.trim();
+    const condition = match[3]?.trim();
+    let source: string | undefined;
+    let parenVariant: CreatureArmorClassVariant | undefined;
+    if (paren !== undefined) {
+      const variantMatch = AC_PAREN_VARIANT_PATTERN.exec(paren);
+      if (variantMatch !== null) {
+        parenVariant = {
+          value: Number.parseInt(variantMatch[1], 10),
+          condition: variantMatch[2].trim(),
+        };
+      } else {
+        source = paren;
+      }
+    }
+    if (i === 0) {
+      base = {
+        value,
+        ...(source !== undefined ? { source } : {}),
+        ...(condition !== undefined ? { condition } : {}),
+      };
+      if (parenVariant !== undefined) {
+        // A parenthesized alternate value binds to the base ("12 (15 with
+        // mage armor)"); a base that ALSO carries a trailing condition after
+        // such a parenthetical has no SRD precedent — fail closed.
+        if (condition !== undefined) return null;
+        variants.push(parenVariant);
+      }
+    } else {
+      // A later segment is a conditional/alternate value and must say when it
+      // applies ("11 while prone", "12 (natural armor) in wolf or hybrid
+      // form"); a bare second value would be ambiguous — fail closed. A
+      // nested parenthesized variant inside a variant has no SRD precedent.
+      if (condition === undefined || parenVariant !== undefined) return null;
+      variants.push({
+        value,
+        ...(source !== undefined ? { source } : {}),
+        condition,
+      });
+    }
+  }
+  if (base === undefined) return null;
+  return {
+    value: base.value,
+    ...(base.source !== undefined ? { source: base.source } : {}),
+    ...(base.condition !== undefined ? { condition: base.condition } : {}),
+    ...(variants.length > 0 ? { variants } : {}),
+    sourceText,
+  };
+}
+
+// "135 (18d10 + 36)" — the printed average plus the printed dice formula. The
+// operator may be the PDF's Unicode minus (U+2212). Every SRD 5.1 creature
+// prints both parts, so a bare integer fails closed (eshyra-o9bd.18.6.2).
+const HP_VALUE_PATTERN = /^(\d+)\s*\((\d+d\d+(?:\s*[+−-]\s*\d+)?)\)$/;
+
+/**
+ * Parse a full Hit Points value text into `{ value, formula }`, preserving the
+ * formula verbatim. Returns null on any other shape.
+ */
+export function parseHitPointsText(text: string): CreatureHitPoints | null {
+  const match = HP_VALUE_PATTERN.exec(text.trim());
+  if (match === null) return null;
+  return { value: Number.parseInt(match[1], 10), formula: match[2] };
+}
+
+// A single speed mode segment. The label set is closed (the four SRD non-walk
+// modes); an unknown label fails the whole line closed rather than keying an
+// arbitrary word.
+const SPEED_MODE_PATTERN = /^(?:(burrow|climb|fly|swim)\s+)?(\d+)\s*ft\.$/;
+// A form-conditional speed parenthetical: one or more mode segments, then the
+// condition ("40 ft., climb 30 ft. in bear or hybrid form").
+const SPEED_VARIANT_PATTERN = /^(.+?\bft\.)\s+((?:in|while|when)\s.+)$/;
+
+/** Strictly parse a comma-separated run of speed modes, or null. */
+function parseSpeedModes(text: string): Record<string, number> | null {
+  const speed: Record<string, number> = {};
+  const segments = text.split(',').map((s) => s.trim());
+  if (segments.some((s) => s.length === 0)) return null;
+  for (const segment of segments) {
+    const match = SPEED_MODE_PATTERN.exec(segment);
+    if (match === null) return null;
+    const key = match[1] ?? 'walk';
+    if (key in speed) return null;
+    speed[key] = Number.parseInt(match[2], 10);
+  }
+  return Object.keys(speed).length > 0 ? speed : null;
+}
+
+export interface ParsedSpeedLine {
+  readonly speed: Record<string, number>;
+  readonly hover?: true;
+  readonly speedVariants?: readonly CreatureSpeedVariant[];
+}
+
+/**
+ * Parse a full Speed value text into unconditional base modes plus the printed
+ * "(hover)" flag and any form-conditional variant set (eshyra-o9bd.18.6.3).
+ * Trailing parentheticals are peeled right-to-left, then the remainder must be
+ * a strict mode run — so the Werebear's "(40 ft., climb 30 ft. in bear or
+ * hybrid form)" becomes a variant instead of leaking a bogus unconditional
+ * `climb: 30`. Returns null on any unrecognized content.
+ */
+export function parseSpeedText(text: string): ParsedSpeedLine | null {
+  let rest = text.trim();
+  let hover = false;
+  const variants: CreatureSpeedVariant[] = [];
+  for (;;) {
+    const match = /^(.*\S)\s+\(([^()]+)\)$/.exec(rest);
+    if (match === null) break;
+    const paren = match[2].trim();
+    if (paren === 'hover') {
+      hover = true;
+      rest = match[1];
+      continue;
+    }
+    const variantMatch = SPEED_VARIANT_PATTERN.exec(paren);
+    if (variantMatch === null) break;
+    const modes = parseSpeedModes(variantMatch[1]);
+    if (modes === null) break;
+    variants.unshift({ condition: variantMatch[2].trim(), speed: modes });
+    rest = match[1];
+  }
+  const speed = parseSpeedModes(rest);
+  if (speed === null) return null;
+  return {
+    speed,
+    ...(hover ? { hover: true } : {}),
+    ...(variants.length > 0 ? { speedVariants: variants } : {}),
+  };
 }
 
 export function parseAbilityScores(
@@ -811,9 +1019,17 @@ interface CreatureCandidate {
 }
 
 interface StatBlockFields {
-  readonly armorClass?: number;
-  readonly hitPoints?: number;
-  readonly speed?: Record<string, number>;
+  /**
+   * Verbatim AC value text (after the "Armor Class " label), with a value that
+   * wraps onto following extracted lines re-joined — the three lycanthropes
+   * with dual-form AC wrap "in <beast> and/or hybrid form" onto the next line
+   * (eshyra-o9bd.18.6.1). Presence still confirms the stat-block signature.
+   */
+  readonly armorClassText?: string;
+  /** Verbatim HP value text (after the "Hit Points " label). */
+  readonly hitPointsText?: string;
+  /** Verbatim Speed value text (after the "Speed " label). */
+  readonly speedText?: string;
   readonly challengeRating?: string;
   readonly experiencePoints?: number;
   readonly abilityScores?: CreatureAbilityScores;
@@ -928,33 +1144,34 @@ export function extractCreatureKeyedFields(
 
 /** Scan a stat-block body for the keyed stat lines. First match wins. */
 function readStatBlock(lines: readonly string[]): StatBlockFields {
-  let armorClass: number | undefined;
-  let hitPoints: number | undefined;
-  let speed: Record<string, number> | undefined;
+  let acIdx = -1;
+  let hpIdx = -1;
+  let hitPointsText: string | undefined;
+  let speedText: string | undefined;
   let challengeRating: string | undefined;
   let experiencePoints: number | undefined;
   let abilityScores: CreatureAbilityScores | undefined;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (armorClass === undefined) {
-      const m = AC_PATTERN.exec(line);
-      if (m !== null) {
-        armorClass = Number.parseInt(m[1], 10);
+    if (acIdx < 0) {
+      if (AC_PATTERN.test(line)) {
+        acIdx = i;
         continue;
       }
     }
-    if (hitPoints === undefined) {
+    if (hpIdx < 0) {
       const m = HP_PATTERN.exec(line);
       if (m !== null) {
-        hitPoints = Number.parseInt(m[1], 10);
+        hpIdx = i;
+        hitPointsText = line.replace(/^Hit Points\s+/, '');
         continue;
       }
     }
-    if (speed === undefined) {
+    if (speedText === undefined) {
       const m = SPEED_PATTERN.exec(line);
       if (m !== null) {
-        speed = parseSpeed(m[1]);
+        speedText = m[1].trim();
         continue;
       }
     }
@@ -982,10 +1199,25 @@ function readStatBlock(lines: readonly string[]): StatBlockFields {
     }
   }
 
+  // The AC value runs from its own line up to the Hit Points line: the three
+  // lycanthropes with dual-form AC wrap the trailing "in <beast> and/or hybrid
+  // form" clause onto the next extracted line (eshyra-o9bd.18.6.1). A joined
+  // foreign line cannot slip through silently — the strict AC grammar in
+  // `parseArmorClassText` fails the import on any unrecognized content.
+  let armorClassText: string | undefined;
+  if (acIdx >= 0) {
+    const end = hpIdx > acIdx ? hpIdx : acIdx + 1;
+    armorClassText = lines
+      .slice(acIdx, end)
+      .map((l) => l.trim())
+      .join(' ')
+      .replace(/^Armor Class\s+/, '');
+  }
+
   return {
-    armorClass,
-    hitPoints,
-    speed,
+    armorClassText,
+    hitPointsText,
+    speedText,
     challengeRating,
     experiencePoints,
     abilityScores,
@@ -1090,8 +1322,8 @@ export function parseCreatures(
 
     // Not a creature unless the structural signature is present.
     if (
-      fields.armorClass === undefined ||
-      fields.hitPoints === undefined ||
+      fields.armorClassText === undefined ||
+      fields.hitPointsText === undefined ||
       fields.abilityScores === undefined
     ) {
       continue;
@@ -1099,7 +1331,7 @@ export function parseCreatures(
     // Confirmed creature: Speed and Challenge are mandatory in a real stat
     // block, so their absence is a parse error, not a non-creature.
     const sourcePage = flat[candidate.metaIdx].page;
-    if (fields.speed === undefined) {
+    if (fields.speedText === undefined) {
       throw new Error(
         `creature "${candidate.name}" at page ${sourcePage} is missing a Speed line`,
       );
@@ -1116,6 +1348,27 @@ export function parseCreatures(
         `creature "${candidate.name}" at page ${sourcePage} has a Challenge line without an XP award`,
       );
     }
+    // Structured statline parsing is fail-closed (eshyra-o9bd.18.6): a
+    // confirmed creature whose AC / HP / Speed value text falls outside the
+    // reviewed grammar throws rather than flattening or dropping semantics.
+    const armorClass = parseArmorClassText(fields.armorClassText);
+    if (armorClass === null) {
+      throw new Error(
+        `creature "${candidate.name}" at page ${sourcePage} has an Armor Class value outside the reviewed statline grammar: "${fields.armorClassText}" (eshyra-o9bd.18.6.1)`,
+      );
+    }
+    const hitPoints = parseHitPointsText(fields.hitPointsText);
+    if (hitPoints === null) {
+      throw new Error(
+        `creature "${candidate.name}" at page ${sourcePage} has a Hit Points value without the printed average + dice formula: "${fields.hitPointsText}" (eshyra-o9bd.18.6.2)`,
+      );
+    }
+    const speedLine = parseSpeedText(fields.speedText);
+    if (speedLine === null) {
+      throw new Error(
+        `creature "${candidate.name}" at page ${sourcePage} has a Speed value outside the reviewed statline grammar: "${fields.speedText}" (eshyra-o9bd.18.6.3)`,
+      );
+    }
 
     const keyed = extractCreatureKeyedFields(body);
     const narrative = parseNarrativeSections(bodyLines);
@@ -1129,9 +1382,14 @@ export function parseCreatures(
       size: candidate.meta.size,
       type: candidate.meta.type,
       alignment: candidate.meta.alignment,
-      armorClass: fields.armorClass,
-      hitPoints: fields.hitPoints,
-      speed: fields.speed,
+      armorClass,
+      hitPoints,
+      speed: speedLine.speed,
+      ...(speedLine.hover === true ? { hover: true as const } : {}),
+      ...(speedLine.speedVariants !== undefined
+        ? { speedVariants: speedLine.speedVariants }
+        : {}),
+      speedSourceText: fields.speedText,
       challengeRating: fields.challengeRating,
       experiencePoints: fields.experiencePoints,
       abilityScores: fields.abilityScores,

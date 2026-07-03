@@ -1385,9 +1385,14 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     expect(goblinData.size).toBe('Small');
     expect(goblinData.type).toBe('humanoid (goblinoid)');
     expect(goblinData.alignment).toBe('neutral evil');
-    expect(goblinData.armorClass).toBe(15);
-    expect(goblinData.hitPoints).toBe(7);
+    expect(goblinData.armorClass).toEqual({
+      value: 15,
+      source: 'leather armor, shield',
+      sourceText: '15 (leather armor, shield)',
+    });
+    expect(goblinData.hitPoints).toEqual({ value: 7, formula: '2d6' });
     expect(goblinData.speed).toEqual({ walk: 30 });
+    expect(goblinData.speedSourceText).toBe('30 ft.');
     expect(goblinData.challengeRating).toBe('1/4');
     expect(goblinData.abilityScores).toEqual({
       strength: 8,
@@ -2454,8 +2459,12 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     expect(captain?.name).toBe('Bandit Captain');
     const captainData = captain?.data as Record<string, unknown>;
     expect(captainData.category).toBe('npc');
-    expect(captainData.armorClass).toBe(15);
-    expect(captainData.hitPoints).toBe(65);
+    expect(captainData.armorClass).toEqual({
+      value: 15,
+      source: 'studded leather',
+      sourceText: '15 (studded leather)',
+    });
+    expect(captainData.hitPoints).toEqual({ value: 65, formula: '10d8 + 20' });
     expect(captainData.challengeRating).toBe('2');
 
     // The monster creature carries NO category field (its absence means

@@ -362,14 +362,22 @@ function lookupCreatureRecord(
   return result.ok ? result.record : undefined;
 }
 
-function readCreatureNumber(
-  record: RulesRecord | undefined,
-  field: string,
-): number | undefined {
+/**
+ * Read a creature's base armor class. SRD packs since eshyra-o9bd.18.6 model
+ * `armorClass` as a structured `{ value, … }` statline object; older/other
+ * packs may still carry a bare integer, so both shapes are accepted (mirrors
+ * `readCreatureHp`).
+ */
+function readCreatureAc(record: RulesRecord | undefined): number | undefined {
   const data = record?.data;
   if (typeof data !== 'object' || data === null) return undefined;
-  const value = (data as Record<string, unknown>)[field];
-  return Number.isInteger(value) ? (value as number) : undefined;
+  const ac = (data as Record<string, unknown>).armorClass;
+  if (typeof ac === 'number' && Number.isInteger(ac)) return ac;
+  if (typeof ac !== 'object' || ac === null) return undefined;
+  const value = (ac as Record<string, unknown>).value;
+  return typeof value === 'number' && Number.isInteger(value)
+    ? value
+    : undefined;
 }
 
 function readCreatureHp(record: RulesRecord | undefined): number {
@@ -676,7 +684,7 @@ export function startEncounter(
   for (const creature of source?.encounter.creatures ?? []) {
     const record = lookupCreatureRecord(db, creature.rulesRef);
     const hpMax = readCreatureHp(record);
-    const ac = readCreatureNumber(record, 'armorClass');
+    const ac = readCreatureAc(record);
     const baseId = slug(creature.rulesRef);
     const baseLabel =
       record?.name ?? displayNameFromRulesRef(creature.rulesRef);
@@ -757,7 +765,7 @@ export function startEncounter(
       faction: actorInput.faction,
       hpCurrent: actor.hpCurrent ?? hpMax,
       hpMax: actor.hpMax ?? hpMax,
-      ac: readCreatureNumber(record, 'armorClass'),
+      ac: readCreatureAc(record),
       conditions: actor.conditions,
       status:
         actorInput.status === undefined &&

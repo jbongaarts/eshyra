@@ -591,9 +591,14 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
     size: 'Large',
     type: 'aberration',
     alignment: 'lawful evil',
-    armorClass: 17,
-    hitPoints: 135,
+    armorClass: {
+      value: 17,
+      source: 'natural armor',
+      sourceText: '17 (natural armor)',
+    },
+    hitPoints: { value: 135, formula: '18d10 + 36' },
     speed: { walk: 10, swim: 40 },
+    speedSourceText: '10 ft., swim 40 ft.',
     challengeRating: '10',
     experiencePoints: 5900,
     abilityScores: baseAbilities,
@@ -623,6 +628,7 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
       'armorClass',
       'hitPoints',
       'speed',
+      'speedSourceText',
       'challengeRating',
       'experiencePoints',
       'abilityScores',
@@ -631,6 +637,70 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
       'senses',
       'languages',
     ]);
+  });
+
+  it('emits structured statline semantics — AC variants, hover, speed variants (eshyra-o9bd.18.6)', () => {
+    const werebear: CreatureExtraction = {
+      ...ABOLETH,
+      name: 'Werebear',
+      armorClass: {
+        value: 10,
+        condition: 'in humanoid form',
+        variants: [
+          {
+            value: 11,
+            source: 'natural armor',
+            condition: 'in bear and hybrid form',
+          },
+        ],
+        sourceText:
+          '10 in humanoid form, 11 (natural armor) in bear and hybrid form',
+      },
+      hitPoints: { value: 135, formula: '18d8 + 54' },
+      speed: { walk: 30 },
+      hover: true,
+      speedVariants: [
+        { condition: 'in bear or hybrid form', speed: { walk: 40, climb: 30 } },
+      ],
+      speedSourceText:
+        '30 ft. (40 ft., climb 30 ft. in bear or hybrid form) (hover)',
+    };
+    const data = creatureExtractionsToRecords([werebear])[0].data as Record<
+      string,
+      unknown
+    >;
+    expect(data.armorClass).toEqual({
+      value: 10,
+      condition: 'in humanoid form',
+      variants: [
+        {
+          value: 11,
+          source: 'natural armor',
+          condition: 'in bear and hybrid form',
+        },
+      ],
+      sourceText:
+        '10 in humanoid form, 11 (natural armor) in bear and hybrid form',
+    });
+    expect(data.hitPoints).toEqual({ value: 135, formula: '18d8 + 54' });
+    expect(data.speed).toEqual({ walk: 30 });
+    expect(data.hover).toBe(true);
+    expect(data.speedVariants).toEqual([
+      { condition: 'in bear or hybrid form', speed: { walk: 40, climb: 30 } },
+    ]);
+    expect(
+      Object.keys(data).slice(
+        Object.keys(data).indexOf('speed'),
+        Object.keys(data).indexOf('challengeRating'),
+      ),
+    ).toEqual(['speed', 'hover', 'speedVariants', 'speedSourceText']);
+    // Absent-by-default: the plain Aboleth fixture emits none of the optionals.
+    const plain = creatureExtractionsToRecords([ABOLETH])[0].data as Record<
+      string,
+      unknown
+    >;
+    expect(plain.hover).toBeUndefined();
+    expect(plain.speedVariants).toBeUndefined();
   });
 
   it('emits narrative sections as {name,text} arrays and a legendary object', () => {

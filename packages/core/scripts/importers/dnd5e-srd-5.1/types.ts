@@ -526,6 +526,69 @@ export interface CreatureVariant {
 }
 
 /**
+ * One conditional / alternate armor-class value in a creature statline
+ * (eshyra-o9bd.18.6.1). The SRD prints these three shapes:
+ *   - a parenthesized alternate on the base value — Mage's
+ *     "12 (15 with mage armor)" → `{ value: 15, condition: "with mage armor" }`;
+ *   - a comma-separated conditional — Ankheg's "14 (natural armor), 11 while
+ *     prone" → `{ value: 11, condition: "while prone" }`;
+ *   - a lycanthrope form AC with its own armor source — Werewolf's
+ *     "11 in humanoid form, 12 (natural armor) in wolf or hybrid form" →
+ *     `{ value: 12, source: "natural armor", condition: "in wolf or hybrid
+ *     form" }`.
+ */
+export interface CreatureArmorClassVariant {
+  readonly value: number;
+  /** Armor-source parenthetical attached to this variant ("natural armor"). */
+  readonly source?: string;
+  /** The printed condition under which this value applies. Always present. */
+  readonly condition: string;
+}
+
+/**
+ * A creature's Armor Class statline, preserving the full printed semantics
+ * rather than flattening to the leading integer (eshyra-o9bd.18.6.1).
+ * `sourceText` is the verbatim value text after the "Armor Class " label
+ * (wrapped lines re-joined), so audits can verify no semantics were dropped.
+ */
+export interface CreatureArmorClass {
+  /** The first printed AC — the base/default value. */
+  readonly value: number;
+  /** Armor-source parenthetical on the base value ("natural armor", "leather armor, shield"). */
+  readonly source?: string;
+  /** Condition on the base value itself (Werewolf's "in humanoid form"). */
+  readonly condition?: string;
+  /** Conditional / alternate AC values, in printed order. */
+  readonly variants?: readonly CreatureArmorClassVariant[];
+  /** Verbatim statline value text, e.g. "14 (natural armor), 11 while prone". */
+  readonly sourceText: string;
+}
+
+/**
+ * A creature's Hit Points statline: the printed average plus the printed dice
+ * formula (eshyra-o9bd.18.6.2). Every SRD 5.1 creature prints both — "135
+ * (18d10 + 36)" → `{ value: 135, formula: "18d10 + 36" }` — matching the
+ * existing inline `stat-block` kind's `hitPoints` shape (minus `special`,
+ * which no full creature statline uses).
+ */
+export interface CreatureHitPoints {
+  readonly value: number;
+  readonly formula: string;
+}
+
+/**
+ * A form- or condition-specific speed set from a Speed-line parenthetical
+ * (eshyra-o9bd.18.6.3). The four SRD lycanthropes print one — Werebear's
+ * "30 ft. (40 ft., climb 30 ft. in bear or hybrid form)" →
+ * `{ condition: "in bear or hybrid form", speed: { walk: 40, climb: 30 } }`.
+ * The base `speed` map carries only the unconditional modes.
+ */
+export interface CreatureSpeedVariant {
+  readonly condition: string;
+  readonly speed: Readonly<Record<string, number>>;
+}
+
+/**
  * A creature (monster) entry as extracted from the SRD source, before
  * conversion to a `kind=creature` `RulesRecord`. Mirrors the fields the
  * `dnd5e-srd` creature kindSchema requires (see `kindSchemas.ts`):
@@ -534,10 +597,13 @@ export interface CreatureVariant {
  *     parenthetical preserved ("humanoid (goblinoid)", "dragon", "swarm of
  *     Tiny beasts"); validation is applied to the bare type word
  *     (loreweaver-2ze);
- *   - `armorClass` / `hitPoints` are the leading integers of the stat-block
- *     lines (the parenthetical AC source and HP dice expression are dropped);
- *   - `speed` maps movement modes to feet, the unlabeled base speed keyed as
- *     `walk` ({ walk: 30, climb: 30 });
+ *   - `armorClass` / `hitPoints` are structured statline objects preserving
+ *     the printed AC sources/conditions and the HP dice formula
+ *     (eshyra-o9bd.18.6);
+ *   - `speed` maps unconditional movement modes to feet, the unlabeled base
+ *     speed keyed as `walk` ({ walk: 30, climb: 30 }); `hover` /
+ *     `speedVariants` / `speedSourceText` carry the printed "(hover)" and
+ *     form-conditional parentheticals (eshyra-o9bd.18.6.3);
  *   - `challengeRating` is the bare fraction/integer string ("1/4", "6"),
  *     without the XP parenthetical;
  *   - `experiencePoints` is the printed XP award from that parenthetical
@@ -563,9 +629,15 @@ export interface CreatureExtraction {
   readonly size: string;
   readonly type: string;
   readonly alignment: string;
-  readonly armorClass: number;
-  readonly hitPoints: number;
+  readonly armorClass: CreatureArmorClass;
+  readonly hitPoints: CreatureHitPoints;
   readonly speed: Readonly<Record<string, number>>;
+  /** True when the Speed line prints "(hover)" on the fly mode. */
+  readonly hover?: true;
+  /** Form-/condition-specific speed sets (the four SRD lycanthropes). */
+  readonly speedVariants?: readonly CreatureSpeedVariant[];
+  /** Verbatim Speed value text, e.g. "0 ft., fly 40 ft. (hover)". */
+  readonly speedSourceText: string;
   readonly challengeRating: string;
   readonly experiencePoints: number;
   readonly abilityScores: CreatureAbilityScores;
