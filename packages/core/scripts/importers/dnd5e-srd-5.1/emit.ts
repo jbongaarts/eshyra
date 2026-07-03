@@ -26,6 +26,7 @@ import type {
 import { validateRulesPack } from '../../../src/rules/validate.js';
 import { linkAncestryOptionTables } from './ancestryOptions.js';
 import { enrichClassChapterRecords } from './classProgression.js';
+import { deriveConditionRecordMechanics } from './conditionMechanics.js';
 import {
   enrichAncestryCreationFacts,
   enrichBackgroundCreationFacts,
@@ -747,6 +748,10 @@ export function conditionExtractionsToRecords(
         level: l.level,
         effect: l.effect,
       }));
+    }
+    const mechanics = deriveConditionRecordMechanics(condition);
+    if (mechanics !== undefined) {
+      data.mechanics = mechanics;
     }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
