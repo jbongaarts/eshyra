@@ -434,6 +434,127 @@ describe('lookup_rules tool', () => {
       expect(result.message).toContain(
         'feature:fighter:ability-score-improvement',
       );
+      // ...and carried as structured data so a caller can act on it without
+      // parsing prose (eshyra-o9bd.18.8.6).
+      const data = result.data as { candidateKeys: readonly string[] };
+      expect(data.candidateKeys).toContain(
+        'feature:fighter:ability-score-improvement',
+      );
+    }
+  });
+
+  it('reports every class Spellcasting feature as ambiguous candidates (eshyra-o9bd.18.8.6)', () => {
+    // "Spellcasting" is a repeated `feature` name across seven full-caster
+    // classes; each has a unique key, so this exercises the same-kind
+    // ambiguous path with a larger candidate group than ASI.
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'feature', name: 'Spellcasting' },
+      ctx(),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe('ambiguous');
+      const data = result.data as { candidateKeys: readonly string[] };
+      for (const cls of [
+        'bard',
+        'cleric',
+        'druid',
+        'paladin',
+        'ranger',
+        'sorcerer',
+        'wizard',
+      ]) {
+        expect(data.candidateKeys).toContain(`feature:${cls}:spellcasting`);
+      }
+    }
+  });
+
+  it('resolves a feature card with grantor class ref and grant level', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'feature', ref: 'feature:wizard:spellcasting' },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as {
+        card: {
+          key: string;
+          kind: string;
+          name: string;
+          parent?: { ref: string; relation: string };
+        };
+      };
+      expect(data.card.key).toBe('feature:wizard:spellcasting');
+      expect(data.card.kind).toBe('feature');
+      expect(data.card.parent?.ref).toBe('class:wizard');
+      expect(data.card.parent?.relation).toBe('grantedBy');
+    }
+  });
+
+  it('resolves a subclass card with parentClass ref', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'subclass', name: 'Champion' },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as {
+        card: { parent?: { ref: string; relation: string } };
+      };
+      expect(data.card.parent?.ref).toBe('class:fighter');
+      expect(data.card.parent?.relation).toBe('parentClass');
+    }
+  });
+
+  it.each([
+    ['action', 'Hide'],
+    ['rule', 'Hide'],
+  ])('resolves cross-kind duplicate name %s:Hide unambiguously by kind', (kind, name) => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind, name },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { card: { kind: string; name: string } };
+      expect(data.card.kind).toBe(kind);
+    }
+  });
+
+  it.each([
+    ['spell', 'Shield'],
+    ['equipment', 'Shield'],
+  ])('resolves cross-kind duplicate name %s:Shield unambiguously by kind', (kind, name) => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind, name },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { card: { kind: string; name: string } };
+      expect(data.card.kind).toBe(kind);
+    }
+  });
+
+  it.each([
+    ['equipment', 'equipment:potion-of-healing'],
+    ['magic-item', 'magic-item:potion-of-healing'],
+  ])('resolves near-duplicate name "Potion of Healing" (%s) by kind, distinct from the other kind', (kind, expectedKey) => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind, name: 'Potion of Healing' },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { card: { key: string; kind: string } };
+      expect(data.card.key).toBe(expectedKey);
+      expect(data.card.kind).toBe(kind);
     }
   });
 

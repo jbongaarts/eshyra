@@ -80,7 +80,13 @@ export function renderToolResults(
   const blocks = results.map(({ tool, result }) => {
     const payload = result.ok
       ? { tool, ok: true, data: result.data }
-      : { tool, ok: false, code: result.code, message: result.message };
+      : {
+          tool,
+          ok: false,
+          code: result.code,
+          message: result.message,
+          ...(result.data !== undefined ? { data: result.data } : {}),
+        };
     return ['```tool_result', JSON.stringify(payload), '```'].join('\n');
   });
   return [
