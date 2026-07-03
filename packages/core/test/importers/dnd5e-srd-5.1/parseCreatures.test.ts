@@ -124,13 +124,23 @@ describe('parseCreatures — Goblin (small humanoid)', () => {
     expect(goblin.alignment).toBe('neutral evil');
   });
 
-  it('parses the leading integers of AC and HP', () => {
-    expect(goblin.armorClass).toBe(15);
-    expect(goblin.hitPoints).toBe(7);
+  it('parses structured AC with the armor-source parenthetical preserved (eshyra-o9bd.18.6.1)', () => {
+    expect(goblin.armorClass).toEqual({
+      value: 15,
+      source: 'leather armor, shield',
+      sourceText: '15 (leather armor, shield)',
+    });
   });
 
-  it('parses an unlabeled base speed as walk', () => {
+  it('parses structured HP with the printed dice formula (eshyra-o9bd.18.6.2)', () => {
+    expect(goblin.hitPoints).toEqual({ value: 7, formula: '2d6' });
+  });
+
+  it('parses an unlabeled base speed as walk and preserves the verbatim Speed text', () => {
     expect(goblin.speed).toEqual({ walk: 30 });
+    expect(goblin.hover).toBeUndefined();
+    expect(goblin.speedVariants).toBeUndefined();
+    expect(goblin.speedSourceText).toBe('30 ft.');
   });
 
   it('parses the challenge rating without the XP parenthetical', () => {
@@ -180,7 +190,7 @@ describe('parseCreatures — Black Bear (medium beast)', () => {
   });
 
   it('parses HP with a dice + bonus expression', () => {
-    expect(bear.hitPoints).toBe(19);
+    expect(bear.hitPoints).toEqual({ value: 19, formula: '3d8 + 6' });
   });
 
   it('parses scores with ASCII-hyphen modifiers', () => {
@@ -209,8 +219,8 @@ describe('parseCreatures — Wyvern (large dragon)', () => {
     expect(wyvern.speed).toEqual({ walk: 20, fly: 80 });
   });
 
-  it('parses a large hit-point total', () => {
-    expect(wyvern.hitPoints).toBe(110);
+  it('parses a large hit-point total with its large hit-dice formula', () => {
+    expect(wyvern.hitPoints).toEqual({ value: 110, formula: '13d10 + 39' });
   });
 
   it('parses an integer challenge rating', () => {
@@ -247,8 +257,12 @@ describe('parseCreatures — category tag', () => {
     expect(captain.name).toBe('Bandit Captain');
     expect(captain.category).toBe('npc');
     // The stat block parses identically to a monster aside from the tag.
-    expect(captain.armorClass).toBe(15);
-    expect(captain.hitPoints).toBe(65);
+    expect(captain.armorClass).toEqual({
+      value: 15,
+      source: 'studded leather',
+      sourceText: '15 (studded leather)',
+    });
+    expect(captain.hitPoints).toEqual({ value: 65, formula: '10d8 + 20' });
     expect(captain.challengeRating).toBe('2');
     expect(captain.abilityScores.charisma).toBe(14);
   });
@@ -393,8 +407,8 @@ describe('parseCreatures — multiple stat blocks on one page', () => {
     expect(bear?.abilityScores.strength).toBe(15);
     expect(wyvern?.abilityScores.strength).toBe(19);
     // AC must not be shared from the first block.
-    expect(bear?.armorClass).toBe(11);
-    expect(wyvern?.armorClass).toBe(13);
+    expect(bear?.armorClass.value).toBe(11);
+    expect(wyvern?.armorClass.value).toBe(13);
   });
 });
 
@@ -1227,5 +1241,183 @@ describe('parseCreatures — stat-block / flavor boundary (eshyra-76b7)', () => 
     );
     expect(creature.actions?.[0].text).not.toContain('This appendix');
     expect(creature.description).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Structured statline semantics (eshyra-o9bd.18.6): conditional AC, HP
+// formulas, form-conditional speeds, and hover. Fixtures mirror the exact SRD
+// 5.1 statlines, including the wrapped AC continuation line the real
+// extraction produces for the dual-form lycanthropes.
+// ---------------------------------------------------------------------------
+
+const WEREWOLF_LINES = [
+  'Werewolf',
+  'Medium humanoid (human, shapechanger), chaotic evil',
+  'Armor Class 11 in humanoid form, 12 (natural armor)',
+  'in wolf or hybrid form',
+  'Hit Points 58 (9d8 + 18)',
+  'Speed 30 ft. (40 ft. in wolf form)',
+  'STR DEX CON INT WIS CHA',
+  '15 (+2) 13 (+1) 14 (+2) 10 (+0) 11 (+0) 10 (+0)',
+  'Challenge 3 (700 XP)',
+];
+
+const WEREBEAR_LINES = [
+  'Werebear',
+  'Medium humanoid (human, shapechanger), neutral good',
+  'Armor Class 10 in humanoid form, 11 (natural armor)',
+  'in bear and hybrid form',
+  'Hit Points 135 (18d8 + 54)',
+  'Speed 30 ft. (40 ft., climb 30 ft. in bear or hybrid form)',
+  'STR DEX CON INT WIS CHA',
+  '19 (+4) 10 (+0) 17 (+3) 11 (+0) 12 (+1) 12 (+1)',
+  'Challenge 5 (1,800 XP)',
+];
+
+const MAGE_LINES = [
+  'Mage',
+  'Medium humanoid (any race), any alignment',
+  'Armor Class 12 (15 with mage armor)',
+  'Hit Points 40 (9d8)',
+  'Speed 30 ft.',
+  'STR DEX CON INT WIS CHA',
+  '9 (−1) 14 (+2) 11 (+0) 17 (+3) 12 (+1) 11 (+0)',
+  'Challenge 6 (2,300 XP)',
+];
+
+const ANKHEG_LINES = [
+  'Ankheg',
+  'Large monstrosity, unaligned',
+  'Armor Class 14 (natural armor), 11 while prone',
+  'Hit Points 39 (6d10 + 6)',
+  'Speed 30 ft., burrow 10 ft.',
+  'STR DEX CON INT WIS CHA',
+  '17 (+3) 11 (+0) 13 (+1) 1 (−5) 13 (+1) 6 (−2)',
+  'Challenge 2 (450 XP)',
+];
+
+const GHOST_LINES = [
+  'Ghost',
+  'Medium undead, any alignment',
+  'Armor Class 11',
+  'Hit Points 45 (10d8)',
+  'Speed 0 ft., fly 40 ft. (hover)',
+  'STR DEX CON INT WIS CHA',
+  '7 (−2) 13 (+1) 10 (+0) 10 (+0) 12 (+1) 17 (+3)',
+  'Challenge 4 (1,100 XP)',
+];
+
+describe('parseCreatures — conditional AC variants (eshyra-o9bd.18.6.1)', () => {
+  it('parses a spell-adjusted parenthesized alternate AC (Mage)', () => {
+    const [mage] = parseCreatures([page(347, MAGE_LINES)]);
+    expect(mage.armorClass).toEqual({
+      value: 12,
+      variants: [{ value: 15, condition: 'with mage armor' }],
+      sourceText: '12 (15 with mage armor)',
+    });
+  });
+
+  it('parses a comma-separated conditional AC (Ankheg prone)', () => {
+    const [ankheg] = parseCreatures([page(268, ANKHEG_LINES)]);
+    expect(ankheg.armorClass).toEqual({
+      value: 14,
+      source: 'natural armor',
+      variants: [{ value: 11, condition: 'while prone' }],
+      sourceText: '14 (natural armor), 11 while prone',
+    });
+  });
+
+  it('parses a dual-form lycanthrope AC whose condition wraps to the next line (Werewolf)', () => {
+    const [werewolf] = parseCreatures([page(342, WEREWOLF_LINES)]);
+    expect(werewolf.armorClass).toEqual({
+      value: 11,
+      condition: 'in humanoid form',
+      variants: [
+        {
+          value: 12,
+          source: 'natural armor',
+          condition: 'in wolf or hybrid form',
+        },
+      ],
+      sourceText:
+        '11 in humanoid form, 12 (natural armor) in wolf or hybrid form',
+    });
+  });
+
+  it('throws instead of flattening an AC value outside the reviewed grammar', () => {
+    const lines = [...GOBLIN_LINES];
+    lines[2] = 'Armor Class 15 or better when entrenched';
+    expect(() => parseCreatures([page(310, lines)])).toThrow(
+      /Armor Class value outside the reviewed statline grammar/,
+    );
+  });
+});
+
+describe('parseCreatures — HP formulas (eshyra-o9bd.18.6.2)', () => {
+  it('parses a formula without a modifier (Ghost)', () => {
+    const [ghost] = parseCreatures([page(310, GHOST_LINES)]);
+    expect(ghost.hitPoints).toEqual({ value: 45, formula: '10d8' });
+  });
+
+  it('throws when the printed dice formula is missing', () => {
+    const lines = [...GOBLIN_LINES];
+    lines[3] = 'Hit Points 7';
+    expect(() => parseCreatures([page(310, lines)])).toThrow(
+      /Hit Points value without the printed average \+ dice formula/,
+    );
+  });
+});
+
+describe('parseCreatures — form-conditional speeds and hover (eshyra-o9bd.18.6.3)', () => {
+  it('parses hover into a deterministic field and keeps the fly mode (Ghost)', () => {
+    const [ghost] = parseCreatures([page(310, GHOST_LINES)]);
+    expect(ghost.speed).toEqual({ walk: 0, fly: 40 });
+    expect(ghost.hover).toBe(true);
+    expect(ghost.speedSourceText).toBe('0 ft., fly 40 ft. (hover)');
+  });
+
+  it('parses a single-mode form variant (Werewolf wolf form)', () => {
+    const [werewolf] = parseCreatures([page(342, WEREWOLF_LINES)]);
+    expect(werewolf.speed).toEqual({ walk: 30 });
+    expect(werewolf.speedVariants).toEqual([
+      { condition: 'in wolf form', speed: { walk: 40 } },
+    ]);
+    expect(werewolf.speedSourceText).toBe('30 ft. (40 ft. in wolf form)');
+  });
+
+  it('keeps the Werebear climb speed OUT of the unconditional base modes', () => {
+    const [werebear] = parseCreatures([page(341, WEREBEAR_LINES)]);
+    // The source grants climb 30 (and walk 40) only in bear or hybrid form;
+    // the previous flattening leaked `climb: 30` into the base speed — actively
+    // wrong data, not just loss (eshyra-o9bd.18.6.3).
+    expect(werebear.speed).toEqual({ walk: 30 });
+    expect(werebear.speedVariants).toEqual([
+      {
+        condition: 'in bear or hybrid form',
+        speed: { walk: 40, climb: 30 },
+      },
+    ]);
+    expect(werebear.armorClass).toEqual({
+      value: 10,
+      condition: 'in humanoid form',
+      variants: [
+        {
+          value: 11,
+          source: 'natural armor',
+          condition: 'in bear and hybrid form',
+        },
+      ],
+      sourceText:
+        '10 in humanoid form, 11 (natural armor) in bear and hybrid form',
+    });
+  });
+
+  it('throws instead of dropping an unrecognized speed segment', () => {
+    const lines = [...GOBLIN_LINES];
+    lines[4] = 'Speed 30 ft., teleport 30 ft.';
+    expect(() => parseCreatures([page(310, lines)])).toThrow(
+      /Speed value outside the reviewed statline grammar/,
+    );
   });
 });

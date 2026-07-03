@@ -335,9 +335,45 @@ function buildCreatureData(
   data.size = creature.size;
   data.type = creature.type;
   data.alignment = creature.alignment;
-  data.armorClass = creature.armorClass;
-  data.hitPoints = creature.hitPoints;
+  // Structured statline objects (eshyra-o9bd.18.6): armorClass preserves the
+  // printed armor source, base condition, and conditional/alternate values
+  // plus the verbatim value text; hitPoints preserves the printed average AND
+  // dice formula (matching the inline `stat-block` kind's shape); speed keeps
+  // only unconditional modes, with hover / form-conditional variants and the
+  // verbatim Speed text alongside. Field insertion order is fixed for
+  // byte-stable JSON.
+  data.armorClass = {
+    value: creature.armorClass.value,
+    ...(creature.armorClass.source !== undefined
+      ? { source: creature.armorClass.source }
+      : {}),
+    ...(creature.armorClass.condition !== undefined
+      ? { condition: creature.armorClass.condition }
+      : {}),
+    ...(creature.armorClass.variants !== undefined
+      ? {
+          variants: creature.armorClass.variants.map((v) => ({
+            value: v.value,
+            ...(v.source !== undefined ? { source: v.source } : {}),
+            condition: v.condition,
+          })),
+        }
+      : {}),
+    sourceText: creature.armorClass.sourceText,
+  };
+  data.hitPoints = {
+    value: creature.hitPoints.value,
+    formula: creature.hitPoints.formula,
+  };
   data.speed = { ...creature.speed };
+  if (creature.hover === true) data.hover = true;
+  if (creature.speedVariants !== undefined) {
+    data.speedVariants = creature.speedVariants.map((v) => ({
+      condition: v.condition,
+      speed: { ...v.speed },
+    }));
+  }
+  data.speedSourceText = creature.speedSourceText;
   data.challengeRating = creature.challengeRating;
   data.experiencePoints = creature.experiencePoints;
   data.abilityScores = {

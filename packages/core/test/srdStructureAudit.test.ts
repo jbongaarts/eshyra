@@ -977,7 +977,15 @@ describe('creature stat-block prose bleed (eshyra-76b7)', () => {
       kind: 'creature',
       key: 'creature:test-beast',
       name: 'Test Beast',
-      data,
+      data: {
+        // Faithful structured statline so the creature-statline-fidelity
+        // check (eshyra-o9bd.18.6.4) stays silent for these fixtures.
+        armorClass: { value: 12, sourceText: '12' },
+        hitPoints: { value: 7, formula: '2d6' },
+        speed: { walk: 30 },
+        speedSourceText: '30 ft.',
+        ...data,
+      },
     });
   }
 
@@ -1205,6 +1213,169 @@ describe('creature CR/XP round-trip (eshyra-o9bd.18.5)', () => {
   it('is silent when the XP matches the table', () => {
     expect(xpFindings(creatureRec('1/2', 100))).toEqual([]);
     expect(xpFindings(creatureRec('30', 155000))).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Creature statline fidelity (eshyra-o9bd.18.6.4)
+// ---------------------------------------------------------------------------
+
+describe('creature statline fidelity (eshyra-o9bd.18.6.4)', () => {
+  function statlineRec(data: Record<string, unknown>): RulesRecord {
+    return record({
+      kind: 'creature',
+      key: 'creature:test-subject',
+      name: 'Test Subject',
+      data: {
+        size: 'Medium',
+        type: 'humanoid',
+        alignment: 'neutral',
+        challengeRating: '1',
+        experiencePoints: 200,
+        ...data,
+      },
+    });
+  }
+
+  function fidelityFindings(rec: RulesRecord) {
+    return auditSrdStructure(pack([rec])).filter(
+      (f) => f.category === 'creature-statline-fidelity',
+    );
+  }
+
+  const FAITHFUL = {
+    armorClass: {
+      value: 14,
+      source: 'natural armor',
+      variants: [{ value: 11, condition: 'while prone' }],
+      sourceText: '14 (natural armor), 11 while prone',
+    },
+    hitPoints: { value: 39, formula: '6d10 + 6' },
+    speed: { walk: 30, burrow: 10 },
+    speedSourceText: '30 ft., burrow 10 ft.',
+  };
+
+  it('is silent for a faithful structured statline (Ankheg shape)', () => {
+    expect(fidelityFindings(statlineRec(FAITHFUL))).toEqual([]);
+  });
+
+  it('is silent for hover and form-conditional speed variants that re-render the printed line', () => {
+    expect(
+      fidelityFindings(
+        statlineRec({
+          ...FAITHFUL,
+          speed: { walk: 0, fly: 40 },
+          hover: true,
+          speedSourceText: '0 ft., fly 40 ft. (hover)',
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      fidelityFindings(
+        statlineRec({
+          ...FAITHFUL,
+          speed: { walk: 30 },
+          speedVariants: [
+            {
+              condition: 'in bear or hybrid form',
+              speed: { walk: 40, climb: 30 },
+            },
+          ],
+          speedSourceText:
+            '30 ft. (40 ft., climb 30 ft. in bear or hybrid form)',
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it('flags a legacy flattened integer armorClass', () => {
+    const findings = fidelityFindings(
+      statlineRec({ ...FAITHFUL, armorClass: 14 }),
+    );
+    expect(
+      findings.some((f) =>
+        f.detail.includes('armorClass must be a structured statline object'),
+      ),
+    ).toBe(true);
+  });
+
+  it('flags a dropped AC parenthetical or conditional value via sourceText residue', () => {
+    // The Mage failure class: "(15 with mage armor)" flattened away.
+    const findings = fidelityFindings(
+      statlineRec({
+        ...FAITHFUL,
+        armorClass: {
+          value: 12,
+          sourceText: '12 (15 with mage armor)',
+        },
+      }),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('drops printed statline content');
+  });
+
+  it('flags a structured AC fragment that is not in the printed line', () => {
+    const findings = fidelityFindings(
+      statlineRec({
+        ...FAITHFUL,
+        armorClass: {
+          value: 14,
+          source: 'plate',
+          sourceText: '14 (natural armor), 11 while prone',
+          variants: [{ value: 11, condition: 'while prone' }],
+        },
+      }),
+    );
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(
+      findings.some((f) =>
+        f.detail.includes('"plate" does not appear in sourceText'),
+      ),
+    ).toBe(true);
+  });
+
+  it('flags a missing HP formula and an average that contradicts the dice math', () => {
+    expect(
+      fidelityFindings(
+        statlineRec({ ...FAITHFUL, hitPoints: { value: 39 } }),
+      ).some((f) => f.detail.includes('hitPoints.formula is missing')),
+    ).toBe(true);
+    // 6d10 + 6 has a floored mean of 39, not 45.
+    const findings = fidelityFindings(
+      statlineRec({
+        ...FAITHFUL,
+        hitPoints: { value: 45, formula: '6d10 + 6' },
+      }),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain(
+      'does not equal the floored mean 39 of formula "6d10 + 6"',
+    );
+  });
+
+  it('flags a dropped hover flag and a variant mode leaked into the base speed', () => {
+    // Hover printed but not modeled.
+    expect(
+      fidelityFindings(
+        statlineRec({
+          ...FAITHFUL,
+          speed: { walk: 0, fly: 40 },
+          speedSourceText: '0 ft., fly 40 ft. (hover)',
+        }),
+      ),
+    ).toHaveLength(1);
+    // The Werebear defect: form-conditional climb flattened into base modes.
+    const findings = fidelityFindings(
+      statlineRec({
+        ...FAITHFUL,
+        speed: { walk: 30, climb: 30 },
+        speedSourceText: '30 ft. (40 ft., climb 30 ft. in bear or hybrid form)',
+      }),
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain(
+      'does not reproduce the printed Speed line',
+    );
   });
 });
 

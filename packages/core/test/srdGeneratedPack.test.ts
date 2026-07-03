@@ -557,6 +557,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 317,
   },
   {
+    // Statline semantics (eshyra-o9bd.18.6.3): `hover` is emitted only for the
+    // 7 creatures whose Speed line prints "(hover)"; absence means the fly
+    // speed (if any) is not a hover.
+    kind: 'creature',
+    field: 'hover',
+    missingCount: 310,
+    totalInKind: 317,
+  },
+  {
     kind: 'creature',
     field: 'legendaryActions',
     missingCount: 287,
@@ -575,6 +584,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     totalInKind: 317,
   },
   { kind: 'creature', field: 'skills', missingCount: 129, totalInKind: 317 },
+  {
+    // Statline semantics (eshyra-o9bd.18.6.3): form-conditional speed sets are
+    // printed only for the four lycanthropes with a beast/hybrid-form speed
+    // parenthetical (Werebear, Wereboar, Weretiger, Werewolf).
+    kind: 'creature',
+    field: 'speedVariants',
+    missingCount: 313,
+    totalInKind: 317,
+  },
   { kind: 'creature', field: 'traits', missingCount: 55, totalInKind: 317 },
   { kind: 'creature', field: 'variants', missingCount: 315, totalInKind: 317 },
   { kind: 'equipment', field: 'ac', missingCount: 205, totalInKind: 218 },
@@ -1434,6 +1452,112 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     it('round-trips a comma-separated printed XP value', () => {
       expect(xpOf('creature:aboleth')).toBe(5900);
       expect(xpOf('creature:tarrasque')).toBe(155000);
+    });
+  });
+
+  describe('creature statline semantics (eshyra-o9bd.18.6)', () => {
+    const creatures = pack.records.filter((r) => r.kind === 'creature');
+    const dataOf = (key: string): Record<string, unknown> => {
+      const found = creatures.find((r) => r.key === key);
+      expect(found, key).toBeDefined();
+      return found?.data as Record<string, unknown>;
+    };
+
+    it('every creature carries a structured AC with verbatim sourceText and a structured HP with the printed dice formula', () => {
+      expect(creatures).toHaveLength(317);
+      for (const record of creatures) {
+        const data = record.data as {
+          armorClass?: { value?: unknown; sourceText?: unknown };
+          hitPoints?: { value?: unknown; formula?: unknown };
+          speedSourceText?: unknown;
+        };
+        expect(typeof data.armorClass?.value, record.key).toBe('number');
+        expect(typeof data.armorClass?.sourceText, record.key).toBe('string');
+        expect(typeof data.hitPoints?.value, record.key).toBe('number');
+        expect(typeof data.hitPoints?.formula, record.key).toBe('string');
+        expect(typeof data.speedSourceText, record.key).toBe('string');
+      }
+    });
+
+    it('preserves armor-source parentheticals and conditional AC variants', () => {
+      expect(dataOf('creature:goblin').armorClass).toEqual({
+        value: 15,
+        source: 'leather armor, shield',
+        sourceText: '15 (leather armor, shield)',
+      });
+      // Spell-adjusted alternates (eshyra-o9bd.18.6.1).
+      expect(dataOf('creature:mage').armorClass).toEqual({
+        value: 12,
+        variants: [{ value: 15, condition: 'with mage armor' }],
+        sourceText: '12 (15 with mage armor)',
+      });
+      expect(dataOf('creature:druid').armorClass).toEqual({
+        value: 11,
+        variants: [{ value: 16, condition: 'with barkskin' }],
+        sourceText: '11 (16 with barkskin)',
+      });
+      // Comma-separated conditional (Ankheg prone).
+      expect(dataOf('creature:ankheg').armorClass).toEqual({
+        value: 14,
+        source: 'natural armor',
+        variants: [{ value: 11, condition: 'while prone' }],
+        sourceText: '14 (natural armor), 11 while prone',
+      });
+      // Dual-form lycanthrope AC with a wrapped source line (Werewolf).
+      expect(dataOf('creature:werewolf').armorClass).toEqual({
+        value: 11,
+        condition: 'in humanoid form',
+        variants: [
+          {
+            value: 12,
+            source: 'natural armor',
+            condition: 'in wolf or hybrid form',
+          },
+        ],
+        sourceText:
+          '11 in humanoid form, 12 (natural armor) in wolf or hybrid form',
+      });
+    });
+
+    it('preserves HP formulas alongside the printed average (eshyra-o9bd.18.6.2)', () => {
+      expect(dataOf('creature:goblin').hitPoints).toEqual({
+        value: 7,
+        formula: '2d6',
+      });
+      expect(dataOf('creature:werebear').hitPoints).toEqual({
+        value: 135,
+        formula: '18d8 + 54',
+      });
+      expect(dataOf('creature:tarrasque').hitPoints).toEqual({
+        value: 676,
+        formula: '33d20 + 330',
+      });
+    });
+
+    it('keeps the Werebear form speeds OUT of the unconditional base modes (eshyra-o9bd.18.6.3)', () => {
+      const werebear = dataOf('creature:werebear');
+      expect(werebear.speed).toEqual({ walk: 30 });
+      expect(werebear.speedVariants).toEqual([
+        {
+          condition: 'in bear or hybrid form',
+          speed: { walk: 40, climb: 30 },
+        },
+      ]);
+      const werewolf = dataOf('creature:werewolf');
+      expect(werewolf.speed).toEqual({ walk: 30 });
+      expect(werewolf.speedVariants).toEqual([
+        { condition: 'in wolf form', speed: { walk: 40 } },
+      ]);
+    });
+
+    it('models hover as a deterministic field on exactly the printed hover creatures', () => {
+      const ghost = dataOf('creature:ghost');
+      expect(ghost.speed).toEqual({ walk: 0, fly: 40 });
+      expect(ghost.hover).toBe(true);
+      expect(ghost.speedSourceText).toBe('0 ft., fly 40 ft. (hover)');
+      expect(
+        creatures.filter((r) => (r.data as { hover?: unknown }).hover === true),
+      ).toHaveLength(7);
     });
   });
 

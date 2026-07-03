@@ -61,9 +61,15 @@ function creatureData(): Record<string, unknown> {
     size: 'Small',
     type: 'humanoid',
     alignment: 'neutral evil',
-    armorClass: 15,
-    hitPoints: 7,
+    // Structured statline objects (eshyra-o9bd.18.6).
+    armorClass: {
+      value: 15,
+      source: 'leather armor, shield',
+      sourceText: '15 (leather armor, shield)',
+    },
+    hitPoints: { value: 7, formula: '2d6' },
     speed: { walk: 30 },
+    speedSourceText: '30 ft.',
     challengeRating: '1/4',
     experiencePoints: 50,
     abilityScores: {
