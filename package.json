@@ -40,7 +40,8 @@
     "format:check": "biome check --error-on-warnings .",
     "lint": "biome lint --error-on-warnings .",
     "check:hidden-unicode": "node scripts/check-hidden-unicode.mjs",
-    "check": "npm run check:hidden-unicode && biome ci --error-on-warnings ."
+    "check": "npm run check:hidden-unicode && biome ci --error-on-warnings .",
+    "audit:dnd5e-srd-deep": "tsx packages/core/scripts/deep-audit-dnd5e-srd/cli.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",

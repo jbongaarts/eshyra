@@ -1421,3 +1421,44 @@ describe('parseCreatures — form-conditional speeds and hover (eshyra-o9bd.18.6
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Wrapped meta line (eshyra-o9bd.18.9.2): the lycanthropes' long
+// "(human, shapechanger)" subtype pushes the alignment past the column
+// width, so the SRD wraps it onto a continuation line. Reading only the
+// first line silently truncated Werewolf's "chaotic evil" to "chaotic" and
+// Werebear's "neutral good" to "neutral" — caught by the region-ledger
+// emission gate.
+// ---------------------------------------------------------------------------
+
+describe('parseCreatures — wrapped meta line (eshyra-o9bd.18.9.2)', () => {
+  const WEREWOLF_LINES = [
+    'Werewolf',
+    'Medium humanoid (human, shapechanger), chaotic',
+    'evil',
+    'Armor Class 11 in humanoid form, 12 (natural armor) in wolf or hybrid form',
+    'Hit Points 58 (9d8 + 18)',
+    'Speed 30 ft. (40 ft. in wolf form)',
+    'STR DEX CON INT WIS CHA',
+    '15 (+2) 13 (+1) 14 (+2) 10 (+0) 11 (+0) 10 (+0)',
+    'Challenge 3 (700 XP)',
+  ];
+
+  it('joins the wrapped alignment continuation instead of truncating it', () => {
+    const [werewolf] = parseCreatures([page(328, WEREWOLF_LINES)]);
+    expect(werewolf.alignment).toBe('chaotic evil');
+  });
+
+  it('keeps the statline intact after consuming the continuation line', () => {
+    const [werewolf] = parseCreatures([page(328, WEREWOLF_LINES)]);
+    expect(werewolf.hitPoints).toEqual({ value: 58, formula: '9d8 + 18' });
+    expect(werewolf.armorClass.sourceText).toBe(
+      '11 in humanoid form, 12 (natural armor) in wolf or hybrid form',
+    );
+  });
+
+  it('leaves an unwrapped meta line alone', () => {
+    const [goblin] = parseCreatures([page(310, GOBLIN_LINES)]);
+    expect(goblin.alignment).toBe('neutral evil');
+  });
+});

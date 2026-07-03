@@ -566,3 +566,200 @@ describe('buildSourceRegionLedger', () => {
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Emission proofs (eshyra-o9bd.18.9.2): an owned region must prove its text
+// was actually emitted, not just that a heading owns it.
+// ---------------------------------------------------------------------------
+
+describe('buildSourceRegionLedger emission proofs (eshyra-o9bd.18.9.2)', () => {
+  it('fails closed on an owned region whose trailing prose is absent from the record (rule:skills p.77–78)', () => {
+    const skills = item({ text: 'Skills', lineIndex: 0 });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Skills',
+            'A skill represents a specific aspect of an ability score.',
+            'Normally, your proficiency in a skill applies only to a specific kind of ability check.',
+          ],
+          [18, 9.8, 9.8],
+        ),
+      ],
+      [coverage(skills, { kind: 'record', key: 'rule:skills' })],
+      [
+        record(
+          'rule:skills',
+          'Skills',
+          'A skill represents a specific aspect of an ability score.',
+        ),
+      ],
+    );
+
+    expect(ledger.summary.ownedEmission.unemitted).toBe(1);
+    expect(ledger.entries).toContainEqual(
+      expect.objectContaining({
+        classification: 'record:rule:skills',
+        emission: 'unemitted',
+        emissionNotes: expect.stringContaining('proficiency in a skill'),
+      }),
+    );
+    expect(() => assertSourceRegionLedger(ledger)).toThrow(
+      SourceRegionLedgerError,
+    );
+    expect(() => assertSourceRegionLedger(ledger)).toThrow(
+      /owned but not emitted/,
+    );
+  });
+
+  it('proves full-body containment as contained', () => {
+    const skills = item({ text: 'Skills', lineIndex: 0 });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Skills',
+            'A skill represents a specific aspect of an ability score.',
+          ],
+          [18, 9.8],
+        ),
+      ],
+      [coverage(skills, { kind: 'record', key: 'rule:skills' })],
+      [
+        record(
+          'rule:skills',
+          'Skills',
+          'A skill represents a specific aspect of an ability score. More prose follows.',
+        ),
+      ],
+    );
+
+    expect(ledger.entries).toContainEqual(
+      expect.objectContaining({
+        classification: 'record:rule:skills',
+        emission: 'contained',
+      }),
+    );
+    expect(ledger.summary.ownedEmission.unemitted).toBe(0);
+    expect(() => assertSourceRegionLedger(ledger)).not.toThrow();
+  });
+
+  it('accepts reflowed prose whose sentences are all emitted (sentences-contained)', () => {
+    const skills = item({ text: 'Skills', lineIndex: 0 });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Skills',
+            // Printed order interrupted by an embedded list: the record
+            // stores the same sentences with other content between them.
+            'Alpha beta gamma delta epsilon. Zeta eta theta iota kappa.',
+          ],
+          [18, 9.8],
+        ),
+      ],
+      [coverage(skills, { kind: 'record', key: 'rule:skills' })],
+      [
+        record(
+          'rule:skills',
+          'Skills',
+          'Alpha beta gamma delta epsilon. (list items here) Zeta eta theta iota kappa.',
+        ),
+      ],
+    );
+
+    expect(ledger.entries).toContainEqual(
+      expect.objectContaining({
+        classification: 'record:rule:skills',
+        emission: 'sentences-contained',
+      }),
+    );
+    expect(() => assertSourceRegionLedger(ledger)).not.toThrow();
+  });
+
+  it('proves statline label blocks against structured record fields (structured-equivalent)', () => {
+    const name = item({ text: 'Aboleth', lineIndex: 0, tier: 'leaf' });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Aboleth',
+            'Large aberration, lawful evil Armor Class 17 (natural armor) Hit Points 135 (18d10 + 36) Speed 10 ft., swim 40 ft.',
+          ],
+          [18, 9.8],
+        ),
+      ],
+      [coverage(name, { kind: 'record', key: 'creature:aboleth' })],
+      [
+        {
+          kind: 'creature',
+          key: 'creature:aboleth',
+          name: 'Aboleth',
+          data: {
+            size: 'Large',
+            type: 'aberration',
+            alignment: 'lawful evil',
+            armorClass: {
+              value: 17,
+              source: 'natural armor',
+              sourceText: '17 (natural armor)',
+            },
+            hitPoints: { value: 135, formula: '18d10 + 36' },
+            speedSourceText: '10 ft., swim 40 ft.',
+          },
+        },
+      ],
+    );
+
+    expect(ledger.entries).toContainEqual(
+      expect.objectContaining({
+        classification: 'record:creature:aboleth',
+        emission: 'structured-equivalent',
+      }),
+    );
+    expect(() => assertSourceRegionLedger(ledger)).not.toThrow();
+  });
+
+  it('does not let label vocabulary launder a dropped prose sentence', () => {
+    const name = item({ text: 'Aboleth', lineIndex: 0, tier: 'leaf' });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Aboleth',
+            'Large aberration, lawful evil Armor Class 17 (natural armor) The aboleth remembers everything its victims knew.',
+          ],
+          [18, 9.8],
+        ),
+      ],
+      [coverage(name, { kind: 'record', key: 'creature:aboleth' })],
+      [
+        {
+          kind: 'creature',
+          key: 'creature:aboleth',
+          name: 'Aboleth',
+          data: {
+            size: 'Large',
+            type: 'aberration',
+            alignment: 'lawful evil',
+            armorClass: {
+              value: 17,
+              source: 'natural armor',
+              sourceText: '17 (natural armor)',
+            },
+          },
+        },
+      ],
+    );
+
+    expect(ledger.entries).toContainEqual(
+      expect.objectContaining({
+        classification: 'record:creature:aboleth',
+        emission: 'unemitted',
+      }),
+    );
+    expect(() => assertSourceRegionLedger(ledger)).toThrow(
+      SourceRegionLedgerError,
+    );
+  });
+});

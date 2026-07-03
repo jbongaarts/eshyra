@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertGameplayReadinessDispositions,
   buildGameplayReadinessReport,
   buildOverlayParityReport,
 } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
@@ -246,5 +247,111 @@ describe('D&D SRD audit bundle overlay-vs-pack parity report (eshyra-jk4d)', () 
           check.key === 'class:cleric' && check.field === 'spellPreparation',
       ),
     ).toMatchObject({ status: 'mismatch' });
+  });
+});
+
+describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
+  it('is fail-closed on a not-yet-modeled bucket without a policy entry', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'deity',
+          key: 'deity:prose-only',
+          name: 'Prose Only',
+          data: { description: 'A deity described only in prose.' },
+        }),
+      ]),
+      [],
+    );
+
+    // Fixture packs also leave the committed-pack policy entries stale;
+    // only the uncovered-bucket error matters here.
+    expect(
+      report.dispositionErrors.filter((error) =>
+        error.startsWith('deity#prose-only'),
+      ),
+    ).toEqual([expect.stringContaining('no reviewed disposition')]);
+    expect(() => assertGameplayReadinessDispositions(report)).toThrow(
+      /deity#prose-only/,
+    );
+  });
+
+  it('does not require dispositions for modeled records', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'deity',
+          key: 'deity:modeled',
+          name: 'Modeled',
+          data: {
+            description: 'Prose plus a mechanics projection.',
+            mechanics: { effects: [] },
+          },
+        }),
+      ]),
+      [],
+    );
+
+    const deityErrors = report.dispositionErrors.filter((error) =>
+      error.startsWith('deity#'),
+    );
+    expect(deityErrors).toEqual([]);
+  });
+
+  it('categorizes every committed-pack bucket via the reviewed policy and passes fail-closed', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+
+    expect(report.dispositionErrors).toEqual([]);
+    expect(() => assertGameplayReadinessDispositions(report)).not.toThrow();
+    // Every disposition is one of the reviewed categories, and every
+    // finding is linked to a bead so a future audit cannot rediscover the
+    // bucket without a tracked closure decision.
+    for (const disposition of report.dispositions) {
+      expect(['accepted-prose-only', 'unsupported', 'finding']).toContain(
+        disposition.status,
+      );
+      if (disposition.status === 'finding') {
+        expect(disposition.bead).toMatch(/^eshyra-/);
+      }
+      expect(disposition.count).toBeGreaterThan(0);
+      expect(disposition.reason.length).toBeGreaterThan(0);
+    }
+    // The broad buckets the 2026-07-01 review flagged are all present and
+    // linked to their modeling beads.
+    const byKey = new Map(
+      report.dispositions.map((d) => [`${d.kind}#${d.bucket}`, d]),
+    );
+    expect(byKey.get('magic-item#prose-only')?.bead).toBe('eshyra-o9bd.18.7.7');
+    expect(byKey.get('rule#prose-only')?.bead).toBe('eshyra-o9bd.18.7.8');
+    expect(byKey.get('equipment#prose-only')?.bead).toBe('eshyra-o9bd.18.7.6');
+    expect(byKey.get('feature#prose-only')?.bead).toBe('eshyra-o9bd.18.7.5');
+    expect(byKey.get('creature#partial-structure')?.bead).toBe(
+      'eshyra-o9bd.18.7.3',
+    );
+  });
+
+  it('reports a stale policy entry when its bucket is empty', () => {
+    // The full policy names magic-item#prose-only (among others); a pack
+    // with no magic items leaves those entries stale, which must fail.
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'creature',
+          key: 'creature:with-traits',
+          name: 'With Traits',
+          data: {
+            traits: [{ name: 'Amphibious', text: 'Breathes air and water.' }],
+          },
+        }),
+      ]),
+      [],
+    );
+
+    expect(report.dispositionErrors).toEqual(
+      expect.arrayContaining([expect.stringContaining('stale disposition')]),
+    );
+    expect(() => assertGameplayReadinessDispositions(report)).toThrow(
+      /stale disposition/,
+    );
   });
 });
