@@ -29,6 +29,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'attackRollModifier',
   'autoFailCheck',
   'autoFailSave',
+  'benefitEndsWhen',
   'cannotAttackOrTarget',
   'cannotHear',
   'cannotMove',
@@ -39,18 +40,27 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'conditionEndsWhen',
   'criticalHitOnHit',
   'criticalRange',
+  'castSpell',
   'damageResistance',
   'death',
   'dropHeldObjects',
   'extraAttack',
+  'extraMovement',
+  'gainRuleBenefitsOnSuccess',
   'hitPointMaximumMultiplier',
   'immunity',
   'impliesCondition',
   'imposesCondition',
   'locationDetectableBy',
+  'makeAbilityCheck',
+  'makeAttack',
   'movementRestriction',
   'obscurement',
+  'objectInteraction',
   'proficiency',
+  'preventOpportunityAttacks',
+  'readyAction',
+  'readySpell',
   'resistance',
   'savingThrowModifier',
   'speechRestricted',
@@ -62,6 +72,11 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'unaware',
   'visibility',
   'weightMultiplier',
+]);
+
+const ACTION_ECONOMY_COSTS: ReadonlySet<string> = new Set([
+  'action',
+  'reaction',
 ]);
 
 function dataObj(record: RulesRecord, path: string): Obj {
@@ -742,6 +757,25 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     throw new RulesPackError(`${path}.${key} must be an object when present`);
   }
   const mechanics = value as Obj;
+  const actionEconomy = mechanics.actionEconomy;
+  if (actionEconomy !== undefined) {
+    if (
+      typeof actionEconomy !== 'object' ||
+      actionEconomy === null ||
+      Array.isArray(actionEconomy)
+    ) {
+      throw new RulesPackError(
+        `${path}.${key}.actionEconomy must be an object when present`,
+      );
+    }
+    const economy = actionEconomy as Obj;
+    const cost = reqStr(economy, 'cost', `${path}.${key}.actionEconomy`);
+    if (!ACTION_ECONOMY_COSTS.has(cost)) {
+      throw new RulesPackError(
+        `${path}.${key}.actionEconomy.cost must be one of ${[...ACTION_ECONOMY_COSTS].join(', ')}, got ${JSON.stringify(cost)}`,
+      );
+    }
+  }
   optBool(mechanics, 'concentration', `${path}.${key}`);
   optBool(mechanics, 'spellAttack', `${path}.${key}`);
   // `spellGrants` is a structured list of validated spell refs (eshyra-vk23.1),

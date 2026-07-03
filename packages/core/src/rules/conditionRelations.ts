@@ -92,7 +92,7 @@ export const MECHANICS_CONDITION_NAMES = [
 ] as const;
 
 // "can't" / "cannot" with straight or curly apostrophe.
-const CANT = String.raw`(?:can(?:['’])?t|cannot)`;
+const CANT = `(?:can(?:['’])?t|cannot)`;
 
 // A comma-separated condition list tail, so list phrasings resolve for every
 // listed condition, not just the first: "can't be charmed, frightened, or
