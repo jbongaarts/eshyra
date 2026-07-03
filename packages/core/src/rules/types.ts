@@ -96,6 +96,12 @@ export interface RulesRecord {
   readonly systemId: string;
   readonly kind: RulesRecordKind;
   readonly key: string;
+  /**
+   * Display name. Usually the SRD heading verbatim, but importers
+   * occasionally normalize or retitle a heading for disambiguation (e.g.
+   * `rule:armor-guidance`) — do not assume this string is always a literal
+   * quote of the source. See eshyra-o9bd.18.8.7.
+   */
   readonly name: string;
   readonly data: unknown;
   /** Short human label for display (e.g. "SRD 5.1 p. 142"). Derived from `provenance`. */
