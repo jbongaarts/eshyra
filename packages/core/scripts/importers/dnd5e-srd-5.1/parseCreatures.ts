@@ -1014,8 +1014,47 @@ export function parseCreatureVariants(
 interface CreatureCandidate {
   readonly nameIdx: number;
   readonly metaIdx: number;
+  /** First body line: `metaIdx + 1`, or `metaIdx + 2` when the printed
+   * meta line wrapped and the alignment continuation was consumed. */
+  readonly bodyStartIdx: number;
   readonly name: string;
   readonly meta: MetaParse;
+}
+
+/**
+ * Alignment words that may continue a wrapped meta line. Lycanthropes'
+ * long "(human, shapechanger)" subtype pushes the alignment past the
+ * column width, so the SRD wraps it: Werewolf prints "Medium humanoid
+ * (human, shapechanger), chaotic" / "evil" and Werebear "…, neutral" /
+ * "good". Reading only the first line silently truncated both alignments
+ * (caught by the region-ledger emission gate, eshyra-o9bd.18.9.2). A body
+ * line can never start with these bare lowercase words — every real stat
+ * block continues with "Armor Class …" — so consuming a whole line of
+ * alignment vocabulary immediately after the meta line is safe.
+ */
+const ALIGNMENT_CONTINUATION_WORDS = new Set([
+  'good',
+  'evil',
+  'neutral',
+  'lawful',
+  'chaotic',
+  'unaligned',
+  'any',
+  'non-lawful',
+  'non-good',
+  'non-evil',
+  'alignment',
+  'or',
+]);
+
+function alignmentContinuation(line: string | undefined): string | null {
+  if (line === undefined) return null;
+  const trimmed = line.trim();
+  if (trimmed.length === 0 || /[A-Z]/.test(trimmed)) return null;
+  const words = trimmed.replace(/[.,]/g, '').split(/\s+/);
+  return words.every((word) => ALIGNMENT_CONTINUATION_WORDS.has(word))
+    ? trimmed.replace(/\.$/, '')
+    : null;
 }
 
 interface StatBlockFields {
@@ -1272,11 +1311,19 @@ export function parseCreatures(
     if (meta === null) return;
     const nameIdx = findPrecedingNameIdx(flat, metaIdx);
     if (nameIdx === null) return;
+    // A wrapped meta line continues its alignment on the next physical line
+    // (Werewolf's "…, chaotic" / "evil"); consume it so the alignment is
+    // complete and the continuation never leaks into the body.
+    const continuation = alignmentContinuation(flat[metaIdx + 1]?.line);
     candidates.push({
       nameIdx,
       metaIdx,
+      bodyStartIdx: continuation === null ? metaIdx + 1 : metaIdx + 2,
       name: flat[nameIdx].line.trim(),
-      meta,
+      meta:
+        continuation === null
+          ? meta
+          : { ...meta, alignment: `${meta.alignment} ${continuation}` },
     });
   });
 
@@ -1314,7 +1361,7 @@ export function parseCreatures(
     const bodyEnd =
       templateBoundaryIdx < 0 ? nextCandidateIdx : templateBoundaryIdx;
     const bodyLines = truncateAtForeignPageJump(
-      flat.slice(candidate.metaIdx + 1, bodyEnd),
+      flat.slice(candidate.bodyStartIdx, bodyEnd),
       flat[candidate.metaIdx].page,
     );
     const body = bodyLines.map((f) => f.line);

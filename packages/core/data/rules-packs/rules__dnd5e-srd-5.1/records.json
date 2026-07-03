@@ -18129,7 +18129,7 @@
       "category": "npc",
       "size": "Medium",
       "type": "humanoid (any race)",
-      "alignment": "any non-lawful",
+      "alignment": "any non-lawful alignment",
       "armorClass": {
         "value": 12,
         "source": "leather armor",
@@ -18245,7 +18245,7 @@
       "category": "npc",
       "size": "Medium",
       "type": "humanoid (any race)",
-      "alignment": "any non-lawful",
+      "alignment": "any non-lawful alignment",
       "armorClass": {
         "value": 15,
         "source": "studded leather",
@@ -50903,7 +50903,7 @@
       ],
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
-      "alignment": "neutral",
+      "alignment": "neutral good",
       "armorClass": {
         "value": 10,
         "condition": "in humanoid form",
@@ -51635,7 +51635,7 @@
       ],
       "size": "Medium",
       "type": "humanoid (human, shapechanger)",
-      "alignment": "chaotic",
+      "alignment": "chaotic evil",
       "armorClass": {
         "value": 11,
         "condition": "in humanoid form",

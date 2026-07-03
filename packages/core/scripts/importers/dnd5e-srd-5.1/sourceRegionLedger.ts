@@ -24,6 +24,10 @@
  */
 
 import {
+  SRD_5_1_SPELL_TABLE_OWNERS,
+  SRD_5_1_TABLE_OWNERS,
+} from '../../../src/rules/srdAudit.js';
+import {
   classifyTier,
   isTableCell,
   type SourceInventoryItem,
@@ -52,6 +56,36 @@ export type SourceRegionClassification =
   | 'pure-document-structure'
   | 'unrepresented';
 
+/**
+ * Emission proof for a prose region classified `record:`/`child-of:`
+ * (eshyra-o9bd.18.9.2). Owner assignment alone proved only that a heading
+ * OWNS the region — the `rule:skills` p.77–78 defect showed a region can be
+ * owned while its post-list paragraphs are silently dropped from the emitted
+ * record. Every owned prose region must therefore also prove its text was
+ * emitted:
+ *
+ *   - `contained` — the full normalized region body is a substring of
+ *     generated record data (the strongest proof; also what the document-wide
+ *     content search establishes).
+ *   - `sentences-contained` — the body as a whole is not contiguous in any
+ *     record (embedded lists/tables interrupt the source flow, so parsers
+ *     legitimately reflow or reorder it), but every sentence of it appears in
+ *     the target record — or, failing that, in the pack corpus.
+ *   - `structured-equivalent` — a reviewed entry in
+ *     `STRUCTURED_EQUIVALENT_REGIONS` documents that the prose is represented
+ *     as structured data whose serialized form intentionally differs from the
+ *     printed sentence flow (e.g. a class's Hit Points/Proficiencies/
+ *     Equipment block emitted as structured creation facts).
+ *   - `unemitted` — none of the above: the region is owned but its text is
+ *     provably absent from the pack. `assertSourceRegionLedger` fails closed
+ *     on any such region.
+ */
+export type SourceRegionEmission =
+  | 'contained'
+  | 'sentences-contained'
+  | 'structured-equivalent'
+  | 'unemitted';
+
 export interface SourceRegionLedgerEntry {
   readonly id: string;
   readonly pageStart: number;
@@ -68,6 +102,19 @@ export interface SourceRegionLedgerEntry {
   readonly targetKey?: string;
   readonly ignoreReason?: string;
   readonly guardNotes?: string;
+  /**
+   * Emission proof for `record:`/`child-of:` prose regions
+   * (eshyra-o9bd.18.9.2). Absent on non-owned classifications, on
+   * zero-prose entries, and on `table-rows` entries (row content is proven
+   * by the owning caption's coverage status per eshyra-erf5.5, not by prose
+   * containment).
+   */
+  readonly emission?: SourceRegionEmission;
+  /**
+   * Reviewed reason when `emission` is `structured-equivalent`; the missing
+   * sentences when `emission` is `unemitted`.
+   */
+  readonly emissionNotes?: string;
   /**
    * True when `targetKey` came from a document-wide text-content search
    * (`findRepresentingRecord`) rather than from the region's own owning
@@ -91,6 +138,19 @@ export interface SourceRegionLedger {
     readonly pureDocumentStructure: number;
     readonly unrepresented: number;
     readonly broadStructuralIgnores: number;
+    /**
+     * Emission-proof breakdown for owned (`record:`/`child-of:`) prose
+     * regions (eshyra-o9bd.18.9.2). `unemitted` must be zero: an owned
+     * region whose text is absent from the pack is exactly the
+     * `rule:skills` failure mode this proof exists to catch. Asserted by
+     * `assertSourceRegionLedger`.
+     */
+    readonly ownedEmission: {
+      readonly contained: number;
+      readonly sentencesContained: number;
+      readonly structuredEquivalent: number;
+      readonly unemitted: number;
+    };
     /**
      * Non-empty source pages (beyond front matter) with neither a ledger
      * entry nor a source-inventory coverage item (eshyra-erf5.5). Must be
@@ -354,11 +414,399 @@ function classifyRegionByOwner(
   };
 }
 
+/**
+ * Reviewed structured-equivalent regions (eshyra-o9bd.18.9.2): owned prose
+ * whose emitted representation is structured data that intentionally does not
+ * reproduce the printed sentence flow, so neither full-body nor
+ * sentence-level containment can prove it. Keyed
+ * `<targetKey>#<sourceContext>`. Every entry must say WHAT structured data
+ * represents the prose; an entry here is a design decision, not an escape
+ * hatch — prose that is merely dropped must stay `unemitted` and fail the
+ * ledger assertion.
+ */
+export const STRUCTURED_EQUIVALENT_REGIONS: Readonly<Record<string, string>> =
+  Object.freeze({
+    'rule:class-features#Class Features':
+      'The per-class lead-in sentence "As a <class>, you gain the following class features." is boilerplate whose content — the class grants these features — is the class record\'s structured features[] and progression advancement data.',
+    'rule:equipment-packs#Equipment Packs':
+      'The bulleted pack list ("Burglar\'s Pack (16 gp). Includes …") is emitted as equipment records: each pack is its own record with structured cost and contents[], verified by the equipment-pack contents gate.',
+    'rule:sample-poisons#Sample Poisons':
+      'The bulleted poison list ("Assassin\'s Blood (Ingested). …") is emitted as hazard records: each poison is its own record with structured delivery type and effect prose.',
+  });
+
+/**
+ * Pre-normalized record texts for emission proofs: `byKey` for
+ * target-record containment, `corpus` (NUL-joined so no needle can span a
+ * record boundary) for the pack-wide sentence fallback. Unlike the
+ * classification search text (`buildSearchableRecords`), emission text also
+ * inlines number scalars, so row/statline values ("Hit Points 135",
+ * exhaustion's "1 Disadvantage on ability checks") stay contiguous with
+ * their neighboring cell/field strings. `records` keeps the raw data for
+ * the label-block fragment prover.
+ */
+interface EmissionIndex {
+  readonly byKey: ReadonlyMap<string, string>;
+  readonly corpus: string;
+  readonly records: readonly CoverageRecordRef[];
+}
+
+/**
+ * Printed label vocabulary for SRD header/statline blocks
+ * (eshyra-o9bd.18.9.2). These are the words the PAGE prints around
+ * structured values — field labels, ability abbreviations, connective
+ * tokens — which parsers correctly do NOT store because the schema field
+ * carries the meaning. The label-block prover may consume them for free;
+ * everything else in a header sentence must match the target record's own
+ * field strings. Keep this list strictly label-shaped: adding ordinary
+ * prose words here would let a genuinely dropped sentence slip through.
+ */
+const HEADER_LABEL_VOCABULARY: readonly string[] = [
+  'hit points at higher levels:',
+  'hit points at 1st level:',
+  '+ your constitution modifier',
+  '(requires attunement)',
+  'requires attunement',
+  'condition immunities',
+  'damage resistance',
+  'damage vulnerabilities',
+  'damage resistances',
+  'damage immunities',
+  'legendary actions',
+  'saving throws:',
+  'saving throws',
+  'casting time:',
+  'components:',
+  'duration:',
+  'hit dice:',
+  'hit points',
+  'armor class',
+  'challenge',
+  'languages',
+  'ritual',
+  'component:',
+  'prerequisite:',
+  'skill proficiencies:',
+  'equipment:',
+  'or higher',
+  'weapons:',
+  'cantrip',
+  'skills:',
+  'senses',
+  'skills',
+  'armor:',
+  'tools:',
+  'range:',
+  'speed',
+  'level',
+  'after 1st',
+  'alignment',
+  'effect',
+  'none',
+  'str',
+  'dex',
+  'con',
+  'int',
+  'wis',
+  'cha',
+  'per',
+  'ft.',
+  'xp',
+  'or',
+].sort((a, b) => b.length - a.length || (a < b ? -1 : 1));
+
+const ORDINAL_SUFFIX = (n: number): string => {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return 'th';
+  switch (n % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+};
+
+/**
+ * Collect the label-block fragments a header sentence may be assembled
+ * from: every string leaf of the record (normalized), the record name, and
+ * printed variants of number scalars — plain, comma-grouped ("5,900"),
+ * ordinal ("2nd"), and for `hitDie` the printed die forms ("1d12" and the
+ * per-level average `die/2 + 1` shown as "(or 7)").
+ */
+function collectFragments(
+  value: unknown,
+  key: string | undefined,
+  out: Set<string>,
+): void {
+  if (typeof value === 'string') {
+    const normalized = normalizeForSearch(value);
+    if (normalized.length > 0) out.add(normalized);
+    return;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    out.add(String(value));
+    if (Number.isInteger(value)) {
+      if (Math.abs(value) >= 1000) out.add(value.toLocaleString('en-US'));
+      if (value > 0 && value <= 100) {
+        out.add(`${value}${ORDINAL_SUFFIX(value)}`);
+      }
+      if (key === 'hitDie') {
+        out.add(`1d${value}`);
+        out.add(String(Math.floor(value / 2) + 1));
+      }
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectFragments(item, undefined, out);
+    return;
+  }
+  if (typeof value === 'object' && value !== null) {
+    for (const [childKey, child] of Object.entries(value)) {
+      collectFragments(child, childKey, out);
+    }
+  }
+}
+
+/**
+ * The records whose structured fields may prove a region's label-block
+ * content: the target itself, plus — when the target is a table — the record
+ * that owns it (a class whose `progressionTableRef` names it, or the
+ * reviewed owner from `SRD_5_1_TABLE_OWNERS`/`SRD_5_1_SPELL_TABLE_OWNERS`),
+ * because an owner's header block physically interleaves the table caption
+ * in the two-column layout and so gets attributed to the table's region.
+ */
+function fragmentRecordsFor(
+  targetKey: string,
+  records: readonly CoverageRecordRef[],
+): readonly CoverageRecordRef[] {
+  const ownerKeys = new Set([targetKey]);
+  const reviewedOwner =
+    SRD_5_1_TABLE_OWNERS[targetKey] ?? SRD_5_1_SPELL_TABLE_OWNERS[targetKey];
+  if (reviewedOwner !== undefined) ownerKeys.add(reviewedOwner);
+  const out: CoverageRecordRef[] = [];
+  for (const record of records) {
+    if (ownerKeys.has(record.key)) {
+      out.push(record);
+      continue;
+    }
+    const data = record.data;
+    if (
+      typeof data === 'object' &&
+      data !== null &&
+      !Array.isArray(data) &&
+      (data as Record<string, unknown>).progressionTableRef === targetKey
+    ) {
+      out.push(record);
+    }
+  }
+  return out;
+}
+
+function buildFragmentList(
+  targetKey: string,
+  records: readonly CoverageRecordRef[],
+): readonly string[] {
+  const fragments = new Set<string>();
+  for (const record of fragmentRecordsFor(targetKey, records)) {
+    fragments.add(normalizeForSearch(record.name));
+    collectFragments(record.data, undefined, fragments);
+  }
+  return [...fragments].sort((a, b) => b.length - a.length || (a < b ? -1 : 1));
+}
+
+const PEEL_SEPARATORS = /^[\s•,.;:)\]}"'’“”—–\-/]+/;
+/** Ability-grid modifiers ("(+5)", "(−1)") are derived from the stored
+ * scores, never stored themselves; peel them structurally. */
+const PEEL_DERIVED_MODIFIER = /^\([+−-]?\d+\)/;
+
+function boundaryOk(rest: string, length: number): boolean {
+  const next = rest[length];
+  return next === undefined || /[\s,.;:()[\]{}"'’“”—–\-/]/.test(next);
+}
+
+/**
+ * When the sentence splitter cuts inside a stored field (a trait whose text
+ * spans a period boundary, e.g. Rock Gnome's Tinker options lead-in), the
+ * resulting needle STARTS mid-fragment. Peel the fragment's tail: find a
+ * fragment whose suffix (at least 12 chars, so common short phrases cannot
+ * chain) is a prefix of the remainder.
+ */
+function peelFragmentSuffix(
+  rest: string,
+  fragments: readonly string[],
+): number {
+  const head = rest.slice(0, 12);
+  if (head.length < 12) return 0;
+  for (const fragment of fragments) {
+    let pos = fragment.indexOf(head);
+    while (pos > 0) {
+      const tail = fragment.slice(pos);
+      if (rest.startsWith(tail) && boundaryOk(rest, tail.length)) {
+        return tail.length;
+      }
+      pos = fragment.indexOf(head, pos + 1);
+    }
+  }
+  return 0;
+}
+
+/**
+ * Greedy front-peel prover for header/label sentences (eshyra-o9bd.18.9.2).
+ * A creature statline, spell header, magic-item type line, or class
+ * hit-points/proficiencies block prints structured record fields interleaved
+ * with label words; parsers store the fields, not the printed line, so no
+ * contiguous containment can succeed. Peel the sentence front-to-back using
+ * only (a) the target record's own field strings and printed number
+ * variants, (b) the reviewed label vocabulary, (c) separators and derived
+ * ability modifiers — and at every step accept the remainder if it is
+ * verbatim-contained emitted prose. A genuinely dropped prose sentence fails
+ * at its first content word: ordinary words are neither vocabulary nor
+ * whole-field fragments.
+ */
+function labelBlockCovered(
+  sentence: string,
+  fragments: readonly string[],
+  remainderContained: (rest: string) => boolean,
+): string | null {
+  let rest = sentence;
+  for (;;) {
+    rest = rest.replace(PEEL_SEPARATORS, '');
+    if (rest.length === 0) return null;
+    if (remainderContained(rest)) return null;
+    const fragment = fragments.find(
+      (candidate) =>
+        rest.startsWith(candidate) && boundaryOk(rest, candidate.length),
+    );
+    if (fragment !== undefined) {
+      rest = rest.slice(fragment.length);
+      continue;
+    }
+    const suffixLength = peelFragmentSuffix(rest, fragments);
+    if (suffixLength > 0) {
+      rest = rest.slice(suffixLength);
+      continue;
+    }
+    const label = HEADER_LABEL_VOCABULARY.find(
+      (candidate) =>
+        rest.startsWith(candidate) && boundaryOk(rest, candidate.length),
+    );
+    if (label !== undefined) {
+      rest = rest.slice(label.length);
+      continue;
+    }
+    const modifier = PEEL_DERIVED_MODIFIER.exec(rest);
+    if (modifier !== null) {
+      rest = rest.slice(modifier[0].length);
+      continue;
+    }
+    if (rest.startsWith('(') || rest.startsWith('[')) {
+      rest = rest.slice(1);
+      continue;
+    }
+    return rest;
+  }
+}
+
+/**
+ * Split a region body into sentence-sized needles for containment checks. A
+ * false split is harmless — any substring of contiguous emitted text still
+ * matches — so the boundary regex only needs to be roughly right; what
+ * matters is that genuinely reflowed units (paragraphs around an embedded
+ * list or table) become separately checkable.
+ */
+function splitSentences(body: string): readonly string[] {
+  return body
+    .split(/(?<=[.!?…]["”’')\]]?)\s+(?=[A-Z0-9])|\s*•\s*/)
+    .map((part) => normalizeForSearch(part))
+    .filter((part) => part.length > 0);
+}
+
+/**
+ * One sentence needle is contained when it appears verbatim, or — for run-in
+ * bold labels the splitter isolates as their own "sentence" ("Age." /
+ * "Ability Score Increase.") — when it appears with the trailing punctuation
+ * stripped, because parsers legitimately lift such labels into structured
+ * name fields without the period.
+ */
+function sentenceContained(sentence: string, haystack: string): boolean {
+  if (haystack.includes(sentence)) return true;
+  const label = sentence.replace(/[.:]+$/, '');
+  return label.length > 0 && label !== sentence && haystack.includes(label);
+}
+
+function computeEmission(
+  body: string,
+  targetKey: string | undefined,
+  sourceContext: string | null,
+  index: EmissionIndex,
+): Pick<SourceRegionLedgerEntry, 'emission' | 'emissionNotes'> {
+  const needle = normalizeForSearch(body);
+  const target =
+    targetKey === undefined ? undefined : index.byKey.get(targetKey);
+  if (target?.includes(needle)) {
+    return { emission: 'contained' };
+  }
+  const sentences = splitSentences(body);
+  if (
+    target !== undefined &&
+    sentences.every((sentence) => sentenceContained(sentence, target))
+  ) {
+    return { emission: 'sentences-contained' };
+  }
+  const corpusMissing = sentences.filter(
+    (sentence) => !sentenceContained(sentence, index.corpus),
+  );
+  if (corpusMissing.length === 0) {
+    return { emission: 'sentences-contained' };
+  }
+  // Header/statline blocks: prove the remaining sentences against the
+  // target record's own structured fields plus the printed label
+  // vocabulary.
+  const fragments =
+    targetKey === undefined ? [] : buildFragmentList(targetKey, index.records);
+  const remainderContained = (rest: string): boolean =>
+    (target !== undefined && sentenceContained(rest, target)) ||
+    sentenceContained(rest, index.corpus);
+  const missing: string[] = [];
+  for (const sentence of corpusMissing) {
+    const stuck = labelBlockCovered(sentence, fragments, remainderContained);
+    if (stuck !== null) {
+      missing.push(`${sentence.slice(0, 80)} …stuck at… ${stuck.slice(0, 60)}`);
+    }
+  }
+  if (missing.length === 0) {
+    return {
+      emission: 'structured-equivalent',
+      emissionNotes:
+        'header/label content proven against the structured fields of the target record',
+    };
+  }
+  const reason =
+    STRUCTURED_EQUIVALENT_REGIONS[`${targetKey ?? ''}#${sourceContext ?? ''}`];
+  if (reason !== undefined) {
+    return { emission: 'structured-equivalent', emissionNotes: reason };
+  }
+  return {
+    emission: 'unemitted',
+    emissionNotes: `sentences absent from generated record data: ${missing
+      .slice(0, 3)
+      .map((sentence) => `"${sentence.slice(0, 160)}"`)
+      .join(
+        ' | ',
+      )}${missing.length > 3 ? ` (+${missing.length - 3} more)` : ''}`,
+  };
+}
+
 function classifyRegion(
   owner: ActiveOwner | undefined,
   pageStart: number,
   body: string,
   searchableRecords: readonly SearchableRecord[],
+  emissionIndex: EmissionIndex,
 ): Pick<
   SourceRegionLedgerEntry,
   | 'classification'
@@ -366,6 +814,8 @@ function classifyRegion(
   | 'ignoreReason'
   | 'guardNotes'
   | 'contentMatch'
+  | 'emission'
+  | 'emissionNotes'
 > {
   if (pageStart <= FRONT_MATTER_MAX_PAGE) {
     return {
@@ -404,7 +854,24 @@ function classifyRegion(
       targetKey: representedRecordKey,
       guardNotes:
         'Region text is contained in generated record data; heading status alone was not used.',
+      // The content search proved full-body containment by construction.
+      emission: 'contained',
       ...(isSelfConsistent ? {} : { contentMatch: true }),
+    };
+  }
+
+  if (
+    ownerBased.classification.startsWith('record:') ||
+    ownerBased.classification.startsWith('child-of:')
+  ) {
+    return {
+      ...ownerBased,
+      ...computeEmission(
+        body,
+        ownerBased.targetKey,
+        owner?.item.text ?? null,
+        emissionIndex,
+      ),
     };
   }
 
@@ -474,6 +941,51 @@ function collectStrings(value: unknown, out: string[]): void {
   if (typeof value === 'object' && value !== null) {
     for (const child of Object.values(value)) collectStrings(child, out);
   }
+}
+
+/**
+ * Like `collectStrings` but also inlines number scalars in walk order, so
+ * emission proofs can match printed value-bearing runs (table rows like
+ * exhaustion's "1 Disadvantage on ability checks", statline values) that
+ * the schema stores as numbers adjacent to strings. Kept separate from the
+ * classification search text so `findRepresentingRecord` behavior — and the
+ * committed classifications derived from it — are unchanged.
+ */
+function collectEmissionStrings(value: unknown, out: string[]): void {
+  if (typeof value === 'string') {
+    out.push(value);
+    return;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    out.push(String(value));
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectEmissionStrings(item, out);
+    return;
+  }
+  if (typeof value === 'object' && value !== null) {
+    for (const child of Object.values(value))
+      collectEmissionStrings(child, out);
+  }
+}
+
+function buildEmissionIndex(
+  records: readonly CoverageRecordRef[],
+): EmissionIndex {
+  const texts = records.map((record) => {
+    const strings: string[] = [];
+    collectEmissionStrings(record.data, strings);
+    return {
+      key: record.key,
+      text: normalizeForSearch(strings.join(' ')),
+    };
+  });
+  return {
+    byKey: new Map(texts.map((entry) => [entry.key, entry.text])),
+    corpus: texts.map((entry) => entry.text).join('\u0000'),
+    records,
+  };
 }
 
 function buildSearchableRecords(
@@ -656,8 +1168,30 @@ function summarize(
   let pureDocumentStructure = 0;
   let unrepresented = 0;
   let broadStructuralIgnores = 0;
+  const ownedEmission = {
+    contained: 0,
+    sentencesContained: 0,
+    structuredEquivalent: 0,
+    unemitted: 0,
+  };
   const intentionallyIgnored = new Map<string, number>();
   for (const entry of entries) {
+    switch (entry.emission) {
+      case 'contained':
+        ownedEmission.contained += 1;
+        break;
+      case 'sentences-contained':
+        ownedEmission.sentencesContained += 1;
+        break;
+      case 'structured-equivalent':
+        ownedEmission.structuredEquivalent += 1;
+        break;
+      case 'unemitted':
+        ownedEmission.unemitted += 1;
+        break;
+      case undefined:
+        break;
+    }
     if (entry.classification.startsWith('record:')) record += 1;
     else if (entry.classification.startsWith('child-of:')) childOf += 1;
     else if (entry.classification === 'pure-document-structure') {
@@ -698,6 +1232,7 @@ function summarize(
     pureDocumentStructure,
     unrepresented,
     broadStructuralIgnores,
+    ownedEmission,
     unaccountedPages,
   };
 }
@@ -717,6 +1252,7 @@ export function buildSourceRegionLedger(
 
   const lines = flattenPages(pages);
   const searchableRecords = buildSearchableRecords(records);
+  const emissionIndex = buildEmissionIndex(records);
   const equipmentLeadIns = equipmentDescriptionLeadIns(records);
   const entries: SourceRegionLedgerEntry[] = [];
   const ownersWithProse = new Set<string>();
@@ -752,6 +1288,7 @@ export function buildSourceRegionLedger(
         first.page,
         segment.body,
         searchableRecords,
+        emissionIndex,
       );
       entries.push({
         id: `p${first.page}-l${first.lineIndex}-prose${segment.idSuffix}`,
@@ -1000,10 +1537,14 @@ function findUnaccountedPages(
 }
 
 export class SourceRegionLedgerError extends Error {
+  /** The full ledger, so callers can report beyond the 50-entry preview. */
+  readonly ledger: SourceRegionLedger;
+
   constructor(ledger: SourceRegionLedger) {
     const invalid = ledger.entries.filter(
       (entry) =>
         entry.classification === 'unrepresented' ||
+        entry.emission === 'unemitted' ||
         (entry.normalizedCharCount > 0 &&
           (entry.ignoreReason === 'document-structure' ||
             entry.ignoreReason === 'record-group-heading')),
@@ -1012,7 +1553,11 @@ export class SourceRegionLedgerError extends Error {
       .slice(0, 50)
       .map(
         (entry) =>
-          `  ${entry.id} [${entry.regionType}] ${entry.classification}: ${entry.firstPhrase}`,
+          `  ${entry.id} [${entry.regionType}] ${entry.classification}${
+            entry.emission === 'unemitted'
+              ? ' (owned but not emitted: region text is absent from generated record data)'
+              : ''
+          }: ${entry.firstPhrase}`,
       );
     if (ledger.summary.unaccountedPages.length > 0) {
       lines.push(
@@ -1023,6 +1568,7 @@ export class SourceRegionLedgerError extends Error {
       `SRD source-region ledger has ${invalid.length} invalid prose-bearing region(s):\n${lines.join('\n')}`,
     );
     this.name = 'SourceRegionLedgerError';
+    this.ledger = ledger;
   }
 }
 
@@ -1030,6 +1576,7 @@ export function assertSourceRegionLedger(ledger: SourceRegionLedger): void {
   if (
     ledger.summary.unrepresented > 0 ||
     ledger.summary.broadStructuralIgnores > 0 ||
+    ledger.summary.ownedEmission.unemitted > 0 ||
     ledger.summary.unaccountedPages.length > 0
   ) {
     throw new SourceRegionLedgerError(ledger);

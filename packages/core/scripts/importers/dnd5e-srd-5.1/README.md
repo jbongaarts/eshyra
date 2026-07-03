@@ -88,6 +88,12 @@ exit codes are strict:
 - `2` — verification could not produce a meaningful diff (importer/runtime
   failure, pack-loading failure).
 
+Beyond the per-PR check, `npm run audit:dnd5e-srd-deep` runs the independent
+deep audit (bidirectional PDF↔pack token-shingle verification plus internal
+consistency checks; shares no parser code with the importer). It is required
+before any freeze/sign-off decision — see `docs/deep-audit-dnd5e-srd.md`
+(eshyra-o9bd.18.9.1).
+
 When a change to a gated path (importer/parser code, the vendored PDF + its
 manifest, the rules schemas/audit/loader, the verify script, or the lockfile)
 is intended to alter pack content, regenerate the committed pack in the same

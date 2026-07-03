@@ -980,6 +980,118 @@ function firstKeys(
     .slice(0, limit);
 }
 
+// ---------------------------------------------------------------------------
+// Gameplay-readiness dispositions (eshyra-o9bd.18.9.6)
+// ---------------------------------------------------------------------------
+
+/**
+ * The readiness buckets that require an explicit reviewed disposition when
+ * they contain records that are not already modeled (no structured choices,
+ * deterministic grants, or mechanics projection).
+ */
+export type GameplayReadinessBucket =
+  | 'unresolved-choice-prose'
+  | 'partial-structure'
+  | 'prose-only';
+
+/**
+ * A reviewed decision about one kind×bucket of not-yet-modeled records:
+ *
+ *   - `accepted-prose-only` — the prose IS the intended representation;
+ *     `reason` says why no deterministic projection is owed.
+ *   - `unsupported` — a projection is not applicable; `reason` documents it.
+ *   - `finding` — deterministic modeling is owed and `bead` names the open
+ *     issue that will drive the bucket to zero.
+ *
+ * Records that are already modeled never need an entry. The policy is
+ * fail-closed both ways (`assertGameplayReadinessDispositions`): a non-empty
+ * bucket without an entry fails the bundle build, and a stale entry naming a
+ * now-empty bucket also fails, so closing a bucket requires an explicit
+ * policy update — a future audit can never silently rediscover (or silently
+ * lose) a broad readiness bucket (eshyra-o9bd.18.9.6).
+ */
+export interface GameplayReadinessDispositionPolicyEntry {
+  readonly status: 'accepted-prose-only' | 'unsupported' | 'finding';
+  readonly reason: string;
+  /** Required when `status` is `finding`. */
+  readonly bead?: string;
+}
+
+export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
+  Record<string, GameplayReadinessDispositionPolicyEntry>
+> = Object.freeze({
+  'creature#partial-structure': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.3',
+    reason:
+      'Frog, Sea Horse, and Shrieker carry traits (Amphibious, Standing Leap, Shriek) with no typed mechanics projection yet.',
+  },
+  'hazard#prose-only': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.7',
+    reason:
+      "Sphere of Annihilation's contact/destruction mechanics are prose-only pending the magic-item deterministic-effect epic.",
+  },
+  'equipment#partial-structure': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.6',
+    reason:
+      'Equipment records with variants/contents structure but no deterministic use mechanics (adventuring gear and consumables).',
+  },
+  'equipment#prose-only': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.6',
+    reason:
+      'Adventuring gear and consumables whose usable effects (acid, healing potion, caltrops, …) are described in prose only.',
+  },
+  'feature#partial-structure': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.5',
+    reason:
+      'Class features with structured child data but no runtime effect projection.',
+  },
+  'feature#prose-only': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.5',
+    reason:
+      'Class features whose runtime effects (Rage, Sneak Attack dice, Evasion, …) are prose-only.',
+  },
+  'magic-item#partial-structure': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.7',
+    reason:
+      'Magic items with variant/table structure but no deterministic effect or charge-economy projection.',
+  },
+  'magic-item#prose-only': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.7',
+    reason:
+      'Magic items whose effects, charges, and bonuses are prose-only pending the phased effect-modeling epic.',
+  },
+  'rule#partial-structure': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.8',
+    reason:
+      'Rule records with table structure but no classified deterministic mechanics.',
+  },
+  'rule#prose-only': {
+    status: 'finding',
+    bead: 'eshyra-o9bd.18.7.8',
+    reason:
+      'Rule records pending the classify-and-model pass that decides deterministic vs narrative-only rules.',
+  },
+});
+
+export interface GameplayReadinessDisposition {
+  readonly kind: string;
+  readonly bucket: GameplayReadinessBucket;
+  readonly count: number;
+  readonly examples: readonly string[];
+  readonly status: GameplayReadinessDispositionPolicyEntry['status'];
+  readonly reason: string;
+  readonly bead?: string;
+}
+
 export type GameplayReadinessReport = {
   readonly packId: string;
   readonly byKind: Record<
@@ -1007,6 +1119,19 @@ export type GameplayReadinessReport = {
     readonly kind: string;
     readonly signal: string;
   }[];
+  /**
+   * Resolved kind×bucket dispositions for not-yet-modeled records
+   * (eshyra-o9bd.18.9.6): every non-empty bucket paired with its reviewed
+   * policy entry.
+   */
+  readonly dispositions: readonly GameplayReadinessDisposition[];
+  /**
+   * Fail-closed policy violations: non-empty buckets without a policy
+   * entry, stale policy entries whose bucket is now empty, and `finding`
+   * entries without a bead. Must be empty;
+   * `assertGameplayReadinessDispositions` throws otherwise.
+   */
+  readonly dispositionErrors: readonly string[];
 };
 
 export function buildGameplayReadinessReport(
@@ -1056,6 +1181,75 @@ export function buildGameplayReadinessReport(
       },
     };
   }
+  // Resolve dispositions (eshyra-o9bd.18.9.6): every non-empty bucket of
+  // not-yet-modeled records must map to a reviewed policy entry, and every
+  // policy entry must still name a non-empty bucket.
+  const isModeled = (record: RulesRecord): boolean =>
+    hasStructuredChoices(record) ||
+    hasDeterministicGrants(record) ||
+    hasMechanicsProjection(record);
+  const dispositions: GameplayReadinessDisposition[] = [];
+  const dispositionErrors: string[] = [];
+  const seenPolicyKeys = new Set<string>();
+  for (const kind of kinds) {
+    const records = pack.records.filter((record) => record.kind === kind);
+    const unmodeled = records.filter((record) => !isModeled(record));
+    const buckets: ReadonlyArray<
+      readonly [GameplayReadinessBucket, readonly RulesRecord[]]
+    > = [
+      [
+        'unresolved-choice-prose',
+        records.filter((record) => choiceFindingKeys.has(record.key)),
+      ],
+      ['partial-structure', unmodeled.filter(hasPartialStructure)],
+      [
+        'prose-only',
+        unmodeled.filter(
+          (record) =>
+            hasProse(record) &&
+            !hasPartialStructure(record) &&
+            !choiceFindingKeys.has(record.key),
+        ),
+      ],
+    ];
+    for (const [bucket, bucketRecords] of buckets) {
+      if (bucketRecords.length === 0) continue;
+      const policyKey = `${kind}#${bucket}`;
+      seenPolicyKeys.add(policyKey);
+      const policy = GAMEPLAY_READINESS_DISPOSITIONS[policyKey];
+      if (policy === undefined) {
+        dispositionErrors.push(
+          `${policyKey}: ${bucketRecords.length} not-yet-modeled record(s) have no reviewed disposition (e.g. ${bucketRecords
+            .slice(0, 3)
+            .map((record) => record.key)
+            .join(', ')})`,
+        );
+        continue;
+      }
+      if (policy.status === 'finding' && policy.bead === undefined) {
+        dispositionErrors.push(
+          `${policyKey}: disposition is a finding but names no bead`,
+        );
+      }
+      dispositions.push({
+        kind,
+        bucket,
+        count: bucketRecords.length,
+        examples: bucketRecords.slice(0, 5).map((record) => record.key),
+        status: policy.status,
+        reason: policy.reason,
+        ...(policy.bead === undefined ? {} : { bead: policy.bead }),
+      });
+    }
+  }
+  for (const policyKey of Object.keys(GAMEPLAY_READINESS_DISPOSITIONS)) {
+    if (!seenPolicyKeys.has(policyKey)) {
+      dispositionErrors.push(
+        `${policyKey}: stale disposition — the bucket is now empty; record the closure by removing the entry`,
+      );
+    }
+  }
+
   return {
     packId: pack.meta.packId,
     byKind,
@@ -1064,7 +1258,25 @@ export function buildGameplayReadinessReport(
       kind: finding.kind,
       signal: finding.matchedPhrases.join(', '),
     })),
+    dispositions,
+    dispositionErrors,
   };
+}
+
+/**
+ * Fail-closed gate for audit/freeze work (eshyra-o9bd.18.9.6): the bundle
+ * build fails when any readiness bucket lacks a reviewed disposition, a
+ * finding lacks a bead, or the policy carries a stale entry.
+ */
+export function assertGameplayReadinessDispositions(
+  report: GameplayReadinessReport,
+): void {
+  if (report.dispositionErrors.length === 0) return;
+  throw new Error(
+    `gameplay-readiness dispositions are not fail-closed:\n${report.dispositionErrors
+      .map((error) => `  ${error}`)
+      .join('\n')}`,
+  );
 }
 
 export function formatGameplayReadinessReport(
@@ -1094,6 +1306,27 @@ export function formatGameplayReadinessReport(
   } else {
     for (const example of report.highImpactExamples) {
       lines.push(`${example.kind}: ${example.key} — ${example.signal}`);
+    }
+  }
+  lines.push(
+    '',
+    'Dispositions for not-yet-modeled buckets (eshyra-o9bd.18.9.6)',
+  );
+  if (report.dispositions.length === 0) {
+    lines.push('(all records modeled)');
+  } else {
+    for (const disposition of report.dispositions) {
+      lines.push(
+        `- ${disposition.kind}#${disposition.bucket} (${disposition.count}): ${disposition.status}${
+          disposition.bead === undefined ? '' : ` → ${disposition.bead}`
+        } — ${disposition.reason}`,
+      );
+    }
+  }
+  if (report.dispositionErrors.length > 0) {
+    lines.push('', 'DISPOSITION ERRORS (fail-closed)');
+    for (const error of report.dispositionErrors) {
+      lines.push(`- ${error}`);
     }
   }
   return `${lines.join('\n')}\n`;
@@ -1533,6 +1766,10 @@ async function main(): Promise<void> {
       pack,
       choiceProseFindings,
     );
+    // Fail-closed disposition gate (eshyra-o9bd.18.9.6): the bundle build
+    // aborts when a readiness bucket has no reviewed disposition, so a
+    // future audit can never silently rediscover a broad bucket.
+    assertGameplayReadinessDispositions(gameplayReadinessReport);
     writeFileSync(
       join(outDir, 'reports/gameplay-readiness.json'),
       JSON.stringify(gameplayReadinessReport, null, 2),
