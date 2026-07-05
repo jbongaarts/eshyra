@@ -524,3 +524,292 @@ describe('damage type canonicalization (eshyra-erf5.4)', () => {
     ]);
   });
 });
+
+describe('creature entry effect projections (eshyra-o9bd.18.7.3)', () => {
+  it('models Magic Resistance as an advantage saving-throw modifier', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Magic Resistance',
+      'The hag has advantage on saving throws against spells and other magical effects.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'savingThrowModifier',
+        mode: 'advantage',
+        against: 'spells and other magical effects',
+      },
+    ]);
+  });
+
+  it('models Gnome Cunning with the printed ability list', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Gnome Cunning',
+      'The gnome has advantage on Intelligence, Wisdom, and Charisma saving throws against magic.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'savingThrowModifier',
+        mode: 'advantage',
+        abilities: ['intelligence', 'wisdom', 'charisma'],
+        against: 'magic',
+      },
+    ]);
+  });
+
+  it('skips a pure "against being <condition>" clause (owned by condition relations)', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Brave',
+      'The knight has advantage on saving throws against being frightened.',
+    );
+    expect(mechanics.effects).toBeUndefined();
+    expect(mechanics.conditions).toEqual([
+      { condition: 'frightened', relation: 'advantage' },
+    ]);
+  });
+
+  it('models Keen Hearing and Smell as an ability-check modifier with senses', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Keen Hearing and Smell',
+      'The wolf has advantage on Wisdom (Perception) checks that rely on hearing or smell.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'abilityCheckModifier',
+        mode: 'advantage',
+        ability: 'wisdom',
+        skill: 'perception',
+        reliesOn: ['hearing', 'smell'],
+      },
+    ]);
+  });
+
+  it('models Sunlight Sensitivity with the shared While-condition on both modifiers', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Sunlight Sensitivity',
+      'While in sunlight, the drow has disadvantage on attack rolls, as well as on Wisdom (Perception) checks that rely on sight.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'attackRollModifier',
+        mode: 'disadvantage',
+        condition: 'While in sunlight',
+      },
+      {
+        kind: 'abilityCheckModifier',
+        mode: 'disadvantage',
+        ability: 'wisdom',
+        skill: 'perception',
+        reliesOn: ['sight'],
+        condition: 'While in sunlight',
+      },
+    ]);
+  });
+
+  it('models Blood Frenzy as a melee attack-roll modifier with its constraint', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Blood Frenzy',
+      'The shark has advantage on melee attack rolls against any creature that doesn’t have all its hit points.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'attackRollModifier',
+        mode: 'advantage',
+        attackType: 'melee',
+        constraint: 'against any creature that doesn’t have all its hit points',
+      },
+    ]);
+  });
+
+  it('models Legendary Resistance with the per-day usage from the name', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Legendary Resistance (3/Day)',
+      'If the dragon fails a saving throw, it can choose to succeed instead.',
+    );
+    expect(mechanics.usage).toEqual({ perDay: 3 });
+    expect(mechanics.effects).toEqual([{ kind: 'legendaryResistance' }]);
+  });
+
+  it('models the Troll regeneration with typed damage-type suppression', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Regeneration',
+      'The troll regains 10 hit points at the start of its turn. If the troll takes acid or fire damage, this trait doesn’t function at the start of the troll’s next turn. The troll dies only if it starts its turn with 0 hit points and doesn’t regenerate.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'regeneration',
+        hitPoints: 10,
+        timing: 'start-of-turn',
+        suppressedBy: 'acid or fire damage',
+        suppressedByDamageTypes: ['acid', 'fire'],
+      },
+    ]);
+  });
+
+  it('models the Vampire regeneration with a verbatim non-type suppression clause and condition', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Regeneration',
+      'The vampire regains 20 hit points at the start of its turn if it has at least 1 hit point and isn’t in sunlight or running water. If the vampire takes radiant damage or damage from holy water, this trait doesn’t function at the start of the vampire’s next turn.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'regeneration',
+        hitPoints: 20,
+        timing: 'start-of-turn',
+        condition:
+          'if it has at least 1 hit point and isn’t in sunlight or running water',
+        suppressedBy: 'radiant damage or damage from holy water',
+      },
+    ]);
+  });
+
+  it('models a Multiattack count', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Multiattack',
+      'The glabrezu makes four attacks: two with its pincers and two with its fists. Alternatively, it makes two attacks with its pincers and casts one spell.',
+    );
+    expect(mechanics.effects).toEqual([{ kind: 'multiattack', attacks: 4 }]);
+  });
+
+  it('models Healing Touch dice healing with per-day usage', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Healing Touch (3/Day)',
+      'The unicorn touches another creature with its horn. The target magically regains 11 (2d8 + 2) hit points.',
+    );
+    expect(mechanics.usage).toEqual({ perDay: 3 });
+    expect(mechanics.effects).toEqual([
+      { kind: 'healing', average: 11, dice: '2d8 + 2' },
+    ]);
+  });
+
+  it('models rest-based recharges from the name parenthetical', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Leadership (Recharges after a Short or Long Rest)',
+      'For 1 minute, the knight can utter a special command.',
+    );
+    expect(mechanics.usage).toEqual({
+      rechargeAfterRest: 'short-or-long-rest',
+    });
+  });
+
+  it('models legendary action costs from the name parenthetical', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Wing Attack (Costs 2 Actions)',
+      'The dragon beats its wings.',
+    );
+    expect(mechanics.usage).toEqual({ legendaryActionCost: 2 });
+  });
+
+  it('models a legendary named-attack reference as makeAttack', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Tail Attack',
+      'The dragon makes a tail attack.',
+    );
+    expect(mechanics.effects).toEqual([{ kind: 'makeAttack', attack: 'tail' }]);
+  });
+
+  it('models the legendary Detect option as makeAbilityCheck', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Detect',
+      'The dragon makes a Wisdom (Perception) check.',
+    );
+    expect(mechanics.effects).toEqual([
+      { kind: 'makeAbilityCheck', ability: 'wisdom', skill: 'perception' },
+    ]);
+  });
+
+  it('models the Bat bite: "one creature" target and flat no-dice damage', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Bite',
+      'Melee Weapon Attack: +0 to hit, reach 5 ft., one creature. Hit: 1 piercing damage.',
+    );
+    expect(mechanics.attacks).toEqual([
+      {
+        attackType: 'melee-weapon',
+        attackBonus: 0,
+        reachFeet: 5,
+        target: 'one creature',
+        hitDamage: [{ amount: 1, type: 'piercing' }],
+      },
+    ]);
+  });
+
+  it('models Amphibious / Water Breathing / Standing Leap (Frog, Sea Horse)', () => {
+    expect(
+      deriveCreatureEntryMechanics(
+        'Amphibious',
+        'The frog can breathe air and water.',
+      ).effects,
+    ).toEqual([{ kind: 'breathes', environments: ['air', 'water'] }]);
+    expect(
+      deriveCreatureEntryMechanics(
+        'Water Breathing',
+        'The sea horse can breathe only underwater.',
+      ).effects,
+    ).toEqual([{ kind: 'breathes', environments: ['water'], only: true }]);
+    expect(
+      deriveCreatureEntryMechanics(
+        'Standing Leap',
+        'The frog’s long jump is up to 10 feet and its high jump is up to 5 feet, with or without a running start.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'jumpDistance',
+        longJumpFeet: 10,
+        highJumpFeet: 5,
+        runningStartRequired: false,
+      },
+    ]);
+  });
+
+  it('models Parry, Magic Weapons, Immutable Form, and Siege Monster', () => {
+    expect(
+      deriveCreatureEntryMechanics(
+        'Parry',
+        'The knight adds 2 to its AC against one melee attack that would hit it. To do so the knight must see the attacker and be wielding a melee weapon.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'acBonus',
+        amount: 2,
+        scope: 'one-melee-attack-that-would-hit',
+      },
+    ]);
+    expect(
+      deriveCreatureEntryMechanics(
+        'Magic Weapons',
+        'The oni’s weapon attacks are magical.',
+      ).effects,
+    ).toEqual([{ kind: 'weaponAttacksMagical' }]);
+    expect(
+      deriveCreatureEntryMechanics(
+        'Immutable Form',
+        'The golem is immune to any spell or effect that would alter its form.',
+      ).effects,
+    ).toEqual([{ kind: 'immunity', to: 'form-altering-spells-and-effects' }]);
+    expect(
+      deriveCreatureEntryMechanics(
+        'Siege Monster',
+        'The treant deals double damage to objects and structures.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'damageMultiplier',
+        multiplier: 2,
+        against: 'objects-and-structures',
+      },
+    ]);
+  });
+
+  it('marks a triggered trait with its verbatim trigger clause', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Shriek',
+      'When bright light or a creature is within 30 feet of the shrieker, it emits a shrill shriek audible within 300 feet of it.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'triggeredEffect',
+        trigger:
+          'When bright light or a creature is within 30 feet of the shrieker',
+      },
+    ]);
+  });
+});

@@ -168,15 +168,34 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     ]);
   });
 
-  it('pins the committed pack creature mechanics-projection count to the documented 314/317 baseline', () => {
-    // Matches docs/audits/dnd5e-srd-5.1-final/mechanics-projection-report.md
-    // and the audit's own direct-scan count (eshyra-txxa) — before this fix
-    // the report undercounted at 100/317 by only checking top-level fields.
+  it('pins the committed pack creature mechanics-projection count to 317/317', () => {
+    // Every creature carries at least one typed nested projection after the
+    // entry-mechanics pass (eshyra-o9bd.18.7.3) — the former 314/317 baseline
+    // (eshyra-txxa) excluded Frog, Sea Horse, and Shrieker, whose traits
+    // (Amphibious, Standing Leap, Water Breathing, Shriek) are now modeled.
     const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
     expect(report.byKind.creature).toMatchObject({
       totalRecords: 317,
-      recordsWithMechanicsProjections: 314,
+      recordsWithMechanicsProjections: 317,
     });
+  });
+
+  it('reports nested creature-entry mechanics coverage (eshyra-o9bd.18.7.3)', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    const entries = report.creatureEntries;
+    // Every trait/action/reaction/legendary entry is counted exactly once and
+    // lands in exactly one bucket.
+    expect(entries.totalEntries).toBeGreaterThan(1400);
+    expect(
+      entries.entriesWithMechanics +
+        entries.mechanicalProse +
+        entries.narrativeProse,
+    ).toBe(entries.totalEntries);
+    // Typed coverage is the dominant bucket, and residual mechanical prose is
+    // bounded — a parser regression that silently drops nested projections
+    // would blow past this ceiling.
+    expect(entries.entriesWithMechanics).toBeGreaterThan(1200);
+    expect(entries.mechanicalProse).toBeLessThan(80);
   });
 });
 
@@ -325,8 +344,15 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('rule#prose-only')?.bead).toBe('eshyra-o9bd.18.7.8');
     expect(byKey.get('equipment#prose-only')?.bead).toBe('eshyra-o9bd.18.7.6');
     expect(byKey.get('feature#prose-only')?.bead).toBe('eshyra-o9bd.18.7.5');
-    expect(byKey.get('creature#partial-structure')?.bead).toBe(
-      'eshyra-o9bd.18.7.3',
+    // The nested creature-entry buckets carry explicit accepted-prose-only
+    // closures (eshyra-o9bd.18.7.3) — record-level creature buckets are gone
+    // because all 317 creatures now carry typed nested mechanics.
+    expect(byKey.get('creature#partial-structure')).toBeUndefined();
+    expect(byKey.get('creature-entry#mechanical-prose')?.status).toBe(
+      'accepted-prose-only',
+    );
+    expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
+      'accepted-prose-only',
     );
   });
 

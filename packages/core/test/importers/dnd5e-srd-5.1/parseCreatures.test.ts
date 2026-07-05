@@ -1462,3 +1462,67 @@ describe('parseCreatures — wrapped meta line (eshyra-o9bd.18.9.2)', () => {
     expect(goblin.alignment).toBe('neutral evil');
   });
 });
+
+describe('trait after a WRAPPED spell list (eshyra-o9bd.18.7.3)', () => {
+  // Night Hag p. 289: the "2/day each:" group wraps across extracted lines, so
+  // the open Innate Spellcasting body's last line ends mid-list with no
+  // terminal punctuation. The old completeness check only looked at that last
+  // line and swallowed the following "Magic Resistance." trait as a
+  // continuation (also Oni's Magic Weapons and Unicorn's Magic Resistance).
+  it('opens a new trait after a spell-list line that wrapped', () => {
+    const creatures = parseCreatures([
+      page(289, [
+        'Night Hag',
+        'Medium fiend, neutral evil',
+        'Armor Class 17 (natural armor)',
+        'Hit Points 112 (15d8 + 45)',
+        'Speed 30 ft.',
+        'STR DEX CON INT WIS CHA',
+        '18 (+4) 15 (+2) 16 (+3) 16 (+3) 14 (+2) 16 (+3)',
+        'Challenge 5 (1,800 XP)',
+        'Innate Spellcasting. The hag’s innate spellcasting ability is',
+        'Charisma (spell save DC 14, +6 to hit with spell attacks).',
+        'She can innately cast the following spells, requiring no',
+        'material components: At will: detect magic, magic missile',
+        '2/day each: plane shift (self only), ray of',
+        'enfeeblement, sleep',
+        'Magic Resistance. The hag has advantage on saving',
+        'throws against spells and other magical effects.',
+      ]),
+    ]);
+    expect(creatures).toHaveLength(1);
+    expect(creatures[0].traits?.map((trait) => trait.name)).toEqual([
+      'Innate Spellcasting',
+      'Magic Resistance',
+    ]);
+    expect(creatures[0].traits?.[0].text).toMatch(/sleep$/);
+    expect(creatures[0].traits?.[1].text).toBe(
+      'The hag has advantage on saving throws against spells and other magical effects.',
+    );
+  });
+
+  it('still keeps a wrapped NON-list sentence attached to its open entry', () => {
+    const creatures = parseCreatures([
+      page(300, [
+        'Test Monster',
+        'Medium fiend, neutral evil',
+        'Armor Class 10',
+        'Hit Points 10 (2d8 + 1)',
+        'Speed 30 ft.',
+        'STR DEX CON INT WIS CHA',
+        '10 (+0) 10 (+0) 10 (+0) 10 (+0) 10 (+0) 10 (+0)',
+        'Challenge 1 (200 XP)',
+        'Wounded Fury. While it has 10 hit points or fewer, the',
+        'monster has advantage on attack rolls. In addition, it',
+        'deals an extra 7 (2d6) damage to any target it hits.',
+        'Rampage. When the monster reduces a creature to',
+        '0 hit points, it can take a bonus action to move.',
+      ]),
+    ]);
+    expect(creatures[0].traits?.map((trait) => trait.name)).toEqual([
+      'Wounded Fury',
+      'Rampage',
+    ]);
+    expect(creatures[0].traits?.[0].text).toMatch(/hits\.$/);
+  });
+});

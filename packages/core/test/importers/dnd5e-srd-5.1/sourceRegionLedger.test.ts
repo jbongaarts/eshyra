@@ -763,3 +763,69 @@ describe('buildSourceRegionLedger emission proofs (eshyra-o9bd.18.9.2)', () => {
     );
   });
 });
+
+describe('emission proofs ignore derived mechanics (eshyra-o9bd.18.7.3)', () => {
+  it('proves a region spanning adjacent entry texts even when a mechanics object sits between them', () => {
+    // A spell-list run-in region spans traits[0].text -> traits[1].name/text.
+    // The derived traits[0].mechanics must not interpose in the emission
+    // index (it is computed data, not source text) or the needle breaks and
+    // the region is falsely reported unemitted.
+    const heading = item({ text: 'Night Hag', lineIndex: 0 });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          [
+            'Night Hag',
+            'Innate Spellcasting. At will: detect magic Magic Resistance. The hag has advantage on saving throws.',
+          ],
+          [18, 9.8],
+        ),
+      ],
+      [coverage(heading, { kind: 'record', key: 'creature:night-hag' })],
+      [
+        {
+          kind: 'creature',
+          key: 'creature:night-hag',
+          name: 'Night Hag',
+          data: {
+            traits: [
+              {
+                name: 'Innate Spellcasting',
+                text: 'At will: detect magic',
+                mechanics: {
+                  spellcasting: {
+                    mode: 'innate',
+                    ability: 'charisma',
+                    groups: [
+                      {
+                        frequency: 'at-will',
+                        spells: [{ ref: 'spell:detect-magic' }],
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                name: 'Magic Resistance',
+                text: 'The hag has advantage on saving throws.',
+              },
+            ],
+          },
+        },
+      ],
+    );
+
+    const region = ledger.entries.find(
+      (entry) =>
+        entry.targetKey === 'creature:night-hag' &&
+        entry.emission !== undefined,
+    );
+    expect(region).toBeDefined();
+    // Contiguous containment, not just fragment-peeled structured
+    // equivalence: with mechanics strings in the index the needle spanning
+    // the trait boundary breaks and this degrades (or, on longer real-pack
+    // sentences, goes fully unemitted — the planetar/glabrezu regression).
+    expect(region?.emission).toBe('sentences-contained');
+    expect(() => assertSourceRegionLedger(ledger)).not.toThrow();
+  });
+});

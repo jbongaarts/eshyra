@@ -721,12 +721,26 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
       string,
       unknown
     >;
+    // Entries carry the verbatim name/text plus a typed `mechanics`
+    // projection where a reviewed grammar matches (eshyra-o9bd.18.7.3):
+    // Amphibious gains a `breathes` effect; the usage parenthetical gains
+    // `usage.perDay`.
     expect(data.traits).toEqual([
-      { name: 'Amphibious', text: 'It can breathe air and water.' },
+      {
+        name: 'Amphibious',
+        text: 'It can breathe air and water.',
+        mechanics: {
+          effects: [{ kind: 'breathes', environments: ['air', 'water'] }],
+        },
+      },
     ]);
     expect(
       (data.actions as Array<{ name: string }>).map((a) => a.name),
     ).toEqual(['Multiattack', 'Enslave (3/Day)']);
+    expect(
+      (data.actions as Array<{ mechanics?: { usage?: unknown } }>)[1].mechanics
+        ?.usage,
+    ).toEqual({ perDay: 3 });
     expect(data.reactions).toEqual([
       { name: 'Parry', text: 'It adds 2 to its AC.' },
     ]);

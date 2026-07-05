@@ -992,7 +992,13 @@ function firstKeys(
 export type GameplayReadinessBucket =
   | 'unresolved-choice-prose'
   | 'partial-structure'
-  | 'prose-only';
+  | 'prose-only'
+  // Nested creature-entry buckets (eshyra-o9bd.18.7.3): individual
+  // trait/action/reaction/legendary-action entries without a typed
+  // `mechanics` object, split by whether their prose carries mechanical
+  // vocabulary (dice, DCs, modifiers) or reads as situational/narrative.
+  | 'mechanical-prose'
+  | 'narrative-prose';
 
 /**
  * A reviewed decision about one kind×bucket of not-yet-modeled records:
@@ -1017,14 +1023,37 @@ export interface GameplayReadinessDispositionPolicyEntry {
   readonly bead?: string;
 }
 
+/**
+ * Mechanical vocabulary in an unmodeled creature entry (eshyra-o9bd.18.7.3):
+ * anything matching this is reported as `mechanical-prose` rather than
+ * `narrative-prose`, so residual gameplay language can never hide inside the
+ * "descriptive text" bucket.
+ */
+export const CREATURE_ENTRY_MECHANICAL_SIGNAL =
+  /\bDC\s*\d|\b\d+d\d+\b|saving throw|advantage|disadvantage|hit point|attack roll|to hit|damage|\bimmune\b|resistance|is (?:blinded|charmed|deafened|frightened|grappled|incapacitated|paralyzed|petrified|poisoned|prone|restrained|stunned|unconscious)\b/i;
+
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
-  'creature#partial-structure': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.3',
+  // Nested creature-entry dispositions (eshyra-o9bd.18.7.3). The typed
+  // entry projections cover attacks, saves, damage, conditions, recharge,
+  // per-day/rest use economies, legendary resistance, regeneration, healing,
+  // multiattack counts, save/check/attack-roll modifiers, spellcasting spell
+  // lists, breathing/jump grammars, and triggered-effect markers. The
+  // remaining unmodeled entries were reviewed with that bead: their
+  // adjudication is inherently situational (form changes, telepathic bonds,
+  // terrain interaction, sensory description), so the verbatim prose is the
+  // intended representation for the DM model, with numeric hooks already
+  // projected wherever the entry prints them.
+  'creature-entry#mechanical-prose': {
+    status: 'accepted-prose-only',
     reason:
-      'Frog, Sea Horse, and Shrieker carry traits (Amphibious, Standing Leap, Shriek) with no typed mechanics projection yet.',
+      'Entries whose remaining mechanical language is situational (movement-style traits, form/terrain interactions, rider clauses on already-projected attacks); the deterministic hooks these entries print (DCs, dice, conditions, uses) are projected — the residue is DM-adjudicated prose by design (eshyra-o9bd.18.7.3).',
+  },
+  'creature-entry#narrative-prose': {
+    status: 'accepted-prose-only',
+    reason:
+      'Entries with no mechanical vocabulary at all (descriptive/sensory traits such as False Appearance or Illumination); prose is the intended representation (eshyra-o9bd.18.7.3).',
   },
   'hazard#prose-only': {
     status: 'finding',
@@ -1120,6 +1149,23 @@ export type GameplayReadinessReport = {
     readonly signal: string;
   }[];
   /**
+   * Nested creature-entry mechanics coverage (eshyra-o9bd.18.7.3): every
+   * trait/action/reaction/legendary-action entry across `creature` and
+   * `stat-block` records, split into typed-mechanics vs prose-only (further
+   * split by mechanical vs narrative vocabulary). This is what distinguishes
+   * "modeled nested mechanics" from "intentionally prose" for readiness.
+   */
+  readonly creatureEntries: {
+    readonly totalEntries: number;
+    readonly entriesWithMechanics: number;
+    readonly mechanicalProse: number;
+    readonly narrativeProse: number;
+    readonly examples: {
+      readonly mechanicalProse: readonly string[];
+      readonly narrativeProse: readonly string[];
+    };
+  };
+  /**
    * Resolved kind×bucket dispositions for not-yet-modeled records
    * (eshyra-o9bd.18.9.6): every non-empty bucket paired with its reviewed
    * policy entry.
@@ -1181,6 +1227,65 @@ export function buildGameplayReadinessReport(
       },
     };
   }
+  // Nested creature-entry coverage (eshyra-o9bd.18.7.3): scan every
+  // trait/action/reaction/legendary-action entry for a typed `mechanics`
+  // object; entries without one are split by mechanical vocabulary.
+  const creatureEntryRefs: {
+    readonly ref: string;
+    readonly text: string;
+    readonly hasMechanics: boolean;
+  }[] = [];
+  for (const record of pack.records) {
+    if (record.kind !== 'creature' && record.kind !== 'stat-block') continue;
+    const data = dataObject(record);
+    if (data === null) continue;
+    const sections: readonly (readonly [string, readonly unknown[]])[] = [
+      ['traits', arrayValue(data.traits)],
+      ['actions', arrayValue(data.actions)],
+      ['reactions', arrayValue(data.reactions)],
+      [
+        'legendaryActions',
+        arrayValue(objectValue(data.legendaryActions)?.entries),
+      ],
+    ];
+    for (const [section, entries] of sections) {
+      for (const rawEntry of entries) {
+        const entry = objectValue(rawEntry);
+        if (entry === null) continue;
+        const name = stringValue(entry.name) ?? '(unnamed)';
+        creatureEntryRefs.push({
+          ref: `${record.key}#${section}:${name}`,
+          text: stringValue(entry.text) ?? '',
+          hasMechanics: objectValue(entry.mechanics) !== null,
+        });
+      }
+    }
+  }
+  const proseEntries = creatureEntryRefs.filter((entry) => !entry.hasMechanics);
+  const mechanicalProseEntries = proseEntries.filter((entry) =>
+    CREATURE_ENTRY_MECHANICAL_SIGNAL.test(entry.text),
+  );
+  const narrativeProseEntries = proseEntries.filter(
+    (entry) => !CREATURE_ENTRY_MECHANICAL_SIGNAL.test(entry.text),
+  );
+  const creatureEntries: GameplayReadinessReport['creatureEntries'] = {
+    totalEntries: creatureEntryRefs.length,
+    entriesWithMechanics: creatureEntryRefs.filter(
+      (entry) => entry.hasMechanics,
+    ).length,
+    mechanicalProse: mechanicalProseEntries.length,
+    narrativeProse: narrativeProseEntries.length,
+    examples: {
+      mechanicalProse: mechanicalProseEntries
+        .map((entry) => entry.ref)
+        .sort()
+        .slice(0, 5),
+      narrativeProse: narrativeProseEntries
+        .map((entry) => entry.ref)
+        .sort()
+        .slice(0, 5),
+    },
+  };
   // Resolve dispositions (eshyra-o9bd.18.9.6): every non-empty bucket of
   // not-yet-modeled records must map to a reviewed policy entry, and every
   // policy entry must still name a non-empty bucket.
@@ -1242,6 +1347,44 @@ export function buildGameplayReadinessReport(
       });
     }
   }
+  // Nested creature-entry buckets go through the same fail-closed policy
+  // (eshyra-o9bd.18.7.3): a non-empty prose bucket without a reviewed
+  // disposition fails, and an entry naming a now-empty bucket goes stale.
+  const entryBuckets: ReadonlyArray<
+    readonly [GameplayReadinessBucket, readonly { readonly ref: string }[]]
+  > = [
+    ['mechanical-prose', mechanicalProseEntries],
+    ['narrative-prose', narrativeProseEntries],
+  ];
+  for (const [bucket, bucketEntries] of entryBuckets) {
+    if (bucketEntries.length === 0) continue;
+    const policyKey = `creature-entry#${bucket}`;
+    seenPolicyKeys.add(policyKey);
+    const policy = GAMEPLAY_READINESS_DISPOSITIONS[policyKey];
+    if (policy === undefined) {
+      dispositionErrors.push(
+        `${policyKey}: ${bucketEntries.length} prose-only creature entr(ies) have no reviewed disposition (e.g. ${bucketEntries
+          .slice(0, 3)
+          .map((entry) => entry.ref)
+          .join(', ')})`,
+      );
+      continue;
+    }
+    if (policy.status === 'finding' && policy.bead === undefined) {
+      dispositionErrors.push(
+        `${policyKey}: disposition is a finding but names no bead`,
+      );
+    }
+    dispositions.push({
+      kind: 'creature-entry',
+      bucket,
+      count: bucketEntries.length,
+      examples: bucketEntries.slice(0, 5).map((entry) => entry.ref),
+      status: policy.status,
+      reason: policy.reason,
+      ...(policy.bead === undefined ? {} : { bead: policy.bead }),
+    });
+  }
   for (const policyKey of Object.keys(GAMEPLAY_READINESS_DISPOSITIONS)) {
     if (!seenPolicyKeys.has(policyKey)) {
       dispositionErrors.push(
@@ -1253,6 +1396,7 @@ export function buildGameplayReadinessReport(
   return {
     packId: pack.meta.packId,
     byKind,
+    creatureEntries,
     highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
       key: finding.key,
       kind: finding.kind,
@@ -1300,6 +1444,13 @@ export function formatGameplayReadinessReport(
       `- ${kind}: choices [${summary.examples.structuredChoices.join(', ') || 'none'}]; unresolved [${summary.examples.unresolvedChoiceProse.join(', ') || 'none'}]; grants [${summary.examples.deterministicGrants.join(', ') || 'none'}]; mechanics [${summary.examples.mechanicsProjections.join(', ') || 'none'}]; partial [${summary.examples.partialStructure.join(', ') || 'none'}]; prose-only [${summary.examples.proseOnly.join(', ') || 'none'}]`,
     );
   }
+  lines.push(
+    '',
+    'Nested creature-entry mechanics (eshyra-o9bd.18.7.3)',
+    `- entries: ${report.creatureEntries.totalEntries}; with typed mechanics: ${report.creatureEntries.entriesWithMechanics}; mechanical prose: ${report.creatureEntries.mechanicalProse}; narrative prose: ${report.creatureEntries.narrativeProse}`,
+    `- mechanical-prose examples: [${report.creatureEntries.examples.mechanicalProse.join(', ') || 'none'}]`,
+    `- narrative-prose examples: [${report.creatureEntries.examples.narrativeProse.join(', ') || 'none'}]`,
+  );
   lines.push('', 'High-impact unresolved choice-prose examples');
   if (report.highImpactExamples.length === 0) {
     lines.push('(none)');
