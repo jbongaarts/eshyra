@@ -965,7 +965,140 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     ) {
       throw new RulesPackError(`${path}.${key}.scaling must be an object`);
     }
-    optStr(scaling as Obj, 'sourceText', `${path}.${key}.scaling`);
+    const scalingObj = scaling as Obj;
+    const scalingPath = `${path}.${key}.scaling`;
+    optStr(scalingObj, 'sourceText', scalingPath);
+    // Structured upcast scaling (eshyra-o9bd.18.7.4).
+    const perSlot = scalingObj.perSlot;
+    if (perSlot !== undefined) {
+      if (
+        typeof perSlot !== 'object' ||
+        perSlot === null ||
+        Array.isArray(perSlot)
+      ) {
+        throw new RulesPackError(`${scalingPath}.perSlot must be an object`);
+      }
+      const perSlotObj = perSlot as Obj;
+      const perSlotPath = `${scalingPath}.perSlot`;
+      reqInt(perSlotObj, 'baseSlotLevel', perSlotPath, 1);
+      optStr(perSlotObj, 'stat', perSlotPath);
+      const stat = perSlotObj.stat;
+      if (stat !== undefined && stat !== 'damage' && stat !== 'healing') {
+        throw new RulesPackError(
+          `${perSlotPath}.stat must be "damage" or "healing", got ${JSON.stringify(stat)}`,
+        );
+      }
+      optStr(perSlotObj, 'increase', perSlotPath);
+      optInt(perSlotObj, 'additionalTargets', perSlotPath, 1);
+      if (stat === undefined && perSlotObj.additionalTargets === undefined) {
+        throw new RulesPackError(
+          `${perSlotPath} must carry a stat increase or additionalTargets`,
+        );
+      }
+    }
+    const cantrip = scalingObj.cantripDamageByLevel;
+    if (cantrip !== undefined) {
+      if (
+        typeof cantrip !== 'object' ||
+        cantrip === null ||
+        Array.isArray(cantrip)
+      ) {
+        throw new RulesPackError(
+          `${scalingPath}.cantripDamageByLevel must be an object`,
+        );
+      }
+      const cantripObj = cantrip as Obj;
+      const cantripPath = `${scalingPath}.cantripDamageByLevel`;
+      const keys = Object.keys(cantripObj).sort((a, b) =>
+        Number(a) < Number(b) ? -1 : 1,
+      );
+      if (keys.join(',') !== '5,11,17') {
+        throw new RulesPackError(
+          `${cantripPath} must carry exactly the 5/11/17 tier keys, got ${JSON.stringify(keys)}`,
+        );
+      }
+      for (const tier of keys) {
+        const dice = cantripObj[tier];
+        if (typeof dice !== 'string' || !/^\d+d\d+$/.test(dice)) {
+          throw new RulesPackError(
+            `${cantripPath}[${tier}] must be a dice expression`,
+          );
+        }
+      }
+    }
+  }
+  // Structured casting metadata (eshyra-o9bd.18.7.4): the closed duration
+  // vocabulary and the Self-range area parenthetical.
+  const duration = mechanics.duration;
+  if (duration !== undefined) {
+    if (
+      typeof duration !== 'object' ||
+      duration === null ||
+      Array.isArray(duration)
+    ) {
+      throw new RulesPackError(`${path}.${key}.duration must be an object`);
+    }
+    const durationObj = duration as Obj;
+    const durationPath = `${path}.${key}.duration`;
+    const durationKind = reqStr(durationObj, 'kind', durationPath);
+    if (!SPELL_DURATION_KINDS.has(durationKind)) {
+      throw new RulesPackError(
+        `${durationPath}.kind must be one of ${[...SPELL_DURATION_KINDS].join(', ')}, got ${JSON.stringify(durationKind)}`,
+      );
+    }
+    if (durationKind === 'timed') {
+      reqInt(durationObj, 'amount', durationPath, 1);
+      const unit = reqStr(durationObj, 'unit', durationPath);
+      if (!SPELL_DURATION_UNITS.has(unit)) {
+        throw new RulesPackError(
+          `${durationPath}.unit must be one of ${[...SPELL_DURATION_UNITS].join(', ')}, got ${JSON.stringify(unit)}`,
+        );
+      }
+      optBool(durationObj, 'upTo', durationPath);
+      optBool(durationObj, 'concentration', durationPath);
+    } else {
+      for (const forbidden of ['amount', 'unit', 'upTo', 'concentration']) {
+        if (durationObj[forbidden] !== undefined) {
+          throw new RulesPackError(
+            `${durationPath}.${forbidden} is only valid on timed durations`,
+          );
+        }
+      }
+      if (durationKind === 'until-dispelled') {
+        optBool(durationObj, 'orTriggered', durationPath);
+      } else if (durationObj.orTriggered !== undefined) {
+        throw new RulesPackError(
+          `${durationPath}.orTriggered is only valid on until-dispelled durations`,
+        );
+      }
+    }
+  }
+  const area = mechanics.area;
+  if (area !== undefined) {
+    if (typeof area !== 'object' || area === null || Array.isArray(area)) {
+      throw new RulesPackError(`${path}.${key}.area must be an object`);
+    }
+    const areaObj = area as Obj;
+    const areaPath = `${path}.${key}.area`;
+    const shape = reqStr(areaObj, 'shape', areaPath);
+    if (!SPELL_AREA_SHAPES.has(shape)) {
+      throw new RulesPackError(
+        `${areaPath}.shape must be one of ${[...SPELL_AREA_SHAPES].join(', ')}, got ${JSON.stringify(shape)}`,
+      );
+    }
+    reqInt(areaObj, 'size', areaPath, 1);
+    const unit = reqStr(areaObj, 'unit', areaPath);
+    if (unit !== 'foot' && unit !== 'mile') {
+      throw new RulesPackError(
+        `${areaPath}.unit must be "foot" or "mile", got ${JSON.stringify(unit)}`,
+      );
+    }
+    const origin = reqStr(areaObj, 'origin', areaPath);
+    if (origin !== 'self') {
+      throw new RulesPackError(
+        `${areaPath}.origin must be "self", got ${JSON.stringify(origin)}`,
+      );
+    }
   }
   const recharge = mechanics.recharge;
   if (recharge !== undefined) {
@@ -1106,6 +1239,29 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     });
   }
 }
+
+const SPELL_DURATION_KINDS: ReadonlySet<string> = new Set([
+  'instantaneous',
+  'timed',
+  'until-dispelled',
+  'special',
+]);
+
+const SPELL_DURATION_UNITS: ReadonlySet<string> = new Set([
+  'round',
+  'minute',
+  'hour',
+  'day',
+]);
+
+const SPELL_AREA_SHAPES: ReadonlySet<string> = new Set([
+  'cone',
+  'line',
+  'cube',
+  'sphere',
+  'hemisphere',
+  'radius',
+]);
 
 const USAGE_RECHARGE_RESTS: ReadonlySet<string> = new Set([
   'short-rest',

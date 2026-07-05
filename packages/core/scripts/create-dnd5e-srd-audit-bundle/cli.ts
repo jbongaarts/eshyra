@@ -1225,6 +1225,125 @@ export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
   ],
 });
 
+/**
+ * Reviewed metadata-only spell MEMBERSHIP (eshyra-o9bd.18.7.4 review). The
+ * `spell#metadata-only` disposition accepts exactly these spells: a spell
+ * whose deterministic projection regresses lands here as an unreviewed key
+ * and fails the build; a spell that gains deterministic semantics goes
+ * stale here and must be removed.
+ */
+export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
+  'spell:alarm',
+  'spell:alter-self',
+  'spell:animal-messenger',
+  'spell:animate-dead',
+  'spell:animate-objects',
+  'spell:antilife-shell',
+  'spell:arcane-lock',
+  'spell:arcanists-magic-aura',
+  'spell:augury',
+  'spell:blink',
+  'spell:clone',
+  'spell:commune',
+  'spell:commune-with-nature',
+  'spell:comprehend-languages',
+  'spell:conjure-animals',
+  'spell:conjure-celestial',
+  'spell:conjure-elemental',
+  'spell:conjure-fey',
+  'spell:conjure-minor-elementals',
+  'spell:conjure-woodland-beings',
+  'spell:contingency',
+  'spell:continual-flame',
+  'spell:control-weather',
+  'spell:create-food-and-water',
+  'spell:create-or-destroy-water',
+  'spell:create-undead',
+  'spell:creation',
+  'spell:dancing-lights',
+  'spell:darkness',
+  'spell:daylight',
+  'spell:death-ward',
+  'spell:demiplane',
+  'spell:detect-evil-and-good',
+  'spell:detect-magic',
+  'spell:detect-poison-and-disease',
+  'spell:disguise-self',
+  'spell:divination',
+  'spell:druidcraft',
+  'spell:etherealness',
+  'spell:expeditious-retreat',
+  'spell:fabricate',
+  'spell:feather-fall',
+  'spell:find-familiar',
+  'spell:find-steed',
+  'spell:find-the-path',
+  'spell:find-traps',
+  'spell:floating-disk',
+  'spell:forbiddance',
+  'spell:gate',
+  'spell:gentle-repose',
+  'spell:giant-insect',
+  'spell:glibness',
+  'spell:globe-of-invulnerability',
+  'spell:hallucinatory-terrain',
+  'spell:identify',
+  'spell:illusory-script',
+  'spell:jump',
+  'spell:knock',
+  'spell:legend-lore',
+  'spell:locate-animals-or-plants',
+  'spell:locate-creature',
+  'spell:locate-object',
+  'spell:mage-hand',
+  'spell:magic-mouth',
+  'spell:major-image',
+  'spell:maze',
+  'spell:mending',
+  'spell:message',
+  'spell:minor-illusion',
+  'spell:mirage-arcane',
+  'spell:mirror-image',
+  'spell:misty-step',
+  'spell:move-earth',
+  'spell:nondetection',
+  'spell:passwall',
+  'spell:phantom-steed',
+  'spell:planar-ally',
+  'spell:plant-growth',
+  'spell:prestidigitation',
+  'spell:private-sanctum',
+  'spell:programmed-illusion',
+  'spell:protection-from-energy',
+  'spell:purify-food-and-drink',
+  'spell:reincarnate',
+  'spell:remove-curse',
+  'spell:secret-chest',
+  'spell:sending',
+  'spell:shillelagh',
+  'spell:silent-image',
+  'spell:simulacrum',
+  'spell:spare-the-dying',
+  'spell:speak-with-animals',
+  'spell:speak-with-dead',
+  'spell:spider-climb',
+  'spell:stone-shape',
+  'spell:stoneskin',
+  'spell:telepathic-bond',
+  'spell:teleportation-circle',
+  'spell:thaumaturgy',
+  'spell:time-stop',
+  'spell:tiny-hut',
+  'spell:tongues',
+  'spell:transport-via-plants',
+  'spell:tree-stride',
+  'spell:true-resurrection',
+  'spell:true-seeing',
+  'spell:water-breathing',
+  'spell:water-walk',
+  'spell:word-of-recall',
+]);
+
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
@@ -1570,7 +1689,9 @@ export function buildGameplayReadinessReport(
     if (arrayValue(mechanics.conditions).length > 0) return true;
     if (arrayValue(mechanics.effects).length > 0) return true;
     if (arrayValue(mechanics.weaponDamageModifiers).length > 0) return true;
-    if (objectValue(mechanics.area) !== null) return true;
+    // `area` is casting metadata (like duration/concentration), NOT an
+    // effect semantic — its presence alone must not promote a spell into
+    // the deterministic bucket (eshyra-o9bd.18.7.4 review).
     const scaling = objectValue(mechanics.scaling);
     if (scaling !== null) {
       if (objectValue(scaling.perSlot) !== null) return true;
@@ -1602,6 +1723,32 @@ export function buildGameplayReadinessReport(
         `${policyKey}: ${metadataOnlySpells.length} metadata-only spell(s) have no reviewed disposition`,
       );
     } else {
+      // Fail closed by MEMBERSHIP (eshyra-o9bd.18.7.4 review): the accepted
+      // disposition covers exactly the reviewed spell keys.
+      const reviewed = new Set(ACCEPTED_METADATA_ONLY_SPELLS);
+      const present = new Set(metadataOnlySpells.map((record) => record.key));
+      const unreviewed = metadataOnlySpells
+        .map((record) => record.key)
+        .filter((key) => !reviewed.has(key));
+      if (unreviewed.length > 0) {
+        dispositionErrors.push(
+          `${policyKey}: ${unreviewed.length} spell(s) not in the reviewed metadata-only membership (e.g. ${unreviewed
+            .slice(0, 3)
+            .join(
+              ', ',
+            )}) — review and add, or restore the deterministic projection`,
+        );
+      }
+      const staleKeys = ACCEPTED_METADATA_ONLY_SPELLS.filter(
+        (key) => !present.has(key),
+      );
+      if (staleKeys.length > 0) {
+        dispositionErrors.push(
+          `${policyKey}: ${staleKeys.length} reviewed spell(s) no longer metadata-only (e.g. ${staleKeys
+            .slice(0, 3)
+            .join(', ')}) — remove them from ACCEPTED_METADATA_ONLY_SPELLS`,
+        );
+      }
       dispositions.push({
         kind: 'spell',
         bucket: 'metadata-only',
