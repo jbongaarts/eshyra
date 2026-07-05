@@ -110,7 +110,7 @@ describe('parseCreatureSpellcasting (eshyra-o9bd.18.7.3)', () => {
     ]);
   });
 
-  it('parses the single-spell mephit form with its inline save DC', () => {
+  it('parses the single-spell mephit form: per-day frequency from the trait-name limit and the inline save DC', () => {
     const parsed = parseCreatureSpellcasting(
       'Innate Spellcasting (1/Day)',
       'The mephit can innately cast heat metal (spell save DC 10), requiring no material components. Its innate spellcasting ability is Charisma.',
@@ -121,7 +121,13 @@ describe('parseCreatureSpellcasting (eshyra-o9bd.18.7.3)', () => {
       ability: 'charisma',
       saveDC: 10,
       componentRequirement: 'no-material',
-      groups: [{ frequency: 'at-will', spells: [{ ref: 'spell:heat-metal' }] }],
+      groups: [
+        {
+          frequency: 'per-day',
+          uses: 1,
+          spells: [{ ref: 'spell:heat-metal' }],
+        },
+      ],
     });
   });
 

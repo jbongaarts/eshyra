@@ -197,6 +197,49 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     expect(entries.entriesWithMechanics).toBeGreaterThan(1200);
     expect(entries.mechanicalProse).toBeLessThan(80);
   });
+
+  it('fails closed by MEMBERSHIP on unreviewed prose creature entries (eshyra-o9bd.18.7.3 review)', () => {
+    // The committed pack's prose buckets match the reviewed allowlist
+    // exactly (no unreviewed, no stale refs)…
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    expect(
+      report.dispositionErrors.filter((error) =>
+        error.startsWith('creature-entry#'),
+      ),
+    ).toEqual([]);
+    // …and a projection regression — an entry with mechanical prose that is
+    // NOT in the reviewed membership — is an error, even though the bucket
+    // itself has an accepted disposition.
+    const regressed = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'creature',
+          key: 'creature:regressed',
+          name: 'Regressed',
+          data: {
+            challengeRating: '1',
+            traits: [
+              {
+                name: 'Newly Unmodeled',
+                text: 'The creature has advantage on Wisdom (Perception) checks and deals 2d6 fire damage.',
+              },
+            ],
+          },
+        }),
+      ]),
+      [],
+    );
+    expect(
+      regressed.dispositionErrors.filter((error) =>
+        error.includes('not in the reviewed accepted-prose membership'),
+      ),
+    ).toEqual([
+      expect.stringContaining('creature:regressed#traits:Newly Unmodeled'),
+    ]);
+    expect(() => assertGameplayReadinessDispositions(regressed)).toThrow(
+      /not in the reviewed accepted-prose membership/,
+    );
+  });
 });
 
 describe('D&D SRD audit bundle overlay-vs-pack parity report (eshyra-jk4d)', () => {

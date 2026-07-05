@@ -1017,6 +1017,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     }
     reqStr(obj, 'ability', castPath);
     optInt(obj, 'saveDC', castPath, 1);
+    optInt(obj, 'attackBonus', castPath);
     optInt(obj, 'casterLevel', castPath, 1);
     optStr(obj, 'listClass', castPath);
     optStr(obj, 'footnote', castPath);
@@ -1042,9 +1043,35 @@ function optMechanics(parent: Obj, key: string, path: string): void {
           `${groupPath}.frequency must be one of ${[...SPELLCASTING_GROUP_FREQUENCIES].join(', ')}, got ${JSON.stringify(frequency)}`,
         );
       }
-      optInt(group, 'uses', groupPath, 1);
-      optInt(group, 'level', groupPath, 1);
-      optInt(group, 'slots', groupPath, 1);
+      // Frequency-specific structure is enforced, not merely permitted:
+      // `per-day` REQUIRES its use count, `slot-level` REQUIRES the spell
+      // level and slot count, and every field is forbidden on frequencies
+      // it does not describe — a structurally invalid group must be
+      // rejected, not silently carried (eshyra-o9bd.18.7.3 review).
+      if (frequency === 'per-day') {
+        reqInt(group, 'uses', groupPath, 1);
+        optBool(group, 'each', groupPath);
+      } else {
+        for (const key of ['uses', 'each']) {
+          if (group[key] !== undefined) {
+            throw new RulesPackError(
+              `${groupPath}.${key} is only valid on per-day groups`,
+            );
+          }
+        }
+      }
+      if (frequency === 'slot-level') {
+        reqInt(group, 'level', groupPath, 1);
+        reqInt(group, 'slots', groupPath, 1);
+      } else {
+        for (const key of ['level', 'slots']) {
+          if (group[key] !== undefined) {
+            throw new RulesPackError(
+              `${groupPath}.${key} is only valid on slot-level groups`,
+            );
+          }
+        }
+      }
       const spells = objArray(group, 'spells', groupPath);
       if (spells === undefined || spells.length === 0) {
         throw new RulesPackError(`${groupPath}.spells must be non-empty`);
@@ -1058,6 +1085,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
           );
         }
         optStr(spell, 'note', spellPath);
+        optBool(spell, 'footnoteMarked', spellPath);
       });
     });
   }

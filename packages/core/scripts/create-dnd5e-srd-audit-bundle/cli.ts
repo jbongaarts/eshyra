@@ -1032,6 +1032,194 @@ export interface GameplayReadinessDispositionPolicyEntry {
 export const CREATURE_ENTRY_MECHANICAL_SIGNAL =
   /\bDC\s*\d|\b\d+d\d+\b|saving throw|advantage|disadvantage|hit point|attack roll|to hit|damage|\bimmune\b|resistance|is (?:blinded|charmed|deafened|frightened|grappled|incapacitated|paralyzed|petrified|poisoned|prone|restrained|stunned|unconscious)\b/i;
 
+/**
+ * Reviewed accepted-prose creature-entry MEMBERSHIP (eshyra-o9bd.18.7.3
+ * review). The bucket dispositions below accept these exact entries and no
+ * others: an entry that newly loses its typed mechanics (or a new unmodeled
+ * entry) is NOT covered by the blanket disposition — it fails the build
+ * until explicitly reviewed here, and an entry that gains mechanics goes
+ * stale here and must be removed. This is what makes the accepted buckets
+ * fail-closed at the entry level rather than only at the bucket level.
+ */
+export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
+  Record<'mechanical-prose' | 'narrative-prose', readonly string[]>
+> = Object.freeze({
+  'mechanical-prose': [
+    'creature:adult-bronze-dragon#actions:Change Shape',
+    'creature:adult-gold-dragon#actions:Change Shape',
+    'creature:adult-silver-dragon#actions:Change Shape',
+    'creature:ancient-brass-dragon#actions:Change Shape',
+    'creature:ancient-bronze-dragon#actions:Change Shape',
+    'creature:ancient-copper-dragon#actions:Change Shape',
+    'creature:ancient-gold-dragon#actions:Change Shape',
+    'creature:ancient-silver-dragon#actions:Change Shape',
+    'creature:androsphinx#traits:Inscrutable',
+    'creature:bugbear#traits:Brute',
+    'creature:cloaker#traits:Damage Transfer',
+    'creature:couatl#traits:Shielded Mind',
+    'creature:doppelganger#actions:Read Thoughts',
+    'creature:fire-elemental#traits:Water Susceptibility',
+    'creature:gelatinous-cube#traits:Transparent',
+    'creature:gladiator#traits:Brute',
+    'creature:gray-ooze#traits:Corrode Metal',
+    'creature:green-hag#actions:Illusory Appearance',
+    'creature:green-hag#traits:Mimicry',
+    'creature:gynosphinx#traits:Inscrutable',
+    'creature:lemure#traits:Hellish Rejuvenation',
+    'creature:mummy-lord#traits:Rejuvenation',
+    'creature:nightmare#traits:Confer Fire Resistance',
+    'creature:raven#traits:Mimicry',
+    'creature:roper#traits:Grasping Tendrils',
+    'creature:rust-monster#traits:Rust Metal',
+    'creature:sea-hag#actions:Illusory Appearance',
+    'creature:shield-guardian#traits:Bound',
+    'creature:swarm-of-bats#traits:Swarm',
+    'creature:swarm-of-insects#traits:Swarm',
+    'creature:swarm-of-poisonous-snakes#traits:Swarm',
+    'creature:swarm-of-quippers#traits:Swarm',
+    'creature:swarm-of-rats#traits:Swarm',
+    'creature:swarm-of-ravens#traits:Swarm',
+    'creature:tarrasque#traits:Reflective Carapace',
+    'creature:vampire#traits:Harmed by Running Water',
+    'creature:vampire-spawn#traits:Harmed by Running Water',
+    'creature:violet-fungus#actions:Multiattack',
+  ],
+  'narrative-prose': [
+    'creature:adult-white-dragon#traits:Ice Walk',
+    'creature:air-elemental#traits:Air Form',
+    'creature:ancient-white-dragon#traits:Ice Walk',
+    'creature:animated-armor#traits:False Appearance',
+    'creature:awakened-shrub#traits:False Appearance',
+    'creature:awakened-tree#traits:False Appearance',
+    'creature:azer#traits:Illumination',
+    'creature:balor#actions:Teleport',
+    'creature:barbed-devil#traits:Devil’s Sight',
+    'creature:bearded-devil#traits:Devil’s Sight',
+    'creature:black-pudding#traits:Amorphous',
+    'creature:black-pudding#traits:Spider Climb',
+    'creature:bone-devil#traits:Devil’s Sight',
+    'creature:chain-devil#traits:Devil’s Sight',
+    'creature:chuul#traits:Sense Magic',
+    'creature:cloaker#traits:False Appearance',
+    'creature:couatl#actions:Change Shape',
+    'creature:darkmantle#traits:False Appearance',
+    'creature:deva#actions:Change Shape',
+    'creature:doppelganger#traits:Shapechanger',
+    'creature:drider#traits:Spider Climb',
+    'creature:drider#traits:Web Walker',
+    'creature:dryad#traits:Speak with Beasts and Plants',
+    'creature:dryad#traits:Tree Stride',
+    'creature:earth-elemental#traits:Earth Glide',
+    'creature:ettercap#traits:Spider Climb',
+    'creature:ettercap#traits:Web Sense',
+    'creature:ettercap#traits:Web Walker',
+    'creature:fire-elemental#traits:Illumination',
+    'creature:flying-snake#traits:Flyby',
+    'creature:flying-sword#traits:False Appearance',
+    'creature:gargoyle#traits:False Appearance',
+    'creature:ghost#actions:Etherealness',
+    'creature:ghost#traits:Ethereal Sight',
+    'creature:giant-fire-beetle#traits:Illumination',
+    'creature:giant-owl#traits:Flyby',
+    'creature:giant-spider#traits:Spider Climb',
+    'creature:giant-spider#traits:Web Sense',
+    'creature:giant-spider#traits:Web Walker',
+    'creature:giant-wolf-spider#traits:Spider Climb',
+    'creature:giant-wolf-spider#traits:Web Sense',
+    'creature:giant-wolf-spider#traits:Web Walker',
+    'creature:goblin#traits:Nimble Escape',
+    'creature:gray-ooze#traits:Amorphous',
+    'creature:gray-ooze#traits:False Appearance',
+    'creature:homunculus#traits:Telepathic Bond',
+    'creature:horned-devil#traits:Devil’s Sight',
+    'creature:hydra#actions:Multiattack',
+    'creature:hydra#traits:Reactive Heads',
+    'creature:hydra#traits:Wakeful',
+    'creature:ice-devil#traits:Devil’s Sight',
+    'creature:ice-mephit#traits:False Appearance',
+    'creature:imp#traits:Devil’s Sight',
+    'creature:imp#traits:Shapechanger',
+    'creature:invisible-stalker#traits:Faultless Tracker',
+    'creature:kraken#legendaryActions:Tentacle Attack or Fling',
+    'creature:lemure#traits:Devil’s Sight',
+    'creature:lich#legendaryActions:Cantrip',
+    'creature:lion#traits:Running Leap',
+    'creature:magma-mephit#traits:False Appearance',
+    'creature:magmin#traits:Ignited Illumination',
+    'creature:manticore#traits:Tail Spike Regrowth',
+    'creature:marilith#actions:Multiattack',
+    'creature:marilith#actions:Teleport',
+    'creature:marilith#traits:Reactive',
+    'creature:medusa#actions:Multiattack',
+    'creature:mimic#traits:False Appearance (Object Form Only)',
+    'creature:mimic#traits:Shapechanger',
+    'creature:minotaur#traits:Labyrinthine Recall',
+    'creature:mule#traits:Beast of Burden',
+    'creature:mummy-lord#legendaryActions:Attack',
+    'creature:nalfeshnee#actions:Teleport',
+    'creature:night-hag#actions:Change Shape',
+    'creature:night-hag#actions:Etherealness',
+    'creature:nightmare#actions:Ethereal Stride',
+    'creature:nightmare#traits:Illumination',
+    'creature:ochre-jelly#traits:Amorphous',
+    'creature:ochre-jelly#traits:Spider Climb',
+    'creature:oni#actions:Change Shape',
+    'creature:orc#traits:Aggressive',
+    'creature:otyugh#traits:Limited Telepathy',
+    'creature:owl#traits:Flyby',
+    'creature:phase-spider#traits:Ethereal Jaunt',
+    'creature:phase-spider#traits:Spider Climb',
+    'creature:phase-spider#traits:Web Walker',
+    'creature:planetar#traits:Divine Awareness',
+    'creature:pseudodragon#traits:Limited Telepathy',
+    'creature:purple-worm#traits:Tunneler',
+    'creature:quasit#traits:Shapechanger',
+    'creature:roper#traits:False Appearance',
+    'creature:roper#traits:Spider Climb',
+    'creature:rug-of-smothering#traits:False Appearance',
+    'creature:rust-monster#traits:Iron Scent',
+    'creature:sahuagin#traits:Shark Telepathy',
+    'creature:shadow#traits:Amorphous',
+    'creature:shadow#traits:Shadow Stealth',
+    'creature:shield-guardian#traits:Spell Storing',
+    'creature:shrieker#traits:False Appearance',
+    'creature:solar#actions:Flying Sword',
+    'creature:solar#legendaryActions:Teleport',
+    'creature:solar#traits:Divine Awareness',
+    'creature:spider#traits:Spider Climb',
+    'creature:spider#traits:Web Sense',
+    'creature:spider#traits:Web Walker',
+    'creature:spy#traits:Cunning Action',
+    'creature:succubus-incubus#actions:Etherealness',
+    'creature:succubus-incubus#traits:Shapechanger',
+    'creature:tarrasque#legendaryActions:Attack',
+    'creature:tarrasque#legendaryActions:Move',
+    'creature:treant#traits:False Appearance',
+    'creature:unicorn#legendaryActions:Hooves',
+    'creature:vampire#legendaryActions:Move',
+    'creature:vampire#legendaryActions:Unarmed Strike',
+    'creature:vampire#traits:Forbiddance',
+    'creature:vampire#traits:Spider Climb',
+    'creature:vampire#traits:Vampire Weaknesses',
+    'creature:vampire-spawn#traits:Forbiddance',
+    'creature:vampire-spawn#traits:Spider Climb',
+    'creature:vampire-spawn#traits:Vampire Weaknesses',
+    'creature:violet-fungus#traits:False Appearance',
+    'creature:water-elemental#traits:Water Form',
+    'creature:werebear#traits:Shapechanger',
+    'creature:wereboar#traits:Shapechanger',
+    'creature:wererat#traits:Shapechanger',
+    'creature:weretiger#traits:Shapechanger',
+    'creature:werewolf#traits:Shapechanger',
+    'creature:will-o-wisp#traits:Ephemeral',
+    'creature:will-o-wisp#traits:Variable Illumination',
+    'creature:wraith#actions:Create Specter',
+    'creature:xorn#traits:Earth Glide',
+    'creature:xorn#traits:Treasure Sense',
+    'creature:young-white-dragon#traits:Ice Walk',
+  ],
+});
+
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
@@ -1369,6 +1557,34 @@ export function buildGameplayReadinessReport(
           .join(', ')})`,
       );
       continue;
+    }
+    // Fail closed by MEMBERSHIP, not just bucket type: the accepted
+    // disposition covers exactly the reviewed refs. A projection regression
+    // (entry newly losing mechanics) or a new unmodeled entry surfaces as an
+    // unreviewed ref; an entry that gained mechanics goes stale in the list.
+    const reviewed = new Set(
+      ACCEPTED_PROSE_CREATURE_ENTRY_REFS[
+        bucket as keyof typeof ACCEPTED_PROSE_CREATURE_ENTRY_REFS
+      ] ?? [],
+    );
+    const present = new Set(bucketEntries.map((entry) => entry.ref));
+    const unreviewed = bucketEntries
+      .map((entry) => entry.ref)
+      .filter((ref) => !reviewed.has(ref));
+    if (unreviewed.length > 0) {
+      dispositionErrors.push(
+        `${policyKey}: ${unreviewed.length} entr(ies) not in the reviewed accepted-prose membership (e.g. ${unreviewed
+          .slice(0, 3)
+          .join(', ')}) — review and add, or restore the typed projection`,
+      );
+    }
+    const staleRefs = [...reviewed].filter((ref) => !present.has(ref));
+    if (staleRefs.length > 0) {
+      dispositionErrors.push(
+        `${policyKey}: ${staleRefs.length} reviewed ref(s) no longer in the bucket (e.g. ${staleRefs
+          .slice(0, 3)
+          .join(', ')}) — remove them from ACCEPTED_PROSE_CREATURE_ENTRY_REFS`,
+      );
     }
     if (policy.status === 'finding' && policy.bead === undefined) {
       dispositionErrors.push(

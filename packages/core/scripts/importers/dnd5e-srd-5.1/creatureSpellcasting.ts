@@ -265,27 +265,51 @@ export function parseCreatureSpellcasting(
     // The archmage prints extra always-on spells before the prepared list:
     // "can cast disguise self and invisibility at will and has the
     // following wizard spells prepared". Capture them as an at-will group.
-    const extraAtWill =
-      /\bcan cast ([a-z][a-z' /-]+(?: and [a-z][a-z' /-]+)*) at will\b/.exec(
-        text.slice(0, headers[0].index),
-      );
-    if (extraAtWill !== null) {
+    // Located by the fixed "can cast " / " at will" delimiters instead of a
+    // nested-quantifier capture (CodeQL flagged the previous regex for
+    // potential exponential backtracking); the bounded middle substring is
+    // split on connectors and each token keeps the fail-closed resolution.
+    const preList = text.slice(0, headers[0].index);
+    const canCastIdx = preList.indexOf('can cast ');
+    const atWillIdx =
+      canCastIdx === -1 ? -1 : preList.indexOf(' at will', canCastIdx);
+    if (canCastIdx !== -1 && atWillIdx !== -1) {
+      const middle = preList.slice(canCastIdx + 'can cast '.length, atWillIdx);
       const spells: CreatureSpellGroupSpell[] = [];
-      for (const token of extraAtWill[1].split(/ and /)) {
+      let valid = middle.length > 0;
+      for (const token of middle.split(/,| and /)) {
+        if (token.trim().length === 0) continue;
         const spell = parseSpellToken(token, resolve);
-        if (spell === undefined) return undefined;
+        if (spell === undefined) {
+          valid = false;
+          break;
+        }
         spells.push(spell);
       }
-      groups.unshift({ frequency: 'at-will', spells });
+      if (valid && spells.length > 0) {
+        groups.unshift({ frequency: 'at-will', spells });
+      }
     }
   } else {
-    // Single-spell innate form; the use limit rides the trait name
-    // ("Innate Spellcasting (1/Day)"), projected separately as `usage`.
+    // Single-spell innate form. The use limit rides the trait NAME
+    // ("Innate Spellcasting (1/Day)") — the structured group must carry it
+    // as a per-day frequency, not claim the spell is at-will; the
+    // trait-level `usage.perDay` field is intentional redundancy for
+    // consumers reading use economies uniformly across entries.
     const single = SINGLE_INNATE_RE.exec(text);
     if (single === null) return undefined;
     const spell = parseSpellToken(single[1], resolve);
     if (spell === undefined) return undefined;
-    groups = [{ frequency: 'at-will', spells: [spell] }];
+    const nameUses = /\((\d+)\/Day\)/i.exec(name);
+    groups = [
+      nameUses === null
+        ? { frequency: 'at-will', spells: [spell] }
+        : {
+            frequency: 'per-day',
+            uses: Number(nameUses[1]),
+            spells: [spell],
+          },
+    ];
   }
 
   const result: {
