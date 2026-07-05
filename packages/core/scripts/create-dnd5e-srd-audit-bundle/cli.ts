@@ -998,7 +998,12 @@ export type GameplayReadinessBucket =
   // `mechanics` object, split by whether their prose carries mechanical
   // vocabulary (dice, DCs, modifiers) or reads as situational/narrative.
   | 'mechanical-prose'
-  | 'narrative-prose';
+  | 'narrative-prose'
+  // Spell-depth bucket (eshyra-o9bd.18.7.4): spells whose mechanics object
+  // carries only casting metadata (concentration/spellAttack/duration/area)
+  // with no deterministic effect semantics (damage, saves, conditions,
+  // typed effects, or structured scaling).
+  | 'metadata-only';
 
 /**
  * A reviewed decision about one kind×bucket of not-yet-modeled records:
@@ -1238,6 +1243,11 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     reason:
       'Entries whose remaining mechanical language is situational (movement-style traits, form/terrain interactions, rider clauses on already-projected attacks); the deterministic hooks these entries print (DCs, dice, conditions, uses) are projected — the residue is DM-adjudicated prose by design (eshyra-o9bd.18.7.3).',
   },
+  'spell#metadata-only': {
+    status: 'accepted-prose-only',
+    reason:
+      'Spells whose remaining behavior is inherently DM-mediated or open-ended (conjuring stat-blocked allies, divination answers, utility/social effects, movement forms); casting metadata (concentration, structured duration, save DCs, areas) is projected, and every printed deterministic hook (damage dice, conditions, healing, modifiers, scaling) is typed where the SRD states one (eshyra-o9bd.18.7.4).',
+  },
   'creature-entry#narrative-prose': {
     status: 'accepted-prose-only',
     reason:
@@ -1351,6 +1361,20 @@ export type GameplayReadinessReport = {
     readonly examples: {
       readonly mechanicalProse: readonly string[];
       readonly narrativeProse: readonly string[];
+    };
+  };
+  /**
+   * Spell effect depth (eshyra-o9bd.18.7.4): "has a mechanics object" (all
+   * spells do) vs "has deterministic effect semantics" — damage, saves,
+   * conditions, typed effects, an area, or structured (non-sourceText-only)
+   * scaling.
+   */
+  readonly spellEffects: {
+    readonly totalSpells: number;
+    readonly spellsWithDeterministicEffects: number;
+    readonly metadataOnlySpells: number;
+    readonly examples: {
+      readonly metadataOnly: readonly string[];
     };
   };
   /**
@@ -1535,6 +1559,60 @@ export function buildGameplayReadinessReport(
       });
     }
   }
+  // Spell effect depth (eshyra-o9bd.18.7.4).
+  const spells = pack.records.filter((record) => record.kind === 'spell');
+  const spellHasDeterministicEffects = (record: RulesRecord): boolean => {
+    const data = dataObject(record);
+    const mechanics = objectValue(data?.mechanics);
+    if (mechanics === null || mechanics === undefined) return false;
+    if (arrayValue(mechanics.damage).length > 0) return true;
+    if (arrayValue(mechanics.saves).length > 0) return true;
+    if (arrayValue(mechanics.conditions).length > 0) return true;
+    if (arrayValue(mechanics.effects).length > 0) return true;
+    if (arrayValue(mechanics.weaponDamageModifiers).length > 0) return true;
+    if (objectValue(mechanics.area) !== null) return true;
+    const scaling = objectValue(mechanics.scaling);
+    if (scaling !== null) {
+      if (objectValue(scaling.perSlot) !== null) return true;
+      if (objectValue(scaling.cantripDamageByLevel) !== null) return true;
+    }
+    return false;
+  };
+  const deterministicSpells = spells.filter(spellHasDeterministicEffects);
+  const metadataOnlySpells = spells.filter(
+    (record) => !spellHasDeterministicEffects(record),
+  );
+  const spellEffects: GameplayReadinessReport['spellEffects'] = {
+    totalSpells: spells.length,
+    spellsWithDeterministicEffects: deterministicSpells.length,
+    metadataOnlySpells: metadataOnlySpells.length,
+    examples: {
+      metadataOnly: metadataOnlySpells
+        .map((record) => record.key)
+        .sort()
+        .slice(0, 5),
+    },
+  };
+  if (metadataOnlySpells.length > 0) {
+    const policyKey = 'spell#metadata-only';
+    seenPolicyKeys.add(policyKey);
+    const policy = GAMEPLAY_READINESS_DISPOSITIONS[policyKey];
+    if (policy === undefined) {
+      dispositionErrors.push(
+        `${policyKey}: ${metadataOnlySpells.length} metadata-only spell(s) have no reviewed disposition`,
+      );
+    } else {
+      dispositions.push({
+        kind: 'spell',
+        bucket: 'metadata-only',
+        count: metadataOnlySpells.length,
+        examples: spellEffects.examples.metadataOnly,
+        status: policy.status,
+        reason: policy.reason,
+        ...(policy.bead === undefined ? {} : { bead: policy.bead }),
+      });
+    }
+  }
   // Nested creature-entry buckets go through the same fail-closed policy
   // (eshyra-o9bd.18.7.3): a non-empty prose bucket without a reviewed
   // disposition fails, and an entry naming a now-empty bucket goes stale.
@@ -1613,6 +1691,7 @@ export function buildGameplayReadinessReport(
     packId: pack.meta.packId,
     byKind,
     creatureEntries,
+    spellEffects,
     highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
       key: finding.key,
       kind: finding.kind,
@@ -1666,6 +1745,12 @@ export function formatGameplayReadinessReport(
     `- entries: ${report.creatureEntries.totalEntries}; with typed mechanics: ${report.creatureEntries.entriesWithMechanics}; mechanical prose: ${report.creatureEntries.mechanicalProse}; narrative prose: ${report.creatureEntries.narrativeProse}`,
     `- mechanical-prose examples: [${report.creatureEntries.examples.mechanicalProse.join(', ') || 'none'}]`,
     `- narrative-prose examples: [${report.creatureEntries.examples.narrativeProse.join(', ') || 'none'}]`,
+  );
+  lines.push(
+    '',
+    'Spell effect depth (eshyra-o9bd.18.7.4)',
+    `- spells: ${report.spellEffects.totalSpells}; deterministic effect semantics: ${report.spellEffects.spellsWithDeterministicEffects}; metadata-only: ${report.spellEffects.metadataOnlySpells}`,
+    `- metadata-only examples: [${report.spellEffects.examples.metadataOnly.join(', ') || 'none'}]`,
   );
   lines.push('', 'High-impact unresolved choice-prose examples');
   if (report.highImpactExamples.length === 0) {

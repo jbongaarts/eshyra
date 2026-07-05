@@ -180,6 +180,23 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     });
   });
 
+  it('distinguishes deterministic spell effect semantics from metadata-only mechanics (eshyra-o9bd.18.7.4)', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    const spells = report.spellEffects;
+    expect(spells.totalSpells).toBe(319);
+    expect(
+      spells.spellsWithDeterministicEffects + spells.metadataOnlySpells,
+    ).toBe(spells.totalSpells);
+    // Damage/save/condition/effect/area/structured-scaling coverage is the
+    // dominant bucket; a projection regression would blow past this floor.
+    expect(spells.spellsWithDeterministicEffects).toBeGreaterThan(200);
+    // The metadata-only bucket carries an explicit accepted disposition.
+    const disposition = report.dispositions.find(
+      (entry) => entry.kind === 'spell' && entry.bucket === 'metadata-only',
+    );
+    expect(disposition?.status).toBe('accepted-prose-only');
+  });
+
   it('reports nested creature-entry mechanics coverage (eshyra-o9bd.18.7.3)', () => {
     const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
     const entries = report.creatureEntries;
