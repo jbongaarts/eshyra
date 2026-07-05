@@ -998,7 +998,12 @@ export type GameplayReadinessBucket =
   // `mechanics` object, split by whether their prose carries mechanical
   // vocabulary (dice, DCs, modifiers) or reads as situational/narrative.
   | 'mechanical-prose'
-  | 'narrative-prose';
+  | 'narrative-prose'
+  // Spell-depth bucket (eshyra-o9bd.18.7.4): spells whose mechanics object
+  // carries only casting metadata (concentration/spellAttack/duration/area)
+  // with no deterministic effect semantics (damage, saves, conditions,
+  // typed effects, or structured scaling).
+  | 'metadata-only';
 
 /**
  * A reviewed decision about one kind×bucket of not-yet-modeled records:
@@ -1220,6 +1225,125 @@ export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
   ],
 });
 
+/**
+ * Reviewed metadata-only spell MEMBERSHIP (eshyra-o9bd.18.7.4 review). The
+ * `spell#metadata-only` disposition accepts exactly these spells: a spell
+ * whose deterministic projection regresses lands here as an unreviewed key
+ * and fails the build; a spell that gains deterministic semantics goes
+ * stale here and must be removed.
+ */
+export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
+  'spell:alarm',
+  'spell:alter-self',
+  'spell:animal-messenger',
+  'spell:animate-dead',
+  'spell:animate-objects',
+  'spell:antilife-shell',
+  'spell:arcane-lock',
+  'spell:arcanists-magic-aura',
+  'spell:augury',
+  'spell:blink',
+  'spell:clone',
+  'spell:commune',
+  'spell:commune-with-nature',
+  'spell:comprehend-languages',
+  'spell:conjure-animals',
+  'spell:conjure-celestial',
+  'spell:conjure-elemental',
+  'spell:conjure-fey',
+  'spell:conjure-minor-elementals',
+  'spell:conjure-woodland-beings',
+  'spell:contingency',
+  'spell:continual-flame',
+  'spell:control-weather',
+  'spell:create-food-and-water',
+  'spell:create-or-destroy-water',
+  'spell:create-undead',
+  'spell:creation',
+  'spell:dancing-lights',
+  'spell:darkness',
+  'spell:daylight',
+  'spell:death-ward',
+  'spell:demiplane',
+  'spell:detect-evil-and-good',
+  'spell:detect-magic',
+  'spell:detect-poison-and-disease',
+  'spell:disguise-self',
+  'spell:divination',
+  'spell:druidcraft',
+  'spell:etherealness',
+  'spell:expeditious-retreat',
+  'spell:fabricate',
+  'spell:feather-fall',
+  'spell:find-familiar',
+  'spell:find-steed',
+  'spell:find-the-path',
+  'spell:find-traps',
+  'spell:floating-disk',
+  'spell:forbiddance',
+  'spell:gate',
+  'spell:gentle-repose',
+  'spell:giant-insect',
+  'spell:glibness',
+  'spell:globe-of-invulnerability',
+  'spell:hallucinatory-terrain',
+  'spell:identify',
+  'spell:illusory-script',
+  'spell:jump',
+  'spell:knock',
+  'spell:legend-lore',
+  'spell:locate-animals-or-plants',
+  'spell:locate-creature',
+  'spell:locate-object',
+  'spell:mage-hand',
+  'spell:magic-mouth',
+  'spell:major-image',
+  'spell:maze',
+  'spell:mending',
+  'spell:message',
+  'spell:minor-illusion',
+  'spell:mirage-arcane',
+  'spell:mirror-image',
+  'spell:misty-step',
+  'spell:move-earth',
+  'spell:nondetection',
+  'spell:passwall',
+  'spell:phantom-steed',
+  'spell:planar-ally',
+  'spell:plant-growth',
+  'spell:prestidigitation',
+  'spell:private-sanctum',
+  'spell:programmed-illusion',
+  'spell:protection-from-energy',
+  'spell:purify-food-and-drink',
+  'spell:reincarnate',
+  'spell:remove-curse',
+  'spell:secret-chest',
+  'spell:sending',
+  'spell:shillelagh',
+  'spell:silent-image',
+  'spell:simulacrum',
+  'spell:spare-the-dying',
+  'spell:speak-with-animals',
+  'spell:speak-with-dead',
+  'spell:spider-climb',
+  'spell:stone-shape',
+  'spell:stoneskin',
+  'spell:telepathic-bond',
+  'spell:teleportation-circle',
+  'spell:thaumaturgy',
+  'spell:time-stop',
+  'spell:tiny-hut',
+  'spell:tongues',
+  'spell:transport-via-plants',
+  'spell:tree-stride',
+  'spell:true-resurrection',
+  'spell:true-seeing',
+  'spell:water-breathing',
+  'spell:water-walk',
+  'spell:word-of-recall',
+]);
+
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
@@ -1237,6 +1361,11 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     status: 'accepted-prose-only',
     reason:
       'Entries whose remaining mechanical language is situational (movement-style traits, form/terrain interactions, rider clauses on already-projected attacks); the deterministic hooks these entries print (DCs, dice, conditions, uses) are projected — the residue is DM-adjudicated prose by design (eshyra-o9bd.18.7.3).',
+  },
+  'spell#metadata-only': {
+    status: 'accepted-prose-only',
+    reason:
+      'Spells whose remaining behavior is inherently DM-mediated or open-ended (conjuring stat-blocked allies, divination answers, utility/social effects, movement forms); casting metadata (concentration, structured duration, save DCs, areas) is projected, and every printed deterministic hook (damage dice, conditions, healing, modifiers, scaling) is typed where the SRD states one (eshyra-o9bd.18.7.4).',
   },
   'creature-entry#narrative-prose': {
     status: 'accepted-prose-only',
@@ -1351,6 +1480,20 @@ export type GameplayReadinessReport = {
     readonly examples: {
       readonly mechanicalProse: readonly string[];
       readonly narrativeProse: readonly string[];
+    };
+  };
+  /**
+   * Spell effect depth (eshyra-o9bd.18.7.4): "has a mechanics object" (all
+   * spells do) vs "has deterministic effect semantics" — damage, saves,
+   * conditions, typed effects, an area, or structured (non-sourceText-only)
+   * scaling.
+   */
+  readonly spellEffects: {
+    readonly totalSpells: number;
+    readonly spellsWithDeterministicEffects: number;
+    readonly metadataOnlySpells: number;
+    readonly examples: {
+      readonly metadataOnly: readonly string[];
     };
   };
   /**
@@ -1535,6 +1678,88 @@ export function buildGameplayReadinessReport(
       });
     }
   }
+  // Spell effect depth (eshyra-o9bd.18.7.4).
+  const spells = pack.records.filter((record) => record.kind === 'spell');
+  const spellHasDeterministicEffects = (record: RulesRecord): boolean => {
+    const data = dataObject(record);
+    const mechanics = objectValue(data?.mechanics);
+    if (mechanics === null || mechanics === undefined) return false;
+    if (arrayValue(mechanics.damage).length > 0) return true;
+    if (arrayValue(mechanics.saves).length > 0) return true;
+    if (arrayValue(mechanics.conditions).length > 0) return true;
+    if (arrayValue(mechanics.effects).length > 0) return true;
+    if (arrayValue(mechanics.weaponDamageModifiers).length > 0) return true;
+    // `area` is casting metadata (like duration/concentration), NOT an
+    // effect semantic — its presence alone must not promote a spell into
+    // the deterministic bucket (eshyra-o9bd.18.7.4 review).
+    const scaling = objectValue(mechanics.scaling);
+    if (scaling !== null) {
+      if (objectValue(scaling.perSlot) !== null) return true;
+      if (objectValue(scaling.cantripDamageByLevel) !== null) return true;
+    }
+    return false;
+  };
+  const deterministicSpells = spells.filter(spellHasDeterministicEffects);
+  const metadataOnlySpells = spells.filter(
+    (record) => !spellHasDeterministicEffects(record),
+  );
+  const spellEffects: GameplayReadinessReport['spellEffects'] = {
+    totalSpells: spells.length,
+    spellsWithDeterministicEffects: deterministicSpells.length,
+    metadataOnlySpells: metadataOnlySpells.length,
+    examples: {
+      metadataOnly: metadataOnlySpells
+        .map((record) => record.key)
+        .sort()
+        .slice(0, 5),
+    },
+  };
+  if (metadataOnlySpells.length > 0) {
+    const policyKey = 'spell#metadata-only';
+    seenPolicyKeys.add(policyKey);
+    const policy = GAMEPLAY_READINESS_DISPOSITIONS[policyKey];
+    if (policy === undefined) {
+      dispositionErrors.push(
+        `${policyKey}: ${metadataOnlySpells.length} metadata-only spell(s) have no reviewed disposition`,
+      );
+    } else {
+      // Fail closed by MEMBERSHIP (eshyra-o9bd.18.7.4 review): the accepted
+      // disposition covers exactly the reviewed spell keys.
+      const reviewed = new Set(ACCEPTED_METADATA_ONLY_SPELLS);
+      const present = new Set(metadataOnlySpells.map((record) => record.key));
+      const unreviewed = metadataOnlySpells
+        .map((record) => record.key)
+        .filter((key) => !reviewed.has(key));
+      if (unreviewed.length > 0) {
+        dispositionErrors.push(
+          `${policyKey}: ${unreviewed.length} spell(s) not in the reviewed metadata-only membership (e.g. ${unreviewed
+            .slice(0, 3)
+            .join(
+              ', ',
+            )}) — review and add, or restore the deterministic projection`,
+        );
+      }
+      const staleKeys = ACCEPTED_METADATA_ONLY_SPELLS.filter(
+        (key) => !present.has(key),
+      );
+      if (staleKeys.length > 0) {
+        dispositionErrors.push(
+          `${policyKey}: ${staleKeys.length} reviewed spell(s) no longer metadata-only (e.g. ${staleKeys
+            .slice(0, 3)
+            .join(', ')}) — remove them from ACCEPTED_METADATA_ONLY_SPELLS`,
+        );
+      }
+      dispositions.push({
+        kind: 'spell',
+        bucket: 'metadata-only',
+        count: metadataOnlySpells.length,
+        examples: spellEffects.examples.metadataOnly,
+        status: policy.status,
+        reason: policy.reason,
+        ...(policy.bead === undefined ? {} : { bead: policy.bead }),
+      });
+    }
+  }
   // Nested creature-entry buckets go through the same fail-closed policy
   // (eshyra-o9bd.18.7.3): a non-empty prose bucket without a reviewed
   // disposition fails, and an entry naming a now-empty bucket goes stale.
@@ -1613,6 +1838,7 @@ export function buildGameplayReadinessReport(
     packId: pack.meta.packId,
     byKind,
     creatureEntries,
+    spellEffects,
     highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
       key: finding.key,
       kind: finding.kind,
@@ -1666,6 +1892,12 @@ export function formatGameplayReadinessReport(
     `- entries: ${report.creatureEntries.totalEntries}; with typed mechanics: ${report.creatureEntries.entriesWithMechanics}; mechanical prose: ${report.creatureEntries.mechanicalProse}; narrative prose: ${report.creatureEntries.narrativeProse}`,
     `- mechanical-prose examples: [${report.creatureEntries.examples.mechanicalProse.join(', ') || 'none'}]`,
     `- narrative-prose examples: [${report.creatureEntries.examples.narrativeProse.join(', ') || 'none'}]`,
+  );
+  lines.push(
+    '',
+    'Spell effect depth (eshyra-o9bd.18.7.4)',
+    `- spells: ${report.spellEffects.totalSpells}; deterministic effect semantics: ${report.spellEffects.spellsWithDeterministicEffects}; metadata-only: ${report.spellEffects.metadataOnlySpells}`,
+    `- metadata-only examples: [${report.spellEffects.examples.metadataOnly.join(', ') || 'none'}]`,
   );
   lines.push('', 'High-impact unresolved choice-prose examples');
   if (report.highImpactExamples.length === 0) {

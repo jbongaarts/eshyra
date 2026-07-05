@@ -373,28 +373,462 @@ function parseRecharge(name: string): Mechanics | undefined {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Spell effect projections (eshyra-o9bd.18.7.4). Anchored grammars over the
+// SRD's closed phrasings; unmatched prose contributes nothing (fail-closed).
+// ---------------------------------------------------------------------------
+
+/** Structured duration from the closed SRD duration vocabulary. */
+function parseSpellDuration(duration: string): Mechanics | undefined {
+  const trimmed = duration.trim().replace(/\.$/, '');
+  if (/^Instantaneous$/i.test(trimmed)) return { kind: 'instantaneous' };
+  if (/^Special$/i.test(trimmed)) return { kind: 'special' };
+  const dispelled = /^Until dispelled( or triggered)?$/i.exec(trimmed);
+  if (dispelled !== null) {
+    return compact({
+      kind: 'until-dispelled',
+      orTriggered: dispelled[1] === undefined ? undefined : true,
+    });
+  }
+  const timed =
+    /^(Concentration,? )?[Uu]p to (\d+|one) (round|minute|hour|day)s?$/.exec(
+      trimmed,
+    ) ?? /^()(\d+) (round|minute|hour|day)s?$/.exec(trimmed);
+  if (timed !== null) {
+    return compact({
+      kind: 'timed',
+      amount: timed[2] === 'one' ? 1 : Number(timed[2]),
+      unit: timed[3],
+      upTo: /up to/i.test(trimmed) ? true : undefined,
+      concentration: timed[1] ? true : undefined,
+    });
+  }
+  return undefined;
+}
+
+/** Structured area from the Range parenthetical ("Self (15-foot cone)"). */
+function parseSpellArea(range: string): Mechanics | undefined {
+  const match =
+    /^Self \((\d+)-(foot|mile)(?:-radius)?\s?(cone|line|cube|sphere|hemisphere|radius)?\)$/.exec(
+      range.trim(),
+    );
+  if (match === null) return undefined;
+  return compact({
+    shape: match[3] ?? 'radius',
+    size: Number(match[1]),
+    unit: match[2],
+    origin: 'self',
+  });
+}
+
+/**
+ * Advantage/disadvantage verbs and the subject vocabulary. The subject is
+ * resolved as the NEAREST candidate before the verb within the sentence — a
+ * lazy any-gap match would bind "If you … are fighting it, it has advantage"
+ * to `you` instead of `it` (Dominate Monster) — so the modifier is never
+ * emitted with the wrong holder.
+ */
+const SPELL_MODIFIER_VERB_RE =
+  /\b(?:ha(?:s|ve)|gains?) (advantage|disadvantage)(?: on ([^.;]+))?/gi;
+
+const SPELL_MODIFIER_SUBJECT_RE =
+  /\b(you|the target|the creature|each target|any creature|it)\b(?![^.;]*\b(?:you|the target|the creature|each target|any creature|it)\b)/i;
+
+const SPELL_MODIFIER_SUBJECTS: ReadonlyMap<string, string> = new Map([
+  ['you', 'caster'],
+  ['the target', 'target'],
+  ['the creature', 'target'],
+  ['it', 'target'],
+  ['each target', 'target'],
+  ['any creature', 'other-creatures'],
+]);
+
+function parseSpellEffects(text: string): readonly Mechanics[] {
+  const effects: Mechanics[] = [];
+  // Healing: dice ("regains a number of hit points equal to 1d8 + your
+  // spellcasting ability modifier"), dice-with-average, or flat ("regains
+  // 70 hit points").
+  const diceHeal =
+    /\bregains? (?:a number of )?hit points equal to (\d+d\d+(?:\s*\+\s*\d+)?)( \+ your spellcasting ability modifier)?/.exec(
+      text,
+    );
+  if (diceHeal !== null) {
+    effects.push(
+      compact({
+        kind: 'healing',
+        dice: diceHeal[1].replace(/\s+/g, ' '),
+        addSpellcastingAbilityModifier:
+          diceHeal[2] === undefined ? undefined : true,
+      }),
+    );
+  } else {
+    const directDice = /\bregains? (\d+d\d+(?:\s*\+\s*\d+)?) hit points\b/.exec(
+      text,
+    );
+    const flatHeal = /\b(?:regains?|restores?) (\d+) hit points?\b/.exec(text);
+    if (directDice !== null) {
+      effects.push({
+        kind: 'healing',
+        dice: directDice[1].replace(/\s+/g, ' '),
+      });
+    } else if (flatHeal !== null) {
+      effects.push({ kind: 'healing', amount: Number(flatHeal[1]) });
+    }
+  }
+  const revive =
+    /\breturns? to life with (all its hit points|\d+ hit points?)\b/.exec(text);
+  if (revive !== null) {
+    effects.push({
+      kind: 'revive',
+      hitPoints: revive[1].startsWith('all')
+        ? 'all'
+        : Number(/\d+/.exec(revive[1])?.[0]),
+    });
+  }
+  const extraOnHit =
+    /\bdeal an extra (\d+d\d+) damage to (?:the target|it) whenever you hit it with (?:a|an) ([a-z]+) attack\b/.exec(
+      text,
+    );
+  if (extraOnHit !== null) {
+    effects.push({
+      kind: 'extraDamageOnHit',
+      dice: extraOnHit[1],
+      attackType: extraOnHit[2],
+    });
+  }
+  const attackDamageBonus =
+    /(?<![\w+-])([+-]\d+) bonus to attack rolls and damage rolls\b/.exec(text);
+  if (attackDamageBonus !== null) {
+    effects.push({
+      kind: 'attackAndDamageBonus',
+      amount: Number(attackDamageBonus[1]),
+    });
+  }
+  const checkBonus =
+    /(?<![\w+-])([+-]\d+) bonus to (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) checks\b/.exec(
+      text,
+    );
+  if (checkBonus !== null) {
+    effects.push({
+      kind: 'checkBonus',
+      amount: Number(checkBonus[1]),
+      ability: checkBonus[2].toLowerCase(),
+      skill: checkBonus[3].toLowerCase().replaceAll(' ', '-'),
+    });
+  }
+  const deathThreshold = /\bhas (\d+) hit points or fewer, it dies\b/.exec(
+    text,
+  );
+  if (deathThreshold !== null) {
+    effects.push({
+      kind: 'death',
+      hitPointThreshold: Number(deathThreshold[1]),
+    });
+  }
+  const tempHp =
+    /\bgains? (\d+d\d+(?:\s*\+\s*\d+)?|\d+) temporary hit points\b/.exec(text);
+  if (tempHp !== null) {
+    const value = tempHp[1].replace(/\s+/g, ' ');
+    effects.push(
+      compact({
+        kind: 'temporaryHitPoints',
+        dice: value.includes('d') ? value : undefined,
+        amount: value.includes('d') ? undefined : Number(value),
+      }),
+    );
+  } else if (
+    /\bgains? temporary hit points equal to your spellcasting ability modifier\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'temporaryHitPoints',
+      amount: 'spellcasting-ability-modifier',
+    });
+  }
+  const maxHp =
+    /\bhit point maximum and current hit points increase by (\d+)\b/.exec(text);
+  if (maxHp !== null) {
+    effects.push({
+      kind: 'hitPointMaximumIncrease',
+      amount: Number(maxHp[1]),
+      alsoCurrentHitPoints: true,
+    });
+  }
+  const light =
+    /\bsheds (bright|dim) light in a (\d+)-foot(?:-radius)? (?:radius|sphere)(?: and dim light for an additional (\d+) feet)?/.exec(
+      text,
+    );
+  if (light !== null) {
+    effects.push(
+      compact({
+        kind: 'light',
+        level: light[1],
+        radiusFeet: Number(light[2]),
+        dimAdditionalFeet:
+          light[3] === undefined ? undefined : Number(light[3]),
+      }),
+    );
+  }
+  const obscured = /\b(heavily|lightly) obscured\b/.exec(text);
+  if (obscured !== null) {
+    effects.push({ kind: 'obscurement', level: obscured[1] });
+  }
+  const darkvision =
+    /\b(?:has|have|gains?|grants? (?:it|the target)?) ?darkvision out to a range of (\d+) feet\b/.exec(
+      text,
+    );
+  if (darkvision !== null) {
+    effects.push({
+      kind: 'sense',
+      sense: 'darkvision',
+      rangeFeet: Number(darkvision[1]),
+    });
+  }
+  if (/\bspeed is doubled\b/.test(text)) {
+    effects.push({ kind: 'speedMultiplier', multiplier: 2 });
+  }
+  if (/\bspeed is halved\b/.test(text)) {
+    effects.push({ kind: 'speedMultiplier', multiplier: 0.5 });
+  }
+  const speedBonus = /\bspeed increases by (\d+) feet\b/.exec(text);
+  if (speedBonus !== null) {
+    effects.push({ kind: 'speedBonus', amountFeet: Number(speedBonus[1]) });
+  }
+  // Bless/Bane/Guidance/Resistance-style roll riders.
+  const rollDice =
+    /\broll a (d\d+) and (add|subtract) the number rolled (?:to|from) (?:the |one )?(attack roll or saving throw|attack rolls?|saving throws?|ability checks?)\b/.exec(
+      text,
+    );
+  if (rollDice !== null) {
+    const applies =
+      rollDice[3] === 'attack roll or saving throw'
+        ? ['attack-rolls', 'saving-throws']
+        : [rollDice[3].replace(/s?$/, 's').replaceAll(' ', '-')];
+    effects.push({
+      kind: rollDice[2] === 'add' ? 'rollBonusDice' : 'rollPenaltyDice',
+      dice: rollDice[1],
+      applies,
+    });
+  }
+  if (
+    /\bmake an ability check using your spellcasting ability\. The DC equals 10 \+ the spell[\u2019']s level\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'makeAbilityCheck',
+      ability: 'spellcasting-ability',
+      dcFormula: '10 + spell level',
+    });
+  }
+  // Recurring saves, in all four SRD phrasings: "repeat the saving throw at
+  // the end of each of its turns", "can make another Wisdom saving throw at
+  // the end of each of its turns / its turn", and the inverted "At the end
+  // of each of its turns(, and each time it takes damage), the target can
+  // make another Wisdom saving throw."
+  const repeatSave =
+    /\brepeat (?:the|its) saving throw at the end of each of (?:its|their) turns\b/.test(
+      text,
+    ) ||
+    /\bmakes? another (?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw at the end of (?:each of its turns|its turn)\b/.test(
+      text,
+    ) ||
+    /\bAt the end of (?:each of its turns|its turn)(?:, and each time it takes damage)?, (?:it|the target|the creature) can make another (?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw\b/.test(
+      text,
+    );
+  if (repeatSave) {
+    effects.push(
+      compact({
+        kind: 'repeatSave',
+        timing: 'end-of-each-of-its-turns',
+        alsoWhenTakingDamage: /, and each time it takes damage,/.test(text)
+          ? true
+          : undefined,
+        endsOnSuccess:
+          /On a success, the spell ends|ending the effect on itself on a success|On a successful save, the (?:spell|effect) ends/.test(
+            text,
+          )
+            ? true
+            : undefined,
+      }),
+    );
+  }
+  const push = /\bpushed (?:up to )?(\d+) feet (away from|toward)\b/.exec(text);
+  if (push !== null) {
+    effects.push({
+      kind: 'forcedMovement',
+      distanceFeet: Number(push[1]),
+      direction: push[2] === 'away from' ? 'away' : 'toward',
+    });
+  }
+  // No \b before the sign: "+" is a non-word char, so a word boundary never
+  // fires between the preceding space and the "+" (Shield's "a +5 bonus").
+  const acBonus = /(?<![\w+-])([+-]\d+) bonus to AC\b/.exec(text);
+  if (acBonus !== null) {
+    effects.push({ kind: 'acBonus', amount: Number(acBonus[1]) });
+  }
+  const acFormula = /\bbase AC becomes (\d+) \+ its Dexterity modifier\b/.exec(
+    text,
+  );
+  if (acFormula !== null) {
+    effects.push({
+      kind: 'acFormula',
+      base: Number(acFormula[1]),
+      ability: 'dexterity',
+    });
+  }
+  const acMinimum = /\bAC can[\u2019']t be less than (\d+)\b/.exec(text);
+  if (acMinimum !== null) {
+    effects.push({ kind: 'acMinimum', value: Number(acMinimum[1]) });
+  }
+  const resistance =
+    /\b(?:you have|has|gains?|grants? it) resistance to ([a-z]+(?:(?:,| and|, and) [a-z]+)*) damage\b/.exec(
+      text,
+    );
+  if (resistance !== null) {
+    const types = resistance[1]
+      .split(/,\s*(?:and\s+)?|\s+and\s+/)
+      .map((type) => type.trim())
+      .filter((type) => SRD_5_1_DAMAGE_TYPES.has(type));
+    if (types.length > 0) {
+      effects.push({ kind: 'damageResistance', types });
+    }
+  }
+  // Advantage/disadvantage with an explicit subject, sentence by sentence.
+  for (const sentence of text.split(/(?<=\.)\s+/)) {
+    const trimmedSentence = sentence.trim();
+    const attackersForm =
+      /\battack rolls against (?:the target|it|you) have (advantage|disadvantage)\b/i.exec(
+        trimmedSentence,
+      );
+    if (attackersForm !== null) {
+      effects.push({
+        kind: 'rollModifier',
+        subject: 'attackers-against-target',
+        mode: attackersForm[1].toLowerCase(),
+        scope: 'attack-rolls',
+      });
+      continue;
+    }
+    SPELL_MODIFIER_VERB_RE.lastIndex = 0;
+    for (const verb of trimmedSentence.matchAll(SPELL_MODIFIER_VERB_RE)) {
+      const prefix = trimmedSentence.slice(0, verb.index);
+      const nearest = SPELL_MODIFIER_SUBJECT_RE.exec(prefix);
+      if (nearest === null) continue;
+      const subject = SPELL_MODIFIER_SUBJECTS.get(nearest[1].toLowerCase());
+      if (subject === undefined) continue;
+      effects.push(
+        compact({
+          kind: 'rollModifier',
+          subject,
+          mode: verb[1].toLowerCase(),
+          scope: verb[2] ? verb[2].trim().replace(/[,.]$/, '') : 'attack-rolls',
+        }),
+      );
+    }
+  }
+  return effects;
+}
+
+/**
+ * Structured upcast scaling (eshyra-o9bd.18.7.4). The verbatim At Higher
+ * Levels text always rides along as `sourceText`; the typed fields are added
+ * only when the closed SRD phrasings match.
+ */
+function parseSpellScaling(
+  higherLevels: string | undefined,
+  description: string,
+): Mechanics | undefined {
+  const out: Mechanics = {};
+  if (higherLevels !== undefined) {
+    out.sourceText = higherLevels;
+    const perSlot =
+      /using a spell slot of (\d+)(?:st|nd|rd|th) level or higher, the (damage|healing)(?: of [^.]*?)? increases by (\d+d\d+|\d+) for each slot level above (\d+)/i.exec(
+        higherLevels,
+      );
+    if (perSlot !== null) {
+      out.perSlot = compact({
+        stat: perSlot[2].toLowerCase(),
+        increase: perSlot[3],
+        baseSlotLevel: Number(perSlot[4]),
+      });
+    }
+    const extraTargets =
+      /you can target one additional (?:creature|humanoid|willing creature|object) for each slot level above (\d+)/i.exec(
+        higherLevels,
+      );
+    if (extraTargets !== null) {
+      out.perSlot = compact({
+        ...(out.perSlot as Record<string, unknown> | undefined),
+        additionalTargets: 1,
+        baseSlotLevel: Number(extraTargets[1]),
+      });
+    }
+  }
+  // Cantrip damage tiers ("increases by 1d8 when you reach 5th level (2d8),
+  // 11th level (3d8), and 17th level (4d8)").
+  const cantrip =
+    /increases by (\d+d\d+) when you reach 5th level \((\d+d\d+)\), 11th level \((\d+d\d+)\), and 17th level \((\d+d\d+)\)/.exec(
+      description,
+    );
+  if (cantrip !== null) {
+    out.cantripDamageByLevel = {
+      '5': cantrip[2],
+      '11': cantrip[3],
+      '17': cantrip[4],
+    };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
   const text = `${spell.description} ${spell.higherLevels ?? ''}`;
   const damage = parseDamage(text);
   const weaponDamageModifiers = parseWeaponDamageModifiers(text);
   const save = parseSave(text);
+  if (
+    save !== undefined &&
+    /\bhalf as much damage on a successful (?:save|saving throw|one)\b/.test(
+      text,
+    )
+  ) {
+    save.damageOnSuccess = 'half';
+  }
   const conditions = parseConditions(text);
-  const scaling = spell.higherLevels?.match(
-    /\b(?:damage increases|one more|additional)\b/i,
-  )
-    ? { sourceText: spell.higherLevels }
-    : undefined;
+  const effects = parseSpellEffects(spell.description);
+  // "takes force damage equal to 1d8 + your spellcasting ability modifier"
+  // (Spiritual Weapon) — a dealt-damage form parseDamage's "<dice> <type>
+  // damage" shape cannot see.
+  const equalTo =
+    /\btakes ([a-z]+) damage equal to (\d+d\d+)( \+ your spellcasting ability modifier)?/.exec(
+      text,
+    );
+  const equalToDamage =
+    equalTo !== null && SRD_5_1_DAMAGE_TYPES.has(equalTo[1])
+      ? [
+          compact({
+            dice: equalTo[2],
+            type: equalTo[1],
+            addSpellcastingAbilityModifier:
+              equalTo[3] === undefined ? undefined : true,
+          }),
+        ]
+      : [];
   return compact({
     // The comma is optional: SRD 5.1 p. 173 prints Protection from Evil and
     // Good's duration as "Concentration up to 10 minutes" (a source typo for
     // the usual "Concentration, up to ..." form).
     concentration: /^Concentration,? up to\b/i.test(spell.duration),
     spellAttack: /\b(?:ranged|melee) spell attack\b/i.test(text),
+    duration: parseSpellDuration(spell.duration),
+    area: parseSpellArea(spell.range),
     saves: save === undefined ? undefined : [save],
-    damage,
+    damage: damage.length > 0 ? damage : equalToDamage,
     weaponDamageModifiers,
     conditions,
-    scaling,
+    effects: effects.length > 0 ? [...effects] : undefined,
+    scaling: parseSpellScaling(spell.higherLevels, spell.description),
   });
 }
 

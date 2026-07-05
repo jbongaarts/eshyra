@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ACCEPTED_METADATA_ONLY_SPELLS,
   assertGameplayReadinessDispositions,
   buildGameplayReadinessReport,
   buildOverlayParityReport,
@@ -178,6 +179,75 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
       totalRecords: 317,
       recordsWithMechanicsProjections: 317,
     });
+  });
+
+  it('distinguishes deterministic spell effect semantics from metadata-only mechanics (eshyra-o9bd.18.7.4)', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    const spells = report.spellEffects;
+    expect(spells.totalSpells).toBe(319);
+    expect(
+      spells.spellsWithDeterministicEffects + spells.metadataOnlySpells,
+    ).toBe(spells.totalSpells);
+    // Deterministic = damage / saves / conditions / effects / structured
+    // scaling. `area` is casting metadata (like duration) and does NOT
+    // promote a spell into this bucket. The exact membership of the
+    // metadata-only complement is pinned by ACCEPTED_METADATA_ONLY_SPELLS,
+    // so these counts are exact, not floors.
+    expect(spells.spellsWithDeterministicEffects).toBe(210);
+    expect(spells.metadataOnlySpells).toBe(
+      ACCEPTED_METADATA_ONLY_SPELLS.length,
+    );
+    // The metadata-only bucket carries an explicit accepted disposition.
+    const disposition = report.dispositions.find(
+      (entry) => entry.kind === 'spell' && entry.bucket === 'metadata-only',
+    );
+    expect(disposition?.status).toBe('accepted-prose-only');
+  });
+
+  it('fails closed by MEMBERSHIP on unreviewed metadata-only spells (eshyra-o9bd.18.7.4 review)', () => {
+    // Committed pack: membership matches exactly (no unreviewed, no stale).
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    expect(
+      report.dispositionErrors.filter((error) => error.startsWith('spell#')),
+    ).toEqual([]);
+    // A projection regression — a spell whose mechanics degrade to metadata
+    // only — is an unreviewed key and fails the gate.
+    const regressed = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'spell',
+          key: 'spell:regressed',
+          name: 'Regressed',
+          data: {
+            description: 'Deals damage the projection no longer captures.',
+            mechanics: { concentration: false, spellAttack: false },
+          },
+        }),
+      ]),
+      [],
+    );
+    expect(
+      regressed.dispositionErrors.filter((error) =>
+        error.includes('not in the reviewed metadata-only membership'),
+      ),
+    ).toEqual([expect.stringContaining('spell:regressed')]);
+  });
+
+  it('projects a valid structured duration for all 319 committed spells (eshyra-o9bd.18.7.4 review)', () => {
+    const spells = getBundledDnd5eSrdPack().records.filter(
+      (record) => record.kind === 'spell',
+    );
+    expect(spells).toHaveLength(319);
+    const kinds = ['instantaneous', 'timed', 'until-dispelled', 'special'];
+    for (const spell of spells) {
+      const mechanics = (
+        spell.data as { mechanics?: { duration?: { kind?: string } } }
+      ).mechanics;
+      expect(
+        kinds.includes(mechanics?.duration?.kind ?? ''),
+        `${spell.key} must carry a structured mechanics.duration`,
+      ).toBe(true);
+    }
   });
 
   it('reports nested creature-entry mechanics coverage (eshyra-o9bd.18.7.3)', () => {

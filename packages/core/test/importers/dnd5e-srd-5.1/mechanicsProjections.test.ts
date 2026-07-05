@@ -813,3 +813,294 @@ describe('creature entry effect projections (eshyra-o9bd.18.7.3)', () => {
     ]);
   });
 });
+
+describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
+  const baseSpell = (over: Partial<SpellExtraction>): SpellExtraction => ({
+    name: 'Test Spell',
+    level: 1,
+    school: 'evocation',
+    ritual: false,
+    castingTime: '1 action',
+    range: '60 feet',
+    components: { verbal: true, somatic: true, material: false },
+    duration: 'Instantaneous',
+    description: '',
+    sourcePage: 1,
+    ...over,
+  });
+
+  it('parses structured durations from the closed SRD vocabulary', () => {
+    expect(
+      deriveSpellMechanics(baseSpell({ description: 'x' })).duration,
+    ).toEqual({ kind: 'instantaneous' });
+    expect(
+      deriveSpellMechanics(
+        baseSpell({ duration: 'Concentration, up to 10 minutes' }),
+      ).duration,
+    ).toEqual({
+      kind: 'timed',
+      amount: 10,
+      unit: 'minute',
+      upTo: true,
+      concentration: true,
+    });
+    expect(
+      deriveSpellMechanics(baseSpell({ duration: '8 hours' })).duration,
+    ).toEqual({ kind: 'timed', amount: 8, unit: 'hour' });
+    expect(
+      deriveSpellMechanics(
+        baseSpell({ duration: 'Until dispelled or triggered' }),
+      ).duration,
+    ).toEqual({ kind: 'until-dispelled', orTriggered: true });
+    // The Protection from Evil and Good comma-less source typo still parses.
+    expect(
+      deriveSpellMechanics(
+        baseSpell({ duration: 'Concentration up to 10 minutes' }),
+      ).duration,
+    ).toEqual({
+      kind: 'timed',
+      amount: 10,
+      unit: 'minute',
+      upTo: true,
+      concentration: true,
+    });
+  });
+
+  it('parses the area from a Self range parenthetical', () => {
+    expect(
+      deriveSpellMechanics(baseSpell({ range: 'Self (15-foot cone)' })).area,
+    ).toEqual({ shape: 'cone', size: 15, unit: 'foot', origin: 'self' });
+    expect(
+      deriveSpellMechanics(baseSpell({ range: 'Self (10-foot-radius sphere)' }))
+        .area,
+    ).toEqual({ shape: 'sphere', size: 10, unit: 'foot', origin: 'self' });
+    expect(
+      deriveSpellMechanics(baseSpell({ range: '60 feet' })).area,
+    ).toBeUndefined();
+  });
+
+  it('projects Cure Wounds healing with the spellcasting-modifier rider and per-slot scaling', () => {
+    const mechanics = deriveSpellMechanics(
+      baseSpell({
+        description:
+          'A creature you touch regains a number of hit points equal to 1d8 + your spellcasting ability modifier.',
+        higherLevels:
+          'When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d8 for each slot level above 1st.',
+      }),
+    );
+    expect(mechanics.effects).toEqual([
+      { kind: 'healing', dice: '1d8', addSpellcastingAbilityModifier: true },
+    ]);
+    expect(mechanics.scaling).toMatchObject({
+      perSlot: { stat: 'healing', increase: '1d8', baseSlotLevel: 1 },
+    });
+  });
+
+  it('marks half-damage-on-save on the save entry (Fireball)', () => {
+    const mechanics = deriveSpellMechanics(
+      baseSpell({
+        description:
+          'Each creature in a 20-foot-radius sphere must make a Dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.',
+      }),
+    );
+    expect(mechanics.saves).toEqual([
+      { ability: 'dexterity', damageOnSuccess: 'half' },
+    ]);
+  });
+
+  it('projects cantrip damage tiers (Fire Bolt)', () => {
+    const mechanics = deriveSpellMechanics(
+      baseSpell({
+        description:
+          'Hurl a mote of fire. On a hit, the target takes 1d10 fire damage. This spell’s damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).',
+      }),
+    );
+    expect(mechanics.scaling).toEqual({
+      cantripDamageByLevel: { 5: '2d10', 11: '3d10', 17: '4d10' },
+    });
+  });
+
+  it('projects additional-target upcasting (Hold Person) and repeat saves', () => {
+    const mechanics = deriveSpellMechanics(
+      baseSpell({
+        description:
+          'Choose a humanoid. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target.',
+        higherLevels:
+          'When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd.',
+      }),
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'repeatSave',
+        timing: 'end-of-each-of-its-turns',
+        endsOnSuccess: true,
+      },
+    ]);
+    expect(mechanics.scaling).toMatchObject({
+      perSlot: { additionalTargets: 1, baseSlotLevel: 2 },
+    });
+  });
+
+  it('projects the Shield AC bonus (sign directly after a space)', () => {
+    const mechanics = deriveSpellMechanics(
+      baseSpell({
+        description:
+          'An invisible barrier of magical force appears and protects you. Until the start of your next turn, you have a +5 bonus to AC.',
+      }),
+    );
+    expect(mechanics.effects).toEqual([{ kind: 'acBonus', amount: 5 }]);
+  });
+
+  it('projects Mage Armor and Barkskin AC formulas', () => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'The target’s base AC becomes 13 + its Dexterity modifier.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'acFormula', base: 13, ability: 'dexterity' }]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'The target’s skin has a rough, bark-like appearance, and the target’s AC can’t be less than 16, regardless of what kind of armor it is wearing.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'acMinimum', value: 16 }]);
+  });
+
+  it('resolves rollModifier subjects to the NEAREST candidate before the verb (Dominate Monster)', () => {
+    const mechanics = deriveSpellMechanics(
+      baseSpell({
+        description:
+          'The target must succeed on a Wisdom saving throw or be charmed by you. If you or creatures that are friendly to you are fighting it, it has advantage on the saving throw.',
+      }),
+    );
+    const modifiers = (mechanics.effects as Array<{ kind: string }>).filter(
+      (effect) => effect.kind === 'rollModifier',
+    );
+    expect(modifiers).toEqual([
+      {
+        kind: 'rollModifier',
+        subject: 'target',
+        mode: 'advantage',
+        scope: 'the saving throw',
+      },
+    ]);
+  });
+
+  it('projects Bless roll dice, Pass Without Trace check bonus, and Magic Weapon attack/damage bonus', () => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw.',
+        }),
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'rollBonusDice',
+        dice: 'd4',
+        applies: ['attack-rolls', 'saving-throws'],
+      },
+    ]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'Each creature you choose within 30 feet of you (including you) has a +10 bonus to Dexterity (Stealth) checks and can’t be tracked except by magical means.',
+        }),
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'checkBonus',
+        amount: 10,
+        ability: 'dexterity',
+        skill: 'stealth',
+      },
+    ]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'You touch a nonmagical weapon. Until the spell ends, that weapon becomes a magic weapon with a +1 bonus to attack rolls and damage rolls.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'attackAndDamageBonus', amount: 1 }]);
+  });
+
+  it('projects revive, death threshold, extra damage on hit, and damage-equal-to forms', () => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'You return a dead creature to life. The creature returns to life with 1 hit point.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'revive', hitPoints: 1 }]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'If the creature you choose has 100 hit points or fewer, it dies. Otherwise, the spell has no effect.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'death', hitPointThreshold: 100 }]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'You deal an extra 1d6 damage to the target whenever you hit it with a weapon attack.',
+        }),
+      ).effects,
+    ).toEqual([
+      { kind: 'extraDamageOnHit', dice: '1d6', attackType: 'weapon' },
+    ]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'On a hit, the target takes force damage equal to 1d8 + your spellcasting ability modifier.',
+        }),
+      ).damage,
+    ).toEqual([
+      { dice: '1d8', type: 'force', addSpellcastingAbilityModifier: true },
+    ]);
+  });
+
+  it('projects light, obscurement, darkvision, and speed changes', () => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'The object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.',
+        }),
+      ).effects,
+    ).toEqual([
+      { kind: 'light', level: 'bright', radiusFeet: 20, dimAdditionalFeet: 20 },
+    ]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description: 'The fog spreads and its area is heavily obscured.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'obscurement', level: 'heavily' }]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description:
+            'For the duration, that creature has darkvision out to a range of 60 feet.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'sense', sense: 'darkvision', rangeFeet: 60 }]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          description: 'Until the spell ends, the target’s speed is doubled.',
+        }),
+      ).effects,
+    ).toEqual([{ kind: 'speedMultiplier', multiplier: 2 }]);
+  });
+});
