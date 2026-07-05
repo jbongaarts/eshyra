@@ -965,8 +965,17 @@ function collectEmissionStrings(value: unknown, out: string[]): void {
     return;
   }
   if (typeof value === 'object' && value !== null) {
-    for (const child of Object.values(value))
+    for (const [key, child] of Object.entries(value)) {
+      // DERIVED projections never prove source-text emission: a `mechanics`
+      // object is computed from its sibling `text`, so letting its strings
+      // into the index both (a) breaks needle contiguity between adjacent
+      // source-text fields (a spell-list run-in region spans traits[i].text →
+      // traits[i+1].name, and projection strings would interpose) and
+      // (b) could mask a genuinely dropped source line with a coincidental
+      // projection match (eshyra-o9bd.18.7.3).
+      if (key === 'mechanics') continue;
       collectEmissionStrings(child, out);
+    }
   }
 }
 

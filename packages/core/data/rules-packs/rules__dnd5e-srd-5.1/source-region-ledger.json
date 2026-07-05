@@ -16,8 +16,8 @@
     "broadStructuralIgnores": 0,
     "ownedEmission": {
       "contained": 1016,
-      "sentencesContained": 506,
-      "structuredEquivalent": 1047,
+      "sentencesContained": 508,
+      "structuredEquivalent": 1045,
       "unemitted": 0
     },
     "unaccountedPages": []
@@ -555,8 +555,7 @@
       "normalizedCharCount": 1421,
       "classification": "record:ancestry:rock-gnome",
       "targetKey": "ancestry:rock-gnome",
-      "emission": "structured-equivalent",
-      "emissionNotes": "header/label content proven against the structured fields of the target record"
+      "emission": "sentences-contained"
     },
     {
       "id": "p6-l83-prose",
@@ -41804,8 +41803,7 @@
       "normalizedCharCount": 2125,
       "classification": "child-of:creature:ancient-brass-dragon",
       "targetKey": "creature:ancient-brass-dragon",
-      "emission": "structured-equivalent",
-      "emissionNotes": "header/label content proven against the structured fields of the target record"
+      "emission": "sentences-contained"
     },
     {
       "id": "p291-l48-prose",
@@ -45652,8 +45650,7 @@
       "normalizedCharCount": 162,
       "classification": "record:creature:night-hag",
       "targetKey": "creature:night-hag",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained"
+      "emission": "sentences-contained"
     },
     {
       "id": "p320-l5-prose",
@@ -57665,7 +57662,7 @@
       "normalizedCharCount": 222,
       "classification": "child-of:creature:guard",
       "targetKey": "creature:guard",
-      "emission": "sentences-contained"
+      "emission": "contained"
     },
     {
       "id": "p400-l6-prose",

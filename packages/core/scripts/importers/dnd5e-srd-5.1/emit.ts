@@ -324,6 +324,7 @@ function ancestryKey(name: string): string {
  */
 function buildCreatureData(
   creature: CreatureExtraction,
+  resolveSpellRef?: SpellGrantResolver,
 ): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   if (creature.category === 'npc') {
@@ -408,7 +409,11 @@ function buildCreatureData(
   // produce no key.
   if (creature.traits !== undefined) {
     data.traits = creature.traits.map((e) => {
-      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      const mechanics = deriveCreatureEntryMechanics(
+        e.name,
+        e.text,
+        resolveSpellRef,
+      );
       return {
         name: e.name,
         text: e.text,
@@ -418,7 +423,11 @@ function buildCreatureData(
   }
   if (creature.actions !== undefined) {
     data.actions = creature.actions.map((e) => {
-      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      const mechanics = deriveCreatureEntryMechanics(
+        e.name,
+        e.text,
+        resolveSpellRef,
+      );
       return {
         name: e.name,
         text: e.text,
@@ -428,7 +437,11 @@ function buildCreatureData(
   }
   if (creature.reactions !== undefined) {
     data.reactions = creature.reactions.map((e) => {
-      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      const mechanics = deriveCreatureEntryMechanics(
+        e.name,
+        e.text,
+        resolveSpellRef,
+      );
       return {
         name: e.name,
         text: e.text,
@@ -442,7 +455,11 @@ function buildCreatureData(
       legendary.description = creature.legendaryActions.description;
     }
     legendary.entries = creature.legendaryActions.entries.map((e) => {
-      const mechanics = deriveCreatureEntryMechanics(e.name, e.text);
+      const mechanics = deriveCreatureEntryMechanics(
+        e.name,
+        e.text,
+        resolveSpellRef,
+      );
       return {
         name: e.name,
         text: e.text,
@@ -471,6 +488,7 @@ function buildCreatureData(
 
 export function creatureExtractionsToRecords(
   creatures: readonly CreatureExtraction[],
+  resolveSpellRef?: SpellGrantResolver,
 ): RulesRecord[] {
   const out: RulesRecord[] = creatures.map((creature) => {
     const record: RulesRecord = {
@@ -478,7 +496,7 @@ export function creatureExtractionsToRecords(
       kind: 'creature',
       key: creatureKey(creature.name),
       name: creature.name,
-      data: buildCreatureData(creature),
+      data: buildCreatureData(creature, resolveSpellRef),
       source: sourceLabelFor(creature.sourcePage),
       license: SRD_5_1_LICENSE,
       provenance: provenanceFor(creature.sourcePage),
@@ -498,6 +516,7 @@ export function creatureExtractionsToRecords(
  */
 function buildStatBlockData(
   statBlock: StatBlockExtraction,
+  resolveSpellRef?: SpellGrantResolver,
 ): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   data.size = statBlock.size;
@@ -542,7 +561,11 @@ function buildStatBlockData(
     data.experiencePoints = statBlock.experiencePoints;
   if (statBlock.traits !== undefined) {
     data.traits = statBlock.traits.map((entry) => {
-      const mechanics = deriveCreatureEntryMechanics(entry.name, entry.text);
+      const mechanics = deriveCreatureEntryMechanics(
+        entry.name,
+        entry.text,
+        resolveSpellRef,
+      );
       return {
         name: entry.name,
         text: entry.text,
@@ -552,7 +575,11 @@ function buildStatBlockData(
   }
   if (statBlock.actions !== undefined) {
     data.actions = statBlock.actions.map((entry) => {
-      const mechanics = deriveCreatureEntryMechanics(entry.name, entry.text);
+      const mechanics = deriveCreatureEntryMechanics(
+        entry.name,
+        entry.text,
+        resolveSpellRef,
+      );
       return {
         name: entry.name,
         text: entry.text,
@@ -569,6 +596,7 @@ function buildStatBlockData(
 
 export function statBlockExtractionsToRecords(
   statBlocks: readonly StatBlockExtraction[],
+  resolveSpellRef?: SpellGrantResolver,
 ): RulesRecord[] {
   const out: RulesRecord[] = statBlocks.map((statBlock) => {
     const record: RulesRecord = {
@@ -576,7 +604,7 @@ export function statBlockExtractionsToRecords(
       kind: 'stat-block',
       key: statBlockKey(statBlock.name),
       name: statBlock.name,
-      data: buildStatBlockData(statBlock),
+      data: buildStatBlockData(statBlock, resolveSpellRef),
       source: sourceLabelFor(statBlock.sourcePage),
       license: SRD_5_1_LICENSE,
       provenance: provenanceFor(statBlock.sourcePage),
@@ -1465,7 +1493,10 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // resolves to a real emitted spell, never raw regex residue.
   const resolveSpellGrant = buildSpellGrantResolver(input.spells);
   const baseSpellRecords = spellExtractionsToRecords(input.spells, classByName);
-  const creatureRecords = creatureExtractionsToRecords(input.creatures ?? []);
+  const creatureRecords = creatureExtractionsToRecords(
+    input.creatures ?? [],
+    resolveSpellGrant,
+  );
   const classRecords = enrichClassToolChoiceDomains(
     classExtractionsToRecords(input.classes ?? [], input.primaryAbilityIndex),
   );
@@ -1508,6 +1539,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // map. Both reviewed containers are emitted and link to their embedded block.
   const statBlockRecords = statBlockExtractionsToRecords(
     input.statBlocks ?? [],
+    resolveSpellGrant,
   );
   const statBlockRefsByItemName = new Map<string, string[]>();
   for (const statBlock of input.statBlocks ?? []) {

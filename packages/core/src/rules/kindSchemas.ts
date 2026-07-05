@@ -25,11 +25,13 @@ const CONDITION_RELATIONS = new Set<string>(CONDITION_RELATION_VALUES);
 
 const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'abilityCheckModifier',
+  'acBonus',
   'advantage',
   'attackRollModifier',
   'autoFailCheck',
   'autoFailSave',
   'benefitEndsWhen',
+  'breathes',
   'cannotAttackOrTarget',
   'cannotHear',
   'cannotMove',
@@ -38,6 +40,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'cannotTakeActions',
   'cannotTakeReactions',
   'conditionEndsWhen',
+  'damageMultiplier',
   'criticalHitOnHit',
   'criticalRange',
   'castSpell',
@@ -47,20 +50,26 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'extraAttack',
   'extraMovement',
   'gainRuleBenefitsOnSuccess',
+  'healing',
   'hitPointMaximumMultiplier',
+  'holdBreath',
   'immunity',
+  'jumpDistance',
   'impliesCondition',
   'imposesCondition',
+  'legendaryResistance',
   'locationDetectableBy',
   'makeAbilityCheck',
   'makeAttack',
   'movementRestriction',
+  'multiattack',
   'obscurement',
   'objectInteraction',
   'proficiency',
   'preventOpportunityAttacks',
   'readyAction',
   'readySpell',
+  'regeneration',
   'resistance',
   'savingThrowModifier',
   'speechRestricted',
@@ -69,8 +78,10 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'speedSet',
   'stopsAging',
   'transformed',
+  'triggeredEffect',
   'unaware',
   'visibility',
+  'weaponAttacksMagical',
   'weightMultiplier',
 ]);
 
@@ -890,7 +901,14 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     }
     entries.forEach((entry, i) => {
       const entryPath = `${path}.${key}.${damageKey}[${i}]`;
-      reqStr(entry, 'dice', entryPath);
+      // A damage entry carries a dice expression, or — for the SRD's flat
+      // no-dice prints ("Hit: 1 piercing damage.", the Bat's Bite;
+      // eshyra-o9bd.18.7.3) — a fixed integer `amount`.
+      if (entry.dice === undefined) {
+        reqInt(entry, 'amount', entryPath, 0);
+      } else {
+        reqStr(entry, 'dice', entryPath);
+      }
       const type = reqStr(entry, 'type', entryPath);
       if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
         throw new RulesPackError(
@@ -947,7 +965,150 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     reqInt(obj, 'minimum', `${path}.${key}.recharge`, 1);
     reqInt(obj, 'maximum', `${path}.${key}.recharge`, 1);
   }
+  // Use-economy qualifiers from the entry-name parenthetical
+  // (eshyra-o9bd.18.7.3): "(3/Day)" → perDay, "(Recharges after a Short or
+  // Long Rest)" → rechargeAfterRest, "(Costs 2 Actions)" → legendaryActionCost.
+  const usage = mechanics.usage;
+  if (usage !== undefined) {
+    if (typeof usage !== 'object' || usage === null || Array.isArray(usage)) {
+      throw new RulesPackError(`${path}.${key}.usage must be an object`);
+    }
+    const obj = usage as Obj;
+    const usagePath = `${path}.${key}.usage`;
+    if (
+      obj.perDay === undefined &&
+      obj.rechargeAfterRest === undefined &&
+      obj.legendaryActionCost === undefined
+    ) {
+      throw new RulesPackError(`${usagePath} must not be empty when present`);
+    }
+    optInt(obj, 'perDay', usagePath, 1);
+    optInt(obj, 'legendaryActionCost', usagePath, 1);
+    optStr(obj, 'rechargeAfterRest', usagePath);
+    const rechargeAfterRest = obj.rechargeAfterRest;
+    if (
+      rechargeAfterRest !== undefined &&
+      !USAGE_RECHARGE_RESTS.has(rechargeAfterRest as string)
+    ) {
+      throw new RulesPackError(
+        `${usagePath}.rechargeAfterRest must be one of ${[...USAGE_RECHARGE_RESTS].join(', ')}, got ${JSON.stringify(rechargeAfterRest)}`,
+      );
+    }
+  }
+  // Structured creature Spellcasting / Innate Spellcasting projection
+  // (eshyra-o9bd.18.7.3). Fail-closed at import: every group spell must be a
+  // resolved `spell:` ref, so the schema requires that shape outright.
+  const spellcasting = mechanics.spellcasting;
+  if (spellcasting !== undefined) {
+    if (
+      typeof spellcasting !== 'object' ||
+      spellcasting === null ||
+      Array.isArray(spellcasting)
+    ) {
+      throw new RulesPackError(`${path}.${key}.spellcasting must be an object`);
+    }
+    const obj = spellcasting as Obj;
+    const castPath = `${path}.${key}.spellcasting`;
+    const mode = reqStr(obj, 'mode', castPath);
+    if (mode !== 'innate' && mode !== 'prepared') {
+      throw new RulesPackError(
+        `${castPath}.mode must be "innate" or "prepared", got ${JSON.stringify(mode)}`,
+      );
+    }
+    reqStr(obj, 'ability', castPath);
+    optInt(obj, 'saveDC', castPath, 1);
+    optInt(obj, 'attackBonus', castPath);
+    optInt(obj, 'casterLevel', castPath, 1);
+    optStr(obj, 'listClass', castPath);
+    optStr(obj, 'footnote', castPath);
+    optStr(obj, 'componentRequirement', castPath);
+    const componentRequirement = obj.componentRequirement;
+    if (
+      componentRequirement !== undefined &&
+      !SPELLCASTING_COMPONENT_REQUIREMENTS.has(componentRequirement as string)
+    ) {
+      throw new RulesPackError(
+        `${castPath}.componentRequirement must be one of ${[...SPELLCASTING_COMPONENT_REQUIREMENTS].join(', ')}, got ${JSON.stringify(componentRequirement)}`,
+      );
+    }
+    const groups = objArray(obj, 'groups', castPath);
+    if (groups === undefined || groups.length === 0) {
+      throw new RulesPackError(`${castPath}.groups must be non-empty`);
+    }
+    groups.forEach((group, i) => {
+      const groupPath = `${castPath}.groups[${i}]`;
+      const frequency = reqStr(group, 'frequency', groupPath);
+      if (!SPELLCASTING_GROUP_FREQUENCIES.has(frequency)) {
+        throw new RulesPackError(
+          `${groupPath}.frequency must be one of ${[...SPELLCASTING_GROUP_FREQUENCIES].join(', ')}, got ${JSON.stringify(frequency)}`,
+        );
+      }
+      // Frequency-specific structure is enforced, not merely permitted:
+      // `per-day` REQUIRES its use count, `slot-level` REQUIRES the spell
+      // level and slot count, and every field is forbidden on frequencies
+      // it does not describe — a structurally invalid group must be
+      // rejected, not silently carried (eshyra-o9bd.18.7.3 review).
+      if (frequency === 'per-day') {
+        reqInt(group, 'uses', groupPath, 1);
+        optBool(group, 'each', groupPath);
+      } else {
+        for (const key of ['uses', 'each']) {
+          if (group[key] !== undefined) {
+            throw new RulesPackError(
+              `${groupPath}.${key} is only valid on per-day groups`,
+            );
+          }
+        }
+      }
+      if (frequency === 'slot-level') {
+        reqInt(group, 'level', groupPath, 1);
+        reqInt(group, 'slots', groupPath, 1);
+      } else {
+        for (const key of ['level', 'slots']) {
+          if (group[key] !== undefined) {
+            throw new RulesPackError(
+              `${groupPath}.${key} is only valid on slot-level groups`,
+            );
+          }
+        }
+      }
+      const spells = objArray(group, 'spells', groupPath);
+      if (spells === undefined || spells.length === 0) {
+        throw new RulesPackError(`${groupPath}.spells must be non-empty`);
+      }
+      spells.forEach((spell, j) => {
+        const spellPath = `${groupPath}.spells[${j}]`;
+        const ref = reqStr(spell, 'ref', spellPath);
+        if (!ref.startsWith('spell:')) {
+          throw new RulesPackError(
+            `${spellPath}.ref must be a 'spell:' ref, got ${JSON.stringify(ref)}`,
+          );
+        }
+        optStr(spell, 'note', spellPath);
+        optBool(spell, 'footnoteMarked', spellPath);
+      });
+    });
+  }
 }
+
+const USAGE_RECHARGE_RESTS: ReadonlySet<string> = new Set([
+  'short-rest',
+  'long-rest',
+  'short-or-long-rest',
+]);
+
+const SPELLCASTING_COMPONENT_REQUIREMENTS: ReadonlySet<string> = new Set([
+  'no-material',
+  'verbal-only',
+  'none',
+]);
+
+const SPELLCASTING_GROUP_FREQUENCIES: ReadonlySet<string> = new Set([
+  'cantrip',
+  'at-will',
+  'per-day',
+  'slot-level',
+]);
 
 function validateMechanicsEffect(effect: Obj, path: string): void {
   const kind = reqStr(effect, 'kind', path);

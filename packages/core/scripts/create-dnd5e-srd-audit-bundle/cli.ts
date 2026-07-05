@@ -992,7 +992,13 @@ function firstKeys(
 export type GameplayReadinessBucket =
   | 'unresolved-choice-prose'
   | 'partial-structure'
-  | 'prose-only';
+  | 'prose-only'
+  // Nested creature-entry buckets (eshyra-o9bd.18.7.3): individual
+  // trait/action/reaction/legendary-action entries without a typed
+  // `mechanics` object, split by whether their prose carries mechanical
+  // vocabulary (dice, DCs, modifiers) or reads as situational/narrative.
+  | 'mechanical-prose'
+  | 'narrative-prose';
 
 /**
  * A reviewed decision about one kind×bucket of not-yet-modeled records:
@@ -1017,14 +1023,225 @@ export interface GameplayReadinessDispositionPolicyEntry {
   readonly bead?: string;
 }
 
+/**
+ * Mechanical vocabulary in an unmodeled creature entry (eshyra-o9bd.18.7.3):
+ * anything matching this is reported as `mechanical-prose` rather than
+ * `narrative-prose`, so residual gameplay language can never hide inside the
+ * "descriptive text" bucket.
+ */
+export const CREATURE_ENTRY_MECHANICAL_SIGNAL =
+  /\bDC\s*\d|\b\d+d\d+\b|saving throw|advantage|disadvantage|hit point|attack roll|to hit|damage|\bimmune\b|resistance|is (?:blinded|charmed|deafened|frightened|grappled|incapacitated|paralyzed|petrified|poisoned|prone|restrained|stunned|unconscious)\b/i;
+
+/**
+ * Reviewed accepted-prose creature-entry MEMBERSHIP (eshyra-o9bd.18.7.3
+ * review). The bucket dispositions below accept these exact entries and no
+ * others: an entry that newly loses its typed mechanics (or a new unmodeled
+ * entry) is NOT covered by the blanket disposition — it fails the build
+ * until explicitly reviewed here, and an entry that gains mechanics goes
+ * stale here and must be removed. This is what makes the accepted buckets
+ * fail-closed at the entry level rather than only at the bucket level.
+ */
+export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
+  Record<'mechanical-prose' | 'narrative-prose', readonly string[]>
+> = Object.freeze({
+  'mechanical-prose': [
+    'creature:adult-bronze-dragon#actions:Change Shape',
+    'creature:adult-gold-dragon#actions:Change Shape',
+    'creature:adult-silver-dragon#actions:Change Shape',
+    'creature:ancient-brass-dragon#actions:Change Shape',
+    'creature:ancient-bronze-dragon#actions:Change Shape',
+    'creature:ancient-copper-dragon#actions:Change Shape',
+    'creature:ancient-gold-dragon#actions:Change Shape',
+    'creature:ancient-silver-dragon#actions:Change Shape',
+    'creature:androsphinx#traits:Inscrutable',
+    'creature:bugbear#traits:Brute',
+    'creature:cloaker#traits:Damage Transfer',
+    'creature:couatl#traits:Shielded Mind',
+    'creature:doppelganger#actions:Read Thoughts',
+    'creature:fire-elemental#traits:Water Susceptibility',
+    'creature:gelatinous-cube#traits:Transparent',
+    'creature:gladiator#traits:Brute',
+    'creature:gray-ooze#traits:Corrode Metal',
+    'creature:green-hag#actions:Illusory Appearance',
+    'creature:green-hag#traits:Mimicry',
+    'creature:gynosphinx#traits:Inscrutable',
+    'creature:lemure#traits:Hellish Rejuvenation',
+    'creature:mummy-lord#traits:Rejuvenation',
+    'creature:nightmare#traits:Confer Fire Resistance',
+    'creature:raven#traits:Mimicry',
+    'creature:roper#traits:Grasping Tendrils',
+    'creature:rust-monster#traits:Rust Metal',
+    'creature:sea-hag#actions:Illusory Appearance',
+    'creature:shield-guardian#traits:Bound',
+    'creature:swarm-of-bats#traits:Swarm',
+    'creature:swarm-of-insects#traits:Swarm',
+    'creature:swarm-of-poisonous-snakes#traits:Swarm',
+    'creature:swarm-of-quippers#traits:Swarm',
+    'creature:swarm-of-rats#traits:Swarm',
+    'creature:swarm-of-ravens#traits:Swarm',
+    'creature:tarrasque#traits:Reflective Carapace',
+    'creature:vampire#traits:Harmed by Running Water',
+    'creature:vampire-spawn#traits:Harmed by Running Water',
+    'creature:violet-fungus#actions:Multiattack',
+  ],
+  'narrative-prose': [
+    'creature:adult-white-dragon#traits:Ice Walk',
+    'creature:air-elemental#traits:Air Form',
+    'creature:ancient-white-dragon#traits:Ice Walk',
+    'creature:animated-armor#traits:False Appearance',
+    'creature:awakened-shrub#traits:False Appearance',
+    'creature:awakened-tree#traits:False Appearance',
+    'creature:azer#traits:Illumination',
+    'creature:balor#actions:Teleport',
+    'creature:barbed-devil#traits:Devil’s Sight',
+    'creature:bearded-devil#traits:Devil’s Sight',
+    'creature:black-pudding#traits:Amorphous',
+    'creature:black-pudding#traits:Spider Climb',
+    'creature:bone-devil#traits:Devil’s Sight',
+    'creature:chain-devil#traits:Devil’s Sight',
+    'creature:chuul#traits:Sense Magic',
+    'creature:cloaker#traits:False Appearance',
+    'creature:couatl#actions:Change Shape',
+    'creature:darkmantle#traits:False Appearance',
+    'creature:deva#actions:Change Shape',
+    'creature:doppelganger#traits:Shapechanger',
+    'creature:drider#traits:Spider Climb',
+    'creature:drider#traits:Web Walker',
+    'creature:dryad#traits:Speak with Beasts and Plants',
+    'creature:dryad#traits:Tree Stride',
+    'creature:earth-elemental#traits:Earth Glide',
+    'creature:ettercap#traits:Spider Climb',
+    'creature:ettercap#traits:Web Sense',
+    'creature:ettercap#traits:Web Walker',
+    'creature:fire-elemental#traits:Illumination',
+    'creature:flying-snake#traits:Flyby',
+    'creature:flying-sword#traits:False Appearance',
+    'creature:gargoyle#traits:False Appearance',
+    'creature:ghost#actions:Etherealness',
+    'creature:ghost#traits:Ethereal Sight',
+    'creature:giant-fire-beetle#traits:Illumination',
+    'creature:giant-owl#traits:Flyby',
+    'creature:giant-spider#traits:Spider Climb',
+    'creature:giant-spider#traits:Web Sense',
+    'creature:giant-spider#traits:Web Walker',
+    'creature:giant-wolf-spider#traits:Spider Climb',
+    'creature:giant-wolf-spider#traits:Web Sense',
+    'creature:giant-wolf-spider#traits:Web Walker',
+    'creature:goblin#traits:Nimble Escape',
+    'creature:gray-ooze#traits:Amorphous',
+    'creature:gray-ooze#traits:False Appearance',
+    'creature:homunculus#traits:Telepathic Bond',
+    'creature:horned-devil#traits:Devil’s Sight',
+    'creature:hydra#actions:Multiattack',
+    'creature:hydra#traits:Reactive Heads',
+    'creature:hydra#traits:Wakeful',
+    'creature:ice-devil#traits:Devil’s Sight',
+    'creature:ice-mephit#traits:False Appearance',
+    'creature:imp#traits:Devil’s Sight',
+    'creature:imp#traits:Shapechanger',
+    'creature:invisible-stalker#traits:Faultless Tracker',
+    'creature:kraken#legendaryActions:Tentacle Attack or Fling',
+    'creature:lemure#traits:Devil’s Sight',
+    'creature:lich#legendaryActions:Cantrip',
+    'creature:lion#traits:Running Leap',
+    'creature:magma-mephit#traits:False Appearance',
+    'creature:magmin#traits:Ignited Illumination',
+    'creature:manticore#traits:Tail Spike Regrowth',
+    'creature:marilith#actions:Multiattack',
+    'creature:marilith#actions:Teleport',
+    'creature:marilith#traits:Reactive',
+    'creature:medusa#actions:Multiattack',
+    'creature:mimic#traits:False Appearance (Object Form Only)',
+    'creature:mimic#traits:Shapechanger',
+    'creature:minotaur#traits:Labyrinthine Recall',
+    'creature:mule#traits:Beast of Burden',
+    'creature:mummy-lord#legendaryActions:Attack',
+    'creature:nalfeshnee#actions:Teleport',
+    'creature:night-hag#actions:Change Shape',
+    'creature:night-hag#actions:Etherealness',
+    'creature:nightmare#actions:Ethereal Stride',
+    'creature:nightmare#traits:Illumination',
+    'creature:ochre-jelly#traits:Amorphous',
+    'creature:ochre-jelly#traits:Spider Climb',
+    'creature:oni#actions:Change Shape',
+    'creature:orc#traits:Aggressive',
+    'creature:otyugh#traits:Limited Telepathy',
+    'creature:owl#traits:Flyby',
+    'creature:phase-spider#traits:Ethereal Jaunt',
+    'creature:phase-spider#traits:Spider Climb',
+    'creature:phase-spider#traits:Web Walker',
+    'creature:planetar#traits:Divine Awareness',
+    'creature:pseudodragon#traits:Limited Telepathy',
+    'creature:purple-worm#traits:Tunneler',
+    'creature:quasit#traits:Shapechanger',
+    'creature:roper#traits:False Appearance',
+    'creature:roper#traits:Spider Climb',
+    'creature:rug-of-smothering#traits:False Appearance',
+    'creature:rust-monster#traits:Iron Scent',
+    'creature:sahuagin#traits:Shark Telepathy',
+    'creature:shadow#traits:Amorphous',
+    'creature:shadow#traits:Shadow Stealth',
+    'creature:shield-guardian#traits:Spell Storing',
+    'creature:shrieker#traits:False Appearance',
+    'creature:solar#actions:Flying Sword',
+    'creature:solar#legendaryActions:Teleport',
+    'creature:solar#traits:Divine Awareness',
+    'creature:spider#traits:Spider Climb',
+    'creature:spider#traits:Web Sense',
+    'creature:spider#traits:Web Walker',
+    'creature:spy#traits:Cunning Action',
+    'creature:succubus-incubus#actions:Etherealness',
+    'creature:succubus-incubus#traits:Shapechanger',
+    'creature:tarrasque#legendaryActions:Attack',
+    'creature:tarrasque#legendaryActions:Move',
+    'creature:treant#traits:False Appearance',
+    'creature:unicorn#legendaryActions:Hooves',
+    'creature:vampire#legendaryActions:Move',
+    'creature:vampire#legendaryActions:Unarmed Strike',
+    'creature:vampire#traits:Forbiddance',
+    'creature:vampire#traits:Spider Climb',
+    'creature:vampire#traits:Vampire Weaknesses',
+    'creature:vampire-spawn#traits:Forbiddance',
+    'creature:vampire-spawn#traits:Spider Climb',
+    'creature:vampire-spawn#traits:Vampire Weaknesses',
+    'creature:violet-fungus#traits:False Appearance',
+    'creature:water-elemental#traits:Water Form',
+    'creature:werebear#traits:Shapechanger',
+    'creature:wereboar#traits:Shapechanger',
+    'creature:wererat#traits:Shapechanger',
+    'creature:weretiger#traits:Shapechanger',
+    'creature:werewolf#traits:Shapechanger',
+    'creature:will-o-wisp#traits:Ephemeral',
+    'creature:will-o-wisp#traits:Variable Illumination',
+    'creature:wraith#actions:Create Specter',
+    'creature:xorn#traits:Earth Glide',
+    'creature:xorn#traits:Treasure Sense',
+    'creature:young-white-dragon#traits:Ice Walk',
+  ],
+});
+
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
-  'creature#partial-structure': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.3',
+  // Nested creature-entry dispositions (eshyra-o9bd.18.7.3). The typed
+  // entry projections cover attacks, saves, damage, conditions, recharge,
+  // per-day/rest use economies, legendary resistance, regeneration, healing,
+  // multiattack counts, save/check/attack-roll modifiers, spellcasting spell
+  // lists, breathing/jump grammars, and triggered-effect markers. The
+  // remaining unmodeled entries were reviewed with that bead: their
+  // adjudication is inherently situational (form changes, telepathic bonds,
+  // terrain interaction, sensory description), so the verbatim prose is the
+  // intended representation for the DM model, with numeric hooks already
+  // projected wherever the entry prints them.
+  'creature-entry#mechanical-prose': {
+    status: 'accepted-prose-only',
     reason:
-      'Frog, Sea Horse, and Shrieker carry traits (Amphibious, Standing Leap, Shriek) with no typed mechanics projection yet.',
+      'Entries whose remaining mechanical language is situational (movement-style traits, form/terrain interactions, rider clauses on already-projected attacks); the deterministic hooks these entries print (DCs, dice, conditions, uses) are projected — the residue is DM-adjudicated prose by design (eshyra-o9bd.18.7.3).',
+  },
+  'creature-entry#narrative-prose': {
+    status: 'accepted-prose-only',
+    reason:
+      'Entries with no mechanical vocabulary at all (descriptive/sensory traits such as False Appearance or Illumination); prose is the intended representation (eshyra-o9bd.18.7.3).',
   },
   'hazard#prose-only': {
     status: 'finding',
@@ -1120,6 +1337,23 @@ export type GameplayReadinessReport = {
     readonly signal: string;
   }[];
   /**
+   * Nested creature-entry mechanics coverage (eshyra-o9bd.18.7.3): every
+   * trait/action/reaction/legendary-action entry across `creature` and
+   * `stat-block` records, split into typed-mechanics vs prose-only (further
+   * split by mechanical vs narrative vocabulary). This is what distinguishes
+   * "modeled nested mechanics" from "intentionally prose" for readiness.
+   */
+  readonly creatureEntries: {
+    readonly totalEntries: number;
+    readonly entriesWithMechanics: number;
+    readonly mechanicalProse: number;
+    readonly narrativeProse: number;
+    readonly examples: {
+      readonly mechanicalProse: readonly string[];
+      readonly narrativeProse: readonly string[];
+    };
+  };
+  /**
    * Resolved kind×bucket dispositions for not-yet-modeled records
    * (eshyra-o9bd.18.9.6): every non-empty bucket paired with its reviewed
    * policy entry.
@@ -1181,6 +1415,65 @@ export function buildGameplayReadinessReport(
       },
     };
   }
+  // Nested creature-entry coverage (eshyra-o9bd.18.7.3): scan every
+  // trait/action/reaction/legendary-action entry for a typed `mechanics`
+  // object; entries without one are split by mechanical vocabulary.
+  const creatureEntryRefs: {
+    readonly ref: string;
+    readonly text: string;
+    readonly hasMechanics: boolean;
+  }[] = [];
+  for (const record of pack.records) {
+    if (record.kind !== 'creature' && record.kind !== 'stat-block') continue;
+    const data = dataObject(record);
+    if (data === null) continue;
+    const sections: readonly (readonly [string, readonly unknown[]])[] = [
+      ['traits', arrayValue(data.traits)],
+      ['actions', arrayValue(data.actions)],
+      ['reactions', arrayValue(data.reactions)],
+      [
+        'legendaryActions',
+        arrayValue(objectValue(data.legendaryActions)?.entries),
+      ],
+    ];
+    for (const [section, entries] of sections) {
+      for (const rawEntry of entries) {
+        const entry = objectValue(rawEntry);
+        if (entry === null) continue;
+        const name = stringValue(entry.name) ?? '(unnamed)';
+        creatureEntryRefs.push({
+          ref: `${record.key}#${section}:${name}`,
+          text: stringValue(entry.text) ?? '',
+          hasMechanics: objectValue(entry.mechanics) !== null,
+        });
+      }
+    }
+  }
+  const proseEntries = creatureEntryRefs.filter((entry) => !entry.hasMechanics);
+  const mechanicalProseEntries = proseEntries.filter((entry) =>
+    CREATURE_ENTRY_MECHANICAL_SIGNAL.test(entry.text),
+  );
+  const narrativeProseEntries = proseEntries.filter(
+    (entry) => !CREATURE_ENTRY_MECHANICAL_SIGNAL.test(entry.text),
+  );
+  const creatureEntries: GameplayReadinessReport['creatureEntries'] = {
+    totalEntries: creatureEntryRefs.length,
+    entriesWithMechanics: creatureEntryRefs.filter(
+      (entry) => entry.hasMechanics,
+    ).length,
+    mechanicalProse: mechanicalProseEntries.length,
+    narrativeProse: narrativeProseEntries.length,
+    examples: {
+      mechanicalProse: mechanicalProseEntries
+        .map((entry) => entry.ref)
+        .sort()
+        .slice(0, 5),
+      narrativeProse: narrativeProseEntries
+        .map((entry) => entry.ref)
+        .sort()
+        .slice(0, 5),
+    },
+  };
   // Resolve dispositions (eshyra-o9bd.18.9.6): every non-empty bucket of
   // not-yet-modeled records must map to a reviewed policy entry, and every
   // policy entry must still name a non-empty bucket.
@@ -1242,6 +1535,72 @@ export function buildGameplayReadinessReport(
       });
     }
   }
+  // Nested creature-entry buckets go through the same fail-closed policy
+  // (eshyra-o9bd.18.7.3): a non-empty prose bucket without a reviewed
+  // disposition fails, and an entry naming a now-empty bucket goes stale.
+  const entryBuckets: ReadonlyArray<
+    readonly [GameplayReadinessBucket, readonly { readonly ref: string }[]]
+  > = [
+    ['mechanical-prose', mechanicalProseEntries],
+    ['narrative-prose', narrativeProseEntries],
+  ];
+  for (const [bucket, bucketEntries] of entryBuckets) {
+    if (bucketEntries.length === 0) continue;
+    const policyKey = `creature-entry#${bucket}`;
+    seenPolicyKeys.add(policyKey);
+    const policy = GAMEPLAY_READINESS_DISPOSITIONS[policyKey];
+    if (policy === undefined) {
+      dispositionErrors.push(
+        `${policyKey}: ${bucketEntries.length} prose-only creature entr(ies) have no reviewed disposition (e.g. ${bucketEntries
+          .slice(0, 3)
+          .map((entry) => entry.ref)
+          .join(', ')})`,
+      );
+      continue;
+    }
+    // Fail closed by MEMBERSHIP, not just bucket type: the accepted
+    // disposition covers exactly the reviewed refs. A projection regression
+    // (entry newly losing mechanics) or a new unmodeled entry surfaces as an
+    // unreviewed ref; an entry that gained mechanics goes stale in the list.
+    const reviewed = new Set(
+      ACCEPTED_PROSE_CREATURE_ENTRY_REFS[
+        bucket as keyof typeof ACCEPTED_PROSE_CREATURE_ENTRY_REFS
+      ] ?? [],
+    );
+    const present = new Set(bucketEntries.map((entry) => entry.ref));
+    const unreviewed = bucketEntries
+      .map((entry) => entry.ref)
+      .filter((ref) => !reviewed.has(ref));
+    if (unreviewed.length > 0) {
+      dispositionErrors.push(
+        `${policyKey}: ${unreviewed.length} entr(ies) not in the reviewed accepted-prose membership (e.g. ${unreviewed
+          .slice(0, 3)
+          .join(', ')}) — review and add, or restore the typed projection`,
+      );
+    }
+    const staleRefs = [...reviewed].filter((ref) => !present.has(ref));
+    if (staleRefs.length > 0) {
+      dispositionErrors.push(
+        `${policyKey}: ${staleRefs.length} reviewed ref(s) no longer in the bucket (e.g. ${staleRefs
+          .slice(0, 3)
+          .join(', ')}) — remove them from ACCEPTED_PROSE_CREATURE_ENTRY_REFS`,
+      );
+    }
+    if (policy.status === 'finding' && policy.bead === undefined) {
+      dispositionErrors.push(
+        `${policyKey}: disposition is a finding but names no bead`,
+      );
+    }
+    dispositions.push({
+      kind: 'creature-entry',
+      bucket,
+      count: bucketEntries.length,
+      examples: bucketEntries.slice(0, 5).map((entry) => entry.ref),
+      status: policy.status,
+      reason: policy.reason,
+      ...(policy.bead === undefined ? {} : { bead: policy.bead }),
+    });
+  }
   for (const policyKey of Object.keys(GAMEPLAY_READINESS_DISPOSITIONS)) {
     if (!seenPolicyKeys.has(policyKey)) {
       dispositionErrors.push(
@@ -1253,6 +1612,7 @@ export function buildGameplayReadinessReport(
   return {
     packId: pack.meta.packId,
     byKind,
+    creatureEntries,
     highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
       key: finding.key,
       kind: finding.kind,
@@ -1300,6 +1660,13 @@ export function formatGameplayReadinessReport(
       `- ${kind}: choices [${summary.examples.structuredChoices.join(', ') || 'none'}]; unresolved [${summary.examples.unresolvedChoiceProse.join(', ') || 'none'}]; grants [${summary.examples.deterministicGrants.join(', ') || 'none'}]; mechanics [${summary.examples.mechanicsProjections.join(', ') || 'none'}]; partial [${summary.examples.partialStructure.join(', ') || 'none'}]; prose-only [${summary.examples.proseOnly.join(', ') || 'none'}]`,
     );
   }
+  lines.push(
+    '',
+    'Nested creature-entry mechanics (eshyra-o9bd.18.7.3)',
+    `- entries: ${report.creatureEntries.totalEntries}; with typed mechanics: ${report.creatureEntries.entriesWithMechanics}; mechanical prose: ${report.creatureEntries.mechanicalProse}; narrative prose: ${report.creatureEntries.narrativeProse}`,
+    `- mechanical-prose examples: [${report.creatureEntries.examples.mechanicalProse.join(', ') || 'none'}]`,
+    `- narrative-prose examples: [${report.creatureEntries.examples.narrativeProse.join(', ') || 'none'}]`,
+  );
   lines.push('', 'High-impact unresolved choice-prose examples');
   if (report.highImpactExamples.length === 0) {
     lines.push('(none)');

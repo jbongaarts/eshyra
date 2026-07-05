@@ -553,6 +553,13 @@ const ENTRY_TERMINAL_PUNCTUATION = /[.!?:)”"’']$/;
 const SPELL_LIST_LINE =
   /^(?:at will|cantrips?|\d+\s*\/\s*day|\d(?:st|nd|rd|th)(?:[ -]?level)?)\b/i;
 
+// A spell-list group header ANYWHERE in a line ("… magic missile 2/day each:
+// plane shift (self only),"): after re-flow a header regularly starts
+// mid-line, so the backward tail scan in `entryBodyComplete` cannot rely on
+// the line-anchored form above (eshyra-o9bd.18.7.3).
+const SPELL_LIST_CONTENT =
+  /(?:^|\s)(?:At will|Cantrips \(at will\)|\d+\s*\/\s*day(?: each)?|\d(?:st|nd|rd|th) level \(\d+ slots?\))\s*:/i;
+
 // Lines printed larger than stat-block content (>= ~12pt) are structural
 // headings — SRD creature-group headings ("Angels" ~14pt, "Black Dragon"
 // ~12pt), running page headers ("Monsters (B)" ~18pt), and leaked creature
@@ -634,9 +641,28 @@ function entryBodyComplete(body: readonly string[]): boolean {
   for (let i = body.length - 1; i >= 0; i--) {
     const trimmed = body[i].trim();
     if (trimmed.length === 0) continue;
-    return (
-      ENTRY_TERMINAL_PUNCTUATION.test(trimmed) || SPELL_LIST_LINE.test(trimmed)
-    );
+    if (
+      ENTRY_TERMINAL_PUNCTUATION.test(trimmed) ||
+      SPELL_LIST_LINE.test(trimmed)
+    ) {
+      return true;
+    }
+    // A WRAPPED spell-list continuation ("… ray of enfeeblement," /
+    // "… entangle") ends no sentence and does not itself start with a group
+    // header, so the head-of-line checks above miss it and the trait printed
+    // after the list (Night Hag / Unicorn "Magic Resistance", Oni "Magic
+    // Weapons") was swallowed as a continuation (eshyra-o9bd.18.7.3). The
+    // body is still complete when the open entry's TAIL is a spell list:
+    // walk back — a group-header line found before any sentence-terminated
+    // line means the dangling line is list content, not an unfinished
+    // sentence.
+    for (let j = i - 1; j >= 0; j--) {
+      const prior = body[j].trim();
+      if (prior.length === 0) continue;
+      if (SPELL_LIST_CONTENT.test(prior)) return true;
+      if (ENTRY_TERMINAL_PUNCTUATION.test(prior)) return false;
+    }
+    return false;
   }
   return true;
 }
