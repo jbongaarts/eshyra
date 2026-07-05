@@ -707,7 +707,14 @@
             "effects": [
               {
                 "kind": "proficiency",
-                "grant": "the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus"
+                "grant": "the History skill",
+                "condition": "related to the origin of stonework"
+              },
+              {
+                "kind": "expertise",
+                "ability": "intelligence",
+                "skill": "history",
+                "condition": "related to the origin of stonework"
               }
             ]
           }
@@ -1632,7 +1639,14 @@
             "effects": [
               {
                 "kind": "proficiency",
-                "grant": "the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus"
+                "grant": "the History skill",
+                "condition": "related to the origin of stonework"
+              },
+              {
+                "kind": "expertise",
+                "ability": "intelligence",
+                "skill": "history",
+                "condition": "related to the origin of stonework"
               }
             ]
           }
@@ -1942,7 +1956,10 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "expertise"
+                "kind": "expertise",
+                "ability": "intelligence",
+                "skill": "history",
+                "condition": "related to magic items, alchemical objects, or technological devices"
               }
             ]
           }
@@ -70942,7 +70959,7 @@
           },
           {
             "condition": "restrained",
-            "relation": "mention"
+            "relation": "applies"
           }
         ],
         "effects": [
@@ -71047,7 +71064,17 @@
         "effects": [
           {
             "kind": "brutalCritical",
-            "additionalDice": 1
+            "additionalDice": 1,
+            "increases": [
+              {
+                "level": 13,
+                "additionalDice": 2
+              },
+              {
+                "level": 17,
+                "additionalDice": 3
+              }
+            ]
           }
         ]
       }
@@ -71087,15 +71114,15 @@
         "conditions": [
           {
             "condition": "blinded",
-            "relation": "prevents"
+            "relation": "exclusion"
           },
           {
             "condition": "deafened",
-            "relation": "prevents"
+            "relation": "exclusion"
           },
           {
             "condition": "incapacitated",
-            "relation": "prevents"
+            "relation": "exclusion"
           }
         ],
         "effects": [
@@ -71298,7 +71325,7 @@
         "conditions": [
           {
             "condition": "unconscious",
-            "relation": "applies"
+            "relation": "exclusion"
           }
         ]
       }
@@ -71498,7 +71525,7 @@
             "kind": "attackRollModifier",
             "mode": "advantage",
             "attackType": "melee",
-            "constraint": "using Strength during this turn, but attack rolls against you have advantage until your next turn"
+            "constraint": "using Strength during this turn"
           },
           {
             "kind": "attackRollModifier",
@@ -71592,7 +71619,8 @@
             "abilities": [
               "dexterity",
               "constitution"
-            ]
+            ],
+            "allowsShield": true
           }
         ]
       }
@@ -73725,7 +73753,7 @@
         "conditions": [
           {
             "condition": "unconscious",
-            "relation": "applies"
+            "relation": "exclusion"
           }
         ]
       },
@@ -73865,7 +73893,17 @@
         "effects": [
           {
             "kind": "extraAttack",
-            "attacks": 2
+            "attacks": 2,
+            "increases": [
+              {
+                "level": 11,
+                "attacks": 3
+              },
+              {
+                "level": 20,
+                "attacks": 4
+              }
+            ]
           }
         ]
       }
@@ -75469,7 +75507,7 @@
         "conditions": [
           {
             "condition": "unconscious",
-            "relation": "applies"
+            "relation": "exclusion"
           }
         ]
       },
@@ -75696,7 +75734,10 @@
         "effects": [
           {
             "kind": "savingThrowBonus",
-            "addAbilityModifier": "charisma"
+            "addAbilityModifier": "charisma",
+            "minimum": 1,
+            "subject": "you-or-friendly-creatures",
+            "rangeFeet": 10
           }
         ]
       }
@@ -75856,7 +75897,9 @@
           {
             "kind": "extraDamage",
             "dice": "2d8",
-            "perSlotLevelIncrease": "1d8"
+            "perSlotLevelIncrease": "1d8",
+            "maximumDice": "5d8",
+            "bonusDiceVsUndeadOrFiend": "1d8"
           }
         ]
       }
@@ -111579,7 +111622,9 @@
           {
             "kind": "acFormula",
             "base": 13,
-            "ability": "dexterity"
+            "abilities": [
+              "dexterity"
+            ]
           }
         ]
       },

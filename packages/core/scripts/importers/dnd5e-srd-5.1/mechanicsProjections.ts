@@ -672,10 +672,12 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
     text,
   );
   if (acFormula !== null) {
+    // Same payload contract as the feature-side acFormula (abilities is
+    // always a list): one effect kind, one shape.
     effects.push({
       kind: 'acFormula',
       base: Number(acFormula[1]),
-      ability: 'dexterity',
+      abilities: ['dexterity'],
     });
   }
   const acMinimum = /\bAC can[\u2019']t be less than (\d+)\b/.exec(text);
@@ -911,7 +913,10 @@ function parseModifierEffects(text: string): readonly Mechanics[] {
       /\b(?:ha(?:s|ve)|gives you|you gain) (advantage|disadvantage) on ([^.;]+)/gi,
     )) {
       const mode = match[1].toLowerCase();
-      const scopeText = match[2];
+      // A coordinated ", but …" continuation is a SEPARATE effect (Reckless
+      // Attack's attackers-against-you clause) and must not ride the first
+      // modifier's constraint.
+      const scopeText = match[2].split(/,\s*but\s+/)[0];
       for (const clause of scopeText.split(/,? as well as (?:on )?/i)) {
         const skillCheck =
           /^(?:an? )?(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+\(([A-Za-z ]+)\) checks?(?: (?:and saving throws )?)?(?:that rely on ([a-z, ]+?(?: (?:and|or) [a-z]+)?))?(?:[ .]|$| if )/.exec(
@@ -1272,9 +1277,14 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
           acFormula[2].toLowerCase(),
           ...(acFormula[3] === undefined ? [] : [acFormula[3].toLowerCase()]),
         ],
-        allowsShield: /\+ your shield['\u2019]s AC bonus/i.test(text)
-          ? true
-          : undefined,
+        // Shield eligibility is stated either inside the formula ("+ your
+        // shield's AC bonus") or as its own sentence (Barbarian Unarmored
+        // Defense: "You can use a shield and still gain this benefit.").
+        allowsShield:
+          /\+ your shield['\u2019]s AC bonus/i.test(text) ||
+          /\bYou can use a shield and still gain this benefit\b/i.test(text)
+            ? true
+            : undefined,
       }),
     );
   }
@@ -1282,7 +1292,24 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
   if (extraAttack !== null) {
     const attacks =
       extraAttack[1] === 'twice' ? 2 : extraAttack[1] === 'three times' ? 3 : 4;
-    effects.push({ kind: 'extraAttack', attacks });
+    // The Fighter's tiers: "The number of attacks increases to three when
+    // you reach 11th level in this class and to four when you reach 20th
+    // level in this class." Every printed tier is preserved.
+    const increases = [
+      ...text.matchAll(
+        /\bto (two|three|four) when you reach (\d+)(?:st|nd|rd|th) level\b/gi,
+      ),
+    ].map((tier) => ({
+      level: Number(tier[2]),
+      attacks: NUMBER_WORDS.get(tier[1].toLowerCase()) ?? 0,
+    }));
+    effects.push(
+      compact({
+        kind: 'extraAttack',
+        attacks,
+        increases: increases.length > 0 ? increases : undefined,
+      }),
+    );
   }
   const critical =
     /\bcritical hit on a roll of (\d+)(?:[-\u2013]20| or 20)\b/i.exec(text);
@@ -1317,14 +1344,42 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
   ) {
     effects.push({ kind: 'damageResistance', typeFrom: 'draconic-ancestry' });
   }
-  // Typed proficiency grants ("You have proficiency with the battleaxe, …",
-  // "You gain proficiency in the Intimidation skill", Stonecunning's
-  // "considered proficient in the History skill"). The grant clause is kept
-  // verbatim — item/skill vocabularies live in the equipment/skill records.
-  const proficiency =
-    /\b[Yy]ou (?:have|gain) proficiency (with|in) ([^.]+)\.|\b[Yy]ou are considered proficient in ([^.]+)\./.exec(
+  // Conditional double-proficiency clauses (Stonecunning, the Rock Gnome's
+  // Artificer's Lore): "Whenever you make an Intelligence (History) check
+  // related to …, you are considered proficient in the History skill and
+  // add double your proficiency bonus …". The executable rule is projected
+  // structurally — a scoped proficiency grant plus a scoped expertise —
+  // never embedded inside a free-text grant string.
+  const conditionalExpertise =
+    /\bWhenever you make an? (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) check (.*?), you (?:are considered proficient in ([^.]*?) and )?(?:can )?add (?:double|twice) your proficiency bonus\b/.exec(
       text,
     );
+  if (conditionalExpertise !== null) {
+    if (conditionalExpertise[4] !== undefined) {
+      effects.push({
+        kind: 'proficiency',
+        grant: conditionalExpertise[4].trim(),
+        condition: conditionalExpertise[3].trim(),
+      });
+    }
+    effects.push({
+      kind: 'expertise',
+      ability: conditionalExpertise[1].toLowerCase(),
+      skill: conditionalExpertise[2].toLowerCase().replaceAll(' ', '-'),
+      condition: conditionalExpertise[3].trim(),
+    });
+  }
+  // Typed proficiency grants ("You have proficiency with the battleaxe, …",
+  // "You gain proficiency in the Intimidation skill"). The grant clause is
+  // kept verbatim — item/skill vocabularies live in the equipment/skill
+  // records. The considered-proficient form is owned by the conditional
+  // double-proficiency grammar above.
+  const proficiency =
+    conditionalExpertise === null
+      ? /\b[Yy]ou (?:have|gain) proficiency (with|in) ([^.]+)\.|\b[Yy]ou are considered proficient in ([^.]+)\./.exec(
+          text,
+        )
+      : /\b[Yy]ou (?:have|gain) proficiency (with|in) ([^.]+)\./.exec(text);
   if (proficiency !== null) {
     effects.push({
       kind: 'proficiency',
@@ -1365,7 +1420,8 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
   }
   if (
     /\bproficiency bonus is doubled\b/i.test(text) ||
-    /\badd twice your proficiency bonus\b/i.test(text)
+    (conditionalExpertise === null &&
+      /\badd (?:twice|double) your proficiency bonus\b/i.test(text))
   ) {
     effects.push({ kind: 'expertise' });
   }
@@ -1417,10 +1473,24 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       text,
     );
   if (brutal !== null) {
-    effects.push({
-      kind: 'brutalCritical',
-      additionalDice: brutal[1] === 'one' ? 1 : brutal[1] === 'two' ? 2 : 3,
-    });
+    // "This increases to two additional dice at 13th level and three
+    // additional dice at 17th level." — the level progression is part of
+    // the deterministic contract, not flavor.
+    const increases = [
+      ...text.matchAll(
+        /\b(one|two|three|four) additional dice at (\d+)(?:st|nd|rd|th) level\b/gi,
+      ),
+    ].map((tier) => ({
+      level: Number(tier[2]),
+      additionalDice: NUMBER_WORDS.get(tier[1].toLowerCase()) ?? 0,
+    }));
+    effects.push(
+      compact({
+        kind: 'brutalCritical',
+        additionalDice: brutal[1] === 'one' ? 1 : brutal[1] === 'two' ? 2 : 3,
+        increases: increases.length > 0 ? increases : undefined,
+      }),
+    );
   }
   const asiIncrease =
     /\bYour (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) and (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) scores increase by (\d+)\. Your maximum for those scores is now (\d+)\b/.exec(
@@ -1447,12 +1517,15 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       }),
     );
   }
-  if (
-    /\b(?:unarmed strikes|weapon attacks) count as magical for the purpose of overcoming resistance\b/i.test(
+  const magicalStrikes =
+    /\b(unarmed strikes|weapon attacks) count as magical for the purpose of overcoming resistance\b/i.exec(
       text,
-    )
-  ) {
-    effects.push({ kind: 'weaponAttacksMagical', scope: 'unarmed-strikes' });
+    );
+  if (magicalStrikes !== null) {
+    effects.push({
+      kind: 'weaponAttacksMagical',
+      scope: magicalStrikes[1].toLowerCase().replaceAll(' ', '-'),
+    });
   }
   const damageReduction =
     /\b(?:reduce the damage|the damage (?:you take )?(?:from the attack )?is reduced) by (\d+d\d+) \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier \+ your ([a-z]+) level\b/i.exec(
@@ -1527,25 +1600,47 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     });
   }
   const saveBonus =
-    /\bgains a bonus to (?:the|that) saving throw equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
+    /\b(you or a friendly creature within (\d+) feet of you )?must make a saving throw, the creature gains a bonus to (?:the|that) saving throw equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier(?: \(with a minimum bonus of \+(\d+)\))?/i.exec(
+      text,
+    ) ??
+    /()()\bgains a bonus to (?:the|that) saving throw equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier(?: \(with a minimum bonus of \+(\d+)\))?/i.exec(
       text,
     );
   if (saveBonus !== null) {
-    effects.push({
-      kind: 'savingThrowBonus',
-      addAbilityModifier: saveBonus[1].toLowerCase(),
-    });
+    effects.push(
+      compact({
+        kind: 'savingThrowBonus',
+        addAbilityModifier: saveBonus[3].toLowerCase(),
+        minimum: saveBonus[4] === undefined ? undefined : Number(saveBonus[4]),
+        subject:
+          saveBonus[1] === undefined || saveBonus[1] === ''
+            ? undefined
+            : 'you-or-friendly-creatures',
+        rangeFeet:
+          saveBonus[2] === undefined || saveBonus[2] === ''
+            ? undefined
+            : Number(saveBonus[2]),
+      }),
+    );
   }
   const smite =
-    /\bextra damage is (\d+d\d+) for a 1st-level spell slot, plus (\d+d\d+) for each spell level higher\b/i.exec(
+    /\bextra damage is (\d+d\d+) for a 1st-level spell slot, plus (\d+d\d+) for each spell level higher than 1st(?:, to a maximum of (\d+d\d+))?/i.exec(
       text,
     );
   if (smite !== null) {
-    effects.push({
-      kind: 'extraDamage',
-      dice: smite[1],
-      perSlotLevelIncrease: smite[2],
-    });
+    const undeadFiend =
+      /\bdamage increases by (\d+d\d+) if the target is an undead or a fiend\b/i.exec(
+        text,
+      );
+    effects.push(
+      compact({
+        kind: 'extraDamage',
+        dice: smite[1],
+        perSlotLevelIncrease: smite[2],
+        maximumDice: smite[3],
+        bonusDiceVsUndeadOrFiend: undeadFiend?.[1],
+      }),
+    );
   }
   const attackOrDamage =
     /\badd your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier to the attack roll or the damage roll\b/i.exec(

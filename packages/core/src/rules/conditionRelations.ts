@@ -174,11 +174,22 @@ const RELATION_PATTERNS: readonly {
     relation: 'exclusion',
     test: (s, c) =>
       new RegExp(`\\bignoring\\s+(?:\\w+\\s+){0,2}${c}\\b`, 'i').test(s) ||
-      // "knocked" may interpose ("It ends early if you are knocked
-      // unconscious" — Barbarian Rage's early-end trigger is a benefit
-      // exclusion, not an application; eshyra-o9bd.18.7.5).
+      // "knocked"/"fall(s)" may carry the condition inside a benefit-end or
+      // revert trigger ("It ends early if you are knocked unconscious" —
+      // Rage; "ends early only if you fall unconscious" — Persistent Rage;
+      // "You automatically revert if you fall unconscious" — Wild Shape).
+      // The benefit/form ends when the condition arrives; the feature does
+      // not apply it (eshyra-o9bd.18.7.5).
       new RegExp(
-        `\\bif\\s+(?:\\w+\\s+){0,3}(?:are|is)\\s+(?:already\\s+)?(?:knocked\\s+)?${c}\\b`,
+        `\\bif\\s+(?:\\w+\\s+){0,3}(?:(?:are|is)\\s+(?:already\\s+)?(?:knocked\\s+)?|falls?\\s+)${c}\\b`,
+        'i',
+      ).test(s) ||
+      // Benefit-eligibility gate phrased as a can't-be list ("To gain this
+      // benefit, you can't be blinded, deafened, or incapacitated" — Danger
+      // Sense). The absence of the condition gates the benefit; nothing is
+      // prevented (eshyra-o9bd.18.7.5).
+      new RegExp(
+        `\\bTo gain (?:this|the) benefit[^.]*\\b${CANT}\\s+be\\b[^.]*\\b${c}\\b`,
         'i',
       ).test(s) ||
       new RegExp(`\\balready\\s+${c}\\b`, 'i').test(s),
@@ -232,7 +243,13 @@ const RELATION_PATTERNS: readonly {
     test: (s, c) =>
       matchesWithoutNegation(
         s,
-        new RegExp(`\\b(?:becomes?|falls?|be|is|are|knocked)\\s+${c}\\b`, 'gi'),
+        // "both" may interpose ("you and the creature are both restrained"
+        // — the Grappler feat's pin applies restrained on success;
+        // eshyra-o9bd.18.7.5).
+        new RegExp(
+          `\\b(?:becomes?|falls?|be|is|are|knocked)\\s+(?:both\\s+)?${c}\\b`,
+          'gi',
+        ),
       ),
   },
 ];

@@ -1,0 +1,147 @@
+import { describe, expect, it } from 'vitest';
+import { getBundledDnd5eSrdPack } from '../src/rules/bundledSrdPack.js';
+
+/**
+ * Committed-pack depth assertions for complex deterministic features
+ * (eshyra-o9bd.18.7.5 review). `hasMechanicsProjection` treats ANY mechanics
+ * object as "modeled", so a typed-but-partial projection (a dropped
+ * maximum, minimum, or level tier) is invisible to the readiness report.
+ * These tests pin the ENTIRE intended structure of the features whose
+ * projections were found incomplete, so a partial regression fails here
+ * even though the record still "has mechanics".
+ */
+
+function dataOf(key: string): Record<string, unknown> {
+  const record = getBundledDnd5eSrdPack().records.find(
+    (candidate) => candidate.key === key,
+  );
+  expect(record, `${key} must exist in the committed pack`).toBeDefined();
+  return record?.data as Record<string, unknown>;
+}
+
+function mechanicsOf(key: string): Record<string, unknown> {
+  const mechanics = dataOf(key).mechanics as Record<string, unknown>;
+  expect(mechanics, `${key} must carry mechanics`).toBeDefined();
+  return mechanics;
+}
+
+describe('committed feature mechanics depth (eshyra-o9bd.18.7.5)', () => {
+  it('Barbarian Unarmored Defense carries the full AC formula including shield eligibility', () => {
+    expect(mechanicsOf('feature:barbarian:unarmored-defense').effects).toEqual([
+      {
+        kind: 'acFormula',
+        base: 10,
+        abilities: ['dexterity', 'constitution'],
+        allowsShield: true,
+      },
+    ]);
+  });
+
+  it('Paladin Aura of Protection carries the minimum bonus and range scope', () => {
+    expect(mechanicsOf('feature:paladin:aura-of-protection').effects).toEqual([
+      {
+        kind: 'savingThrowBonus',
+        addAbilityModifier: 'charisma',
+        minimum: 1,
+        subject: 'you-or-friendly-creatures',
+        rangeFeet: 10,
+      },
+    ]);
+  });
+
+  it('Paladin Divine Smite carries the 5d8 maximum and the undead/fiend rider', () => {
+    expect(mechanicsOf('feature:paladin:divine-smite').effects).toEqual([
+      {
+        kind: 'extraDamage',
+        dice: '2d8',
+        perSlotLevelIncrease: '1d8',
+        maximumDice: '5d8',
+        bonusDiceVsUndeadOrFiend: '1d8',
+      },
+    ]);
+  });
+
+  it('Barbarian Brutal Critical carries the 13th/17th-level progression', () => {
+    expect(mechanicsOf('feature:barbarian:brutal-critical').effects).toEqual([
+      {
+        kind: 'brutalCritical',
+        additionalDice: 1,
+        increases: [
+          { level: 13, additionalDice: 2 },
+          { level: 17, additionalDice: 3 },
+        ],
+      },
+    ]);
+  });
+
+  it('Fighter Extra Attack carries the 11th/20th-level tiers', () => {
+    expect(mechanicsOf('feature:fighter:extra-attack').effects).toEqual([
+      {
+        kind: 'extraAttack',
+        attacks: 2,
+        increases: [
+          { level: 11, attacks: 3 },
+          { level: 20, attacks: 4 },
+        ],
+      },
+    ]);
+  });
+
+  it('Barbarian Reckless Attack keeps the coordinated but-clause out of the actor constraint', () => {
+    expect(mechanicsOf('feature:barbarian:reckless-attack').effects).toEqual([
+      {
+        kind: 'attackRollModifier',
+        mode: 'advantage',
+        attackType: 'melee',
+        constraint: 'using Strength during this turn',
+      },
+      {
+        kind: 'attackRollModifier',
+        subject: 'attackers-against-you',
+        mode: 'advantage',
+      },
+    ]);
+  });
+
+  it('Dwarf Stonecunning projects a scoped proficiency plus scoped expertise', () => {
+    const traits = dataOf('ancestry:dwarf').traits as Array<{
+      name: string;
+      mechanics?: { effects?: unknown };
+    }>;
+    const stonecunning = traits.find((trait) => trait.name === 'Stonecunning');
+    expect(stonecunning?.mechanics?.effects).toEqual([
+      {
+        kind: 'proficiency',
+        grant: 'the History skill',
+        condition: 'related to the origin of stonework',
+      },
+      {
+        kind: 'expertise',
+        ability: 'intelligence',
+        skill: 'history',
+        condition: 'related to the origin of stonework',
+      },
+    ]);
+  });
+
+  it('condition relations: Persistent Rage / Danger Sense are exclusions, Grappler applies restrained', () => {
+    expect(mechanicsOf('feature:barbarian:persistent-rage').conditions).toEqual(
+      [{ condition: 'unconscious', relation: 'exclusion' }],
+    );
+    expect(mechanicsOf('feature:barbarian:danger-sense').conditions).toEqual([
+      { condition: 'blinded', relation: 'exclusion' },
+      { condition: 'deafened', relation: 'exclusion' },
+      { condition: 'incapacitated', relation: 'exclusion' },
+    ]);
+    expect(mechanicsOf('feat:grappler').conditions).toContainEqual({
+      condition: 'restrained',
+      relation: 'applies',
+    });
+    expect(mechanicsOf('feat:grappler').conditions).not.toContainEqual(
+      expect.objectContaining({
+        condition: 'restrained',
+        relation: 'mention',
+      }),
+    );
+  });
+});

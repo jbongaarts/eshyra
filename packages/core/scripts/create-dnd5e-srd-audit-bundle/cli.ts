@@ -1344,6 +1344,53 @@ export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
   'spell:word-of-recall',
 ]);
 
+/**
+ * Reviewed accepted-prose RECORD memberships (eshyra-o9bd.18.7.5 review),
+ * keyed by `kind#bucket` policy key. Every record-level bucket whose
+ * disposition is `accepted-prose-only` must carry its exact reviewed key
+ * set here: a record that newly loses its modeled status (choices, grants,
+ * or mechanics) is NOT blanket-blessed — it fails the build until
+ * explicitly reviewed, and a record that becomes modeled goes stale here
+ * and must be removed.
+ */
+export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
+  Record<string, readonly string[]>
+> = Object.freeze({
+  'feature#partial-structure': ['feature:cleric:destroy-undead'],
+  'feature#prose-only': [
+    'feature:barbarian:indomitable-might',
+    'feature:bard:superior-inspiration',
+    'feature:circle-of-the-land:bonus-cantrip',
+    'feature:circle-of-the-land:circle-spells',
+    'feature:college-of-lore:peerless-skill',
+    'feature:draconic-bloodline:dragon-wings',
+    'feature:druid:archdruid',
+    'feature:druid:beast-spells',
+    'feature:druid:druidic',
+    'feature:druid:timeless-body',
+    'feature:life-domain:disciple-of-life',
+    'feature:life-domain:supreme-healing',
+    'feature:monk:martial-arts',
+    'feature:monk:perfect-self',
+    'feature:monk:tongue-of-the-sun-and-moon',
+    'feature:oath-of-devotion:purity-of-spirit',
+    'feature:path-of-the-berserker:frenzy',
+    'feature:path-of-the-berserker:retaliation',
+    'feature:ranger:primeval-awareness',
+    'feature:ranger:vanish',
+    'feature:rogue:cunning-action',
+    'feature:rogue:thieves-cant',
+    'feature:school-of-evocation:evocation-savant',
+    'feature:school-of-evocation:potent-cantrip',
+    'feature:school-of-evocation:sculpt-spells',
+    'feature:thief:fast-hands',
+    'feature:thief:second-story-work',
+    'feature:thief:thiefs-reflexes',
+    'feature:thief:use-magic-device',
+    'feature:wizard:cantrips',
+  ],
+});
+
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
@@ -1672,6 +1719,41 @@ export function buildGameplayReadinessReport(
         dispositionErrors.push(
           `${policyKey}: disposition is a finding but names no bead`,
         );
+      }
+      // Accepted record buckets fail closed by MEMBERSHIP
+      // (eshyra-o9bd.18.7.5 review): the acceptance covers exactly the
+      // reviewed keys, so a modeling regression surfaces as an unreviewed
+      // key instead of being silently blessed by the bucket disposition.
+      if (policy.status === 'accepted-prose-only') {
+        const reviewedKeys = ACCEPTED_PROSE_RECORD_KEYS[policyKey];
+        if (reviewedKeys === undefined) {
+          dispositionErrors.push(
+            `${policyKey}: accepted-prose-only record bucket has no reviewed membership in ACCEPTED_PROSE_RECORD_KEYS`,
+          );
+        } else {
+          const reviewed = new Set(reviewedKeys);
+          const present = new Set(bucketRecords.map((record) => record.key));
+          const unreviewed = bucketRecords
+            .map((record) => record.key)
+            .filter((recordKey) => !reviewed.has(recordKey));
+          if (unreviewed.length > 0) {
+            dispositionErrors.push(
+              `${policyKey}: ${unreviewed.length} record(s) not in the reviewed accepted-prose membership (e.g. ${unreviewed
+                .slice(0, 3)
+                .join(', ')}) — review and add, or restore the modeling`,
+            );
+          }
+          const staleKeys = reviewedKeys.filter(
+            (recordKey) => !present.has(recordKey),
+          );
+          if (staleKeys.length > 0) {
+            dispositionErrors.push(
+              `${policyKey}: ${staleKeys.length} reviewed key(s) no longer in the bucket (e.g. ${staleKeys
+                .slice(0, 3)
+                .join(', ')}) — remove them from ACCEPTED_PROSE_RECORD_KEYS`,
+            );
+          }
+        }
       }
       dispositions.push({
         kind,

@@ -1294,6 +1294,150 @@ const SPELLCASTING_GROUP_FREQUENCIES: ReadonlySet<string> = new Set([
   'slot-level',
 ]);
 
+const ABILITY_NAMES: ReadonlySet<string> = new Set([
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+]);
+
+function reqAbility(parent: Obj, key: string, path: string): void {
+  const value = reqStr(parent, key, path);
+  if (!ABILITY_NAMES.has(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be an ability name, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+function reqDice(parent: Obj, key: string, path: string): void {
+  const value = reqStr(parent, key, path);
+  if (!/^\d*d\d+(?:\s*[+-]\s*\d+)?$/.test(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be a dice expression, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+/**
+ * Per-kind payload contracts for the structured effect kinds introduced by
+ * the eshyra-o9bd.18.7.x projection passes. A recognized `kind` string with
+ * a malformed payload must fail pack validation, not slide through on the
+ * kind whitelist alone (eshyra-o9bd.18.7.5 review). Kinds without an entry
+ * here are validated by the whitelist only (their payloads are either
+ * free-form standard-action shapes or under review in later 18.7 children).
+ */
+const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
+  Record<string, (effect: Obj, path: string) => void>
+> = {
+  abilityScoreIncrease: (effect, path) => {
+    const raw = effect.abilities;
+    if (
+      !Array.isArray(raw) ||
+      raw.length === 0 ||
+      !raw.every(
+        (ability) => typeof ability === 'string' && ABILITY_NAMES.has(ability),
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.abilities must be a non-empty ability-name array`,
+      );
+    }
+    reqInt(effect, 'amount', path, 1);
+    optInt(effect, 'newMaximum', path, 1);
+  },
+  acFormula: (effect, path) => {
+    reqInt(effect, 'base', path, 1);
+    const raw = effect.abilities;
+    if (
+      !Array.isArray(raw) ||
+      raw.length === 0 ||
+      !raw.every(
+        (ability) => typeof ability === 'string' && ABILITY_NAMES.has(ability),
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.abilities must be a non-empty ability-name array`,
+      );
+    }
+    optBool(effect, 'allowsShield', path);
+  },
+  brutalCritical: (effect, path) => {
+    reqInt(effect, 'additionalDice', path, 1);
+    const increases = objArray(effect, 'increases', path);
+    increases?.forEach((tier, i) => {
+      reqInt(tier, 'level', `${path}.increases[${i}]`, 1);
+      reqInt(tier, 'additionalDice', `${path}.increases[${i}]`, 1);
+    });
+  },
+  damageReduction: (effect, path) => {
+    if (
+      effect.dice === undefined &&
+      effect.multiplier === undefined &&
+      effect.amountFormula === undefined
+    ) {
+      throw new RulesPackError(
+        `${path} must carry dice, multiplier, or amountFormula`,
+      );
+    }
+    if (effect.dice !== undefined) reqDice(effect, 'dice', path);
+  },
+  extraAttack: (effect, path) => {
+    reqInt(effect, 'attacks', path, 2);
+    const increases = objArray(effect, 'increases', path);
+    increases?.forEach((tier, i) => {
+      reqInt(tier, 'level', `${path}.increases[${i}]`, 1);
+      reqInt(tier, 'attacks', `${path}.increases[${i}]`, 2);
+    });
+  },
+  extraDamage: (effect, path) => {
+    reqDice(effect, 'dice', path);
+    if (effect.type !== undefined) {
+      const type = reqStr(effect, 'type', path);
+      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+        throw new RulesPackError(
+          `${path}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+        );
+      }
+    }
+    if (effect.maximumDice !== undefined) reqDice(effect, 'maximumDice', path);
+    if (effect.perSlotLevelIncrease !== undefined) {
+      reqDice(effect, 'perSlotLevelIncrease', path);
+    }
+    if (effect.bonusDiceVsUndeadOrFiend !== undefined) {
+      reqDice(effect, 'bonusDiceVsUndeadOrFiend', path);
+    }
+  },
+  rollFloor: (effect, path) => {
+    reqInt(effect, 'rollOf', path, 1);
+    reqInt(effect, 'treatAs', path, 1);
+  },
+  saveDcFormula: (effect, path) => {
+    reqInt(effect, 'base', path, 1);
+    reqAbility(effect, 'ability', path);
+    optBool(effect, 'addProficiencyBonus', path);
+  },
+  savingThrowBonus: (effect, path) => {
+    reqAbility(effect, 'addAbilityModifier', path);
+    optInt(effect, 'minimum', path, 1);
+    optInt(effect, 'rangeFeet', path, 1);
+  },
+  weaponAttacksMagical: (effect, path) => {
+    const scope = effect.scope;
+    if (
+      scope !== undefined &&
+      scope !== 'unarmed-strikes' &&
+      scope !== 'weapon-attacks'
+    ) {
+      throw new RulesPackError(
+        `${path}.scope must be "unarmed-strikes" or "weapon-attacks", got ${JSON.stringify(scope)}`,
+      );
+    }
+  },
+};
+
 function validateMechanicsEffect(effect: Obj, path: string): void {
   const kind = reqStr(effect, 'kind', path);
   if (!MECHANICS_EFFECT_KINDS.has(kind)) {
@@ -1301,6 +1445,7 @@ function validateMechanicsEffect(effect: Obj, path: string): void {
       `${path}.kind has unsupported mechanics effect kind ${JSON.stringify(kind)}`,
     );
   }
+  MECHANICS_EFFECT_PAYLOAD_VALIDATORS[kind]?.(effect, path);
 }
 
 // Optional level-by-level class progression (eshyra-4a7.6). Each row carries an

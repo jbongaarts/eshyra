@@ -781,6 +781,11 @@ describe('creature entry effect projections (eshyra-o9bd.18.7.3)', () => {
       ).effects,
     ).toEqual([{ kind: 'weaponAttacksMagical' }]);
     expect(
+      deriveFeatureMechanics(
+        'Your unarmed strikes count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.',
+      ).effects,
+    ).toEqual([{ kind: 'weaponAttacksMagical', scope: 'unarmed-strikes' }]);
+    expect(
       deriveCreatureEntryMechanics(
         'Immutable Form',
         'The golem is immune to any spell or effect that would alter its form.',
@@ -960,7 +965,7 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
             'The target’s base AC becomes 13 + its Dexterity modifier.',
         }),
       ).effects,
-    ).toEqual([{ kind: 'acFormula', base: 13, ability: 'dexterity' }]);
+    ).toEqual([{ kind: 'acFormula', base: 13, abilities: ['dexterity'] }]);
     expect(
       deriveSpellMechanics(
         baseSpell({
@@ -1119,6 +1124,9 @@ describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
         kind: 'acFormula',
         base: 10,
         abilities: ['dexterity', 'constitution'],
+        // The explicit "You can use a shield and still gain this benefit."
+        // sentence is part of the deterministic contract.
+        allowsShield: true,
       },
     ]);
   });
@@ -1151,12 +1159,16 @@ describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
     const mechanics = derive(
       'When you make your first attack on your turn, you can decide to attack recklessly. Doing so gives you advantage on melee weapon attack rolls using Strength during this turn, but attack rolls against you have advantage until your next turn.',
     );
+    // Exact objects: the actor-side constraint must NOT absorb the
+    // coordinated ", but attack rolls against you …" continuation, which is
+    // its own effect.
     expect(mechanics.effects).toEqual([
-      expect.objectContaining({
+      {
         kind: 'attackRollModifier',
         mode: 'advantage',
         attackType: 'melee',
-      }),
+        constraint: 'using Strength during this turn',
+      },
       {
         kind: 'attackRollModifier',
         subject: 'attackers-against-you',
@@ -1177,14 +1189,51 @@ describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
     ).toEqual([{ kind: 'criticalRange', minimumRoll: 19 }]);
     expect(
       derive(
-        'You can attack three times, instead of once, whenever you take the Attack action on your turn.',
+        'You can attack twice, instead of once, whenever you take the Attack action on your turn. The number of attacks increases to three when you reach 11th level in this class and to four when you reach 20th level in this class.',
       ).effects,
-    ).toEqual([{ kind: 'extraAttack', attacks: 3 }]);
+    ).toEqual([
+      {
+        kind: 'extraAttack',
+        attacks: 2,
+        increases: [
+          { level: 11, attacks: 3 },
+          { level: 20, attacks: 4 },
+        ],
+      },
+    ]);
     expect(
       derive(
-        'You can roll one additional weapon damage die when determining the extra damage for a critical hit with a melee attack.',
+        'You can roll one additional weapon damage die when determining the extra damage for a critical hit with a melee attack. This increases to two additional dice at 13th level and three additional dice at 17th level.',
       ).effects,
-    ).toEqual([{ kind: 'brutalCritical', additionalDice: 1 }]);
+    ).toEqual([
+      {
+        kind: 'brutalCritical',
+        additionalDice: 1,
+        increases: [
+          { level: 13, additionalDice: 2 },
+          { level: 17, additionalDice: 3 },
+        ],
+      },
+    ]);
+  });
+
+  it('projects Stonecunning as a scoped proficiency plus scoped expertise, not prose in the grant string', () => {
+    const mechanics = derive(
+      'Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'proficiency',
+        grant: 'the History skill',
+        condition: 'related to the origin of stonework',
+      },
+      {
+        kind: 'expertise',
+        ability: 'intelligence',
+        skill: 'history',
+        condition: 'related to the origin of stonework',
+      },
+    ]);
   });
 
   it('projects typed proficiency grants and expertise', () => {
@@ -1214,13 +1263,27 @@ describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
       derive(
         'Whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus to the saving throw equal to your Charisma modifier (with a minimum bonus of +1).',
       ).effects,
-    ).toEqual([{ kind: 'savingThrowBonus', addAbilityModifier: 'charisma' }]);
+    ).toEqual([
+      {
+        kind: 'savingThrowBonus',
+        addAbilityModifier: 'charisma',
+        minimum: 1,
+        subject: 'you-or-friendly-creatures',
+        rangeFeet: 10,
+      },
+    ]);
     expect(
       derive(
-        'The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8.',
+        'The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8. The damage increases by 1d8 if the target is an undead or a fiend.',
       ).effects,
     ).toEqual([
-      { kind: 'extraDamage', dice: '2d8', perSlotLevelIncrease: '1d8' },
+      {
+        kind: 'extraDamage',
+        dice: '2d8',
+        perSlotLevelIncrease: '1d8',
+        maximumDice: '5d8',
+        bonusDiceVsUndeadOrFiend: '1d8',
+      },
     ]);
     expect(
       derive(

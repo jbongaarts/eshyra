@@ -471,6 +471,42 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     );
   });
 
+  it('fails closed by MEMBERSHIP on unreviewed accepted-prose feature records (eshyra-o9bd.18.7.5 review)', () => {
+    // Committed pack: the feature bucket memberships match exactly.
+    const committed = buildGameplayReadinessReport(
+      getBundledDnd5eSrdPack(),
+      [],
+    );
+    expect(
+      committed.dispositionErrors.filter((error) =>
+        error.startsWith('feature#'),
+      ),
+    ).toEqual([]);
+    // A modeling regression — a feature record that newly carries neither
+    // choices nor mechanics — is NOT blessed by the blanket accepted
+    // disposition; it must be explicitly reviewed into the membership.
+    const regressed = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'feature',
+          key: 'feature:test:regressed',
+          name: 'Regressed',
+          data: {
+            source: 'class:test',
+            level: 1,
+            description: 'A feature whose projection regressed to prose.',
+          },
+        }),
+      ]),
+      [],
+    );
+    expect(
+      regressed.dispositionErrors.filter((error) =>
+        error.includes('not in the reviewed accepted-prose membership'),
+      ),
+    ).toEqual([expect.stringContaining('feature:test:regressed')]);
+  });
+
   it('reports a stale policy entry when its bucket is empty', () => {
     // The full policy names magic-item#prose-only (among others); a pack
     // with no magic items leaves those entries stale, which must fail.
