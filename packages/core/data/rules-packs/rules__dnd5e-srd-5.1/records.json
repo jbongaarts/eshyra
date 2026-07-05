@@ -540,7 +540,10 @@
             ],
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "saveDcFormula",
+                "base": 8,
+                "ability": "constitution",
+                "addProficiencyBonus": true
               }
             ]
           }
@@ -551,7 +554,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "resistance"
+                "kind": "damageResistance",
+                "typeFrom": "draconic-ancestry"
               }
             ]
           }
@@ -659,10 +663,15 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "advantage"
+                "kind": "savingThrowModifier",
+                "mode": "advantage",
+                "against": "poison"
               },
               {
-                "kind": "resistance"
+                "kind": "damageResistance",
+                "types": [
+                  "poison"
+                ]
               }
             ]
           }
@@ -673,7 +682,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the battleaxe, handaxe, light hammer, and warhammer"
               }
             ]
           }
@@ -684,7 +694,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the artisan’s tools of your choice: smith’s tools, brewer’s supplies, or mason’s tools"
               }
             ]
           }
@@ -695,7 +706,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus"
               }
             ]
           }
@@ -806,7 +818,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the Perception skill"
               }
             ]
           }
@@ -815,9 +828,10 @@
           "name": "Fey Ancestry",
           "text": "You have advantage on saving throws against being charmed, and magic can’t put you to sleep.",
           "mechanics": {
-            "effects": [
+            "conditions": [
               {
-                "kind": "advantage"
+                "condition": "charmed",
+                "relation": "advantage"
               }
             ]
           }
@@ -918,7 +932,14 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "advantage"
+                "kind": "savingThrowModifier",
+                "mode": "advantage",
+                "abilities": [
+                  "intelligence",
+                  "wisdom",
+                  "charisma"
+                ],
+                "against": "magic"
               }
             ]
           }
@@ -1013,9 +1034,10 @@
           "name": "Fey Ancestry",
           "text": "You have advantage on saving throws against being charmed, and magic can’t put you to sleep.",
           "mechanics": {
-            "effects": [
+            "conditions": [
               {
-                "kind": "advantage"
+                "condition": "charmed",
+                "relation": "advantage"
               }
             ]
           }
@@ -1026,7 +1048,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "two skills of your choice"
               }
             ]
           }
@@ -1171,7 +1194,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the Intimidation skill"
               }
             ]
           }
@@ -1282,9 +1306,10 @@
           "name": "Brave",
           "text": "You have advantage on saving throws against being frightened.",
           "mechanics": {
-            "effects": [
+            "conditions": [
               {
-                "kind": "advantage"
+                "condition": "frightened",
+                "relation": "advantage"
               }
             ]
           }
@@ -1385,7 +1410,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the Perception skill"
               }
             ]
           }
@@ -1394,9 +1420,10 @@
           "name": "Fey Ancestry",
           "text": "You have advantage on saving throws against being charmed, and magic can’t put you to sleep.",
           "mechanics": {
-            "effects": [
+            "conditions": [
               {
-                "kind": "advantage"
+                "condition": "charmed",
+                "relation": "advantage"
               }
             ]
           }
@@ -1415,7 +1442,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the longsword, shortsword, shortbow, and longbow"
               }
             ]
           }
@@ -1560,10 +1588,15 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "advantage"
+                "kind": "savingThrowModifier",
+                "mode": "advantage",
+                "against": "poison"
               },
               {
-                "kind": "resistance"
+                "kind": "damageResistance",
+                "types": [
+                  "poison"
+                ]
               }
             ]
           }
@@ -1574,7 +1607,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the battleaxe, handaxe, light hammer, and warhammer"
               }
             ]
           }
@@ -1585,7 +1619,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the artisan’s tools of your choice: smith’s tools, brewer’s supplies, or mason’s tools"
               }
             ]
           }
@@ -1596,7 +1631,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus"
               }
             ]
           }
@@ -1820,9 +1856,10 @@
           "name": "Brave",
           "text": "You have advantage on saving throws against being frightened.",
           "mechanics": {
-            "effects": [
+            "conditions": [
               {
-                "kind": "advantage"
+                "condition": "frightened",
+                "relation": "advantage"
               }
             ]
           }
@@ -1905,7 +1942,7 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "expertise"
               }
             ]
           }
@@ -1936,7 +1973,14 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "advantage"
+                "kind": "savingThrowModifier",
+                "mode": "advantage",
+                "abilities": [
+                  "intelligence",
+                  "wisdom",
+                  "charisma"
+                ],
+                "against": "magic"
               }
             ]
           }
@@ -1951,7 +1995,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "proficiency"
+                "kind": "proficiency",
+                "grant": "artisan’s tools (tinker’s tools)"
               }
             ]
           }
@@ -2058,7 +2103,10 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "resistance"
+                "kind": "damageResistance",
+                "types": [
+                  "fire"
+                ]
               }
             ]
           }
@@ -70887,9 +70935,21 @@
       "description": "You’ve developed the skills necessary to hold your own in close-quarters grappling. You gain the following benefits: You have advantage on attack rolls against a creature you are grappling. You can use your action to try to pin a creature grappled by you. To do so, make another grapple check. If you succeed, you and the creature are both restrained until the grapple ends.",
       "prerequisites": "Strength 13 or higher",
       "mechanics": {
+        "conditions": [
+          {
+            "condition": "grappled",
+            "relation": "mention"
+          },
+          {
+            "condition": "restrained",
+            "relation": "mention"
+          }
+        ],
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "attackRollModifier",
+            "mode": "advantage",
+            "constraint": "against a creature you are grappling"
           }
         ]
       }
@@ -70982,7 +71042,15 @@
     "data": {
       "source": "class:barbarian",
       "level": 9,
-      "description": "Beginning at 9th level, you can roll one additional weapon damage die when determining the extra damage for a critical hit with a melee attack. This increases to two additional dice at 13th level and three additional dice at 17th level."
+      "description": "Beginning at 9th level, you can roll one additional weapon damage die when determining the extra damage for a critical hit with a melee attack. This increases to two additional dice at 13th level and three additional dice at 17th level.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "brutalCritical",
+            "additionalDice": 1
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -71016,9 +71084,28 @@
       "level": 2,
       "description": "At 2nd level, you gain an uncanny sense of when things nearby aren’t as they should be, giving you an edge when you dodge away from danger. You have advantage on Dexterity saving throws against effects that you can see, such as traps and spells. To gain this benefit, you can’t be blinded, deafened, or incapacitated.",
       "mechanics": {
+        "conditions": [
+          {
+            "condition": "blinded",
+            "relation": "prevents"
+          },
+          {
+            "condition": "deafened",
+            "relation": "prevents"
+          },
+          {
+            "condition": "incapacitated",
+            "relation": "prevents"
+          }
+        ],
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "savingThrowModifier",
+            "mode": "advantage",
+            "abilities": [
+              "dexterity"
+            ],
+            "against": "effects that you can see, such as traps and spells"
           }
         ]
       }
@@ -71093,7 +71180,16 @@
     "data": {
       "source": "class:barbarian",
       "level": 5,
-      "description": "Starting at 5th level, your speed increases by 10 feet while you aren’t wearing heavy armor."
+      "description": "Starting at 5th level, your speed increases by 10 feet while you aren’t wearing heavy armor.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "speedBonus",
+            "amountFeet": 10,
+            "condition": "while you aren’t wearing heavy armor"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -71127,9 +71223,10 @@
       "level": 7,
       "description": "By 7th level, your instincts are so honed that you have advantage on initiative rolls. Additionally, if you are surprised at the beginning of combat and aren’t incapacitated, you can act normally on your first turn, but only if you enter your rage before doing anything else on that turn.",
       "mechanics": {
-        "effects": [
+        "conditions": [
           {
-            "kind": "advantage"
+            "condition": "incapacitated",
+            "relation": "mention"
           }
         ]
       }
@@ -71196,7 +71293,15 @@
     "data": {
       "source": "class:barbarian",
       "level": 15,
-      "description": "Beginning at 15th level, your rage is so fierce that it ends early only if you fall unconscious or if you choose to end it."
+      "description": "Beginning at 15th level, your rage is so fierce that it ends early only if you fall unconscious or if you choose to end it.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "unconscious",
+            "relation": "applies"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -71228,7 +71333,20 @@
     "data": {
       "source": "class:barbarian",
       "level": 20,
-      "description": "At 20th level, you embody the power of the wilds. Your Strength and Constitution scores increase by 4. Your maximum for those scores is now 24."
+      "description": "At 20th level, you embody the power of the wilds. Your Strength and Constitution scores increase by 4. Your maximum for those scores is now 24.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "abilityScoreIncrease",
+            "abilities": [
+              "strength",
+              "constitution"
+            ],
+            "amount": 4,
+            "newMaximum": 24
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -71311,12 +71429,34 @@
             "reset": "long-rest"
           }
         ],
+        "conditions": [
+          {
+            "condition": "unconscious",
+            "relation": "exclusion"
+          }
+        ],
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "abilityCheckModifier",
+            "mode": "advantage",
+            "ability": "strength",
+            "condition": "While raging"
           },
           {
-            "kind": "resistance"
+            "kind": "savingThrowModifier",
+            "mode": "advantage",
+            "abilities": [
+              "strength"
+            ],
+            "condition": "While raging"
+          },
+          {
+            "kind": "damageResistance",
+            "types": [
+              "bludgeoning",
+              "piercing",
+              "slashing"
+            ]
           }
         ]
       }
@@ -71355,7 +71495,15 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "attackRollModifier",
+            "mode": "advantage",
+            "attackType": "melee",
+            "constraint": "using Strength during this turn, but attack rolls against you have advantage until your next turn"
+          },
+          {
+            "kind": "attackRollModifier",
+            "subject": "attackers-against-you",
+            "mode": "advantage"
           }
         ]
       }
@@ -71392,6 +71540,12 @@
       "level": 11,
       "description": "Starting at 11th level, your rage can keep you fighting despite grievous wounds. If you drop to 0 hit points while you’re raging and don’t die outright, you can make a DC 10 Constitution saving throw. If you succeed, you drop to 1 hit point instead. Each time you use this feature after the first, the DC increases by 5. When you finish a short or long rest, the DC resets to 10.",
       "mechanics": {
+        "saves": [
+          {
+            "ability": "constitution",
+            "dc": 10
+          }
+        ],
         "resources": [
           {
             "reset": "short-or-long-rest"
@@ -71429,7 +71583,19 @@
     "data": {
       "source": "class:barbarian",
       "level": 1,
-      "description": "While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit."
+      "description": "While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "acFormula",
+            "base": 10,
+            "abilities": [
+              "dexterity",
+              "constitution"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 8",
     "license": {
@@ -71567,6 +71733,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": "charisma-modifier",
             "reset": "long-rest"
           }
         ]
@@ -71604,9 +71771,25 @@
       "level": 6,
       "description": "At 6th level, you gain the ability to use musical notes or words of power to disrupt mind-influencing effects. As an action, you can start a performance that lasts until the end of your next turn. During that time, you and any friendly creatures within 30 feet of you have advantage on saving throws against being frightened or charmed. A creature must be able to hear you to gain this benefit. The performance ends early if you are incapacitated or silenced or if you voluntarily end it (no action required).",
       "mechanics": {
+        "conditions": [
+          {
+            "condition": "charmed",
+            "relation": "advantage"
+          },
+          {
+            "condition": "frightened",
+            "relation": "advantage"
+          },
+          {
+            "condition": "incapacitated",
+            "relation": "exclusion"
+          }
+        ],
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "savingThrowModifier",
+            "mode": "advantage",
+            "against": "being frightened or charmed"
           }
         ]
       }
@@ -71645,7 +71828,7 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "expertise"
           }
         ]
       },
@@ -71738,7 +71921,9 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "halfProficiencyToChecks",
+            "round": "down",
+            "scope": "ability"
           }
         ]
       }
@@ -71869,11 +72054,6 @@
         "resources": [
           {
             "reset": "long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
           }
         ]
       },
@@ -72124,7 +72304,9 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "halfProficiencyToChecks",
+            "round": "up",
+            "scope": "strength, dexterity, or constitution"
           }
         ]
       }
@@ -72159,7 +72341,15 @@
     "data": {
       "source": "subclass:champion",
       "level": 15,
-      "description": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18–20."
+      "description": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18–20.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "criticalRange",
+            "minimumRoll": 18
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 25",
     "license": {
@@ -72191,7 +72381,16 @@
     "data": {
       "source": "subclass:champion",
       "level": 18,
-      "description": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don’t gain this benefit if you have 0 hit points."
+      "description": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don’t gain this benefit if you have 0 hit points.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "healing",
+            "amount": 5,
+            "addAbilityModifier": "constitution"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 25",
     "license": {
@@ -72291,7 +72490,9 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "savingThrowModifier",
+            "mode": "advantage",
+            "against": "plants that are magically created or manipulated to impede movement, such those created by the entangle spell"
           }
         ]
       }
@@ -72365,7 +72566,14 @@
     "data": {
       "source": "subclass:circle-of-the-land",
       "level": 14,
-      "description": "When you reach 14th level, creatures of the natural world sense your connection to nature and become hesitant to attack you. When a beast or plant creature attacks you, that creature must make a Wisdom saving throw against your druid spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours. The creature is aware of this effect before it makes its attack against you."
+      "description": "When you reach 14th level, creatures of the natural world sense your connection to nature and become hesitant to attack you. When a beast or plant creature attacks you, that creature must make a Wisdom saving throw against your druid spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours. The creature is aware of this effect before it makes its attack against you.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "wisdom"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -72397,7 +72605,25 @@
     "data": {
       "source": "subclass:circle-of-the-land",
       "level": 10,
-      "description": "When you reach 10th level, you can’t be charmed or frightened by elementals or fey, and you are immune to poison and disease."
+      "description": "When you reach 10th level, you can’t be charmed or frightened by elementals or fey, and you are immune to poison and disease.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "charmed",
+            "relation": "prevents"
+          },
+          {
+            "condition": "frightened",
+            "relation": "prevents"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "immunity",
+            "to": "poison and disease"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 22",
     "license": {
@@ -72493,11 +72719,6 @@
           {
             "reset": "long-rest"
           }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
-          }
         ]
       }
     },
@@ -72533,6 +72754,11 @@
       "level": 2,
       "description": "At 2nd level, you gain the ability to channel divine energy directly from your deity, using that energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain. Some domains grant you additional effects as you advance in levels, as noted in the domain description. When you use your Channel Divinity, you choose which effect to create. You must then finish a short or long rest to use your Channel Divinity again. Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your cleric spell save DC. Beginning at 6th level, you can use your Channel Divinity twice between rests, and beginning at 18th level, you can use it three times between rests. When you finish a short or long rest, you regain your expended uses. Channel Divinity: Turn Undead As an action, you present your holy symbol and speak a prayer censuring the undead. Each undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes any damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action.",
       "mechanics": {
+        "saves": [
+          {
+            "ability": "wisdom"
+          }
+        ],
         "resources": [
           {
             "reset": "short-or-long-rest"
@@ -72834,7 +73060,8 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "proficiency",
+            "grant": "three skills of your choice"
           }
         ]
       }
@@ -72869,7 +73096,15 @@
     "data": {
       "source": "subclass:college-of-lore",
       "level": 3,
-      "description": "Also at 3rd level, you learn how to use your wit to distract, confuse, and otherwise sap the confidence and competence of others. When a creature that you can see within 60 feet of you makes an attack roll, an ability check, or a damage roll, you can use your reaction to expend one of your uses of Bardic Inspiration, rolling a Bardic Inspiration die and subtracting the number rolled from the creature’s roll. You can choose to use this feature after the creature makes its roll, but before the GM determines whether the attack roll or ability check succeeds or fails, or before the creature deals its damage. The creature is immune if it can’t hear you or if it’s immune to being charmed."
+      "description": "Also at 3rd level, you learn how to use your wit to distract, confuse, and otherwise sap the confidence and competence of others. When a creature that you can see within 60 feet of you makes an attack roll, an ability check, or a damage roll, you can use your reaction to expend one of your uses of Bardic Inspiration, rolling a Bardic Inspiration die and subtracting the number rolled from the creature’s roll. You can choose to use this feature after the creature makes its roll, but before the GM determines whether the attack roll or ability check succeeds or fails, or before the creature deals its damage. The creature is immune if it can’t hear you or if it’s immune to being charmed.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "charmed",
+            "relation": "immune"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -72933,7 +73168,24 @@
     "data": {
       "source": "subclass:draconic-bloodline",
       "level": 18,
-      "description": "Beginning at 18th level, you can channel the dread presence of your dragon ancestor, causing those around you to become awestruck or frightened. As an action, you can spend 5 sorcery points to draw on this power and exude an aura of awe or fear (your choice) to a distance of 60 feet. For 1 minute or until you lose your concentration (as if you were casting a concentration spell), each hostile creature that starts its turn in this aura must succeed on a Wisdom saving throw or be charmed (if you chose awe) or frightened (if you chose fear) until the aura ends. A creature that succeeds on this saving throw is immune to your aura for 24 hours."
+      "description": "Beginning at 18th level, you can channel the dread presence of your dragon ancestor, causing those around you to become awestruck or frightened. As an action, you can spend 5 sorcery points to draw on this power and exude an aura of awe or fear (your choice) to a distance of 60 feet. For 1 minute or until you lose your concentration (as if you were casting a concentration spell), each hostile creature that starts its turn in this aura must succeed on a Wisdom saving throw or be charmed (if you chose awe) or frightened (if you chose fear) until the aura ends. A creature that succeeds on this saving throw is immune to your aura for 24 hours.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "wisdom"
+          }
+        ],
+        "conditions": [
+          {
+            "condition": "charmed",
+            "relation": "applies"
+          },
+          {
+            "condition": "frightened",
+            "relation": "mention"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 45",
     "license": {
@@ -72965,7 +73217,18 @@
     "data": {
       "source": "subclass:draconic-bloodline",
       "level": 1,
-      "description": "As magic flows through your body, it causes physical traits of your dragon ancestors to emerge. At 1st level, your hit point maximum increases by 1 and increases by 1 again whenever you gain a level in this class. Additionally, parts of your skin are covered by a thin sheen of dragon-like scales. When you aren’t wearing armor, your AC equals 13 + your Dexterity modifier."
+      "description": "As magic flows through your body, it causes physical traits of your dragon ancestors to emerge. At 1st level, your hit point maximum increases by 1 and increases by 1 again whenever you gain a level in this class. Additionally, parts of your skin are covered by a thin sheen of dragon-like scales. When you aren’t wearing armor, your AC equals 13 + your Dexterity modifier.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "acFormula",
+            "base": 13,
+            "abilities": [
+              "dexterity"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 45",
     "license": {
@@ -73001,7 +73264,7 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "expertise"
           }
         ]
       },
@@ -73075,7 +73338,9 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "resistance"
+            "kind": "damageBonus",
+            "addAbilityModifier": "charisma",
+            "scope": "one-damage-roll"
           }
         ]
       }
@@ -73237,11 +73502,6 @@
         "resources": [
           {
             "reset": "long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
           }
         ]
       }
@@ -73458,12 +73718,14 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 2,
             "reset": "short-or-long-rest"
           }
         ],
-        "effects": [
+        "conditions": [
           {
-            "kind": "proficiency"
+            "condition": "unconscious",
+            "relation": "applies"
           }
         ]
       },
@@ -73729,6 +73991,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 2,
             "reset": "long-rest"
           }
         ]
@@ -73849,9 +74112,10 @@
       "level": 7,
       "description": "At 7th level, you gain one of the following features of your choice. Escape the Horde. Opportunity attacks against you are made with disadvantage. Multiattack Defense. When a creature hits you with an attack, you gain a +4 bonus to AC against all subsequent attacks made by that creature for the rest of the turn. Steel Will. You have advantage on saving throws against being frightened.",
       "mechanics": {
-        "effects": [
+        "conditions": [
           {
-            "kind": "advantage"
+            "condition": "frightened",
+            "relation": "advantage"
           }
         ]
       },
@@ -73921,6 +74185,14 @@
       "source": "subclass:hunter",
       "level": 3,
       "description": "At 3rd level, you gain one of the following features of your choice. Colossus Slayer. Your tenacity can wear down the most potent foes. When you hit a creature with a weapon attack, the creature takes an extra 1d8 damage if it’s below its hit point maximum. You can deal this extra damage only once per turn. Giant Killer. When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature. Horde Breaker. Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "extraDamage",
+            "dice": "1d8"
+          }
+        ]
+      },
       "choices": [
         {
           "id": "hunters-prey",
@@ -74046,6 +74318,23 @@
       "source": "subclass:hunter",
       "level": 15,
       "description": "At 15th level, you gain one of the following features of your choice. Evasion. When you are subjected to an effect, such as a red dragon’s fiery breath or a lightning bolt spell, that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail. Stand Against the Tide. When a hostile creature misses you with a melee attack, you can use your reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice. Uncanny Dodge. When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "dexterity"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "evasion"
+          },
+          {
+            "kind": "damageReduction",
+            "multiplier": 0.5,
+            "scope": "triggering-attack"
+          }
+        ]
+      },
       "choices": [
         {
           "id": "superior-hunters-defense",
@@ -74111,7 +74400,15 @@
     "data": {
       "source": "subclass:life-domain",
       "level": 6,
-      "description": "Beginning at 6th level, the healing spells you cast on others heal you as well. When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell’s level."
+      "description": "Beginning at 6th level, the healing spells you cast on others heal you as well. When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell’s level.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "healing",
+            "amountFormula": "2 + spell-level"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -74147,7 +74444,8 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "proficiency",
+            "grant": "heavy armor"
           }
         ]
       }
@@ -74183,6 +74481,14 @@
       "source": "subclass:life-domain",
       "level": 2,
       "description": "Starting at 2nd level, you can use your Channel Divinity to heal the badly injured. As an action, you present your holy symbol and evoke healing energy that can restore a number of hit points equal to five times your cleric level. Choose any creatures within 30 feet of you, and divide those hit points among them. This feature can restore a creature to no more than half of its hit point maximum. You can’t use this feature on an undead or a construct.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "healing",
+            "amountFormula": "5 × cleric-level"
+          }
+        ]
+      },
       "choices": [
         {
           "id": "channel-divinity",
@@ -74257,7 +74563,16 @@
     "data": {
       "source": "subclass:life-domain",
       "level": 8,
-      "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8."
+      "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "extraDamage",
+            "dice": "1d8",
+            "type": "radiant"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -74383,7 +74698,10 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "damageReduction",
+            "dice": "1d10",
+            "addAbilityModifier": "dexterity",
+            "addClassLevel": "monk"
           }
         ]
       }
@@ -74422,7 +74740,8 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "proficiency",
+            "scope": "all-saving-throws"
           }
         ]
       }
@@ -74459,9 +74778,16 @@
       "level": 18,
       "description": "Beginning at 18th level, you can use your action to spend 4 ki points to become invisible for 1 minute. During that time, you also have resistance to all damage but force damage. Additionally, you can spend 8 ki points to cast the astral projection spell, without needing material components. When you do so, you can’t take any other creatures with you.",
       "mechanics": {
+        "conditions": [
+          {
+            "condition": "invisible",
+            "relation": "applies"
+          }
+        ],
         "effects": [
           {
-            "kind": "resistance"
+            "kind": "damageResistance",
+            "types": "all"
           }
         ]
       }
@@ -74496,7 +74822,19 @@
     "data": {
       "source": "class:monk",
       "level": 7,
-      "description": "At 7th level, your instinctive agility lets you dodge out of the way of certain area effects, such as a blue dragon’s lightning breath or a fireball spell. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail."
+      "description": "At 7th level, your instinctive agility lets you dodge out of the way of certain area effects, such as a blue dragon’s lightning breath or a fireball spell. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "dexterity"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "evasion"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 28",
     "license": {
@@ -74574,11 +74912,6 @@
           {
             "reset": "short-or-long-rest"
           }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
-          }
         ]
       }
     },
@@ -74616,7 +74949,8 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "resistance"
+            "kind": "weaponAttacksMagical",
+            "scope": "unarmed-strikes"
           }
         ]
       }
@@ -74759,7 +75093,15 @@
     "data": {
       "source": "class:monk",
       "level": 10,
-      "description": "At 10th level, your mastery of the ki flowing through you makes you immune to disease and poison."
+      "description": "At 10th level, your mastery of the ki flowing through you makes you immune to disease and poison.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "immunity",
+            "to": "disease and poison"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 28",
     "license": {
@@ -74791,7 +75133,16 @@
     "data": {
       "source": "class:monk",
       "level": 4,
-      "description": "Beginning at 4th level, you can use your reaction when you fall to reduce any falling damage you take by an amount equal to five times your monk level."
+      "description": "Beginning at 4th level, you can use your reaction when you fall to reduce any falling damage you take by an amount equal to five times your monk level.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "damageReduction",
+            "scope": "falling",
+            "amountFormula": "5 × monk-level"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 27",
     "license": {
@@ -74823,7 +75174,19 @@
     "data": {
       "source": "class:monk",
       "level": 7,
-      "description": "Starting at 7th level, you can use your action to end one effect on yourself that is causing you to be charmed or frightened."
+      "description": "Starting at 7th level, you can use your action to end one effect on yourself that is causing you to be charmed or frightened.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "charmed",
+            "relation": "applies"
+          },
+          {
+            "condition": "frightened",
+            "relation": "mention"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 28",
     "license": {
@@ -74855,7 +75218,20 @@
     "data": {
       "source": "class:monk",
       "level": 5,
-      "description": "Starting at 5th level, you can interfere with the flow of ki in an opponent’s body. When you hit another creature with a melee weapon attack, you can spend 1 ki point to attempt a stunning strike. The target must succeed on a Constitution saving throw or be stunned until the end of your next turn."
+      "description": "Starting at 5th level, you can interfere with the flow of ki in an opponent’s body. When you hit another creature with a melee weapon attack, you can spend 1 ki point to attempt a stunning strike. The target must succeed on a Constitution saving throw or be stunned until the end of your next turn.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "constitution"
+          }
+        ],
+        "conditions": [
+          {
+            "condition": "stunned",
+            "relation": "applies"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 28",
     "license": {
@@ -74887,7 +75263,14 @@
     "data": {
       "source": "class:monk",
       "level": 15,
-      "description": "At 15th level, your ki sustains you so that you suffer none of the frailty of old age, and you can’t be aged magically. You can still die of old age, however. In addition, you no longer need food or water."
+      "description": "At 15th level, your ki sustains you so that you suffer none of the frailty of old age, and you can’t be aged magically. You can still die of old age, however. In addition, you no longer need food or water.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "stopsAging"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 28",
     "license": {
@@ -74951,7 +75334,19 @@
     "data": {
       "source": "class:monk",
       "level": 1,
-      "description": "Beginning at 1st level, while you are wearing no armor and not wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier."
+      "description": "Beginning at 1st level, while you are wearing no armor and not wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "acFormula",
+            "base": 10,
+            "abilities": [
+              "dexterity",
+              "wisdom"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 26",
     "license": {
@@ -74983,7 +75378,16 @@
     "data": {
       "source": "class:monk",
       "level": 2,
-      "description": "Starting at 2nd level, your speed increases by 10 feet while you are not wearing armor or wielding a shield. This bonus increases when you reach certain monk levels, as shown in the Monk table. At 9th level, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the move."
+      "description": "Starting at 2nd level, your speed increases by 10 feet while you are not wearing armor or wielding a shield. This bonus increases when you reach certain monk levels, as shown in the Monk table. At 9th level, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the move.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "speedBonus",
+            "amountFeet": 10,
+            "condition": "while you are not wearing armor or wielding a shield"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 27",
     "license": {
@@ -75015,7 +75419,15 @@
     "data": {
       "source": "subclass:oath-of-devotion",
       "level": 7,
-      "description": "Starting at 7th level, you and friendly creatures within 10 feet of you can’t be charmed while you are conscious. At 18th level, the range of this aura increases to 30 feet."
+      "description": "Starting at 7th level, you and friendly creatures within 10 feet of you can’t be charmed while you are conscious. At 18th level, the range of this aura increases to 30 feet.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "charmed",
+            "relation": "prevents"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 33",
     "license": {
@@ -75048,6 +75460,19 @@
       "source": "subclass:oath-of-devotion",
       "level": 3,
       "description": "When you take this oath at 3rd level, you gain the following two Channel Divinity options. Sacred Weapon. As an action, you can imbue one weapon that you are holding with positive energy, using your Channel Divinity. For 1 minute, you add your Charisma modifier to attack rolls made with that weapon (with a minimum bonus of +1). The weapon also emits bright light in a 20-foot radius and dim light 20 feet beyond that. If the weapon is not already magical, it becomes magical for the duration. You can end this effect on your turn as part of any other action. If you are no longer holding or carrying this weapon, or if you fall unconscious, this effect ends. Turn the Unholy. As an action, you present your holy symbol and speak a prayer censuring fiends and undead, using your Channel Divinity. Each fiend or undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes damage. A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "wisdom"
+          }
+        ],
+        "conditions": [
+          {
+            "condition": "unconscious",
+            "relation": "applies"
+          }
+        ]
+      },
       "choices": [
         {
           "id": "channel-divinity",
@@ -75099,7 +75524,9 @@
         ],
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "savingThrowModifier",
+            "mode": "advantage",
+            "against": "spells cast by fiends or undead"
           }
         ]
       }
@@ -75224,7 +75651,15 @@
     "data": {
       "source": "class:paladin",
       "level": 10,
-      "description": "Starting at 10th level, you and friendly creatures within 10 feet of you can’t be frightened while you are conscious. At 18th level, the range of this aura increases to 30 feet."
+      "description": "Starting at 10th level, you and friendly creatures within 10 feet of you can’t be frightened while you are conscious. At 18th level, the range of this aura increases to 30 feet.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "frightened",
+            "relation": "prevents"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -75256,7 +75691,15 @@
     "data": {
       "source": "class:paladin",
       "level": 6,
-      "description": "Starting at 6th level, whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus to the saving throw equal to your Charisma modifier (with a minimum bonus of +1). You must be conscious to grant this bonus. At 18th level, the range of this aura increases to 30 feet."
+      "description": "Starting at 6th level, whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus to the saving throw equal to your Charisma modifier (with a minimum bonus of +1). You must be conscious to grant this bonus. At 18th level, the range of this aura increases to 30 feet.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "savingThrowBonus",
+            "addAbilityModifier": "charisma"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -75292,6 +75735,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": "charisma-modifier",
             "reset": "long-rest"
           }
         ]
@@ -75327,7 +75771,15 @@
     "data": {
       "source": "class:paladin",
       "level": 3,
-      "description": "By 3rd level, the divine magic flowing through you makes you immune to disease."
+      "description": "By 3rd level, the divine magic flowing through you makes you immune to disease.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "immunity",
+            "to": "disease"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -75398,7 +75850,16 @@
     "data": {
       "source": "class:paladin",
       "level": 2,
-      "description": "Starting at 2nd level, when you hit a creature with a melee weapon attack, you can expend one spell slot to deal radiant damage to the target, in addition to the weapon’s damage. The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8. The damage increases by 1d8 if the target is an undead or a fiend."
+      "description": "Starting at 2nd level, when you hit a creature with a melee weapon attack, you can expend one spell slot to deal radiant damage to the target, in addition to the weapon’s damage. The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8. The damage increases by 1d8 if the target is an undead or a fiend.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "extraDamage",
+            "dice": "2d8",
+            "perSlotLevelIncrease": "1d8"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 31, 32",
     "license": {
@@ -75543,7 +76004,16 @@
     "data": {
       "source": "class:paladin",
       "level": 11,
-      "description": "By 11th level, you are so suffused with righteous might that all your melee weapon strikes carry divine power with them. Whenever you hit a creature with a melee weapon, the creature takes an extra 1d8 radiant damage. If you also use your Divine Smite with an attack, you add this damage to the extra damage of your Divine Smite."
+      "description": "By 11th level, you are so suffused with righteous might that all your melee weapon strikes carry divine power with them. Whenever you hit a creature with a melee weapon, the creature takes an extra 1d8 radiant damage. If you also use your Divine Smite with an attack, you add this damage to the extra damage of your Divine Smite.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "extraDamage",
+            "dice": "1d8",
+            "type": "radiant"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 32",
     "license": {
@@ -75680,11 +76150,6 @@
           {
             "reset": "long-rest"
           }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
-          }
         ]
       },
       "choices": [
@@ -75774,9 +76239,15 @@
       "level": 10,
       "description": "Beginning at 10th level, you can use your action to frighten someone with your menacing presence. When you do so, choose one creature that you can see within 30 feet of you. If the creature can see or hear you, it must succeed on a Wisdom saving throw (DC equal to 8 + your proficiency bonus + your Charisma modifier) or be frightened of you until the end of your next turn. On subsequent turns, you can use your action to extend the duration of this effect on the frightened creature until the end of your next turn. This effect ends if the creature ends its turn out of line of sight or more than 60 feet away from you. If the creature succeeds on its saving throw, you can’t use this feature on that creature again for 24 hours.",
       "mechanics": {
-        "effects": [
+        "saves": [
           {
-            "kind": "proficiency"
+            "ability": "wisdom"
+          }
+        ],
+        "conditions": [
+          {
+            "condition": "frightened",
+            "relation": "applies"
           }
         ]
       }
@@ -75811,7 +76282,19 @@
     "data": {
       "source": "subclass:path-of-the-berserker",
       "level": 6,
-      "description": "Beginning at 6th level, you can’t be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage."
+      "description": "Beginning at 6th level, you can’t be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "charmed",
+            "relation": "prevents"
+          },
+          {
+            "condition": "frightened",
+            "relation": "prevents"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 10",
     "license": {
@@ -75977,7 +76460,10 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "abilityCheckModifier",
+            "mode": "advantage",
+            "ability": "wisdom",
+            "skill": "survival"
           }
         ]
       },
@@ -76036,7 +76522,23 @@
     "data": {
       "source": "class:ranger",
       "level": 18,
-      "description": "At 18th level, you gain preternatural senses that help you fight creatures you can’t see. When you attack a creature you can’t see, your inability to see it doesn’t impose disadvantage on your attack rolls against it. You are also aware of the location of any invisible creature within 30 feet of you, provided that the creature isn’t hidden from you and you aren’t blinded or deafened."
+      "description": "At 18th level, you gain preternatural senses that help you fight creatures you can’t see. When you attack a creature you can’t see, your inability to see it doesn’t impose disadvantage on your attack rolls against it. You are also aware of the location of any invisible creature within 30 feet of you, provided that the creature isn’t hidden from you and you aren’t blinded or deafened.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "blinded",
+            "relation": "mention"
+          },
+          {
+            "condition": "deafened",
+            "relation": "mention"
+          },
+          {
+            "condition": "invisible",
+            "relation": "mention"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -76141,7 +76643,15 @@
     "data": {
       "source": "class:ranger",
       "level": 20,
-      "description": "At 20th level, you become an unparalleled hunter of your enemies. Once on each of your turns, you can add your Wisdom modifier to the attack roll or the damage roll of an attack you make against one of your favored enemies. You can choose to use this feature before or after the roll, but before any effects of the roll are applied."
+      "description": "At 20th level, you become an unparalleled hunter of your enemies. Once on each of your turns, you can add your Wisdom modifier to the attack roll or the damage roll of an attack you make against one of your favored enemies. You can choose to use this feature before or after the roll, but before any effects of the roll are applied.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "attackOrDamageBonus",
+            "addAbilityModifier": "wisdom"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -76173,7 +76683,17 @@
     "data": {
       "source": "class:ranger",
       "level": 10,
-      "description": "Starting at 10th level, you can spend 1 minute creating camouflage for yourself. You must have access to fresh mud, dirt, plants, soot, and other naturally occurring materials with which to create your camouflage. Once you are camouflaged in this way, you can try to hide by pressing yourself up against a solid surface, such as a tree or wall, that is at least as tall and wide as you are. You gain a +10 bonus to Dexterity (Stealth) checks as long as you remain there without moving or taking actions. Once you move or take an action or a reaction, you must camouflage yourself again to gain this benefit."
+      "description": "Starting at 10th level, you can spend 1 minute creating camouflage for yourself. You must have access to fresh mud, dirt, plants, soot, and other naturally occurring materials with which to create your camouflage. Once you are camouflaged in this way, you can try to hide by pressing yourself up against a solid surface, such as a tree or wall, that is at least as tall and wide as you are. You gain a +10 bonus to Dexterity (Stealth) checks as long as you remain there without moving or taking actions. Once you move or take an action or a reaction, you must camouflage yourself again to gain this benefit.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "checkBonus",
+            "amount": 10,
+            "ability": "dexterity",
+            "skill": "stealth"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -76209,7 +76729,9 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "savingThrowModifier",
+            "mode": "advantage",
+            "against": "plants that are magically created or manipulated to impede movement, such those created by the entangle spell"
           }
         ]
       }
@@ -76248,7 +76770,7 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "expertise"
           }
         ]
       },
@@ -76382,11 +76904,6 @@
         "resources": [
           {
             "reset": "long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
           }
         ]
       },
@@ -76548,7 +77065,15 @@
     "data": {
       "source": "class:rogue",
       "level": 14,
-      "description": "Starting at 14th level, if you are able to hear, you are aware of the location of any hidden or invisible creature within 10 feet of you."
+      "description": "Starting at 14th level, if you are able to hear, you are aware of the location of any hidden or invisible creature within 10 feet of you.",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "invisible",
+            "relation": "mention"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -76614,9 +77139,10 @@
       "level": 18,
       "description": "Beginning at 18th level, you are so evasive that attackers rarely gain the upper hand against you. No attack roll has advantage against you while you aren’t incapacitated.",
       "mechanics": {
-        "effects": [
+        "conditions": [
           {
-            "kind": "advantage"
+            "condition": "incapacitated",
+            "relation": "advantage"
           }
         ]
       }
@@ -76651,7 +77177,19 @@
     "data": {
       "source": "class:rogue",
       "level": 7,
-      "description": "Beginning at 7th level, you can nimbly dodge out of the way of certain area effects, such as a red dragon’s fiery breath or an ice storm spell. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail."
+      "description": "Beginning at 7th level, you can nimbly dodge out of the way of certain area effects, such as a red dragon’s fiery breath or an ice storm spell. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "dexterity"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "evasion"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -76687,7 +77225,7 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "expertise"
           }
         ]
       },
@@ -76744,7 +77282,9 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "rollFloor",
+            "rollOf": 9,
+            "treatAs": 10
           }
         ]
       }
@@ -76827,7 +77367,8 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "proficiency",
+            "grant": "Wisdom saving throws"
           }
         ]
       }
@@ -76864,9 +77405,16 @@
       "level": 1,
       "description": "Beginning at 1st level, you know how to strike subtly and exploit a foe’s distraction. Once per turn, you can deal an extra 1d6 damage to one creature you hit with an attack if you have advantage on the attack roll. The attack must use a finesse or a ranged weapon. You don’t need advantage on the attack roll if another enemy of the target is within 5 feet of it, that enemy isn’t incapacitated, and you don’t have disadvantage on the attack roll. The amount of the extra damage increases as you gain levels in this class, as shown in the Sneak Attack column of the Rogue table.",
       "mechanics": {
+        "conditions": [
+          {
+            "condition": "incapacitated",
+            "relation": "advantage"
+          }
+        ],
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "extraDamage",
+            "dice": "1d6"
           }
         ]
       }
@@ -76972,7 +77520,16 @@
     "data": {
       "source": "class:rogue",
       "level": 5,
-      "description": "Starting at 5th level, when an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you."
+      "description": "Starting at 5th level, when an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "damageReduction",
+            "multiplier": 0.5,
+            "scope": "triggering-attack"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -77004,7 +77561,16 @@
     "data": {
       "source": "subclass:school-of-evocation",
       "level": 10,
-      "description": "Beginning at 10th level, you can add your Intelligence modifier to one damage roll of any wizard evocation spell you cast."
+      "description": "Beginning at 10th level, you can add your Intelligence modifier to one damage roll of any wizard evocation spell you cast.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "damageBonus",
+            "addAbilityModifier": "intelligence",
+            "scope": "one-damage-roll"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 54",
     "license": {
@@ -77073,11 +77639,6 @@
         "resources": [
           {
             "reset": "long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "resistance"
           }
         ]
       }
@@ -77239,11 +77800,6 @@
         "resources": [
           {
             "reset": "long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
           }
         ]
       }
@@ -77589,7 +78145,16 @@
     "data": {
       "source": "subclass:the-fiend",
       "level": 1,
-      "description": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1)."
+      "description": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1).",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "temporaryHitPoints",
+            "addAbilityModifier": "charisma",
+            "addClassLevel": "warlock"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 50",
     "license": {
@@ -77665,11 +78230,6 @@
         "resources": [
           {
             "reset": "short-or-long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "resistance"
           }
         ]
       }
@@ -77811,7 +78371,10 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "advantage"
+            "kind": "abilityCheckModifier",
+            "mode": "advantage",
+            "ability": "dexterity",
+            "skill": "stealth"
           }
         ]
       }
@@ -77975,9 +78538,24 @@
             "reset": "long-rest"
           }
         ],
+        "conditions": [
+          {
+            "condition": "blinded",
+            "relation": "applies"
+          },
+          {
+            "condition": "deafened",
+            "relation": "mention"
+          },
+          {
+            "condition": "invisible",
+            "relation": "applies"
+          }
+        ],
         "effects": [
           {
-            "kind": "proficiency"
+            "kind": "proficiency",
+            "grant": "the Deception and Persuasion skills"
           }
         ]
       },
@@ -78641,11 +79219,6 @@
             "reset": "short-or-long-rest"
           }
         ],
-        "effects": [
-          {
-            "kind": "resistance"
-          }
-        ],
         "spellGrants": [
           {
             "spell": "spell:find-familiar"
@@ -78741,11 +79314,6 @@
           {
             "reset": "short-or-long-rest"
           }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
-          }
         ]
       },
       "choices": [
@@ -78832,7 +79400,20 @@
     "data": {
       "source": "subclass:way-of-the-open-hand",
       "level": 3,
-      "description": "Starting when you choose this tradition at 3rd level, you can manipulate your enemy’s ki when you harness your own. Whenever you hit a creature with one of the attacks granted by your Flurry of Blows, you can impose one of the following effects on that target: • It must succeed on a Dexterity saving throw or be knocked prone. • It must make a Strength saving throw. If it fails, you can push it up to 15 feet away from you. • It can’t take reactions until the end of your next turn."
+      "description": "Starting when you choose this tradition at 3rd level, you can manipulate your enemy’s ki when you harness your own. Whenever you hit a creature with one of the attacks granted by your Flurry of Blows, you can impose one of the following effects on that target: • It must succeed on a Dexterity saving throw or be knocked prone. • It must make a Strength saving throw. If it fails, you can push it up to 15 feet away from you. • It can’t take reactions until the end of your next turn.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "strength"
+          }
+        ],
+        "conditions": [
+          {
+            "condition": "prone",
+            "relation": "applies"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 28",
     "license": {
@@ -78864,7 +79445,14 @@
     "data": {
       "source": "subclass:way-of-the-open-hand",
       "level": 17,
-      "description": "At 17th level, you gain the ability to set up lethal vibrations in someone’s body. When you hit a creature with an unarmed strike, you can spend 3 ki points to start these imperceptible vibrations, which last for a number of days equal to your monk level. The vibrations are harmless unless you use your action to end them. To do so, you and the target must be on the same plane of existence. When you use this action, the creature must make a Constitution saving throw. If it fails, it is reduced to 0 hit points. If it succeeds, it takes 10d10 necrotic damage. You can have only one creature under the effect of this feature at a time. You can choose to end the vibrations harmlessly without using an action."
+      "description": "At 17th level, you gain the ability to set up lethal vibrations in someone’s body. When you hit a creature with an unarmed strike, you can spend 3 ki points to start these imperceptible vibrations, which last for a number of days equal to your monk level. The vibrations are harmless unless you use your action to end them. To do so, you and the target must be on the same plane of existence. When you use this action, the creature must make a Constitution saving throw. If it fails, it is reduced to 0 hit points. If it succeeds, it takes 10d10 necrotic damage. You can have only one creature under the effect of this feature at a time. You can choose to end the vibrations harmlessly without using an action.",
+      "mechanics": {
+        "saves": [
+          {
+            "ability": "constitution"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 29",
     "license": {
@@ -78901,11 +79489,6 @@
         "resources": [
           {
             "reset": "long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
           }
         ]
       }
@@ -79286,11 +79869,6 @@
         "resources": [
           {
             "reset": "long-rest"
-          }
-        ],
-        "effects": [
-          {
-            "kind": "proficiency"
           }
         ]
       },

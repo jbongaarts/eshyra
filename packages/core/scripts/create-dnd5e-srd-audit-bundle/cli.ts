@@ -1390,17 +1390,23 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     reason:
       'Adventuring gear and consumables whose usable effects (acid, healing potion, caltrops, …) are described in prose only.',
   },
+  // Feature runtime-effect projections landed with eshyra-o9bd.18.7.5
+  // (117/184 features carry typed mechanics; the rest carry structured
+  // choices or table refs). The residual prose-only records were reviewed
+  // individually: subclass/cantrip pickers whose runtime behavior is the
+  // choice itself, action-economy riders (Cunning Action, Martial Arts'
+  // bonus-action strike), meta features that modify other features
+  // (Superior Inspiration, Evocation Savant), and always-on spell effects
+  // referencing spell records (Purity of Spirit).
   'feature#partial-structure': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.5',
+    status: 'accepted-prose-only',
     reason:
-      'Class features with structured child data but no runtime effect projection.',
+      'Features whose structured payload is a linked table (Destroy Undead, Wild Shape shapes) or resource ledger (Font of Magic); the table/resource records carry the deterministic data (eshyra-o9bd.18.7.5).',
   },
   'feature#prose-only': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.5',
+    status: 'accepted-prose-only',
     reason:
-      'Class features whose runtime effects (Rage, Sneak Attack dice, Evasion, …) are prose-only.',
+      'Reviewed residue after the eshyra-o9bd.18.7.5 projection pass: choice-picker features, bonus-action economy riders, and meta features that modify other named features or spells; their deterministic payloads live in the referenced feature/spell/table records.',
   },
   'magic-item#partial-structure': {
     status: 'finding',

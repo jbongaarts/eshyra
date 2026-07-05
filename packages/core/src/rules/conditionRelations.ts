@@ -174,8 +174,11 @@ const RELATION_PATTERNS: readonly {
     relation: 'exclusion',
     test: (s, c) =>
       new RegExp(`\\bignoring\\s+(?:\\w+\\s+){0,2}${c}\\b`, 'i').test(s) ||
+      // "knocked" may interpose ("It ends early if you are knocked
+      // unconscious" — Barbarian Rage's early-end trigger is a benefit
+      // exclusion, not an application; eshyra-o9bd.18.7.5).
       new RegExp(
-        `\\bif\\s+(?:\\w+\\s+){0,3}(?:are|is)\\s+(?:already\\s+)?${c}\\b`,
+        `\\bif\\s+(?:\\w+\\s+){0,3}(?:are|is)\\s+(?:already\\s+)?(?:knocked\\s+)?${c}\\b`,
         'i',
       ).test(s) ||
       new RegExp(`\\balready\\s+${c}\\b`, 'i').test(s),

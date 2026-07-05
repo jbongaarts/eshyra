@@ -456,7 +456,9 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('magic-item#prose-only')?.bead).toBe('eshyra-o9bd.18.7.7');
     expect(byKey.get('rule#prose-only')?.bead).toBe('eshyra-o9bd.18.7.8');
     expect(byKey.get('equipment#prose-only')?.bead).toBe('eshyra-o9bd.18.7.6');
-    expect(byKey.get('feature#prose-only')?.bead).toBe('eshyra-o9bd.18.7.5');
+    // Feature runtime projections landed (eshyra-o9bd.18.7.5): the residual
+    // prose-only bucket is a reviewed accepted closure, not an open finding.
+    expect(byKey.get('feature#prose-only')?.status).toBe('accepted-prose-only');
     // The nested creature-entry buckets carry explicit accepted-prose-only
     // closures (eshyra-o9bd.18.7.3) — record-level creature buckets are gone
     // because all 317 creatures now carry typed nested mechanics.

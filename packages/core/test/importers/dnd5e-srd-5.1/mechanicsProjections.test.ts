@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   deriveActionMechanics,
   deriveCreatureEntryMechanics,
+  deriveFeatureMechanics,
   deriveSpellMechanics,
 } from '../../../scripts/importers/dnd5e-srd-5.1/mechanicsProjections.js';
 import type {
@@ -1102,5 +1103,180 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
         }),
       ).effects,
     ).toEqual([{ kind: 'speedMultiplier', multiplier: 2 }]);
+  });
+});
+
+describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
+  const derive = (text: string) => deriveFeatureMechanics(text);
+
+  it('projects Barbarian Unarmored Defense as an AC formula', () => {
+    expect(
+      derive(
+        'While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'acFormula',
+        base: 10,
+        abilities: ['dexterity', 'constitution'],
+      },
+    ]);
+  });
+
+  it('projects Rage: resource reset, ability check/save advantage with condition, and the unconscious early-end as exclusion', () => {
+    const mechanics = derive(
+      'While raging, you gain the following benefits if you aren’t wearing heavy armor: You have advantage on Strength checks and Strength saving throws. Your rage lasts for 1 minute. It ends early if you are knocked unconscious. Once you have raged the maximum number of times, you must finish a long rest before you can rage again.',
+    );
+    expect(mechanics.resources).toEqual([{ reset: 'long-rest' }]);
+    expect(mechanics.conditions).toEqual([
+      { condition: 'unconscious', relation: 'exclusion' },
+    ]);
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'abilityCheckModifier',
+        mode: 'advantage',
+        ability: 'strength',
+        condition: 'While raging',
+      },
+      {
+        kind: 'savingThrowModifier',
+        mode: 'advantage',
+        abilities: ['strength'],
+        condition: 'While raging',
+      },
+    ]);
+  });
+
+  it('projects Reckless Attack: melee advantage plus attackers-against-you advantage', () => {
+    const mechanics = derive(
+      'When you make your first attack on your turn, you can decide to attack recklessly. Doing so gives you advantage on melee weapon attack rolls using Strength during this turn, but attack rolls against you have advantage until your next turn.',
+    );
+    expect(mechanics.effects).toEqual([
+      expect.objectContaining({
+        kind: 'attackRollModifier',
+        mode: 'advantage',
+        attackType: 'melee',
+      }),
+      {
+        kind: 'attackRollModifier',
+        subject: 'attackers-against-you',
+        mode: 'advantage',
+      },
+    ]);
+  });
+
+  it('projects Evasion, Improved Critical, Extra Attack tiers, and Brutal Critical', () => {
+    expect(
+      derive(
+        'You can nimbly dodge out of the way. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.',
+      ).effects,
+    ).toContainEqual({ kind: 'evasion' });
+    expect(
+      derive('Your weapon attacks score a critical hit on a roll of 19 or 20.')
+        .effects,
+    ).toEqual([{ kind: 'criticalRange', minimumRoll: 19 }]);
+    expect(
+      derive(
+        'You can attack three times, instead of once, whenever you take the Attack action on your turn.',
+      ).effects,
+    ).toEqual([{ kind: 'extraAttack', attacks: 3 }]);
+    expect(
+      derive(
+        'You can roll one additional weapon damage die when determining the extra damage for a critical hit with a melee attack.',
+      ).effects,
+    ).toEqual([{ kind: 'brutalCritical', additionalDice: 1 }]);
+  });
+
+  it('projects typed proficiency grants and expertise', () => {
+    expect(
+      derive('You have proficiency in the Perception skill.').effects,
+    ).toEqual([{ kind: 'proficiency', grant: 'the Perception skill' }]);
+    expect(
+      derive(
+        'Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.',
+      ).effects,
+    ).toEqual([{ kind: 'expertise' }]);
+  });
+
+  it('projects racial resistances including the Dragonborn ancestry-linked type', () => {
+    expect(derive('You have resistance to fire damage.').effects).toEqual([
+      { kind: 'damageResistance', types: ['fire'] },
+    ]);
+    expect(
+      derive(
+        'You have resistance to the damage type associated with your draconic ancestry.',
+      ).effects,
+    ).toEqual([{ kind: 'damageResistance', typeFrom: 'draconic-ancestry' }]);
+  });
+
+  it('projects Paladin aura/smite/health and Monk deflect formulas', () => {
+    expect(
+      derive(
+        'Whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus to the saving throw equal to your Charisma modifier (with a minimum bonus of +1).',
+      ).effects,
+    ).toEqual([{ kind: 'savingThrowBonus', addAbilityModifier: 'charisma' }]);
+    expect(
+      derive(
+        'The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8.',
+      ).effects,
+    ).toEqual([
+      { kind: 'extraDamage', dice: '2d8', perSlotLevelIncrease: '1d8' },
+    ]);
+    expect(
+      derive(
+        'The divine magic flowing through you makes you immune to disease.',
+      ).effects,
+    ).toEqual([{ kind: 'immunity', to: 'disease' }]);
+    expect(
+      derive(
+        'When you do so, the damage you take from the attack is reduced by 1d10 + your Dexterity modifier + your monk level.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'damageReduction',
+        dice: '1d10',
+        addAbilityModifier: 'dexterity',
+        addClassLevel: 'monk',
+      },
+    ]);
+  });
+
+  it('projects usage resources with printed uses and ability-modifier uses', () => {
+    expect(
+      derive(
+        'You can use this feature twice. You regain all expended uses when you finish a short or long rest.',
+      ).resources,
+    ).toEqual([{ uses: 2, reset: 'short-or-long-rest' }]);
+    expect(
+      derive(
+        'You can use this feature a number of times equal to your Charisma modifier. You regain expended uses when you finish a long rest.',
+      ).resources,
+    ).toEqual([{ uses: 'charisma-modifier', reset: 'long-rest' }]);
+  });
+
+  it('projects Primal Champion ability increases and Fast Movement speed', () => {
+    expect(
+      derive(
+        'Your Strength and Constitution scores increase by 4. Your maximum for those scores is now 24.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'abilityScoreIncrease',
+        abilities: ['strength', 'constitution'],
+        amount: 4,
+        newMaximum: 24,
+      },
+    ]);
+    expect(
+      derive(
+        'Starting at 5th level, your speed increases by 10 feet while you aren’t wearing heavy armor.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'speedBonus',
+        amountFeet: 10,
+        condition: 'while you aren’t wearing heavy armor',
+      },
+    ]);
   });
 });
