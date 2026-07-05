@@ -35,19 +35,26 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'attackRollModifier',
   'autoFailCheck',
   'autoFailSave',
+  'abilitySubstitution',
+  'autoSucceedSave',
   'benefitEndsWhen',
+  'bonusAction',
   'breathes',
   'brutalCritical',
   'cannotAttackOrTarget',
   'cannotHear',
   'checkBonus',
+  'checkMinimum',
+  'climbWithoutExtraMovement',
   'cannotMove',
   'cannotSee',
   'cannotSpeak',
   'cannotTakeActions',
   'cannotTakeReactions',
   'conditionEndsWhen',
+  'damageDieReplacement',
   'damageMultiplier',
+  'damageOnSuccessfulSave',
   'damageReduction',
   'criticalHitOnHit',
   'criticalRange',
@@ -62,6 +69,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'extraDamage',
   'extraDamageOnHit',
   'extraMovement',
+  'extraTurn',
   'forcedMovement',
   'gainRuleBenefitsOnSuccess',
   'halfProficiencyToChecks',
@@ -71,6 +79,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'holdBreath',
   'immunity',
   'jumpDistance',
+  'jumpDistanceBonus',
   'light',
   'impliesCondition',
   'imposesCondition',
@@ -78,16 +87,20 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'locationDetectableBy',
   'makeAbilityCheck',
   'makeAttack',
+  'maximizeHealingDice',
   'movementRestriction',
   'multiattack',
   'obscurement',
   'objectInteraction',
   'proficiency',
+  'permanentSpellEffect',
   'preventOpportunityAttacks',
+  'reaction',
   'readyAction',
   'readySpell',
   'regeneration',
   'repeatSave',
+  'resourceRegain',
   'rollBonusDice',
   'rollFloor',
   'rollModifier',
@@ -98,6 +111,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'savingThrowBonus',
   'savingThrowModifier',
   'sense',
+  'slowAging',
   'speechRestricted',
   'speedBonus',
   'speedBonusSuppressed',
@@ -1332,6 +1346,10 @@ function reqDice(parent: Obj, key: string, path: string): void {
 const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   Record<string, (effect: Obj, path: string) => void>
 > = {
+  abilitySubstitution: (effect, path) => {
+    reqAbility(effect, 'use', path);
+    reqAbility(effect, 'insteadOf', path);
+  },
   abilityScoreIncrease: (effect, path) => {
     const raw = effect.abilities;
     if (
@@ -1383,6 +1401,47 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       );
     }
     if (effect.dice !== undefined) reqDice(effect, 'dice', path);
+    // Every alternate shape is fully validated (eshyra-o9bd.18.7.5
+    // re-review): a recognized kind with a malformed payload must fail.
+    if (effect.multiplier !== undefined) {
+      const multiplier = effect.multiplier;
+      if (
+        typeof multiplier !== 'number' ||
+        !Number.isFinite(multiplier) ||
+        multiplier <= 0 ||
+        multiplier >= 1
+      ) {
+        throw new RulesPackError(
+          `${path}.multiplier must be a finite number in (0, 1), got ${JSON.stringify(multiplier)}`,
+        );
+      }
+    }
+    optStr(effect, 'amountFormula', path);
+    if (effect.addAbilityModifier !== undefined) {
+      reqAbility(effect, 'addAbilityModifier', path);
+    }
+    optStr(effect, 'addClassLevel', path);
+    optStr(effect, 'scope', path);
+  },
+  bonusAction: (effect, path) => {
+    const options = effect.options;
+    if (
+      !Array.isArray(options) ||
+      options.length === 0 ||
+      !options.every(
+        (option) => typeof option === 'string' && option.length > 0,
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.options must be a non-empty string array`,
+      );
+    }
+    optStr(effect, 'via', path);
+    optStr(effect, 'frequency', path);
+  },
+  checkMinimum: (effect, path) => {
+    reqAbility(effect, 'ability', path);
+    reqStr(effect, 'minimum', path);
   },
   extraAttack: (effect, path) => {
     reqInt(effect, 'attacks', path, 2);
@@ -1409,6 +1468,23 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     if (effect.bonusDiceVsUndeadOrFiend !== undefined) {
       reqDice(effect, 'bonusDiceVsUndeadOrFiend', path);
     }
+  },
+  permanentSpellEffect: (effect, path) => {
+    const ref = reqStr(effect, 'spell', path);
+    if (!ref.startsWith('spell:')) {
+      throw new RulesPackError(
+        `${path}.spell must be a 'spell:' ref, got ${JSON.stringify(ref)}`,
+      );
+    }
+  },
+  reaction: (effect, path) => {
+    reqStr(effect, 'action', path);
+    reqStr(effect, 'trigger', path);
+  },
+  resourceRegain: (effect, path) => {
+    reqStr(effect, 'resource', path);
+    reqInt(effect, 'amount', path, 1);
+    reqStr(effect, 'trigger', path);
   },
   rollFloor: (effect, path) => {
     reqInt(effect, 'rollOf', path, 1);

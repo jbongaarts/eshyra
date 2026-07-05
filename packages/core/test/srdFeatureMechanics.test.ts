@@ -145,3 +145,122 @@ describe('committed feature mechanics depth (eshyra-o9bd.18.7.5)', () => {
     );
   });
 });
+
+describe('re-audited action-economy and numeric features (eshyra-o9bd.18.7.5 re-review)', () => {
+  it('Cunning Action carries the full bonus-action option set', () => {
+    expect(mechanicsOf('feature:rogue:cunning-action').effects).toEqual([
+      {
+        kind: 'bonusAction',
+        options: ['dash', 'disengage', 'hide'],
+        frequency: 'each-turn',
+      },
+    ]);
+  });
+
+  it('Martial Arts carries the bonus-action strike, ability substitution, and die replacement', () => {
+    expect(mechanicsOf('feature:monk:martial-arts').effects).toEqual([
+      { kind: 'bonusAction', options: ['unarmed-strike'] },
+      {
+        kind: 'abilitySubstitution',
+        use: 'dexterity',
+        insteadOf: 'strength',
+        for: ['attack-rolls', 'damage-rolls'],
+        appliesTo: 'your unarmed strikes and monk weapons',
+      },
+      {
+        kind: 'damageDieReplacement',
+        die: 'd4',
+        appliesTo: 'your unarmed strike or monk weapon',
+      },
+    ]);
+  });
+
+  it('Frenzy carries the bonus-action attack and applies exhaustion when rage ends', () => {
+    const mechanics = mechanicsOf('feature:path-of-the-berserker:frenzy');
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'bonusAction',
+        options: ['melee-weapon-attack'],
+        frequency: 'each-turn',
+      },
+    ]);
+    expect(mechanics.conditions).toEqual([
+      { condition: 'exhaustion', relation: 'applies' },
+    ]);
+  });
+
+  it('Retaliation is a typed reaction attack with its trigger', () => {
+    expect(
+      mechanicsOf('feature:path-of-the-berserker:retaliation').effects,
+    ).toEqual([
+      {
+        kind: 'reaction',
+        action: 'melee-weapon-attack',
+        trigger: 'take damage from a creature within 5 feet of you',
+      },
+    ]);
+  });
+
+  it('Perfect Self and Superior Inspiration are typed resource regains', () => {
+    expect(mechanicsOf('feature:monk:perfect-self').effects).toEqual([
+      {
+        kind: 'resourceRegain',
+        resource: 'ki-points',
+        amount: 4,
+        trigger: 'roll-initiative-with-none-remaining',
+      },
+    ]);
+    expect(mechanicsOf('feature:bard:superior-inspiration').effects).toEqual([
+      {
+        kind: 'resourceRegain',
+        resource: 'bardic-inspiration',
+        amount: 1,
+        trigger: 'roll-initiative-with-none-remaining',
+      },
+    ]);
+  });
+
+  it('Purity of Spirit resolves its always-on spell reference', () => {
+    expect(
+      mechanicsOf('feature:oath-of-devotion:purity-of-spirit').effects,
+    ).toEqual([
+      {
+        kind: 'permanentSpellEffect',
+        spell: 'spell:protection-from-evil-and-good',
+      },
+    ]);
+  });
+
+  it('Second-Story Work carries the climb cost and running-jump formulas', () => {
+    expect(mechanicsOf('feature:thief:second-story-work').effects).toEqual([
+      { kind: 'climbWithoutExtraMovement' },
+      {
+        kind: 'jumpDistanceBonus',
+        addAbilityModifier: 'dexterity',
+        appliesTo: 'running-jump',
+      },
+    ]);
+  });
+
+  it('Sculpt Spells and Potent Cantrip carry typed save-outcome semantics', () => {
+    expect(
+      mechanicsOf('feature:school-of-evocation:sculpt-spells').effects,
+    ).toEqual([
+      {
+        kind: 'autoSucceedSave',
+        targets: 'chosen-creatures',
+        countFormula: '1 + spell-level',
+        noDamageInsteadOfHalf: true,
+      },
+    ]);
+    expect(
+      mechanicsOf('feature:school-of-evocation:potent-cantrip').effects,
+    ).toEqual([
+      {
+        kind: 'damageOnSuccessfulSave',
+        portion: 'half',
+        scope: 'your-cantrips',
+      },
+    ]);
+  });
+});

@@ -704,8 +704,10 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // all, so the missing count rose 108 -> 110. The eshyra-o9bd.18.7.5
   // runtime-effect projection pass (AC formulas, typed proficiency grants,
   // modifiers, resistances/immunities, healing/damage formulas, usage
-  // resources) dropped it 110 -> 67.
-  { kind: 'feature', field: 'mechanics', missingCount: 67, totalInKind: 184 },
+  // resources) dropped it 110 -> 67, and the review's action-economy /
+  // numeric re-audit (bonus actions, reactions, substitutions, resource
+  // regains, save-outcome semantics) dropped it 67 -> 49.
+  { kind: 'feature', field: 'mechanics', missingCount: 49, totalInKind: 184 },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic

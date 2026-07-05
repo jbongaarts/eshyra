@@ -1576,6 +1576,196 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       treatAs: Number(rollFloor[2]),
     });
   }
+  // Deterministic action economy (eshyra-o9bd.18.7.5 re-review): bonus
+  // actions with fixed option sets, reaction attacks, and turn structure.
+  const cunningAction =
+    /\bYou can take a bonus action on each of your turns in combat\. This action can be used only to take the (.+?) action\./.exec(
+      text,
+    );
+  if (cunningAction !== null) {
+    effects.push({
+      kind: 'bonusAction',
+      options: cunningAction[1]
+        .split(/,\s*(?:or\s+)?|\s+or\s+/)
+        .map((option) => option.trim().toLowerCase().replaceAll(' ', '-'))
+        .filter((option) => option.length > 0),
+      frequency: 'each-turn',
+    });
+  }
+  const hideBonus = /\byou can use the (\w+) action as a bonus action\b/i.exec(
+    text,
+  );
+  if (hideBonus !== null) {
+    effects.push({
+      kind: 'bonusAction',
+      options: [hideBonus[1].toLowerCase()],
+    });
+  }
+  if (
+    /\byou can make a single melee weapon attack as a bonus action on each of your turns\b/i.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'bonusAction',
+      options: ['melee-weapon-attack'],
+      frequency: 'each-turn',
+    });
+  }
+  if (/\byou can make one unarmed strike as a bonus action\b/i.test(text)) {
+    effects.push({ kind: 'bonusAction', options: ['unarmed-strike'] });
+  }
+  const cunningVia =
+    /\byou can use the bonus action granted by your Cunning Action to (.+?)\./.exec(
+      text,
+    );
+  if (cunningVia !== null) {
+    effects.push({
+      kind: 'bonusAction',
+      options: cunningVia[1]
+        .split(/,\s*(?:or\s+)?|\s+or\s+(?=use|take|make)/)
+        .map((option) => option.trim())
+        .filter((option) => option.length > 0),
+      via: 'cunning-action',
+    });
+  }
+  const reactionAttack =
+    /\bwhen you take damage from a creature that is within (\d+) feet of you, you can use your reaction to make a melee weapon attack against that creature\b/i.exec(
+      text,
+    );
+  if (reactionAttack !== null) {
+    effects.push({
+      kind: 'reaction',
+      action: 'melee-weapon-attack',
+      trigger: `take damage from a creature within ${reactionAttack[1]} feet of you`,
+    });
+  }
+  const abilitySub =
+    /\bYou can use (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) instead of (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) for the attack and damage rolls of ([^.•]+)/.exec(
+      text,
+    );
+  if (abilitySub !== null) {
+    effects.push({
+      kind: 'abilitySubstitution',
+      use: abilitySub[1].toLowerCase(),
+      insteadOf: abilitySub[2].toLowerCase(),
+      for: ['attack-rolls', 'damage-rolls'],
+      appliesTo: abilitySub[3].trim(),
+    });
+  }
+  const dieReplacement =
+    /\bYou can roll a (d\d+) in place of the normal damage of ([^.•]+)/.exec(
+      text,
+    );
+  if (dieReplacement !== null) {
+    effects.push({
+      kind: 'damageDieReplacement',
+      die: dieReplacement[1],
+      appliesTo: dieReplacement[2].trim(),
+    });
+  }
+  const extraTurn =
+    /\bYou can take two turns during the first round of any combat\. You take your first turn at your normal initiative and your second turn at your initiative minus (\d+)\b/.exec(
+      text,
+    );
+  if (extraTurn !== null) {
+    effects.push({
+      kind: 'extraTurn',
+      round: 1,
+      secondTurnInitiativeOffset: -Number(extraTurn[1]),
+    });
+  }
+  const resourceRegain =
+    /\bwhen you roll (?:for )?initiative and have no (ki points|uses of Bardic Inspiration) (?:remaining|left), you regain (one use|\d+ ki points)\b/i.exec(
+      text,
+    );
+  if (resourceRegain !== null) {
+    effects.push({
+      kind: 'resourceRegain',
+      resource: resourceRegain[1].startsWith('ki')
+        ? 'ki-points'
+        : 'bardic-inspiration',
+      amount:
+        resourceRegain[2] === 'one use'
+          ? 1
+          : Number(/\d+/.exec(resourceRegain[2])?.[0]),
+      trigger: 'roll-initiative-with-none-remaining',
+    });
+  }
+  if (
+    /\bwhen you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die\b/i.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'maximizeHealingDice', appliesTo: 'spell-healing' });
+  }
+  if (
+    /\bWhen a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip[\u2019']s damage\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'damageOnSuccessfulSave',
+      portion: 'half',
+      scope: 'your-cantrips',
+    });
+  }
+  const sculpt =
+    /\byou can choose a number of them equal to (\d+) \+ the spell[\u2019']s level\. The chosen creatures automatically succeed on their saving throws against the spell\b/.exec(
+      text,
+    );
+  if (sculpt !== null) {
+    effects.push({
+      kind: 'autoSucceedSave',
+      targets: 'chosen-creatures',
+      countFormula: `${sculpt[1]} + spell-level`,
+      noDamageInsteadOfHalf:
+        /take no damage if they would normally take half damage on a successful save/.test(
+          text,
+        )
+          ? true
+          : undefined,
+    });
+  }
+  const checkMinimum =
+    /\bif your total for a (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) check is less than your \1 score, you can use that score in place of the total\b/i.exec(
+      text,
+    );
+  if (checkMinimum !== null) {
+    effects.push({
+      kind: 'checkMinimum',
+      ability: checkMinimum[1].toLowerCase(),
+      minimum: 'ability-score',
+    });
+  }
+  const slowAging =
+    /\bFor every (\d+) years that pass, your body ages only (\d+) years?\b/.exec(
+      text,
+    );
+  if (slowAging !== null) {
+    effects.push({
+      kind: 'slowAging',
+      periodYears: Number(slowAging[1]),
+      agesYears: Number(slowAging[2]),
+    });
+  }
+  if (/\bclimbing no longer costs you extra movement\b/i.test(text)) {
+    effects.push({ kind: 'climbWithoutExtraMovement' });
+  }
+  const runningJump =
+    /\bwhen you make a running jump, the distance you (?:can )?cover increases by a number of feet equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
+      text,
+    );
+  if (runningJump !== null) {
+    effects.push({
+      kind: 'jumpDistanceBonus',
+      addAbilityModifier: runningJump[1].toLowerCase(),
+      appliesTo: 'running-jump',
+    });
+  }
+  if (/\bgaining a flying speed equal to your current speed\b/i.test(text)) {
+    effects.push({ kind: 'speedSet', mode: 'fly', value: 'current-speed' });
+  }
   const abilityDamageBonus =
     /\badd your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier to one damage roll\b/i.exec(
       text,
@@ -1666,7 +1856,7 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     );
   }
   const spellLevelHeal =
-    /\bregain hit points equal to (\d+) \+ the spell[\u2019']s level\b/i.exec(
+    /\bregains? (?:additional )?hit points equal to (\d+) \+ the spell[\u2019']s level\b/i.exec(
       text,
     );
   if (spellLevelHeal !== null) {
@@ -1708,7 +1898,18 @@ export function deriveFeatureMechanics(
     /\ba number of times equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
       text,
     );
-  const effects = parseFeatureEffects(text);
+  const effects = [...parseFeatureEffects(text)];
+  // A permanent always-on spell effect (Oath of Devotion's Purity of
+  // Spirit) resolves fail-closed against the emitted spell set, like
+  // spellGrants.
+  const permanentSpell =
+    /\byou are always under the effects of an? ([a-z' ]+?) spell\b/i.exec(text);
+  if (permanentSpell !== null && resolveSpellGrant !== undefined) {
+    const ref = resolveSpellGrant(permanentSpell[1]);
+    if (ref !== undefined) {
+      effects.push({ kind: 'permanentSpellEffect', spell: ref });
+    }
+  }
   const save = parseSave(text);
   return compact({
     saves: save === undefined ? undefined : [save],

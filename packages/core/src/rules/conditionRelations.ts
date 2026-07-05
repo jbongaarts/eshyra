@@ -72,12 +72,16 @@ export type ConditionRelation = (typeof CONDITION_RELATION_VALUES)[number];
 
 /**
  * The 14 SRD 5.1 condition names that appear as adjectives in effect prose
- * (Appendix A minus Exhaustion, which never reads as "is exhaustion").
+ * (Appendix A. Exhaustion never reads as "is exhaustion", but it IS applied
+ * by its own phrasing — "suffer(s) one level of exhaustion" (Berserker
+ * Frenzy, Sewer Plague, Cackle Fever) — which the applies grammar
+ * recognizes; eshyra-o9bd.18.7.5.)
  */
 export const MECHANICS_CONDITION_NAMES = [
   'blinded',
   'charmed',
   'deafened',
+  'exhaustion',
   'frightened',
   'grappled',
   'incapacitated',
@@ -247,7 +251,7 @@ const RELATION_PATTERNS: readonly {
         // — the Grappler feat's pin applies restrained on success;
         // eshyra-o9bd.18.7.5).
         new RegExp(
-          `\\b(?:becomes?|falls?|be|is|are|knocked)\\s+(?:both\\s+)?${c}\\b`,
+          `\\b(?:becomes?|falls?|be|is|are|knocked|suffers?(?:\\s+\\w+)?\\s+levels?\\s+of)\\s+(?:both\\s+)?${c}\\b`,
           'gi',
         ),
       ),

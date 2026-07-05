@@ -71288,7 +71288,16 @@
     "data": {
       "source": "class:barbarian",
       "level": 18,
-      "description": "Beginning at 18th level, if your total for a Strength check is less than your Strength score, you can use that score in place of the total."
+      "description": "Beginning at 18th level, if your total for a Strength check is less than your Strength score, you can use that score in place of the total.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "checkMinimum",
+            "ability": "strength",
+            "minimum": "ability-score"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -72169,7 +72178,17 @@
     "data": {
       "source": "class:bard",
       "level": 20,
-      "description": "At 20th level, when you roll initiative and have no uses of Bardic Inspiration left, you regain one use."
+      "description": "At 20th level, when you roll initiative and have no uses of Bardic Inspiration left, you regain one use.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "resourceRegain",
+            "resource": "bardic-inspiration",
+            "amount": 1,
+            "trigger": "roll-initiative-with-none-remaining"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -73330,7 +73349,16 @@
     "data": {
       "source": "subclass:draconic-bloodline",
       "level": 14,
-      "description": "At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn. You can’t manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them."
+      "description": "At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn. You can’t manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "speedSet",
+            "mode": "fly",
+            "value": "current-speed"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 45",
     "license": {
@@ -73710,7 +73738,16 @@
     "data": {
       "source": "class:druid",
       "level": 18,
-      "description": "Starting at 18th level, the primal magic that you wield causes you to age more slowly. For every 10 years that pass, your body ages only 1 year."
+      "description": "Starting at 18th level, the primal magic that you wield causes you to age more slowly. For every 10 years that pass, your body ages only 1 year.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "slowAging",
+            "periodYears": 10,
+            "agesYears": 1
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 21",
     "license": {
@@ -74569,7 +74606,15 @@
     "data": {
       "source": "subclass:life-domain",
       "level": 1,
-      "description": "Also starting at 1st level, your healing spells are more effective. Whenever you use a spell of 1st level or higher to restore hit points to a creature, the creature regains additional hit points equal to 2 + the spell’s level."
+      "description": "Also starting at 1st level, your healing spells are more effective. Whenever you use a spell of 1st level or higher to restore hit points to a creature, the creature regains additional hit points equal to 2 + the spell’s level.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "healing",
+            "amountFormula": "2 + spell-level"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -74642,7 +74687,15 @@
     "data": {
       "source": "subclass:life-domain",
       "level": 17,
-      "description": "Starting at 17th level, when you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of restoring 2d6 hit points to a creature, you restore 12."
+      "description": "Starting at 17th level, when you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of restoring 2d6 hit points to a creature, you restore 12.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "maximizeHealingDice",
+            "appliesTo": "spell-healing"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 17, 18",
     "license": {
@@ -75023,7 +75076,32 @@
     "data": {
       "source": "class:monk",
       "level": 1,
-      "description": "At 1st level, your practice of martial arts gives you mastery of combat styles that use unarmed strikes and monk weapons, which are shortswords and any simple melee weapons that don’t have the two-handed or heavy property. You gain the following benefits while you are unarmed or wielding only monk weapons and you aren’t wearing armor or wielding a shield: • You can use Dexterity instead of Strength for the attack and damage rolls of your unarmed strikes and monk weapons. • You can roll a d4 in place of the normal damage of your unarmed strike or monk weapon. This die changes as you gain monk levels, as shown in the Martial Arts column of the Monk table. • When you use the Attack action with an unarmed strike or a monk weapon on your turn, you can make one unarmed strike as a bonus action. For example, if you take the Attack action and attack with a quarterstaff, you can also make an unarmed strike as a bonus action, assuming you haven’t already taken a bonus action this turn. Certain monasteries use specialized forms of the monk weapons. For example, you might use a club that is two lengths of wood connected by a short chain (called a nunchaku) or a sickle with a shorter, straighter blade (called a kama). Whatever name you use for a monk weapon, you can use the game statistics provided for the weapon."
+      "description": "At 1st level, your practice of martial arts gives you mastery of combat styles that use unarmed strikes and monk weapons, which are shortswords and any simple melee weapons that don’t have the two-handed or heavy property. You gain the following benefits while you are unarmed or wielding only monk weapons and you aren’t wearing armor or wielding a shield: • You can use Dexterity instead of Strength for the attack and damage rolls of your unarmed strikes and monk weapons. • You can roll a d4 in place of the normal damage of your unarmed strike or monk weapon. This die changes as you gain monk levels, as shown in the Martial Arts column of the Monk table. • When you use the Attack action with an unarmed strike or a monk weapon on your turn, you can make one unarmed strike as a bonus action. For example, if you take the Attack action and attack with a quarterstaff, you can also make an unarmed strike as a bonus action, assuming you haven’t already taken a bonus action this turn. Certain monasteries use specialized forms of the monk weapons. For example, you might use a club that is two lengths of wood connected by a short chain (called a nunchaku) or a sickle with a shorter, straighter blade (called a kama). Whatever name you use for a monk weapon, you can use the game statistics provided for the weapon.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "bonusAction",
+            "options": [
+              "unarmed-strike"
+            ]
+          },
+          {
+            "kind": "abilitySubstitution",
+            "use": "dexterity",
+            "insteadOf": "strength",
+            "for": [
+              "attack-rolls",
+              "damage-rolls"
+            ],
+            "appliesTo": "your unarmed strikes and monk weapons"
+          },
+          {
+            "kind": "damageDieReplacement",
+            "die": "d4",
+            "appliesTo": "your unarmed strike or monk weapon"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 26, 27",
     "license": {
@@ -75099,7 +75177,17 @@
     "data": {
       "source": "class:monk",
       "level": 20,
-      "description": "At 20th level, when you roll for initiative and have no ki points remaining, you regain 4 ki points."
+      "description": "At 20th level, when you roll for initiative and have no ki points remaining, you regain 4 ki points.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "resourceRegain",
+            "resource": "ki-points",
+            "amount": 4,
+            "trigger": "roll-initiative-with-none-remaining"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 28",
     "license": {
@@ -75599,7 +75687,15 @@
     "data": {
       "source": "subclass:oath-of-devotion",
       "level": 15,
-      "description": "Beginning at 15th level, you are always under the effects of a protection from evil and good spell."
+      "description": "Beginning at 15th level, you are always under the effects of a protection from evil and good spell.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "permanentSpellEffect",
+            "spell": "spell:protection-from-evil-and-good"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 33",
     "license": {
@@ -76248,7 +76344,24 @@
     "data": {
       "source": "subclass:path-of-the-berserker",
       "level": 3,
-      "description": "Starting when you choose this path at 3rd level, you can go into a frenzy when you rage. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion (as described in appendix PH-A)."
+      "description": "Starting when you choose this path at 3rd level, you can go into a frenzy when you rage. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion (as described in appendix PH-A).",
+      "mechanics": {
+        "conditions": [
+          {
+            "condition": "exhaustion",
+            "relation": "applies"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "bonusAction",
+            "options": [
+              "melee-weapon-attack"
+            ],
+            "frequency": "each-turn"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 9",
     "license": {
@@ -76369,7 +76482,16 @@
     "data": {
       "source": "subclass:path-of-the-berserker",
       "level": 14,
-      "description": "Starting at 14th level, when you take damage from a creature that is within 5 feet of you, you can use your reaction to make a melee weapon attack against that creature."
+      "description": "Starting at 14th level, when you take damage from a creature that is within 5 feet of you, you can use your reaction to make a melee weapon attack against that creature.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "reaction",
+            "action": "melee-weapon-attack",
+            "trigger": "take damage from a creature within 5 feet of you"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 10",
     "license": {
@@ -77018,7 +77140,17 @@
     "data": {
       "source": "class:ranger",
       "level": 14,
-      "description": "Starting at 14th level, you can use the Hide action as a bonus action on your turn. Also, you can’t be tracked by nonmagical means, unless you choose to leave a trail."
+      "description": "Starting at 14th level, you can use the Hide action as a bonus action on your turn. Also, you can’t be tracked by nonmagical means, unless you choose to leave a trail.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "bonusAction",
+            "options": [
+              "hide"
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 37",
     "license": {
@@ -77148,7 +77280,20 @@
     "data": {
       "source": "class:rogue",
       "level": 2,
-      "description": "Starting at 2nd level, your quick thinking and agility allow you to move and act quickly. You can take a bonus action on each of your turns in combat. This action can be used only to take the Dash, Disengage, or Hide action."
+      "description": "Starting at 2nd level, your quick thinking and agility allow you to move and act quickly. You can take a bonus action on each of your turns in combat. This action can be used only to take the Dash, Disengage, or Hide action.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "bonusAction",
+            "options": [
+              "dash",
+              "disengage",
+              "hide"
+            ],
+            "frequency": "each-turn"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 40",
     "license": {
@@ -77716,7 +77861,16 @@
     "data": {
       "source": "subclass:school-of-evocation",
       "level": 6,
-      "description": "Starting at 6th level, your damaging cantrips affect even creatures that avoid the brunt of the effect. When a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip’s damage (if any) but suffers no additional effect from the cantrip."
+      "description": "Starting at 6th level, your damaging cantrips affect even creatures that avoid the brunt of the effect. When a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip’s damage (if any) but suffers no additional effect from the cantrip.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "damageOnSuccessfulSave",
+            "portion": "half",
+            "scope": "your-cantrips"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 54",
     "license": {
@@ -77748,7 +77902,17 @@
     "data": {
       "source": "subclass:school-of-evocation",
       "level": 2,
-      "description": "Beginning at 2nd level, you can create pockets of relative safety within the effects of your evocation spells. When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell’s level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save."
+      "description": "Beginning at 2nd level, you can create pockets of relative safety within the effects of your evocation spells. When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell’s level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "autoSucceedSave",
+            "targets": "chosen-creatures",
+            "countFormula": "1 + spell-level",
+            "noDamageInsteadOfHalf": true
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 54",
     "license": {
@@ -78346,7 +78510,20 @@
     "data": {
       "source": "subclass:thief",
       "level": 3,
-      "description": "Starting at 3rd level, you can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves’ tools to disarm a trap or open a lock, or take the Use an Object action."
+      "description": "Starting at 3rd level, you can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves’ tools to disarm a trap or open a lock, or take the Use an Object action.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "bonusAction",
+            "options": [
+              "make a Dexterity (Sleight of Hand) check",
+              "use your thieves’ tools to disarm a trap or open a lock",
+              "take the Use an Object action"
+            ],
+            "via": "cunning-action"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 40, 41",
     "license": {
@@ -78378,7 +78555,19 @@
     "data": {
       "source": "subclass:thief",
       "level": 3,
-      "description": "When you choose this archetype at 3rd level, you gain the ability to climb faster than normal; climbing no longer costs you extra movement. In addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier."
+      "description": "When you choose this archetype at 3rd level, you gain the ability to climb faster than normal; climbing no longer costs you extra movement. In addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "climbWithoutExtraMovement"
+          },
+          {
+            "kind": "jumpDistanceBonus",
+            "addAbilityModifier": "dexterity",
+            "appliesTo": "running-jump"
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 41",
     "license": {
@@ -78452,7 +78641,16 @@
     "data": {
       "source": "subclass:thief",
       "level": 17,
-      "description": "When you reach 17th level, you have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can’t use this feature when you are surprised."
+      "description": "When you reach 17th level, you have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can’t use this feature when you are surprised.",
+      "mechanics": {
+        "effects": [
+          {
+            "kind": "extraTurn",
+            "round": 1,
+            "secondTurnInitiativeOffset": -10
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 41",
     "license": {
@@ -80174,6 +80372,10 @@
         ],
         "conditions": [
           {
+            "condition": "exhaustion",
+            "relation": "mention"
+          },
+          {
             "condition": "incapacitated",
             "relation": "applies"
           }
@@ -81043,6 +81245,12 @@
           {
             "ability": "constitution",
             "dc": 11
+          }
+        ],
+        "conditions": [
+          {
+            "condition": "exhaustion",
+            "relation": "applies"
           }
         ]
       }
@@ -108744,6 +108952,10 @@
         "conditions": [
           {
             "condition": "charmed",
+            "relation": "mention"
+          },
+          {
+            "condition": "exhaustion",
             "relation": "mention"
           },
           {
