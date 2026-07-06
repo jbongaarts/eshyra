@@ -425,12 +425,18 @@ PROC families (grouped for child beads):
     improvised-weapons (+armor-guidance payload) — route to
     `eshyra-o9bd.18.7.6`, not to a rules child.
 
-Anomalies to fix regardless of architecture (small Codex slice):
-**4 missing-tableRef candidates** — rule:beyond-1st-level (character
-advancement), rule:creature-size (size categories), 
-rule:expenses-lifestyle-expenses (expenses/lifestyle), rule:mounts-and-vehicles
-(mounts table, if that table record exists). Verify each table record exists
-before adding the ref; follow `docs/importer-fix-protocol.md`.
+Anomalies to fix regardless of architecture (small Codex slice) — verified
+against the committed pack 2026-07-06: **3 confirmed missing tableRefs** —
+rule:beyond-1st-level → `table:character-advancement` (exists; currently
+ref'd only by rule:experience-points), rule:creature-size →
+`table:size-categories` (exists; ref'd by rule:size),
+rule:expenses-lifestyle-expenses → `table:lifestyle-expenses` (exists; ref'd
+by the p. 88 lifestyle-expenses row). rule:mounts-and-vehicles is **not** a
+gap: the Mounts and Other Animals data is structured as `equipment` records
+with `category: "mount"` (speed + carryingCapacity fields), and no
+mounts table record exists by design. Follow
+`docs/importer-fix-protocol.md`: add the refs in the importer, not by
+editing the pack.
 
 Routing recommendation: the disposition-layer design and the
 engine-procedure inventory decision are **Opus** work; the missing-tableRef
