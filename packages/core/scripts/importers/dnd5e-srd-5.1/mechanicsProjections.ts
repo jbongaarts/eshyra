@@ -1,4 +1,5 @@
 import { deriveConditionMechanics } from '../../../src/rules/conditionRelations.js';
+import { camelCase } from './classProgression.js';
 import {
   parseCreatureSpellcasting,
   type SpellRefResolver,
@@ -672,10 +673,12 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
     text,
   );
   if (acFormula !== null) {
+    // Same payload contract as the feature-side acFormula (abilities is
+    // always a list): one effect kind, one shape.
     effects.push({
       kind: 'acFormula',
       base: Number(acFormula[1]),
-      ability: 'dexterity',
+      abilities: ['dexterity'],
     });
   }
   const acMinimum = /\bAC can[\u2019']t be less than (\d+)\b/.exec(text);
@@ -908,15 +911,45 @@ function parseModifierEffects(text: string): readonly Mechanics[] {
     const conditionMatch = /^(While [^,]+|When [^,]+),\s/.exec(sentence);
     const condition = conditionMatch?.[1];
     for (const match of sentence.matchAll(
-      /\bha(?:s|ve) (advantage|disadvantage) on ([^.;]+)/gi,
+      /\b(?:ha(?:s|ve)|gives you|you gain) (advantage|disadvantage) on ([^.;]+)/gi,
     )) {
       const mode = match[1].toLowerCase();
-      const scopeText = match[2];
+      // A coordinated ", but …" continuation is a SEPARATE effect (Reckless
+      // Attack's attackers-against-you clause) and must not ride the first
+      // modifier's constraint.
+      const scopeText = match[2].split(/,\s*but\s+/)[0];
       for (const clause of scopeText.split(/,? as well as (?:on )?/i)) {
         const skillCheck =
-          /^(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+\(([A-Za-z ]+)\) checks(?: (?:and saving throws )?)?(?:that rely on ([a-z, ]+?(?: (?:and|or) [a-z]+)?))?(?:[ .]|$)/.exec(
+          /^(?:an? )?(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+\(([A-Za-z ]+)\) checks?(?: (?:and saving throws )?)?(?:that rely on ([a-z, ]+?(?: (?:and|or) [a-z]+)?))?(?:[ .]|$| if )/.exec(
             clause.trim(),
           );
+        // Bare-ability checks, optionally paired with same-ability saves
+        // ("advantage on Strength checks and Strength saving throws" — Rage).
+        const bareCheck =
+          /^(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) checks(?: and (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throws)?\.?$/.exec(
+            clause.trim(),
+          );
+        if (skillCheck === null && bareCheck !== null) {
+          out.push(
+            compact({
+              kind: 'abilityCheckModifier',
+              mode,
+              ability: bareCheck[1].toLowerCase(),
+              condition,
+            }),
+          );
+          if (bareCheck[2] !== undefined) {
+            out.push(
+              compact({
+                kind: 'savingThrowModifier',
+                mode,
+                abilities: [bareCheck[2].toLowerCase()],
+                condition,
+              }),
+            );
+          }
+          continue;
+        }
         if (skillCheck !== null) {
           out.push(
             compact({
@@ -937,7 +970,7 @@ function parseModifierEffects(text: string): readonly Mechanics[] {
           continue;
         }
         const attackRoll =
-          /^(?:an )?(melee |ranged )?attack rolls?\b\s*([^.;]*)/.exec(
+          /^(?:an )?(melee |ranged )?(?:weapon |spell )?attack rolls?\b\s*([^.;]*)/.exec(
             clause.trim(),
           );
         if (attackRoll !== null) {
@@ -954,7 +987,7 @@ function parseModifierEffects(text: string): readonly Mechanics[] {
           continue;
         }
         const savingThrow =
-          /^(?:((?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)(?:, (?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma))*(?:,? and (?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma))?) )?saving throws( and (?:all )?ability checks)?(?: against (.+?))?\.?$/.exec(
+          /^(?:all )?(?:((?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)(?:, (?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma))*(?:,? and (?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma))?) )?saving throws( and (?:all )?ability checks)?(?: against (.+?))?\.?$/.exec(
             clause.trim(),
           );
         if (savingThrow !== null) {
@@ -1223,15 +1256,752 @@ function deriveSpellGrants(
   return grants.length > 0 ? grants : undefined;
 }
 
+/**
+ * Feature/trait runtime-effect grammars (eshyra-o9bd.18.7.5). Anchored to the
+ * SRD's class-feature and racial-trait phrasings; shared modifier scanning
+ * comes from `parseModifierEffects`. Replaces the earlier keyword-presence
+ * markers (bare `advantage`/`resistance`/`proficiency`), which fired on any
+ * mention and carried no semantics.
+ */
+function parseFeatureEffects(text: string): readonly Mechanics[] {
+  const effects: Mechanics[] = [...parseModifierEffects(text)];
+  const acFormula =
+    /\b(?:AC|Armor Class) equals (\d+) \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier(?: \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier)?(?: \+ your shield['\u2019]s AC bonus)?/i.exec(
+      text,
+    );
+  if (acFormula !== null) {
+    effects.push(
+      compact({
+        kind: 'acFormula',
+        base: Number(acFormula[1]),
+        abilities: [
+          acFormula[2].toLowerCase(),
+          ...(acFormula[3] === undefined ? [] : [acFormula[3].toLowerCase()]),
+        ],
+        // Shield eligibility is stated either inside the formula ("+ your
+        // shield's AC bonus") or as its own sentence (Barbarian Unarmored
+        // Defense: "You can use a shield and still gain this benefit.").
+        allowsShield:
+          /\+ your shield['\u2019]s AC bonus/i.test(text) ||
+          /\bYou can use a shield and still gain this benefit\b/i.test(text)
+            ? true
+            : undefined,
+      }),
+    );
+  }
+  const extraAttack = /\battack (twice|three times|four times)\b/i.exec(text);
+  if (extraAttack !== null) {
+    const attacks =
+      extraAttack[1] === 'twice' ? 2 : extraAttack[1] === 'three times' ? 3 : 4;
+    // The Fighter's tiers: "The number of attacks increases to three when
+    // you reach 11th level in this class and to four when you reach 20th
+    // level in this class." Every printed tier is preserved.
+    const increases = [
+      ...text.matchAll(
+        /\bto (two|three|four) when you reach (\d+)(?:st|nd|rd|th) level\b/gi,
+      ),
+    ].map((tier) => ({
+      level: Number(tier[2]),
+      attacks: NUMBER_WORDS.get(tier[1].toLowerCase()) ?? 0,
+    }));
+    effects.push(
+      compact({
+        kind: 'extraAttack',
+        attacks,
+        increases: increases.length > 0 ? increases : undefined,
+      }),
+    );
+  }
+  const critical =
+    /\bcritical hit on a roll of (\d+)(?:[-\u2013]20| or 20)\b/i.exec(text);
+  if (critical !== null) {
+    effects.push({ kind: 'criticalRange', minimumRoll: Number(critical[1]) });
+  }
+  if (
+    /\binstead take no damage if you succeed on the saving throw, and only half damage if you fail\b/i.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'evasion' });
+  }
+  const resistance =
+    /\b(?:you (?:have|gain)|gains?) resistance (?:to|against) ([a-z]+(?:(?:,| and|, and) [a-z]+)*) damage\b/i.exec(
+      text,
+    );
+  if (resistance !== null) {
+    const types = resistance[1]
+      .toLowerCase()
+      .split(/,\s*(?:and\s+)?|\s+and\s+/)
+      .map((type) => type.trim())
+      .filter((type) => SRD_5_1_DAMAGE_TYPES.has(type));
+    if (types.length > 0) {
+      effects.push({ kind: 'damageResistance', types });
+    }
+  }
+  if (
+    /\bresistance to the damage type associated with your draconic ancestry\b/i.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'damageResistance', typeFrom: 'draconic-ancestry' });
+  }
+  // Conditional double-proficiency clauses (Stonecunning, the Rock Gnome's
+  // Artificer's Lore): "Whenever you make an Intelligence (History) check
+  // related to …, you are considered proficient in the History skill and
+  // add double your proficiency bonus …". The executable rule is projected
+  // structurally — a scoped proficiency grant plus a scoped expertise —
+  // never embedded inside a free-text grant string.
+  const conditionalExpertise =
+    /\bWhenever you make an? (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) check (.*?), you (?:are considered proficient in ([^.]*?) and )?(?:can )?add (?:double|twice) your proficiency bonus\b/.exec(
+      text,
+    );
+  if (conditionalExpertise !== null) {
+    if (conditionalExpertise[4] !== undefined) {
+      effects.push({
+        kind: 'proficiency',
+        grant: conditionalExpertise[4].trim(),
+        condition: conditionalExpertise[3].trim(),
+      });
+    }
+    effects.push({
+      kind: 'expertise',
+      ability: conditionalExpertise[1].toLowerCase(),
+      skill: conditionalExpertise[2].toLowerCase().replaceAll(' ', '-'),
+      condition: conditionalExpertise[3].trim(),
+    });
+  }
+  // Typed proficiency grants ("You have proficiency with the battleaxe, …",
+  // "You gain proficiency in the Intimidation skill"). The grant clause is
+  // kept verbatim — item/skill vocabularies live in the equipment/skill
+  // records. The considered-proficient form is owned by the conditional
+  // double-proficiency grammar above.
+  const proficiency =
+    conditionalExpertise === null
+      ? /\b[Yy]ou (?:have|gain) proficiency (with|in) ([^.]+)\.|\b[Yy]ou are considered proficient in ([^.]+)\./.exec(
+          text,
+        )
+      : /\b[Yy]ou (?:have|gain) proficiency (with|in) ([^.]+)\./.exec(text);
+  if (proficiency !== null) {
+    effects.push({
+      kind: 'proficiency',
+      grant: (proficiency[2] ?? proficiency[3]).trim(),
+    });
+  }
+  if (/\bresistance to all damage\b/.test(text)) {
+    effects.push({ kind: 'damageResistance', types: 'all' });
+  }
+  const immunity = /\b(?:you are|makes you) immune to ([a-z ]+?)[.,]/.exec(
+    text,
+  );
+  if (immunity !== null) {
+    effects.push({ kind: 'immunity', to: immunity[1].trim() });
+  }
+  const darkvision =
+    /\b(?:you (?:have|can see in)|gains?) (?:superior )?darkvision[^.]*?(\d+) feet\b/i.exec(
+      text,
+    );
+  if (darkvision !== null) {
+    effects.push({
+      kind: 'sense',
+      sense: 'darkvision',
+      rangeFeet: Number(darkvision[1]),
+    });
+  }
+  const speedBonus = /\bspeed increases by (\d+) feet( while [^.]+)?/i.exec(
+    text,
+  );
+  if (speedBonus !== null) {
+    effects.push(
+      compact({
+        kind: 'speedBonus',
+        amountFeet: Number(speedBonus[1]),
+        condition: speedBonus[2]?.trim(),
+      }),
+    );
+  }
+  if (
+    /\bproficiency bonus is doubled\b/i.test(text) ||
+    (conditionalExpertise === null &&
+      /\badd (?:twice|double) your proficiency bonus\b/i.test(text))
+  ) {
+    effects.push({ kind: 'expertise' });
+  }
+  const dcFormula =
+    /\bDC (?:for this saving throw )?(?:equals|is) (\d+) \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier( \+ your proficiency bonus)?/i.exec(
+      text,
+    );
+  if (dcFormula !== null) {
+    effects.push(
+      compact({
+        kind: 'saveDcFormula',
+        base: Number(dcFormula[1]),
+        ability: dcFormula[2].toLowerCase(),
+        addProficiencyBonus: dcFormula[3] === undefined ? undefined : true,
+      }),
+    );
+  }
+  const extraDamage =
+    /\b(?:deals?|takes) an extra (\d+d\d+) (?:([a-z]+) )?damage\b/i.exec(text);
+  if (
+    extraDamage !== null &&
+    (extraDamage[2] === undefined || SRD_5_1_DAMAGE_TYPES.has(extraDamage[2]))
+  ) {
+    effects.push(
+      compact({
+        kind: 'extraDamage',
+        dice: extraDamage[1],
+        type: extraDamage[2],
+      }),
+    );
+  }
+  const damageBonus = /(?<![\w+-])([+-]\d+) bonus to the damage roll\b/.exec(
+    text,
+  );
+  if (damageBonus !== null) {
+    effects.push({ kind: 'damageBonus', amount: Number(damageBonus[1]) });
+  }
+  const attackersAgainst =
+    /\battack rolls against you have (advantage|disadvantage)\b/i.exec(text);
+  if (attackersAgainst !== null) {
+    effects.push({
+      kind: 'attackRollModifier',
+      subject: 'attackers-against-you',
+      mode: attackersAgainst[1].toLowerCase(),
+    });
+  }
+  const brutal =
+    /\broll (one|two|three) additional weapon damage (?:die|dice) when determining the extra damage for a critical hit\b/i.exec(
+      text,
+    );
+  if (brutal !== null) {
+    // "This increases to two additional dice at 13th level and three
+    // additional dice at 17th level." — the level progression is part of
+    // the deterministic contract, not flavor.
+    const increases = [
+      ...text.matchAll(
+        /\b(one|two|three|four) additional dice at (\d+)(?:st|nd|rd|th) level\b/gi,
+      ),
+    ].map((tier) => ({
+      level: Number(tier[2]),
+      additionalDice: NUMBER_WORDS.get(tier[1].toLowerCase()) ?? 0,
+    }));
+    effects.push(
+      compact({
+        kind: 'brutalCritical',
+        additionalDice: brutal[1] === 'one' ? 1 : brutal[1] === 'two' ? 2 : 3,
+        increases: increases.length > 0 ? increases : undefined,
+      }),
+    );
+  }
+  const asiIncrease =
+    /\bYour (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) and (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) scores increase by (\d+)\. Your maximum for those scores is now (\d+)\b/.exec(
+      text,
+    );
+  if (asiIncrease !== null) {
+    effects.push({
+      kind: 'abilityScoreIncrease',
+      abilities: [asiIncrease[1].toLowerCase(), asiIncrease[2].toLowerCase()],
+      amount: Number(asiIncrease[3]),
+      newMaximum: Number(asiIncrease[4]),
+    });
+  }
+  const halfProficiency =
+    /\badd half your proficiency bonus(?:, rounded (up|down),| \(round (up|down)\))? to any ([^.]*?) checks? you make that doesn['\u2019]t already (?:include|use) your proficiency bonus\b/i.exec(
+      text,
+    );
+  if (halfProficiency !== null) {
+    effects.push(
+      compact({
+        kind: 'halfProficiencyToChecks',
+        round: halfProficiency[1] ?? halfProficiency[2],
+        scope: halfProficiency[3].trim().toLowerCase(),
+      }),
+    );
+  }
+  const magicalStrikes =
+    /\b(unarmed strikes|weapon attacks) count as magical for the purpose of overcoming resistance\b/i.exec(
+      text,
+    );
+  if (magicalStrikes !== null) {
+    effects.push({
+      kind: 'weaponAttacksMagical',
+      scope: magicalStrikes[1].toLowerCase().replaceAll(' ', '-'),
+    });
+  }
+  const damageReduction =
+    /\b(?:reduce the damage|the damage (?:you take )?(?:from the attack )?is reduced) by (\d+d\d+) \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier \+ your ([a-z]+) level\b/i.exec(
+      text,
+    );
+  if (damageReduction !== null) {
+    effects.push({
+      kind: 'damageReduction',
+      dice: damageReduction[1],
+      addAbilityModifier: damageReduction[2].toLowerCase(),
+      addClassLevel: damageReduction[3].toLowerCase(),
+    });
+  }
+  const formulaHeal =
+    /\bregain hit points equal to (\d+) \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
+      text,
+    );
+  if (formulaHeal !== null) {
+    effects.push({
+      kind: 'healing',
+      amount: Number(formulaHeal[1]),
+      addAbilityModifier: formulaHeal[2].toLowerCase(),
+    });
+  }
+  const poolHeal =
+    /\brestore a number of hit points equal to (five|ten) times your ([a-z]+) level\b/i.exec(
+      text,
+    );
+  if (poolHeal !== null) {
+    effects.push({
+      kind: 'healing',
+      amountFormula: `${poolHeal[1] === 'five' ? 5 : 10} × ${poolHeal[2].toLowerCase()}-level`,
+    });
+  }
+  if (/\bcan['\u2019]t be aged magically\b/i.test(text)) {
+    effects.push({ kind: 'stopsAging' });
+  }
+  if (/\b(?:gain|grants you) proficiency in all saving throws\b/i.test(text)) {
+    effects.push({ kind: 'proficiency', scope: 'all-saving-throws' });
+  }
+  const rollFloor = /\btreat a d20 roll of (\d+) or lower as an? (\d+)\b/i.exec(
+    text,
+  );
+  if (rollFloor !== null) {
+    effects.push({
+      kind: 'rollFloor',
+      rollOf: Number(rollFloor[1]),
+      treatAs: Number(rollFloor[2]),
+    });
+  }
+  // Deterministic action economy (eshyra-o9bd.18.7.5 re-review): bonus
+  // actions with fixed option sets, reaction attacks, and turn structure.
+  const cunningAction =
+    /\bYou can take a bonus action on each of your turns in combat\. This action can be used only to take the (.+?) action\./.exec(
+      text,
+    );
+  if (cunningAction !== null) {
+    effects.push({
+      kind: 'bonusAction',
+      options: cunningAction[1]
+        .split(/,\s*(?:or\s+)?|\s+or\s+/)
+        .map((option) => option.trim().toLowerCase().replaceAll(' ', '-'))
+        .filter((option) => option.length > 0),
+      frequency: 'each-turn',
+    });
+  }
+  const hideBonus = /\byou can use the (\w+) action as a bonus action\b/i.exec(
+    text,
+  );
+  if (hideBonus !== null) {
+    effects.push({
+      kind: 'bonusAction',
+      options: [hideBonus[1].toLowerCase()],
+    });
+  }
+  if (
+    /\byou can make a single melee weapon attack as a bonus action on each of your turns\b/i.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'bonusAction',
+      options: ['melee-weapon-attack'],
+      frequency: 'each-turn',
+    });
+  }
+  // Martial Arts' benefits share one applicability constraint — "while you
+  // are unarmed or wielding only monk weapons and you aren't wearing armor
+  // or wielding a shield" — that governs every bulleted benefit, so it rides
+  // each projected effect rather than being dropped (eshyra-o9bd.18.7.5
+  // re-review).
+  const sharedEligibility =
+    /\bgain the following benefits while you are unarmed or wielding only monk weapons and you aren['’]t wearing armor or wielding a shield\b/i.test(
+      text,
+    )
+      ? {
+          wielding: 'unarmed-or-monk-weapons-only',
+          armor: false,
+          shield: false,
+        }
+      : undefined;
+  if (/\byou can make one unarmed strike as a bonus action\b/i.test(text)) {
+    effects.push(
+      compact({
+        kind: 'bonusAction',
+        options: ['unarmed-strike'],
+        // The bonus-action strike is gated on having used the Attack action
+        // with an unarmed strike or monk weapon this turn.
+        prerequisite:
+          /\bWhen you use the Attack action with an unarmed strike or a monk weapon on your turn\b/i.test(
+            text,
+          )
+            ? 'attack-action-with-unarmed-strike-or-monk-weapon'
+            : undefined,
+        eligibility: sharedEligibility,
+      }),
+    );
+  }
+  const cunningVia =
+    /\byou can use the bonus action granted by your Cunning Action to (.+?)\./.exec(
+      text,
+    );
+  if (cunningVia !== null) {
+    effects.push({
+      kind: 'bonusAction',
+      options: cunningVia[1]
+        .split(/,\s*(?:or\s+)?|\s+or\s+(?=use|take|make)/)
+        .map((option) => option.trim())
+        .filter((option) => option.length > 0),
+      via: 'cunning-action',
+    });
+  }
+  const reactionAttack =
+    /\bwhen you take damage from a creature that is within (\d+) feet of you, you can use your reaction to make a melee weapon attack against that creature\b/i.exec(
+      text,
+    );
+  if (reactionAttack !== null) {
+    effects.push({
+      kind: 'reaction',
+      action: 'melee-weapon-attack',
+      trigger: `take damage from a creature within ${reactionAttack[1]} feet of you`,
+    });
+  }
+  const abilitySub =
+    /\bYou can use (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) instead of (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) for the attack and damage rolls of ([^.•]+)/.exec(
+      text,
+    );
+  if (abilitySub !== null) {
+    effects.push(
+      compact({
+        kind: 'abilitySubstitution',
+        use: abilitySub[1].toLowerCase(),
+        insteadOf: abilitySub[2].toLowerCase(),
+        for: ['attack-rolls', 'damage-rolls'],
+        appliesTo: abilitySub[3].trim(),
+        eligibility: sharedEligibility,
+      }),
+    );
+  }
+  const dieReplacement =
+    /\bYou can roll a (d\d+) in place of the normal damage of ([^.•]+)/.exec(
+      text,
+    );
+  if (dieReplacement !== null) {
+    // "This die changes as you gain monk levels, as shown in the Martial
+    // Arts column of the Monk table." — the die is progression-backed, not
+    // fixed. The reference resolves against the class record's structured
+    // `progression[].advancement` resourceProgression entries (the single
+    // source of progression truth), so every level tier is preserved
+    // without duplicating the table here.
+    const dieProgression =
+      /\bThis die changes as you gain ([a-z]+) levels, as shown in the ([A-Za-z ]+?) column of the [A-Za-z ]+ table\b/.exec(
+        text,
+      );
+    effects.push(
+      compact({
+        kind: 'damageDieReplacement',
+        die: dieReplacement[1],
+        appliesTo: dieReplacement[2].trim(),
+        progression:
+          dieProgression === null
+            ? undefined
+            : {
+                classRef: `class:${dieProgression[1].toLowerCase()}`,
+                resource: camelCase(dieProgression[2]),
+              },
+        eligibility: sharedEligibility,
+      }),
+    );
+  }
+  const extraTurn =
+    /\bYou can take two turns during the first round of any combat\. You take your first turn at your normal initiative and your second turn at your initiative minus (\d+)\b/.exec(
+      text,
+    );
+  if (extraTurn !== null) {
+    effects.push({
+      kind: 'extraTurn',
+      round: 1,
+      secondTurnInitiativeOffset: -Number(extraTurn[1]),
+    });
+  }
+  const resourceRegain =
+    /\bwhen you roll (?:for )?initiative and have no (ki points|uses of Bardic Inspiration) (?:remaining|left), you regain (one use|\d+ ki points)\b/i.exec(
+      text,
+    );
+  if (resourceRegain !== null) {
+    effects.push({
+      kind: 'resourceRegain',
+      resource: resourceRegain[1].startsWith('ki')
+        ? 'ki-points'
+        : 'bardic-inspiration',
+      amount:
+        resourceRegain[2] === 'one use'
+          ? 1
+          : Number(/\d+/.exec(resourceRegain[2])?.[0]),
+      trigger: 'roll-initiative-with-none-remaining',
+    });
+  }
+  if (
+    /\bwhen you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die\b/i.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'maximizeHealingDice', appliesTo: 'spell-healing' });
+  }
+  if (
+    /\bWhen a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip[\u2019']s damage\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'damageOnSuccessfulSave',
+      portion: 'half',
+      scope: 'your-cantrips',
+    });
+  }
+  const sculpt =
+    /\byou can choose a number of them equal to (\d+) \+ the spell[\u2019']s level\. The chosen creatures automatically succeed on their saving throws against the spell\b/.exec(
+      text,
+    );
+  if (sculpt !== null) {
+    effects.push({
+      kind: 'autoSucceedSave',
+      targets: 'chosen-creatures',
+      countFormula: `${sculpt[1]} + spell-level`,
+      noDamageInsteadOfHalf:
+        /take no damage if they would normally take half damage on a successful save/.test(
+          text,
+        )
+          ? true
+          : undefined,
+    });
+  }
+  const checkMinimum =
+    /\bif your total for a (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) check is less than your \1 score, you can use that score in place of the total\b/i.exec(
+      text,
+    );
+  if (checkMinimum !== null) {
+    effects.push({
+      kind: 'checkMinimum',
+      ability: checkMinimum[1].toLowerCase(),
+      minimum: 'ability-score',
+    });
+  }
+  const slowAging =
+    /\bFor every (\d+) years that pass, your body ages only (\d+) years?\b/.exec(
+      text,
+    );
+  if (slowAging !== null) {
+    effects.push({
+      kind: 'slowAging',
+      periodYears: Number(slowAging[1]),
+      agesYears: Number(slowAging[2]),
+    });
+  }
+  if (/\bclimbing no longer costs you extra movement\b/i.test(text)) {
+    effects.push({ kind: 'climbWithoutExtraMovement' });
+  }
+  const runningJump =
+    /\bwhen you make a running jump, the distance you (?:can )?cover increases by a number of feet equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
+      text,
+    );
+  if (runningJump !== null) {
+    effects.push({
+      kind: 'jumpDistanceBonus',
+      addAbilityModifier: runningJump[1].toLowerCase(),
+      appliesTo: 'running-jump',
+    });
+  }
+  if (/\bgaining a flying speed equal to your current speed\b/i.test(text)) {
+    // Dragon Wings (eshyra-o9bd.18.7.5 re-review): the feature also fixes
+    // the action-economy costs — a bonus action to create the wings and a
+    // bonus action to dismiss them — and forbids manifesting them in armor
+    // not made to accommodate them. All three clauses are deterministic and
+    // ride the speed effect.
+    effects.push(
+      compact({
+        kind: 'speedSet',
+        mode: 'fly',
+        value: 'current-speed',
+        activation: /\bcreate these wings as a bonus action\b/i.test(text)
+          ? { cost: 'bonus-action' }
+          : undefined,
+        deactivation: /\bdismiss them as a bonus action\b/i.test(text)
+          ? { cost: 'bonus-action' }
+          : undefined,
+        eligibility:
+          /\bcan['’]t manifest your wings while wearing armor unless the armor is made to accommodate them\b/i.test(
+            text,
+          )
+            ? { armor: 'accommodating-armor-only' }
+            : undefined,
+      }),
+    );
+  }
+  const abilityDamageBonus =
+    /\badd your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier to one damage roll\b/i.exec(
+      text,
+    );
+  if (abilityDamageBonus !== null) {
+    effects.push({
+      kind: 'damageBonus',
+      addAbilityModifier: abilityDamageBonus[1].toLowerCase(),
+      scope: 'one-damage-roll',
+    });
+  }
+  const checkBonus =
+    /(?<![\w+-])([+-]\d+) bonus to (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) checks\b/.exec(
+      text,
+    );
+  if (checkBonus !== null) {
+    effects.push({
+      kind: 'checkBonus',
+      amount: Number(checkBonus[1]),
+      ability: checkBonus[2].toLowerCase(),
+      skill: checkBonus[3].toLowerCase().replaceAll(' ', '-'),
+    });
+  }
+  const saveBonus =
+    /\b(you or a friendly creature within (\d+) feet of you )?must make a saving throw, the creature gains a bonus to (?:the|that) saving throw equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier(?: \(with a minimum bonus of \+(\d+)\))?/i.exec(
+      text,
+    ) ??
+    /()()\bgains a bonus to (?:the|that) saving throw equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier(?: \(with a minimum bonus of \+(\d+)\))?/i.exec(
+      text,
+    );
+  if (saveBonus !== null) {
+    effects.push(
+      compact({
+        kind: 'savingThrowBonus',
+        addAbilityModifier: saveBonus[3].toLowerCase(),
+        minimum: saveBonus[4] === undefined ? undefined : Number(saveBonus[4]),
+        subject:
+          saveBonus[1] === undefined || saveBonus[1] === ''
+            ? undefined
+            : 'you-or-friendly-creatures',
+        rangeFeet:
+          saveBonus[2] === undefined || saveBonus[2] === ''
+            ? undefined
+            : Number(saveBonus[2]),
+      }),
+    );
+  }
+  const smite =
+    /\bextra damage is (\d+d\d+) for a 1st-level spell slot, plus (\d+d\d+) for each spell level higher than 1st(?:, to a maximum of (\d+d\d+))?/i.exec(
+      text,
+    );
+  if (smite !== null) {
+    const undeadFiend =
+      /\bdamage increases by (\d+d\d+) if the target is an undead or a fiend\b/i.exec(
+        text,
+      );
+    effects.push(
+      compact({
+        kind: 'extraDamage',
+        dice: smite[1],
+        perSlotLevelIncrease: smite[2],
+        maximumDice: smite[3],
+        bonusDiceVsUndeadOrFiend: undeadFiend?.[1],
+      }),
+    );
+  }
+  const attackOrDamage =
+    /\badd your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier to the attack roll or the damage roll\b/i.exec(
+      text,
+    );
+  if (attackOrDamage !== null) {
+    effects.push({
+      kind: 'attackOrDamageBonus',
+      addAbilityModifier: attackOrDamage[1].toLowerCase(),
+    });
+  }
+  const tempFormula =
+    /\bgain temporary hit points equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier(?: \+ your ([a-z]+) level)?\b/i.exec(
+      text,
+    );
+  if (tempFormula !== null) {
+    effects.push(
+      compact({
+        kind: 'temporaryHitPoints',
+        addAbilityModifier: tempFormula[1].toLowerCase(),
+        addClassLevel: tempFormula[2]?.toLowerCase(),
+      }),
+    );
+  }
+  const spellLevelHeal =
+    /\bregains? (?:additional )?hit points equal to (\d+) \+ the spell[\u2019']s level\b/i.exec(
+      text,
+    );
+  if (spellLevelHeal !== null) {
+    effects.push({
+      kind: 'healing',
+      amountFormula: `${spellLevelHeal[1]} + spell-level`,
+    });
+  }
+  const fallReduction =
+    /\breduce any falling damage you take by an amount equal to (five|ten) times your ([a-z]+) level\b/i.exec(
+      text,
+    );
+  if (fallReduction !== null) {
+    effects.push({
+      kind: 'damageReduction',
+      scope: 'falling',
+      amountFormula: `${fallReduction[1] === 'five' ? 5 : 10} × ${fallReduction[2].toLowerCase()}-level`,
+    });
+  }
+  if (/\bhalve the attack[\u2019']s damage against you\b/i.test(text)) {
+    effects.push({
+      kind: 'damageReduction',
+      multiplier: 0.5,
+      scope: 'triggering-attack',
+    });
+  }
+  return effects;
+}
+
 export function deriveFeatureMechanics(
   text: string,
   resolveSpellGrant?: SpellGrantResolver,
 ): Mechanics {
   const lower = text.toLowerCase();
+  const uses = /\byou can use this feature (once|twice|three times)\b/i.exec(
+    text,
+  );
+  const usesPerAbility =
+    /\ba number of times equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
+      text,
+    );
+  const effects = [...parseFeatureEffects(text)];
+  // A permanent always-on spell effect (Oath of Devotion's Purity of
+  // Spirit) resolves fail-closed against the emitted spell set, like
+  // spellGrants.
+  const permanentSpell =
+    /\byou are always under the effects of an? ([a-z' ]+?) spell\b/i.exec(text);
+  if (permanentSpell !== null && resolveSpellGrant !== undefined) {
+    const ref = resolveSpellGrant(permanentSpell[1]);
+    if (ref !== undefined) {
+      effects.push({ kind: 'permanentSpellEffect', spell: ref });
+    }
+  }
+  const save = parseSave(text);
   return compact({
+    saves: save === undefined ? undefined : [save],
     resources: /\b(short or long rest|long rest|short rest)\b/i.test(text)
       ? [
           compact({
+            uses:
+              uses === null
+                ? usesPerAbility === null
+                  ? undefined
+                  : `${usesPerAbility[1].toLowerCase()}-modifier`
+                : uses[1] === 'once'
+                  ? 1
+                  : uses[1] === 'twice'
+                    ? 2
+                    : 3,
             reset: lower.includes('short or long rest')
               ? 'short-or-long-rest'
               : lower.includes('short rest')
@@ -1240,17 +2010,8 @@ export function deriveFeatureMechanics(
           }),
         ]
       : undefined,
-    effects: [
-      ...(/\battack twice\b/i.test(text)
-        ? [{ kind: 'extraAttack', attacks: 2 }]
-        : []),
-      ...(/\bcritical hit on a roll of 19 or 20\b/i.test(text)
-        ? [{ kind: 'criticalRange', minimumRoll: 19 }]
-        : []),
-      ...(/\badvantage\b/i.test(text) ? [{ kind: 'advantage' }] : []),
-      ...(/\bresistance\b/i.test(text) ? [{ kind: 'resistance' }] : []),
-      ...(/\bproficiency\b/i.test(text) ? [{ kind: 'proficiency' }] : []),
-    ],
+    conditions: parseConditions(text),
+    effects: effects.length > 0 ? [...effects] : undefined,
     spellGrants: deriveSpellGrants(text, resolveSpellGrant),
   });
 }

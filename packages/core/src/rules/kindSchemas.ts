@@ -28,40 +28,58 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'acBonus',
   'acFormula',
   'acMinimum',
+  'abilityScoreIncrease',
   'advantage',
   'attackAndDamageBonus',
+  'attackOrDamageBonus',
   'attackRollModifier',
   'autoFailCheck',
   'autoFailSave',
+  'abilitySubstitution',
+  'autoSucceedSave',
   'benefitEndsWhen',
+  'bonusAction',
   'breathes',
+  'brutalCritical',
   'cannotAttackOrTarget',
   'cannotHear',
   'checkBonus',
+  'checkMinimum',
+  'climbWithoutExtraMovement',
   'cannotMove',
   'cannotSee',
   'cannotSpeak',
   'cannotTakeActions',
   'cannotTakeReactions',
   'conditionEndsWhen',
+  'damageDieReplacement',
   'damageMultiplier',
+  'damageOnSuccessfulSave',
+  'damageReduction',
   'criticalHitOnHit',
   'criticalRange',
   'castSpell',
   'damageResistance',
   'death',
+  'damageBonus',
   'dropHeldObjects',
+  'evasion',
+  'expertise',
   'extraAttack',
+  'extraDamage',
   'extraDamageOnHit',
   'extraMovement',
+  'extraTurn',
   'forcedMovement',
   'gainRuleBenefitsOnSuccess',
+  'halfProficiencyToChecks',
   'healing',
   'hitPointMaximumIncrease',
   'hitPointMaximumMultiplier',
   'holdBreath',
   'immunity',
   'jumpDistance',
+  'jumpDistanceBonus',
   'light',
   'impliesCondition',
   'imposesCondition',
@@ -69,23 +87,31 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'locationDetectableBy',
   'makeAbilityCheck',
   'makeAttack',
+  'maximizeHealingDice',
   'movementRestriction',
   'multiattack',
   'obscurement',
   'objectInteraction',
   'proficiency',
+  'permanentSpellEffect',
   'preventOpportunityAttacks',
+  'reaction',
   'readyAction',
   'readySpell',
   'regeneration',
   'repeatSave',
+  'resourceRegain',
   'rollBonusDice',
+  'rollFloor',
   'rollModifier',
   'rollPenaltyDice',
   'resistance',
   'revive',
+  'saveDcFormula',
+  'savingThrowBonus',
   'savingThrowModifier',
   'sense',
+  'slowAging',
   'speechRestricted',
   'speedBonus',
   'speedBonusSuppressed',
@@ -1282,6 +1308,430 @@ const SPELLCASTING_GROUP_FREQUENCIES: ReadonlySet<string> = new Set([
   'slot-level',
 ]);
 
+const ABILITY_NAMES: ReadonlySet<string> = new Set([
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+]);
+
+function reqAbility(parent: Obj, key: string, path: string): void {
+  const value = reqStr(parent, key, path);
+  if (!ABILITY_NAMES.has(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be an ability name, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+function reqDice(parent: Obj, key: string, path: string): void {
+  const value = reqStr(parent, key, path);
+  if (!/^\d*d\d+(?:\s*[+-]\s*\d+)?$/.test(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be a dice expression, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+function optAbility(parent: Obj, key: string, path: string): void {
+  if (parent[key] !== undefined) {
+    reqAbility(parent, key, path);
+  }
+}
+
+function optEnum(
+  parent: Obj,
+  key: string,
+  path: string,
+  allowed: ReadonlySet<string>,
+): void {
+  const value = parent[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'string' || !allowed.has(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be one of ${[...allowed].join(', ')}, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+function reqEnum(
+  parent: Obj,
+  key: string,
+  path: string,
+  allowed: ReadonlySet<string>,
+): void {
+  reqStr(parent, key, path);
+  optEnum(parent, key, path, allowed);
+}
+
+/**
+ * A marker-only effect's contract is exactly `{ kind }` — any payload field
+ * on it is either a projection bug or an undocumented contract change, and
+ * must fail validation rather than ride the whitelist (eshyra-o9bd.18.7.5
+ * re-review).
+ */
+function markerOnly(effect: Obj, path: string): void {
+  for (const key of Object.keys(effect)) {
+    if (key !== 'kind') {
+      throw new RulesPackError(
+        `${path} is a marker-only effect; unexpected payload key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+}
+
+/**
+ * Shared equipment-state eligibility rider (Martial Arts, Dragon Wings):
+ * `wielding` is a closed wielding constraint, `armor` is `false` (none
+ * allowed) or `"accommodating-armor-only"`, `shield` is a boolean.
+ */
+function optEligibility(effect: Obj, path: string): void {
+  const value = effect.eligibility;
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(
+      `${path}.eligibility must be a non-null object when present`,
+    );
+  }
+  const eligibility = value as Obj;
+  const keys = Object.keys(eligibility);
+  if (keys.length === 0) {
+    throw new RulesPackError(`${path}.eligibility must not be empty`);
+  }
+  for (const key of keys) {
+    if (key !== 'wielding' && key !== 'armor' && key !== 'shield') {
+      throw new RulesPackError(
+        `${path}.eligibility has unsupported key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+  optStr(eligibility, 'wielding', `${path}.eligibility`);
+  const armor = eligibility.armor;
+  if (
+    armor !== undefined &&
+    armor !== false &&
+    armor !== 'accommodating-armor-only'
+  ) {
+    throw new RulesPackError(
+      `${path}.eligibility.armor must be false or "accommodating-armor-only", got ${JSON.stringify(armor)}`,
+    );
+  }
+  optBool(eligibility, 'shield', `${path}.eligibility`);
+}
+
+/** Action-economy cost object rider ({ cost: 'bonus-action' | … }). */
+function optActionCost(effect: Obj, key: string, path: string): void {
+  const value = effect[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be a non-null object when present`,
+    );
+  }
+  reqEnum(
+    value as Obj,
+    'cost',
+    `${path}.${key}`,
+    new Set(['action', 'bonus-action', 'reaction']),
+  );
+}
+
+/**
+ * Per-kind payload contracts for the structured effect kinds introduced by
+ * the eshyra-o9bd.18.7.x projection passes. A recognized `kind` string with
+ * a malformed payload must fail pack validation, not slide through on the
+ * kind whitelist alone (eshyra-o9bd.18.7.5 review). Kinds without an entry
+ * here are validated by the whitelist only (their payloads are either
+ * free-form standard-action shapes or under review in later 18.7 children).
+ */
+const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
+  Record<string, (effect: Obj, path: string) => void>
+> = {
+  abilitySubstitution: (effect, path) => {
+    reqAbility(effect, 'use', path);
+    reqAbility(effect, 'insteadOf', path);
+    optStrArray(effect, 'for', path);
+    optStr(effect, 'appliesTo', path);
+    optEligibility(effect, path);
+  },
+  attackOrDamageBonus: (effect, path) => {
+    reqAbility(effect, 'addAbilityModifier', path);
+  },
+  autoSucceedSave: (effect, path) => {
+    reqStr(effect, 'targets', path);
+    reqStr(effect, 'countFormula', path);
+    optBool(effect, 'noDamageInsteadOfHalf', path);
+  },
+  climbWithoutExtraMovement: markerOnly,
+  evasion: markerOnly,
+  damageBonus: (effect, path) => {
+    if (
+      (effect.amount === undefined) ===
+      (effect.addAbilityModifier === undefined)
+    ) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of amount or addAbilityModifier`,
+      );
+    }
+    if (effect.amount !== undefined) {
+      reqInt(effect, 'amount', path);
+    }
+    optAbility(effect, 'addAbilityModifier', path);
+    optStr(effect, 'scope', path);
+  },
+  damageDieReplacement: (effect, path) => {
+    reqDice(effect, 'die', path);
+    reqStr(effect, 'appliesTo', path);
+    const progression = effect.progression;
+    if (progression !== undefined) {
+      if (
+        typeof progression !== 'object' ||
+        progression === null ||
+        Array.isArray(progression)
+      ) {
+        throw new RulesPackError(
+          `${path}.progression must be a non-null object when present`,
+        );
+      }
+      const ref = reqStr(progression as Obj, 'classRef', `${path}.progression`);
+      if (!ref.startsWith('class:')) {
+        throw new RulesPackError(
+          `${path}.progression.classRef must be a 'class:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+      reqStr(progression as Obj, 'resource', `${path}.progression`);
+    }
+    optEligibility(effect, path);
+  },
+  damageOnSuccessfulSave: (effect, path) => {
+    reqEnum(effect, 'portion', path, new Set(['half', 'none']));
+    reqStr(effect, 'scope', path);
+  },
+  extraTurn: (effect, path) => {
+    reqInt(effect, 'round', path, 1);
+    reqInt(effect, 'secondTurnInitiativeOffset', path);
+  },
+  expertise: (effect, path) => {
+    optAbility(effect, 'ability', path);
+    optStr(effect, 'skill', path);
+    optStr(effect, 'condition', path);
+  },
+  halfProficiencyToChecks: (effect, path) => {
+    reqStr(effect, 'scope', path);
+    optEnum(effect, 'round', path, new Set(['up', 'down']));
+  },
+  jumpDistanceBonus: (effect, path) => {
+    reqAbility(effect, 'addAbilityModifier', path);
+    reqStr(effect, 'appliesTo', path);
+  },
+  maximizeHealingDice: (effect, path) => {
+    reqStr(effect, 'appliesTo', path);
+  },
+  slowAging: (effect, path) => {
+    reqInt(effect, 'periodYears', path, 1);
+    reqInt(effect, 'agesYears', path, 1);
+  },
+  speedSet: (effect, path) => {
+    // Two emitted shapes: the condition projection's `{ speed: 0, subject }`
+    // and the feature projection's `{ mode, value, … }` (Dragon Wings).
+    if (effect.speed !== undefined) {
+      reqInt(effect, 'speed', path, 0);
+      optStr(effect, 'subject', path);
+      return;
+    }
+    reqEnum(
+      effect,
+      'mode',
+      path,
+      new Set(['walk', 'fly', 'swim', 'climb', 'burrow']),
+    );
+    const value = effect.value;
+    if (
+      value !== 'current-speed' &&
+      (typeof value !== 'number' || !Number.isInteger(value) || value < 0)
+    ) {
+      throw new RulesPackError(
+        `${path}.value must be "current-speed" or a non-negative integer, got ${JSON.stringify(value)}`,
+      );
+    }
+    optActionCost(effect, 'activation', path);
+    optActionCost(effect, 'deactivation', path);
+    optEligibility(effect, path);
+  },
+  abilityScoreIncrease: (effect, path) => {
+    const raw = effect.abilities;
+    if (
+      !Array.isArray(raw) ||
+      raw.length === 0 ||
+      !raw.every(
+        (ability) => typeof ability === 'string' && ABILITY_NAMES.has(ability),
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.abilities must be a non-empty ability-name array`,
+      );
+    }
+    reqInt(effect, 'amount', path, 1);
+    optInt(effect, 'newMaximum', path, 1);
+  },
+  acFormula: (effect, path) => {
+    reqInt(effect, 'base', path, 1);
+    const raw = effect.abilities;
+    if (
+      !Array.isArray(raw) ||
+      raw.length === 0 ||
+      !raw.every(
+        (ability) => typeof ability === 'string' && ABILITY_NAMES.has(ability),
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.abilities must be a non-empty ability-name array`,
+      );
+    }
+    optBool(effect, 'allowsShield', path);
+  },
+  brutalCritical: (effect, path) => {
+    reqInt(effect, 'additionalDice', path, 1);
+    const increases = objArray(effect, 'increases', path);
+    increases?.forEach((tier, i) => {
+      reqInt(tier, 'level', `${path}.increases[${i}]`, 1);
+      reqInt(tier, 'additionalDice', `${path}.increases[${i}]`, 1);
+    });
+  },
+  damageReduction: (effect, path) => {
+    if (
+      effect.dice === undefined &&
+      effect.multiplier === undefined &&
+      effect.amountFormula === undefined
+    ) {
+      throw new RulesPackError(
+        `${path} must carry dice, multiplier, or amountFormula`,
+      );
+    }
+    if (effect.dice !== undefined) reqDice(effect, 'dice', path);
+    // Every alternate shape is fully validated (eshyra-o9bd.18.7.5
+    // re-review): a recognized kind with a malformed payload must fail.
+    if (effect.multiplier !== undefined) {
+      const multiplier = effect.multiplier;
+      if (
+        typeof multiplier !== 'number' ||
+        !Number.isFinite(multiplier) ||
+        multiplier <= 0 ||
+        multiplier >= 1
+      ) {
+        throw new RulesPackError(
+          `${path}.multiplier must be a finite number in (0, 1), got ${JSON.stringify(multiplier)}`,
+        );
+      }
+    }
+    optStr(effect, 'amountFormula', path);
+    if (effect.addAbilityModifier !== undefined) {
+      reqAbility(effect, 'addAbilityModifier', path);
+    }
+    optStr(effect, 'addClassLevel', path);
+    optStr(effect, 'scope', path);
+  },
+  bonusAction: (effect, path) => {
+    const options = effect.options;
+    if (
+      !Array.isArray(options) ||
+      options.length === 0 ||
+      !options.every(
+        (option) => typeof option === 'string' && option.length > 0,
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.options must be a non-empty string array`,
+      );
+    }
+    optStr(effect, 'via', path);
+    optStr(effect, 'frequency', path);
+    optStr(effect, 'prerequisite', path);
+    optEligibility(effect, path);
+  },
+  checkMinimum: (effect, path) => {
+    reqAbility(effect, 'ability', path);
+    reqStr(effect, 'minimum', path);
+  },
+  extraAttack: (effect, path) => {
+    reqInt(effect, 'attacks', path, 2);
+    const increases = objArray(effect, 'increases', path);
+    increases?.forEach((tier, i) => {
+      reqInt(tier, 'level', `${path}.increases[${i}]`, 1);
+      reqInt(tier, 'attacks', `${path}.increases[${i}]`, 2);
+    });
+  },
+  extraDamage: (effect, path) => {
+    reqDice(effect, 'dice', path);
+    if (effect.type !== undefined) {
+      const type = reqStr(effect, 'type', path);
+      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+        throw new RulesPackError(
+          `${path}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+        );
+      }
+    }
+    if (effect.maximumDice !== undefined) reqDice(effect, 'maximumDice', path);
+    if (effect.perSlotLevelIncrease !== undefined) {
+      reqDice(effect, 'perSlotLevelIncrease', path);
+    }
+    if (effect.bonusDiceVsUndeadOrFiend !== undefined) {
+      reqDice(effect, 'bonusDiceVsUndeadOrFiend', path);
+    }
+  },
+  permanentSpellEffect: (effect, path) => {
+    const ref = reqStr(effect, 'spell', path);
+    if (!ref.startsWith('spell:')) {
+      throw new RulesPackError(
+        `${path}.spell must be a 'spell:' ref, got ${JSON.stringify(ref)}`,
+      );
+    }
+  },
+  reaction: (effect, path) => {
+    reqStr(effect, 'action', path);
+    reqStr(effect, 'trigger', path);
+  },
+  resourceRegain: (effect, path) => {
+    reqStr(effect, 'resource', path);
+    reqInt(effect, 'amount', path, 1);
+    reqStr(effect, 'trigger', path);
+  },
+  rollFloor: (effect, path) => {
+    reqInt(effect, 'rollOf', path, 1);
+    reqInt(effect, 'treatAs', path, 1);
+  },
+  saveDcFormula: (effect, path) => {
+    reqInt(effect, 'base', path, 1);
+    reqAbility(effect, 'ability', path);
+    optBool(effect, 'addProficiencyBonus', path);
+  },
+  savingThrowBonus: (effect, path) => {
+    reqAbility(effect, 'addAbilityModifier', path);
+    optInt(effect, 'minimum', path, 1);
+    optInt(effect, 'rangeFeet', path, 1);
+  },
+  weaponAttacksMagical: (effect, path) => {
+    const scope = effect.scope;
+    if (
+      scope !== undefined &&
+      scope !== 'unarmed-strikes' &&
+      scope !== 'weapon-attacks'
+    ) {
+      throw new RulesPackError(
+        `${path}.scope must be "unarmed-strikes" or "weapon-attacks", got ${JSON.stringify(scope)}`,
+      );
+    }
+  },
+};
+
 function validateMechanicsEffect(effect: Obj, path: string): void {
   const kind = reqStr(effect, 'kind', path);
   if (!MECHANICS_EFFECT_KINDS.has(kind)) {
@@ -1289,6 +1739,7 @@ function validateMechanicsEffect(effect: Obj, path: string): void {
       `${path}.kind has unsupported mechanics effect kind ${JSON.stringify(kind)}`,
     );
   }
+  MECHANICS_EFFECT_PAYLOAD_VALIDATORS[kind]?.(effect, path);
 }
 
 // Optional level-by-level class progression (eshyra-4a7.6). Each row carries an

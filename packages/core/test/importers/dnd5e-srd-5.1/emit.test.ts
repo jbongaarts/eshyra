@@ -1122,11 +1122,22 @@ describe('ancestryExtractionsToRecords — record shape', () => {
       ],
     };
     const [record] = ancestryExtractionsToRecords([resistant]);
+    // Structured projections (eshyra-o9bd.18.7.5): "saving throws against
+    // poison" names the damage/effect family, not the poisoned condition, so
+    // it is a scoped saving-throw modifier; the resistance names its damage
+    // type. The earlier bare keyword markers carried no semantics.
     expect(record.data).toMatchObject({
       traits: [
         {
           mechanics: {
-            effects: [{ kind: 'advantage' }, { kind: 'resistance' }],
+            effects: [
+              {
+                kind: 'savingThrowModifier',
+                mode: 'advantage',
+                against: 'poison',
+              },
+              { kind: 'damageResistance', types: ['poison'] },
+            ],
           },
         },
       ],
@@ -1135,7 +1146,7 @@ describe('ancestryExtractionsToRecords — record shape', () => {
 });
 
 describe('featExtractionsToRecords — mechanics projection', () => {
-  it('projects explicit feat proficiency mechanics', () => {
+  it('projects explicit feat proficiency mechanics with the verbatim grant clause', () => {
     const skilled: FeatExtraction = {
       name: 'Skilled',
       description:
@@ -1145,7 +1156,12 @@ describe('featExtractionsToRecords — mechanics projection', () => {
     const [record] = featExtractionsToRecords([skilled]);
     expect(record.data).toMatchObject({
       mechanics: {
-        effects: [{ kind: 'proficiency' }],
+        effects: [
+          {
+            kind: 'proficiency',
+            grant: 'any combination of three skills or tools of your choice',
+          },
+        ],
       },
     });
   });

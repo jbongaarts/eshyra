@@ -456,7 +456,9 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('magic-item#prose-only')?.bead).toBe('eshyra-o9bd.18.7.7');
     expect(byKey.get('rule#prose-only')?.bead).toBe('eshyra-o9bd.18.7.8');
     expect(byKey.get('equipment#prose-only')?.bead).toBe('eshyra-o9bd.18.7.6');
-    expect(byKey.get('feature#prose-only')?.bead).toBe('eshyra-o9bd.18.7.5');
+    // Feature runtime projections landed (eshyra-o9bd.18.7.5): the residual
+    // prose-only bucket is a reviewed accepted closure, not an open finding.
+    expect(byKey.get('feature#prose-only')?.status).toBe('accepted-prose-only');
     // The nested creature-entry buckets carry explicit accepted-prose-only
     // closures (eshyra-o9bd.18.7.3) — record-level creature buckets are gone
     // because all 317 creatures now carry typed nested mechanics.
@@ -467,6 +469,42 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'accepted-prose-only',
     );
+  });
+
+  it('fails closed by MEMBERSHIP on unreviewed accepted-prose feature records (eshyra-o9bd.18.7.5 review)', () => {
+    // Committed pack: the feature bucket memberships match exactly.
+    const committed = buildGameplayReadinessReport(
+      getBundledDnd5eSrdPack(),
+      [],
+    );
+    expect(
+      committed.dispositionErrors.filter((error) =>
+        error.startsWith('feature#'),
+      ),
+    ).toEqual([]);
+    // A modeling regression — a feature record that newly carries neither
+    // choices nor mechanics — is NOT blessed by the blanket accepted
+    // disposition; it must be explicitly reviewed into the membership.
+    const regressed = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'feature',
+          key: 'feature:test:regressed',
+          name: 'Regressed',
+          data: {
+            source: 'class:test',
+            level: 1,
+            description: 'A feature whose projection regressed to prose.',
+          },
+        }),
+      ]),
+      [],
+    );
+    expect(
+      regressed.dispositionErrors.filter((error) =>
+        error.includes('not in the reviewed accepted-prose membership'),
+      ),
+    ).toEqual([expect.stringContaining('feature:test:regressed')]);
   });
 
   it('reports a stale policy entry when its bucket is empty', () => {

@@ -143,7 +143,9 @@ const FEATURE_ALIASES: ReadonlyMap<string, string> = new Map([
   ['thieves cant', 'feature:rogue:thieves-cant'],
 ]);
 
-function camelCase(label: string): string {
+// Exported so mechanicsProjections' progression-backed references use the
+// same column-label → resource-key convention as the progression rows.
+export function camelCase(label: string): string {
   const words = label.trim().split(/\s+/);
   return words
     .map((w, i) =>

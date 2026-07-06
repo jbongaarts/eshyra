@@ -1344,6 +1344,35 @@ export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
   'spell:word-of-recall',
 ]);
 
+/**
+ * Reviewed accepted-prose RECORD memberships (eshyra-o9bd.18.7.5 review),
+ * keyed by `kind#bucket` policy key. Every record-level bucket whose
+ * disposition is `accepted-prose-only` must carry its exact reviewed key
+ * set here: a record that newly loses its modeled status (choices, grants,
+ * or mechanics) is NOT blanket-blessed — it fails the build until
+ * explicitly reviewed, and a record that becomes modeled goes stale here
+ * and must be removed.
+ */
+export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
+  Record<string, readonly string[]>
+> = Object.freeze({
+  'feature#partial-structure': ['feature:cleric:destroy-undead'],
+  'feature#prose-only': [
+    'feature:circle-of-the-land:bonus-cantrip',
+    'feature:circle-of-the-land:circle-spells',
+    'feature:college-of-lore:peerless-skill',
+    'feature:druid:archdruid',
+    'feature:druid:beast-spells',
+    'feature:druid:druidic',
+    'feature:monk:tongue-of-the-sun-and-moon',
+    'feature:ranger:primeval-awareness',
+    'feature:rogue:thieves-cant',
+    'feature:school-of-evocation:evocation-savant',
+    'feature:thief:use-magic-device',
+    'feature:wizard:cantrips',
+  ],
+});
+
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
@@ -1390,17 +1419,23 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     reason:
       'Adventuring gear and consumables whose usable effects (acid, healing potion, caltrops, …) are described in prose only.',
   },
+  // Feature runtime-effect projections landed with eshyra-o9bd.18.7.5
+  // (117/184 features carry typed mechanics; the rest carry structured
+  // choices or table refs). The residual prose-only records were reviewed
+  // individually: subclass/cantrip pickers whose runtime behavior is the
+  // choice itself, action-economy riders (Cunning Action, Martial Arts'
+  // bonus-action strike), meta features that modify other features
+  // (Superior Inspiration, Evocation Savant), and always-on spell effects
+  // referencing spell records (Purity of Spirit).
   'feature#partial-structure': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.5',
+    status: 'accepted-prose-only',
     reason:
-      'Class features with structured child data but no runtime effect projection.',
+      'Features whose structured payload is a linked table (Destroy Undead, Wild Shape shapes) or resource ledger (Font of Magic); the table/resource records carry the deterministic data (eshyra-o9bd.18.7.5).',
   },
   'feature#prose-only': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.5',
+    status: 'accepted-prose-only',
     reason:
-      'Class features whose runtime effects (Rage, Sneak Attack dice, Evasion, …) are prose-only.',
+      'Reviewed residue after the eshyra-o9bd.18.7.5 projection passes: choice-picker features (Bonus Cantrip, Wizard Cantrips), linked spell-list features (Circle Spells), languages (Druidic, Thieves\u2019 Cant), open-ended senses/divination (Primeval Awareness, Tongue of the Sun and Moon), and meta features that modify other named features, spells, or costs (Peerless Skill, Archdruid, Beast Spells, Evocation Savant, Use Magic Device). Action economy, numeric formulas, movement rules, and resource changes are all typed.',
   },
   'magic-item#partial-structure': {
     status: 'finding',
@@ -1666,6 +1701,41 @@ export function buildGameplayReadinessReport(
         dispositionErrors.push(
           `${policyKey}: disposition is a finding but names no bead`,
         );
+      }
+      // Accepted record buckets fail closed by MEMBERSHIP
+      // (eshyra-o9bd.18.7.5 review): the acceptance covers exactly the
+      // reviewed keys, so a modeling regression surfaces as an unreviewed
+      // key instead of being silently blessed by the bucket disposition.
+      if (policy.status === 'accepted-prose-only') {
+        const reviewedKeys = ACCEPTED_PROSE_RECORD_KEYS[policyKey];
+        if (reviewedKeys === undefined) {
+          dispositionErrors.push(
+            `${policyKey}: accepted-prose-only record bucket has no reviewed membership in ACCEPTED_PROSE_RECORD_KEYS`,
+          );
+        } else {
+          const reviewed = new Set(reviewedKeys);
+          const present = new Set(bucketRecords.map((record) => record.key));
+          const unreviewed = bucketRecords
+            .map((record) => record.key)
+            .filter((recordKey) => !reviewed.has(recordKey));
+          if (unreviewed.length > 0) {
+            dispositionErrors.push(
+              `${policyKey}: ${unreviewed.length} record(s) not in the reviewed accepted-prose membership (e.g. ${unreviewed
+                .slice(0, 3)
+                .join(', ')}) — review and add, or restore the modeling`,
+            );
+          }
+          const staleKeys = reviewedKeys.filter(
+            (recordKey) => !present.has(recordKey),
+          );
+          if (staleKeys.length > 0) {
+            dispositionErrors.push(
+              `${policyKey}: ${staleKeys.length} reviewed key(s) no longer in the bucket (e.g. ${staleKeys
+                .slice(0, 3)
+                .join(', ')}) — remove them from ACCEPTED_PROSE_RECORD_KEYS`,
+            );
+          }
+        }
       }
       dispositions.push({
         kind,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   deriveActionMechanics,
   deriveCreatureEntryMechanics,
+  deriveFeatureMechanics,
   deriveSpellMechanics,
 } from '../../../scripts/importers/dnd5e-srd-5.1/mechanicsProjections.js';
 import type {
@@ -780,6 +781,11 @@ describe('creature entry effect projections (eshyra-o9bd.18.7.3)', () => {
       ).effects,
     ).toEqual([{ kind: 'weaponAttacksMagical' }]);
     expect(
+      deriveFeatureMechanics(
+        'Your unarmed strikes count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.',
+      ).effects,
+    ).toEqual([{ kind: 'weaponAttacksMagical', scope: 'unarmed-strikes' }]);
+    expect(
       deriveCreatureEntryMechanics(
         'Immutable Form',
         'The golem is immune to any spell or effect that would alter its form.',
@@ -959,7 +965,7 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
             'The target’s base AC becomes 13 + its Dexterity modifier.',
         }),
       ).effects,
-    ).toEqual([{ kind: 'acFormula', base: 13, ability: 'dexterity' }]);
+    ).toEqual([{ kind: 'acFormula', base: 13, abilities: ['dexterity'] }]);
     expect(
       deriveSpellMechanics(
         baseSpell({
@@ -1102,5 +1108,291 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
         }),
       ).effects,
     ).toEqual([{ kind: 'speedMultiplier', multiplier: 2 }]);
+  });
+});
+
+describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
+  const derive = (text: string) => deriveFeatureMechanics(text);
+
+  it('projects Barbarian Unarmored Defense as an AC formula', () => {
+    expect(
+      derive(
+        'While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'acFormula',
+        base: 10,
+        abilities: ['dexterity', 'constitution'],
+        // The explicit "You can use a shield and still gain this benefit."
+        // sentence is part of the deterministic contract.
+        allowsShield: true,
+      },
+    ]);
+  });
+
+  it('projects Rage: resource reset, ability check/save advantage with condition, and the unconscious early-end as exclusion', () => {
+    const mechanics = derive(
+      'While raging, you gain the following benefits if you aren’t wearing heavy armor: You have advantage on Strength checks and Strength saving throws. Your rage lasts for 1 minute. It ends early if you are knocked unconscious. Once you have raged the maximum number of times, you must finish a long rest before you can rage again.',
+    );
+    expect(mechanics.resources).toEqual([{ reset: 'long-rest' }]);
+    expect(mechanics.conditions).toEqual([
+      { condition: 'unconscious', relation: 'exclusion' },
+    ]);
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'abilityCheckModifier',
+        mode: 'advantage',
+        ability: 'strength',
+        condition: 'While raging',
+      },
+      {
+        kind: 'savingThrowModifier',
+        mode: 'advantage',
+        abilities: ['strength'],
+        condition: 'While raging',
+      },
+    ]);
+  });
+
+  it('projects Reckless Attack: melee advantage plus attackers-against-you advantage', () => {
+    const mechanics = derive(
+      'When you make your first attack on your turn, you can decide to attack recklessly. Doing so gives you advantage on melee weapon attack rolls using Strength during this turn, but attack rolls against you have advantage until your next turn.',
+    );
+    // Exact objects: the actor-side constraint must NOT absorb the
+    // coordinated ", but attack rolls against you …" continuation, which is
+    // its own effect.
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'attackRollModifier',
+        mode: 'advantage',
+        attackType: 'melee',
+        constraint: 'using Strength during this turn',
+      },
+      {
+        kind: 'attackRollModifier',
+        subject: 'attackers-against-you',
+        mode: 'advantage',
+      },
+    ]);
+  });
+
+  it('projects Martial Arts: shared eligibility, progression-backed die, and the bonus-action prerequisite', () => {
+    const mechanics = derive(
+      'At 1st level, your practice of martial arts gives you mastery of combat styles that use unarmed strikes and monk weapons, which are shortswords and any simple melee weapons that don’t have the two-handed or heavy property. You gain the following benefits while you are unarmed or wielding only monk weapons and you aren’t wearing armor or wielding a shield: • You can use Dexterity instead of Strength for the attack and damage rolls of your unarmed strikes and monk weapons. • You can roll a d4 in place of the normal damage of your unarmed strike or monk weapon. This die changes as you gain monk levels, as shown in the Martial Arts column of the Monk table. • When you use the Attack action with an unarmed strike or a monk weapon on your turn, you can make one unarmed strike as a bonus action.',
+    );
+    const eligibility = {
+      wielding: 'unarmed-or-monk-weapons-only',
+      armor: false,
+      shield: false,
+    };
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'bonusAction',
+        options: ['unarmed-strike'],
+        prerequisite: 'attack-action-with-unarmed-strike-or-monk-weapon',
+        eligibility,
+      },
+      {
+        kind: 'abilitySubstitution',
+        use: 'dexterity',
+        insteadOf: 'strength',
+        for: ['attack-rolls', 'damage-rolls'],
+        appliesTo: 'your unarmed strikes and monk weapons',
+        eligibility,
+      },
+      {
+        kind: 'damageDieReplacement',
+        die: 'd4',
+        appliesTo: 'your unarmed strike or monk weapon',
+        // The die is progression-backed: it resolves against the Monk
+        // table's martialArts resource column, not a fixed d4.
+        progression: { classRef: 'class:monk', resource: 'martialArts' },
+        eligibility,
+      },
+    ]);
+  });
+
+  it('projects Dragon Wings: fly speed with bonus-action activation/dismissal and the armor restriction', () => {
+    expect(
+      derive(
+        'At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn. You can’t manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'speedSet',
+        mode: 'fly',
+        value: 'current-speed',
+        activation: { cost: 'bonus-action' },
+        deactivation: { cost: 'bonus-action' },
+        eligibility: { armor: 'accommodating-armor-only' },
+      },
+    ]);
+  });
+
+  it('projects Evasion, Improved Critical, Extra Attack tiers, and Brutal Critical', () => {
+    expect(
+      derive(
+        'You can nimbly dodge out of the way. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.',
+      ).effects,
+    ).toContainEqual({ kind: 'evasion' });
+    expect(
+      derive('Your weapon attacks score a critical hit on a roll of 19 or 20.')
+        .effects,
+    ).toEqual([{ kind: 'criticalRange', minimumRoll: 19 }]);
+    expect(
+      derive(
+        'You can attack twice, instead of once, whenever you take the Attack action on your turn. The number of attacks increases to three when you reach 11th level in this class and to four when you reach 20th level in this class.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'extraAttack',
+        attacks: 2,
+        increases: [
+          { level: 11, attacks: 3 },
+          { level: 20, attacks: 4 },
+        ],
+      },
+    ]);
+    expect(
+      derive(
+        'You can roll one additional weapon damage die when determining the extra damage for a critical hit with a melee attack. This increases to two additional dice at 13th level and three additional dice at 17th level.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'brutalCritical',
+        additionalDice: 1,
+        increases: [
+          { level: 13, additionalDice: 2 },
+          { level: 17, additionalDice: 3 },
+        ],
+      },
+    ]);
+  });
+
+  it('projects Stonecunning as a scoped proficiency plus scoped expertise, not prose in the grant string', () => {
+    const mechanics = derive(
+      'Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'proficiency',
+        grant: 'the History skill',
+        condition: 'related to the origin of stonework',
+      },
+      {
+        kind: 'expertise',
+        ability: 'intelligence',
+        skill: 'history',
+        condition: 'related to the origin of stonework',
+      },
+    ]);
+  });
+
+  it('projects typed proficiency grants and expertise', () => {
+    expect(
+      derive('You have proficiency in the Perception skill.').effects,
+    ).toEqual([{ kind: 'proficiency', grant: 'the Perception skill' }]);
+    expect(
+      derive(
+        'Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.',
+      ).effects,
+    ).toEqual([{ kind: 'expertise' }]);
+  });
+
+  it('projects racial resistances including the Dragonborn ancestry-linked type', () => {
+    expect(derive('You have resistance to fire damage.').effects).toEqual([
+      { kind: 'damageResistance', types: ['fire'] },
+    ]);
+    expect(
+      derive(
+        'You have resistance to the damage type associated with your draconic ancestry.',
+      ).effects,
+    ).toEqual([{ kind: 'damageResistance', typeFrom: 'draconic-ancestry' }]);
+  });
+
+  it('projects Paladin aura/smite/health and Monk deflect formulas', () => {
+    expect(
+      derive(
+        'Whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus to the saving throw equal to your Charisma modifier (with a minimum bonus of +1).',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'savingThrowBonus',
+        addAbilityModifier: 'charisma',
+        minimum: 1,
+        subject: 'you-or-friendly-creatures',
+        rangeFeet: 10,
+      },
+    ]);
+    expect(
+      derive(
+        'The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8. The damage increases by 1d8 if the target is an undead or a fiend.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'extraDamage',
+        dice: '2d8',
+        perSlotLevelIncrease: '1d8',
+        maximumDice: '5d8',
+        bonusDiceVsUndeadOrFiend: '1d8',
+      },
+    ]);
+    expect(
+      derive(
+        'The divine magic flowing through you makes you immune to disease.',
+      ).effects,
+    ).toEqual([{ kind: 'immunity', to: 'disease' }]);
+    expect(
+      derive(
+        'When you do so, the damage you take from the attack is reduced by 1d10 + your Dexterity modifier + your monk level.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'damageReduction',
+        dice: '1d10',
+        addAbilityModifier: 'dexterity',
+        addClassLevel: 'monk',
+      },
+    ]);
+  });
+
+  it('projects usage resources with printed uses and ability-modifier uses', () => {
+    expect(
+      derive(
+        'You can use this feature twice. You regain all expended uses when you finish a short or long rest.',
+      ).resources,
+    ).toEqual([{ uses: 2, reset: 'short-or-long-rest' }]);
+    expect(
+      derive(
+        'You can use this feature a number of times equal to your Charisma modifier. You regain expended uses when you finish a long rest.',
+      ).resources,
+    ).toEqual([{ uses: 'charisma-modifier', reset: 'long-rest' }]);
+  });
+
+  it('projects Primal Champion ability increases and Fast Movement speed', () => {
+    expect(
+      derive(
+        'Your Strength and Constitution scores increase by 4. Your maximum for those scores is now 24.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'abilityScoreIncrease',
+        abilities: ['strength', 'constitution'],
+        amount: 4,
+        newMaximum: 24,
+      },
+    ]);
+    expect(
+      derive(
+        'Starting at 5th level, your speed increases by 10 feet while you aren’t wearing heavy armor.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'speedBonus',
+        amountFeet: 10,
+        condition: 'while you aren’t wearing heavy armor',
+      },
+    ]);
   });
 });
