@@ -86,7 +86,7 @@ verified scope split).
 | casting-a-spell-at-a-higher-level | PROC | spellcasting: spell assumes the slot's level; scaling applies per structured per-spell `scaling` (promoted from DEF: deterministic upcasting procedure) |
 | casting-a-spell-attack-rolls | PROC | spellcasting: spell attack = ability mod + PB |
 | casting-a-spell-range | PROC | spellcasting: target-within-range validation; range self semantics for cones/lines (promoted from DEF: deterministic targeting gate) |
-| casting-a-spell-saving-throws | PROC | spellcasting: spell save DC = 8 + mod + PB |
+| casting-a-spell-saving-throws | PROC | spellcasting: spell save DC = 8 + mod + PB + special modifiers |
 | casting-in-armor | PROC | spellcasting: must be proficient in worn armor |
 | casting-time | DEF | |
 | casting-time-reactions | DEF | |
@@ -174,7 +174,7 @@ verified scope split).
 | grappling | PROC | combat-contests: Athletics vs Athletics/Acrobatics; drag at half speed |
 | group-checks | PROC | core-d20: half-succeed rule |
 | half-dragon-template | PROC+TABLE | templates: stat deltas + 2 tables ref'd |
-| healing | PROC | rest-death: cap at HP max |
+| healing | PROC | rest-death: healing adds regained HP to current HP; excess over HP max is lost; dead creatures can't regain HP until magic restores them to life |
 | heavy-armor-category | DUP | canonical: gear armor records (no Dex to AC) |
 | help | PROC | action: advantage grant, 5-ft attack aid |
 | hide | PROC | action: Stealth check per hiding rules |
