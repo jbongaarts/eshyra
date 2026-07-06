@@ -94,8 +94,25 @@ type Lifecycle =
       transition: { amount: 1, unit: 'minute' } } // phantom-steed
   | { event: 'zero-hit-points',
       result: 'duplicate-destroyed' }            // simulacrum melts
+  | { event: 'spell-ends' | 'zero-hit-points',
+      result: 'transformed-target-reverts' }     // giant-insect: each target reverts
+                                                 // to its natural form; NO damage
+                                                 // carryover claim (source states none —
+                                                 // do not import polymorph semantics)
+  // Recast semantics under exclusiveInstance are per-spell and source-backed —
+  // deliberately NOT a shared generic rule:
   | { event: 'recast',
-      result: 'prior-exclusive-instance-destroyed' } // familiar/steed/simulacrum one-at-a-time
+      result: 'existing-familiar-adopts-new-form' } // find-familiar: recasting while you
+                                                 // have a familiar causes it to adopt a
+                                                 // new form — nothing is destroyed
+  | { event: 'recast',
+      result: 'same-steed-returns-restored' }    // find-steed: casting again after the
+                                                 // steed disappeared summons the SAME
+                                                 // steed, restored to its HP maximum —
+                                                 // persistent identity, not replacement
+  | { event: 'recast',
+      result: 'prior-duplicates-instantly-destroyed' } // simulacrum only: active
+                                                 // duplicates are instantly destroyed
 
 type Modification =
   | { attribute: 'hit-point-maximum', value: 'half-of-original' }        // simulacrum
@@ -133,6 +150,18 @@ as statline `sourceText`.
 - `sourceRequirement`, `telepathy`, `senseSharing`, `spellDelivery`,
   `spellSharing`, and `repair` are typed deterministic protocols, not
   riders. Range/cost/size fields are positive integers / closed enums.
+- `appears.kind = 'target-transformation'` requires a
+  `transformed-target-reverts` lifecycle entry and forbids
+  `summoned-creature-disappears` and `animated-object-reverts` (the
+  transformed creatures are pre-existing targets, not summons or objects).
+  `transformed-target-reverts` carries no `damageCarriesOver` field.
+- `control.exclusiveInstance: true` requires exactly one `recast` lifecycle
+  entry, and the three recast results are spell-specific: schema-level the
+  union admits all three, but committed-pack assertions pin
+  `existing-familiar-adopts-new-form` to find-familiar,
+  `same-steed-returns-restored` to find-steed, and
+  `prior-duplicates-instantly-destroyed` to simulacrum. A `recast` lifecycle
+  entry is invalid without `exclusiveInstance: true`.
 
 ## 4. Runtime integration boundaries
 
@@ -169,16 +198,24 @@ rider count per golden record so silent rider growth fails the gate.
    commands ≤500 ft; lifecycle spell-end reversion with damage carryover.
 5. `find-familiar` — form-list with creatureRefs, chooseOne type,
    cannot-attack modification, pocket-dimension dismissal,
-   exclusiveInstance, zero-HP disappearance, typed telepathy 100 ft,
-   sense-sharing action, and touch-spell delivery via reaction.
+   exclusiveInstance, recast → existing-familiar-adopts-new-form (the
+   familiar is never destroyed by recasting), zero-HP disappearance, typed
+   telepathy 100 ft, sense-sharing action, and touch-spell delivery via
+   reaction.
 6. `simulacrum` — duplicate + modifications (half HP max, no equipment,
-   no advancement), exclusiveInstance, prior-instance destruction on recast,
-   zero-HP duplicate destruction, repair 100 gp/HP.
+   no advancement), exclusiveInstance, recast →
+   prior-duplicates-instantly-destroyed, zero-HP duplicate destruction,
+   repair 100 gp/HP.
+7. `giant-insect` — target-transformation + transformed-target-reverts
+   lifecycle (spell end / 0 HP → natural form, no carryover), commands on
+   caster's turn, per-target dismissal.
 
-Remaining 8 after goldens: conjure-celestial, conjure-fey,
+Remaining 7 after goldens: conjure-celestial, conjure-fey,
 conjure-minor-elementals, conjure-woodland-beings, create-undead,
-find-steed, giant-insect, phantom-steed — all instances of the six shapes
-above (Codex).
+find-steed, phantom-steed — all instances of the golden shapes above
+(Codex). find-steed must use recast → same-steed-returns-restored (the
+steed has persistent identity across castings — represent it as the same
+persistent actor, restored to HP maximum, never as a new instance).
 
 Membership bookkeeping on completion: remove the 14 keys from
 `ACCEPTED_METADATA_ONLY_SPELLS`, recount, negative tests per Appearance/
