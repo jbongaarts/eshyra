@@ -75,11 +75,24 @@ indistinguishableFrom: string }`. Refs (all identical structure; `cloaker`
 adds "without its underside exposed", `flying-sword` adds "and isn't
 flying", `mimic` is object-form-only):
 
-`animated-armor`, `awakened-shrub`, `awakened-tree`, `cloaker`,
-`darkmantle`, `flying-sword`, `gargoyle`, `gray-ooze`, `ice-mephit`,
-`magma-mephit`, `mimic` (ref name `False Appearance (Object Form Only)`),
-`roper`, `rug-of-smothering`, `shrieker`, `treant`, `violet-fungus` — each
-as `creature:<key>#traits:False Appearance…`.
+Exact refs (machine-checkable):
+
+- `creature:animated-armor#traits:False Appearance`
+- `creature:awakened-shrub#traits:False Appearance`
+- `creature:awakened-tree#traits:False Appearance`
+- `creature:cloaker#traits:False Appearance`
+- `creature:darkmantle#traits:False Appearance`
+- `creature:flying-sword#traits:False Appearance`
+- `creature:gargoyle#traits:False Appearance`
+- `creature:gray-ooze#traits:False Appearance`
+- `creature:ice-mephit#traits:False Appearance`
+- `creature:magma-mephit#traits:False Appearance`
+- `creature:mimic#traits:False Appearance (Object Form Only)`
+- `creature:roper#traits:False Appearance`
+- `creature:rug-of-smothering#traits:False Appearance`
+- `creature:shrieker#traits:False Appearance`
+- `creature:treant#traits:False Appearance`
+- `creature:violet-fungus#traits:False Appearance`
 
 ### 1.3 Telepathy/communication family — 5 refs — disposition: model (slice C3)
 
@@ -95,18 +108,18 @@ for the dryad.
 | `creature:sahuagin#traits:Shark Telepathy` | command sharks within 120 ft; limited telepathy |
 | `creature:dryad#traits:Speak with Beasts and Plants` | communicate with beasts and plants as if shared language (cross-reference `spell:speak-with-animals` grammar) |
 
-### 1.4 Innate-knowledge family — 2 refs — disposition: model (slice C3)
+### 1.4 Innate-knowledge/state family — 3 refs — disposition: model (slice C3)
 
 | ref | semantics |
 |---|---|
 | `creature:invisible-stalker#traits:Faultless Tracker` | knows direction+distance to designated quarry while same-plane; also knows summoner's location. Related existing kind: `locationDetectableBy` (inverse direction) — new `locationKnowledge` payload proposed |
 | `creature:minotaur#traits:Labyrinthine Recall` | perfect recall of any traveled path (auto-success navigation) |
+| `creature:hydra#traits:Wakeful` | deterministic sleep-state exception: at least one head awake while sleeping (defeats asleep-based surprise/unawareness). Reclassified from accept 2026-07-06: consistency with False Appearance — a dice-free deterministic gate is model, not accept. Small `sleepException`-style payload in the C3 contract set |
 
-### 1.5 Genuinely accepted — 3 refs — disposition: accept / accept\*
+### 1.5 Genuinely accepted — 2 refs — disposition: accept\*
 
 | ref | rationale |
 |---|---|
-| `creature:hydra#traits:Wakeful` | accept (borderline): "while the hydra sleeps, at least one head is awake" — sleep/surprise adjudication is situational DM territory; no dice/DC. Revisit only if a sleep-state engine model appears |
 | `creature:vampire#traits:Vampire Weaknesses` | accept\*: header line only ("has the following flaws:"); the four flaws (Forbiddance, Harmed by Running Water, Stake to the Heart, Sunlight Hypersensitivity) are separate sibling trait entries, each already typed — verified in pack 2026-07-06 |
 | `creature:vampire-spawn#traits:Vampire Weaknesses` | accept\*: same as vampire |
 
@@ -158,7 +171,7 @@ trigger, resetOn?, secret? }`.
 | `spell:sending` | flat 5 % failure when target on another plane; 25-word limit (reference) |
 | `spell:secret-chest` | cumulative 5 %/day after 60 days → effect ends; chest loss rule on end (reference) |
 
-### 2.3 Ward/trigger family — 5 — disposition: design (slice S3)
+### 2.3 Ward/trigger & spatial-boundary family — 8 — disposition: design (slice S3)
 
 | key | clauses / reuse |
 |---|---|
@@ -167,6 +180,9 @@ trigger, resetOn?, secret? }`.
 | `spell:contingency` | stored spell (≤5th level, 1-action cast, self-target) + trigger circumstance; one-at-a-time; ends if component leaves person. Reuse: `spellStoring { maximumSpellLevel, capacity? }` + `triggeredEffect` |
 | `spell:private-sanctum` | ward-property menu (blocks sound / vision / divination sensors / divination targeting / teleport / planar travel); 5–100 ft cube; permanence after 1 year daily. Interacts with modeled `teleport`/`planeShift` kinds — genuine ward-flags design |
 | `spell:tiny-hut` | dome barrier: 9-creature Medium cap; casting-time occupants pass freely, others barred; spells can't cross; caster-exit ends. Area already in `area` metadata |
+| `spell:gate` | reclassified from accept 2026-07-06: planar portal is the deterministic core — reuse existing `planeShift` kind plus portal parameters (5–20 ft diameter, front-only traversal, instant transport). Named-creature draw and deity discretion remain prose |
+| `spell:demiplane` | reclassified from accept 2026-07-06: deterministic extradimensional-space state — 30-ft room, trapped-on-end transition, reconnect-to-previous-demiplane option. Spatial-boundary payload designed with private-sanctum/tiny-hut |
+| `spell:passwall` | reclassified from accept 2026-07-06: exact passage dimensions (≤5×8×20 ft) and safe-ejection-on-end state transition. Contrast move-earth (retained accept): passwall creates a persistent traversable state with a creature-affecting end transition; move-earth explicitly cannot trap/injure and is narrative reshaping |
 
 ### 2.4 Quantified-creation family — 2 — disposition: model (slice S2)
 
@@ -182,40 +198,57 @@ trigger, resetOn?, secret? }`.
 | `spell:mage-hand` | 10 lb capacity; 30 ft leash (vanishes beyond); move 30 ft/use; action to control; can't attack/activate magic items |
 | `spell:floating-disk` | 500 lb capacity; follows within 20 ft; immobile when caster ≤20 ft; can't cross ≥10 ft elevation change; ends beyond 100 ft |
 
-### 2.6 Table-backed — 2 — disposition: accept\* (already represented)
+### 2.6 Table-backed — 1 — disposition: accept\* (already represented)
 
 | key | rationale |
 |---|---|
-| `spell:control-weather` | stage tables **already structured** (`tableRefs: [table:precipitation, table:temperature, table:wind]`); one-stage-per-change procedure and 1d4×10-min onset remain prose — the onset die is the only unmodeled numeric hook (note for S2 if desired; low value) |
-| `spell:creation` | material→duration table already `tableRefs: [table:creation-material-duration]`; cube scaling captured |
+| `spell:creation` | material→duration table already `tableRefs: [table:creation-material-duration]`; cube scaling captured. Its only deterministic clause beyond baseline is the table itself |
 
-### 2.7 Genuinely accepted — 23 — disposition: accept / accept\*
+### 2.7 Genuinely accepted — 11 — disposition: accept
+
+Retention standard (2026-07-06 integrity pass): a record stays here only if
+its deterministic-looking content is purely descriptive parameters of a
+GM-narrated outcome — no dice, no DC, no persistent state transition, no
+resource/limit bookkeeping, no eligibility gate that an engine would
+enforce.
 
 | key | rationale (concise) |
 |---|---|
-| `spell:animal-messenger` | accept\*: travel rates (50/25 mi per 24 h) are downtime narration parameters; duration + scaling captured |
-| `spell:arcanists-magic-aura` | accept: divination-deception modes; 30-day permanence is narrative state |
-| `spell:commune-with-nature` | accept: knowledge grant; radii are descriptive |
-| `spell:demiplane` | accept: planar door/room; trapped-on-end is narrative state |
-| `spell:druidcraft` | accept: sensory-utility option menu; no adjudication hooks |
-| `spell:fabricate` | accept: crafting conversion; size caps + tool-proficiency gate are DM-adjudicated crafting |
-| `spell:gate` | accept: planar portal (5–20 ft); deity discretion; named-creature draw is narrative |
-| `spell:identify` | accept: knowledge grant |
-| `spell:illusory-script` | accept: designated-reader illusion; truesight interaction is descriptive |
-| `spell:legend-lore` | accept: knowledge grant |
-| `spell:mending` | accept: repairs break ≤1 ft; utility |
-| `spell:message` | accept\*: whisper + reply; material blockers (1 ft stone / 1 in metal / lead sheet / 3 ft wood) are LOS adjudication parameters |
-| `spell:mirage-arcane` | accept\*: 1-mi illusory terrain; **can create/remove difficult terrain** — situational movement rider left to DM; truesight semantics descriptive |
-| `spell:move-earth` | accept: slow terrain reshaping; 10-min increments descriptive |
-| `spell:passwall` | accept: passage dimensions; safe ejection on end |
-| `spell:planar-ally` | accept: negotiated service; payment rates (100 gp/min, 1,000 gp/h, 10,000 gp/day) are GM reference guidance, explicitly adjustable |
-| `spell:prestidigitation` | accept: option menu; 3-concurrent-effect cap is minor bookkeeping |
-| `spell:purify-food-and-drink` | accept: area in metadata; purification is narrative |
-| `spell:speak-with-animals` | accept\*: comprehension grant; same semantic family as dryad trait (C3) — reuse `communication` contract there if promoted later |
-| `spell:speak-with-dead` | accept\*: 5 questions; **10-day recast lockout per corpse** is deterministic anti-repeat state — recorded, low engine value |
-| `spell:stone-shape` | accept: shaping utility |
-| `spell:telepathic-bond` | accept\*: 8 willing creatures; Int ≥ 3 floor; any-distance, not cross-plane — boundaries recorded; candidate `telepathy` reuse if C3 contract generalizes |
-| `spell:thaumaturgy` | accept: option menu; 3-concurrent cap minor |
+| `spell:commune-with-nature` | knowledge grant; fact count and radii are prompt parameters for narration, no state/dice |
+| `spell:druidcraft` | sensory-utility option menu; all effects instantaneous or self-expiring, no concurrent-effect cap |
+| `spell:fabricate` | crafting conversion; size caps are parameters, "high degree of craftsmanship" gate is inherently judgment-based (tool-proficiency check is owned by the general crafting/tools rules) |
+| `spell:identify` | knowledge grant |
+| `spell:illusory-script` | designated-reader illusion; truesight interaction descriptive |
+| `spell:legend-lore` | knowledge grant |
+| `spell:mending` | repairs break ≤1 ft; no state/dice |
+| `spell:move-earth` | slow terrain reshaping; explicitly cannot trap/injure creatures — purely narrative outcome (contrast passwall, now S3) |
+| `spell:planar-ally` | negotiated service; payment rates are GM reference guidance, explicitly adjustable |
+| `spell:purify-food-and-drink` | area in metadata; purification narrative |
+| `spell:stone-shape` | shaping utility; hinge/latch limits are parameters |
+
+### 2.8 Small deterministic clauses reclassified from accept — 8 — disposition: model (slice S2)
+
+Integrity pass 2026-07-06: these carried deterministic clauses that were
+previously waved through as "low value" / "narration parameters". Under the
+artifact's own taxonomy they are model.
+
+| key | deterministic clauses to structure |
+|---|---|
+| `spell:control-weather` | 1d4×10-minute onset die; one-stage-per-change shift procedure against the already-structured stage tables (`tableRefs: [table:precipitation, table:temperature, table:wind]`). Moved from former §2.6 |
+| `spell:animal-messenger` | travel rates: 50 mi/24 h flying, 25 mi/24 h other; 25-word cap; message-lost-on-expiry rule |
+| `spell:message` | material blocking thresholds: magical silence, 1 ft stone, 1 in common metal, thin lead sheet, 3 ft wood; no-straight-line propagation |
+| `spell:mirage-arcane` | deterministic creation/removal of difficult terrain within the area (interacts with modeled movement-cost semantics); removed-piece-disappears rule |
+| `spell:speak-with-dead` | 10-day per-corpse recast lockout (persistent anti-repeat state); 5-question cap; not-undead / has-mouth eligibility |
+| `spell:prestidigitation` | concurrent-effect cap: ≤3 non-instantaneous effects active; action to dismiss |
+| `spell:thaumaturgy` | concurrent-effect cap: ≤3 one-minute effects active; action to dismiss (shared payload with prestidigitation) |
+| `spell:arcanists-magic-aura` | permanence-after-repeated-casting: same effect daily × 30 days → until dispelled (shared payload shape with private-sanctum's 1-year clause in S3) |
+
+### 2.9 C3-contract spells — 2 — disposition: model (contract shared with slice C3)
+
+| key | deterministic boundaries |
+|---|---|
+| `spell:speak-with-animals` | comprehension grant for beasts — same `communication` contract as `creature:dryad#traits:Speak with Beasts and Plants`; keeping the spell accepted while modeling the identical trait was inconsistent |
+| `spell:telepathic-bond` | 8-creature cap; willing only; unaffected below Int 3; any distance; blocked cross-plane — `telepathy` contract reuse |
 
 ## 3. Implementation slices and routing
 
@@ -229,13 +262,29 @@ None of the remaining slices below is started unless stated.
 |---|---|---|---|
 | **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove from accepted list; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
 | **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Codex** (after 5-line design review) |
-| **C3** telepathy/knowledge | `telepathy`, `communication`, `locationKnowledge` payloads; 7 refs (§1.3–1.4) | yes, small | **Opus** design, Codex rollout |
+| **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, sleep-exception payloads; 8 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Opus** design, Codex rollout |
 | **S1** summoning | design summoning contract extension (option menus, control economy, statblock modification); 14 spells | yes — largest open design | **Opus** |
-| **S2** small deterministic clauses | `percentChance` (5 spells), `createsProvisions`/quantified creation (2), conjured-utility-object (2); optionally control-weather onset die | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
-| **S3** ward/trigger | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design | partial reuse; ward flags new | **Opus** for ward flags; Codex for triggeredEffect reuse |
+| **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
+| **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
 | **S4** membership bookkeeping | after each slice: exact removals from `ACCEPTED_*`, count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
 
 Ordering: C2 and S2 are low-risk warm-ups; C1/S1 are the substantive
-designs; S3 last (interacts with modeled teleport/planar kinds). The 26
-accept/accept\* records (3 creatures + 23 spells) are closed permanently by
-this document.
+designs; S3 last (interacts with modeled teleport/planar kinds).
+
+Reconciliation (mechanically verified 2026-07-06 against
+`ACCEPTED_PROSE_CREATURE_ENTRY_REFS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
+every membership key appears in exactly one disposition section):
+
+- creatures 48 = C1 22 (§1.1) + C2 16 (§1.2) + C3 8 (§1.3 5 + §1.4 3) +
+  accept\* 2 (§1.5)
+- spells 53 = S1 14 (§2.1) + S2 17 (§2.2 5 + §2.4 2 + §2.5 2 + §2.8 8) +
+  S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) + accept\* 1 (§2.6)
+
+**14 records total (2 creatures + 12 spells) are closed permanently by this
+document.** An earlier revision claimed 26 permanent accepts (with
+internally inconsistent section counts of 3+2+23); the 2026-07-06 integrity
+pass reclassified 13 spells and 1 creature ref out of the acceptance bucket
+under the strict taxonomy and corrected the arithmetic. Note in particular:
+`spell:animate-objects` is and remains **S1** — its object-statistics table
+being structured (`tableRefs`) covers only the stat lookup, not the
+summoning/control/command-economy semantics.
