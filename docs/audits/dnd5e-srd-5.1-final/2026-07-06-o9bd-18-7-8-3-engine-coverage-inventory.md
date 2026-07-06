@@ -27,16 +27,22 @@ Status vocabulary (18.7.8.1 design §2): `implemented` (runtime owner +
 test evidence), `partial` (owner + named missing semantics),
 `unimplemented`, `design-blocked` (explicit design owner).
 
+For `implemented` and `partial` rows, runtime/evidence cells use explicit
+`path:` labels for exact repo-relative filesystem paths and separate
+`symbol/detail:` labels for functions, categories, or explanatory ownership.
+
 ## Census
 
-**implemented 4 · partial 15 · unimplemented 148 · design-blocked 8 = 175.**
+**implemented 0 · partial 19 · unimplemented 148 · design-blocked 8 = 175.**
 
 Headline gaps worth naming: the dice grammar supports only `NdM+K` — no
 advantage/disadvantage or keep/drop, so even the most fundamental d20
 mechanic is model-enforced; death-save counters, temp-HP, and rest
 procedures have no state owner; the entire multiclassing suite (8 rules)
 is design-blocked on a scope decision, since `levelUpEngine.ts` is
-single-class by design.
+single-class by design. The previous four `implemented` rows were tightened
+to `partial` after a bounded source-semantics recheck found missing
+multi-clause ownership.
 
 ## Inventory (all 175 PROC rules, by key)
 
@@ -44,8 +50,8 @@ single-class by design.
 |---|---|---|---|---|
 | a-clear-path-to-the-target | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | abilities | unimplemented | — | — | 4d6-drop-lowest generation for sentient items; note the dice grammar also lacks keep/drop modifiers |
-| ability-checks | partial | packages/core/src/orchestrator/toolRoll.ts (ability_check category, seeded dice), playerVisibleRollLedger.ts | packages/core/test/tools.test.ts | dice + categorized ledger code-owned; DC comparison and outcome are DM-adjudicated |
-| ability-scores-and-modifiers | implemented | packages/core/src/character/abilities.ts (abilityModifier), packages/core/src/character/derivedValues.ts | packages/core/test/derivedValues.test.ts | floor((score-10)/2) code-owned; table also structured |
+| ability-checks | partial | path: packages/core/src/orchestrator/toolRoll.ts; path: packages/core/src/orchestrator/playerVisibleRollLedger.ts; symbol/detail: ability_check category, seeded dice, visible ledger | path: packages/core/test/tools.test.ts | dice + categorized ledger code-owned; DC comparison and outcome are DM-adjudicated |
+| ability-scores-and-modifiers | partial | path: packages/core/src/character/abilities.ts; path: packages/core/src/character/derivedValues.ts; symbol/detail: abilityModifier, deriveLevel1Values abilityModifiers | path: packages/core/test/derivedValues.test.ts; path: packages/core/test/characterCreation.test.ts | modifier formula code-owned, and PC creation validates current player-character free-entry bounds; missing generic creature ability-score range / modifier-range enforcement for the full SRD 1-30 table contract |
 | activating-an-item | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | advantage-and-disadvantage | unimplemented | — | — | concrete named gap: dice grammar (packages/core/src/orchestrator/dice.ts, NdM+K only) has no advantage/disadvantage (2d20 keep-high/low) support; the model must roll twice and pick, unenforced |
 | ammunition | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
@@ -53,36 +59,36 @@ single-class by design.
 | armor-guidance | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | armor-weapon-and-tool-proficiencies | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | attack | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| attack-rolls | partial | packages/core/src/orchestrator/toolRoll.ts (attack category, seeded dice) | packages/core/test/tools.test.ts | dice code-owned; hit determination vs AC is DM-adjudicated |
+| attack-rolls | partial | path: packages/core/src/orchestrator/toolRoll.ts; symbol/detail: attack category, seeded dice | path: packages/core/test/tools.test.ts | dice code-owned; hit determination vs AC is DM-adjudicated |
 | attunement | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| backgrounds-equipment | partial | packages/core/src/character/srdStartingEquipmentGrants.ts, srdEquipmentPacks.ts (package grants) | packages/core/test/srdPlayabilityAudit.test.ts | equipment-package granting code-owned; the coin-purchase alternative and the package-XOR-coin gate are not implemented (no coin path found in creation choices) |
+| backgrounds-equipment | partial | path: packages/core/src/character/srdStartingEquipmentGrants.ts; path: packages/core/src/character/srdEquipmentPacks.ts; symbol/detail: package grants | path: packages/core/test/srdPlayabilityAudit.test.ts | equipment-package granting code-owned; the coin-purchase alternative and the package-XOR-coin gate are not implemented (no coin path found in creation choices) |
 | backgrounds-proficiencies | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | being-prone | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| beyond-1st-level | partial | packages/core/src/character/levelUpEngine.ts (fixed-average HP, PB, features, spellcasting capacity per pack progression) | packages/core/test/levelUpEngine.test.ts | rolled-HP alternative not wired through seeded dice (deliberate deferral); ASI-cap-20 enforcement at improvement time not verified |
+| beyond-1st-level | partial | path: packages/core/src/character/levelUpEngine.ts; symbol/detail: fixed-average HP, PB, features, spellcasting capacity per pack progression | path: packages/core/test/levelUpEngine.test.ts | rolled-HP alternative not wired through seeded dice (deliberate deferral); ASI-cap-20 enforcement at improvement time not verified |
 | blindsight | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | bonus-action | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | bonus-actions | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | breaking-up-your-move | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | burrow | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | casting-a-spell-at-a-higher-level | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| casting-a-spell-attack-rolls | partial | packages/core/src/character/derivedValues.ts (spell attack modifier) | packages/core/test/derivedValues.test.ts | bonus formula code-owned; the within-5-ft ranged-disadvantage clause is DM-adjudicated |
+| casting-a-spell-attack-rolls | partial | path: packages/core/src/character/derivedValues.ts; symbol/detail: spellAttackModifier | path: packages/core/test/derivedValues.test.ts | bonus formula code-owned; the within-5-ft ranged-disadvantage clause is DM-adjudicated |
 | casting-a-spell-range | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| casting-a-spell-saving-throws | implemented | packages/core/src/character/derivedValues.ts (spell save DC = 8 + mod + PB) | packages/core/test/derivedValues.test.ts | formula code-owned at character-derivation time |
+| casting-a-spell-saving-throws | partial | path: packages/core/src/character/derivedValues.ts; symbol/detail: spellSaveDc = 8 + mod + PB | path: packages/core/test/derivedValues.test.ts | base formula code-owned at character-derivation time; source also includes special modifiers, which are not modeled or applied by the derived-value runtime |
 | casting-in-armor | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | channel-divinity | design-blocked | — | — | multiclassing is out of current engine scope: levelUpEngine.ts is single-class by design (no multiclass path exists); design owner: eshyra-o9bd.18.7.8 parent pending a multiclass decision bead |
 | charges | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | class-features | design-blocked | — | — | multiclassing is out of current engine scope: levelUpEngine.ts is single-class by design (no multiclass path exists); design owner: eshyra-o9bd.18.7.8 parent pending a multiclass decision bead |
 | climb | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | climbing-swimming-and-crawling | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| coinage | partial | packages/core/src/character/currency.ts (denominations, convertCharacterCurrency) | packages/core/test/characterCurrency.test.ts | exchange rates code-owned; coin weight (50/lb) not modeled |
-| combat-step-by-step | partial | packages/core/src/orchestrator/toolStartEncounter.ts (encounter lifecycle) | packages/core/test/tools.test.ts | encounter lifecycle state code-owned; the 5-step procedure itself DM-adjudicated |
+| coinage | partial | path: packages/core/src/character/currency.ts; symbol/detail: denominations, convertCharacterCurrency | path: packages/core/test/characterCurrency.test.ts | exchange rates code-owned; coin weight (50/lb) not modeled |
+| combat-step-by-step | partial | path: packages/core/src/orchestrator/toolStartEncounter.ts; symbol/detail: encounter lifecycle | path: packages/core/test/tools.test.ts | encounter lifecycle state code-owned; the 5-step procedure itself DM-adjudicated |
 | combining-magical-effects | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | command-word | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | complex-traps | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | concentration | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | cone | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | conflict | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| constitution-hit-points | partial | packages/core/src/character/levelUpEngine.ts (per-level Con modifier applied to each HP step) | packages/core/test/levelUpEngine.test.ts | retroactive hp_max recalculation when the Con modifier changes is missing |
+| constitution-hit-points | partial | path: packages/core/src/character/levelUpEngine.ts; symbol/detail: per-level Con modifier applied to each HP step | path: packages/core/test/levelUpEngine.test.ts | retroactive hp_max recalculation when the Con modifier changes is missing |
 | consumables | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | contests | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | controlling-a-mount | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
@@ -93,19 +99,19 @@ single-class by design.
 | customizing-a-background | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | cylinder | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | damage-resistance-and-vulnerability | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| damage-rolls | partial | packages/core/src/orchestrator/dice.ts (parse/roll NdM+K under seeded RNG) | packages/core/test/tools.test.ts | dice math code-owned; add-ability-mod, never-negative, roll-once-for-multi-target procedure DM-adjudicated |
+| damage-rolls | partial | path: packages/core/src/orchestrator/dice.ts; symbol/detail: parse/roll NdM+K under seeded RNG | path: packages/core/test/tools.test.ts | dice math code-owned; add-ability-mod, never-negative, roll-once-for-multi-target procedure DM-adjudicated |
 | darkvision | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | dash | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| death-saving-throws | partial | packages/core/src/orchestrator/toolRoll.ts (death_save category) | packages/core/test/tools.test.ts | death-save rolls categorized in the ledger; success/failure counters, nat-1/nat-20 effects, and damage-at-0 escalation are not tracked in code |
+| death-saving-throws | partial | path: packages/core/src/orchestrator/toolRoll.ts; symbol/detail: death_save category | path: packages/core/test/tools.test.ts | death-save rolls categorized in the ledger; success/failure counters, nat-1/nat-20 effects, and damage-at-0 escalation are not tracked in code |
 | detecting-and-disabling-a-trap | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | dexterity-attack-rolls-and-damage | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| dexterity-initiative | partial | packages/core/src/orchestrator/toolRoll.ts (initiative category); encounter state in toolStartEncounter/toolUpdateCombatant | packages/core/test/tools.test.ts | initiative rolls + combatant tracking code-owned; ordering/tie procedure DM-adjudicated |
+| dexterity-initiative | partial | path: packages/core/src/orchestrator/toolRoll.ts; path: packages/core/src/orchestrator/toolStartEncounter.ts; path: packages/core/src/orchestrator/toolUpdateCombatant.ts; symbol/detail: initiative category and encounter combatant state | path: packages/core/test/tools.test.ts | initiative rolls + combatant tracking code-owned; ordering/tie procedure DM-adjudicated |
 | disengage | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | dodge | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | downtime-activities | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | equipment | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | expenses-lifestyle-expenses | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| experience-points | implemented | packages/core/src/rules/advancementTable.ts (levelForXp, xpThresholdForLevel, ADVANCEMENT_TABLE_REF) | packages/core/test/advancementTable.test.ts | XP-to-level thresholds code-owned from the structured table; multiclass total-level nuance moot while multiclassing is unimplemented |
+| experience-points | partial | path: packages/core/src/rules/advancementTable.ts; symbol/detail: levelForXp, xpThresholdForLevel, ADVANCEMENT_TABLE_REF | path: packages/core/test/advancementTable.test.ts | XP-to-level thresholds are code-owned from the structured table; missing runtime ownership for the multiclass total-character-level rule because the current level-up engine is single-class and multiclassing is design-blocked |
 | extra-attack | design-blocked | — | — | multiclassing is out of current engine scope: levelUpEngine.ts is single-class by design (no multiclass path exists); design owner: eshyra-o9bd.18.7.8 parent pending a multiclass decision bead |
 | falling | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | falling-unconscious | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
@@ -119,7 +125,7 @@ single-class by design.
 | grappling | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | group-checks | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | half-dragon-template | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| healing | implemented | packages/core/src/state/domainMutations.ts (adjustHp) via orchestrator adjust_hp tool — clamps to [0, hp_max] | packages/core/test/tools.test.ts | the cap-at-maximum rule is enforced in code on every HP write |
+| healing | partial | path: packages/core/src/state/domainMutations.ts; path: packages/core/src/orchestrator/toolAdjustHp.ts; symbol/detail: adjustHp / adjust_hp adds HP delta and clamps to [0, hp_max] | path: packages/core/test/domainMutations.test.ts; path: packages/core/test/tools.test.ts | HP addition and maximum cap are enforced on HP writes; missing dead-creature eligibility semantics: a dead creature cannot regain HP until magic restores it to life |
 | help | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | hide | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | hiding | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
@@ -161,7 +167,7 @@ single-class by design.
 | passive-checks | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | poisons | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | practicing-a-profession | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| proficiency-bonus | partial | packages/core/src/character/derivedValues.ts (LEVEL_1_PROFICIENCY_BONUS), packages/core/src/character/levelUpEngine.ts (per-level PB from pack) | packages/core/test/derivedValues.test.ts, packages/core/test/levelUpEngine.test.ts | PB values code-owned; apply-once / multiply-once / x0-without-proficiency roll semantics are DM-adjudicated |
+| proficiency-bonus | partial | path: packages/core/src/character/derivedValues.ts; path: packages/core/src/character/levelUpEngine.ts; symbol/detail: LEVEL_1_PROFICIENCY_BONUS and per-level PB from pack | path: packages/core/test/derivedValues.test.ts; path: packages/core/test/levelUpEngine.test.ts | PB values code-owned; apply-once / multiply-once / x0-without-proficiency roll semantics are DM-adjudicated |
 | range | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | ranged-attacks-in-close-combat | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | reactions | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
@@ -170,7 +176,7 @@ single-class by design.
 | researching | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | rituals | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | rolling-1-or-20 | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| saving-throws | partial | packages/core/src/orchestrator/toolRoll.ts (saving_throw category); save modifiers in derivedValues.ts | packages/core/test/tools.test.ts, packages/core/test/derivedValues.test.ts | dice + save modifiers code-owned; DC comparison DM-adjudicated |
+| saving-throws | partial | path: packages/core/src/orchestrator/toolRoll.ts; path: packages/core/src/character/derivedValues.ts; symbol/detail: saving_throw category and save modifiers | path: packages/core/test/tools.test.ts; path: packages/core/test/derivedValues.test.ts | dice + save modifiers code-owned; DC comparison DM-adjudicated |
 | search | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | self-sufficiency | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | selling-treasure | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
@@ -195,8 +201,8 @@ single-class by design.
 | targeting-yourself | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | telepathy | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | temporary-hit-points | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
-| the-order-of-combat | partial | packages/core/src/orchestrator/toolStartEncounter.ts, toolCloseCombatInstance.ts, turnLoop.ts | packages/core/test/tools.test.ts | round/turn state tracked; 6-second-round cycle procedure DM-adjudicated |
-| the-order-of-combat-initiative | partial | packages/core/src/orchestrator/toolStartEncounter.ts, toolUpdateCombatant.ts | packages/core/test/tools.test.ts | same as dexterity-initiative: state tracked, group-roll/tie rules DM-adjudicated |
+| the-order-of-combat | partial | path: packages/core/src/orchestrator/toolStartEncounter.ts; path: packages/core/src/orchestrator/toolCloseCombatInstance.ts; path: packages/core/src/orchestrator/turnLoop.ts; symbol/detail: encounter round/turn state | path: packages/core/test/tools.test.ts | round/turn state tracked; 6-second-round cycle procedure DM-adjudicated |
+| the-order-of-combat-initiative | partial | path: packages/core/src/orchestrator/toolStartEncounter.ts; path: packages/core/src/orchestrator/toolUpdateCombatant.ts; symbol/detail: encounter combatant initiative state | path: packages/core/test/tools.test.ts | same as dexterity-initiative: state tracked, group-roll/tie rules DM-adjudicated |
 | training | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | tremorsense | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
 | truesight | unimplemented | — | — | no code-owned procedure; adjudicated by the DM model over the primitive tool surface (seeded roll / adjust_hp / conditions / encounter state) |
