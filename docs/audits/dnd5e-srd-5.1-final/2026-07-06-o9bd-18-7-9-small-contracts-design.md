@@ -38,8 +38,12 @@ indistinguishability state; discovery is DM adjudication (contrast
 
 { kind: 'locationKnowledge',
   knows: ('direction'|'distance'|'location')[],
-  of: string,                    // 'designated quarry' | 'summoner' | 'any path it has traveled'
+  of: string,                    // 'designated quarry' | 'summoner'
   condition?: string }           // 'same plane of existence'
+
+{ kind: 'pathMemory',
+  scope: 'any-previously-traveled-path',
+  recall: 'perfect' }             // minotaur Labyrinthine Recall
 
 { kind: 'sleepException',
   detail: string }               // hydra: 'at least one head is awake while sleeping'
@@ -48,10 +52,13 @@ indistinguishability state; discovery is DM adjudication (contrast
 Validation: `telepathy` fields all optional but at least one of
 `rangeFeet`/`audience`/`maxCreatures` present (empty payload rejected);
 `communication.with` non-empty; `locationKnowledge.knows` non-empty.
+Use `pathMemory`, not `locationKnowledge`, for navigation/path-recall
+semantics where no target entity location is being tracked.
 Global telepathy semantics (initiation, incapacitation, antimagic) live in
 `rule:telepathy` (engine procedure, 18.7.8.3) — payloads carry only the
 per-record boundaries. Goldens: otyugh (oneWay), invisible-stalker (two
-`locationKnowledge` effects: quarry + summoner), `spell:telepathic-bond`.
+`locationKnowledge` effects: quarry + summoner), minotaur (`pathMemory`),
+`spell:telepathic-bond`.
 
 ## S2 — small deterministic clause payloads (17 spells)
 
@@ -86,26 +93,44 @@ Reclassified-clause payloads (artifact §2.8):
 { kind: 'onsetTime', roll: string, multiplierMinutes: number }   // control-weather 1d4 × 10
 { kind: 'stagedTableShift', tableRefs: string[], stepsPerChange: 1 } // control-weather
 { kind: 'messengerTravel', ratesMilesPer24h: { flying: 50, other: 25 }, maxWords: 25, lostIfUndelivered: true } // animal-messenger
-{ kind: 'communicationBarriers', blockedBy: string[] }           // message: silence, 1 ft stone, 1 in metal, lead sheet, 3 ft wood
+{ kind: 'communicationBarriers',
+  magicalSilenceBlocks: true,
+  noStraightLineRequired?: boolean,
+  materials: {
+    material: 'stone'|'common-metal'|'lead'|'wood',
+    thickness?: { amount: number, unit: 'foot'|'inch' },
+    threshold: 'blocks-at-or-above'|'any-thin-sheet'
+  }[] } // message: 1 ft stone, 1 in common metal, thin lead sheet, 3 ft wood
 { kind: 'terrainAlteration', canCreate: ['difficult-terrain'], canRemove: ['difficult-terrain'] } // mirage-arcane
 { kind: 'recastLockout', scope: 'per-target', days: number }     // speak-with-dead 10
+{ kind: 'questionLimit', maxQuestions: number }                  // commune 3, speak-with-dead 5
+{ kind: 'corpseEligibility',
+  target: 'corpse',
+  requiresMouth?: boolean,
+  excludesUndead?: boolean }                                     // speak-with-dead
 { kind: 'concurrentEffectLimit', max: 3, dismissCost: 'action' } // prestidigitation, thaumaturgy
 { kind: 'permanenceAfterRepetition', period: 'day', count: number, result: 'until-dispelled' | 'permanent' }
 // arcanists-magic-aura {count:30}; private-sanctum {count:365, result:'permanent'} (S3 record, shared payload)
 ```
 
-Question caps / eligibility (augury omens, commune 3 questions,
-speak-with-dead 5 questions + corpse eligibility) stay prose per the
-retention standard except where listed above; the artifact rows are the
-per-record source of truth.
+Question caps and creature/corpse eligibility are deterministic when they
+limit executable behavior. `commune` uses `questionLimit { maxQuestions: 3 }`;
+`speak-with-dead` uses `recastLockout`, `questionLimit { maxQuestions: 5 }`,
+and `corpseEligibility { target: 'corpse', requiresMouth: true,
+excludesUndead: true }`. Augury's omen menu remains prose because it is the
+GM-narrated result rather than a state gate.
 
 ## S3 — ward/trigger & spatial boundaries (8 spells)
 
 - `alarm`, `magic-mouth`: reuse `triggeredEffect { trigger, result }`
   verbatim (first pass; no new kind).
-- `contingency`: `spellStoring { maximumSpellLevel: 5, capacity: 1 }` +
-  `triggeredEffect`; one-at-a-time + component-on-person clauses as riders
-  pinned by committed-pack assertion.
+- `contingency`: `spellStoring { maximumSpellLevel: 5, capacity: 1,
+  castingTime: '1-action', target: 'self' }` + `triggeredEffect` +
+  `{ kind: 'exclusiveInstance', maxActive: 1, replacement: 'previous-ends' }`
+  + `{ kind: 'componentPresenceTermination',
+       component: 'ivory-statuette-of-self',
+       location: 'on-your-person' }`. These are deterministic limits, not
+  riders.
 - `private-sanctum`, `tiny-hut`:
   ```ts
   { kind: 'wardedArea',

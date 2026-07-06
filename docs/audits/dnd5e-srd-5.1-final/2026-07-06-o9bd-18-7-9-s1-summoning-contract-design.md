@@ -23,17 +23,23 @@ in this slice.)
   creatureType?: { treatedAs: string[],           // ['fey'] "considered fey"
                    chooseOne?: boolean },         // familiar/steed: celestial/fey/fiend, caster's choice
   control: Control,
-  disappearsWhen: ('zero-hp' | 'spell-ends')[],   // non-empty
-  onConcentrationBroken?: {                       // conjure-elemental / conjure-fey
-    becomes: 'uncontrolled-hostile',
-    dismissable: false,
-    disappearsAfter: { amount: number, unit: 'hour' | 'minute' },
-  },
+  lifecycle: Lifecycle[],                          // non-empty; see source-backed union below
+  sourceRequirement?: { shape: 'cube',
+                        sizeFeet: number,
+                        materialOrTerrain: string[] }, // conjure-elemental 10-ft cube
   dismissal?: { cost: 'action',
                 temporary?: { to: 'pocket-dimension',
                               recall: { cost: 'action', rangeFeet: number } } },
   modifications?: Modification[],                 // deltas against the source statblock
-  riders?: string[],                              // verbatim residue (see §5)
+  telepathy?: { rangeFeet: number },
+  senseSharing?: { cost: 'action',
+                   casterConditionWhileSharing: ('deaf'|'blind')[] },
+  spellDelivery?: { spellRange: 'touch', cost: 'reaction' },
+  spellSharing?: { when: 'caster-targets-only-self',
+                   requiresMounted: true,
+                   alsoAffects: 'steed' },
+  repair?: { costGpPerHitPoint: number },
+  riders?: string[],                              // narrative residue only (see §5)
 }
 
 type Appearance =
@@ -69,6 +75,28 @@ type Control = {
   exclusiveInstance?: boolean,                   // familiar/steed/simulacrum one-at-a-time
 }
 
+type Lifecycle =
+  | { event: 'spell-ends' | 'zero-hit-points',
+      result: 'summoned-creature-disappears' }   // find-familiar and concentration summons
+  | { event: 'spell-ends',
+      result: 'animated-object-reverts',
+      damageCarriesOver: true }                  // animate-objects
+  | { event: 'control-window-expires',
+      result: 'animated-creature-persists-uncontrolled',
+      window: { amount: 24, unit: 'hour' },
+      reassertableByRecast: { maxCreatures: number } } // animate-dead/create-undead
+  | { event: 'concentration-broken',
+      result: 'uncontrolled-hostile',
+      dismissable: false,
+      disappearsAfter: { amount: number, unit: 'hour' | 'minute' } } // conjure-elemental/fey
+  | { event: 'damage-taken' | 'spell-ends',
+      result: 'effect-fades',
+      transition: { amount: 1, unit: 'minute' } } // phantom-steed
+  | { event: 'zero-hit-points',
+      result: 'duplicate-destroyed' }            // simulacrum melts
+  | { event: 'recast',
+      result: 'prior-exclusive-instance-destroyed' } // familiar/steed/simulacrum one-at-a-time
+
 type Modification =
   | { attribute: 'hit-point-maximum', value: 'half-of-original' }        // simulacrum
   | { attribute: 'speed', mode: string, value: number }                  // phantom steed 100
@@ -93,10 +121,18 @@ as statline `sourceText`.
   integrity against the pack is a committed-pack test (schema cannot see
   siblings). `statTableRef` must be a `table:*` ref present in the
   record's `tableRefs`.
-- `onConcentrationBroken` only valid when the spell's structured duration
-  has `concentration: true`.
+- `lifecycle.event = 'concentration-broken'` only valid when the spell's
+  structured duration has `concentration: true`.
 - `reassert`/`window` require `commandEconomy`; `exclusiveInstance`
   forbids `window`.
+- `lifecycle` non-empty. `animated-creature-persists-uncontrolled` requires
+  `control.window`; `reassertableByRecast.maxCreatures` must match the
+  spell's recast-control clause. `summoned-creature-disappears` is not valid
+  for `corpse-animation`, because animate-dead/create-undead creatures
+  persist when control expires.
+- `sourceRequirement`, `telepathy`, `senseSharing`, `spellDelivery`,
+  `spellSharing`, and `repair` are typed deterministic protocols, not
+  riders. Range/cost/size fields are positive integers / closed enums.
 
 ## 4. Runtime integration boundaries
 
@@ -111,31 +147,33 @@ as statline `sourceText`.
 
 ## 5. Riders policy (explicit, bounded)
 
-Compound familiar/steed abilities stay verbatim `riders` in this slice:
-find-familiar's touch-spell delivery, sense-sharing action, telepathy
-100 ft; find-steed's mounted spell-sharing and telepathy 1 mi. Rationale:
-each is a one-off multi-actor protocol; promoting them to typed contracts
-is not justified by a single record each. The C3 `telepathy` contract MAY
-later absorb the two telepathy riders — noted in C3's design space, not
-required for S1 closure. `riders` non-empty strings, and a committed-pack
-assertion pins the exact rider count per golden record so silent rider
-growth fails the gate.
+`riders` are allowed only for genuinely narrative or source-location
+residue that does not affect deterministic execution. They must not hide
+eligibility gates, action/reaction economy, ranges, lifecycle transitions,
+exclusive-instance limits, telepathy, sense sharing, touch-spell delivery,
+mounted spell sharing, repair costs, or retained/lost capabilities.
+`riders` non-empty strings, and committed-pack assertions pin the exact
+rider count per golden record so silent rider growth fails the gate.
 
 ## 6. Golden examples for rollout
 
 1. `conjure-animals` — option-menu (4 options) + multipliers {5:2,7:3,9:4},
    group initiative, verbal-no-action commands, treatedAs ['fey'].
-2. `conjure-elemental` — cr-cap + perSlotAbove, onConcentrationBroken
-   (1 hour), terrain-cube casting residue as rider.
+2. `conjure-elemental` — cr-cap + perSlotAbove, 10-ft source cube
+   requirement, concentration-broken lifecycle to uncontrolled hostile for
+   1 hour.
 3. `animate-dead` — corpse-animation (bones→skeleton, corpse→zombie),
-   bonus-action commands ≤60 ft, window 24 h, reassert 4.
+   bonus-action commands ≤60 ft, lifecycle control-window expiry to
+   uncontrolled persistent undead, reassert 4.
 4. `animate-objects` — object-animation with sizeCosts + statTableRef,
-   commands ≤500 ft; damage-carryover-on-revert rider.
+   commands ≤500 ft; lifecycle spell-end reversion with damage carryover.
 5. `find-familiar` — form-list with creatureRefs, chooseOne type,
    cannot-attack modification, pocket-dimension dismissal,
-   exclusiveInstance, 3 riders.
+   exclusiveInstance, zero-HP disappearance, typed telepathy 100 ft,
+   sense-sharing action, and touch-spell delivery via reaction.
 6. `simulacrum` — duplicate + modifications (half HP max, no equipment,
-   no advancement), exclusiveInstance, repair-cost rider.
+   no advancement), exclusiveInstance, prior-instance destruction on recast,
+   zero-HP duplicate destruction, repair 100 gp/HP.
 
 Remaining 8 after goldens: conjure-celestial, conjure-fey,
 conjure-minor-elementals, conjure-woodland-beings, create-undead,

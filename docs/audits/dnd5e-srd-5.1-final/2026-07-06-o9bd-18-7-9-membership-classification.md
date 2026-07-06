@@ -47,8 +47,8 @@ sizeOverrides?, notes? }`.
 | `creature:ancient-copper-dragon#actions:Change Shape` | identical grammar |
 | `creature:ancient-gold-dragon#actions:Change Shape` | identical grammar |
 | `creature:ancient-silver-dragon#actions:Change Shape` | identical grammar |
-| `creature:couatl#actions:Change Shape` | forms CR ≤ own; retains game statistics + speech; **replaces** AC, movement modes, Str, Dex, other actions; gains new form's capabilities (except class features/legendary/lair); bite rider |
-| `creature:deva#actions:Change Shape` | as couatl but replaces AC, movement modes, Str, Dex, special senses; no bite rider |
+| `creature:couatl#actions:Change Shape` | forms CR ≤ own; retains game statistics + speech; **replaces** AC, movement modes, Str, Dex, other actions; gains new form's capabilities (except class features/legendary/lair); conditionally retains Bite only when the new form is capable of making that attack |
+| `creature:deva#actions:Change Shape` | as couatl but replaces AC, movement modes, Str, Dex, special senses; no Bite-retention clause |
 | `creature:night-hag#actions:Change Shape` | forms: Small/Medium female humanoid; statistics unchanged; equipment not transformed |
 | `creature:oni#actions:Change Shape` | forms: Small/Medium humanoid or Large giant; stats same except size; **glaive transforms with it** (equipment: 'specific'); glaive reverts on death |
 | `creature:doppelganger#traits:Shapechanger` | Small/Medium humanoid it has seen; stats same except size; equipment not transformed; reverts on death |
@@ -113,7 +113,7 @@ for the dryad.
 | ref | semantics |
 |---|---|
 | `creature:invisible-stalker#traits:Faultless Tracker` | knows direction+distance to designated quarry while same-plane; also knows summoner's location. Related existing kind: `locationDetectableBy` (inverse direction) — new `locationKnowledge` payload proposed |
-| `creature:minotaur#traits:Labyrinthine Recall` | perfect recall of any traveled path (auto-success navigation) |
+| `creature:minotaur#traits:Labyrinthine Recall` | perfect recall of any traveled path (auto-success navigation); use path-memory semantics, not target-location knowledge |
 | `creature:hydra#traits:Wakeful` | deterministic sleep-state exception: at least one head awake while sleeping (defeats asleep-based surprise/unawareness). Reclassified from accept 2026-07-06: consistency with False Appearance — a dice-free deterministic gate is model, not accept. Small `sleepException`-style payload in the C3 contract set |
 
 ### 1.5 Genuinely accepted — 2 refs — disposition: accept\*
@@ -262,7 +262,7 @@ None of the remaining slices below is started unless stated.
 |---|---|---|---|
 | **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove from accepted list; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
 | **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Codex** (after 5-line design review) |
-| **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, sleep-exception payloads; 8 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Opus** design, Codex rollout |
+| **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 8 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Opus** design, Codex rollout |
 | **S1** summoning | design summoning contract extension (option menus, control economy, statblock modification); 14 spells | yes — largest open design | **Opus** |
 | **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
 | **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |

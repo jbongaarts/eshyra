@@ -54,7 +54,9 @@ New `mechanics.effects` kind `changeShape` (kindSchemas.ts):
   reversion: { on: ['death'] },               // closed enum today; extensible
   excludedCapabilities?:
     ('class-features'|'legendary-actions'|'lair-actions')[],
-  riders?: string[],                    // verbatim residue, e.g. couatl bite clause
+  retainedCapabilities?: RetainedCapability[],
+  speedConditions?: SpeedCondition[],
+  riders?: string[],                    // narrative residue only; not deterministic clauses
 }
 
 type Form =
@@ -66,6 +68,12 @@ type Form =
       speedOverrides?: Record<string, number> }   // imp rat {walk:20}, raven {walk:20, fly:60}…
   | { kind: 'object' }                            // mimic
   | { kind: 'statline-variant', variant: string } // lycanthropes: names the structured statline speed/AC variant
+
+type RetainedCapability =
+  | { name: 'bite', whenFormHas: { anatomy: 'jaws' } } // couatl conditional Bite retention
+
+type SpeedCondition =
+  | { mode: 'fly', lostUnlessFormHas: { anatomy: 'wings' } } // succubus/incubus
 ```
 
 ## 3. Validation rules (kindSchemas)
@@ -81,8 +89,10 @@ type Form =
 - `statline-variant` is valid only on creatures whose statline actually
   carries `speedVariants`/AC `variants` — enforced by a committed-pack
   test, not the schema (schema can't see siblings).
-- `excludedCapabilities` non-empty when present; `riders` non-empty
-  strings.
+- `excludedCapabilities`, `retainedCapabilities`, `speedConditions`, and
+  `riders` are non-empty when present. `riders` must not carry
+  deterministic eligibility gates, retained/lost capabilities, speed
+  changes, or action economy.
 
 ## 4. Runtime integration boundaries
 
@@ -103,7 +113,8 @@ type Form =
    absorbed-or-borne, excludedCapabilities [class-features,
    legendary-actions].
 2. `couatl#actions:Change Shape` — retain-listed variant with `replaces` +
-   `gainsMissingCapabilities` + bite `rider`; excluded adds lair-actions.
+   `gainsMissingCapabilities` + typed conditional Bite retention; excluded
+   adds lair-actions.
 3. `oni#actions:Change Shape` — two descriptor forms, same-except [size],
    equipment 'specific' (glaive).
 4. `imp#traits:Shapechanger` — fixed forms with speedOverrides,
@@ -112,9 +123,9 @@ type Form =
    [size, ac], not-transformed.
 
 Dragon rollout after example 1 is 7 verbatim-identical grammars (Codex).
-Remaining: deva (as couatl minus rider/bite, replaces senses), night-hag,
-doppelganger, quasit, mimic (object form), succubus (speed-loss rider on
-wingless form → `riders`), wereboar/wererat/weretiger/werewolf.
+Remaining: deva (as couatl minus Bite retention, replaces senses),
+night-hag, doppelganger, quasit, mimic (object form), succubus/incubus
+(typed wing-dependent fly-speed loss), wereboar/wererat/weretiger/werewolf.
 
 Membership bookkeeping on completion: remove all 22 refs from
 `ACCEPTED_PROSE_CREATURE_ENTRY_REFS` (the 8 `mechanical-prose` +
