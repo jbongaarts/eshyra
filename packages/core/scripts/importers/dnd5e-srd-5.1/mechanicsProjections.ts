@@ -865,6 +865,10 @@ const NUMBER_WORDS: ReadonlyMap<string, number> = new Map([
   ['four', 4],
   ['five', 5],
   ['six', 6],
+  ['seven', 7],
+  ['eight', 8],
+  ['nine', 9],
+  ['ten', 10],
 ]);
 
 /**
@@ -1078,16 +1082,137 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     );
   }
   if (/^Multiattack\b/.test(name)) {
-    const count =
-      /\bmakes (one|two|three|four|five|six|\d+)\b[^.]*?\battacks?\b/.exec(
+    // Either/or routines (Medusa) are preserved as option sets; the Hydra's
+    // per-head count and the Violet Fungus's dice count are formulas.
+    const eitherOr =
+      /\bmakes either (one|two|three|four|five|six) melee attacks\b[^.]*?\bor (one|two|three|four|five|six) ranged attacks\b/.exec(
         text,
       );
-    if (count !== null) {
+    const perHead = /\bmakes as many (\w+) attacks as it has heads\b/.exec(
+      text,
+    );
+    const diceCount = /\bmakes (\d+d\d+) [A-Za-z ]+ attacks\b/.exec(text);
+    const count =
+      /\bmakes (one|two|three|four|five|six|seven|eight|nine|ten|\d+)\b[^.]*?\battacks?\b/.exec(
+        text,
+      );
+    if (eitherOr !== null) {
+      effects.push({
+        kind: 'multiattack',
+        options: [
+          {
+            attacks: NUMBER_WORDS.get(eitherOr[1].toLowerCase()) ?? 0,
+            attackType: 'melee',
+          },
+          {
+            attacks: NUMBER_WORDS.get(eitherOr[2].toLowerCase()) ?? 0,
+            attackType: 'ranged',
+          },
+        ],
+      });
+    } else if (perHead !== null) {
+      effects.push({
+        kind: 'multiattack',
+        attacksFormula: 'one-per-head',
+        attackName: perHead[1],
+      });
+    } else if (diceCount !== null) {
+      effects.push({ kind: 'multiattack', attacksDice: diceCount[1] });
+    } else if (count !== null) {
       effects.push({
         kind: 'multiattack',
         attacks: NUMBER_WORDS.get(count[1].toLowerCase()) ?? Number(count[1]),
       });
     }
+  }
+  // Deterministic action economy and attack references
+  // (eshyra-o9bd.18.7.9): bonus-action option sets, attack-or-ability
+  // selections, legendary movement, and extra reactions.
+  const bonusActionTake =
+    /\bcan (?:take the (.+?) action as a bonus action|use a bonus action to take the (.+?) action)\b/.exec(
+      text,
+    );
+  if (bonusActionTake !== null) {
+    effects.push({
+      kind: 'bonusAction',
+      options: (bonusActionTake[1] ?? bonusActionTake[2])
+        .split(/,\s*(?:or\s+)?|\s+or\s+/)
+        .map((option) => option.trim().toLowerCase().replaceAll(' ', '-'))
+        .filter((option) => option.length > 0),
+    });
+  }
+  if (
+    /\bAs a bonus action, the [\w'\u2019 ]+ can move up to its speed toward a hostile creature that it can see\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'bonusAction',
+      options: ['move-up-to-speed-toward-hostile-creature'],
+    });
+  }
+  const attackOrUse =
+    /\bmakes one ([a-z ]+?) attack or (?:uses its ([A-Za-z' ]+?)|([a-z ]+?) attack)\.?$/.exec(
+      text,
+    );
+  if (attackOrUse !== null) {
+    effects.push(
+      compact({
+        kind: 'makeAttack',
+        options: [
+          attackOrUse[1].trim(),
+          (attackOrUse[2] ?? attackOrUse[3])?.trim(),
+        ].filter((option): option is string => option !== undefined),
+      }),
+    );
+  }
+  const attackWith = /\bmakes one attack with its ([a-z ]+?)(?: or uses its ([A-Za-z' ]+?))?\.?$/.exec(
+    text,
+  );
+  if (attackWith !== null) {
+    effects.push(
+      compact({
+        kind: 'makeAttack',
+        attack: attackWith[1].trim(),
+        orUses: attackWith[2]?.trim(),
+      }),
+    );
+  }
+  if (/^The [\w'\u2019 ]+ makes one unarmed strike\.$/.test(text)) {
+    effects.push({ kind: 'makeAttack', attack: 'unarmed strike' });
+  }
+  if (/^The [\w'\u2019 ]+ casts a cantrip\.$/.test(text)) {
+    effects.push({ kind: 'castSpell', spellLevel: 'cantrip' });
+  }
+  const moveUpTo = /^The [\w'\u2019 ]+ moves up to (half its speed|its speed)(?: without provoking opportunity attacks)?\.?$/.exec(
+    text,
+  );
+  if (moveUpTo !== null) {
+    effects.push(
+      compact({
+        kind: 'moveUpTo',
+        amount: moveUpTo[1] === 'half its speed' ? 'half-speed' : 'speed',
+        withoutOpportunityAttacks: /without provoking opportunity attacks/.test(
+          text,
+        )
+          ? true
+          : undefined,
+      }),
+    );
+  }
+  if (/\bcan take one reaction on every turn in a combat\b/.test(text)) {
+    effects.push({ kind: 'extraReactions', perTurn: 1 });
+  }
+  if (
+    /\bFor each head the [\w'\u2019 ]+ has beyond one, it gets an extra reaction that can be used only for opportunity attacks\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'extraReactions',
+      formula: 'one-per-head-beyond-one',
+      restrictedTo: 'opportunity-attacks',
+    });
   }
   const healing =
     /\bregains (\d+) \((\d+d\d+(?:\s*[+-]\s*\d+)?)\) hit points\b/.exec(text);
@@ -1189,6 +1314,373 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     if (attackName !== 'melee' && attackName !== 'ranged') {
       effects.push({ kind: 'makeAttack', attack: attackName });
     }
+  }
+  // Movement traits (eshyra-o9bd.18.7.9).
+  if (
+    /\bcan climb difficult surfaces, including upside down on ceilings, without needing to make an ability check\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'climbWithoutCheck' });
+  }
+  if (/\bignores movement restrictions caused by webbing\b/.test(text)) {
+    effects.push({ kind: 'ignoreMovementRestriction', source: 'webbing' });
+  }
+  if (
+    /\bcan move across and climb icy surfaces without needing to make an ability check\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'climbWithoutCheck', surfaces: 'icy' });
+  }
+  if (
+    /\bdifficult terrain composed of ice or snow doesn['\u2019]t cost it extra move?ment\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'ignoreDifficultTerrain',
+      terrain: ['ice', 'snow'],
+    });
+  }
+  if (
+    /\bdoesn['\u2019]t provoke opportunity attacks when it flies out of an enemy['\u2019]s reach\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'preventOpportunityAttacks',
+      scope: 'flying-out-of-reach',
+    });
+  }
+  const narrowSpace =
+    /\bcan move through a space as narrow as (\d+) inch(?:es)? wide without squeezing\b/.exec(
+      text,
+    );
+  if (narrowSpace !== null) {
+    effects.push({
+      kind: 'moveThroughNarrowSpaces',
+      widthInches: Number(narrowSpace[1]),
+    });
+  }
+  if (
+    /\bcan burrow through nonmagical, unworked earth and stone\b/.test(text)
+  ) {
+    effects.push({ kind: 'earthGlide' });
+  }
+  const tunneler =
+    /\bcan burrow through solid rock at half its burrow speed and leaves a (\d+)-foot-diameter tunnel\b/.exec(
+      text,
+    );
+  if (tunneler !== null) {
+    effects.push({
+      kind: 'tunneler',
+      tunnelDiameterFeet: Number(tunneler[1]),
+    });
+  }
+  const runningLeap =
+    /\bWith a (\d+)-foot running start, the [\w'\u2019 ]+ can long jump up to (\d+) feet\b/.exec(
+      text,
+    );
+  if (runningLeap !== null) {
+    effects.push({
+      kind: 'jumpDistance',
+      longJumpFeet: Number(runningLeap[2]),
+      runningStartFeet: Number(runningLeap[1]),
+    });
+  }
+  const creatureTeleport =
+    /\bmagically teleports?, along with any equipment it is wearing or carrying, up to (\d+) feet to an unoccupied space it can see\b/.exec(
+      text,
+    );
+  if (creatureTeleport !== null) {
+    effects.push({ kind: 'teleport', distanceFeet: Number(creatureTeleport[1]) });
+  }
+  const treeStride =
+    /\bcan use (\d+) feet of her movement to step magically into one living tree within her reach and emerge from a second living tree within (\d+) feet of the first\b/.exec(
+      text,
+    );
+  if (treeStride !== null) {
+    effects.push({
+      kind: 'teleport',
+      via: 'living-trees',
+      distanceFeet: Number(treeStride[2]),
+      movementCostFeet: Number(treeStride[1]),
+    });
+  }
+  if (
+    /\benters? the Ethereal Plane from the Material Plane, or vice versa\b/i.test(
+      text,
+    ) ||
+    /\bshift from the Material Plane to the Ethereal Plane, or vice versa\b/i.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'planeShift',
+      planes: ['material', 'ethereal'],
+    });
+  }
+  // Light and senses (eshyra-o9bd.18.7.9).
+  const entryLight =
+    /\bsheds bright light in a (\d+)-foot radius and dim light for an additional (\d+) feet\b/.exec(
+      text,
+    );
+  if (entryLight !== null) {
+    effects.push({
+      kind: 'light',
+      level: 'bright',
+      radiusFeet: Number(entryLight[1]),
+      dimAdditionalFeet: Number(entryLight[2]),
+    });
+  }
+  const variableLight =
+    /\bsheds bright light in a (\d+)- to (\d+)-foot radius\b/.exec(text);
+  if (variableLight !== null) {
+    effects.push({
+      kind: 'light',
+      level: 'bright',
+      radiusFeetMinimum: Number(variableLight[1]),
+      radiusFeetMaximum: Number(variableLight[2]),
+      variable: true,
+    });
+  }
+  if (
+    /\bMagical darkness doesn['\u2019]t impede the [\w'\u2019 ]+ darkvision\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'seeInMagicalDarkness' });
+  }
+  const etherealSight =
+    /\bcan see (\d+) feet into the Ethereal Plane\b/.exec(text);
+  if (etherealSight !== null) {
+    effects.push({
+      kind: 'sense',
+      sense: 'ethereal-sight',
+      rangeFeet: Number(etherealSight[1]),
+    });
+  }
+  const senseMagic = /\bsenses magic within (\d+) feet of it at will\b/.exec(
+    text,
+  );
+  if (senseMagic !== null) {
+    effects.push({
+      kind: 'sense',
+      sense: 'detect-magic',
+      rangeFeet: Number(senseMagic[1]),
+    });
+  }
+  const scentPinpoint =
+    /\bcan pinpoint, by scent, the location of ([a-z, ]+?(?:, such as [a-z, ]+)?) within (\d+) feet\b/.exec(
+      text,
+    );
+  if (scentPinpoint !== null) {
+    effects.push({
+      kind: 'sense',
+      sense: 'scent-pinpoint',
+      detects: scentPinpoint[1].trim(),
+      rangeFeet: Number(scentPinpoint[2]),
+    });
+  }
+  if (
+    /\bWhile in contact with a web, the [\w'\u2019 ]+ knows the exact location of any other creature in contact with the same web\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'sense', sense: 'web-sense' });
+  }
+  if (/^The [\w'\u2019 ]+ knows if it hears a lie\.$/.test(text)) {
+    effects.push({ kind: 'sense', sense: 'detect-lies' });
+  }
+  // Damage and defense traits (eshyra-o9bd.18.7.9).
+  if (
+    /\bA melee weapon deals one extra die of its damage when the [\w'\u2019 ]+ hits with it\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'extraWeaponDamageDie', extraDice: 1 });
+  }
+  if (
+    /\btakes only half the damage dealt to it \(rounded down\), and (?:that|the) creature takes the other half\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'damageTransfer', portion: 'half' });
+  }
+  const runningWater =
+    /\btakes (\d+) ([a-z]+) damage (?:when|if) it ends its turn in running water\b/.exec(
+      text,
+    );
+  if (runningWater !== null && SRD_5_1_DAMAGE_TYPES.has(runningWater[2])) {
+    effects.push({
+      kind: 'recurringDamage',
+      amount: Number(runningWater[1]),
+      type: runningWater[2],
+      trigger: 'ends-turn-in-running-water',
+    });
+  }
+  const waterSusceptibility =
+    /\bFor every (\d+) feet the [\w'\u2019 ]+ moves in water, or for every gallon of water splashed on it, it takes (\d+) ([a-z]+) damage\b/.exec(
+      text,
+    );
+  if (
+    waterSusceptibility !== null &&
+    SRD_5_1_DAMAGE_TYPES.has(waterSusceptibility[3])
+  ) {
+    effects.push({
+      kind: 'recurringDamage',
+      amount: Number(waterSusceptibility[2]),
+      type: waterSusceptibility[3],
+      trigger: `every ${waterSusceptibility[1]} feet moved in water or gallon of water splashed on it`,
+    });
+  }
+  const corrosion =
+    /\bthe weapon takes a permanent and cumulative [\u2212\u2013-](\d+) penalty to damage rolls\. If its penalty drops to [\u2212\u2013-](\d+), the weapon is destroyed\b/.exec(
+      text,
+    );
+  if (corrosion !== null) {
+    effects.push({
+      kind: 'weaponCorrosion',
+      penaltyPerHit: -Number(corrosion[1]),
+      destroyedAtPenalty: -Number(corrosion[2]),
+    });
+  }
+  const reflect =
+    /\broll a d6\. On a 1 to (\d+), the [\w'\u2019 ]+ is unaffected\. On a (\d+), the [\w'\u2019 ]+ is unaffected and the effect is reflected\b/.exec(
+      text,
+    );
+  if (reflect !== null) {
+    effects.push({
+      kind: 'spellReflection',
+      roll: 'd6',
+      unaffectedOnMaximum: Number(reflect[1]),
+      reflectedOn: Number(reflect[2]),
+    });
+  }
+  const rejuvenationHours =
+    /\bgains a new body in (\d+) hours if its heart is intact\b/.exec(text);
+  if (rejuvenationHours !== null) {
+    effects.push({
+      kind: 'rejuvenation',
+      afterHours: Number(rejuvenationHours[1]),
+      condition: 'heart-intact',
+    });
+  }
+  const rejuvenationDice =
+    /\bcomes back to life with all its hit points in (\d+d\d+) days\b/.exec(
+      text,
+    );
+  if (rejuvenationDice !== null) {
+    effects.push({
+      kind: 'rejuvenation',
+      afterDaysDice: rejuvenationDice[1],
+    });
+  }
+  if (
+    /\bcan grant resistance to fire damage to anyone riding it\b/.test(text)
+  ) {
+    effects.push({
+      kind: 'damageResistance',
+      types: ['fire'],
+      target: 'rider',
+    });
+  }
+  if (
+    /\bThe swarm can occupy another creature['\u2019]s space and vice versa\b/.test(
+      text,
+    )
+  ) {
+    effects.push(
+      compact({
+        kind: 'swarm',
+        canOccupyOtherCreaturesSpace: true,
+        cannotRegainHitPoints:
+          /\bcan['\u2019]t regain hit points or gain temporary hit points\b/.test(
+            text,
+          )
+            ? true
+            : undefined,
+      }),
+    );
+  }
+  const appendage =
+    /\bEach (\w+) can be attacked \(AC (\d+); (\d+) hit points?; immunity to ([a-z, ]+? damage)\)/.exec(
+      text,
+    );
+  if (appendage !== null) {
+    effects.push({
+      kind: 'attackableAppendage',
+      appendage: appendage[1],
+      ac: Number(appendage[2]),
+      hitPoints: Number(appendage[3]),
+      immunities: appendage[4],
+    });
+  }
+  const spotDc =
+    /\btakes a successful DC (\d+) (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) check to spot\b/.exec(
+      text,
+    );
+  if (spotDc !== null) {
+    effects.push({
+      kind: 'hiddenFromView',
+      spotDc: Number(spotDc[1]),
+      ability: spotDc[2].toLowerCase(),
+      skill: spotDc[3].toLowerCase().replaceAll(' ', '-'),
+    });
+  }
+  const mimicry =
+    /\bcan tell they are imitations with a successful DC (\d+) (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) check\b/.exec(
+      text,
+    );
+  if (mimicry !== null) {
+    effects.push({
+      kind: 'mimicry',
+      discernDc: Number(mimicry[1]),
+      ability: mimicry[2].toLowerCase(),
+      skill: mimicry[3].toLowerCase().replaceAll(' ', '-'),
+    });
+  }
+  if (
+    /\bhas twenty-four tail spikes\. Used spikes regrow when the [\w'\u2019 ]+ finishes a long rest\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'limitedAmmunition',
+      count: 24,
+      replenish: 'long-rest',
+    });
+  }
+  const carrySize =
+    /\bis considered to be a (Large|Huge|Gargantuan) animal for the purpose of determining its carrying capacity\b/.exec(
+      text,
+    );
+  if (carrySize !== null) {
+    effects.push({
+      kind: 'carryingCapacitySize',
+      size: carrySize[1].toLowerCase(),
+    });
+  }
+  const spellStoring =
+    /\bcause the [\w'\u2019 ]+ to store one spell of (\d+)(?:st|nd|rd|th) level or lower\b/.exec(
+      text,
+    );
+  if (spellStoring !== null) {
+    effects.push({
+      kind: 'spellStoring',
+      maximumSpellLevel: Number(spellStoring[1]),
+    });
+  }
+  const mindImmunity =
+    /\bis immune to (scrying and to any effect that would sense its emotions[^.]*|any effect that would sense its emotions or read its thoughts[^.]*)\./.exec(
+      text,
+    );
+  if (mindImmunity !== null) {
+    effects.push({
+      kind: 'immunity',
+      to: mindImmunity[1].trim(),
+    });
   }
   // Triggered marker: the entry activates on a stated trigger rather than by
   // spending an action. Captures the trigger clause verbatim. Suppressed for
