@@ -33,6 +33,50 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'attackAndDamageBonus',
   'attackOrDamageBonus',
   'attackRollModifier',
+  'attackableAppendage',
+  'banishment',
+  'cannotWearOrCarry',
+  'carryingCapacitySize',
+  'climbAnywhere',
+  'dcIncrease',
+  'endsCurses',
+  'extraTurns',
+  'illusionDiscernment',
+  'jumpDistanceMultiplier',
+  'mirrorImages',
+  'movementCostMultiplier',
+  'naturalWeaponDamage',
+  'slowFall',
+  'stabilize',
+  'understandLanguages',
+  'unlock',
+  'walkOnLiquids',
+  'climbWithoutCheck',
+  'damageTransfer',
+  'earthGlide',
+  'enterHostileSpace',
+  'hoveringWeapon',
+  'illusoryDisguise',
+  'summonCreature',
+  'extraReactions',
+  'extraWeaponDamageDie',
+  'hiddenFromView',
+  'ignoreDifficultTerrain',
+  'ignoreMovementRestriction',
+  'limitedAmmunition',
+  'mimicry',
+  'moveThroughNarrowSpaces',
+  'moveUpTo',
+  'planeShift',
+  'recurringDamage',
+  'rejuvenation',
+  'seeInMagicalDarkness',
+  'spellReflection',
+  'spellStoring',
+  'swarm',
+  'teleport',
+  'tunneler',
+  'weaponCorrosion',
   'autoFailCheck',
   'autoFailSave',
   'abilitySubstitution',
@@ -1456,7 +1500,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   Record<string, (effect: Obj, path: string) => void>
 > = {
   abilitySubstitution: (effect, path) => {
-    reqAbility(effect, 'use', path);
+    // Shillelagh substitutes the caster's spellcasting ability rather than a
+    // named ability score.
+    if (effect.use !== 'spellcasting-ability') {
+      reqAbility(effect, 'use', path);
+    }
     reqAbility(effect, 'insteadOf', path);
     optStrArray(effect, 'for', path);
     optStr(effect, 'appliesTo', path);
@@ -1464,6 +1512,492 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   attackOrDamageBonus: (effect, path) => {
     reqAbility(effect, 'addAbilityModifier', path);
+  },
+  attackableAppendage: (effect, path) => {
+    reqStr(effect, 'appendage', path);
+    reqInt(effect, 'ac', path, 1);
+    reqInt(effect, 'hitPoints', path, 1);
+    reqStr(effect, 'immunities', path);
+    optInt(effect, 'maximumCount', path, 1);
+    optInt(effect, 'breakDc', path, 1);
+    optAbility(effect, 'breakAbility', path);
+    optBool(effect, 'regrowsNextTurn', path);
+  },
+  carryingCapacitySize: (effect, path) => {
+    reqEnum(
+      effect,
+      'size',
+      path,
+      new Set(['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan']),
+    );
+  },
+  breathes: (effect, path) => {
+    const environments = effect.environments;
+    if (
+      !Array.isArray(environments) ||
+      environments.length === 0 ||
+      !environments.every(
+        (environment) => environment === 'air' || environment === 'water',
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.environments must be a non-empty array of "air"/"water"`,
+      );
+    }
+    optBool(effect, 'only', path);
+  },
+  obscurement: (effect, path) => {
+    if (effect.level !== undefined) {
+      reqEnum(effect, 'level', path, new Set(['heavily', 'lightly']));
+    } else {
+      reqStr(effect, 'degree', path);
+    }
+    optStr(effect, 'source', path);
+    optStr(effect, 'context', path);
+    optStr(effect, 'subject', path);
+    optInt(effect, 'radiusFeet', path, 1);
+    optBool(effect, 'blocksDarkvision', path);
+  },
+  damageResistance: (effect, path) => {
+    const variants = [
+      effect.types,
+      effect.typeFrom,
+      effect.chooseOne,
+      effect.damage,
+    ].filter((variant) => variant !== undefined);
+    if (variants.length !== 1) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of types, typeFrom, chooseOne, or damage`,
+      );
+    }
+    const validTypesArray = (value: unknown): boolean =>
+      Array.isArray(value) &&
+      value.length > 0 &&
+      value.every(
+        (type) => typeof type === 'string' && SRD_5_1_DAMAGE_TYPES.has(type),
+      );
+    if (
+      effect.types !== undefined &&
+      effect.types !== 'all' &&
+      !validTypesArray(effect.types)
+    ) {
+      throw new RulesPackError(
+        `${path}.types must be "all" or a non-empty array of canonical damage types`,
+      );
+    }
+    if (effect.typeFrom !== undefined) {
+      reqStr(effect, 'typeFrom', path);
+    }
+    if (effect.chooseOne !== undefined && !validTypesArray(effect.chooseOne)) {
+      throw new RulesPackError(
+        `${path}.chooseOne must be a non-empty array of canonical damage types`,
+      );
+    }
+    if (effect.damage !== undefined && effect.damage !== 'all') {
+      throw new RulesPackError(`${path}.damage must be "all" when present`);
+    }
+    optBool(effect, 'nonmagicalOnly', path);
+    optStr(effect, 'target', path);
+    optStr(effect, 'subject', path);
+  },
+  banishment: (effect, path) => {
+    reqStr(effect, 'destination', path);
+    reqInt(effect, 'escapeDc', path, 1);
+    reqAbility(effect, 'escapeAbility', path);
+    reqEnum(
+      effect,
+      'escapeCost',
+      path,
+      new Set(['action', 'bonus-action', 'reaction']),
+    );
+  },
+  cannotWearOrCarry: markerOnly,
+  climbAnywhere: markerOnly,
+  climbWithoutCheck: (effect, path) => {
+    optStr(effect, 'surfaces', path);
+  },
+  dcIncrease: (effect, path) => {
+    reqInt(effect, 'amount', path, 1);
+    reqStr(effect, 'appliesTo', path);
+  },
+  endsCurses: markerOnly,
+  extraTurns: (effect, path) => {
+    reqDice(effect, 'turnsDice', path);
+  },
+  illusionDiscernment: (effect, path) => {
+    reqAbility(effect, 'ability', path);
+    reqStr(effect, 'skill', path);
+    reqEnum(effect, 'dc', path, new Set(['spell-save-dc']));
+    optEnum(
+      effect,
+      'cost',
+      path,
+      new Set(['action', 'bonus-action', 'reaction']),
+    );
+  },
+  jumpDistanceMultiplier: (effect, path) => {
+    reqInt(effect, 'multiplier', path, 2);
+  },
+  mirrorImages: (effect, path) => {
+    reqInt(effect, 'images', path, 1);
+    const thresholds = objArray(effect, 'redirectThresholds', path);
+    if (thresholds === undefined || thresholds.length === 0) {
+      throw new RulesPackError(
+        `${path}.redirectThresholds must be a non-empty array`,
+      );
+    }
+    thresholds.forEach((tier, i) => {
+      reqInt(tier, 'duplicates', `${path}.redirectThresholds[${i}]`, 1);
+      reqInt(tier, 'minimumRoll', `${path}.redirectThresholds[${i}]`, 1);
+    });
+    optStr(effect, 'duplicateAcFormula', path);
+  },
+  movementCostMultiplier: (effect, path) => {
+    reqInt(effect, 'feetPerFoot', path, 2);
+  },
+  naturalWeaponDamage: (effect, path) => {
+    reqDice(effect, 'dice', path);
+    const choice = effect.typeChoice;
+    if (
+      !Array.isArray(choice) ||
+      choice.length === 0 ||
+      !choice.every(
+        (type) => typeof type === 'string' && SRD_5_1_DAMAGE_TYPES.has(type),
+      )
+    ) {
+      throw new RulesPackError(
+        `${path}.typeChoice must be a non-empty array of canonical damage types`,
+      );
+    }
+    optInt(effect, 'attackAndDamageBonus', path, 1);
+    optBool(effect, 'magical', path);
+    optBool(effect, 'proficient', path);
+  },
+  slowFall: (effect, path) => {
+    reqInt(effect, 'descentFeetPerRound', path, 1);
+    optBool(effect, 'noFallingDamageOnLanding', path);
+  },
+  stabilize: (effect, path) => {
+    optStr(effect, 'target', path);
+  },
+  understandLanguages: (effect, path) => {
+    if (effect.spoken !== true) {
+      throw new RulesPackError(`${path}.spoken must be true`);
+    }
+    optBool(effect, 'written', path);
+    optBool(effect, 'speechUnderstood', path);
+  },
+  unlock: (effect, path) => {
+    optInt(effect, 'audibleRangeFeet', path, 1);
+    optInt(effect, 'suppressesArcaneLockMinutes', path, 1);
+  },
+  walkOnLiquids: (effect, path) => {
+    optInt(effect, 'surfacingFeetPerRound', path, 1);
+  },
+  damageTransfer: (effect, path) => {
+    reqEnum(effect, 'portion', path, new Set(['half']));
+    optStr(effect, 'from', path);
+    optInt(effect, 'rangeFeet', path, 1);
+  },
+  earthGlide: markerOnly,
+  enterHostileSpace: markerOnly,
+  hoveringWeapon: (effect, path) => {
+    reqStr(effect, 'weapon', path);
+    reqInt(effect, 'releaseRangeFeet', path, 1);
+    reqEnum(
+      effect,
+      'commandCost',
+      path,
+      new Set(['action', 'bonus-action', 'reaction']),
+    );
+    reqInt(effect, 'commandFlyFeet', path, 1);
+    reqStrArray(effect, 'commandOptions', path);
+  },
+  illusoryDisguise: (effect, path) => {
+    reqInt(effect, 'discernDc', path, 1);
+    reqAbility(effect, 'ability', path);
+    reqStr(effect, 'skill', path);
+    reqEnum(
+      effect,
+      'inspectionCost',
+      path,
+      new Set(['action', 'bonus-action', 'reaction']),
+    );
+    optEnum(
+      effect,
+      'endCost',
+      path,
+      new Set(['action', 'bonus-action', 'reaction']),
+    );
+  },
+  summonCreature: (effect, path) => {
+    reqStr(effect, 'creature', path);
+    reqInt(effect, 'rangeFeet', path, 1);
+    optStr(effect, 'target', path);
+    optInt(effect, 'maximumControlled', path, 1);
+  },
+  movementRestriction: (effect, path) => {
+    reqStr(effect, 'restriction', path);
+    optStr(effect, 'subject', path);
+    optStr(effect, 'target', path);
+    optStr(effect, 'endsBy', path);
+  },
+  triggeredEffect: (effect, path) => {
+    reqStr(effect, 'trigger', path);
+    optStr(effect, 'result', path);
+  },
+  extraReactions: (effect, path) => {
+    if ((effect.perTurn === undefined) === (effect.formula === undefined)) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of perTurn or formula`,
+      );
+    }
+    if (effect.perTurn !== undefined) {
+      reqInt(effect, 'perTurn', path, 1);
+    }
+    if (effect.formula !== undefined) {
+      reqStr(effect, 'formula', path);
+    }
+    optStr(effect, 'restrictedTo', path);
+  },
+  extraWeaponDamageDie: (effect, path) => {
+    reqInt(effect, 'extraDice', path, 1);
+  },
+  hiddenFromView: (effect, path) => {
+    reqInt(effect, 'spotDc', path, 1);
+    reqAbility(effect, 'ability', path);
+    reqStr(effect, 'skill', path);
+  },
+  ignoreDifficultTerrain: (effect, path) => {
+    reqStrArray(effect, 'terrain', path);
+  },
+  ignoreMovementRestriction: (effect, path) => {
+    reqStr(effect, 'source', path);
+  },
+  limitedAmmunition: (effect, path) => {
+    reqInt(effect, 'count', path, 1);
+    reqStr(effect, 'replenish', path);
+  },
+  mimicry: (effect, path) => {
+    reqInt(effect, 'discernDc', path, 1);
+    reqAbility(effect, 'ability', path);
+    reqStr(effect, 'skill', path);
+  },
+  moveThroughNarrowSpaces: (effect, path) => {
+    reqInt(effect, 'widthInches', path, 1);
+  },
+  moveUpTo: (effect, path) => {
+    reqEnum(effect, 'amount', path, new Set(['speed', 'half-speed']));
+    optBool(effect, 'withoutOpportunityAttacks', path);
+  },
+  planeShift: (effect, path) => {
+    reqStrArray(effect, 'planes', path);
+    // Blink's chance-gated shift: a die, a threshold, a trigger, and the
+    // return radius.
+    if (effect.roll !== undefined) {
+      const roll = reqStr(effect, 'roll', path);
+      if (!/^d\d+$/.test(roll)) {
+        throw new RulesPackError(
+          `${path}.roll must be a die (e.g. "d20"), got ${JSON.stringify(roll)}`,
+        );
+      }
+    }
+    optInt(effect, 'threshold', path, 1);
+    optStr(effect, 'trigger', path);
+    optInt(effect, 'returnRangeFeet', path, 1);
+  },
+  recurringDamage: (effect, path) => {
+    if ((effect.amount === undefined) === (effect.dice === undefined)) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of amount or dice`,
+      );
+    }
+    if (effect.amount !== undefined) {
+      reqInt(effect, 'amount', path, 1);
+    }
+    if (effect.dice !== undefined) {
+      reqDice(effect, 'dice', path);
+    }
+    if ((effect.type === undefined) === (effect.typeChoice === undefined)) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of type or typeChoice`,
+      );
+    }
+    if (effect.type !== undefined) {
+      const type = reqStr(effect, 'type', path);
+      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+        throw new RulesPackError(
+          `${path}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+        );
+      }
+    }
+    if (effect.typeChoice !== undefined) {
+      const choice = effect.typeChoice;
+      if (
+        !Array.isArray(choice) ||
+        choice.length === 0 ||
+        !choice.every(
+          (type) => typeof type === 'string' && SRD_5_1_DAMAGE_TYPES.has(type),
+        )
+      ) {
+        throw new RulesPackError(
+          `${path}.typeChoice must be a non-empty array of canonical damage types`,
+        );
+      }
+    }
+    reqStr(effect, 'trigger', path);
+  },
+  rejuvenation: (effect, path) => {
+    if (effect.afterHours === undefined && effect.afterDaysDice === undefined) {
+      throw new RulesPackError(
+        `${path} must carry afterHours or afterDaysDice`,
+      );
+    }
+    if (effect.afterHours !== undefined) {
+      reqInt(effect, 'afterHours', path, 1);
+    }
+    if (effect.afterDaysDice !== undefined) {
+      reqDice(effect, 'afterDaysDice', path);
+    }
+    optStr(effect, 'condition', path);
+  },
+  seeInMagicalDarkness: markerOnly,
+  spellReflection: (effect, path) => {
+    const roll = reqStr(effect, 'roll', path);
+    if (!/^d\d+$/.test(roll)) {
+      throw new RulesPackError(
+        `${path}.roll must be a die (e.g. "d6"), got ${JSON.stringify(roll)}`,
+      );
+    }
+    reqInt(effect, 'unaffectedOnMaximum', path, 1);
+    reqInt(effect, 'reflectedOn', path, 1);
+  },
+  spellStoring: (effect, path) => {
+    const level = reqInt(effect, 'maximumSpellLevel', path, 1);
+    if (level > 9) {
+      throw new RulesPackError(
+        `${path}.maximumSpellLevel must be <= 9, got ${level}`,
+      );
+    }
+    optInt(effect, 'capacity', path, 1);
+  },
+  swarm: (effect, path) => {
+    if (effect.canOccupyOtherCreaturesSpace !== true) {
+      throw new RulesPackError(
+        `${path}.canOccupyOtherCreaturesSpace must be true`,
+      );
+    }
+    optBool(effect, 'cannotRegainHitPoints', path);
+  },
+  teleport: (effect, path) => {
+    // Either a fixed distance (creature Teleport actions, Misty Step) or a
+    // named destination (Word of Recall, Teleportation Circle).
+    if (effect.distanceFeet === undefined && effect.destination === undefined) {
+      throw new RulesPackError(
+        `${path} must carry distanceFeet or destination`,
+      );
+    }
+    if (effect.distanceFeet !== undefined) {
+      reqInt(effect, 'distanceFeet', path, 1);
+    }
+    optStr(effect, 'destination', path);
+    optStr(effect, 'via', path);
+    optInt(effect, 'movementCostFeet', path, 1);
+  },
+  tunneler: (effect, path) => {
+    reqInt(effect, 'tunnelDiameterFeet', path, 1);
+  },
+  weaponCorrosion: (effect, path) => {
+    const perHit = reqInt(effect, 'penaltyPerHit', path);
+    const destroyedAt = reqInt(effect, 'destroyedAtPenalty', path);
+    if (perHit >= 0 || destroyedAt >= 0) {
+      throw new RulesPackError(
+        `${path} penaltyPerHit and destroyedAtPenalty must be negative integers`,
+      );
+    }
+    optBool(effect, 'ammunitionDestroyedOnHit', path);
+  },
+  multiattack: (effect, path) => {
+    const variants = [
+      effect.attacks,
+      effect.options,
+      effect.attacksFormula,
+      effect.attacksDice,
+    ].filter((variant) => variant !== undefined);
+    if (variants.length !== 1) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of attacks, options, attacksFormula, or attacksDice`,
+      );
+    }
+    if (effect.attacks !== undefined) {
+      reqInt(effect, 'attacks', path, 1);
+      const routine = objArray(effect, 'routine', path);
+      routine?.forEach((part, i) => {
+        reqInt(part, 'attacks', `${path}.routine[${i}]`, 1);
+        reqStr(part, 'attack', `${path}.routine[${i}]`);
+      });
+    }
+    if (effect.options !== undefined) {
+      const options = objArray(effect, 'options', path);
+      if (options === undefined || options.length === 0) {
+        throw new RulesPackError(`${path}.options must be a non-empty array`);
+      }
+      options.forEach((option, i) => {
+        reqInt(option, 'attacks', `${path}.options[${i}]`, 1);
+        reqEnum(
+          option,
+          'attackType',
+          `${path}.options[${i}]`,
+          new Set(['melee', 'ranged']),
+        );
+      });
+    }
+    if (effect.attacksFormula !== undefined) {
+      reqEnum(effect, 'attacksFormula', path, new Set(['one-per-head']));
+      optStr(effect, 'attackName', path);
+    }
+    if (effect.attacksDice !== undefined) {
+      reqDice(effect, 'attacksDice', path);
+    }
+  },
+  light: (effect, path) => {
+    // Continual Flame's brightness is defined only by analogy to a torch.
+    if (effect.equivalentTo !== undefined) {
+      reqEnum(effect, 'equivalentTo', path, new Set(['torch']));
+      return;
+    }
+    reqEnum(effect, 'level', path, new Set(['bright', 'dim']));
+    const fixed = effect.radiusFeet !== undefined;
+    const variable =
+      effect.radiusFeetMinimum !== undefined ||
+      effect.radiusFeetMaximum !== undefined;
+    if (fixed === variable) {
+      throw new RulesPackError(
+        `${path} must carry radiusFeet or a radiusFeetMinimum/radiusFeetMaximum pair`,
+      );
+    }
+    if (fixed) {
+      reqInt(effect, 'radiusFeet', path, 1);
+    } else {
+      reqInt(effect, 'radiusFeetMinimum', path, 1);
+      reqInt(effect, 'radiusFeetMaximum', path, 1);
+    }
+    optInt(effect, 'dimAdditionalFeet', path, 1);
+    optBool(effect, 'dimAdditionalFeetEqualsRadius', path);
+    optBool(effect, 'variable', path);
+    optStr(effect, 'condition', path);
+  },
+  sense: (effect, path) => {
+    reqStr(effect, 'sense', path);
+    optInt(effect, 'rangeFeet', path, 1);
+    optInt(effect, 'rangeMiles', path, 1);
+    optStr(effect, 'detects', path);
+  },
+  jumpDistance: (effect, path) => {
+    reqInt(effect, 'longJumpFeet', path, 1);
+    optInt(effect, 'highJumpFeet', path, 1);
+    optBool(effect, 'runningStartRequired', path);
+    optInt(effect, 'runningStartFeet', path, 1);
   },
   autoSucceedSave: (effect, path) => {
     reqStr(effect, 'targets', path);
@@ -1556,10 +2090,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     const value = effect.value;
     if (
       value !== 'current-speed' &&
+      value !== 'walking-speed' &&
       (typeof value !== 'number' || !Number.isInteger(value) || value < 0)
     ) {
       throw new RulesPackError(
-        `${path}.value must be "current-speed" or a non-negative integer, got ${JSON.stringify(value)}`,
+        `${path}.value must be "current-speed", "walking-speed", or a non-negative integer, got ${JSON.stringify(value)}`,
       );
     }
     optActionCost(effect, 'activation', path);
@@ -1705,8 +2240,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqStr(effect, 'trigger', path);
   },
   rollFloor: (effect, path) => {
-    reqInt(effect, 'rollOf', path, 1);
+    // Reliable Talent's "treat a roll of N or lower as M" carries rollOf;
+    // Glibness's "replace the number you roll with a 15" carries scope only.
     reqInt(effect, 'treatAs', path, 1);
+    optInt(effect, 'rollOf', path, 1);
+    optStr(effect, 'scope', path);
   },
   saveDcFormula: (effect, path) => {
     reqInt(effect, 'base', path, 1);

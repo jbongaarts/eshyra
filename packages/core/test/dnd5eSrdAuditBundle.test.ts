@@ -192,8 +192,11 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     // scaling. `area` is casting metadata (like duration) and does NOT
     // promote a spell into this bucket. The exact membership of the
     // metadata-only complement is pinned by ACCEPTED_METADATA_ONLY_SPELLS,
-    // so these counts are exact, not floors.
-    expect(spells.spellsWithDeterministicEffects).toBe(210);
+    // so these counts are exact, not floors. The eshyra-o9bd.18.7.9
+    // membership re-audit moved 56 spells with deterministic semantics
+    // (senses, teleports, resistances, action economy, stabilization, …)
+    // out of the metadata-only bucket: 210 → 266.
+    expect(spells.spellsWithDeterministicEffects).toBe(266);
     expect(spells.metadataOnlySpells).toBe(
       ACCEPTED_METADATA_ONLY_SPELLS.length,
     );

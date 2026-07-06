@@ -1,0 +1,607 @@
+import { describe, expect, it } from 'vitest';
+import { getBundledDnd5eSrdPack } from '../src/rules/bundledSrdPack.js';
+
+/**
+ * Committed-pack assertions for the eshyra-o9bd.18.7.9 membership
+ * corrections: deterministic creature entries and spells that PRs #396/#397
+ * accepted as prose/metadata-only now carry typed mechanics. These pin the
+ * exact structures of representative and high-risk corrections so a grammar
+ * regression cannot silently drop them back into the accepted buckets.
+ */
+
+type Entry = {
+  name: string;
+  text: string;
+  mechanics?: { effects?: unknown[] };
+};
+
+function creatureEntry(key: string, section: string, name: string): Entry {
+  const record = getBundledDnd5eSrdPack().records.find(
+    (candidate) => candidate.key === key,
+  );
+  expect(record, `${key} must exist`).toBeDefined();
+  const data = record?.data as Record<string, unknown>;
+  const entries =
+    section === 'legendaryActions'
+      ? ((data.legendaryActions as Record<string, unknown>).entries as Entry[])
+      : (data[section] as Entry[]);
+  const entry = entries.find((candidate) => candidate.name === name);
+  expect(entry, `${key}#${section}:${name} must exist`).toBeDefined();
+  return entry as Entry;
+}
+
+function spellEffects(key: string): unknown[] {
+  const record = getBundledDnd5eSrdPack().records.find(
+    (candidate) => candidate.key === key,
+  );
+  expect(record, `${key} must exist`).toBeDefined();
+  const mechanics = (record?.data as Record<string, unknown>).mechanics as {
+    effects?: unknown[];
+  };
+  expect(mechanics.effects, `${key} must carry typed effects`).toBeDefined();
+  return mechanics.effects as unknown[];
+}
+
+describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('Hydra Multiattack is a per-head formula, Medusa an either/or option set, Violet Fungus a dice count', () => {
+    expect(
+      creatureEntry('creature:hydra', 'actions', 'Multiattack').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'multiattack',
+        attacksFormula: 'one-per-head',
+        attackName: 'bite',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:medusa', 'actions', 'Multiattack').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'multiattack',
+        options: [
+          { attacks: 3, attackType: 'melee' },
+          { attacks: 2, attackType: 'ranged' },
+        ],
+      },
+    ]);
+    expect(
+      creatureEntry('creature:violet-fungus', 'actions', 'Multiattack')
+        .mechanics?.effects,
+    ).toEqual([{ kind: 'multiattack', attacksDice: '1d4' }]);
+  });
+
+  it('Marilith Multiattack carries the complete routine breakdown', () => {
+    expect(
+      creatureEntry('creature:marilith', 'actions', 'Multiattack').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'multiattack',
+        attacks: 7,
+        routine: [
+          { attacks: 6, attack: 'longswords' },
+          { attacks: 1, attack: 'tail' },
+        ],
+      },
+    ]);
+  });
+
+  it('Nimble Escape and Cunning Action are typed bonus-action option sets', () => {
+    expect(
+      creatureEntry('creature:goblin', 'traits', 'Nimble Escape').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'bonusAction', options: ['disengage', 'hide'] }]);
+    expect(
+      creatureEntry('creature:spy', 'traits', 'Cunning Action').mechanics
+        ?.effects,
+    ).toEqual([
+      { kind: 'bonusAction', options: ['dash', 'disengage', 'hide'] },
+    ]);
+  });
+
+  it('legendary Attack/Move/Teleport references are typed', () => {
+    expect(
+      creatureEntry('creature:tarrasque', 'legendaryActions', 'Attack')
+        .mechanics?.effects,
+    ).toEqual([{ kind: 'makeAttack', options: ['claw', 'tail'] }]);
+    expect(
+      creatureEntry('creature:tarrasque', 'legendaryActions', 'Move').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'moveUpTo', amount: 'half-speed' }]);
+    expect(
+      creatureEntry('creature:vampire', 'legendaryActions', 'Move').mechanics
+        ?.effects,
+    ).toEqual([
+      { kind: 'moveUpTo', amount: 'speed', withoutOpportunityAttacks: true },
+    ]);
+    expect(
+      creatureEntry('creature:balor', 'actions', 'Teleport').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'teleport', distanceFeet: 120 }]);
+  });
+
+  it('Ice Walk keeps BOTH the climb rule and the difficult-terrain rule (SRD "extra moment" typo)', () => {
+    expect(
+      creatureEntry('creature:adult-white-dragon', 'traits', 'Ice Walk')
+        .mechanics?.effects,
+    ).toEqual([
+      { kind: 'climbWithoutCheck', surfaces: 'icy' },
+      { kind: 'ignoreDifficultTerrain', terrain: ['ice', 'snow'] },
+    ]);
+  });
+
+  it('Reflective Carapace, Corrode Metal, and Grasping Tendrils carry complete structures', () => {
+    expect(
+      creatureEntry('creature:tarrasque', 'traits', 'Reflective Carapace')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'spellReflection',
+        roll: 'd6',
+        unaffectedOnMaximum: 5,
+        reflectedOn: 6,
+      },
+    ]);
+    expect(
+      creatureEntry('creature:gray-ooze', 'traits', 'Corrode Metal').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'weaponCorrosion',
+        penaltyPerHit: -1,
+        destroyedAtPenalty: -5,
+        ammunitionDestroyedOnHit: true,
+      },
+    ]);
+    expect(
+      creatureEntry('creature:roper', 'traits', 'Grasping Tendrils').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'attackableAppendage',
+        appendage: 'tendril',
+        ac: 20,
+        hitPoints: 10,
+        immunities: 'poison and psychic damage',
+        maximumCount: 6,
+        breakDc: 15,
+        breakAbility: 'strength',
+        regrowsNextTurn: true,
+      },
+    ]);
+  });
+
+  it('movement traits are typed: Spider Climb, Web Walker, Amorphous, Earth Glide, Tunneler, Tree Stride', () => {
+    expect(
+      creatureEntry('creature:giant-spider', 'traits', 'Spider Climb')
+        .mechanics?.effects,
+    ).toEqual([{ kind: 'climbWithoutCheck' }]);
+    expect(
+      creatureEntry('creature:giant-spider', 'traits', 'Web Walker').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'ignoreMovementRestriction', source: 'webbing' }]);
+    expect(
+      creatureEntry('creature:black-pudding', 'traits', 'Amorphous').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'moveThroughNarrowSpaces', widthInches: 1 }]);
+    expect(
+      creatureEntry('creature:earth-elemental', 'traits', 'Earth Glide')
+        .mechanics?.effects,
+    ).toEqual([{ kind: 'earthGlide' }]);
+    expect(
+      creatureEntry('creature:purple-worm', 'traits', 'Tunneler').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'tunneler', tunnelDiameterFeet: 10 }]);
+    expect(
+      creatureEntry('creature:dryad', 'traits', 'Tree Stride').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'teleport',
+        via: 'living-trees',
+        distanceFeet: 60,
+        movementCostFeet: 10,
+      },
+    ]);
+    expect(
+      creatureEntry('creature:air-elemental', 'traits', 'Air Form').mechanics
+        ?.effects,
+    ).toEqual([
+      { kind: 'moveThroughNarrowSpaces', widthInches: 1 },
+      { kind: 'enterHostileSpace' },
+    ]);
+  });
+
+  it('light and sense traits are typed, including the hyphen-split Illumination texts', () => {
+    expect(
+      creatureEntry('creature:nightmare', 'traits', 'Illumination').mechanics
+        ?.effects,
+    ).toEqual([
+      { kind: 'light', level: 'bright', radiusFeet: 10, dimAdditionalFeet: 10 },
+    ]);
+    expect(
+      creatureEntry('creature:fire-elemental', 'traits', 'Illumination')
+        .mechanics?.effects,
+    ).toEqual([
+      { kind: 'light', level: 'bright', radiusFeet: 30, dimAdditionalFeet: 30 },
+    ]);
+    expect(
+      creatureEntry('creature:will-o-wisp', 'traits', 'Variable Illumination')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'light',
+        level: 'bright',
+        radiusFeetMinimum: 5,
+        radiusFeetMaximum: 20,
+        dimAdditionalFeetEqualsRadius: true,
+        variable: true,
+      },
+      { kind: 'bonusAction', options: ['alter-light-radius'] },
+    ]);
+    expect(
+      creatureEntry('creature:imp', 'traits', 'Devil’s Sight').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'seeInMagicalDarkness' }]);
+    expect(
+      creatureEntry('creature:ghost', 'traits', 'Ethereal Sight').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'sense', sense: 'ethereal-sight', rangeFeet: 60 }]);
+    expect(
+      creatureEntry('creature:giant-spider', 'traits', 'Web Sense').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'sense', sense: 'web-sense' }]);
+  });
+
+  it('deterministic defense traits are typed: Damage Transfer, Bound, Harmed by Running Water, Swarm', () => {
+    expect(
+      creatureEntry('creature:cloaker', 'traits', 'Damage Transfer').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'damageTransfer', portion: 'half' }]);
+    expect(
+      creatureEntry('creature:shield-guardian', 'traits', 'Bound').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'damageTransfer',
+        portion: 'half',
+        from: 'amulet-wearer',
+        rangeFeet: 60,
+      },
+      { kind: 'sense', sense: 'bound-amulet-location' },
+    ]);
+    expect(
+      creatureEntry('creature:vampire', 'traits', 'Harmed by Running Water')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'recurringDamage',
+        amount: 20,
+        type: 'acid',
+        trigger: 'ends-turn-in-running-water',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:swarm-of-rats', 'traits', 'Swarm').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'swarm',
+        canOccupyOtherCreaturesSpace: true,
+        cannotRegainHitPoints: true,
+      },
+    ]);
+  });
+
+  it('re-audited action entries are typed: Read Thoughts, Illusory Appearance, Flying Sword, Create Specter', () => {
+    const readThoughts = creatureEntry(
+      'creature:doppelganger',
+      'actions',
+      'Read Thoughts',
+    ).mechanics?.effects as Array<Record<string, unknown>>;
+    expect(readThoughts[0]).toEqual({
+      kind: 'sense',
+      sense: 'read-surface-thoughts',
+      rangeFeet: 60,
+    });
+    expect(
+      readThoughts.filter((e) => e.kind === 'abilityCheckModifier'),
+    ).toHaveLength(4);
+    expect(
+      creatureEntry('creature:green-hag', 'actions', 'Illusory Appearance')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'illusoryDisguise',
+        discernDc: 20,
+        ability: 'intelligence',
+        skill: 'investigation',
+        inspectionCost: 'action',
+        endCost: 'bonus-action',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:solar', 'actions', 'Flying Sword').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'hoveringWeapon',
+        weapon: 'greatsword',
+        releaseRangeFeet: 5,
+        commandCost: 'bonus-action',
+        commandFlyFeet: 50,
+        commandOptions: ['make-one-attack', 'return-to-hand'],
+      },
+    ]);
+    expect(
+      creatureEntry('creature:wraith', 'actions', 'Create Specter').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'summonCreature',
+        creature: 'specter',
+        rangeFeet: 10,
+        target: 'humanoid dead no longer than 1 minute that died violently',
+        maximumControlled: 7,
+      },
+    ]);
+  });
+
+  it('remaining deterministic traits: Inscrutable, Transparent, Brute, Mimicry, Rejuvenation, Spell Storing, Forbiddance, Ephemeral', () => {
+    const inscrutable = creatureEntry(
+      'creature:androsphinx',
+      'traits',
+      'Inscrutable',
+    ).mechanics?.effects as Array<Record<string, unknown>>;
+    expect(inscrutable.map((e) => e.kind)).toEqual([
+      'immunity',
+      'abilityCheckModifier',
+    ]);
+    const transparent = creatureEntry(
+      'creature:gelatinous-cube',
+      'traits',
+      'Transparent',
+    ).mechanics?.effects as Array<Record<string, unknown>>;
+    expect(transparent[0]).toEqual({
+      kind: 'hiddenFromView',
+      spotDc: 15,
+      ability: 'wisdom',
+      skill: 'perception',
+    });
+    expect(
+      creatureEntry('creature:bugbear', 'traits', 'Brute').mechanics?.effects,
+    ).toEqual([{ kind: 'extraWeaponDamageDie', extraDice: 1 }]);
+    expect(
+      creatureEntry('creature:raven', 'traits', 'Mimicry').mechanics?.effects,
+    ).toEqual([
+      { kind: 'mimicry', discernDc: 10, ability: 'wisdom', skill: 'insight' },
+    ]);
+    expect(
+      creatureEntry('creature:mummy-lord', 'traits', 'Rejuvenation').mechanics
+        ?.effects,
+    ).toEqual([
+      { kind: 'rejuvenation', afterHours: 24, condition: 'heart-intact' },
+    ]);
+    expect(
+      creatureEntry('creature:shield-guardian', 'traits', 'Spell Storing')
+        .mechanics?.effects,
+    ).toEqual([{ kind: 'spellStoring', maximumSpellLevel: 4, capacity: 1 }]);
+    expect(
+      creatureEntry('creature:vampire', 'traits', 'Forbiddance').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'movementRestriction',
+        restriction: 'cannot-enter-residence-without-invitation',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:will-o-wisp', 'traits', 'Ephemeral').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'cannotWearOrCarry' }]);
+    expect(
+      creatureEntry('creature:hydra', 'traits', 'Reactive Heads').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'extraReactions',
+        formula: 'one-per-head-beyond-one',
+        restrictedTo: 'opportunity-attacks',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:marilith', 'traits', 'Reactive').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'extraReactions', perTurn: 1 }]);
+    expect(
+      creatureEntry('creature:mule', 'traits', 'Beast of Burden').mechanics
+        ?.effects,
+    ).toEqual([{ kind: 'carryingCapacitySize', size: 'large' }]);
+    expect(
+      creatureEntry('creature:manticore', 'traits', 'Tail Spike Regrowth')
+        .mechanics?.effects,
+    ).toEqual([
+      { kind: 'limitedAmmunition', count: 24, replenish: 'long-rest' },
+    ]);
+  });
+});
+
+describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
+  it('Jump and Spare the Dying carry their deterministic semantics', () => {
+    expect(spellEffects('spell:jump')).toEqual([
+      { kind: 'jumpDistanceMultiplier', multiplier: 3 },
+    ]);
+    expect(spellEffects('spell:spare-the-dying')).toEqual([
+      { kind: 'stabilize', target: 'living-creature-at-0-hit-points' },
+    ]);
+  });
+
+  it('resistance spells: choose-one and nonmagical-only shapes', () => {
+    expect(spellEffects('spell:protection-from-energy')).toEqual([
+      {
+        kind: 'damageResistance',
+        chooseOne: ['acid', 'cold', 'fire', 'lightning', 'thunder'],
+      },
+    ]);
+    expect(spellEffects('spell:stoneskin')).toEqual([
+      {
+        kind: 'damageResistance',
+        types: ['bludgeoning', 'piercing', 'slashing'],
+        nonmagicalOnly: true,
+      },
+    ]);
+  });
+
+  it('movement spells: teleports, slow fall, liquid walking, climbing, breathing', () => {
+    expect(spellEffects('spell:misty-step')).toEqual([
+      { kind: 'teleport', distanceFeet: 30 },
+    ]);
+    expect(spellEffects('spell:word-of-recall')).toEqual([
+      { kind: 'teleport', destination: 'designated-sanctuary' },
+    ]);
+    expect(spellEffects('spell:tree-stride')).toEqual([
+      { kind: 'teleport', via: 'trees', distanceFeet: 500, movementCostFeet: 5 },
+    ]);
+    expect(spellEffects('spell:feather-fall')).toEqual([
+      {
+        kind: 'slowFall',
+        descentFeetPerRound: 60,
+        noFallingDamageOnLanding: true,
+      },
+    ]);
+    expect(spellEffects('spell:water-walk')).toEqual([
+      { kind: 'walkOnLiquids', surfacingFeetPerRound: 60 },
+    ]);
+    expect(spellEffects('spell:spider-climb')).toEqual([
+      { kind: 'climbAnywhere' },
+      { kind: 'speedSet', mode: 'climb', value: 'walking-speed' },
+    ]);
+    expect(spellEffects('spell:water-breathing')).toEqual([
+      { kind: 'breathes', environments: ['air', 'water'] },
+    ]);
+    expect(spellEffects('spell:expeditious-retreat')).toEqual([
+      { kind: 'bonusAction', options: ['dash'], frequency: 'each-turn' },
+    ]);
+  });
+
+  it('sense spells carry ranges: detect magic, locate creature, truesight', () => {
+    expect(spellEffects('spell:detect-magic')).toEqual([
+      { kind: 'sense', sense: 'detect-magic', rangeFeet: 30 },
+    ]);
+    expect(spellEffects('spell:locate-creature')).toEqual([
+      { kind: 'sense', sense: 'locate-creature', rangeFeet: 1000 },
+    ]);
+    expect(spellEffects('spell:locate-animals-or-plants')).toEqual([
+      { kind: 'sense', sense: 'locate-named-beast-or-plant', rangeMiles: 5 },
+    ]);
+    expect(spellEffects('spell:true-seeing')).toEqual([
+      { kind: 'sense', sense: 'truesight', rangeFeet: 120 },
+    ]);
+    expect(spellEffects('spell:comprehend-languages')).toEqual([
+      { kind: 'understandLanguages', spoken: true, written: true },
+    ]);
+    expect(spellEffects('spell:tongues')).toEqual([
+      { kind: 'understandLanguages', spoken: true, speechUnderstood: true },
+    ]);
+  });
+
+  it('weapon-modification and numeric spells: Shillelagh, Arcane Lock, Glibness, Mirror Image, Time Stop', () => {
+    expect(spellEffects('spell:shillelagh')).toEqual([
+      {
+        kind: 'abilitySubstitution',
+        use: 'spellcasting-ability',
+        insteadOf: 'strength',
+        for: ['attack-rolls', 'damage-rolls'],
+        appliesTo: 'melee attacks using that weapon',
+      },
+      { kind: 'damageDieReplacement', die: 'd8', appliesTo: 'that weapon' },
+      { kind: 'weaponAttacksMagical', scope: 'weapon-attacks' },
+    ]);
+    expect(spellEffects('spell:arcane-lock')).toEqual([
+      { kind: 'dcIncrease', amount: 10, appliesTo: 'break-or-pick-locks' },
+    ]);
+    expect(spellEffects('spell:glibness')).toEqual([
+      { kind: 'rollFloor', treatAs: 15, scope: 'charisma-checks' },
+      {
+        kind: 'immunity',
+        to: 'magical lie detection (always indicates truthful)',
+      },
+    ]);
+    expect(spellEffects('spell:mirror-image')).toEqual([
+      {
+        kind: 'mirrorImages',
+        images: 3,
+        redirectThresholds: [
+          { duplicates: 3, minimumRoll: 6 },
+          { duplicates: 2, minimumRoll: 8 },
+          { duplicates: 1, minimumRoll: 11 },
+        ],
+        duplicateAcFormula: '10 + your Dexterity modifier',
+      },
+    ]);
+    expect(spellEffects('spell:time-stop')).toEqual([
+      { kind: 'extraTurns', turnsDice: '1d4 + 1' },
+    ]);
+    expect(spellEffects('spell:maze')).toEqual([
+      {
+        kind: 'banishment',
+        destination: 'labyrinthine-demiplane',
+        escapeDc: 20,
+        escapeAbility: 'intelligence',
+        escapeCost: 'action',
+      },
+    ]);
+    expect(spellEffects('spell:blink')).toEqual([
+      {
+        kind: 'planeShift',
+        planes: ['material', 'ethereal'],
+        roll: 'd20',
+        threshold: 11,
+        trigger: 'end-of-each-of-your-turns',
+        returnRangeFeet: 10,
+      },
+    ]);
+    expect(spellEffects('spell:forbiddance')).toEqual([
+      {
+        kind: 'movementRestriction',
+        restriction: 'no-teleportation-or-planar-travel-into-area',
+        subject: 'all-creatures',
+      },
+      {
+        kind: 'recurringDamage',
+        dice: '5d10',
+        typeChoice: ['radiant', 'necrotic'],
+        trigger:
+          'a chosen creature type enters the area for the first time on a turn or starts its turn there',
+      },
+    ]);
+  });
+
+  it('condition-relation corrections: Exhaustion is source-correct for hazards and Greater Restoration', () => {
+    const pack = getBundledDnd5eSrdPack();
+    const conditionsOf = (key: string) =>
+      (
+        (pack.records.find((r) => r.key === key)?.data as Record<
+          string,
+          unknown
+        >).mechanics as Record<string, unknown>
+      ).conditions;
+    // "The infected creature gains one level of exhaustion" — applies.
+    expect(conditionsOf('hazard:cackle-fever')).toEqual([
+      { condition: 'exhaustion', relation: 'applies' },
+      { condition: 'incapacitated', relation: 'applies' },
+    ]);
+    expect(conditionsOf('hazard:sewer-plague')).toEqual([
+      { condition: 'exhaustion', relation: 'applies' },
+    ]);
+    // "reduce the target's exhaustion level by one, or end one of the
+    // following effects … charmed or petrified" — removes, not mentions.
+    expect(conditionsOf('spell:greater-restoration')).toEqual([
+      { condition: 'charmed', relation: 'removes' },
+      { condition: 'exhaustion', relation: 'removes' },
+      { condition: 'petrified', relation: 'removes' },
+    ]);
+  });
+});

@@ -340,4 +340,468 @@ describe('mechanics effect payload contracts', () => {
       }),
     ).toThrow(/prerequisite/);
   });
+
+  it('accepts the emitted shapes of the eshyra-o9bd.18.7.9 corrective kinds', () => {
+    const emitted: Record<string, unknown>[] = [
+      { kind: 'multiattack', attacksFormula: 'one-per-head', attackName: 'bite' },
+      { kind: 'multiattack', attacksDice: '1d4' },
+      {
+        kind: 'multiattack',
+        options: [
+          { attacks: 3, attackType: 'melee' },
+          { attacks: 2, attackType: 'ranged' },
+        ],
+      },
+      {
+        kind: 'multiattack',
+        attacks: 7,
+        routine: [
+          { attacks: 6, attack: 'longswords' },
+          { attacks: 1, attack: 'tail' },
+        ],
+      },
+      { kind: 'extraReactions', perTurn: 1 },
+      {
+        kind: 'extraReactions',
+        formula: 'one-per-head-beyond-one',
+        restrictedTo: 'opportunity-attacks',
+      },
+      { kind: 'moveUpTo', amount: 'half-speed' },
+      { kind: 'moveUpTo', amount: 'speed', withoutOpportunityAttacks: true },
+      { kind: 'climbWithoutCheck' },
+      { kind: 'climbWithoutCheck', surfaces: 'icy' },
+      { kind: 'ignoreDifficultTerrain', terrain: ['ice', 'snow'] },
+      { kind: 'ignoreMovementRestriction', source: 'webbing' },
+      { kind: 'moveThroughNarrowSpaces', widthInches: 1 },
+      { kind: 'earthGlide' },
+      { kind: 'enterHostileSpace' },
+      { kind: 'tunneler', tunnelDiameterFeet: 10 },
+      { kind: 'teleport', distanceFeet: 120 },
+      { kind: 'teleport', destination: 'designated-sanctuary' },
+      {
+        kind: 'teleport',
+        via: 'trees',
+        distanceFeet: 500,
+        movementCostFeet: 5,
+      },
+      { kind: 'planeShift', planes: ['material', 'ethereal'] },
+      {
+        kind: 'planeShift',
+        planes: ['material', 'ethereal'],
+        roll: 'd20',
+        threshold: 11,
+        trigger: 'end-of-each-of-your-turns',
+        returnRangeFeet: 10,
+      },
+      { kind: 'seeInMagicalDarkness' },
+      { kind: 'sense', sense: 'web-sense' },
+      { kind: 'sense', sense: 'locate-named-beast-or-plant', rangeMiles: 5 },
+      { kind: 'extraWeaponDamageDie', extraDice: 1 },
+      { kind: 'damageTransfer', portion: 'half' },
+      {
+        kind: 'damageTransfer',
+        portion: 'half',
+        from: 'amulet-wearer',
+        rangeFeet: 60,
+      },
+      {
+        kind: 'recurringDamage',
+        amount: 20,
+        type: 'acid',
+        trigger: 'ends-turn-in-running-water',
+      },
+      {
+        kind: 'recurringDamage',
+        dice: '5d10',
+        typeChoice: ['radiant', 'necrotic'],
+        trigger: 'enters the area',
+      },
+      {
+        kind: 'weaponCorrosion',
+        penaltyPerHit: -1,
+        destroyedAtPenalty: -5,
+        ammunitionDestroyedOnHit: true,
+      },
+      {
+        kind: 'spellReflection',
+        roll: 'd6',
+        unaffectedOnMaximum: 5,
+        reflectedOn: 6,
+      },
+      { kind: 'rejuvenation', afterHours: 24, condition: 'heart-intact' },
+      { kind: 'rejuvenation', afterDaysDice: '1d10' },
+      {
+        kind: 'swarm',
+        canOccupyOtherCreaturesSpace: true,
+        cannotRegainHitPoints: true,
+      },
+      {
+        kind: 'attackableAppendage',
+        appendage: 'tendril',
+        ac: 20,
+        hitPoints: 10,
+        immunities: 'poison and psychic damage',
+        maximumCount: 6,
+        breakDc: 15,
+        breakAbility: 'strength',
+        regrowsNextTurn: true,
+      },
+      { kind: 'hiddenFromView', spotDc: 15, ability: 'wisdom', skill: 'perception' },
+      { kind: 'mimicry', discernDc: 10, ability: 'wisdom', skill: 'insight' },
+      { kind: 'limitedAmmunition', count: 24, replenish: 'long-rest' },
+      { kind: 'carryingCapacitySize', size: 'large' },
+      { kind: 'spellStoring', maximumSpellLevel: 4, capacity: 1 },
+      {
+        kind: 'illusoryDisguise',
+        discernDc: 20,
+        ability: 'intelligence',
+        skill: 'investigation',
+        inspectionCost: 'action',
+        endCost: 'bonus-action',
+      },
+      {
+        kind: 'hoveringWeapon',
+        weapon: 'greatsword',
+        releaseRangeFeet: 5,
+        commandCost: 'bonus-action',
+        commandFlyFeet: 50,
+        commandOptions: ['make-one-attack', 'return-to-hand'],
+      },
+      {
+        kind: 'summonCreature',
+        creature: 'specter',
+        rangeFeet: 10,
+        maximumControlled: 7,
+      },
+      { kind: 'cannotWearOrCarry' },
+      {
+        kind: 'movementRestriction',
+        restriction: 'cannot-enter-residence-without-invitation',
+      },
+      { kind: 'triggeredEffect', trigger: 'If it dies' },
+      {
+        kind: 'triggeredEffect',
+        trigger: 'a creature enters its space while unaware of it',
+        result: 'that creature is surprised',
+      },
+      { kind: 'jumpDistanceMultiplier', multiplier: 3 },
+      { kind: 'stabilize', target: 'living-creature-at-0-hit-points' },
+      { kind: 'slowFall', descentFeetPerRound: 60, noFallingDamageOnLanding: true },
+      { kind: 'walkOnLiquids', surfacingFeetPerRound: 60 },
+      { kind: 'climbAnywhere' },
+      { kind: 'understandLanguages', spoken: true, written: true },
+      { kind: 'unlock', audibleRangeFeet: 300, suppressesArcaneLockMinutes: 10 },
+      { kind: 'dcIncrease', amount: 10, appliesTo: 'break-or-pick-locks' },
+      { kind: 'endsCurses' },
+      { kind: 'extraTurns', turnsDice: '1d4 + 1' },
+      {
+        kind: 'banishment',
+        destination: 'labyrinthine-demiplane',
+        escapeDc: 20,
+        escapeAbility: 'intelligence',
+        escapeCost: 'action',
+      },
+      {
+        kind: 'mirrorImages',
+        images: 3,
+        redirectThresholds: [
+          { duplicates: 3, minimumRoll: 6 },
+          { duplicates: 2, minimumRoll: 8 },
+          { duplicates: 1, minimumRoll: 11 },
+        ],
+        duplicateAcFormula: '10 + your Dexterity modifier',
+      },
+      { kind: 'movementCostMultiplier', feetPerFoot: 4 },
+      {
+        kind: 'naturalWeaponDamage',
+        dice: '1d6',
+        typeChoice: ['bludgeoning', 'piercing', 'slashing'],
+        attackAndDamageBonus: 1,
+        magical: true,
+        proficient: true,
+      },
+      { kind: 'breathes', environments: ['air', 'water'] },
+      {
+        kind: 'obscurement',
+        level: 'heavily',
+        source: 'magical-darkness',
+        radiusFeet: 15,
+        blocksDarkvision: true,
+      },
+      {
+        kind: 'damageResistance',
+        chooseOne: ['acid', 'cold', 'fire', 'lightning', 'thunder'],
+      },
+      {
+        kind: 'damageResistance',
+        types: ['bludgeoning', 'piercing', 'slashing'],
+        nonmagicalOnly: true,
+      },
+      { kind: 'light', equivalentTo: 'torch' },
+      { kind: 'rollFloor', treatAs: 15, scope: 'charisma-checks' },
+      {
+        kind: 'abilitySubstitution',
+        use: 'spellcasting-ability',
+        insteadOf: 'strength',
+      },
+      {
+        kind: 'illusionDiscernment',
+        ability: 'intelligence',
+        skill: 'investigation',
+        dc: 'spell-save-dc',
+        cost: 'action',
+      },
+      { kind: 'speedSet', mode: 'swim', value: 'walking-speed' },
+    ];
+    for (const effect of emitted) {
+      expect(() => validate(effect), JSON.stringify(effect)).not.toThrow();
+    }
+  });
+
+  it('rejects malformed payloads for the eshyra-o9bd.18.7.9 corrective kinds', () => {
+    expect(() => validate({ kind: 'multiattack' })).toThrow(
+      /exactly one of attacks, options, attacksFormula, or attacksDice/,
+    );
+    expect(() =>
+      validate({ kind: 'multiattack', attacks: 2, attacksDice: '1d4' }),
+    ).toThrow(/exactly one/);
+    expect(() =>
+      validate({ kind: 'multiattack', attacksFormula: 'one-per-tentacle' }),
+    ).toThrow(/attacksFormula/);
+    expect(() =>
+      validate({
+        kind: 'multiattack',
+        attacks: 7,
+        routine: [{ attacks: 6 }],
+      }),
+    ).toThrow(/routine\[0\]\.attack/);
+    expect(() =>
+      validate({
+        kind: 'multiattack',
+        options: [{ attacks: 3, attackType: 'psychic' }],
+      }),
+    ).toThrow(/attackType/);
+    expect(() => validate({ kind: 'extraReactions' })).toThrow(
+      /exactly one of perTurn or formula/,
+    );
+    expect(() => validate({ kind: 'moveUpTo', amount: 'double-speed' })).toThrow(
+      /amount/,
+    );
+    expect(() => validate({ kind: 'earthGlide', speed: 30 })).toThrow(
+      /marker-only/,
+    );
+    expect(() => validate({ kind: 'enterHostileSpace', size: 'Tiny' })).toThrow(
+      /marker-only/,
+    );
+    expect(() => validate({ kind: 'teleport' })).toThrow(
+      /distanceFeet or destination/,
+    );
+    expect(() => validate({ kind: 'teleport', distanceFeet: 0 })).toThrow(
+      /distanceFeet/,
+    );
+    expect(() =>
+      validate({ kind: 'planeShift', planes: [] }),
+    ).toThrow(/planes/);
+    expect(() =>
+      validate({
+        kind: 'planeShift',
+        planes: ['material', 'ethereal'],
+        roll: 'twenty-sider',
+      }),
+    ).toThrow(/roll must be a die/);
+    expect(() =>
+      validate({ kind: 'recurringDamage', amount: 20, trigger: 't' }),
+    ).toThrow(/type or typeChoice/);
+    expect(() =>
+      validate({
+        kind: 'recurringDamage',
+        amount: 20,
+        dice: '5d10',
+        type: 'acid',
+        trigger: 't',
+      }),
+    ).toThrow(/amount or dice/);
+    expect(() =>
+      validate({
+        kind: 'recurringDamage',
+        dice: '5d10',
+        typeChoice: ['radiant', 'holy'],
+        trigger: 't',
+      }),
+    ).toThrow(/typeChoice/);
+    expect(() =>
+      validate({
+        kind: 'weaponCorrosion',
+        penaltyPerHit: 1,
+        destroyedAtPenalty: -5,
+      }),
+    ).toThrow(/negative/);
+    expect(() =>
+      validate({ kind: 'spellReflection', roll: 'd6', unaffectedOnMaximum: 5 }),
+    ).toThrow(/reflectedOn/);
+    expect(() => validate({ kind: 'rejuvenation' })).toThrow(
+      /afterHours or afterDaysDice/,
+    );
+    expect(() =>
+      validate({ kind: 'swarm', canOccupyOtherCreaturesSpace: false }),
+    ).toThrow(/canOccupyOtherCreaturesSpace/);
+    expect(() =>
+      validate({
+        kind: 'attackableAppendage',
+        appendage: 'tendril',
+        ac: 20,
+        hitPoints: 10,
+        immunities: 'poison',
+        breakAbility: 'grit',
+      }),
+    ).toThrow(/ability name/);
+    expect(() =>
+      validate({ kind: 'carryingCapacitySize', size: 'colossal' }),
+    ).toThrow(/size/);
+    expect(() =>
+      validate({ kind: 'spellStoring', maximumSpellLevel: 10 }),
+    ).toThrow(/<= 9/);
+    expect(() =>
+      validate({
+        kind: 'illusoryDisguise',
+        discernDc: 20,
+        ability: 'intelligence',
+        skill: 'investigation',
+        inspectionCost: 'free',
+      }),
+    ).toThrow(/inspectionCost/);
+    expect(() =>
+      validate({
+        kind: 'hoveringWeapon',
+        weapon: 'greatsword',
+        releaseRangeFeet: 5,
+        commandCost: 'bonus-action',
+        commandFlyFeet: 50,
+      }),
+    ).toThrow(/commandOptions/);
+    expect(() =>
+      validate({ kind: 'summonCreature', creature: 'specter' }),
+    ).toThrow(/rangeFeet/);
+    expect(() => validate({ kind: 'cannotWearOrCarry', weight: 0 })).toThrow(
+      /marker-only/,
+    );
+    expect(() => validate({ kind: 'movementRestriction' })).toThrow(
+      /restriction/,
+    );
+    expect(() => validate({ kind: 'triggeredEffect', result: 'r' })).toThrow(
+      /trigger/,
+    );
+    expect(() =>
+      validate({ kind: 'jumpDistanceMultiplier', multiplier: 1 }),
+    ).toThrow(/multiplier/);
+    expect(() =>
+      validate({ kind: 'slowFall', noFallingDamageOnLanding: true }),
+    ).toThrow(/descentFeetPerRound/);
+    expect(() => validate({ kind: 'climbAnywhere', speed: 30 })).toThrow(
+      /marker-only/,
+    );
+    expect(() =>
+      validate({ kind: 'understandLanguages', written: true }),
+    ).toThrow(/spoken/);
+    expect(() => validate({ kind: 'endsCurses', scope: 'all' })).toThrow(
+      /marker-only/,
+    );
+    expect(() => validate({ kind: 'extraTurns', turnsDice: 'several' })).toThrow(
+      /dice expression/,
+    );
+    expect(() =>
+      validate({
+        kind: 'banishment',
+        destination: 'demiplane',
+        escapeDc: 20,
+        escapeAbility: 'cunning',
+        escapeCost: 'action',
+      }),
+    ).toThrow(/ability name/);
+    expect(() =>
+      validate({ kind: 'mirrorImages', images: 3, redirectThresholds: [] }),
+    ).toThrow(/redirectThresholds/);
+    expect(() =>
+      validate({ kind: 'movementCostMultiplier', feetPerFoot: 1 }),
+    ).toThrow(/feetPerFoot/);
+    expect(() =>
+      validate({
+        kind: 'naturalWeaponDamage',
+        dice: '1d6',
+        typeChoice: ['sharpness'],
+      }),
+    ).toThrow(/typeChoice/);
+    expect(() =>
+      validate({ kind: 'breathes', environments: ['lava'] }),
+    ).toThrow(/environments/);
+    expect(() =>
+      validate({ kind: 'obscurement', level: 'totally' }),
+    ).toThrow(/level/);
+    expect(() =>
+      validate({ kind: 'damageResistance', types: ['fire'], chooseOne: ['cold'] }),
+    ).toThrow(/exactly one/);
+    expect(() =>
+      validate({ kind: 'damageResistance', chooseOne: ['warmth'] }),
+    ).toThrow(/chooseOne/);
+    expect(() => validate({ kind: 'light', equivalentTo: 'bonfire' })).toThrow(
+      /equivalentTo/,
+    );
+    expect(() => validate({ kind: 'rollFloor', scope: 'checks' })).toThrow(
+      /treatAs/,
+    );
+    expect(() =>
+      validate({
+        kind: 'abilitySubstitution',
+        use: 'luck',
+        insteadOf: 'strength',
+      }),
+    ).toThrow(/ability name/);
+    expect(() =>
+      validate({
+        kind: 'illusionDiscernment',
+        ability: 'intelligence',
+        skill: 'investigation',
+        dc: 'fixed-20',
+      }),
+    ).toThrow(/dc/);
+    expect(() =>
+      validate({ kind: 'unlock', audibleRangeFeet: 0 }),
+    ).toThrow(/audibleRangeFeet/);
+    expect(() =>
+      validate({ kind: 'dcIncrease', amount: 10 }),
+    ).toThrow(/appliesTo/);
+    expect(() => validate({ kind: 'stabilize', target: '' })).toThrow(
+      /target/,
+    );
+    expect(() =>
+      validate({ kind: 'walkOnLiquids', surfacingFeetPerRound: 0 }),
+    ).toThrow(/surfacingFeetPerRound/);
+    expect(() =>
+      validate({ kind: 'hiddenFromView', spotDc: 15, ability: 'wisdom' }),
+    ).toThrow(/skill/);
+    expect(() =>
+      validate({ kind: 'mimicry', discernDc: 0, ability: 'wisdom', skill: 'insight' }),
+    ).toThrow(/discernDc/);
+    expect(() =>
+      validate({ kind: 'limitedAmmunition', count: 24 }),
+    ).toThrow(/replenish/);
+    expect(() =>
+      validate({ kind: 'tunneler', tunnelDiameterFeet: 0 }),
+    ).toThrow(/tunnelDiameterFeet/);
+    expect(() =>
+      validate({ kind: 'moveThroughNarrowSpaces' }),
+    ).toThrow(/widthInches/);
+    expect(() =>
+      validate({ kind: 'ignoreDifficultTerrain', terrain: [] }),
+    ).toThrow(/terrain/);
+    expect(() =>
+      validate({ kind: 'ignoreMovementRestriction' }),
+    ).toThrow(/source/);
+    expect(() =>
+      validate({ kind: 'extraWeaponDamageDie', extraDice: 0 }),
+    ).toThrow(/extraDice/);
+    expect(() =>
+      validate({ kind: 'damageTransfer', portion: 'all' }),
+    ).toThrow(/portion/);
+  });
 });

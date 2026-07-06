@@ -146,7 +146,16 @@ const RELATION_PATTERNS: readonly {
       // Lesser Restoration's removal list: "end either one disease or one
       // condition afflicting it. The condition can be blinded, deafened,
       // paralyzed, or poisoned."
-      new RegExp(`\\bcondition\\s+can\\s+be\\s+${LIST}${c}\\b`, 'i').test(s),
+      new RegExp(`\\bcondition\\s+can\\s+be\\s+${LIST}${c}\\b`, 'i').test(s) ||
+      // Greater Restoration (eshyra-o9bd.18.7.9): "You can reduce the
+      // target's exhaustion level by one, or end one of the following
+      // effects on the target: • One effect that charmed or petrified the
+      // target …" — both clauses remove, not apply.
+      new RegExp(`\\breduces?\\b[^.;:]*\\b${c}\\s+level\\b`, 'i').test(s) ||
+      new RegExp(
+        `\\bend\\s+one\\s+of\\s+the\\s+following\\s+effects\\b[^.]*\\b${c}\\b`,
+        'i',
+      ).test(s),
   },
   {
     relation: 'suppresses',
@@ -250,8 +259,11 @@ const RELATION_PATTERNS: readonly {
         // "both" may interpose ("you and the creature are both restrained"
         // — the Grappler feat's pin applies restrained on success;
         // eshyra-o9bd.18.7.5).
+        // Cackle Fever's "gains one level of exhaustion" applies the
+        // condition just like the "suffers … levels of" phrasing
+        // (eshyra-o9bd.18.7.9).
         new RegExp(
-          `\\b(?:becomes?|falls?|be|is|are|knocked|suffers?(?:\\s+\\w+)?\\s+levels?\\s+of)\\s+(?:both\\s+)?${c}\\b`,
+          `\\b(?:becomes?|falls?|be|is|are|knocked|(?:suffers?|gains?)(?:\\s+\\w+)?\\s+levels?\\s+of)\\s+(?:both\\s+)?${c}\\b`,
           'gi',
         ),
       ),
