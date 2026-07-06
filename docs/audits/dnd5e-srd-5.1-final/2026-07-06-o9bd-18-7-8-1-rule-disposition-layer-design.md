@@ -62,12 +62,12 @@ export interface RuleDisposition {
   /** Required iff class === 'duplicate': must resolve to a non-duplicate rule key. */
   readonly canonicalOwner?: string;
   /**
-   * Set when another bead owns the deterministic payload
-   * (e.g. 'eshyra-o9bd.18.7.6' for gear-payload rows). Presence exempts
-   * the row from the engine-coverage requirement but keeps it visible in
-   * readiness as externally-owned until that bead closes it.
+   * DEPRECATED by the 2026-07-06 execution-boundary revision: whole-row
+   * exemption is not allowed. External ownership is clause-level and lives
+   * in RuleProcedureCoverage.externalClauses; every engine-procedure key
+   * appears in ENGINE_PROCEDURE_COVERAGE regardless of cross-bead clauses.
    */
-  readonly crossBead?: string;
+  readonly crossBead?: never;
   /** True for hybrid PROC+TABLE rows: tableRefs must exist AND coverage is still required. */
   readonly tableEvidence?: boolean;
 }
@@ -82,7 +82,14 @@ destroy coverage claims:
 
 ```ts
 export type RuleCoverageStatus =
-  | 'implemented' | 'partial' | 'unimplemented' | 'design-blocked';
+  | 'implemented'
+  | 'model-adjudicated-supported' // reviewed, evidence-backed terminal status:
+                                  // DM-model adjudication over the primitive
+                                  // tool surface is the intended architecture
+                                  // for this rule (2026-07-06 execution-
+                                  // boundary artifact) — NOT a synonym of
+                                  // unimplemented
+  | 'partial' | 'unimplemented' | 'design-blocked';
 
 export interface RuleProcedureCoverage {
   readonly status: RuleCoverageStatus;
@@ -90,15 +97,33 @@ export interface RuleProcedureCoverage {
   readonly runtimeOwner?: readonly string[];
   /** Required for 'implemented': test file(s) exercising the behavior. */
   readonly evidence?: readonly string[];
-  /** Required for 'partial': the exact missing semantics. */
+  /**
+   * Required for 'model-adjudicated-supported': the registered tool names
+   * relied on (checked against DEFAULT_TOOLS so a tool removal fails the
+   * register) and what must be retrievable/structured at play time.
+   */
+  readonly primitives?: readonly string[];
+  readonly contextRequirement?: string;
+  /** Optional for 'model-adjudicated-supported': e.g. "F2 budget improves enforcement". */
+  readonly dependencyNote?: string;
+  /** Required for 'partial': the exact missing semantics (may name a shared
+   *  primitive family such as F9 derived-math or F10 currency surface). */
   readonly missing?: string;
   /** Required for 'design-blocked': the bead that owns the design decision. */
   readonly designOwner?: string;
+  /**
+   * Clause-level external ownership (replaces the row-level crossBead
+   * exemption): each externally owned clause keeps the row visible and
+   * never auto-upgrades on bead closure — the transition to covered
+   * requires new runtime/pack evidence in a reviewed diff.
+   */
+  readonly externalClauses?: readonly { clause: string; bead: string }[];
 }
 
 export const ENGINE_PROCEDURE_COVERAGE:
   Readonly<Record<string, RuleProcedureCoverage>>;
-// exactly the engine-procedure keys minus crossBead rows
+// exactly ALL engine-procedure keys (no exemptions; external ownership is
+// clause-level inside the coverage row)
 ```
 
 ## 3. Fail-closed validation (build-time, in the audit bundle)
@@ -116,20 +141,26 @@ stale/unreviewed membership errors:
    pack record to actually carry non-empty `tableRefs`; a
    `deterministicOwner` that names a rule key must resolve to an
    engine-procedure or table-backed row.
-4. **Coverage completeness**: every `engine-procedure` key without
-   `crossBead` must appear in `ENGINE_PROCEDURE_COVERAGE`; every coverage
-   key must be such a disposition key (no orphans). A newly promoted rule
-   therefore fails until someone writes an explicit coverage row —
-   `unimplemented` is the honest default, but it must be written, not
-   assumed.
+4. **Coverage completeness**: every `engine-procedure` key must appear in
+   `ENGINE_PROCEDURE_COVERAGE` (no exemptions); every coverage key must be
+   such a disposition key (no orphans). A newly promoted rule therefore
+   fails until someone writes an explicit coverage row — `unimplemented` is
+   the honest transitional default, but it must be written, not assumed.
 5. **Status invariants**: `implemented` requires non-empty `runtimeOwner`
    and `evidence` (paths existence-checked against the repo tree);
-   `partial` requires `runtimeOwner` and `missing`; `design-blocked`
-   requires `designOwner`.
-6. **Census check**: recomputed class counts are asserted against pinned
-   expected counts (updated only in reviewed diffs), so classification
-   drift is always visible in review — same philosophy as the exact
-   membership lists.
+   `model-adjudicated-supported` requires non-empty `primitives` (each name
+   present in `DEFAULT_TOOLS`) and `contextRequirement`; `partial` requires
+   `missing` (and `runtimeOwner` when code partially owns it);
+   `design-blocked` requires `designOwner`; `externalClauses` beads must be
+   real bead-id shapes, and their presence never changes the row's status.
+6. **Census check**: recomputed counts for BOTH registers are asserted
+   against pinned expected counts (updated only in reviewed diffs): the
+   semantic census (PROC 175/REF 96/DEF 33/TABLE 19/DUP 12) and the
+   coverage census seeded from the execution-boundary artifact
+   (0 implemented / 107 model-adjudicated-supported / 37 partial /
+   21 implementation-required→unimplemented / 10 design-blocked, corrected
+   2026-07-06 revision — provisional until PR #406 review; do not pin
+   before that merge).
 
 ## 4. Readiness report shape
 
@@ -142,18 +173,24 @@ rules:
   table-backed: n            // acceptable, evidence checked
   duplicate: n               // acceptable, canonical owners resolve
   engine-procedure:
-    implemented: n
+    implemented: n                     // green (code-owned, evidence)
+    model-adjudicated-supported: n     // green-by-design, own bucket —
+                                       // never merged with implemented
     partial: n               // actionable gap list (key + missing)
-    unimplemented: n         // actionable gap list (key + family)
+    unimplemented: n         // transitional only: new/promoted rules
     design-blocked: n        // list (key + designOwner)
-    externally-owned: n      // crossBead rows (key + bead)
+    external-clauses: n      // clause-level list (key + clause + bead)
 ```
 
-Only `implemented` is green. `partial`, `unimplemented`, and
-`design-blocked` are the actionable readiness gaps this whole layer exists
-to keep visible; `externally-owned` stays amber until the owning bead
-closes. The report never collapses `engine-procedure` into a single
-number.
+`implemented` and `model-adjudicated-supported` are the two green buckets,
+reported separately. `partial`, `unimplemented`, and `design-blocked` are
+the actionable readiness gaps this layer exists to keep visible; external
+clauses stay listed until runtime/pack evidence lands in a reviewed diff.
+CI policy: registry-integrity failures (missing/stale/malformed rows) fail
+every build; truthful readiness gaps stay visible in the report and fail
+only the final readiness/re-freeze gate (eshyra-2zyy era), so incremental
+registry introduction remains possible. The report never collapses
+`engine-procedure` into a single number.
 
 ## 5. Seeding and review protocol
 
@@ -161,9 +198,12 @@ number.
   the evidence corpus; the constants are the enforcement). Transcription
   is mechanical — a Codex task — and the census check (§3.6) catches
   transcription drift.
-- Initial coverage rows come from the 18.7.8.3 inventory. Until that
-  lands, seeding every engine-procedure key as `unimplemented` is correct
-  and honest; the report will show the true gap surface.
+- Initial coverage rows come from the execution-boundary classification
+  (`2026-07-06-o9bd-18-7-8-execution-boundary-classification.md`, PR #406
+  corrected revision) — NOT from all-`unimplemented` seeding and not from
+  the raw 18.7.8.3 inventory: the boundary artifact already resolves which
+  #402 rows are model-adjudicated-supported versus genuine gaps, and maps
+  partial rows' `missing` to families F1–F10.
 - Future reclassification (e.g. a DEF row later found deterministic)
   is a reviewed diff: change the disposition row, and validation forces
   the corresponding coverage row in the same commit.
