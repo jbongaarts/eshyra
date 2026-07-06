@@ -1177,6 +1177,59 @@ describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
     ]);
   });
 
+  it('projects Martial Arts: shared eligibility, progression-backed die, and the bonus-action prerequisite', () => {
+    const mechanics = derive(
+      'At 1st level, your practice of martial arts gives you mastery of combat styles that use unarmed strikes and monk weapons, which are shortswords and any simple melee weapons that don’t have the two-handed or heavy property. You gain the following benefits while you are unarmed or wielding only monk weapons and you aren’t wearing armor or wielding a shield: • You can use Dexterity instead of Strength for the attack and damage rolls of your unarmed strikes and monk weapons. • You can roll a d4 in place of the normal damage of your unarmed strike or monk weapon. This die changes as you gain monk levels, as shown in the Martial Arts column of the Monk table. • When you use the Attack action with an unarmed strike or a monk weapon on your turn, you can make one unarmed strike as a bonus action.',
+    );
+    const eligibility = {
+      wielding: 'unarmed-or-monk-weapons-only',
+      armor: false,
+      shield: false,
+    };
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'bonusAction',
+        options: ['unarmed-strike'],
+        prerequisite: 'attack-action-with-unarmed-strike-or-monk-weapon',
+        eligibility,
+      },
+      {
+        kind: 'abilitySubstitution',
+        use: 'dexterity',
+        insteadOf: 'strength',
+        for: ['attack-rolls', 'damage-rolls'],
+        appliesTo: 'your unarmed strikes and monk weapons',
+        eligibility,
+      },
+      {
+        kind: 'damageDieReplacement',
+        die: 'd4',
+        appliesTo: 'your unarmed strike or monk weapon',
+        // The die is progression-backed: it resolves against the Monk
+        // table's martialArts resource column, not a fixed d4.
+        progression: { classRef: 'class:monk', resource: 'martialArts' },
+        eligibility,
+      },
+    ]);
+  });
+
+  it('projects Dragon Wings: fly speed with bonus-action activation/dismissal and the armor restriction', () => {
+    expect(
+      derive(
+        'At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn. You can’t manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them.',
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'speedSet',
+        mode: 'fly',
+        value: 'current-speed',
+        activation: { cost: 'bonus-action' },
+        deactivation: { cost: 'bonus-action' },
+        eligibility: { armor: 'accommodating-armor-only' },
+      },
+    ]);
+  });
+
   it('projects Evasion, Improved Critical, Extra Attack tiers, and Brutal Critical', () => {
     expect(
       derive(

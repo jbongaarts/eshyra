@@ -1,4 +1,5 @@
 import { deriveConditionMechanics } from '../../../src/rules/conditionRelations.js';
+import { camelCase } from './classProgression.js';
 import {
   parseCreatureSpellcasting,
   type SpellRefResolver,
@@ -1612,8 +1613,37 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       frequency: 'each-turn',
     });
   }
+  // Martial Arts' benefits share one applicability constraint — "while you
+  // are unarmed or wielding only monk weapons and you aren't wearing armor
+  // or wielding a shield" — that governs every bulleted benefit, so it rides
+  // each projected effect rather than being dropped (eshyra-o9bd.18.7.5
+  // re-review).
+  const sharedEligibility =
+    /\bgain the following benefits while you are unarmed or wielding only monk weapons and you aren['’]t wearing armor or wielding a shield\b/i.test(
+      text,
+    )
+      ? {
+          wielding: 'unarmed-or-monk-weapons-only',
+          armor: false,
+          shield: false,
+        }
+      : undefined;
   if (/\byou can make one unarmed strike as a bonus action\b/i.test(text)) {
-    effects.push({ kind: 'bonusAction', options: ['unarmed-strike'] });
+    effects.push(
+      compact({
+        kind: 'bonusAction',
+        options: ['unarmed-strike'],
+        // The bonus-action strike is gated on having used the Attack action
+        // with an unarmed strike or monk weapon this turn.
+        prerequisite:
+          /\bWhen you use the Attack action with an unarmed strike or a monk weapon on your turn\b/i.test(
+            text,
+          )
+            ? 'attack-action-with-unarmed-strike-or-monk-weapon'
+            : undefined,
+        eligibility: sharedEligibility,
+      }),
+    );
   }
   const cunningVia =
     /\byou can use the bonus action granted by your Cunning Action to (.+?)\./.exec(
@@ -1645,24 +1675,47 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       text,
     );
   if (abilitySub !== null) {
-    effects.push({
-      kind: 'abilitySubstitution',
-      use: abilitySub[1].toLowerCase(),
-      insteadOf: abilitySub[2].toLowerCase(),
-      for: ['attack-rolls', 'damage-rolls'],
-      appliesTo: abilitySub[3].trim(),
-    });
+    effects.push(
+      compact({
+        kind: 'abilitySubstitution',
+        use: abilitySub[1].toLowerCase(),
+        insteadOf: abilitySub[2].toLowerCase(),
+        for: ['attack-rolls', 'damage-rolls'],
+        appliesTo: abilitySub[3].trim(),
+        eligibility: sharedEligibility,
+      }),
+    );
   }
   const dieReplacement =
     /\bYou can roll a (d\d+) in place of the normal damage of ([^.•]+)/.exec(
       text,
     );
   if (dieReplacement !== null) {
-    effects.push({
-      kind: 'damageDieReplacement',
-      die: dieReplacement[1],
-      appliesTo: dieReplacement[2].trim(),
-    });
+    // "This die changes as you gain monk levels, as shown in the Martial
+    // Arts column of the Monk table." — the die is progression-backed, not
+    // fixed. The reference resolves against the class record's structured
+    // `progression[].advancement` resourceProgression entries (the single
+    // source of progression truth), so every level tier is preserved
+    // without duplicating the table here.
+    const dieProgression =
+      /\bThis die changes as you gain ([a-z]+) levels, as shown in the ([A-Za-z ]+?) column of the [A-Za-z ]+ table\b/.exec(
+        text,
+      );
+    effects.push(
+      compact({
+        kind: 'damageDieReplacement',
+        die: dieReplacement[1],
+        appliesTo: dieReplacement[2].trim(),
+        progression:
+          dieProgression === null
+            ? undefined
+            : {
+                classRef: `class:${dieProgression[1].toLowerCase()}`,
+                resource: camelCase(dieProgression[2]),
+              },
+        eligibility: sharedEligibility,
+      }),
+    );
   }
   const extraTurn =
     /\bYou can take two turns during the first round of any combat\. You take your first turn at your normal initiative and your second turn at your initiative minus (\d+)\b/.exec(
@@ -1764,7 +1817,30 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     });
   }
   if (/\bgaining a flying speed equal to your current speed\b/i.test(text)) {
-    effects.push({ kind: 'speedSet', mode: 'fly', value: 'current-speed' });
+    // Dragon Wings (eshyra-o9bd.18.7.5 re-review): the feature also fixes
+    // the action-economy costs — a bonus action to create the wings and a
+    // bonus action to dismiss them — and forbids manifesting them in armor
+    // not made to accommodate them. All three clauses are deterministic and
+    // ride the speed effect.
+    effects.push(
+      compact({
+        kind: 'speedSet',
+        mode: 'fly',
+        value: 'current-speed',
+        activation: /\bcreate these wings as a bonus action\b/i.test(text)
+          ? { cost: 'bonus-action' }
+          : undefined,
+        deactivation: /\bdismiss them as a bonus action\b/i.test(text)
+          ? { cost: 'bonus-action' }
+          : undefined,
+        eligibility:
+          /\bcan['’]t manifest your wings while wearing armor unless the armor is made to accommodate them\b/i.test(
+            text,
+          )
+            ? { armor: 'accommodating-armor-only' }
+            : undefined,
+      }),
+    );
   }
   const abilityDamageBonus =
     /\badd your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier to one damage roll\b/i.exec(

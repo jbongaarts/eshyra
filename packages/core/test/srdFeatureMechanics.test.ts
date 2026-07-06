@@ -157,20 +157,75 @@ describe('re-audited action-economy and numeric features (eshyra-o9bd.18.7.5 re-
     ]);
   });
 
-  it('Martial Arts carries the bonus-action strike, ability substitution, and die replacement', () => {
+  it('Martial Arts carries the complete contract: shared eligibility, prerequisite, and progression-backed die', () => {
+    const eligibility = {
+      wielding: 'unarmed-or-monk-weapons-only',
+      armor: false,
+      shield: false,
+    };
     expect(mechanicsOf('feature:monk:martial-arts').effects).toEqual([
-      { kind: 'bonusAction', options: ['unarmed-strike'] },
+      {
+        kind: 'bonusAction',
+        options: ['unarmed-strike'],
+        prerequisite: 'attack-action-with-unarmed-strike-or-monk-weapon',
+        eligibility,
+      },
       {
         kind: 'abilitySubstitution',
         use: 'dexterity',
         insteadOf: 'strength',
         for: ['attack-rolls', 'damage-rolls'],
         appliesTo: 'your unarmed strikes and monk weapons',
+        eligibility,
       },
       {
         kind: 'damageDieReplacement',
         die: 'd4',
         appliesTo: 'your unarmed strike or monk weapon',
+        progression: { classRef: 'class:monk', resource: 'martialArts' },
+        eligibility,
+      },
+    ]);
+  });
+
+  it('the Monk progression backs the Martial Arts die reference with every level tier', () => {
+    const progression = dataOf('class:monk').progression as Array<{
+      level: number;
+      advancement: Array<{ kind: string; resource?: string; value?: unknown }>;
+    }>;
+    const dieAtLevel = new Map(
+      progression.map((row) => [
+        row.level,
+        row.advancement.find(
+          (entry) =>
+            entry.kind === 'resourceProgression' &&
+            entry.resource === 'martialArts',
+        )?.value,
+      ]),
+    );
+    // The Monk table's Martial Arts column: 1d4 (1–4), 1d6 (5–10),
+    // 1d8 (11–16), 1d10 (17–20). Every tier must be present so the
+    // progression-backed reference resolves at every level.
+    for (let level = 1; level <= 20; level += 1) {
+      const expected =
+        level >= 17 ? '1d10' : level >= 11 ? '1d8' : level >= 5 ? '1d6' : '1d4';
+      expect(dieAtLevel.get(level), `martial arts die at level ${level}`).toBe(
+        expected,
+      );
+    }
+  });
+
+  it('Dragon Wings carries the fly speed, bonus-action activation/dismissal, and armor restriction', () => {
+    expect(
+      mechanicsOf('feature:draconic-bloodline:dragon-wings').effects,
+    ).toEqual([
+      {
+        kind: 'speedSet',
+        mode: 'fly',
+        value: 'current-speed',
+        activation: { cost: 'bonus-action' },
+        deactivation: { cost: 'bonus-action' },
+        eligibility: { armor: 'accommodating-armor-only' },
       },
     ]);
   });

@@ -1335,6 +1335,115 @@ function reqDice(parent: Obj, key: string, path: string): void {
   }
 }
 
+function optAbility(parent: Obj, key: string, path: string): void {
+  if (parent[key] !== undefined) {
+    reqAbility(parent, key, path);
+  }
+}
+
+function optEnum(
+  parent: Obj,
+  key: string,
+  path: string,
+  allowed: ReadonlySet<string>,
+): void {
+  const value = parent[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'string' || !allowed.has(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be one of ${[...allowed].join(', ')}, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+function reqEnum(
+  parent: Obj,
+  key: string,
+  path: string,
+  allowed: ReadonlySet<string>,
+): void {
+  reqStr(parent, key, path);
+  optEnum(parent, key, path, allowed);
+}
+
+/**
+ * A marker-only effect's contract is exactly `{ kind }` — any payload field
+ * on it is either a projection bug or an undocumented contract change, and
+ * must fail validation rather than ride the whitelist (eshyra-o9bd.18.7.5
+ * re-review).
+ */
+function markerOnly(effect: Obj, path: string): void {
+  for (const key of Object.keys(effect)) {
+    if (key !== 'kind') {
+      throw new RulesPackError(
+        `${path} is a marker-only effect; unexpected payload key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+}
+
+/**
+ * Shared equipment-state eligibility rider (Martial Arts, Dragon Wings):
+ * `wielding` is a closed wielding constraint, `armor` is `false` (none
+ * allowed) or `"accommodating-armor-only"`, `shield` is a boolean.
+ */
+function optEligibility(effect: Obj, path: string): void {
+  const value = effect.eligibility;
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(
+      `${path}.eligibility must be a non-null object when present`,
+    );
+  }
+  const eligibility = value as Obj;
+  const keys = Object.keys(eligibility);
+  if (keys.length === 0) {
+    throw new RulesPackError(`${path}.eligibility must not be empty`);
+  }
+  for (const key of keys) {
+    if (key !== 'wielding' && key !== 'armor' && key !== 'shield') {
+      throw new RulesPackError(
+        `${path}.eligibility has unsupported key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+  optStr(eligibility, 'wielding', `${path}.eligibility`);
+  const armor = eligibility.armor;
+  if (
+    armor !== undefined &&
+    armor !== false &&
+    armor !== 'accommodating-armor-only'
+  ) {
+    throw new RulesPackError(
+      `${path}.eligibility.armor must be false or "accommodating-armor-only", got ${JSON.stringify(armor)}`,
+    );
+  }
+  optBool(eligibility, 'shield', `${path}.eligibility`);
+}
+
+/** Action-economy cost object rider ({ cost: 'bonus-action' | … }). */
+function optActionCost(effect: Obj, key: string, path: string): void {
+  const value = effect[key];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be a non-null object when present`,
+    );
+  }
+  reqEnum(
+    value as Obj,
+    'cost',
+    `${path}.${key}`,
+    new Set(['action', 'bonus-action', 'reaction']),
+  );
+}
+
 /**
  * Per-kind payload contracts for the structured effect kinds introduced by
  * the eshyra-o9bd.18.7.x projection passes. A recognized `kind` string with
@@ -1349,6 +1458,113 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   abilitySubstitution: (effect, path) => {
     reqAbility(effect, 'use', path);
     reqAbility(effect, 'insteadOf', path);
+    optStrArray(effect, 'for', path);
+    optStr(effect, 'appliesTo', path);
+    optEligibility(effect, path);
+  },
+  attackOrDamageBonus: (effect, path) => {
+    reqAbility(effect, 'addAbilityModifier', path);
+  },
+  autoSucceedSave: (effect, path) => {
+    reqStr(effect, 'targets', path);
+    reqStr(effect, 'countFormula', path);
+    optBool(effect, 'noDamageInsteadOfHalf', path);
+  },
+  climbWithoutExtraMovement: markerOnly,
+  evasion: markerOnly,
+  damageBonus: (effect, path) => {
+    if (
+      (effect.amount === undefined) ===
+      (effect.addAbilityModifier === undefined)
+    ) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of amount or addAbilityModifier`,
+      );
+    }
+    if (effect.amount !== undefined) {
+      reqInt(effect, 'amount', path);
+    }
+    optAbility(effect, 'addAbilityModifier', path);
+    optStr(effect, 'scope', path);
+  },
+  damageDieReplacement: (effect, path) => {
+    reqDice(effect, 'die', path);
+    reqStr(effect, 'appliesTo', path);
+    const progression = effect.progression;
+    if (progression !== undefined) {
+      if (
+        typeof progression !== 'object' ||
+        progression === null ||
+        Array.isArray(progression)
+      ) {
+        throw new RulesPackError(
+          `${path}.progression must be a non-null object when present`,
+        );
+      }
+      const ref = reqStr(progression as Obj, 'classRef', `${path}.progression`);
+      if (!ref.startsWith('class:')) {
+        throw new RulesPackError(
+          `${path}.progression.classRef must be a 'class:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+      reqStr(progression as Obj, 'resource', `${path}.progression`);
+    }
+    optEligibility(effect, path);
+  },
+  damageOnSuccessfulSave: (effect, path) => {
+    reqEnum(effect, 'portion', path, new Set(['half', 'none']));
+    reqStr(effect, 'scope', path);
+  },
+  extraTurn: (effect, path) => {
+    reqInt(effect, 'round', path, 1);
+    reqInt(effect, 'secondTurnInitiativeOffset', path);
+  },
+  expertise: (effect, path) => {
+    optAbility(effect, 'ability', path);
+    optStr(effect, 'skill', path);
+    optStr(effect, 'condition', path);
+  },
+  halfProficiencyToChecks: (effect, path) => {
+    reqStr(effect, 'scope', path);
+    optEnum(effect, 'round', path, new Set(['up', 'down']));
+  },
+  jumpDistanceBonus: (effect, path) => {
+    reqAbility(effect, 'addAbilityModifier', path);
+    reqStr(effect, 'appliesTo', path);
+  },
+  maximizeHealingDice: (effect, path) => {
+    reqStr(effect, 'appliesTo', path);
+  },
+  slowAging: (effect, path) => {
+    reqInt(effect, 'periodYears', path, 1);
+    reqInt(effect, 'agesYears', path, 1);
+  },
+  speedSet: (effect, path) => {
+    // Two emitted shapes: the condition projection's `{ speed: 0, subject }`
+    // and the feature projection's `{ mode, value, … }` (Dragon Wings).
+    if (effect.speed !== undefined) {
+      reqInt(effect, 'speed', path, 0);
+      optStr(effect, 'subject', path);
+      return;
+    }
+    reqEnum(
+      effect,
+      'mode',
+      path,
+      new Set(['walk', 'fly', 'swim', 'climb', 'burrow']),
+    );
+    const value = effect.value;
+    if (
+      value !== 'current-speed' &&
+      (typeof value !== 'number' || !Number.isInteger(value) || value < 0)
+    ) {
+      throw new RulesPackError(
+        `${path}.value must be "current-speed" or a non-negative integer, got ${JSON.stringify(value)}`,
+      );
+    }
+    optActionCost(effect, 'activation', path);
+    optActionCost(effect, 'deactivation', path);
+    optEligibility(effect, path);
   },
   abilityScoreIncrease: (effect, path) => {
     const raw = effect.abilities;
@@ -1438,6 +1654,8 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     }
     optStr(effect, 'via', path);
     optStr(effect, 'frequency', path);
+    optStr(effect, 'prerequisite', path);
+    optEligibility(effect, path);
   },
   checkMinimum: (effect, path) => {
     reqAbility(effect, 'ability', path);

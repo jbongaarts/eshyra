@@ -73355,7 +73355,16 @@
           {
             "kind": "speedSet",
             "mode": "fly",
-            "value": "current-speed"
+            "value": "current-speed",
+            "activation": {
+              "cost": "bonus-action"
+            },
+            "deactivation": {
+              "cost": "bonus-action"
+            },
+            "eligibility": {
+              "armor": "accommodating-armor-only"
+            }
           }
         ]
       }
@@ -75083,7 +75092,13 @@
             "kind": "bonusAction",
             "options": [
               "unarmed-strike"
-            ]
+            ],
+            "prerequisite": "attack-action-with-unarmed-strike-or-monk-weapon",
+            "eligibility": {
+              "wielding": "unarmed-or-monk-weapons-only",
+              "armor": false,
+              "shield": false
+            }
           },
           {
             "kind": "abilitySubstitution",
@@ -75093,12 +75108,26 @@
               "attack-rolls",
               "damage-rolls"
             ],
-            "appliesTo": "your unarmed strikes and monk weapons"
+            "appliesTo": "your unarmed strikes and monk weapons",
+            "eligibility": {
+              "wielding": "unarmed-or-monk-weapons-only",
+              "armor": false,
+              "shield": false
+            }
           },
           {
             "kind": "damageDieReplacement",
             "die": "d4",
-            "appliesTo": "your unarmed strike or monk weapon"
+            "appliesTo": "your unarmed strike or monk weapon",
+            "progression": {
+              "classRef": "class:monk",
+              "resource": "martialArts"
+            },
+            "eligibility": {
+              "wielding": "unarmed-or-monk-weapons-only",
+              "armor": false,
+              "shield": false
+            }
           }
         ]
       }
