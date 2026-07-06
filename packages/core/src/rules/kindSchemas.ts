@@ -1769,7 +1769,9 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqStr(effect, 'skill', path);
   },
   ignoreDifficultTerrain: (effect, path) => {
-    reqStrArray(effect, 'terrain', path);
+    if (reqStrArray(effect, 'terrain', path).length === 0) {
+      throw new RulesPackError(`${path}.terrain must not be empty`);
+    }
   },
   ignoreMovementRestriction: (effect, path) => {
     reqStr(effect, 'source', path);
@@ -1791,7 +1793,9 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optBool(effect, 'withoutOpportunityAttacks', path);
   },
   planeShift: (effect, path) => {
-    reqStrArray(effect, 'planes', path);
+    if (reqStrArray(effect, 'planes', path).length === 0) {
+      throw new RulesPackError(`${path}.planes must not be empty`);
+    }
     // Blink's chance-gated shift: a die, a threshold, a trigger, and the
     // return radius.
     if (effect.roll !== undefined) {

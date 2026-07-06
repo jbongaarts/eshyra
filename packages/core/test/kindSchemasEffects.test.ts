@@ -343,7 +343,11 @@ describe('mechanics effect payload contracts', () => {
 
   it('accepts the emitted shapes of the eshyra-o9bd.18.7.9 corrective kinds', () => {
     const emitted: Record<string, unknown>[] = [
-      { kind: 'multiattack', attacksFormula: 'one-per-head', attackName: 'bite' },
+      {
+        kind: 'multiattack',
+        attacksFormula: 'one-per-head',
+        attackName: 'bite',
+      },
       { kind: 'multiattack', attacksDice: '1d4' },
       {
         kind: 'multiattack',
@@ -446,7 +450,12 @@ describe('mechanics effect payload contracts', () => {
         breakAbility: 'strength',
         regrowsNextTurn: true,
       },
-      { kind: 'hiddenFromView', spotDc: 15, ability: 'wisdom', skill: 'perception' },
+      {
+        kind: 'hiddenFromView',
+        spotDc: 15,
+        ability: 'wisdom',
+        skill: 'perception',
+      },
       { kind: 'mimicry', discernDc: 10, ability: 'wisdom', skill: 'insight' },
       { kind: 'limitedAmmunition', count: 24, replenish: 'long-rest' },
       { kind: 'carryingCapacitySize', size: 'large' },
@@ -486,11 +495,19 @@ describe('mechanics effect payload contracts', () => {
       },
       { kind: 'jumpDistanceMultiplier', multiplier: 3 },
       { kind: 'stabilize', target: 'living-creature-at-0-hit-points' },
-      { kind: 'slowFall', descentFeetPerRound: 60, noFallingDamageOnLanding: true },
+      {
+        kind: 'slowFall',
+        descentFeetPerRound: 60,
+        noFallingDamageOnLanding: true,
+      },
       { kind: 'walkOnLiquids', surfacingFeetPerRound: 60 },
       { kind: 'climbAnywhere' },
       { kind: 'understandLanguages', spoken: true, written: true },
-      { kind: 'unlock', audibleRangeFeet: 300, suppressesArcaneLockMinutes: 10 },
+      {
+        kind: 'unlock',
+        audibleRangeFeet: 300,
+        suppressesArcaneLockMinutes: 10,
+      },
       { kind: 'dcIncrease', amount: 10, appliesTo: 'break-or-pick-locks' },
       { kind: 'endsCurses' },
       { kind: 'extraTurns', turnsDice: '1d4 + 1' },
@@ -584,9 +601,9 @@ describe('mechanics effect payload contracts', () => {
     expect(() => validate({ kind: 'extraReactions' })).toThrow(
       /exactly one of perTurn or formula/,
     );
-    expect(() => validate({ kind: 'moveUpTo', amount: 'double-speed' })).toThrow(
-      /amount/,
-    );
+    expect(() =>
+      validate({ kind: 'moveUpTo', amount: 'double-speed' }),
+    ).toThrow(/amount/);
     expect(() => validate({ kind: 'earthGlide', speed: 30 })).toThrow(
       /marker-only/,
     );
@@ -599,9 +616,9 @@ describe('mechanics effect payload contracts', () => {
     expect(() => validate({ kind: 'teleport', distanceFeet: 0 })).toThrow(
       /distanceFeet/,
     );
-    expect(() =>
-      validate({ kind: 'planeShift', planes: [] }),
-    ).toThrow(/planes/);
+    expect(() => validate({ kind: 'planeShift', planes: [] })).toThrow(
+      /planes/,
+    );
     expect(() =>
       validate({
         kind: 'planeShift',
@@ -706,9 +723,9 @@ describe('mechanics effect payload contracts', () => {
     expect(() => validate({ kind: 'endsCurses', scope: 'all' })).toThrow(
       /marker-only/,
     );
-    expect(() => validate({ kind: 'extraTurns', turnsDice: 'several' })).toThrow(
-      /dice expression/,
-    );
+    expect(() =>
+      validate({ kind: 'extraTurns', turnsDice: 'several' }),
+    ).toThrow(/dice expression/);
     expect(() =>
       validate({
         kind: 'banishment',
@@ -734,11 +751,15 @@ describe('mechanics effect payload contracts', () => {
     expect(() =>
       validate({ kind: 'breathes', environments: ['lava'] }),
     ).toThrow(/environments/);
+    expect(() => validate({ kind: 'obscurement', level: 'totally' })).toThrow(
+      /level/,
+    );
     expect(() =>
-      validate({ kind: 'obscurement', level: 'totally' }),
-    ).toThrow(/level/);
-    expect(() =>
-      validate({ kind: 'damageResistance', types: ['fire'], chooseOne: ['cold'] }),
+      validate({
+        kind: 'damageResistance',
+        types: ['fire'],
+        chooseOne: ['cold'],
+      }),
     ).toThrow(/exactly one/);
     expect(() =>
       validate({ kind: 'damageResistance', chooseOne: ['warmth'] }),
@@ -764,15 +785,13 @@ describe('mechanics effect payload contracts', () => {
         dc: 'fixed-20',
       }),
     ).toThrow(/dc/);
-    expect(() =>
-      validate({ kind: 'unlock', audibleRangeFeet: 0 }),
-    ).toThrow(/audibleRangeFeet/);
-    expect(() =>
-      validate({ kind: 'dcIncrease', amount: 10 }),
-    ).toThrow(/appliesTo/);
-    expect(() => validate({ kind: 'stabilize', target: '' })).toThrow(
-      /target/,
+    expect(() => validate({ kind: 'unlock', audibleRangeFeet: 0 })).toThrow(
+      /audibleRangeFeet/,
     );
+    expect(() => validate({ kind: 'dcIncrease', amount: 10 })).toThrow(
+      /appliesTo/,
+    );
+    expect(() => validate({ kind: 'stabilize', target: '' })).toThrow(/target/);
     expect(() =>
       validate({ kind: 'walkOnLiquids', surfacingFeetPerRound: 0 }),
     ).toThrow(/surfacingFeetPerRound/);
@@ -780,28 +799,33 @@ describe('mechanics effect payload contracts', () => {
       validate({ kind: 'hiddenFromView', spotDc: 15, ability: 'wisdom' }),
     ).toThrow(/skill/);
     expect(() =>
-      validate({ kind: 'mimicry', discernDc: 0, ability: 'wisdom', skill: 'insight' }),
+      validate({
+        kind: 'mimicry',
+        discernDc: 0,
+        ability: 'wisdom',
+        skill: 'insight',
+      }),
     ).toThrow(/discernDc/);
-    expect(() =>
-      validate({ kind: 'limitedAmmunition', count: 24 }),
-    ).toThrow(/replenish/);
-    expect(() =>
-      validate({ kind: 'tunneler', tunnelDiameterFeet: 0 }),
-    ).toThrow(/tunnelDiameterFeet/);
-    expect(() =>
-      validate({ kind: 'moveThroughNarrowSpaces' }),
-    ).toThrow(/widthInches/);
+    expect(() => validate({ kind: 'limitedAmmunition', count: 24 })).toThrow(
+      /replenish/,
+    );
+    expect(() => validate({ kind: 'tunneler', tunnelDiameterFeet: 0 })).toThrow(
+      /tunnelDiameterFeet/,
+    );
+    expect(() => validate({ kind: 'moveThroughNarrowSpaces' })).toThrow(
+      /widthInches/,
+    );
     expect(() =>
       validate({ kind: 'ignoreDifficultTerrain', terrain: [] }),
     ).toThrow(/terrain/);
-    expect(() =>
-      validate({ kind: 'ignoreMovementRestriction' }),
-    ).toThrow(/source/);
+    expect(() => validate({ kind: 'ignoreMovementRestriction' })).toThrow(
+      /source/,
+    );
     expect(() =>
       validate({ kind: 'extraWeaponDamageDie', extraDice: 0 }),
     ).toThrow(/extraDice/);
-    expect(() =>
-      validate({ kind: 'damageTransfer', portion: 'all' }),
-    ).toThrow(/portion/);
+    expect(() => validate({ kind: 'damageTransfer', portion: 'all' })).toThrow(
+      /portion/,
+    );
   });
 });

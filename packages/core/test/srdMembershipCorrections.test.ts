@@ -117,8 +117,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       { kind: 'moveUpTo', amount: 'speed', withoutOpportunityAttacks: true },
     ]);
     expect(
-      creatureEntry('creature:balor', 'actions', 'Teleport').mechanics
-        ?.effects,
+      creatureEntry('creature:balor', 'actions', 'Teleport').mechanics?.effects,
     ).toEqual([{ kind: 'teleport', distanceFeet: 120 }]);
   });
 
@@ -175,8 +174,8 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
 
   it('movement traits are typed: Spider Climb, Web Walker, Amorphous, Earth Glide, Tunneler, Tree Stride', () => {
     expect(
-      creatureEntry('creature:giant-spider', 'traits', 'Spider Climb')
-        .mechanics?.effects,
+      creatureEntry('creature:giant-spider', 'traits', 'Spider Climb').mechanics
+        ?.effects,
     ).toEqual([{ kind: 'climbWithoutCheck' }]);
     expect(
       creatureEntry('creature:giant-spider', 'traits', 'Web Walker').mechanics
@@ -462,7 +461,12 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
       { kind: 'teleport', destination: 'designated-sanctuary' },
     ]);
     expect(spellEffects('spell:tree-stride')).toEqual([
-      { kind: 'teleport', via: 'trees', distanceFeet: 500, movementCostFeet: 5 },
+      {
+        kind: 'teleport',
+        via: 'trees',
+        distanceFeet: 500,
+        movementCostFeet: 5,
+      },
     ]);
     expect(spellEffects('spell:feather-fall')).toEqual([
       {
@@ -583,10 +587,12 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     const pack = getBundledDnd5eSrdPack();
     const conditionsOf = (key: string) =>
       (
-        (pack.records.find((r) => r.key === key)?.data as Record<
-          string,
-          unknown
-        >).mechanics as Record<string, unknown>
+        (
+          pack.records.find((r) => r.key === key)?.data as Record<
+            string,
+            unknown
+          >
+        ).mechanics as Record<string, unknown>
       ).conditions;
     // "The infected creature gains one level of exhaustion" — applies.
     expect(conditionsOf('hazard:cackle-fever')).toEqual([

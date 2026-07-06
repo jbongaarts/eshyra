@@ -857,15 +857,14 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
         kind: 'teleport',
         via: 'trees',
         distanceFeet: Number(treeStride[1]),
-        movementCostFeet: /\bYou must use (\d+) feet of movement to enter a tree\b/.exec(
-          text,
-        )
-          ? Number(
-              /\bYou must use (\d+) feet of movement to enter a tree\b/.exec(
-                text,
-              )?.[1],
-            )
-          : undefined,
+        movementCostFeet:
+          /\bYou must use (\d+) feet of movement to enter a tree\b/.exec(text)
+            ? Number(
+                /\bYou must use (\d+) feet of movement to enter a tree\b/.exec(
+                  text,
+                )?.[1],
+              )
+            : undefined,
       }),
     );
   }
@@ -890,25 +889,20 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
       }),
     );
   }
-  if (
-    /\bYou step into the border regions of the Ethereal Plane\b/.test(text)
-  ) {
+  if (/\bYou step into the border regions of the Ethereal Plane\b/.test(text)) {
     effects.push({ kind: 'planeShift', planes: ['material', 'ethereal'] });
   }
   const understand =
     /\byou understand the literal meaning of any spoken language that you hear\b/.test(
       text,
-    ) ||
-    /\bability to understand any spoken language it hears\b/.test(text);
+    ) || /\bability to understand any spoken language it hears\b/.test(text);
   if (understand) {
     effects.push(
       compact({
         kind: 'understandLanguages',
         spoken: true,
         written:
-          /\bYou also understand any written language that you see\b/.test(
-            text,
-          )
+          /\bYou also understand any written language that you see\b/.test(text)
             ? true
             : undefined,
         speechUnderstood:
@@ -993,9 +987,7 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
       rangeFeet: Number(locateThing[2].replaceAll(',', '')),
     });
   }
-  if (
-    /\byou know how far it is and in what direction it lies\b/.test(text)
-  ) {
+  if (/\byou know how far it is and in what direction it lies\b/.test(text)) {
     effects.push({
       kind: 'sense',
       sense: 'direction-and-distance-to-destination',
@@ -1007,9 +999,7 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
     effects.push({ kind: 'breathes', environments: ['air', 'water'] });
   }
   if (
-    /\bgains? a swimming speed equal to (?:your|its) walking speed\b/.test(
-      text,
-    )
+    /\bgains? a swimming speed equal to (?:your|its) walking speed\b/.test(text)
   ) {
     effects.push({ kind: 'speedSet', mode: 'swim', value: 'walking-speed' });
   }
@@ -1051,9 +1041,7 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
   ) {
     effects.push({ kind: 'climbAnywhere' });
   }
-  if (
-    /\bgains a climbing speed equal to its walking speed\b/.test(text)
-  ) {
+  if (/\bgains a climbing speed equal to its walking speed\b/.test(text)) {
     effects.push({ kind: 'speedSet', mode: 'climb', value: 'walking-speed' });
   }
   const featherFall =
@@ -1085,8 +1073,9 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
   }
   if (/\bbecomes unlocked, unstuck, or unbarred\b/.test(text)) {
     const audible = /\baudible from as far away as (\d+) feet\b/.exec(text);
-    const suppress =
-      /\bthat spell is suppressed for (\d+) minutes\b/.exec(text);
+    const suppress = /\bthat spell is suppressed for (\d+) minutes\b/.exec(
+      text,
+    );
     effects.push(
       compact({
         kind: 'unlock',
@@ -1290,8 +1279,9 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
       escapeCost: 'action',
     });
   }
-  const timeStop =
-    /\byou take (\d+d\d+(?:\s*\+\s*\d+)?) turns in a row\b/.exec(text);
+  const timeStop = /\byou take (\d+d\d+(?:\s*\+\s*\d+)?) turns in a row\b/.exec(
+    text,
+  );
   if (timeStop !== null) {
     effects.push({
       kind: 'extraTurns',
@@ -1798,9 +1788,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       }),
     );
   }
-  const attackWith = /\bmakes one attack with its ([a-z ]+?)(?: or uses its ([A-Za-z' ]+?))?\.?$/.exec(
-    text,
-  );
+  const attackWith =
+    /\bmakes one attack with its ([a-z ]+?)(?: or uses its ([A-Za-z' ]+?))?\.?$/.exec(
+      text,
+    );
   if (attackWith !== null) {
     effects.push(
       compact({
@@ -1816,9 +1807,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   if (/^The [\w'\u2019 ]+ casts a cantrip\.$/.test(text)) {
     effects.push({ kind: 'castSpell', spellLevel: 'cantrip' });
   }
-  const moveUpTo = /^The [\w'\u2019 ]+ moves up to (half its speed|its speed)(?: without provoking opportunity attacks)?\.?$/.exec(
-    text,
-  );
+  const moveUpTo =
+    /^The [\w'\u2019 ]+ moves up to (half its speed|its speed)(?: without provoking opportunity attacks)?\.?$/.exec(
+      text,
+    );
   if (moveUpTo !== null) {
     effects.push(
       compact({
@@ -2028,7 +2020,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       text,
     );
   if (creatureTeleport !== null) {
-    effects.push({ kind: 'teleport', distanceFeet: Number(creatureTeleport[1]) });
+    effects.push({
+      kind: 'teleport',
+      distanceFeet: Number(creatureTeleport[1]),
+    });
   }
   const treeStride =
     /\bcan use (\d+) feet of her movement to step magically into one living tree within her reach and emerge from a second living tree within (\d+) feet of the first\b/.exec(
@@ -2110,8 +2105,9 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   ) {
     effects.push({ kind: 'seeInMagicalDarkness' });
   }
-  const etherealSight =
-    /\bcan see (\d+) feet into the Ethereal Plane\b/.exec(text);
+  const etherealSight = /\bcan see (\d+) feet into the Ethereal Plane\b/.exec(
+    text,
+  );
   if (etherealSight !== null) {
     effects.push({
       kind: 'sense',
@@ -2451,9 +2447,7 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   }
   // Air Form / Water Form: the elemental can end its move inside a hostile
   // creature's space.
-  if (
-    /\bcan enter a hostile creature['’]s space and stop there\b/.test(text)
-  ) {
+  if (/\bcan enter a hostile creature['’]s space and stop there\b/.test(text)) {
     effects.push({ kind: 'enterHostileSpace' });
   }
   // Read Thoughts: a ranged surface-thought sense plus concentration-gated
