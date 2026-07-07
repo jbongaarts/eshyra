@@ -19,7 +19,7 @@ Goals:
 2. A **separate** implementation-coverage register for engine procedures,
    so "classified as engine-procedure" can never read as "done".
 3. Readiness output that distinguishes acceptable prose, table-backed,
-   duplicates, and the four coverage states of deterministic procedures.
+   duplicates, and the five coverage statuses of deterministic procedures.
 
 Non-goals: projecting rule procedures as per-record `mechanics.effects`
 (rejected by the 18.7.8 artifact); implementing the engine procedures
@@ -93,7 +93,11 @@ export type RuleCoverageStatus =
 
 export interface RuleProcedureCoverage {
   readonly status: RuleCoverageStatus;
-  /** Required for 'implemented' and 'partial': repo-relative code path(s). */
+  /**
+   * Repo-relative code path(s). Required for 'implemented'; required for a
+   * 'partial' row only when code owns part of the behavior. A partial row's
+   * supported portion may instead be model-adjudicated over primitives.
+   */
   readonly runtimeOwner?: readonly string[];
   /** Required for 'implemented': test file(s) exercising the behavior. */
   readonly evidence?: readonly string[];
