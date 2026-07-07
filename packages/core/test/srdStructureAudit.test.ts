@@ -531,6 +531,33 @@ describe('non-spell owner-table linkage (eshyra-o9bd.8)', () => {
     ).toEqual([]);
   });
 
+  it('does not require absent secondary referrers in reduced packs', () => {
+    const size = record({
+      kind: 'rule',
+      key: 'rule:size',
+      name: 'Size',
+      data: {
+        text: 'The Size Categories table shows each creature size.',
+        tableRefs: ['table:size-categories'],
+      },
+    });
+    const sizeCategories = record({
+      kind: 'table',
+      key: 'table:size-categories',
+      name: 'Size Categories',
+      data: {
+        columns: ['Size', 'Space'],
+        rows: [['Tiny', '2 1/2 by 2 1/2 ft.']],
+      },
+    });
+
+    expect(
+      auditSrdStructure(pack([size, sizeCategories])).filter(
+        (finding) => finding.category === 'table-owner-link',
+      ),
+    ).toEqual([]);
+  });
+
   it('flags an owned table that its owner does not link', () => {
     const unlinked = {
       ...wand,
@@ -540,7 +567,7 @@ describe('non-spell owner-table linkage (eshyra-o9bd.8)', () => {
       (finding) => finding.category === 'table-owner-link',
     );
     expect(findings).toHaveLength(1);
-    expect(findings[0].detail).toContain('must be referenced exactly once');
+    expect(findings[0].detail).toContain('must be referenced by');
   });
 
   it('flags an owned table claimed by an unexpected record', () => {
