@@ -9,10 +9,11 @@ the reviewed creature-entry refs now represented by
 `ACCEPTED_METADATA_ONLY_SPELLS` (53 keys) in
 `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts` as of this
 branch. Seventy-two creature-entry refs were reviewed in total: 6 were
-implemented and graduated out, while 66 residual refs remain represented in
-the per-ref registry. Of those 66 residual refs, 2 are permanent
-`accepted-prose-only` entries and 64 are pending `finding` entries routed to
-C1-C9. Spell metadata-only membership remains represented separately by
+implemented during the original pass and the 16 C2 False Appearance refs were
+implemented in the follow-up rollout, while 50 residual refs remain
+represented in the per-ref registry. Of those 50 residual refs, 2 are
+permanent `accepted-prose-only` entries and 48 are pending `finding` entries
+routed to C1/C3-C9. Spell metadata-only membership remains represented separately by
 `ACCEPTED_METADATA_ONLY_SPELLS`. Every record's full pack text was read
 against SRD 5.1 source. **Do not repeat this audit.** Implementation agents
 should work from the slices in §3 and consult §1/§2/§1.6 only for per-record
@@ -73,11 +74,11 @@ Note: vampire's Shapechanger and Misty Escape are **not** in the accepted
 list (already typed); the contract design should nonetheless check those for
 vocabulary compatibility.
 
-### 1.2 False Appearance family — 16 refs — disposition: model (slice C2)
+### 1.2 False Appearance family — 16 refs — disposition: model (slice C2; implemented)
 
 Uniform grammar: "While the X remains motionless (±extra condition), it is
 indistinguishable from Y." Deterministic auto-rule (no check/DC printed).
-Proposed small contract: `falseAppearance { while: string,
+Implemented small contract: `falseAppearance { while: string,
 indistinguishableFrom: string }`. Refs (all identical structure; `cloaker`
 adds "without its underside exposed", `flying-sword` adds "and isn't
 flying", `mimic` is object-form-only):
@@ -416,7 +417,7 @@ None of the remaining slices below is started unless stated.
 | slice | content | new contract? | agent |
 |---|---|---|---|
 | **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove/update their `finding` entries in the reviewed-disposition registry; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
-| **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Codex** (after 5-line design review) |
+| **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Implemented** |
 | **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 8 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Opus** design, Codex rollout |
 | **S1** summoning | design summoning contract extension (option menus, control economy, statblock modification); 14 spells | yes — largest open design | **Opus** |
 | **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
@@ -446,10 +447,10 @@ every membership key appears in exactly one disposition section):
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
-  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after this pass: 66
-  (72 - 6 implemented) = C1 22 + C2 16 + C3 10 + accept\* 2 + C4 2 + C5 2 +
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after C2 rollout: 50
+  (72 - 6 implemented - 16 C2 implemented) = C1 22 + C3 10 + accept\* 2 + C4 2 + C5 2 +
   C6 4 + C7 2 + C8 2 + C9 4
-  (22+16+10+2+2+2+4+2+2+4 = 66)
+  (22+10+2+2+2+4+2+2+4 = 50)
 - spells 53 = S1 14 (§2.1) + S2 17 (§2.2 5 + §2.4 2 + §2.5 2 + §2.8 8) +
   S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) + accept\* 1 (§2.6)
 

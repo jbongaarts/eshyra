@@ -1194,34 +1194,6 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
   'creature:weretiger#traits:Shapechanger': creatureEntrySliceFinding('C1'),
   'creature:werewolf#traits:Shapechanger': creatureEntrySliceFinding('C1'),
 
-  // C2 — False Appearance family (16, §1.2).
-  'creature:animated-armor#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:awakened-shrub#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:awakened-tree#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:cloaker#traits:False Appearance': creatureEntrySliceFinding('C2'),
-  'creature:darkmantle#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:flying-sword#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:gargoyle#traits:False Appearance': creatureEntrySliceFinding('C2'),
-  'creature:gray-ooze#traits:False Appearance': creatureEntrySliceFinding('C2'),
-  'creature:ice-mephit#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:magma-mephit#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:mimic#traits:False Appearance (Object Form Only)':
-    creatureEntrySliceFinding('C2'),
-  'creature:roper#traits:False Appearance': creatureEntrySliceFinding('C2'),
-  'creature:rug-of-smothering#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-  'creature:shrieker#traits:False Appearance': creatureEntrySliceFinding('C2'),
-  'creature:treant#traits:False Appearance': creatureEntrySliceFinding('C2'),
-  'creature:violet-fungus#traits:False Appearance':
-    creatureEntrySliceFinding('C2'),
-
   // C3 — telepathy/communication/innate-knowledge family (10, §1.3–§1.4).
   'creature:homunculus#traits:Telepathic Bond': creatureEntrySliceFinding('C3'),
   'creature:otyugh#traits:Limited Telepathy': creatureEntrySliceFinding('C3'),

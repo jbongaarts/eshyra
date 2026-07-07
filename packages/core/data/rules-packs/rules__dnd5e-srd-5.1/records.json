@@ -18150,7 +18150,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the armor remains motionless, it is indistinguishable from a normal suit of armor."
+          "text": "While the armor remains motionless, it is indistinguishable from a normal suit of armor.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "a normal suit of armor"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -19034,7 +19043,16 @@
       "traits": [
         {
           "name": "False Appearance",
-          "text": "While the shrub remains motionless, it is indistinguishable from a normal shrub."
+          "text": "While the shrub remains motionless, it is indistinguishable from a normal shrub.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "a normal shrub"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -19116,7 +19134,16 @@
       "traits": [
         {
           "name": "False Appearance",
-          "text": "While the tree remains motionless, it is indistinguishable from a normal tree."
+          "text": "While the tree remains motionless, it is indistinguishable from a normal tree.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "a normal tree"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -24193,7 +24220,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the cloaker remains motionless without its underside exposed, it is indistinguishable from a dark leather cloak."
+          "text": "While the cloaker remains motionless without its underside exposed, it is indistinguishable from a dark leather cloak.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless without its underside exposed",
+                "indistinguishableFrom": "a dark leather cloak"
+              }
+            ]
+          }
         },
         {
           "name": "Light Sensitivity",
@@ -25817,7 +25853,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the darkmantle remains motionless, it is indistinguishable from a cave formation such as a stalactite or stalagmite."
+          "text": "While the darkmantle remains motionless, it is indistinguishable from a cave formation such as a stalactite or stalagmite.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "a cave formation such as a stalactite or stalagmite"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -30589,7 +30634,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the sword remains motionless and isn’t flying, it is indistinguishable from a normal sword."
+          "text": "While the sword remains motionless and isn’t flying, it is indistinguishable from a normal sword.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless and isn't flying",
+                "indistinguishableFrom": "a normal sword"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -30912,7 +30966,16 @@
       "traits": [
         {
           "name": "False Appearance",
-          "text": "While the gargoyle remains motionless, it is indistinguishable from an inanimate statue."
+          "text": "While the gargoyle remains motionless, it is indistinguishable from an inanimate statue.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "an inanimate statue"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -37029,7 +37092,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the ooze remains motionless, it is indistinguishable from an oily pool or wet rock."
+          "text": "While the ooze remains motionless, it is indistinguishable from an oily pool or wet rock.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "an oily pool or wet rock"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -40795,7 +40867,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the mephit remains motionless, it is indistinguishable from an ordinary shard of ice."
+          "text": "While the mephit remains motionless, it is indistinguishable from an ordinary shard of ice.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "an ordinary shard of ice"
+              }
+            ]
+          }
         },
         {
           "name": "Innate Spellcasting (1/Day)",
@@ -43750,7 +43831,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the mephit remains motionless, it is indistinguishable from an ordinary mound of magma."
+          "text": "While the mephit remains motionless, it is indistinguishable from an ordinary mound of magma.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "an ordinary mound of magma"
+              }
+            ]
+          }
         },
         {
           "name": "Innate Spellcasting (1/Day)",
@@ -45264,7 +45354,16 @@
         },
         {
           "name": "False Appearance (Object Form Only)",
-          "text": "While the mimic remains motionless, it is indistinguishable from an ordinary object."
+          "text": "While the mimic remains motionless, it is indistinguishable from an ordinary object.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "in object form and motionless",
+                "indistinguishableFrom": "an ordinary object"
+              }
+            ]
+          }
         },
         {
           "name": "Grappler",
@@ -51736,7 +51835,16 @@
       "traits": [
         {
           "name": "False Appearance",
-          "text": "While the roper remains motionless, it is indistinguishable from a normal cave formation, such as a stalagmite."
+          "text": "While the roper remains motionless, it is indistinguishable from a normal cave formation, such as a stalagmite.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "a normal cave formation, such as a stalagmite"
+              }
+            ]
+          }
         },
         {
           "name": "Grasping Tendrils",
@@ -51948,7 +52056,16 @@
         },
         {
           "name": "False Appearance",
-          "text": "While the rug remains motionless, it is indistinguishable from a normal rug."
+          "text": "While the rug remains motionless, it is indistinguishable from a normal rug.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "a normal rug"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -53860,7 +53977,16 @@
       "traits": [
         {
           "name": "False Appearance",
-          "text": "While the shrieker remains motionless, it is indistinguishable from an ordinary fungus."
+          "text": "While the shrieker remains motionless, it is indistinguishable from an ordinary fungus.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "an ordinary fungus"
+              }
+            ]
+          }
         }
       ],
       "reactions": [
@@ -57838,7 +57964,16 @@
       "traits": [
         {
           "name": "False Appearance",
-          "text": "While the treant remains motionless, it is indistinguishable from a normal tree."
+          "text": "While the treant remains motionless, it is indistinguishable from a normal tree.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "a normal tree"
+              }
+            ]
+          }
         },
         {
           "name": "Siege Monster",
@@ -59691,7 +59826,16 @@
       "traits": [
         {
           "name": "False Appearance",
-          "text": "While the violet fungus remains motionless, it is indistinguishable from an ordinary fungus."
+          "text": "While the violet fungus remains motionless, it is indistinguishable from an ordinary fungus.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "falseAppearance",
+                "while": "motionless",
+                "indistinguishableFrom": "an ordinary fungus"
+              }
+            ]
+          }
         }
       ],
       "actions": [
