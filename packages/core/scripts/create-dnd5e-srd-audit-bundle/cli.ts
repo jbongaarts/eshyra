@@ -1199,22 +1199,6 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
   'creature:weretiger#traits:Shapechanger': creatureEntrySliceFinding('C1'),
   'creature:werewolf#traits:Shapechanger': creatureEntrySliceFinding('C1'),
 
-  // C3 — telepathy/communication/innate-knowledge family (10, §1.3–§1.4).
-  'creature:homunculus#traits:Telepathic Bond': creatureEntrySliceFinding('C3'),
-  'creature:otyugh#traits:Limited Telepathy': creatureEntrySliceFinding('C3'),
-  'creature:pseudodragon#traits:Limited Telepathy':
-    creatureEntrySliceFinding('C3'),
-  'creature:sahuagin#traits:Shark Telepathy': creatureEntrySliceFinding('C3'),
-  'creature:dryad#traits:Speak with Beasts and Plants':
-    creatureEntrySliceFinding('C3'),
-  'creature:aboleth#traits:Probing Telepathy': creatureEntrySliceFinding('C3'),
-  'creature:invisible-stalker#traits:Faultless Tracker':
-    creatureEntrySliceFinding('C3'),
-  'creature:minotaur#traits:Labyrinthine Recall':
-    creatureEntrySliceFinding('C3'),
-  'creature:hydra#traits:Wakeful': creatureEntrySliceFinding('C3'),
-  'creature:ettin#traits:Wakeful': creatureEntrySliceFinding('C3'),
-
   // C4 — Reckless family (2, §1.6.2).
   'creature:berserker#traits:Reckless': creatureEntrySliceFinding('C4'),
   'creature:minotaur#traits:Reckless': creatureEntrySliceFinding('C4'),
@@ -1301,10 +1285,8 @@ export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
   'spell:secret-chest',
   'spell:sending',
   'spell:simulacrum',
-  'spell:speak-with-animals',
   'spell:speak-with-dead',
   'spell:stone-shape',
-  'spell:telepathic-bond',
   'spell:thaumaturgy',
   'spell:tiny-hut',
 ]);

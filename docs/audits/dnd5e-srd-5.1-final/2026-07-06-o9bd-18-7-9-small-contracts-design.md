@@ -19,7 +19,11 @@ indistinguishability state; discovery is DM adjudication (contrast
 `illusoryDisguise`/`mimicry`, which carry `discernDc`). Golden:
 `animated-armor`; the other 15 are grammar-identical.
 
-## C3 — communication/knowledge/state contracts (8 creature refs + 2 spells)
+## C3 — communication/knowledge/state contracts (10 creature refs + 2 spells)
+
+Implemented 2026-07-07. The rollout included the original 8 creature refs plus
+the folded aboleth Probing Telepathy and ettin Wakeful refs from the
+classification artifact's residual reconciliation.
 
 ```ts
 { kind: 'telepathy',
@@ -28,6 +32,7 @@ indistinguishability state; discovery is DM adjudication (contrast
   oneWay?: boolean,              // otyugh (receiver cannot respond)
   requiresLanguage?: boolean,    // target must understand ≥1 language
   audience?: string,             // 'sharks' (sahuagin), 'master' (homunculus)
+  content?: ('simple-messages'|'simple-ideas'|'emotions'|'images')[],
   commands?: boolean,            // sahuagin: command, not converse
   maxCreatures?: number,         // telepathic-bond 8
   willingOnly?: boolean,         // telepathic-bond
@@ -35,6 +40,12 @@ indistinguishability state; discovery is DM adjudication (contrast
 
 { kind: 'communication',
   with: string[] }               // ['beasts','plants'] dryad; ['beasts'] speak-with-animals
+
+{ kind: 'senseSharing',
+  source: string,                // 'homunculus'
+  recipient: string,             // 'master'
+  senses: string,
+  condition?: string }           // homunculus same-plane clause
 
 { kind: 'locationKnowledge',
   knows: ('direction'|'distance'|'location')[],
@@ -51,14 +62,18 @@ indistinguishability state; discovery is DM adjudication (contrast
 
 Validation: `telepathy` fields all optional but at least one of
 `rangeFeet`/`audience`/`maxCreatures` present (empty payload rejected);
-`communication.with` non-empty; `locationKnowledge.knows` non-empty.
+`communication.with` non-empty; `telepathy.content`, when present, must use the
+closed content vocabulary above; `conveys` is not a supported telepathy field;
+`senseSharing` requires source, recipient, and senses;
+`locationKnowledge.knows` non-empty.
 Use `pathMemory`, not `locationKnowledge`, for navigation/path-recall
 semantics where no target entity location is being tracked.
 Global telepathy semantics (initiation, incapacitation, antimagic) live in
 `rule:telepathy` (engine procedure, 18.7.8.3) — payloads carry only the
 per-record boundaries. Goldens: otyugh (oneWay), invisible-stalker (two
 `locationKnowledge` effects: quarry + summoner), minotaur (`pathMemory`),
-`spell:telepathic-bond`.
+homunculus (`telepathy` + directional `senseSharing`), aboleth
+(`triggeredEffect` with result + condition), `spell:telepathic-bond`.
 
 ## S2 — small deterministic clause payloads (17 spells)
 

@@ -881,6 +881,35 @@ describe('mechanics effect payload contracts', () => {
         indistinguishableFrom: 'a normal suit of armor',
       }),
     ).toThrow(/while/);
+    expect(() => validate({ kind: 'telepathy' })).toThrow(/telepathy boundary/);
+    expect(() => validate({ kind: 'telepathy', rangeFeet: 0 })).toThrow(
+      /rangeFeet/,
+    );
+    expect(() =>
+      validate({ kind: 'telepathy', rangeFeet: 100, conveys: 'senses' }),
+    ).toThrow(/conveys/);
+    expect(() =>
+      validate({ kind: 'telepathy', rangeFeet: 100, content: ['thoughts'] }),
+    ).toThrow(/content/);
+    expect(() => validate({ kind: 'communication', with: [] })).toThrow(/with/);
+    expect(() =>
+      validate({
+        kind: 'senseSharing',
+        source: 'homunculus',
+        senses: 'what it senses',
+      }),
+    ).toThrow(/recipient/);
+    expect(() =>
+      validate({ kind: 'locationKnowledge', knows: ['bearing'], of: 'quarry' }),
+    ).toThrow(/knows/);
+    expect(() =>
+      validate({
+        kind: 'pathMemory',
+        scope: 'local-maze',
+        recall: 'perfect',
+      }),
+    ).toThrow(/scope/);
+    expect(() => validate({ kind: 'sleepException' })).toThrow(/detail/);
     expect(() => validate({ kind: 'limitedAmmunition', count: 24 })).toThrow(
       /replenish/,
     );
