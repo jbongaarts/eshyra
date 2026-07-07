@@ -63,7 +63,7 @@ const SRD_5_1_DAMAGE_TYPES: ReadonlySet<string> = new Set([
   'thunder',
 ]);
 
-function compact<T extends Record<string, unknown>>(obj: T): T {
+export function compact<T extends Record<string, unknown>>(obj: T): T {
   for (const key of Object.keys(obj)) {
     const value = obj[key];
     if (

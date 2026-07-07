@@ -908,3 +908,245 @@ describe('mechanics effect payload contracts', () => {
     );
   });
 });
+
+/**
+ * Magic-item M2/M3 passive-modifier vocabulary (eshyra-o9bd.18.7.7.5): new
+ * effect kinds plus extensions to existing kinds (abilityScoreIncrease,
+ * hitPointMaximumIncrease, regeneration, sense, speedSet, stabilize).
+ */
+describe('magic-item passive-modifier effect payload contracts', () => {
+  it('accepts abilityScoreSet with a fixed value or a table ref, never both', () => {
+    expect(() =>
+      validate({ kind: 'abilityScoreSet', ability: 'strength', value: 19 }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'abilityScoreSet',
+        ability: 'strength',
+        tableRef: 'table:belt-of-giant-strength',
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects malformed abilityScoreSet payloads', () => {
+    expect(() =>
+      validate({ kind: 'abilityScoreSet', ability: 'strength' }),
+    ).toThrow(/exactly one of value or tableRef/);
+    expect(() =>
+      validate({
+        kind: 'abilityScoreSet',
+        ability: 'strength',
+        value: 19,
+        tableRef: 'table:x',
+      }),
+    ).toThrow(/exactly one of value or tableRef/);
+    expect(() =>
+      validate({ kind: 'abilityScoreSet', ability: 'luck', value: 19 }),
+    ).toThrow(/must be an ability name/);
+    expect(() =>
+      validate({
+        kind: 'abilityScoreSet',
+        ability: 'strength',
+        tableRef: 'notable:x',
+      }),
+    ).toThrow(/tableRef must be a 'table:' ref/);
+  });
+
+  it('accepts and rejects proficiencyBonusIncrease and healingMultiplier', () => {
+    expect(() =>
+      validate({ kind: 'proficiencyBonusIncrease', amount: 1 }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'proficiencyBonusIncrease' })).toThrow(
+      /amount/,
+    );
+    expect(() =>
+      validate({
+        kind: 'healingMultiplier',
+        multiplier: 2,
+        appliesTo: 'hit-dice-spent-to-regain-hit-points',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({ kind: 'healingMultiplier', multiplier: 2 }),
+    ).toThrow(/appliesTo/);
+    expect(() =>
+      validate({ kind: 'healingMultiplier', appliesTo: 'x' }),
+    ).toThrow(/multiplier must be a finite number/);
+  });
+
+  it('accepts marker-only hover/sustenance/swimWithoutExtraMovement and rejects extra payload', () => {
+    expect(() => validate({ kind: 'hover' })).not.toThrow();
+    expect(() => validate({ kind: 'sustenance' })).not.toThrow();
+    expect(() => validate({ kind: 'swimWithoutExtraMovement' })).not.toThrow();
+    expect(() => validate({ kind: 'hover', extra: true })).toThrow(
+      /marker-only effect/,
+    );
+  });
+
+  it('accepts telepathicRelay and temperatureTolerance', () => {
+    expect(() =>
+      validate({
+        kind: 'telepathicRelay',
+        requires: 'concentrating on the helm’s detect thoughts',
+      }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'telepathicRelay' })).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'temperatureTolerance',
+        minimumFahrenheit: -50,
+        withHeavyClothesMinimumFahrenheit: -100,
+      }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'temperatureTolerance' })).toThrow(
+      /minimumFahrenheit/,
+    );
+  });
+
+  it('extends abilityScoreIncrease with alsoIncreasesMaximum, mutually exclusive with newMaximum', () => {
+    expect(() =>
+      validate({
+        kind: 'abilityScoreIncrease',
+        abilities: ['constitution'],
+        amount: 2,
+        alsoIncreasesMaximum: true,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'abilityScoreIncrease',
+        abilities: ['constitution'],
+        amount: 2,
+        newMaximum: 20,
+        alsoIncreasesMaximum: true,
+      }),
+    ).toThrow(/must not carry both newMaximum and alsoIncreasesMaximum/);
+  });
+
+  it('extends hitPointMaximumIncrease with perLevel as an alternative to amount', () => {
+    expect(() =>
+      validate({ kind: 'hitPointMaximumIncrease', perLevel: 1 }),
+    ).not.toThrow();
+    expect(() =>
+      validate({ kind: 'hitPointMaximumIncrease', amount: 5 }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'hitPointMaximumIncrease' })).toThrow(
+      /exactly one of amount or perLevel/,
+    );
+    expect(() =>
+      validate({
+        kind: 'hitPointMaximumIncrease',
+        amount: 5,
+        perLevel: 1,
+      }),
+    ).toThrow(/exactly one of amount or perLevel/);
+  });
+
+  it('validates the new regeneration payload shape', () => {
+    expect(() =>
+      validate({
+        kind: 'regeneration',
+        hitDice: '1d6',
+        timing: 'every-10-minutes',
+        condition: 'if it has at least 1 hit point',
+        limbRegrowthDays: '1d6 + 1',
+        limbRegrowthCondition:
+          'if you have at least 1 hit point the whole time',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'regeneration',
+        hitPoints: 10,
+        timing: 'start-of-turn',
+      }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'regeneration', timing: 'x' })).toThrow(
+      /exactly one of hitPoints or hitDice/,
+    );
+    expect(() =>
+      validate({
+        kind: 'regeneration',
+        hitPoints: 10,
+        hitDice: '1d6',
+        timing: 'x',
+      }),
+    ).toThrow(/exactly one of hitPoints or hitDice/);
+    expect(() => validate({ kind: 'regeneration', hitPoints: 10 })).toThrow(
+      /timing/,
+    );
+    expect(() =>
+      validate({
+        kind: 'regeneration',
+        hitPoints: 10,
+        timing: 'x',
+        suppressedByDamageTypes: ['not-a-type'],
+      }),
+    ).toThrow(
+      /suppressedByDamageTypes must be an array of canonical damage types/,
+    );
+  });
+
+  it('extends sense with durationMinutes and bonusRangeFeetIfAlreadyHasSense', () => {
+    expect(() =>
+      validate({
+        kind: 'sense',
+        sense: 'truesight',
+        rangeFeet: 120,
+        durationMinutes: 10,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'sense',
+        sense: 'darkvision',
+        rangeFeet: 60,
+        bonusRangeFeetIfAlreadyHasSense: 60,
+      }),
+    ).not.toThrow();
+  });
+
+  it('extends speedSet with valueTableRef, floor, and hover', () => {
+    expect(() =>
+      validate({
+        kind: 'speedSet',
+        mode: 'fly',
+        valueTableRef: 'table:carpet-of-flying',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({ kind: 'speedSet', mode: 'walk', value: 30, floor: true }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'speedSet',
+        mode: 'fly',
+        value: 'walking-speed',
+        hover: true,
+      }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'speedSet', mode: 'fly' })).toThrow(
+      /exactly one of value or valueTableRef/,
+    );
+    expect(() =>
+      validate({
+        kind: 'speedSet',
+        mode: 'fly',
+        value: 60,
+        valueTableRef: 'table:x',
+      }),
+    ).toThrow(/exactly one of value or valueTableRef/);
+    expect(() =>
+      validate({ kind: 'speedSet', mode: 'fly', valueTableRef: 'notable:x' }),
+    ).toThrow(/valueTableRef must be a 'table:' ref/);
+  });
+
+  it('extends stabilize with trigger', () => {
+    expect(() =>
+      validate({
+        kind: 'stabilize',
+        trigger: 'start of your turn while dying',
+      }),
+    ).not.toThrow();
+  });
+});
