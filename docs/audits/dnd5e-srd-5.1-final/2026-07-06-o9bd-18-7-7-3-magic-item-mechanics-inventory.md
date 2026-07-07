@@ -81,8 +81,12 @@ Other tags: **DB** — design-blocked clause (exact reason/owner in the row);
 **NM** — genuinely non-mechanical flavor clause (never the whole item — 0 of
 240 items are purely non-mechanical); **F#-hook** — the clause must
 integrate with a Phase 1 engine family from
-`2026-07-06-o9bd-18-7-8-execution-boundary-classification.md` (F2 action
-economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
+`2026-07-06-o9bd-18-7-8-execution-boundary-classification.md` (F1/F9 roll
+and deterministic-resolution primitives, F2 action economy, F3
+concentration, F4 spell slots, F5 reset/resource/recharge events, F6
+death/temp-HP, F7 rest, F10 canonical currency/trade surface). Hooks do not
+replace pack-side clause ownership or item live-state ownership; they name
+the shared engine primitive the item implementation must subscribe to.
 
 ## 2. Master inventory (all 240 items, by key; `magic-item:` prefix elided)
 
@@ -98,7 +102,7 @@ economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
 | armor-1-2-or-3 | C2 | +N AC by rarity: C2 |
 | armor-of-invulnerability | C2,C1 | nonmagical-damage resistance; action→10-min immunity: C2; 1/dawn: C1 |
 | armor-of-resistance | C2,S | resistance one type: C2; type table: S |
-| armor-of-vulnerability | C2,M7 | resistance clause + vulnerability×2 math: C2; curse attach/reveal/removal semantics: M7 |
+| armor-of-vulnerability | C2,M7 | resistance clause + vulnerability×2 math (F9-hook): C2; curse attach/reveal/removal semantics: M7 |
 | arrow-catching-shield | C2 | +2 AC vs ranged; reaction redirect-to-self: C2 |
 | arrow-of-slaying | C2,C1 | type-scoped DC17 Con save 6d10/half: C2; becomes-nonmagical depletion: C1 |
 | bag-of-beans | C1,C2,M8,S | 3d4 bean count/depletion: C1; dump explosion DC15 Dex 5d4: C2; plant→random effect: M8; effects table: S |
@@ -111,8 +115,8 @@ economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
 | berserker-axe | C2,M2,M7 | +1 atk/dmg: C2; hp-max +1/level: M2; curse (unwilling to part, disadv other weapons, DC15 Wis berserk forced-attack state): M7 |
 | boots-of-elvenkind | C2 | silent steps + adv Stealth (silent): C2 |
 | boots-of-levitation | C2,C1 | levitate self at will: C2 (grant) + C1 (at-will economy) |
-| boots-of-speed | M5,M3,C2,C1 | heel-click toggle: M5; walking speed ×2: M3; OA disadv: C2; cumulative 10-min budget, long-rest reset: C1 (hard case) |
-| boots-of-striding-and-springing | M3 | speed floor 30, no encumbrance/heavy-armor reduction; jump ×3 capped by movement: M3 |
+| boots-of-speed | M5,M3,C2,C1 | heel-click toggle: M5; walking speed ×2 (F9-hook): M3; OA disadv: C2; cumulative 10-min budget, long-rest reset (F5/F7-hooks): C1 (hard case) |
+| boots-of-striding-and-springing | M3 | speed floor 30, no encumbrance/heavy-armor reduction; jump ×3 capped by movement (F9-hook): M3 |
 | boots-of-the-winterlands | C2,M3 | cold resistance: C2; ignore ice/snow difficult terrain, −50°F tolerance: M3 |
 | bowl-of-commanding-water-elementals | C1,M4 | 1/dawn: C1; summon as conjure elemental: M4 |
 | bracers-of-archery | M2,C2 | longbow/shortbow proficiency: M2; +2 damage with them: C2 |
@@ -122,7 +126,7 @@ economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
 | broom-of-flying | M5,M3 | rideable animation + remote travel commands: M5; fly 50 (30 over 200 lb), 400-lb cap: M3 |
 | candle-of-invocation | C1,C2,M9 | 4-hour burn budget in 1-min increments, destruction: C1; alignment-matched adv zone + gate cast (destroys): C2; 1st-level free casting for matching cleric/druid in light: M9 |
 | cape-of-the-mountebank | C2,C1,NM | dimension door cast: C2; 1/dawn: C1; smoke obscurement flavor: NM |
-| carpet-of-flying | M5,M3,S | command-word vehicle: M5; fly speed by size, half over capacity: M3; size table: S |
+| carpet-of-flying | M5,M3,S | command-word vehicle: M5; fly speed by size, half over capacity (F9-hook): M3; size table: S |
 | censer-of-controlling-air-elementals | C1,M4 | as bowl (air) |
 | chime-of-opening | C1,M5 | 10 uses then cracks: C1; open lock/latch at 120 ft, sound-path requirement: M5 |
 | circlet-of-blasting | C2,C1 | scorching ray at fixed +5: C2; 1/dawn: C1 |
@@ -139,7 +143,7 @@ economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
 | dancing-sword | M5,C2 | bonus-action launch, hover, per-turn flight+attack, 4-attack counter then return/fall: M5; uses your attack roll/mods: C2 |
 | decanter-of-endless-water | M5,C2 | command-word water production (3 modes): M5; geyser DC13 Str 1d4 + prone / object push: C2 |
 | deck-of-illusions | M8,M4,C1,S | random draw from deck missing 1d20−1 cards: M8; illusory creature persistence, movement command, DC15 investigation reveal: M4; per-card depletion: C1; card table: S |
-| deck-of-many-things | M8,M7,S | declared-draw procedure, 1-hour inter-draw limit, card resolution (XP/levels, alignment flip, Euryale −2 curse, Donjon/Void soul-state, wish grants, keep/NPC outcomes): M8 (flagship; card effects are one-time GM-mediated events touching XP/advancement engine); Euryale/Donjon/Void persistent states: M7; card table + avatar-of-death stat block: S |
+| deck-of-many-things | M8,M7,S | declared-draw procedure, 1-hour inter-draw limit, card resolution (XP/levels, alignment flip, Euryale −2 curse, Donjon/Void soul-state, wish grants, wealth/treasure outcomes requiring canonical currency/asset mutation → F10-hook, keep/NPC outcomes): M8 (flagship; card effects are one-time GM-mediated events touching XP/advancement and currency/trade surfaces); Euryale/Donjon/Void persistent states: M7; card table + avatar-of-death stat block: S |
 | defender | C2 | +3 with per-first-attack split between atk/dmg and AC until next turn: C2 (per-turn choice state noted) |
 | demon-armor | C2,M2,M7 | +1 AC; unarmed 1d8 magic +1/+1: C2; Abyssal: M2; curse (can't doff; disadv attack/saves vs demons): M7 |
 | dimensional-shackles | M5,C2 | bind incapacitated target, size range, designated-remover, DC30 escape 1/30-days: M5; extradimensional-movement prevention: C2 (targeting/movement immunity inverse) |
@@ -198,9 +202,9 @@ economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
 | mantle-of-spell-resistance | C2 | adv saves vs spells: C2 |
 | manual-of-bodily-health | M2,C1 | Con +2 and max +2 (permanent): M2; 48-h/6-day study procedure (downtime-hook), century recharge: C1 |
 | manual-of-gainful-exercise | M2,C1 | as bodily-health (Str) |
-| manual-of-golems | M4,C1,C2,S | golem creation + control: M4; consumed on completion, reader gating (two 5th-level slots): C1; 6d6 psychic on unqualified read: C2; time/cost table: S; downtime-hook |
+| manual-of-golems | M4,C1,C2,S | golem creation + control: M4; consumed on completion, reader gating (two 5th-level slots): C1; 6d6 psychic on unqualified read: C2; time/cost table (F10-hook for canonical build costs): S; downtime-hook |
 | manual-of-quickness-of-action | M2,C1 | as bodily-health (Dex) |
-| marvelous-pigments | M1,M5 | 1d4 pots, coverage budget (1,000 sq ft/pot, 10 min/100 sq ft): M1; painted objects/terrain become real, 25-gp value cap, energy dissipates: M5 |
+| marvelous-pigments | M1,M5 | 1d4 pots, coverage budget (1,000 sq ft/pot, 10 min/100 sq ft; F9-hook for coverage arithmetic): M1; painted objects/terrain become real, 25-gp value cap (F10-hook if converted to canonical assets), energy dissipates: M5 |
 | medallion-of-thoughts | C1,C2 | 3 charges, 1d3/dawn: C1; detect thoughts DC13: C2 |
 | mirror-of-life-trapping | M6,C2 | 12-cell containment, activation command state, trap/release/free procedures, overflow release, shatter frees, no aging/needs: M6 (flagship); DC15 Cha save (adv if known; constructs auto-succeed): C2 |
 | mithral-armor | C2 | removes stealth disadvantage and Str requirement of base armor: C2 (armor-stat override) |
@@ -281,7 +285,7 @@ economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
 | sovereign-glue | M1,M5,M11 | 1d6+1 oz, 1 oz/sq ft, 1-min set: M1; permanent bond state: M5; breakable only by universal solvent / oil of etherealness / wish; container must be slipperiness-coated: M11 |
 | spell-scroll | M1,M9,S | single-use, crumbles on cast, destroyed-on-copy: M1; casting procedure (class-list gate, higher-level DC 10+level check w/ loss-on-failure, scroll-set DC/attack by level, copy DC 10+level): M9 (flagship); level/DC/attack table: S |
 | spellguard-shield | C2 | adv saves vs spells/magical effects; spell attacks disadv vs you: C2 |
-| sphere-of-annihilation | M5,C2,M8,S,M11 | obliteration semantics, uncontrolled/controlled states, DC25 Arcana control + contested control, movement math (5×Int mod), space-entry DC13 4d10: M5 (flagship) + C2 (contact damage); portal-contact random outcomes: M8 + table: S; talisman-of-the-sphere / portal / extradimensional interactions: M11 |
+| sphere-of-annihilation | M5,C2,M8,S,M11 | obliteration semantics, uncontrolled/controlled states, DC25 Arcana control + contested control, movement math (5×Int mod → F9-hook), space-entry DC13 4d10: M5 (flagship) + C2 (contact damage); portal-contact random outcomes: M8 + table: S; talisman-of-the-sphere / portal / extradimensional interactions: M11 |
 | staff-of-charming | C1,C2,M10,S | 10 charges, 1d8+2/dawn, last-charge d20 (1: nonmagical): C1; charm person/command/comprehend languages at own DC: C2; save-flip vs enchantment 1/dawn + reflect-on-success w/ 1 charge: M10; class attunement: S |
 | staff-of-fire | C1,C2,S | 10 charges, 1d6+4/dawn, last-charge d20 destruction: C1; fire resistance; burning hands/fireball/wall of fire at own DC: C2; class attunement: S |
 | staff-of-frost | C1,C2,S | as staff-of-fire (cold; cone of cold/fog cloud/ice storm/wall of ice) |
@@ -301,7 +305,7 @@ economy, F3 concentration, F4 spell slots, F6 death/temp-HP, F7 rest).
 | sword-of-sharpness | C2,M8,M5 | maximize damage dice vs objects; nat-20 +4d6 + nested d20 (20: sever limb, GM effect): C2+M8; light command toggle: M5 |
 | sword-of-wounding | M7,C2 | wound counters (1d4/wound at turn start), once-per-turn application, DC15 Con or Medicine ending, hp-loss recoverable only via rest (healing suppression; F6/F7-hooks): M7; hit application: C2 |
 | talisman-of-pure-good | C2,C1,M7,S | touch damage by alignment (6d6/8d6 radiant, per-turn); +2 spell attacks (good cleric/paladin); fissure DC20 Dex destroy: C2; 7 charges, destroyed at 0: C1; alignment interaction/eligibility: M7; good-creature attunement: S |
-| talisman-of-the-sphere | M11,M10,C2 | modifies sphere-of-annihilation control: M11; double PB on control checks: M10; enhanced levitation math: C2 |
+| talisman-of-the-sphere | M11,M10,C2 | modifies sphere-of-annihilation control: M11; double PB on control checks (F9-hook): M10; enhanced levitation math (F9-hook): C2 |
 | talisman-of-ultimate-evil | C2,C1,M7,S | mirror of pure-good (necrotic; 6 charges): same owners |
 | tome-of-clear-thought | M2,C1 | Int +2 and max +2 (permanent): M2; study procedure + century recharge: C1 |
 | tome-of-leadership-and-influence | M2,C1 | as clear-thought (Cha) |
@@ -433,8 +437,9 @@ grep the table; counts match §3).
   (fail→success), scarab-of-protection (fail→success vs necromancy/undead),
   staff-of-charming (save flip/reflect), ring-of-spell-turning (nat-20
   reflect), rod-of-absorption (reaction cancel), talisman-of-the-sphere
-  (PB doubling). Couples to the Phase 1 **F1 dice/roll tool** surface.
-  Agent: Opus design (small), Codex rollout.
+  (PB doubling). Couples to the Phase 1 **F1 dice/roll tool** and **F9
+  deterministic-resolution/derived-math** surfaces. Agent: Opus design
+  (small), Codex rollout.
 - **M11 — inter-item interactions** (9): extradimensional nesting → astral
   gate (bag-of-holding, handy-haversack, portable-hole),
   hammer-of-thunderbolts attunement precondition on belt+gauntlets,
@@ -443,10 +448,12 @@ grep the table; counts match §3).
   sphere-of-annihilation, sphere portal interactions. Agent: Opus (small,
   cross-cutting).
 
-Engine-hook clauses recorded in §2 (F2 scimitar-of-speed; F3 concentration
-items; F4 pearl/rod/ring storage; F6 temp-HP/stabilize/instant-death-adjacent
-items; F7 rest-coupled budgets) must be designed against the Phase 1
-families, not duplicated.
+Engine-hook clauses recorded in §2 include: F2 scimitar-of-speed; F3
+concentration items; F4 pearl/rod/ring storage; F5 reset/resource/recharge
+events for C1 live economies; F6 temp-HP/stabilize/instant-death-adjacent
+items; F7 rest-coupled budgets; F9 deterministic arithmetic/derived
+resolution; and F10 canonical currency/asset mutation. These hooks must be
+designed against the Phase 1 families, not duplicated.
 
 ## 5. Recommended decomposition (child beads under eshyra-o9bd.18.7.7)
 
@@ -469,7 +476,7 @@ New children (create after review; exact memberships = §4 tag lists):
 6. M7 curses, oaths & restrictions — Opus.
 7. M8 random-procedure devices — Opus design, Codex rollout.
 8. M9+M10 spell storage, slot interop & roll manipulation — Opus (design
-   with Phase 1 F4/F1).
+   with Phase 1 F4/F1/F9).
 
 Recommended order: 2 (highest volume, most regular) → 1 → existing .1/.2
 rollout → 7 → 3 → 6 → 8 → 4 → 5. Validation expectations for every child:
