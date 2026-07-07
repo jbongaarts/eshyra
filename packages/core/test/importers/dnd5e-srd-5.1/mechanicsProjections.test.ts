@@ -667,7 +667,16 @@ describe('creature entry effect projections (eshyra-o9bd.18.7.3)', () => {
       'Multiattack',
       'The glabrezu makes four attacks: two with its pincers and two with its fists. Alternatively, it makes two attacks with its pincers and casts one spell.',
     );
-    expect(mechanics.effects).toEqual([{ kind: 'multiattack', attacks: 4 }]);
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'multiattack',
+        attacks: 4,
+        routine: [
+          { attack: 'pincers', attacks: 2 },
+          { attack: 'fists', attacks: 2 },
+        ],
+      },
+    ]);
   });
 
   it('models Healing Touch dice healing with per-day usage', () => {

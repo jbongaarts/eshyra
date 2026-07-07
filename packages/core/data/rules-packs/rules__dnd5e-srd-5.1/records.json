@@ -11328,7 +11328,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -11619,7 +11629,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -11910,7 +11930,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -12230,7 +12260,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -12533,7 +12573,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -12847,7 +12897,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -13166,7 +13226,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -13457,7 +13527,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -13747,7 +13827,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -14036,7 +14126,22 @@
       "traits": [
         {
           "name": "Ice Walk",
-          "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, difficult terrain composed of ice or snow doesn’t cost it extra moment."
+          "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, difficult terrain composed of ice or snow doesn’t cost it extra moment.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck",
+                "surfaces": "icy"
+              },
+              {
+                "kind": "ignoreDifficultTerrain",
+                "terrain": [
+                  "ice",
+                  "snow"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Legendary Resistance (3/Day)",
@@ -14061,7 +14166,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -14328,7 +14443,18 @@
       "traits": [
         {
           "name": "Air Form",
-          "text": "The elemental can enter a hostile creature’s space and stop there. It can move through a space as narrow as 1 inch wide without squeezing."
+          "text": "The elemental can enter a hostile creature’s space and stop there. It can move through a space as narrow as 1 inch wide without squeezing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "moveThroughNarrowSpaces",
+                "widthInches": 1
+              },
+              {
+                "kind": "enterHostileSpace"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -14514,7 +14640,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -14805,7 +14941,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -15096,7 +15242,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -15420,7 +15576,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -15723,7 +15889,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -16041,7 +16217,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -16360,7 +16546,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -16651,7 +16847,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -16941,7 +17147,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -17230,7 +17446,22 @@
       "traits": [
         {
           "name": "Ice Walk",
-          "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, difficult terrain composed of ice or snow doesn’t cost it extra moment."
+          "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, difficult terrain composed of ice or snow doesn’t cost it extra moment.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck",
+                "surfaces": "icy"
+              },
+              {
+                "kind": "ignoreDifficultTerrain",
+                "terrain": [
+                  "ice",
+                  "snow"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Legendary Resistance (3/Day)",
@@ -17255,7 +17486,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -17523,7 +17764,23 @@
       "traits": [
         {
           "name": "Inscrutable",
-          "text": "The sphinx is immune to any effect that would sense its emotions or read its thoughts, as well as any divination spell that it refuses. Wisdom (Insight) checks made to ascertain the sphinx’s intentions or sincerity have disadvantage."
+          "text": "The sphinx is immune to any effect that would sense its emotions or read its thoughts, as well as any divination spell that it refuses. Wisdom (Insight) checks made to ascertain the sphinx’s intentions or sincerity have disadvantage.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "immunity",
+                "to": "any effect that would sense its emotions or read its thoughts, as well as any divination spell that it refuses"
+              },
+              {
+                "kind": "abilityCheckModifier",
+                "mode": "disadvantage",
+                "ability": "wisdom",
+                "skill": "insight",
+                "subject": "checks-against-it",
+                "condition": "made to ascertain its intentions or sincerity"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Weapons",
@@ -17787,7 +18044,13 @@
             "mechanics": {
               "usage": {
                 "legendaryActionCost": 2
-              }
+              },
+              "effects": [
+                {
+                  "kind": "teleport",
+                  "distanceFeet": 120
+                }
+              ]
             }
           },
           {
@@ -19069,7 +19332,17 @@
         },
         {
           "name": "Illumination",
-          "text": "The azer sheds bright light in a 10-foot radius and dim light for an additional 10 feet."
+          "text": "The azer sheds bright light in a 10-foot radius and dim light for an additional 10 feet.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "light",
+                "level": "bright",
+                "radiusFeet": 10,
+                "dimAdditionalFeet": 10
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -19462,7 +19735,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "longsword"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "whip"
+                  }
+                ]
               }
             ]
           }
@@ -19551,7 +19834,15 @@
         },
         {
           "name": "Teleport",
-          "text": "The balor magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see."
+          "text": "The balor magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "teleport",
+                "distanceFeet": 120
+              }
+            ]
+          }
         }
       ]
     },
@@ -19738,7 +20029,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 2,
+                    "attack": "scimitar"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "dagger"
+                  }
+                ]
               }
             ]
           }
@@ -19907,7 +20208,14 @@
         },
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the devil’s darkvision."
+          "text": "Magical darkness doesn’t impede the devil’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Resistance",
@@ -19931,7 +20239,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -20328,7 +20646,14 @@
       "traits": [
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the devil’s darkvision."
+          "text": "Magical darkness doesn’t impede the devil’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Resistance",
@@ -20364,7 +20689,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beard"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "glaive"
+                  }
+                ]
               }
             ]
           }
@@ -20840,7 +21175,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -21115,7 +21460,15 @@
       "traits": [
         {
           "name": "Amorphous",
-          "text": "The pudding can move through a space as narrow as 1 inch wide without squeezing."
+          "text": "The pudding can move through a space as narrow as 1 inch wide without squeezing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "moveThroughNarrowSpaces",
+                "widthInches": 1
+              }
+            ]
+          }
         },
         {
           "name": "Corrosive Form",
@@ -21127,12 +21480,26 @@
                 "dice": "1d8",
                 "type": "acid"
               }
+            ],
+            "effects": [
+              {
+                "kind": "weaponCorrosion",
+                "penaltyPerHit": -1,
+                "destroyedAtPenalty": -5
+              }
             ]
           }
         },
         {
           "name": "Spider Climb",
-          "text": "The pudding can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The pudding can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -21303,7 +21670,13 @@
               "roll": "d6",
               "minimum": 4,
               "maximum": 6
-            }
+            },
+            "effects": [
+              {
+                "kind": "teleport",
+                "distanceFeet": 40
+              }
+            ]
           }
         }
       ],
@@ -21770,7 +22143,14 @@
       "traits": [
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the devil’s darkvision."
+          "text": "Magical darkness doesn’t impede the devil’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Resistance",
@@ -21794,7 +22174,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "sting"
+                  }
+                ]
               }
             ]
           }
@@ -22265,7 +22655,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -22388,7 +22788,15 @@
       "traits": [
         {
           "name": "Brute",
-          "text": "A melee weapon deals one extra die of its damage when the bugbear hits with it (included in the attack)."
+          "text": "A melee weapon deals one extra die of its damage when the bugbear hits with it (included in the attack).",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "extraWeaponDamageDie",
+                "extraDice": 1
+              }
+            ]
+          }
         },
         {
           "name": "Surprise Attack",
@@ -22396,7 +22804,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
                 "trigger": "If the bugbear surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -22886,7 +23295,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "pike"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "hooves or two with its longbow"
+                  }
+                ]
               }
             ]
           }
@@ -23046,7 +23465,14 @@
       "traits": [
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the devil’s darkvision."
+          "text": "Magical darkness doesn’t impede the devil’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Resistance",
@@ -23216,7 +23642,21 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "horns"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -23409,7 +23849,16 @@
         },
         {
           "name": "Sense Magic",
-          "text": "The chuul senses magic within 120 feet of it at will. This trait otherwise works like the detect magic spell but isn’t itself magical."
+          "text": "The chuul senses magic within 120 feet of it at will. This trait otherwise works like the detect magic spell but isn’t itself magical.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "detect-magic",
+                "rangeFeet": 120
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -23731,7 +24180,16 @@
       "traits": [
         {
           "name": "Damage Transfer",
-          "text": "While attached to a creature, the cloaker takes only half the damage dealt to it (rounded down), and that creature takes the other half."
+          "text": "While attached to a creature, the cloaker takes only half the damage dealt to it (rounded down), and that creature takes the other half.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "damageTransfer",
+                "portion": "half",
+                "rounding": "down"
+              }
+            ]
+          }
         },
         {
           "name": "False Appearance",
@@ -23760,7 +24218,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -24661,7 +25129,15 @@
         },
         {
           "name": "Shielded Mind",
-          "text": "The couatl is immune to scrying and to any effect that would sense its emotions, read its thoughts, or detect its location."
+          "text": "The couatl is immune to scrying and to any effect that would sense its emotions, read its thoughts, or detect its location.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "immunity",
+                "to": "scrying and to any effect that would sense its emotions, read its thoughts, or detect its location"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -26263,7 +26739,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "3d6",
                 "trigger": "If the doppelganger surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -26313,7 +26790,44 @@
         },
         {
           "name": "Read Thoughts",
-          "text": "The doppelganger magically reads the surface thoughts of one creature within 60 feet of it. The effect can penetrate barriers, but 3 feet of wood or dirt, 2 feet of stone, 2 inches of metal, or a thin sheet of lead blocks it. While the target is in range, the doppelganger can continue reading its thoughts, as long as the doppelganger’s concentration isn’t broken (as if concentrating on a spell). While reading the target’s mind, the doppelganger has advantage on Wisdom (Insight) and Charisma (Deception, Intimidation, and Persuasion) checks against the target."
+          "text": "The doppelganger magically reads the surface thoughts of one creature within 60 feet of it. The effect can penetrate barriers, but 3 feet of wood or dirt, 2 feet of stone, 2 inches of metal, or a thin sheet of lead blocks it. While the target is in range, the doppelganger can continue reading its thoughts, as long as the doppelganger’s concentration isn’t broken (as if concentrating on a spell). While reading the target’s mind, the doppelganger has advantage on Wisdom (Insight) and Charisma (Deception, Intimidation, and Persuasion) checks against the target.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "read-surface-thoughts",
+                "rangeFeet": 60
+              },
+              {
+                "kind": "abilityCheckModifier",
+                "mode": "advantage",
+                "ability": "wisdom",
+                "skill": "insight",
+                "condition": "while reading the target’s mind"
+              },
+              {
+                "kind": "abilityCheckModifier",
+                "mode": "advantage",
+                "ability": "charisma",
+                "skill": "deception",
+                "condition": "while reading the target’s mind"
+              },
+              {
+                "kind": "abilityCheckModifier",
+                "mode": "advantage",
+                "ability": "charisma",
+                "skill": "intimidation",
+                "condition": "while reading the target’s mind"
+              },
+              {
+                "kind": "abilityCheckModifier",
+                "mode": "advantage",
+                "ability": "charisma",
+                "skill": "persuasion",
+                "condition": "while reading the target’s mind"
+              }
+            ]
+          }
         }
       ]
     },
@@ -26487,7 +27001,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -26684,7 +27208,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -26876,7 +27410,14 @@
         },
         {
           "name": "Spider Climb",
-          "text": "The drider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The drider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Sunlight Sensitivity",
@@ -26903,7 +27444,15 @@
         },
         {
           "name": "Web Walker",
-          "text": "The drider ignores movement restrictions caused by webbing."
+          "text": "The drider ignores movement restrictions caused by webbing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "ignoreMovementRestriction",
+                "source": "webbing"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -27325,7 +27874,17 @@
         },
         {
           "name": "Tree Stride",
-          "text": "Once on her turn, the dryad can use 10 feet of her movement to step magically into one living tree within her reach and emerge from a second living tree within 60 feet of the first tree, appearing in an unoccupied space within 5 feet of the second tree. Both trees must be Large or bigger."
+          "text": "Once on her turn, the dryad can use 10 feet of her movement to step magically into one living tree within her reach and emerge from a second living tree within 60 feet of the first tree, appearing in an unoccupied space within 5 feet of the second tree. Both trees must be Large or bigger.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "teleport",
+                "via": "living-trees",
+                "distanceFeet": 60,
+                "movementCostFeet": 10
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -27921,7 +28480,14 @@
       "traits": [
         {
           "name": "Earth Glide",
-          "text": "The elemental can burrow through nonmagical, unworked earth and stone. While doing so, the elemental doesn’t disturb the material it moves through."
+          "text": "The elemental can burrow through nonmagical, unworked earth and stone. While doing so, the elemental doesn’t disturb the material it moves through.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "earthGlide"
+              }
+            ]
+          }
         },
         {
           "name": "Siege Monster",
@@ -28986,15 +29552,38 @@
       "traits": [
         {
           "name": "Spider Climb",
-          "text": "The ettercap can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The ettercap can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Web Sense",
-          "text": "While in contact with a web, the ettercap knows the exact location of any other creature in contact with the same web."
+          "text": "While in contact with a web, the ettercap knows the exact location of any other creature in contact with the same web.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "web-sense"
+              }
+            ]
+          }
         },
         {
           "name": "Web Walker",
-          "text": "The ettercap ignores movement restrictions caused by webbing."
+          "text": "The ettercap ignores movement restrictions caused by webbing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "ignoreMovementRestriction",
+                "source": "webbing"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -29005,7 +29594,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -29237,7 +29836,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "battleaxe"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "morningstar"
+                  }
+                ]
               }
             ]
           }
@@ -29382,16 +29991,45 @@
                 "dice": "1d10",
                 "type": "fire"
               }
+            ],
+            "effects": [
+              {
+                "kind": "moveThroughNarrowSpaces",
+                "widthInches": 1
+              },
+              {
+                "kind": "enterHostileSpace"
+              }
             ]
           }
         },
         {
           "name": "Illumination",
-          "text": "The elemental sheds bright light in a 30-foot radius and dim light in an additional 30 feet."
+          "text": "The elemental sheds bright light in a 30-foot radius and dim light in an additional 30 feet.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "light",
+                "level": "bright",
+                "radiusFeet": 30,
+                "dimAdditionalFeet": 30
+              }
+            ]
+          }
         },
         {
           "name": "Water Susceptibility",
-          "text": "For every 5 feet the elemental moves in water, or for every gallon of water splashed on it, it takes 1 cold damage."
+          "text": "For every 5 feet the elemental moves in water, or for every gallon of water splashed on it, it takes 1 cold damage.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "recurringDamage",
+                "amount": 1,
+                "type": "cold",
+                "trigger": "every 5 feet moved in water or gallon of water splashed on it"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -29820,7 +30458,15 @@
       "traits": [
         {
           "name": "Flyby",
-          "text": "The snake doesn’t provoke opportunity attacks when it flies out of an enemy’s reach."
+          "text": "The snake doesn’t provoke opportunity attacks when it flies out of an enemy’s reach.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "preventOpportunityAttacks",
+                "scope": "flying-out-of-reach"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -30277,7 +30923,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -30415,7 +31071,22 @@
         },
         {
           "name": "Transparent",
-          "text": "Even when the cube is in plain sight, it takes a successful DC 15 Wisdom (Perception) check to spot a cube that has neither moved nor attacked. A creature that tries to enter the cube’s space while unaware of the cube is surprised by the cube."
+          "text": "Even when the cube is in plain sight, it takes a successful DC 15 Wisdom (Perception) check to spot a cube that has neither moved nor attacked. A creature that tries to enter the cube’s space while unaware of the cube is surprised by the cube.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "hiddenFromView",
+                "spotDc": 15,
+                "ability": "wisdom",
+                "skill": "perception"
+              },
+              {
+                "kind": "triggeredEffect",
+                "trigger": "a creature enters its space while unaware of it",
+                "result": "that creature is surprised"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -30707,7 +31378,16 @@
       "traits": [
         {
           "name": "Ethereal Sight",
-          "text": "The ghost can see 60 feet into the Ethereal Plane when it is on the Material Plane, and vice versa."
+          "text": "The ghost can see 60 feet into the Ethereal Plane when it is on the Material Plane, and vice versa.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "ethereal-sight",
+                "rangeFeet": 60
+              }
+            ]
+          }
         },
         {
           "name": "Incorporeal Movement",
@@ -30754,7 +31434,18 @@
         },
         {
           "name": "Etherealness",
-          "text": "The ghost enters the Ethereal Plane from the Material Plane, or vice versa. It is visible on the Material Plane while it is in the Border Ethereal, and vice versa, yet it can’t affect or be affected by anything on the other plane."
+          "text": "The ghost enters the Ethereal Plane from the Material Plane, or vice versa. It is visible on the Material Plane while it is in the Border Ethereal, and vice versa, yet it can’t affect or be affected by anything on the other plane.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "planeShift",
+                "planes": [
+                  "material",
+                  "ethereal"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Horrifying Visage",
@@ -31152,7 +31843,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -31900,7 +32601,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -32073,7 +32784,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beak"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "talons"
+                  }
+                ]
               }
             ]
           }
@@ -32345,7 +33066,17 @@
       "traits": [
         {
           "name": "Illumination",
-          "text": "The beetle sheds bright light in a 10-foot radius and dim light for an additional 10 feet."
+          "text": "The beetle sheds bright light in a 10-foot radius and dim light for an additional 10 feet.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "light",
+                "level": "bright",
+                "radiusFeet": 10,
+                "dimAdditionalFeet": 10
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -33054,7 +33785,15 @@
       "traits": [
         {
           "name": "Flyby",
-          "text": "The owl doesn’t provoke opportunity attacks when it flies out of an enemy’s reach."
+          "text": "The owl doesn’t provoke opportunity attacks when it flies out of an enemy’s reach.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "preventOpportunityAttacks",
+                "scope": "flying-out-of-reach"
+              }
+            ]
+          }
         },
         {
           "name": "Keen Hearing and Sight",
@@ -33405,7 +34144,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "sting"
+                  }
+                ]
               }
             ]
           }
@@ -33809,15 +34558,38 @@
       "traits": [
         {
           "name": "Spider Climb",
-          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Web Sense",
-          "text": "While in contact with a web, the spider knows the exact location of any other creature in contact with the same web."
+          "text": "While in contact with a web, the spider knows the exact location of any other creature in contact with the same web.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "web-sense"
+              }
+            ]
+          }
         },
         {
           "name": "Web Walker",
-          "text": "The spider ignores movement restrictions caused by webbing."
+          "text": "The spider ignores movement restrictions caused by webbing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "ignoreMovementRestriction",
+                "source": "webbing"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -34175,7 +34947,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beak"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "talons"
+                  }
+                ]
               }
             ]
           }
@@ -34519,15 +35301,38 @@
       "traits": [
         {
           "name": "Spider Climb",
-          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Web Sense",
-          "text": "While in contact with a web, the spider knows the exact location of any other creature in contact with the same web."
+          "text": "While in contact with a web, the spider knows the exact location of any other creature in contact with the same web.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "web-sense"
+              }
+            ]
+          }
         },
         {
           "name": "Web Walker",
-          "text": "The spider ignores movement restrictions caused by webbing."
+          "text": "The spider ignores movement restrictions caused by webbing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "ignoreMovementRestriction",
+                "source": "webbing"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -34885,7 +35690,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 4
+                "attacks": 4,
+                "routine": [
+                  {
+                    "attacks": 2,
+                    "attack": "pincers"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "fists"
+                  }
+                ]
               }
             ]
           }
@@ -35028,7 +35843,15 @@
         },
         {
           "name": "Brute",
-          "text": "A melee weapon deals one extra die of its damage when the gladiator hits with it (included in the attack)."
+          "text": "A melee weapon deals one extra die of its damage when the gladiator hits with it (included in the attack).",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "extraWeaponDamageDie",
+                "extraDice": 1
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -35713,7 +36536,18 @@
       "traits": [
         {
           "name": "Nimble Escape",
-          "text": "The goblin can take the Disengage or Hide action as a bonus action on each of its turns."
+          "text": "The goblin can take the Disengage or Hide action as a bonus action on each of its turns.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "bonusAction",
+                "options": [
+                  "disengage",
+                  "hide"
+                ]
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -36169,11 +37003,29 @@
       "traits": [
         {
           "name": "Amorphous",
-          "text": "The ooze can move through a space as narrow as 1 inch wide without squeezing."
+          "text": "The ooze can move through a space as narrow as 1 inch wide without squeezing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "moveThroughNarrowSpaces",
+                "widthInches": 1
+              }
+            ]
+          }
         },
         {
           "name": "Corrode Metal",
-          "text": "Any nonmagical weapon made of metal that hits the ooze corrodes. After dealing damage, the weapon takes a permanent and cumulative −1 penalty to damage rolls. If its penalty drops to −5, the weapon is destroyed. Nonmagical ammunition made of metal that hits the ooze is destroyed after dealing damage. The ooze can eat through 2-inch-thick, nonmagical metal in 1 round."
+          "text": "Any nonmagical weapon made of metal that hits the ooze corrodes. After dealing damage, the weapon takes a permanent and cumulative −1 penalty to damage rolls. If its penalty drops to −5, the weapon is destroyed. Nonmagical ammunition made of metal that hits the ooze is destroyed after dealing damage. The ooze can eat through 2-inch-thick, nonmagical metal in 1 round.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "weaponCorrosion",
+                "penaltyPerHit": -1,
+                "destroyedAtPenalty": -5,
+                "ammunitionDestroyedOnHit": true
+              }
+            ]
+          }
         },
         {
           "name": "False Appearance",
@@ -36476,7 +37328,17 @@
         },
         {
           "name": "Mimicry",
-          "text": "The hag can mimic animal sounds and humanoid voices. A creature that hears the sounds can tell they are imitations with a successful DC 14 Wisdom (Insight) check."
+          "text": "The hag can mimic animal sounds and humanoid voices. A creature that hears the sounds can tell they are imitations with a successful DC 14 Wisdom (Insight) check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "mimicry",
+                "discernDc": 14,
+                "ability": "wisdom",
+                "skill": "insight"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -36510,7 +37372,19 @@
         },
         {
           "name": "Illusory Appearance",
-          "text": "The hag covers herself and anything she is wearing or carrying with a magical illusion that makes her look like another creature of her general size and humanoid shape. The illusion ends if the hag takes a bonus action to end it or if she dies. The changes wrought by this effect fail to hold up to physical inspection. For example, the hag could appear to have smooth skin, but someone touching her would feel her rough flesh. Otherwise, a creature must take an action to visually inspect the illusion and succeed on a DC 20 Intelligence (Investigation) check to discern that the hag is disguised."
+          "text": "The hag covers herself and anything she is wearing or carrying with a magical illusion that makes her look like another creature of her general size and humanoid shape. The illusion ends if the hag takes a bonus action to end it or if she dies. The changes wrought by this effect fail to hold up to physical inspection. For example, the hag could appear to have smooth skin, but someone touching her would feel her rough flesh. Otherwise, a creature must take an action to visually inspect the illusion and succeed on a DC 20 Intelligence (Investigation) check to discern that the hag is disguised.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "illusoryDisguise",
+                "discernDc": 20,
+                "ability": "intelligence",
+                "skill": "investigation",
+                "inspectionCost": "action",
+                "endCost": "bonus-action"
+              }
+            ]
+          }
         },
         {
           "name": "Invisible Passage",
@@ -36755,7 +37629,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beak"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -37135,8 +38019,9 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "If it dies"
+                "kind": "rejuvenation",
+                "afterDaysDice": "1d6",
+                "condition": "no-wish-spell-cast-to-prevent-it"
               }
             ]
           }
@@ -37402,7 +38287,23 @@
       "traits": [
         {
           "name": "Inscrutable",
-          "text": "The sphinx is immune to any effect that would sense its emotions or read its thoughts, as well as any divination spell that it refuses. Wisdom (Insight) checks made to ascertain the sphinx’s intentions or sincerity have disadvantage."
+          "text": "The sphinx is immune to any effect that would sense its emotions or read its thoughts, as well as any divination spell that it refuses. Wisdom (Insight) checks made to ascertain the sphinx’s intentions or sincerity have disadvantage.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "immunity",
+                "to": "any effect that would sense its emotions or read its thoughts, as well as any divination spell that it refuses"
+              },
+              {
+                "kind": "abilityCheckModifier",
+                "mode": "disadvantage",
+                "ability": "wisdom",
+                "skill": "insight",
+                "subject": "checks-against-it",
+                "condition": "made to ascertain its intentions or sincerity"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Weapons",
@@ -37581,7 +38482,13 @@
             "mechanics": {
               "usage": {
                 "legendaryActionCost": 2
-              }
+              },
+              "effects": [
+                {
+                  "kind": "teleport",
+                  "distanceFeet": 120
+                }
+              ]
             }
           },
           {
@@ -37854,7 +38761,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "club"
+                  }
+                ]
               }
             ]
           }
@@ -38304,7 +39221,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -38585,7 +39512,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beak"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -38961,7 +39898,14 @@
       "traits": [
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the devil’s darkvision."
+          "text": "Magical darkness doesn’t impede the devil’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Resistance",
@@ -38985,7 +39929,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 2,
+                    "attack": "fork"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -39315,7 +40269,16 @@
         },
         {
           "name": "Reactive Heads",
-          "text": "For each head the hydra has beyond one, it gets an extra reaction that can be used only for opportunity attacks."
+          "text": "For each head the hydra has beyond one, it gets an extra reaction that can be used only for opportunity attacks.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "extraReactions",
+                "formula": "one-per-head-beyond-one",
+                "restrictedTo": "opportunity-attacks"
+              }
+            ]
+          }
         },
         {
           "name": "Wakeful",
@@ -39325,7 +40288,16 @@
       "actions": [
         {
           "name": "Multiattack",
-          "text": "The hydra makes as many bite attacks as it has heads."
+          "text": "The hydra makes as many bite attacks as it has heads.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "multiattack",
+                "attacksFormula": "one-per-head",
+                "attackName": "bite"
+              }
+            ]
+          }
         },
         {
           "name": "Bite",
@@ -39531,7 +40503,14 @@
       "traits": [
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the devil’s darkvision."
+          "text": "Magical darkness doesn’t impede the devil’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Resistance",
@@ -39555,7 +40534,21 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -39965,7 +40958,14 @@
         },
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the imp’s darkvision."
+          "text": "Magical darkness doesn’t impede the imp’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Magic Resistance",
@@ -41218,7 +42218,18 @@
         "entries": [
           {
             "name": "Tentacle Attack or Fling",
-            "text": "The kraken makes one tentacle attack or uses its Fling."
+            "text": "The kraken makes one tentacle attack or uses its Fling.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "makeAttack",
+                  "options": [
+                    "tentacle",
+                    "Fling"
+                  ]
+                }
+              ]
+            }
           },
           {
             "name": "Lightning Storm (Costs 2 Actions)",
@@ -41375,7 +42386,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "dagger or Intoxicating Touch"
+                  }
+                ]
               }
             ]
           }
@@ -41530,11 +42551,26 @@
       "traits": [
         {
           "name": "Devil’s Sight",
-          "text": "Magical darkness doesn’t impede the lemure’s darkvision."
+          "text": "Magical darkness doesn’t impede the lemure’s darkvision.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "seeInMagicalDarkness"
+              }
+            ]
+          }
         },
         {
           "name": "Hellish Rejuvenation",
-          "text": "A lemure that dies in the Nine Hells comes back to life with all its hit points in 1d10 days unless it is killed by a good-aligned creature with a bless spell cast on that creature or its remains are sprinkled with holy water."
+          "text": "A lemure that dies in the Nine Hells comes back to life with all its hit points in 1d10 days unless it is killed by a good-aligned creature with a bless spell cast on that creature or its remains are sprinkled with holy water.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "rejuvenation",
+                "afterDaysDice": "1d10"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -41650,8 +42686,9 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "If it has a phylactery"
+                "kind": "rejuvenation",
+                "afterDaysDice": "1d10",
+                "condition": "has-a-phylactery"
               }
             ]
           }
@@ -41879,7 +42916,15 @@
         "entries": [
           {
             "name": "Cantrip",
-            "text": "The lich casts a cantrip."
+            "text": "The lich casts a cantrip.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "castSpell",
+                  "spellLevel": "cantrip"
+                }
+              ]
+            }
           },
           {
             "name": "Paralyzing Touch (Costs 2 Actions)",
@@ -42055,7 +43100,16 @@
         },
         {
           "name": "Running Leap",
-          "text": "With a 10-foot running start, the lion can long jump up to 25 feet."
+          "text": "With a 10-foot running start, the lion can long jump up to 25 feet.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "jumpDistance",
+                "longJumpFeet": 25,
+                "runningStartFeet": 10
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -42876,7 +43930,25 @@
         },
         {
           "name": "Ignited Illumination",
-          "text": "As a bonus action, the magmin can set itself ablaze or extinguish its flames. While ablaze, the magmin sheds bright light in a 10-foot radius and dim light for an additional 10 feet."
+          "text": "As a bonus action, the magmin can set itself ablaze or extinguish its flames. While ablaze, the magmin sheds bright light in a 10-foot radius and dim light for an additional 10 feet.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "light",
+                "level": "bright",
+                "radiusFeet": 10,
+                "dimAdditionalFeet": 10,
+                "condition": "while-ablaze"
+              },
+              {
+                "kind": "bonusAction",
+                "options": [
+                  "set-ablaze",
+                  "extinguish-flames"
+                ]
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -43123,7 +44195,16 @@
       "traits": [
         {
           "name": "Tail Spike Regrowth",
-          "text": "The manticore has twenty-four tail spikes. Used spikes regrow when the manticore finishes a long rest."
+          "text": "The manticore has twenty-four tail spikes. Used spikes regrow when the manticore finishes a long rest.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "limitedAmmunition",
+                "count": 24,
+                "replenish": "long-rest"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -43134,7 +44215,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws or three with its tail spikes"
+                  }
+                ]
               }
             ]
           }
@@ -43318,13 +44409,39 @@
         },
         {
           "name": "Reactive",
-          "text": "The marilith can take one reaction on every turn in a combat."
+          "text": "The marilith can take one reaction on every turn in a combat.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "extraReactions",
+                "perTurn": 1
+              }
+            ]
+          }
         }
       ],
       "actions": [
         {
           "name": "Multiattack",
-          "text": "The marilith makes seven attacks: six with its longswords and one with its tail."
+          "text": "The marilith makes seven attacks: six with its longswords and one with its tail.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "multiattack",
+                "attacks": 7,
+                "routine": [
+                  {
+                    "attacks": 6,
+                    "attack": "longswords"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Longsword",
@@ -43394,7 +44511,15 @@
         },
         {
           "name": "Teleport",
-          "text": "The marilith magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see."
+          "text": "The marilith magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "teleport",
+                "distanceFeet": 120
+              }
+            ]
+          }
         }
       ],
       "reactions": [
@@ -43627,7 +44752,24 @@
       "actions": [
         {
           "name": "Multiattack",
-          "text": "The medusa makes either three melee attacks—one with its snake hair and two with its shortsword—or two ranged attacks with its longbow."
+          "text": "The medusa makes either three melee attacks—one with its snake hair and two with its shortsword—or two ranged attacks with its longbow.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "multiattack",
+                "options": [
+                  {
+                    "attacks": 3,
+                    "attackType": "melee"
+                  },
+                  {
+                    "attacks": 2,
+                    "attackType": "ranged"
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Snake Hair",
@@ -43939,7 +45081,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws or harpoon"
+                  }
+                ]
               }
             ]
           }
@@ -44580,7 +45732,15 @@
       "traits": [
         {
           "name": "Beast of Burden",
-          "text": "The mule is considered to be a Large animal for the purpose of determining its carrying capacity."
+          "text": "The mule is considered to be a Large animal for the purpose of determining its carrying capacity.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "carryingCapacitySize",
+                "size": "large"
+              }
+            ]
+          }
         },
         {
           "name": "Sure-Footed",
@@ -44699,6 +45859,10 @@
               {
                 "kind": "multiattack",
                 "attacks": 1
+              },
+              {
+                "kind": "makeAttack",
+                "attack": "rotting fist"
               }
             ]
           }
@@ -44851,7 +46015,16 @@
         },
         {
           "name": "Rejuvenation",
-          "text": "A destroyed mummy lord gains a new body in 24 hours if its heart is intact, regaining all its hit points and becoming active again. The new body appears within 5 feet of the mummy lord’s heart."
+          "text": "A destroyed mummy lord gains a new body in 24 hours if its heart is intact, regaining all its hit points and becoming active again. The new body appears within 5 feet of the mummy lord’s heart.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "rejuvenation",
+                "afterHours": 24,
+                "condition": "heart-intact"
+              }
+            ]
+          }
         },
         {
           "name": "Spellcasting",
@@ -44971,6 +46144,10 @@
               {
                 "kind": "multiattack",
                 "attacks": 1
+              },
+              {
+                "kind": "makeAttack",
+                "attack": "rotting fist"
               }
             ]
           }
@@ -45047,7 +46224,16 @@
         "entries": [
           {
             "name": "Attack",
-            "text": "The mummy lord makes one attack with its rotting fist or uses its Dreadful Glare."
+            "text": "The mummy lord makes one attack with its rotting fist or uses its Dreadful Glare.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "makeAttack",
+                  "attack": "rotting fist",
+                  "orUses": "Dreadful Glare"
+                }
+              ]
+            }
           },
           {
             "name": "Blinding Dust",
@@ -45218,7 +46404,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -45304,7 +46500,15 @@
         },
         {
           "name": "Teleport",
-          "text": "The nalfeshnee magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see."
+          "text": "The nalfeshnee magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "teleport",
+                "distanceFeet": 120
+              }
+            ]
+          }
         }
       ]
     },
@@ -45463,7 +46667,18 @@
         },
         {
           "name": "Etherealness",
-          "text": "The hag magically enters the Ethereal Plane from the Material Plane, or vice versa. To do so, the hag must have a heartstone in her possession."
+          "text": "The hag magically enters the Ethereal Plane from the Material Plane, or vice versa. To do so, the hag must have a heartstone in her possession.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "planeShift",
+                "planes": [
+                  "material",
+                  "ethereal"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Nightmare Haunting (1/Day)",
@@ -45537,11 +46752,32 @@
       "traits": [
         {
           "name": "Confer Fire Resistance",
-          "text": "The nightmare can grant resistance to fire damage to anyone riding it."
+          "text": "The nightmare can grant resistance to fire damage to anyone riding it.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "damageResistance",
+                "types": [
+                  "fire"
+                ],
+                "target": "rider"
+              }
+            ]
+          }
         },
         {
           "name": "Illumination",
-          "text": "The nightmare sheds bright light in a 10-foot radius and dim light for an additional 10 feet."
+          "text": "The nightmare sheds bright light in a 10-foot radius and dim light for an additional 10 feet.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "light",
+                "level": "bright",
+                "radiusFeet": 10,
+                "dimAdditionalFeet": 10
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -45585,7 +46821,18 @@
         },
         {
           "name": "Ethereal Stride",
-          "text": "The nightmare and up to three willing creatures within 5 feet of it magically enter the Ethereal Plane from the Material Plane, or vice versa."
+          "text": "The nightmare and up to three willing creatures within 5 feet of it magically enter the Ethereal Plane from the Material Plane, or vice versa.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "planeShift",
+                "planes": [
+                  "material",
+                  "ethereal"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -45759,11 +47006,26 @@
       "traits": [
         {
           "name": "Amorphous",
-          "text": "The jelly can move through a space as narrow as 1 inch wide without squeezing."
+          "text": "The jelly can move through a space as narrow as 1 inch wide without squeezing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "moveThroughNarrowSpaces",
+                "widthInches": 1
+              }
+            ]
+          }
         },
         {
           "name": "Spider Climb",
-          "text": "The jelly can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The jelly can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -46464,7 +47726,17 @@
       "traits": [
         {
           "name": "Aggressive",
-          "text": "As a bonus action, the orc can move up to its speed toward a hostile creature that it can see."
+          "text": "As a bonus action, the orc can move up to its speed toward a hostile creature that it can see.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "bonusAction",
+                "options": [
+                  "move-up-to-speed-toward-hostile-creature"
+                ]
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -46601,7 +47873,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "tentacles"
+                  }
+                ]
               }
             ]
           }
@@ -46785,7 +48067,15 @@
       "traits": [
         {
           "name": "Flyby",
-          "text": "The owl doesn’t provoke opportunity attacks when it flies out of an enemy’s reach."
+          "text": "The owl doesn’t provoke opportunity attacks when it flies out of an enemy’s reach.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "preventOpportunityAttacks",
+                "scope": "flying-out-of-reach"
+              }
+            ]
+          }
         },
         {
           "name": "Keen Hearing and Sight",
@@ -46914,7 +48204,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beak"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -47286,15 +48586,41 @@
       "traits": [
         {
           "name": "Ethereal Jaunt",
-          "text": "As a bonus action, the spider can magically shift from the Material Plane to the Ethereal Plane, or vice versa."
+          "text": "As a bonus action, the spider can magically shift from the Material Plane to the Ethereal Plane, or vice versa.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "planeShift",
+                "planes": [
+                  "material",
+                  "ethereal"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Spider Climb",
-          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Web Walker",
-          "text": "The spider ignores movement restrictions caused by webbing."
+          "text": "The spider ignores movement restrictions caused by webbing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "ignoreMovementRestriction",
+                "source": "webbing"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -47513,7 +48839,25 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 4
+                "attacks": 4,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claw"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "mace"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -47743,7 +49087,15 @@
         },
         {
           "name": "Divine Awareness",
-          "text": "The planetar knows if it hears a lie."
+          "text": "The planetar knows if it hears a lie.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "detect-lies"
+              }
+            ]
+          }
         },
         {
           "name": "Innate Spellcasting",
@@ -48173,7 +49525,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -48729,7 +50091,16 @@
       "traits": [
         {
           "name": "Tunneler",
-          "text": "The worm can burrow through solid rock at half its burrow speed and leaves a 10-foot-diameter tunnel in its wake."
+          "text": "The worm can burrow through solid rock at half its burrow speed and leaves a 10-foot-diameter tunnel in its wake.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "tunneler",
+                "solidRockBurrowSpeedMultiplier": 0.5,
+                "tunnelDiameterFeet": 10
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -48740,7 +50111,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "stinger"
+                  }
+                ]
               }
             ]
           }
@@ -49469,7 +50850,17 @@
       "traits": [
         {
           "name": "Mimicry",
-          "text": "The raven can mimic simple sounds it has heard, such as a person whispering, a baby crying, or an animal chittering. A creature that hears the sounds can tell they are imitations with a successful DC 10 Wisdom (Insight) check."
+          "text": "The raven can mimic simple sounds it has heard, such as a person whispering, a baby crying, or an animal chittering. A creature that hears the sounds can tell they are imitations with a successful DC 10 Wisdom (Insight) check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "mimicry",
+                "discernDc": 10,
+                "ability": "wisdom",
+                "skill": "insight"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -50201,7 +51592,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beak"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "talons"
+                  }
+                ]
               }
             ]
           }
@@ -50339,11 +51740,33 @@
         },
         {
           "name": "Grasping Tendrils",
-          "text": "The roper can have up to six tendrils at a time. Each tendril can be attacked (AC 20; 10 hit points; immunity to poison and psychic damage). Destroying a tendril deals no damage to the roper, which can extrude a replacement tendril on its next turn. A tendril can also be broken if a creature takes an action and succeeds on a DC 15 Strength check against it."
+          "text": "The roper can have up to six tendrils at a time. Each tendril can be attacked (AC 20; 10 hit points; immunity to poison and psychic damage). Destroying a tendril deals no damage to the roper, which can extrude a replacement tendril on its next turn. A tendril can also be broken if a creature takes an action and succeeds on a DC 15 Strength check against it.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "attackableAppendage",
+                "appendage": "tendril",
+                "ac": 20,
+                "hitPoints": 10,
+                "immunities": "poison and psychic damage",
+                "maximumCount": 6,
+                "breakDc": 15,
+                "breakAbility": "strength",
+                "regrowsNextTurn": true
+              }
+            ]
+          }
         },
         {
           "name": "Spider Climb",
-          "text": "The roper can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The roper can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -50355,6 +51778,10 @@
               {
                 "kind": "multiattack",
                 "attacks": 4
+              },
+              {
+                "kind": "makeAttack",
+                "attack": "bite"
               }
             ]
           }
@@ -50621,11 +52048,31 @@
       "traits": [
         {
           "name": "Iron Scent",
-          "text": "The rust monster can pinpoint, by scent, the location of ferrous metal within 30 feet of it."
+          "text": "The rust monster can pinpoint, by scent, the location of ferrous metal within 30 feet of it.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "scent-pinpoint",
+                "detects": "ferrous metal",
+                "rangeFeet": 30
+              }
+            ]
+          }
         },
         {
           "name": "Rust Metal",
-          "text": "Any nonmagical weapon made of metal that hits the rust monster corrodes. After dealing damage, the weapon takes a permanent and cumulative −1 penalty to damage rolls. If its penalty drops to −5, the weapon is destroyed. Nonmagical ammunition made of metal that hits the rust monster is destroyed after dealing damage."
+          "text": "Any nonmagical weapon made of metal that hits the rust monster corrodes. After dealing damage, the weapon takes a permanent and cumulative −1 penalty to damage rolls. If its penalty drops to −5, the weapon is destroyed. Nonmagical ammunition made of metal that hits the rust monster is destroyed after dealing damage.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "weaponCorrosion",
+                "penaltyPerHit": -1,
+                "destroyedAtPenalty": -5,
+                "ammunitionDestroyedOnHit": true
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -50930,7 +52377,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws or spear"
+                  }
+                ]
               }
             ]
           }
@@ -51130,7 +52587,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "spear"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -51788,7 +53255,19 @@
         },
         {
           "name": "Illusory Appearance",
-          "text": "The hag covers herself and anything she is wearing or carrying with a magical illusion that makes her look like an ugly creature of her general size and humanoid shape. The effect ends if the hag takes a bonus action to end it or if she dies. The changes wrought by this effect fail to hold up to physical inspection. For example, the hag could appear to have no claws, but someone touching her hand might feel the claws. Otherwise, a creature must take an action to visually inspect the illusion and succeed on a DC 16 Intelligence (Investigation) check to discern that the hag is disguised."
+          "text": "The hag covers herself and anything she is wearing or carrying with a magical illusion that makes her look like an ugly creature of her general size and humanoid shape. The effect ends if the hag takes a bonus action to end it or if she dies. The changes wrought by this effect fail to hold up to physical inspection. For example, the hag could appear to have no claws, but someone touching her hand might feel the claws. Otherwise, a creature must take an action to visually inspect the illusion and succeed on a DC 16 Intelligence (Investigation) check to discern that the hag is disguised.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "illusoryDisguise",
+                "discernDc": 16,
+                "ability": "intelligence",
+                "skill": "investigation",
+                "inspectionCost": "action",
+                "endCost": "bonus-action"
+              }
+            ]
+          }
         }
       ]
     },
@@ -51929,11 +53408,29 @@
       "traits": [
         {
           "name": "Amorphous",
-          "text": "The shadow can move through a space as narrow as 1 inch wide without squeezing."
+          "text": "The shadow can move through a space as narrow as 1 inch wide without squeezing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "moveThroughNarrowSpaces",
+                "widthInches": 1
+              }
+            ]
+          }
         },
         {
           "name": "Shadow Stealth",
-          "text": "While in dim light or darkness, the shadow can take the Hide action as a bonus action."
+          "text": "While in dim light or darkness, the shadow can take the Hide action as a bonus action.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "bonusAction",
+                "options": [
+                  "hide"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Sunlight Weakness",
@@ -52199,7 +53696,22 @@
       "traits": [
         {
           "name": "Bound",
-          "text": "The shield guardian is magically bound to an amulet. As long as the guardian and its amulet are on the same plane of existence, the amulet’s wearer can telepathically call the guardian to travel to it, and the guardian knows the distance and direction to the amulet. If the guardian is within 60 feet of the amulet’s wearer, half of any damage the wearer takes (rounded up) is transferred to the guardian."
+          "text": "The shield guardian is magically bound to an amulet. As long as the guardian and its amulet are on the same plane of existence, the amulet’s wearer can telepathically call the guardian to travel to it, and the guardian knows the distance and direction to the amulet. If the guardian is within 60 feet of the amulet’s wearer, half of any damage the wearer takes (rounded up) is transferred to the guardian.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "damageTransfer",
+                "portion": "half",
+                "rounding": "up",
+                "from": "amulet-wearer",
+                "rangeFeet": 60
+              },
+              {
+                "kind": "sense",
+                "sense": "bound-amulet-location"
+              }
+            ]
+          }
         },
         {
           "name": "Regeneration",
@@ -52217,7 +53729,16 @@
         },
         {
           "name": "Spell Storing",
-          "text": "A spellcaster who wears the shield guardian’s amulet can cause the guardian to store one spell of 4th level or lower. To do so, the wearer must cast the spell on the guardian. The spell has no effect but is stored within the guardian. When commanded to do so by the wearer or when a situation arises that was predefined by the spellcaster, the guardian casts the stored spell with any parameters set by the original caster, requiring no components. When the spell is cast or a new spell is stored, any previously stored spell is lost."
+          "text": "A spellcaster who wears the shield guardian’s amulet can cause the guardian to store one spell of 4th level or lower. To do so, the wearer must cast the spell on the guardian. The spell has no effect but is stored within the guardian. When commanded to do so by the wearer or when a situation arises that was predefined by the spellcaster, the guardian casts the stored spell with any parameters set by the original caster, requiring no components. When the spell is cast or a new spell is stored, any previously stored spell is lost.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "spellStoring",
+                "maximumSpellLevel": 4,
+                "capacity": 1
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -52710,7 +54231,15 @@
         },
         {
           "name": "Divine Awareness",
-          "text": "The solar knows if it hears a lie."
+          "text": "The solar knows if it hears a lie.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "detect-lies"
+              }
+            ]
+          }
         },
         {
           "name": "Innate Spellcasting",
@@ -52881,7 +54410,22 @@
         },
         {
           "name": "Flying Sword",
-          "text": "The solar releases its greatsword to hover magically in an unoccupied space within 5 feet of it. If the solar can see the sword, the solar can mentally command it as a bonus action to fly up to 50 feet and either make one attack against a target or return to the solar’s hands. If the hovering sword is targeted by any effect, the solar is considered to be holding it. The hovering sword falls if the solar dies."
+          "text": "The solar releases its greatsword to hover magically in an unoccupied space within 5 feet of it. If the solar can see the sword, the solar can mentally command it as a bonus action to fly up to 50 feet and either make one attack against a target or return to the solar’s hands. If the hovering sword is targeted by any effect, the solar is considered to be holding it. The hovering sword falls if the solar dies.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "hoveringWeapon",
+                "weapon": "greatsword",
+                "releaseRangeFeet": 5,
+                "commandCost": "bonus-action",
+                "commandFlyFeet": 50,
+                "commandOptions": [
+                  "make-one-attack",
+                  "return-to-hand"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Healing Touch (4/Day)",
@@ -52905,7 +54449,15 @@
         "entries": [
           {
             "name": "Teleport",
-            "text": "The solar magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see."
+            "text": "The solar magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "teleport",
+                  "distanceFeet": 120
+                }
+              ]
+            }
           },
           {
             "name": "Searing Burst (Costs 2 Actions)",
@@ -53153,15 +54705,38 @@
       "traits": [
         {
           "name": "Spider Climb",
-          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The spider can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Web Sense",
-          "text": "While in contact with a web, the spider knows the exact location of any other creature in contact with the same web."
+          "text": "While in contact with a web, the spider knows the exact location of any other creature in contact with the same web.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "web-sense"
+              }
+            ]
+          }
         },
         {
           "name": "Web Walker",
-          "text": "The spider ignores movement restrictions caused by webbing."
+          "text": "The spider ignores movement restrictions caused by webbing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "ignoreMovementRestriction",
+                "source": "webbing"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -53270,8 +54845,9 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "If it dies"
+                "kind": "rejuvenation",
+                "afterDaysDice": "1d6",
+                "condition": "no-wish-spell-cast-to-prevent-it"
               }
             ]
           }
@@ -53624,7 +55200,19 @@
       "traits": [
         {
           "name": "Cunning Action",
-          "text": "On each of its turns, the spy can use a bonus action to take the Dash, Disengage, or Hide action."
+          "text": "On each of its turns, the spy can use a bonus action to take the Dash, Disengage, or Hide action.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "bonusAction",
+                "options": [
+                  "dash",
+                  "disengage",
+                  "hide"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Sneak Attack (1/Turn)",
@@ -54696,7 +56284,18 @@
         },
         {
           "name": "Etherealness",
-          "text": "The fiend magically enters the Ethereal Plane from the Material Plane, or vice versa."
+          "text": "The fiend magically enters the Ethereal Plane from the Material Plane, or vice versa.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "planeShift",
+                "planes": [
+                  "material",
+                  "ethereal"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -54790,7 +56389,17 @@
         },
         {
           "name": "Swarm",
-          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny bat. The swarm can’t regain hit points or gain temporary hit points."
+          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny bat. The swarm can’t regain hit points or gain temporary hit points.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "swarm",
+                "canOccupyOtherCreaturesSpace": true,
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -54896,7 +56505,17 @@
       "traits": [
         {
           "name": "Swarm",
-          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny insect. The swarm can’t regain hit points or gain temporary hit points."
+          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny insect. The swarm can’t regain hit points or gain temporary hit points.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "swarm",
+                "canOccupyOtherCreaturesSpace": true,
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -55007,7 +56626,17 @@
       "traits": [
         {
           "name": "Swarm",
-          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny snake. The swarm can’t regain hit points or gain temporary hit points."
+          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny snake. The swarm can’t regain hit points or gain temporary hit points.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "swarm",
+                "canOccupyOtherCreaturesSpace": true,
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -55137,7 +56766,17 @@
         },
         {
           "name": "Swarm",
-          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny quipper. The swarm can’t regain hit points or gain temporary hit points."
+          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny quipper. The swarm can’t regain hit points or gain temporary hit points.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "swarm",
+                "canOccupyOtherCreaturesSpace": true,
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
+              }
+            ]
+          }
         },
         {
           "name": "Water Breathing",
@@ -55273,7 +56912,17 @@
         },
         {
           "name": "Swarm",
-          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny rat. The swarm can’t regain hit points or gain temporary hit points."
+          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny rat. The swarm can’t regain hit points or gain temporary hit points.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "swarm",
+                "canOccupyOtherCreaturesSpace": true,
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -55379,7 +57028,17 @@
       "traits": [
         {
           "name": "Swarm",
-          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny raven. The swarm can’t regain hit points or gain temporary hit points."
+          "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny raven. The swarm can’t regain hit points or gain temporary hit points.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "swarm",
+                "canOccupyOtherCreaturesSpace": true,
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -55512,7 +57171,17 @@
         },
         {
           "name": "Reflective Carapace",
-          "text": "Any time the tarrasque is targeted by a magic missile spell, a line spell, or a spell that requires a ranged attack roll, roll a d6. On a 1 to 5, the tarrasque is unaffected. On a 6, the tarrasque is unaffected, and the effect is reflected back at the caster as though it originated from the tarrasque, turning the caster into the target."
+          "text": "Any time the tarrasque is targeted by a magic missile spell, a line spell, or a spell that requires a ranged attack roll, roll a d6. On a 1 to 5, the tarrasque is unaffected. On a 6, the tarrasque is unaffected, and the effect is reflected back at the caster as though it originated from the tarrasque, turning the caster into the target.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "spellReflection",
+                "roll": "d6",
+                "unaffectedOnMaximum": 5,
+                "reflectedOn": 6
+              }
+            ]
+          }
         },
         {
           "name": "Siege Monster",
@@ -55536,7 +57205,25 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 5
+                "attacks": 5,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "horns"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -55732,11 +57419,30 @@
         "entries": [
           {
             "name": "Attack",
-            "text": "The tarrasque makes one claw attack or tail attack."
+            "text": "The tarrasque makes one claw attack or tail attack.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "makeAttack",
+                  "options": [
+                    "claw",
+                    "tail"
+                  ]
+                }
+              ]
+            }
           },
           {
             "name": "Move",
-            "text": "The tarrasque moves up to half its speed."
+            "text": "The tarrasque moves up to half its speed.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "moveUpTo",
+                  "amount": "half-speed"
+                }
+              ]
+            }
           },
           {
             "name": "Chomp (Costs 2 Actions)",
@@ -55744,7 +57450,16 @@
             "mechanics": {
               "usage": {
                 "legendaryActionCost": 2
-              }
+              },
+              "effects": [
+                {
+                  "kind": "makeAttack",
+                  "options": [
+                    "bite",
+                    "Swallow"
+                  ]
+                }
+              ]
             }
           }
         ]
@@ -56598,7 +58313,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -56729,7 +58454,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "tail"
+                  }
+                ]
               }
             ]
           }
@@ -56968,7 +58703,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "hooves"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "horn"
+                  }
+                ]
               }
             ]
           }
@@ -57060,7 +58805,15 @@
         "entries": [
           {
             "name": "Hooves",
-            "text": "The unicorn makes one attack with its hooves."
+            "text": "The unicorn makes one attack with its hooves.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "makeAttack",
+                  "attack": "hooves"
+                }
+              ]
+            }
           },
           {
             "name": "Shimmering Shield (Costs 2 Actions)",
@@ -57159,6 +58912,9 @@
           "mechanics": {
             "effects": [
               {
+                "kind": "enterHostileSpace"
+              },
+              {
                 "kind": "triggeredEffect",
                 "trigger": "If the vampire isn’t in sunlight or running water"
               }
@@ -57218,7 +58974,14 @@
         },
         {
           "name": "Spider Climb",
-          "text": "The vampire can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The vampire can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Vampire Weaknesses",
@@ -57226,11 +58989,29 @@
         },
         {
           "name": "Forbiddance",
-          "text": "The vampire can’t enter a residence without an invitation from one of the occupants."
+          "text": "The vampire can’t enter a residence without an invitation from one of the occupants.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "movementRestriction",
+                "restriction": "cannot-enter-residence-without-invitation"
+              }
+            ]
+          }
         },
         {
           "name": "Harmed by Running Water",
-          "text": "The vampire takes 20 acid damage if it ends its turn in running water."
+          "text": "The vampire takes 20 acid damage if it ends its turn in running water.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "recurringDamage",
+                "amount": 20,
+                "type": "acid",
+                "trigger": "ends-turn-in-running-water"
+              }
+            ]
+          }
         },
         {
           "name": "Stake to the Heart",
@@ -57395,11 +59176,28 @@
         "entries": [
           {
             "name": "Move",
-            "text": "The vampire moves up to its speed without provoking opportunity attacks."
+            "text": "The vampire moves up to its speed without provoking opportunity attacks.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "moveUpTo",
+                  "amount": "speed",
+                  "withoutOpportunityAttacks": true
+                }
+              ]
+            }
           },
           {
             "name": "Unarmed Strike",
-            "text": "The vampire makes one unarmed strike."
+            "text": "The vampire makes one unarmed strike.",
+            "mechanics": {
+              "effects": [
+                {
+                  "kind": "makeAttack",
+                  "attack": "unarmed strike"
+                }
+              ]
+            }
           },
           {
             "name": "Bite (Costs 2 Actions)",
@@ -57499,7 +59297,14 @@
         },
         {
           "name": "Spider Climb",
-          "text": "The vampire can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check."
+          "text": "The vampire can climb difficult surfaces, including upside down on ceilings, without needing to make an ability check.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck"
+              }
+            ]
+          }
         },
         {
           "name": "Vampire Weaknesses",
@@ -57507,11 +59312,29 @@
         },
         {
           "name": "Forbiddance",
-          "text": "The vampire can’t enter a residence without an invitation from one of the occupants."
+          "text": "The vampire can’t enter a residence without an invitation from one of the occupants.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "movementRestriction",
+                "restriction": "cannot-enter-residence-without-invitation"
+              }
+            ]
+          }
         },
         {
           "name": "Harmed by Running Water",
-          "text": "The vampire takes 20 acid damage when it ends its turn in running water."
+          "text": "The vampire takes 20 acid damage when it ends its turn in running water.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "recurringDamage",
+                "amount": 20,
+                "type": "acid",
+                "trigger": "ends-turn-in-running-water"
+              }
+            ]
+          }
         },
         {
           "name": "Stake to the Heart",
@@ -57874,7 +59697,15 @@
       "actions": [
         {
           "name": "Multiattack",
-          "text": "The fungus makes 1d4 Rotting Touch attacks."
+          "text": "The fungus makes 1d4 Rotting Touch attacks.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "multiattack",
+                "attacksDice": "1d4"
+              }
+            ]
+          }
         },
         {
           "name": "Rotting Touch",
@@ -57993,7 +59824,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "beak"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "talons"
+                  }
+                ]
               }
             ]
           }
@@ -58505,7 +60346,18 @@
       "traits": [
         {
           "name": "Water Form",
-          "text": "The elemental can enter a hostile creature’s space and stop there. It can move through a space as narrow as 1 inch wide without squeezing."
+          "text": "The elemental can enter a hostile creature’s space and stop there. It can move through a space as narrow as 1 inch wide without squeezing.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "moveThroughNarrowSpaces",
+                "widthInches": 1
+              },
+              {
+                "kind": "enterHostileSpace"
+              }
+            ]
+          }
         },
         {
           "name": "Freeze",
@@ -58513,7 +60365,9 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "movementRestriction",
+                "restriction": "speed-reduced-by-20-feet",
+                "endsBy": "end-of-next-turn",
                 "trigger": "If the elemental takes cold damage"
               }
             ]
@@ -59644,7 +61498,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "claws or spear"
+                  }
+                ]
               }
             ]
           }
@@ -60172,7 +62036,14 @@
         },
         {
           "name": "Ephemeral",
-          "text": "The will-o’-wisp can’t wear or carry anything."
+          "text": "The will-o’-wisp can’t wear or carry anything.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "cannotWearOrCarry"
+              }
+            ]
+          }
         },
         {
           "name": "Incorporeal Movement",
@@ -60189,7 +62060,25 @@
         },
         {
           "name": "Variable Illumination",
-          "text": "The will-o’-wisp sheds bright light in a 5- to 20-foot radius and dim light for an additional number of feet equal to the chosen radius. The will-o’-wisp can alter the radius as a bonus action."
+          "text": "The will-o’-wisp sheds bright light in a 5- to 20-foot radius and dim light for an additional number of feet equal to the chosen radius. The will-o’-wisp can alter the radius as a bonus action.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "light",
+                "level": "bright",
+                "radiusFeetMinimum": 5,
+                "radiusFeetMaximum": 20,
+                "dimAdditionalFeetEqualsRadius": true,
+                "variable": true
+              },
+              {
+                "kind": "bonusAction",
+                "options": [
+                  "alter-light-radius"
+                ]
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -60809,7 +62698,18 @@
         },
         {
           "name": "Create Specter",
-          "text": "The wraith targets a humanoid within 10 feet of it that has been dead for no longer than 1 minute and died violently. The target’s spirit rises as a specter in the space of its corpse or in the nearest unoccupied space. The specter is under the wraith’s control. The wraith can have no more than seven specters under its control at one time."
+          "text": "The wraith targets a humanoid within 10 feet of it that has been dead for no longer than 1 minute and died violently. The target’s spirit rises as a specter in the space of its corpse or in the nearest unoccupied space. The specter is under the wraith’s control. The wraith can have no more than seven specters under its control at one time.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "summonCreature",
+                "creature": "specter",
+                "rangeFeet": 10,
+                "target": "humanoid dead no longer than 1 minute that died violently",
+                "maximumControlled": 7
+              }
+            ]
+          }
         }
       ]
     },
@@ -60879,7 +62779,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 2
+                "attacks": 2,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 1,
+                    "attack": "stinger"
+                  }
+                ]
               }
             ]
           }
@@ -61043,7 +62953,14 @@
       "traits": [
         {
           "name": "Earth Glide",
-          "text": "The xorn can burrow through nonmagical, unworked earth and stone. While doing so, the xorn doesn’t disturb the material it moves through."
+          "text": "The xorn can burrow through nonmagical, unworked earth and stone. While doing so, the xorn doesn’t disturb the material it moves through.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "earthGlide"
+              }
+            ]
+          }
         },
         {
           "name": "Stone Camouflage",
@@ -61061,7 +62978,17 @@
         },
         {
           "name": "Treasure Sense",
-          "text": "The xorn can pinpoint, by scent, the location of precious metals and stones, such as coins and gems, within 60 feet of it."
+          "text": "The xorn can pinpoint, by scent, the location of precious metals and stones, such as coins and gems, within 60 feet of it.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sense",
+                "sense": "scent-pinpoint",
+                "detects": "precious metals and stones, such as coins and gems,",
+                "rangeFeet": 60
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -61226,7 +63153,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -61397,7 +63334,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -61568,7 +63515,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -61770,7 +63727,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -61949,7 +63916,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -62145,7 +64122,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -62342,7 +64329,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -62513,7 +64510,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -62683,7 +64690,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -62864,7 +64881,22 @@
       "traits": [
         {
           "name": "Ice Walk",
-          "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, difficult terrain composed of ice or snow doesn’t cost it extra moment."
+          "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. Additionally, difficult terrain composed of ice or snow doesn’t cost it extra moment.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "climbWithoutCheck",
+                "surfaces": "icy"
+              },
+              {
+                "kind": "ignoreDifficultTerrain",
+                "terrain": [
+                  "ice",
+                  "snow"
+                ]
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -62875,7 +64907,17 @@
             "effects": [
               {
                 "kind": "multiattack",
-                "attacks": 3
+                "attacks": 3,
+                "routine": [
+                  {
+                    "attacks": 1,
+                    "attack": "bite"
+                  },
+                  {
+                    "attacks": 2,
+                    "attack": "claws"
+                  }
+                ]
               }
             ]
           }
@@ -80402,7 +82444,7 @@
         "conditions": [
           {
             "condition": "exhaustion",
-            "relation": "mention"
+            "relation": "applies"
           },
           {
             "condition": "incapacitated",
@@ -100080,7 +102122,33 @@
           "unit": "hour",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "breathes",
+            "environments": [
+              "air",
+              "water"
+            ]
+          },
+          {
+            "kind": "speedSet",
+            "mode": "swim",
+            "value": "walking-speed"
+          },
+          {
+            "kind": "naturalWeaponDamage",
+            "dice": "1d6",
+            "typeChoice": [
+              "bludgeoning",
+              "piercing",
+              "slashing"
+            ],
+            "attackAndDamageBonus": 1,
+            "magical": true,
+            "proficient": true
+          }
+        ]
       }
     },
     "source": "SRD 5.1 pp. 114, 115",
@@ -100446,7 +102514,14 @@
           "size": 10,
           "unit": "foot",
           "origin": "self"
-        }
+        },
+        "effects": [
+          {
+            "kind": "movementRestriction",
+            "restriction": "cannot-pass-or-reach-through-barrier",
+            "subject": "creatures-other-than-undead-and-constructs"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 pp. 116, 117",
@@ -100769,7 +102844,14 @@
         "spellAttack": false,
         "duration": {
           "kind": "until-dispelled"
-        }
+        },
+        "effects": [
+          {
+            "kind": "dcIncrease",
+            "amount": 10,
+            "appliesTo": "break-or-pick-locks"
+          }
+        ]
       },
       "componentMaterials": "gold dust worth at least 25 gp, which the spell consumes"
     },
@@ -101828,7 +103910,20 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "planeShift",
+            "planes": [
+              "material",
+              "ethereal"
+            ],
+            "roll": "d20",
+            "threshold": 11,
+            "trigger": "end-of-each-of-your-turns",
+            "returnRangeFeet": 10
+          }
+        ]
       }
     },
     "source": "SRD 5.1 pp. 122, 123",
@@ -102583,7 +104678,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "revive",
+            "via": "clone-body"
+          }
+        ]
       },
       "componentMaterials": "a diamond worth at least 1,000 gp and at least 1 cubic inch of flesh of the creature that is to be cloned, which the spell consumes, and a vessel worth at least 2,000 gp that has a sealable lid and is large enough to hold a Medium creature, such as a huge urn, coffin, mud-filled cyst in the ground, or crystal container filled with salt water"
     },
@@ -102965,7 +105066,14 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "understandLanguages",
+            "spoken": true,
+            "written": true
+          }
+        ]
       },
       "componentMaterials": "a pinch of soot and salt",
       "ritual": true
@@ -103804,7 +105912,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "until-dispelled"
-        }
+        },
+        "effects": [
+          {
+            "kind": "light",
+            "equivalentTo": "torch"
+          }
+        ]
       },
       "componentMaterials": "ruby dust worth 50 gp, which the spell consumes"
     },
@@ -104353,7 +106467,20 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "light",
+            "level": "dim",
+            "radiusFeet": 10
+          },
+          {
+            "kind": "bonusAction",
+            "options": [
+              "move-lights-up-to-60-feet"
+            ]
+          }
+        ]
       },
       "componentMaterials": "a bit of phosphorus or wychwood, or a glowworm"
     },
@@ -104409,7 +106536,16 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "obscurement",
+            "level": "heavily",
+            "source": "magical-darkness",
+            "radiusFeet": 15,
+            "blocksDarkvision": true
+          }
+        ]
       },
       "componentMaterials": "bat fur and a drop of pitch or piece of coal"
     },
@@ -104528,7 +106664,15 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "light",
+            "level": "bright",
+            "radiusFeet": 60,
+            "dimAdditionalFeet": 60
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 133",
@@ -104580,7 +106724,19 @@
           "kind": "timed",
           "amount": 8,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "triggeredEffect",
+            "trigger": "the first time the target would drop to 0 hit points as a result of taking damage",
+            "result": "the target drops to 1 hit point instead and the spell ends"
+          },
+          {
+            "kind": "triggeredEffect",
+            "trigger": "the target is subjected to an effect that would kill it instantaneously without dealing damage",
+            "result": "that effect is negated and the spell ends"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 133",
@@ -104751,7 +106907,15 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "detect-creature-types",
+            "detects": "aberrations, celestials, elementals, fey, fiends, undead, and consecrated or desecrated places and objects",
+            "rangeFeet": 30
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 134",
@@ -104810,7 +106974,14 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "detect-magic",
+            "rangeFeet": 30
+          }
+        ]
       },
       "ritual": true
     },
@@ -104868,7 +107039,14 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "detect-poison-and-disease",
+            "rangeFeet": 30
+          }
+        ]
       },
       "componentMaterials": "a yew leaf",
       "ritual": true
@@ -105042,7 +107220,16 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc",
+            "cost": "action"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 135",
@@ -106308,6 +108495,15 @@
           "unit": "hour",
           "upTo": true
         },
+        "effects": [
+          {
+            "kind": "planeShift",
+            "planes": [
+              "material",
+              "ethereal"
+            ]
+          }
+        ],
         "scaling": {
           "sourceText": "When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell."
         }
@@ -106366,7 +108562,16 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "bonusAction",
+            "options": [
+              "dash"
+            ],
+            "frequency": "each-turn"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 141",
@@ -106819,7 +109024,14 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "slowFall",
+            "descentFeetPerRound": 60,
+            "noFallingDamageOnLanding": true
+          }
+        ]
       },
       "componentMaterials": "a small feather or piece of down"
     },
@@ -107042,7 +109254,13 @@
           "unit": "day",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "direction-and-distance-to-destination"
+          }
+        ]
       },
       "componentMaterials": "a set of divinatory tools— such as bones, ivory sticks, cards, teeth, or carved runes—worth 100 gp and an object from the location you wish to find"
     },
@@ -107094,7 +109312,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "detect-traps"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 144",
@@ -107962,7 +110186,23 @@
           "kind": "timed",
           "amount": 1,
           "unit": "day"
-        }
+        },
+        "effects": [
+          {
+            "kind": "movementRestriction",
+            "restriction": "no-teleportation-or-planar-travel-into-area",
+            "subject": "all-creatures"
+          },
+          {
+            "kind": "recurringDamage",
+            "dice": "5d10",
+            "typeChoice": [
+              "radiant",
+              "necrotic"
+            ],
+            "trigger": "a chosen creature type enters the area for the first time on a turn or starts its turn there"
+          }
+        ]
       },
       "componentMaterials": "a sprinkling of holy water, rare incense, and powdered ruby worth at least 1,000 gp",
       "ritual": true
@@ -108495,7 +110735,13 @@
           "kind": "timed",
           "amount": 10,
           "unit": "day"
-        }
+        },
+        "effects": [
+          {
+            "kind": "immunity",
+            "to": "decay and becoming undead"
+          }
+        ]
       },
       "componentMaterials": "a pinch of salt and one copper piece placed on each of the corpse’s eyes, which must remain there for the duration",
       "ritual": true
@@ -108601,7 +110847,18 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "rollFloor",
+            "treatAs": 15,
+            "scope": "charisma-checks"
+          },
+          {
+            "kind": "immunity",
+            "to": "magical lie detection (always indicates truthful)"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 149",
@@ -108663,6 +110920,12 @@
           "unit": "foot",
           "origin": "self"
         },
+        "effects": [
+          {
+            "kind": "immunity",
+            "to": "spells of 5th level or lower cast from outside the barrier"
+          }
+        ],
         "scaling": {
           "sourceText": "When you cast this spell using a spell slot of 7th level or higher, the barrier blocks spells of one level higher for each slot level above 6th."
         }
@@ -108731,6 +110994,14 @@
           {
             "condition": "invisible",
             "relation": "mention"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc"
           }
         ],
         "scaling": {
@@ -108981,15 +111252,15 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "mention"
+            "relation": "removes"
           },
           {
             "condition": "exhaustion",
-            "relation": "mention"
+            "relation": "removes"
           },
           {
             "condition": "petrified",
-            "relation": "mention"
+            "relation": "removes"
           }
         ]
       },
@@ -109318,6 +111589,10 @@
             "kind": "forcedMovement",
             "distanceFeet": 15,
             "direction": "away"
+          },
+          {
+            "kind": "movementCostMultiplier",
+            "feetPerFoot": 2
           }
         ]
       },
@@ -109441,7 +111716,15 @@
           "kind": "timed",
           "amount": 24,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc"
+          }
+        ]
       },
       "componentMaterials": "a stone, a twig, and a bit of green plant"
     },
@@ -111178,7 +113461,13 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "jumpDistanceMultiplier",
+            "multiplier": 3
+          }
+        ]
       },
       "componentMaterials": "a grasshopper’s hind leg"
     },
@@ -111229,7 +113518,14 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "unlock",
+            "audibleRangeFeet": 300,
+            "suppressesArcaneLockMinutes": 10
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 158",
@@ -111613,7 +113909,14 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "locate-named-beast-or-plant",
+            "rangeMiles": 5
+          }
+        ]
       },
       "componentMaterials": "a bit of fur from a bloodhound",
       "ritual": true
@@ -111674,7 +113977,14 @@
           "unit": "hour",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "locate-creature",
+            "rangeFeet": 1000
+          }
+        ]
       },
       "componentMaterials": "a bit of fur from a bloodhound"
     },
@@ -111734,7 +114044,14 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "locate-object",
+            "rangeFeet": 1000
+          }
+        ]
       },
       "componentMaterials": "a forked twig"
     },
@@ -112356,6 +114673,15 @@
           "upTo": true,
           "concentration": true
         },
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc",
+            "cost": "action"
+          }
+        ],
         "scaling": {
           "sourceText": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
         }
@@ -112673,7 +114999,16 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "banishment",
+            "destination": "labyrinthine-demiplane",
+            "escapeDc": 20,
+            "escapeAbility": "intelligence",
+            "escapeCost": "action"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 163",
@@ -113026,7 +115361,16 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc",
+            "cost": "action"
+          }
+        ]
       },
       "componentMaterials": "a bit of fleece"
     },
@@ -113133,7 +115477,28 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "mirrorImages",
+            "images": 3,
+            "redirectThresholds": [
+              {
+                "duplicates": 3,
+                "minimumRoll": 6
+              },
+              {
+                "duplicates": 2,
+                "minimumRoll": 8
+              },
+              {
+                "duplicates": 1,
+                "minimumRoll": 11
+              }
+            ],
+            "duplicateAcFormula": "10 + your Dexterity modifier"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 165",
@@ -113250,7 +115615,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "teleport",
+            "distanceFeet": 30
+          }
+        ]
       }
     },
     "source": "SRD 5.1 pp. 165, 166",
@@ -113518,7 +115889,13 @@
           "kind": "timed",
           "amount": 8,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "immunity",
+            "to": "divination magic targeting and magical scrying sensors"
+          }
+        ]
       },
       "componentMaterials": "a pinch of diamond dust worth 25 gp sprinkled over the target, which the spell consumes"
     },
@@ -113992,7 +116369,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "movementCostMultiplier",
+            "feetPerFoot": 4
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 169",
@@ -114740,7 +117123,16 @@
         "spellAttack": false,
         "duration": {
           "kind": "until-dispelled"
-        }
+        },
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc",
+            "cost": "action"
+          }
+        ]
       },
       "componentMaterials": "a bit of fleece and jade dust worth at least 25 gp"
     },
@@ -114806,6 +117198,15 @@
             "condition": "deafened",
             "relation": "mention"
           }
+        ],
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc",
+            "cost": "action"
+          }
         ]
       },
       "componentMaterials": "a small replica of you made from materials worth at least 5 gp"
@@ -114864,7 +117265,19 @@
           "unit": "hour",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "damageResistance",
+            "chooseOne": [
+              "acid",
+              "cold",
+              "fire",
+              "lightning",
+              "thunder"
+            ]
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 173",
@@ -115358,7 +117771,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "revive",
+            "via": "new-body"
+          }
+        ]
       },
       "componentMaterials": "rare oils and unguents worth at least 1,000 gp, which the spell consumes",
       "tableRefs": [
@@ -115414,7 +117833,12 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "endsCurses"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 pp. 174, 175",
@@ -116210,6 +118634,15 @@
           {
             "ability": "charisma"
           }
+        ],
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc",
+            "cost": "action"
+          }
         ]
       }
     },
@@ -116637,7 +119070,28 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "abilitySubstitution",
+            "use": "spellcasting-ability",
+            "insteadOf": "strength",
+            "for": [
+              "attack-rolls",
+              "damage-rolls"
+            ],
+            "appliesTo": "melee attacks using that weapon"
+          },
+          {
+            "kind": "damageDieReplacement",
+            "die": "d8",
+            "appliesTo": "that weapon"
+          },
+          {
+            "kind": "weaponAttacksMagical",
+            "scope": "weapon-attacks"
+          }
+        ]
       },
       "componentMaterials": "mistletoe, a shamrock leaf, and a club or quarterstaff"
     },
@@ -116827,7 +119281,16 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc",
+            "cost": "action"
+          }
+        ]
       },
       "componentMaterials": "a bit of fleece"
     },
@@ -117143,7 +119606,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "stabilize",
+            "target": "living-creature-at-0-hit-points"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 181",
@@ -117372,7 +119841,17 @@
           "unit": "hour",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "climbAnywhere"
+          },
+          {
+            "kind": "speedSet",
+            "mode": "climb",
+            "value": "walking-speed"
+          }
+        ]
       },
       "componentMaterials": "a drop of bitumen and a spider"
     },
@@ -117766,7 +120245,18 @@
           "unit": "hour",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "damageResistance",
+            "types": [
+              "bludgeoning",
+              "piercing",
+              "slashing"
+            ],
+            "nonmagicalOnly": true
+          }
+        ]
       },
       "componentMaterials": "diamond dust worth 100 gp, which the spell consumes"
     },
@@ -118186,6 +120676,12 @@
             "subject": "target",
             "mode": "disadvantage",
             "scope": "attack rolls and ability checks"
+          },
+          {
+            "kind": "illusionDiscernment",
+            "ability": "intelligence",
+            "skill": "investigation",
+            "dc": "spell-save-dc"
           }
         ]
       },
@@ -118414,7 +120910,13 @@
           "kind": "timed",
           "amount": 1,
           "unit": "round"
-        }
+        },
+        "effects": [
+          {
+            "kind": "teleport",
+            "destination": "linked-permanent-teleportation-circle"
+          }
+        ]
       },
       "componentMaterials": "rare chalks and inks infused with precious gems with 50 gp, which the spell consumes"
     },
@@ -118600,7 +121102,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "extraTurns",
+            "turnsDice": "1d4 + 1"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 187",
@@ -118716,7 +121224,14 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "understandLanguages",
+            "spoken": true,
+            "speechUnderstood": true
+          }
+        ]
       },
       "componentMaterials": "a small clay model of a ziggurat"
     },
@@ -118768,7 +121283,15 @@
           "kind": "timed",
           "amount": 1,
           "unit": "round"
-        }
+        },
+        "effects": [
+          {
+            "kind": "teleport",
+            "via": "plants",
+            "destination": "linked-plant",
+            "movementCostFeet": 5
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 188",
@@ -118822,7 +121345,15 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "teleport",
+            "via": "trees",
+            "distanceFeet": 500,
+            "movementCostFeet": 5
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 188",
@@ -118941,7 +121472,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "revive",
+            "hitPoints": "all"
+          }
+        ]
       },
       "componentMaterials": "a sprinkle of holy water and diamonds worth at least 25,000 gp, which the spell consumes"
     },
@@ -118998,7 +121535,14 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "sense",
+            "sense": "truesight",
+            "rangeFeet": 120
+          }
+        ]
       },
       "componentMaterials": "an ointment for the eyes that costs 25 gp; is made from mushroom powder, saffron, and fat; and is consumed by the spell"
     },
@@ -119736,7 +122280,16 @@
           "kind": "timed",
           "amount": 24,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "breathes",
+            "environments": [
+              "air",
+              "water"
+            ]
+          }
+        ]
       },
       "componentMaterials": "a short reed or piece of straw",
       "ritual": true
@@ -119793,7 +122346,13 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "walkOnLiquids",
+            "surfacingFeetPerRound": 60
+          }
+        ]
       },
       "componentMaterials": "a piece of cork",
       "ritual": true
@@ -120168,7 +122727,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "teleport",
+            "destination": "designated-sanctuary"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 193",

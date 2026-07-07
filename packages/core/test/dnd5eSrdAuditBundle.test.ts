@@ -4,6 +4,7 @@ import {
   assertGameplayReadinessDispositions,
   buildGameplayReadinessReport,
   buildOverlayParityReport,
+  CREATURE_ENTRY_REVIEWED_DISPOSITIONS,
 } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
 import {
   getBundledDnd5eSrdPack,
@@ -110,7 +111,9 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
               {
                 name: 'Bite',
                 text: 'Melee attack.',
-                mechanics: { attacks: [], damage: [] },
+                mechanics: {
+                  effects: [{ kind: 'makeAttack', attack: 'bite' }],
+                },
               },
             ],
           },
@@ -124,7 +127,7 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
               {
                 name: 'Parry',
                 text: 'Reaction.',
-                mechanics: { attacks: [] },
+                mechanics: { effects: [{ kind: 'acBonus', amount: 2 }] },
               },
             ],
           },
@@ -140,7 +143,9 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
                 {
                   name: 'Detect',
                   text: 'Perception check.',
-                  mechanics: { attacks: [] },
+                  mechanics: {
+                    effects: [{ kind: 'makeAbilityCheck', ability: 'wisdom' }],
+                  },
                 },
               ],
             },
@@ -192,8 +197,11 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     // scaling. `area` is casting metadata (like duration) and does NOT
     // promote a spell into this bucket. The exact membership of the
     // metadata-only complement is pinned by ACCEPTED_METADATA_ONLY_SPELLS,
-    // so these counts are exact, not floors.
-    expect(spells.spellsWithDeterministicEffects).toBe(210);
+    // so these counts are exact, not floors. The eshyra-o9bd.18.7.9
+    // membership re-audit moved 56 spells with deterministic semantics
+    // (senses, teleports, resistances, action economy, stabilization, …)
+    // out of the metadata-only bucket: 210 → 266.
+    expect(spells.spellsWithDeterministicEffects).toBe(266);
     expect(spells.metadataOnlySpells).toBe(
       ACCEPTED_METADATA_ONLY_SPELLS.length,
     );
@@ -301,13 +309,15 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     );
     expect(
       regressed.dispositionErrors.filter((error) =>
-        error.includes('not in the reviewed accepted-prose membership'),
+        error.includes(
+          'has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS',
+        ),
       ),
     ).toEqual([
       expect.stringContaining('creature:regressed#traits:Newly Unmodeled'),
     ]);
     expect(() => assertGameplayReadinessDispositions(regressed)).toThrow(
-      /not in the reviewed accepted-prose membership/,
+      /has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS/,
     );
   });
 });
@@ -408,6 +418,145 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     );
   });
 
+  it('does not count trigger-only creature-entry markers as modeled', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'creature',
+          key: 'creature:trigger-only',
+          name: 'Trigger Only',
+          data: {
+            traits: [
+              {
+                name: 'Incomplete Trigger',
+                text: 'When the creature is hit, it deals 2d6 fire damage.',
+                mechanics: {
+                  effects: [{ kind: 'triggeredEffect', trigger: 'When hit' }],
+                },
+              },
+            ],
+          },
+        }),
+      ]),
+      [],
+    );
+
+    expect(report.creatureEntries).toMatchObject({
+      totalEntries: 1,
+      entriesWithMechanics: 0,
+      mechanicalProse: 1,
+      narrativeProse: 0,
+    });
+    expect(
+      report.dispositionErrors.filter((error) =>
+        error.includes(
+          'has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS',
+        ),
+      ),
+    ).toEqual([
+      expect.stringContaining(
+        'creature:trigger-only#traits:Incomplete Trigger',
+      ),
+    ]);
+  });
+
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS to the eshyra-o9bd.18.7.9 §1 exhaustive per-ref classification (2 accepted + 64 pending findings = 66)', () => {
+    // This is a hard pin, not a derived recomputation: it exists so that a
+    // future change to the registry (an addition, removal, or silent
+    // reclassification) is caught here and forces an update to the
+    // classification doc's own reconciliation arithmetic
+    // (docs/audits/dnd5e-srd-5.1-final/
+    // 2026-07-06-o9bd-18-7-9-membership-classification.md §1/§3), rather
+    // than only being caught by the coarser bucket-level fail-closed check.
+    //
+    // The critical invariant this test guards: only the 2 genuinely accepted
+    // refs may carry `accepted-prose-only` — every other reviewed ref MUST
+    // be a `finding` with an explicit bead + slice, so a broad bucket-level
+    // policy can never hide reviewed-but-pending deterministic work behind
+    // blanket acceptance.
+    const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
+    expect(entries).toHaveLength(66);
+
+    const accepted = entries.filter(
+      ([, d]) => d.status === 'accepted-prose-only',
+    );
+    const findings = entries.filter(([, d]) => d.status === 'finding');
+    expect(accepted).toHaveLength(2);
+    expect(findings).toHaveLength(64);
+    expect(accepted.map(([ref]) => ref).sort()).toEqual([
+      'creature:vampire#traits:Vampire Weaknesses',
+      'creature:vampire-spawn#traits:Vampire Weaknesses',
+    ]);
+
+    // Every finding names the parent bead and an explicit slice — the
+    // per-ref owner/slice metadata the fail-closed MEMBERSHIP check and the
+    // human-readable report both rely on.
+    for (const [ref, disposition] of findings) {
+      expect(disposition.status).toBe('finding');
+      if (disposition.status !== 'finding') continue;
+      expect(disposition.bead).toBe('eshyra-o9bd.18.7.9');
+      expect(disposition.slice).toMatch(/^C[1-9]$/);
+      expect(disposition.reason.length, ref).toBeGreaterThan(0);
+    }
+
+    const findingsBySlice: Record<string, number> = {};
+    for (const [, disposition] of findings) {
+      if (disposition.status !== 'finding') continue;
+      findingsBySlice[disposition.slice] =
+        (findingsBySlice[disposition.slice] ?? 0) + 1;
+    }
+    expect(findingsBySlice).toEqual({
+      C1: 22,
+      C2: 16,
+      C3: 10,
+      C4: 2,
+      C5: 2,
+      C6: 4,
+      C7: 2,
+      C8: 2,
+      C9: 4,
+    });
+
+    // The six refs implemented in the §1.6.1 reconciliation pass (existing
+    // typed kinds: rejuvenation, extraDamage, movementRestriction) must have
+    // graduated out of the registry entirely.
+    const allRefs = entries.map(([ref]) => ref);
+    expect(allRefs).not.toEqual(
+      expect.arrayContaining([
+        'creature:guardian-naga#traits:Rejuvenation',
+        'creature:spirit-naga#traits:Rejuvenation',
+        'creature:lich#traits:Rejuvenation',
+        'creature:bugbear#traits:Surprise Attack',
+        'creature:doppelganger#traits:Surprise Attack',
+        'creature:water-elemental#traits:Freeze',
+      ]),
+    );
+    // Refs newly classified into slices C4-C9 remain tracked as pending
+    // findings (not blanket accepted), each with an explicit rationale.
+    expect(allRefs).toEqual(
+      expect.arrayContaining([
+        'creature:berserker#traits:Reckless',
+        'creature:minotaur#traits:Reckless',
+        'creature:black-pudding#reactions:Split',
+        'creature:ochre-jelly#reactions:Split',
+        'creature:clay-golem#traits:Acid Absorption',
+        'creature:flesh-golem#traits:Lightning Absorption',
+        'creature:iron-golem#traits:Fire Absorption',
+        'creature:shambling-mound#traits:Lightning Absorption',
+        'creature:clay-golem#traits:Berserk',
+        'creature:flesh-golem#traits:Berserk',
+        'creature:giant-hyena#traits:Rampage',
+        'creature:gnoll#traits:Rampage',
+        'creature:shrieker#reactions:Shriek',
+        'creature:djinni#traits:Elemental Demise',
+        'creature:efreeti#traits:Elemental Demise',
+        'creature:shield-guardian#reactions:Shield',
+        'creature:aboleth#traits:Probing Telepathy',
+        'creature:ettin#traits:Wakeful',
+      ]),
+    );
+  });
+
   it('does not require dispositions for modeled records', () => {
     const report = buildGameplayReadinessReport(
       pack([
@@ -439,9 +588,12 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // finding is linked to a bead so a future audit cannot rediscover the
     // bucket without a tracked closure decision.
     for (const disposition of report.dispositions) {
-      expect(['accepted-prose-only', 'unsupported', 'finding']).toContain(
-        disposition.status,
-      );
+      expect([
+        'accepted-prose-only',
+        'unsupported',
+        'finding',
+        'reviewed-per-ref',
+      ]).toContain(disposition.status);
       if (disposition.status === 'finding') {
         expect(disposition.bead).toMatch(/^eshyra-/);
       }
@@ -459,16 +611,36 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // Feature runtime projections landed (eshyra-o9bd.18.7.5): the residual
     // prose-only bucket is a reviewed accepted closure, not an open finding.
     expect(byKey.get('feature#prose-only')?.status).toBe('accepted-prose-only');
-    // The nested creature-entry buckets carry explicit accepted-prose-only
-    // closures (eshyra-o9bd.18.7.3) — record-level creature buckets are gone
-    // because all 317 creatures now carry typed nested mechanics.
+    // The nested creature-entry buckets are `reviewed-per-ref`
+    // (eshyra-o9bd.18.7.9), NOT a blanket `accepted-prose-only` — record-
+    // level creature buckets are gone because all 317 creatures now carry
+    // typed nested mechanics, but the prose-entry buckets mix 2 genuinely
+    // accepted refs with 64 reviewed pending findings, so the bucket-level
+    // status must never claim blanket acceptance.
     expect(byKey.get('creature#partial-structure')).toBeUndefined();
     expect(byKey.get('creature-entry#mechanical-prose')?.status).toBe(
-      'accepted-prose-only',
+      'reviewed-per-ref',
     );
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
-      'accepted-prose-only',
+      'reviewed-per-ref',
     );
+    // The per-ref breakdown is exact: 2 permanent accepts, 64 pending
+    // findings across slices C1-C9.
+    expect(report.creatureEntries.reviewedDispositions).toEqual({
+      acceptedProseOnly: 2,
+      pendingFindings: 64,
+      findingsBySlice: {
+        C1: 22,
+        C2: 16,
+        C3: 10,
+        C4: 2,
+        C5: 2,
+        C6: 4,
+        C7: 2,
+        C8: 2,
+        C9: 4,
+      },
+    });
   });
 
   it('fails closed by MEMBERSHIP on unreviewed accepted-prose feature records (eshyra-o9bd.18.7.5 review)', () => {
