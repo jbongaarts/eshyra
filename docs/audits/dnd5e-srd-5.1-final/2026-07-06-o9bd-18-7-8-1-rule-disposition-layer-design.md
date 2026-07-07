@@ -161,10 +161,10 @@ stale/unreviewed membership errors:
    against pinned expected counts (updated only in reviewed diffs): the
    semantic census (PROC 175/REF 96/DEF 33/TABLE 19/DUP 12) and the
    coverage census seeded from the execution-boundary artifact
-   (0 implemented / 99 model-adjudicated-supported / 45 partial /
+   (0 implemented / 97 model-adjudicated-supported / 47 partial /
    21 implementation-required→unimplemented / 10 design-blocked, per the
-   2026-07-06 second (MODEL-integrity) revision of #406 — provisional until
-   PR #406 review; do not pin before that merge).
+   2026-07-06 third (slow-time-arithmetic-exception) revision of #406 —
+   provisional until PR #406 review; do not pin before that merge).
 
 ## 4. Readiness report shape
 
