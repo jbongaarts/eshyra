@@ -2042,8 +2042,31 @@ export function formatGameplayReadinessReport(
     '',
     'Rule-record disposition & engine-procedure coverage (eshyra-o9bd.18.7.8.1)',
     `- reference-prose: ${report.rules.referencesProse}; definition: ${report.rules.definitions}; table-backed: ${report.rules.tableBacked}; duplicate: ${report.rules.duplicates}`,
-    `- engine-procedure: implemented ${report.rules.engineProcedure.implemented}; model-adjudicated-supported ${report.rules.engineProcedure.modelAdjudicatedSupported}; partial ${report.rules.engineProcedure.partial}; unimplemented ${report.rules.engineProcedure.unimplemented}; design-blocked ${report.rules.engineProcedure.designBlocked}`,
-    `- external clauses (clause-level cross-bead ownership, not auto-resolved): ${report.rules.engineProcedure.externalClauses}`,
+    `- engine-procedure: implemented ${report.rules.engineProcedure.implemented}; model-adjudicated-supported ${report.rules.engineProcedure.modelAdjudicatedSupported}; partial ${report.rules.engineProcedure.partial.length}; unimplemented ${report.rules.engineProcedure.unimplemented.length}; design-blocked ${report.rules.engineProcedure.designBlocked.length}`,
+    'Partial (actionable gaps: key — missing)',
+    ...(report.rules.engineProcedure.partial.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.partial.map(
+          (row) => `- ${row.key} — ${row.missing}`,
+        )),
+    'Unimplemented (transitional actionable gaps: key — missing)',
+    ...(report.rules.engineProcedure.unimplemented.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.unimplemented.map(
+          (row) => `- ${row.key} — ${row.missing}`,
+        )),
+    'Design-blocked (key — design owner)',
+    ...(report.rules.engineProcedure.designBlocked.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.designBlocked.map(
+          (row) => `- ${row.key} — ${row.designOwner}`,
+        )),
+    `External clauses (clause-level cross-bead ownership, not auto-resolved on bead closure): ${report.rules.engineProcedure.externalClauses.length}`,
+    ...(report.rules.engineProcedure.externalClauses.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.externalClauses.map(
+          (row) => `- ${row.key}: ${row.clause} → ${row.bead}`,
+        )),
   );
   if (report.dispositionErrors.length > 0) {
     lines.push('', 'DISPOSITION ERRORS (fail-closed)');

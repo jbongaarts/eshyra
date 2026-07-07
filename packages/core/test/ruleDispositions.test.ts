@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   assertRuleDispositions,
@@ -75,22 +77,74 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   it('pins the exact 335-key semantic census against the committed pack', () => {
     expect(assertRuleDispositions(getBundledDnd5eSrdPack())).toEqual([]);
     const report = buildRuleDispositionReport();
-    expect(report).toEqual({
-      referencesProse: 96,
-      definitions: 33,
-      tableBacked: 19,
-      duplicates: 12,
-      engineProcedure: {
-        implemented: 0,
-        modelAdjudicatedSupported: 97,
-        partial: 47,
-        unimplemented: 21,
-        designBlocked: 10,
-        externalClauses: 5,
-      },
-    });
+    expect(report.referencesProse).toBe(96);
+    expect(report.definitions).toBe(33);
+    expect(report.tableBacked).toBe(19);
+    expect(report.duplicates).toBe(12);
+    expect(report.engineProcedure.implemented).toBe(0);
+    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(97);
+    expect(report.engineProcedure.partial).toHaveLength(47);
+    expect(report.engineProcedure.unimplemented).toHaveLength(21);
+    expect(report.engineProcedure.designBlocked).toHaveLength(10);
+    // 6 rows carry an externally owned clause; armor-guidance carries two,
+    // so the flattened list has 7 entries.
+    expect(report.engineProcedure.externalClauses).toHaveLength(7);
     expect(Object.keys(RULE_DISPOSITIONS)).toHaveLength(335);
     expect(Object.keys(ENGINE_PROCEDURE_COVERAGE)).toHaveLength(175);
+  });
+
+  it('surfaces actionable detail (key + missing/designOwner/clause), not just counts', () => {
+    const report = buildRuleDispositionReport();
+    expect(
+      report.engineProcedure.partial.find(
+        (row) => row.key === 'rule:ability-checks',
+      )?.missing,
+    ).toMatch(/vs-DC resolution/);
+    expect(
+      report.engineProcedure.designBlocked.find(
+        (row) => row.key === 'rule:multiclassing',
+      )?.designOwner,
+    ).toBe('eshyra-2n1t.1');
+    expect(report.engineProcedure.externalClauses).toContainEqual({
+      key: 'rule:improvised-weapons',
+      clause: 'per-record payload completeness',
+      bead: 'eshyra-o9bd.18.7.6',
+    });
+    expect(report.engineProcedure.externalClauses).toContainEqual({
+      key: 'rule:weapon-properties',
+      clause: 'per-record payload completeness',
+      bead: 'eshyra-o9bd.18.7.6',
+    });
+    // armor-guidance carries two distinct externally owned clauses.
+    expect(
+      report.engineProcedure.externalClauses.filter(
+        (row) => row.key === 'rule:armor-guidance',
+      ),
+    ).toHaveLength(2);
+  });
+
+  it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {
+    // A supporting tool must be a checked primitive, not just prose — so
+    // removing it from DEFAULT_TOOLS invalidates the row (see the
+    // 'unregistered primitive' failure-mode test below).
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:consumables']?.primitives).toEqual(
+      expect.arrayContaining(['remove_item']),
+    );
+  });
+
+  it('checks every runtimeOwner/evidence path against the repo tree', () => {
+    const missing: string[] = [];
+    for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
+      for (const path of [
+        ...(coverage.runtimeOwner ?? []),
+        ...(coverage.evidence ?? []),
+      ]) {
+        if (!existsSync(join(process.cwd(), path))) {
+          missing.push(`${key}: ${path}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
   });
 
   it('fails closed on a new (unreviewed) rule record', () => {
@@ -323,6 +377,47 @@ describe('validateRuleRegistries (eshyra-o9bd.18.7.8.1 §6 failure modes)', () =
     );
     expect(errors).toContain(
       'rule:x: design-blocked row is missing designOwner',
+    );
+  });
+
+  it('fails closed on a design-blocked row whose designOwner is not a real bead-id shape', () => {
+    const errors = validateRuleRegistries(
+      dispositions({
+        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
+      }),
+      { 'rule:x': { status: 'design-blocked', designOwner: 'TBD' } },
+      { 'engine-procedure': 1 } as never,
+      { 'design-blocked': 1 } as never,
+    );
+    expect(errors).toContain(
+      "rule:x: designOwner 'TBD' is not a real bead-id shape",
+    );
+  });
+
+  it('fails closed on an externalClauses entry with a malformed bead id or empty clause', () => {
+    const errors = validateRuleRegistries(
+      dispositions({
+        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
+      }),
+      {
+        'rule:x': {
+          status: 'model-adjudicated-supported',
+          primitives: ['lookup_rules'],
+          contextRequirement: 'req',
+          externalClauses: [
+            { clause: '', bead: 'eshyra-o9bd.18.7.6' },
+            { clause: 'valid clause', bead: 'not-a-bead' },
+          ],
+        },
+      },
+      { 'engine-procedure': 1 } as never,
+      { 'model-adjudicated-supported': 1 } as never,
+    );
+    expect(errors).toContain(
+      `rule:x: externalClauses entry is missing 'clause'`,
+    );
+    expect(errors).toContain(
+      "rule:x: externalClauses bead 'not-a-bead' is not a real bead-id shape",
     );
   });
 

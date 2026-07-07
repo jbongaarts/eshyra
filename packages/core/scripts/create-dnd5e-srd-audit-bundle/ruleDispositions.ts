@@ -1700,11 +1700,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:activating-an-item': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'activation-vs-Use-an-Object distinction is a per-turn ruling',
@@ -1716,7 +1716,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:ammunition': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'give_item', 'remove_item'],
+    primitives: ['give_item', 'lookup_rules', 'remove_item', 'roll'],
     contextRequirement: 'statblock convention; inventory + ledger suffice',
   },
   'rule:areas-of-effect': {
@@ -1776,7 +1776,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:being-prone': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'add_condition', 'remove_condition'],
+    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
     contextRequirement: 'prone condition + movement-cost ruling',
   },
   'rule:beyond-1st-level': {
@@ -1881,11 +1881,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:combat-step-by-step': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       "encounter lifecycle state code-owned; the 5-step narration procedure is the DM's job",
@@ -1904,11 +1904,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:complex-traps': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'trap initiative/actions procedure; encounter tools suffice',
@@ -1935,7 +1935,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:consumables': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
+    primitives: ['lookup_rules', 'remove_item', 'roll'],
     contextRequirement:
       'one-shot consumption = `remove_item` mutation; supported today',
   },
@@ -1947,11 +1947,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:controlling-a-mount': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'controlled/independent ruling; initiative sync narratable',
@@ -2025,11 +2025,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:dexterity-initiative': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'initiative rolls + combatant state code-owned; ordering visible',
@@ -2037,13 +2037,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:disengage': {
     status: 'model-adjudicated-supported',
     primitives: [
-      'lookup_rules',
-      'roll',
       'add_condition',
+      'close_combat_instance',
+      'lookup_rules',
       'remove_condition',
+      'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'until-end-of-turn effect; condition entry representable',
@@ -2051,13 +2051,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:dodge': {
     status: 'model-adjudicated-supported',
     primitives: [
-      'lookup_rules',
-      'roll',
       'add_condition',
+      'close_combat_instance',
+      'lookup_rules',
       'remove_condition',
+      'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'until-next-turn effect representable as combatant condition; per-roll adv/dis application',
@@ -2107,7 +2107,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:flying-movement': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'add_condition', 'remove_condition'],
+    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
     contextRequirement: 'fall-when-prone/speed-0 ruling',
   },
   'rule:food': {
@@ -2118,10 +2118,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:food-and-water': {
     status: 'model-adjudicated-supported',
     primitives: [
-      'lookup_rules',
-      'roll',
       'add_condition',
+      'lookup_rules',
       'remove_condition',
+      'roll',
       'update_clock',
     ],
     contextRequirement:
@@ -2139,7 +2139,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:grappling': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'add_condition', 'remove_condition'],
+    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
     contextRequirement:
       'contest rolls + grappled condition + half-speed drag ruling',
   },
@@ -2179,7 +2179,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:hit-points': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'adjust_hp'],
+    primitives: ['adjust_hp', 'lookup_rules', 'roll'],
     contextRequirement:
       'per-creature HP/HD structured; the size-die formula is GM-time creature design',
   },
@@ -2192,6 +2192,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'roll'],
     contextRequirement:
       '1d4 / proficiency-analogy ruling; per-record payload clause → eshyra-o9bd.18.7.6',
+    externalClauses: [
+      {
+        clause: 'per-record payload completeness',
+        bead: 'eshyra-o9bd.18.7.6',
+      },
+    ],
   },
   'rule:innate-spellcasting': {
     status: 'model-adjudicated-supported',
@@ -2217,11 +2223,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:knocking-a-creature-out': {
     status: 'model-adjudicated-supported',
     primitives: [
-      'lookup_rules',
-      'roll',
       'add_condition',
-      'remove_condition',
       'adjust_hp',
+      'lookup_rules',
+      'remove_condition',
+      'roll',
     ],
     contextRequirement:
       'declared choice at damage time → unconscious+stable conditions (durable once F6 defines stable)',
@@ -2229,11 +2235,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:lair-actions': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       "initiative-20 scheduling ruling; once-per-round is structural when the lair is entered as an initiative-20 combatant in the code-owned turn order; F5's per-round reset vocabulary can host the no-repeat clause if drift is observed",
@@ -2272,13 +2278,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:longer-casting-times': {
     status: 'model-adjudicated-supported',
     primitives: [
-      'lookup_rules',
-      'roll',
       'add_condition',
+      'close_combat_instance',
+      'lookup_rules',
       'remove_condition',
+      'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'rare multi-turn casting; in-progress state durably representable as a character condition entry (readable in context); slot-kept-on-break ruling',
@@ -2362,7 +2368,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:objects': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'adjust_hp'],
+    primitives: ['adjust_hp', 'lookup_rules', 'roll'],
     contextRequirement: 'AC/HP tables structured; threshold/immunity rulings',
   },
   'rule:opportunity-attacks': {
@@ -2378,7 +2384,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:paired-items': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'give_item', 'remove_item'],
+    primitives: ['give_item', 'lookup_rules', 'remove_item', 'roll'],
     contextRequirement: 'both-of-pair requirement ruling; inventory visible',
   },
   'rule:passive-checks': {
@@ -2422,17 +2428,17 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:ready': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'add_condition', 'remove_condition'],
+    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
     contextRequirement:
       'held trigger + readied-spell concentration representable as condition; reaction spend → F2',
   },
   'rule:recuperating': {
     status: 'model-adjudicated-supported',
     primitives: [
-      'lookup_rules',
-      'roll',
       'add_condition',
+      'lookup_rules',
       'remove_condition',
+      'roll',
       'update_clock',
     ],
     contextRequirement:
@@ -2483,7 +2489,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:shoving-a-creature': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'add_condition', 'remove_condition'],
+    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
     contextRequirement: 'contest → prone/push ruling',
   },
   'rule:silvered-weapons': {
@@ -2532,7 +2538,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:spells': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'give_item', 'remove_item'],
+    primitives: ['give_item', 'lookup_rules', 'remove_item', 'roll'],
     contextRequirement:
       'item-casting procedure ruling; per-item spell data completeness → 18.7.7 corpus work',
   },
@@ -2590,11 +2596,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:the-order-of-combat': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       "round/turn state code-owned; cycle narration is the DM's job",
@@ -2602,11 +2608,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:the-order-of-combat-initiative': {
     status: 'model-adjudicated-supported',
     primitives: [
+      'close_combat_instance',
       'lookup_rules',
       'roll',
       'start_encounter',
       'update_combatant',
-      'close_combat_instance',
     ],
     contextRequirement:
       'rolls + combatant state code-owned; group-roll/tie rulings',
@@ -2683,7 +2689,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:water': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'add_condition', 'remove_condition'],
+    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
     contextRequirement:
       'as `food`: condition-entry deprivation state + Con saves',
   },
@@ -2697,6 +2703,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'roll'],
     contextRequirement:
       'property semantics applied per roll over structured tags; per-record payload completeness clause → eshyra-o9bd.18.7.6',
+    externalClauses: [
+      {
+        clause: 'per-record payload completeness',
+        bead: 'eshyra-o9bd.18.7.6',
+      },
+    ],
   },
   'rule:wizard-your-spellbook': {
     status: 'partial',
@@ -2741,6 +2753,9 @@ const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
 const DEFAULT_TOOL_NAMES: ReadonlySet<string> = new Set(
   DEFAULT_TOOLS.map((tool) => tool.name),
 );
+
+/** Shape of a real bead ID, e.g. `eshyra-o9bd.18.7.6` or `eshyra-b69j.13`. */
+const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 
 /**
  * Registry-integrity check (design §3) over an arbitrary
@@ -2874,8 +2889,27 @@ export function validateRuleRegistries(
     if (coverageRow.status === 'partial' && !coverageRow.missing) {
       errors.push(`${key}: partial row is missing 'missing'`);
     }
-    if (coverageRow.status === 'design-blocked' && !coverageRow.designOwner) {
-      errors.push(`${key}: design-blocked row is missing designOwner`);
+    if (coverageRow.status === 'design-blocked') {
+      if (!coverageRow.designOwner) {
+        errors.push(`${key}: design-blocked row is missing designOwner`);
+      } else if (!BEAD_ID_PATTERN.test(coverageRow.designOwner)) {
+        errors.push(
+          `${key}: designOwner '${coverageRow.designOwner}' is not a real bead-id shape`,
+        );
+      }
+    }
+    // Clause-level external ownership (design §5 item 3): each clause must
+    // name a real bead and a non-empty description — never a placeholder —
+    // so a malformed cross-bead pointer can't silently pass review.
+    for (const { clause, bead } of coverageRow.externalClauses ?? []) {
+      if (!clause) {
+        errors.push(`${key}: externalClauses entry is missing 'clause'`);
+      }
+      if (!BEAD_ID_PATTERN.test(bead)) {
+        errors.push(
+          `${key}: externalClauses bead '${bead}' is not a real bead-id shape`,
+        );
+      }
     }
   }
   for (const [status, expected] of Object.entries(expectedCoverageCensus)) {
@@ -2951,18 +2985,39 @@ export interface RuleDispositionReport {
   readonly engineProcedure: {
     readonly implemented: number;
     readonly modelAdjudicatedSupported: number;
-    readonly partial: number;
-    readonly unimplemented: number;
-    readonly designBlocked: number;
-    readonly externalClauses: number;
+    /** Actionable gap list: key + missing semantics (design §4). */
+    readonly partial: readonly {
+      readonly key: string;
+      readonly missing: string;
+    }[];
+    /** Transitional actionable gap list: key + missing semantics. */
+    readonly unimplemented: readonly {
+      readonly key: string;
+      readonly missing: string;
+    }[];
+    /** key + design owner (design §4). */
+    readonly designBlocked: readonly {
+      readonly key: string;
+      readonly designOwner: string;
+    }[];
+    /** Flattened key + clause + bead (design §4) — a row with multiple
+     *  externally owned clauses (e.g. armor-guidance) contributes one entry
+     *  per clause. */
+    readonly externalClauses: readonly {
+      readonly key: string;
+      readonly clause: string;
+      readonly bead: string;
+    }[];
   };
 }
 
 /**
- * Readiness-report counts (design §4). Registry-integrity errors
- * (`assertRuleDispositions`) fail every build; these counts are visibility
+ * Readiness-report detail (design §4). Registry-integrity errors
+ * (`assertRuleDispositions`) fail every build; these lists are visibility
  * only — partial/unimplemented/design-blocked rows are truthful, actionable
- * readiness gaps that stay visible without failing day-to-day CI.
+ * readiness gaps that stay visible without failing day-to-day CI. Detail
+ * arrays (not just counts) so a reviewer can see exactly which keys and
+ * clauses are outstanding without re-deriving them from the registry.
  */
 export function buildRuleDispositionReport(): RuleDispositionReport {
   let referencesProse = 0;
@@ -2977,19 +3032,30 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
   }
   let implemented = 0;
   let modelAdjudicatedSupported = 0;
-  let partial = 0;
-  let unimplemented = 0;
-  let designBlocked = 0;
-  let externalClauses = 0;
-  for (const coverage of Object.values(ENGINE_PROCEDURE_COVERAGE)) {
+  const partial: { key: string; missing: string }[] = [];
+  const unimplemented: { key: string; missing: string }[] = [];
+  const designBlocked: { key: string; designOwner: string }[] = [];
+  const externalClauses: { key: string; clause: string; bead: string }[] = [];
+  for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
     if (coverage.status === 'implemented') implemented += 1;
-    if (coverage.status === 'model-adjudicated-supported')
+    if (coverage.status === 'model-adjudicated-supported') {
       modelAdjudicatedSupported += 1;
-    if (coverage.status === 'partial') partial += 1;
-    if (coverage.status === 'unimplemented') unimplemented += 1;
-    if (coverage.status === 'design-blocked') designBlocked += 1;
-    externalClauses += coverage.externalClauses?.length ?? 0;
+    }
+    if (coverage.status === 'partial') {
+      partial.push({ key, missing: coverage.missing ?? '' });
+    }
+    if (coverage.status === 'unimplemented') {
+      unimplemented.push({ key, missing: coverage.missing ?? '' });
+    }
+    if (coverage.status === 'design-blocked') {
+      designBlocked.push({ key, designOwner: coverage.designOwner ?? '' });
+    }
+    for (const { clause, bead } of coverage.externalClauses ?? []) {
+      externalClauses.push({ key, clause, bead });
+    }
   }
+  const byKey = <T extends { key: string }>(a: T, b: T) =>
+    a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   return {
     referencesProse,
     definitions,
@@ -2998,10 +3064,12 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
     engineProcedure: {
       implemented,
       modelAdjudicatedSupported,
-      partial,
-      unimplemented,
-      designBlocked,
-      externalClauses,
+      partial: partial.sort(byKey),
+      unimplemented: unimplemented.sort(byKey),
+      designBlocked: designBlocked.sort(byKey),
+      externalClauses: externalClauses.sort(
+        (a, b) => byKey(a, b) || (a.clause < b.clause ? -1 : 1),
+      ),
     },
   };
 }
