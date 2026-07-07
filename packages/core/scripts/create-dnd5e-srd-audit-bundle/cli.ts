@@ -80,6 +80,11 @@ import {
   SOURCE_EXPECTED_SRD_5_1_RULE_KEYS,
   SOURCE_EXPECTED_SRD_5_1_TABLE_NAMES,
 } from '../importers/dnd5e-srd-5.1/sourceCoverage.js';
+import {
+  assertRuleDispositions,
+  buildRuleDispositionReport,
+  type RuleDispositionReport,
+} from './ruleDispositions.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../../..');
@@ -1512,6 +1517,18 @@ export type GameplayReadinessReport = {
    */
   readonly dispositions: readonly GameplayReadinessDisposition[];
   /**
+   * Rule-record disposition & engine-procedure coverage counts
+   * (eshyra-o9bd.18.7.8.1): what every `rule:*` record IS (reference-prose /
+   * definition / table-backed / duplicate / engine-procedure) crossed with,
+   * for engine-procedure rows, whether the deterministic behavior is
+   * actually covered. `implemented` and `modelAdjudicatedSupported` are the
+   * two green buckets; `partial`/`unimplemented`/`designBlocked` are
+   * visible, truthful readiness gaps that do not by themselves fail this
+   * report (see `dispositionErrors` for registry-integrity failures, which
+   * do).
+   */
+  readonly rules: RuleDispositionReport;
+  /**
    * Fail-closed policy violations: non-empty buckets without a policy
    * entry, stale policy entries whose bucket is now empty, and `finding`
    * entries without a bead. Must be empty;
@@ -1915,6 +1932,14 @@ export function buildGameplayReadinessReport(
     }
   }
 
+  // Rule-record disposition & engine-procedure coverage layer
+  // (eshyra-o9bd.18.7.8.1): registry-integrity failures are fail-closed
+  // build errors, same as every other disposition check above; the visible
+  // partial/unimplemented/design-blocked counts in `rules` are truthful
+  // readiness gaps, not build failures.
+  dispositionErrors.push(...assertRuleDispositions(pack));
+  const rules = buildRuleDispositionReport();
+
   return {
     packId: pack.meta.packId,
     byKind,
@@ -1926,6 +1951,7 @@ export function buildGameplayReadinessReport(
       signal: finding.matchedPhrases.join(', '),
     })),
     dispositions,
+    rules,
     dispositionErrors,
   };
 }
@@ -2012,6 +2038,36 @@ export function formatGameplayReadinessReport(
       );
     }
   }
+  lines.push(
+    '',
+    'Rule-record disposition & engine-procedure coverage (eshyra-o9bd.18.7.8.1)',
+    `- reference-prose: ${report.rules.referencesProse}; definition: ${report.rules.definitions}; table-backed: ${report.rules.tableBacked}; duplicate: ${report.rules.duplicates}`,
+    `- engine-procedure: implemented ${report.rules.engineProcedure.implemented}; model-adjudicated-supported ${report.rules.engineProcedure.modelAdjudicatedSupported}; partial ${report.rules.engineProcedure.partial.length}; unimplemented ${report.rules.engineProcedure.unimplemented.length}; design-blocked ${report.rules.engineProcedure.designBlocked.length}`,
+    'Partial (actionable gaps: key — missing)',
+    ...(report.rules.engineProcedure.partial.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.partial.map(
+          (row) => `- ${row.key} — ${row.missing}`,
+        )),
+    'Unimplemented (transitional actionable gaps: key — missing)',
+    ...(report.rules.engineProcedure.unimplemented.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.unimplemented.map(
+          (row) => `- ${row.key} — ${row.missing}`,
+        )),
+    'Design-blocked (key — design owner)',
+    ...(report.rules.engineProcedure.designBlocked.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.designBlocked.map(
+          (row) => `- ${row.key} — ${row.designOwner}`,
+        )),
+    `External clauses (clause-level cross-bead ownership, not auto-resolved on bead closure): ${report.rules.engineProcedure.externalClauses.length}`,
+    ...(report.rules.engineProcedure.externalClauses.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.externalClauses.map(
+          (row) => `- ${row.key}: ${row.clause} → ${row.bead}`,
+        )),
+  );
   if (report.dispositionErrors.length > 0) {
     lines.push('', 'DISPOSITION ERRORS (fail-closed)');
     for (const error of report.dispositionErrors) {
