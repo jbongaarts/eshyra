@@ -32,6 +32,7 @@ classification artifact's residual reconciliation.
   oneWay?: boolean,              // otyugh (receiver cannot respond)
   requiresLanguage?: boolean,    // target must understand ≥1 language
   audience?: string,             // 'sharks' (sahuagin), 'master' (homunculus)
+  content?: ('simple-messages'|'simple-ideas'|'emotions'|'images')[],
   commands?: boolean,            // sahuagin: command, not converse
   maxCreatures?: number,         // telepathic-bond 8
   willingOnly?: boolean,         // telepathic-bond
@@ -61,8 +62,10 @@ classification artifact's residual reconciliation.
 
 Validation: `telepathy` fields all optional but at least one of
 `rangeFeet`/`audience`/`maxCreatures` present (empty payload rejected);
-`communication.with` non-empty; `senseSharing` requires source, recipient, and
-senses; `locationKnowledge.knows` non-empty.
+`communication.with` non-empty; `telepathy.content`, when present, must use the
+closed content vocabulary above; `conveys` is not a supported telepathy field;
+`senseSharing` requires source, recipient, and senses;
+`locationKnowledge.knows` non-empty.
 Use `pathMemory`, not `locationKnowledge`, for navigation/path-recall
 semantics where no target entity location is being tracked.
 Global telepathy semantics (initiation, incapacitation, antimagic) live in

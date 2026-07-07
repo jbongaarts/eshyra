@@ -48034,7 +48034,11 @@
                 "kind": "telepathy",
                 "rangeFeet": 120,
                 "requiresLanguage": true,
-                "oneWay": true
+                "oneWay": true,
+                "content": [
+                  "simple-messages",
+                  "images"
+                ]
               }
             ]
           }
@@ -50133,7 +50137,12 @@
               {
                 "kind": "telepathy",
                 "rangeFeet": 100,
-                "requiresLanguage": true
+                "requiresLanguage": true,
+                "content": [
+                  "simple-ideas",
+                  "emotions",
+                  "images"
+                ]
               }
             ]
           }

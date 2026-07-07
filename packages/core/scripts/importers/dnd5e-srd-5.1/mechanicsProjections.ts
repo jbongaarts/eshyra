@@ -2517,6 +2517,7 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
           )
             ? true
             : undefined,
+        content: ['simple-messages', 'images'],
       }),
     );
   }
@@ -2530,6 +2531,7 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       kind: 'telepathy',
       rangeFeet: 100,
       requiresLanguage: true,
+      content: ['simple-ideas', 'emotions', 'images'],
     });
   }
   if (

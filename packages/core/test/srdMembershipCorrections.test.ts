@@ -652,6 +652,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         rangeFeet: 120,
         requiresLanguage: true,
         oneWay: true,
+        content: ['simple-messages', 'images'],
       },
     ]);
     expect(
@@ -662,6 +663,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         kind: 'telepathy',
         rangeFeet: 100,
         requiresLanguage: true,
+        content: ['simple-ideas', 'emotions', 'images'],
       },
     ]);
     expect(

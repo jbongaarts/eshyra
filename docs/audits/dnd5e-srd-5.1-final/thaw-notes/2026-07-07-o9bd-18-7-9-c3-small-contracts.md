@@ -30,15 +30,17 @@ or removed. A post-review correction kept the same record set but refined four
 payload shapes: homunculus now separates two-way telepathy from directional
 sense sharing, aboleth now uses `triggeredEffect { trigger, result, condition
 }`, and otyugh/pseudodragon no longer put communicated content in the
-`telepathy` payload.
+directional `conveys` field. A second post-review correction restored those
+two Limited Telepathy content limits as direction-neutral `telepathy.content`
+values.
 
 ## Importer changed?
 
 Yes. Creature-entry and spell mechanics projection now recognize the reviewed
 C3 SRD sentence shapes and suppress duplicate bare trigger markers when the
 typed C3 effect owns the trigger/condition. `telepathy` is limited to
-communication boundaries; directional sense sharing and triggered information
-learning are separate effects.
+communication boundaries plus direction-neutral content limits; directional
+sense sharing and triggered information learning are separate effects.
 
 ## Commands run
 

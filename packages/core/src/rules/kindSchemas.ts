@@ -1726,6 +1726,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqStr(effect, 'detail', path);
   },
   telepathy: (effect, path) => {
+    if (effect.conveys !== undefined) {
+      throw new RulesPackError(
+        `${path}.conveys is not a supported telepathy field; use content for non-directional content limits`,
+      );
+    }
     const hasBoundary =
       effect.rangeFeet !== undefined ||
       effect.audience !== undefined ||
@@ -1744,6 +1749,27 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optInt(effect, 'maxCreatures', path, 1);
     optBool(effect, 'willingOnly', path);
     optInt(effect, 'minIntelligence', path, 1);
+    const content = effect.content;
+    if (content !== undefined) {
+      if (!Array.isArray(content) || content.length === 0) {
+        throw new RulesPackError(
+          `${path}.content must be a non-empty array when present`,
+        );
+      }
+      const allowedContent = new Set([
+        'simple-messages',
+        'simple-ideas',
+        'emotions',
+        'images',
+      ]);
+      content.forEach((value, i) => {
+        if (typeof value !== 'string' || !allowedContent.has(value)) {
+          throw new RulesPackError(
+            `${path}.content[${i}] must be one of simple-messages, simple-ideas, emotions, images`,
+          );
+        }
+      });
+    }
   },
   understandLanguages: (effect, path) => {
     if (effect.spoken !== true) {

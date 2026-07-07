@@ -107,9 +107,10 @@ Exact refs (machine-checkable):
 
 Implemented 2026-07-07: `telepathy` payloads carry per-record boundaries
 (`rangeFeet`, `samePlaneOnly`, `oneWay`, `audience`, `commands`,
-`maxCreatures`, `willingOnly`, `minIntelligence`); `communication { with }`
-covers the dryad and `speak-with-animals`; homunculus sense sharing uses a
-directional `senseSharing` effect; aboleth Probing Telepathy uses
+`maxCreatures`, `willingOnly`, `minIntelligence`, and direction-neutral
+`content` limits); `communication { with }` covers the dryad and
+`speak-with-animals`; homunculus sense sharing uses a directional
+`senseSharing` effect; aboleth Probing Telepathy uses
 `triggeredEffect` with an explicit result and sight condition.
 
 | ref | deterministic boundaries |
