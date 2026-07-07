@@ -1,18 +1,22 @@
 # eshyra-o9bd.18.7.7 — Magic-item mechanics & live-state contract design
 
 Date: 2026-07-06 (revised same day: instance identity, multi-economy
-cardinality, clause-level readiness). Epic: `eshyra-o9bd.18.7.7`. Status:
-**design** — the shared architecture for children .1/.2 and .4–.11;
-implementation follows per-child.
+cardinality, clause-level readiness; further revised same day: §5's clause
+registry corrected to a dual-dimension representation-binding +
+zero-or-more-engineHooks shape, per #407's F8 ownership correction). Epic:
+`eshyra-o9bd.18.7.7`. Status: **design** — the shared architecture for
+children .1/.2 and .4–.11; implementation follows per-child.
 
 Inputs (do not re-derive):
 
-- `2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md` (PR #407) —
-  clause-level owners for all 240 items (C1/C2/S/M1–M11), including the
-  F5/F9/F10 engine-hook vocabulary.
+- `2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md` (PR #407,
+  **including its 2026-07-06 F8-ownership correction**) — clause-level
+  owners for all 240 items (C1/C2/S/DB/M1–M11), including the corrected
+  F2/F3/F4/F5/F6/F7/F8/F9/F10 engine-hook vocabulary (F1 is not clause-hook
+  tagged by any #407 row today).
 - `2026-07-06-o9bd-18-7-8-execution-boundary-classification.md` (PR #406,
-  **final MODEL-integrity revision, census 0/99/45/21/10**) — engine
-  families F1–F10; the Hybrid Contract facts (math is tool-owned;
+  **final slow-time-arithmetic-exception revision, census 0/97/47/21/10**)
+  — engine families F1–F10; the Hybrid Contract facts (math is tool-owned;
   `overlay_facts` is world-overlay lore, not a mechanics store; no DM
   currency surface; character/combatant condition entries are the apt
   durable mechanism for temporary states).
@@ -311,50 +315,188 @@ representing one of three clauses #407 assigns to M5 on that item.
 Tag-level checks ("C1 tag ⇒ `useEconomy` exists") therefore cannot prove
 completeness. The gate is **clause-level**:
 
+**Revision 2026-07-06 (dual-dimension correction):** the original single
+`binding` field conflated two independent questions — "where does this
+clause's *data* live in the pack/state model" and "does this clause depend
+on an engine primitive that hasn't landed yet" — into one union, forcing a
+clause to pick exactly one. That broke on #407's own corrected examples:
+Robe of the Archmagi's spell-save-DC/attack bonus is simultaneously *pack
+represented* (a C2 `effects` entry, per the #407 correction) *and*
+*engine-pending* (F8's application hook hasn't landed) — the old shape could
+prove one or the other, never both, so a represented-but-engine-pending
+clause had no way to stay `engine-pending` instead of falsely reading
+`green`/`red`. The corrected shape below carries exactly one reviewed
+**representation** binding (unconditional — every clause has a pack/state
+home or an explicit adjudicated/design-blocked disposition) plus zero or
+more **engine dependencies** (conditional — only clauses that need an
+unlanded Phase 1 primitive carry any):
+
 1. **Reviewed clause registry** (`MAGIC_ITEM_CLAUSES`, transcribed once,
    mechanically, from the #407 artifact — the reviewed semantic source;
    CI never re-interprets prose). Every item key maps to a list of clause
    expectations with stable ids:
 
    ```ts
+   type EngineFamily =
+     | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10';
+     // per the corrected #406/#407 vocabulary — every family #407 actually
+     // tags a clause with (F1 is not: no #407 clause names an F1-hook
+     // today; adding it back is a reviewed diff, not a silent omission).
+
+   interface EngineHookBinding {
+     engine: EngineFamily;
+     hook: string;              // e.g. 'special-modifier application into
+                                // derived spellSaveDc/spellAttackModifier'
+   }
+
+   interface PackBlockBinding {
+     // M4–M11: the clause is one bespoke sub-block of a larger state shape,
+     // not separately keyed (unlike economies/operations/effects below).
+     block: 'stateMachine' | 'spellStore' | 'curse' | 'containment'
+          | 'entityGrant' | 'randomProcedure' | 'rollManipulation'
+          | 'interItem';
+   }
+   interface EconomyBinding { block: 'economies'; economyId: EconomyId }
+   interface OperationBinding { block: 'operations'; operationId: string }
+   interface EffectBinding { block: 'effects'; effectId: string }
+   interface StructuredFieldBinding {
+     // S: already-structured outside `mechanics` (§0 fields) — a table
+     // reference, a `variants` entry, or an existing typed field the
+     // clause reuses rather than duplicating into `mechanics`.
+     block: 'structuredField';
+     field: string;             // e.g. 'tableRefs', 'variants', 'damage'
+     ref?: string;               // e.g. the specific table key
+   }
+   interface AdjudicatedBinding {
+     // deliberate, reviewed model remainder — never graduates on its own;
+     // changing this to a represented clause is a reviewed diff.
+     adjudicated: true;
+     note: string;
+   }
+   interface DesignBlockedBinding {
+     // DB: a domain/architecture or source-data decision blocks even
+     // designing the representation (orb-of-dragonkind's artifact Random
+     // Properties — the table itself is absent from SRD 5.1).
+     designBlocked: true;
+     reason: string;
+   }
+
    interface ItemClauseExpectation {
      id: string;             // 'staff-of-fire/charges',
                              // 'rod-of-lordly-might/drain-life',
                              // 'winged-boots/expiry-descent'
-     tag: 'C1'|'C2'|'S'|'M1'|…|'M11';
-     binding:                // exactly one concrete owner:
-       | { block: 'economies'; economyId: EconomyId }
-       | { block: 'operations'; operationId: string }
-       | { block: 'effects'; effectId: string }
-       | { block: 'stateMachine'|'spellStore'|'curse'|'containment'
-                | 'entityGrant'|'randomProcedure'|'rollManipulation'
-                | 'interItem' }
-       | { engine: 'F2'|'F3'|'F4'|'F5'|'F6'|'F9'|'F10'; hook: string }
-       | { adjudicated: true; note: string };   // deliberate model remainder
+     tag: 'C1' | 'C2' | 'S' | 'DB' | 'M1' | … | 'M11';
+
+     /** Exactly one reviewed representation/disposition binding. */
+     representation:
+       | PackBlockBinding
+       | EconomyBinding
+       | OperationBinding
+       | EffectBinding
+       | StructuredFieldBinding
+       | AdjudicatedBinding
+       | DesignBlockedBinding;
+
+     /**
+      * Zero or more engine dependencies. Present alongside a real
+      * representation binding (not instead of one) whenever the clause's
+      * runtime behavior needs a Phase 1 primitive that hasn't landed.
+      * Empty/absent for clauses fully served by the current tool surface.
+      */
+     engineHooks?: EngineHookBinding[];
+   }
+   ```
+
+   Illustrative instances (not the full registry — see #407 §2 for the
+   exhaustive per-item clause list):
+
+   ```ts
+   // Armor of Vulnerability: pack-side C2 effect representation; F9 runtime
+   // dependency for the deterministic vulnerability-damage-type math.
+   {
+     id: 'armor-of-vulnerability/vulnerability',
+     tag: 'C2',
+     representation: { block: 'effects', effectId: 'vulnerability-damage-type' },
+     engineHooks: [{ engine: 'F9', hook: 'damage-resistance-and-vulnerability halve/double transform' }],
+   }
+
+   // Ring of X-ray Vision: C1 economy representation; F7 dependency for the
+   // long-rest relationship (re-use before long rest is gated, not free).
+   {
+     id: 'ring-of-x-ray-vision/x-ray-vision-use',
+     tag: 'C1',
+     representation: { block: 'economies', economyId: 'x-ray-vision-use' },
+     engineHooks: [{ engine: 'F7', hook: 'long-rest re-use gate' }],
+   }
+
+   // Robe of the Archmagi, post-#407-correction: pack-side C2 representation
+   // of the spell-save-DC/attack bonus; F8 runtime application dependency.
+   {
+     id: 'robe-of-the-archmagi/spell-save-dc-attack-bonus',
+     tag: 'C2',
+     representation: { block: 'effects', effectId: 'spell-save-dc-attack-bonus' },
+     engineHooks: [{ engine: 'F8', hook: 'special-modifier application into derived spellSaveDc/spellAttackModifier' }],
+   }
+
+   // A C1 reset economy with BOTH F5 and F7 dependencies (boots-of-speed's
+   // "(F5/F7-hooks)" pairing in #407) — demonstrates cardinality > 1.
+   {
+     id: 'boots-of-speed/flight-budget',
+     tag: 'C1',
+     representation: { block: 'economies', economyId: 'flight-budget' },
+     engineHooks: [
+       { engine: 'F5', hook: 'per-use/per-period budget reset' },
+       { engine: 'F7', hook: 'long-rest budget reset' },
+     ],
+   }
+
+   // Orb of Dragonkind's artifact Random Properties: no representation is
+   // possible yet — the source table itself is missing, not merely unowned.
+   {
+     id: 'orb-of-dragonkind/random-properties',
+     tag: 'DB',
+     representation: {
+       designBlocked: true,
+       reason: 'artifact Random Properties table absent from SRD 5.1 pack (verified #407 §0); GM-supplied content',
+     },
    }
    ```
 
 2. **Build-time integrity checks (normal CI, fail on violation):**
    (a) every #407 item key present in the registry, no stale/unknown keys;
    (b) pinned per-tag censuses from #407 asserted (drift = reviewed diff);
-   (c) every `binding` resolves: the named economy id / operation id /
-   effect id / block **exists in the item's pack `mechanics`** — this is
+   (c) **representation integrity** — every clause's `representation`
+   resolves: the named economy id / operation id / effect id / structured
+   field **exists in the item's pack `mechanics` (or the named §0
+   structured field, for `structuredField`)**, or the clause carries an
+   explicit reviewed `adjudicated`/`designBlocked` disposition — this is
    what distinguishes "block exists" from "the clause is represented";
-   (d) `DiceExpr` fields parse under the (F1-extended) grammar; tableRef'd
-   blocks reference existing table records; every operation `cost`
-   references a declared economy; every state-document key is licensed by
-   the pack shape.
-3. **Readiness report (gap-truthful, mirroring the #401 policy):** an item
-   is **green** only when every clause binding is satisfied AND its
-   state-bearing bindings are enforced by the landed tool surface
-   (`use_item` + item-state owner). Buckets: `green`,
-   `engine-pending` (clause bound to an F-family hook whose surface has
-   not landed — checked against the registered tool/engine registry),
-   `adjudicated-by-design` (explicit, reviewed model remainder),
-   `transitional` (state only in `properties_json` — **never green**),
-   `red` (unbound clause). Normal CI fails only on integrity errors (2);
-   the readiness gaps stay visible until the re-freeze gate, which fails
-   on any `red`/`transitional`.
+   (d) **engine dependency integrity** — every `engineHooks[]` entry names
+   a family in the current `EngineFamily` union (itself checked against the
+   corrected #406 family list — an engine family rename/removal is a
+   reviewed diff, not a silent drift); (e) `DiceExpr` fields parse under the
+   (F1-extended) grammar; tableRef'd blocks reference existing table
+   records; every operation `cost` references a declared economy; every
+   state-document key is licensed by the pack shape.
+3. **Readiness report (gap-truthful, mirroring the #401 policy) — two
+   independent dimensions, not one:** an item is **green** only when every
+   clause's representation is satisfied AND every one of its `engineHooks`
+   (if any) is satisfied by the landed tool/engine surface (`use_item` +
+   item-state owner + the named F-family). A clause is never green merely
+   because its representation exists — a represented clause with **any**
+   unlanded engine dependency stays `engine-pending`, and a clause with
+   **multiple** hooks (the boots-of-speed F5+F7 case) stays `engine-pending`
+   until **all** are satisfied, not just one. Buckets: `green`,
+   `engine-pending` (representation satisfied, ≥1 `engineHooks` entry not
+   yet landed — checked against the registered tool/engine registry),
+   `adjudicated-by-design` (explicit, reviewed model remainder —
+   `AdjudicatedBinding`), `design-blocked` (`DesignBlockedBinding` — distinct
+   from `adjudicated-by-design`: a decision/data gap blocks representation
+   itself, not a deliberate ruling), `transitional` (state only in
+   `properties_json` — **never green**), `red` (no resolvable
+   representation and no reviewed disposition). Normal CI fails only on
+   integrity errors (2); the readiness gaps stay visible until the
+   re-freeze gate, which fails on any `red`/`transitional`.
 
 ## 6. Agent split & child ownership
 
