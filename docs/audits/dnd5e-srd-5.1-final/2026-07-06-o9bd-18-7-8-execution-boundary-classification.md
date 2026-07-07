@@ -111,6 +111,24 @@ owner). The sweep also fixed notes on rows that stay MODEL so the boundary is
 principled, not accidental. Three calibration principles were made explicit
 (recorded here so future rows classify consistently):
 
+**Third revision 2026-07-06 (slow-time-arithmetic-exception correction):** a
+final-review pass found the second revision's own calibration prose had
+carved out a frequency/stakes exception for deterministic arithmetic — "One-shot
+slow-time derivations with durable condition-entry state and low stakes
+(food/water deprivation thresholds, forced-march DC) also stay MODEL" — that
+directly contradicted the Hybrid Contract this same artifact grounds every
+other F9 clause in (§0: arithmetic clauses always route to F9; no frequency
+carve-out). Two rows had a deterministic formula riding this now-removed
+exception: `food` (3 + Constitution modifier, minimum 1, deprivation-day
+threshold) and `speed` (forced-march save DC 10 + 1 per hour past 8); both
+move MODEL → PARTIAL for that one clause each, routed to F9. A third row,
+`recuperating`, cites the same "slow-time counter" language but was verified
+to have **no** arithmetic clause (fixed DC 15, no derivation) — it is
+unaffected and stays MODEL. The exception was never about state-machine
+ownership (a low-frequency clock legitimately does not need a dedicated
+engine the way death saves do) — it is about whether the model may perform
+forbidden arithmetic, which frequency and stakes cannot license.
+
 - **F9-clause criteria.** A deterministic derivation is an F9 clause when
   (a) the derived number feeds a code-owned surface — a dice expression,
   modifier composition, vs-DC/AC/opposed resolution, or an HP/damage
@@ -122,10 +140,24 @@ principled, not accidental. Three calibration principles were made explicit
   text-first game (difficult terrain, squeezing, crawl/climb costs,
   cross-mode speed subtraction) — is part of narration under boundary rule 1,
   because the movement budget is deliberately not code-owned (F2 excludes
-  it). One-shot slow-time derivations with durable condition-entry state and
-  low stakes (food/water deprivation thresholds, forced-march DC) also stay
-  MODEL under the already-stated frequency/stakes weighing; each such row's
-  note says so explicitly.
+  it).
+- **Frequency/stakes governs state-machine ownership, never whether the
+  model performs arithmetic.** A prior revision of this artifact stayed
+  MODEL on two rows' deterministic formulas — the food deprivation
+  day-threshold (3 + Constitution modifier, minimum 1) and the forced-march
+  save DC (10 + 1 per hour past 8) — reasoning that low-frequency,
+  durable-condition-entry-backed derivations were an exception to the Hybrid
+  Contract. That was wrong: the Hybrid Contract ("all dice and math go
+  through the `roll` tool") draws no frequency or stakes carve-out, and §0
+  is explicit that *any* rule whose procedure requires the model to produce
+  a derived number is an F9 gap. Frequency and stakes are the correct test
+  for whether a *state machine* is warranted (durable generic
+  condition-entry storage is sufficient for these low-frequency clocks —
+  they do not need a dedicated engine the way death saves or concentration
+  do) — they are not a test for whether forbidden arithmetic may be
+  performed by the model. Both rows are corrected to PARTIAL below: the
+  clock/state/ruling portion stays MODEL-adjudicated; the derivation itself
+  routes to F9.
 - **Single-owner factoring.** Generic resolution gaps are owned once by the
   generic rows (`ability-checks`/`saving-throws`/`attack-rolls`/`contests` own
   vs-DC/AC/opposed resolution; `modifiers-to-the-roll` owns composition;
@@ -270,8 +302,8 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | feats | char-build | unimplemented | DESIGN | D2: variant-feat adoption + prerequisite tracking in the code-owned advancement flow (SRD ships one feat) |
 | fly | movement-environment | unimplemented | MODEL | hover/death-fall ruling; flags structured |
 | flying-movement | movement | unimplemented | MODEL | fall-when-prone/speed-0 ruling |
-| food | survival | unimplemented | MODEL | deprivation-day state durably representable as character condition entries (semantically apt temporary character state, read back from the context snapshot); clock owned; the 3+Con-mod day threshold is a one-shot slow-time derivation, auditable in transcript (frequency/stakes principle) |
-| food-and-water | survival | unimplemented | MODEL | as `food` (condition-entry state); exhaustion-not-removable-until-fed gate is a rest-time ruling (F7 hook noted) |
+| food | survival | unimplemented | PARTIAL | deprivation-day state durably representable as character condition entries (semantically apt temporary character state, read back from the context snapshot); clock stays model-adjudicated (low-frequency, no dedicated state machine needed); missing: the 3+Con-mod (minimum 1) day-threshold derivation is deterministic arithmetic feeding a gameplay threshold, not narration — the Hybrid Contract routes it to F9 regardless of frequency → F9 |
+| food-and-water | survival | unimplemented | MODEL | as `food` (condition-entry state, clock model-adjudicated); no formula of its own — this row is the exhaustion-not-removable-until-fed gate, a rest-time ruling (F7 hook noted); the deprivation-day arithmetic itself is `food`'s clause, not duplicated here |
 | gaining-inspiration | inspiration | unimplemented | IMPL | F5: inspiration is a durable boolean resource with a no-stockpile cap; overlay_facts is a world-template overlay store, not a mechanics resource, and conditions are semantically wrong for a resource — needs a character-state owner |
 | grapple-rules-for-monsters | monster-conventions | unimplemented | PARTIAL | missing: default escape DC derivation (10 + Str(Athletics) mod) as derived math → F9 |
 | grappling | combat-contests | unimplemented | MODEL | contest rolls + grappled condition + half-speed drag ruling |
@@ -324,7 +356,7 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | ranged-attacks-in-close-combat | combat-core | unimplemented | MODEL | within-5-ft disadv ruling |
 | reactions | action-economy | unimplemented | IMPL | F2: one reaction per round crosses turn boundaries — budget state, not a ruling |
 | ready | action | unimplemented | MODEL | held trigger + readied-spell concentration representable as condition; reaction spend → F2 |
-| recuperating | downtime | unimplemented | MODEL | fixed DC 15, no derivation; the 3-day counter is durably representable as a character condition entry over the owned clock (slow-time counter principle, as food/water) |
+| recuperating | downtime | unimplemented | MODEL | fixed DC 15, no derivation (not an arithmetic clause, so the `food`/`speed` correction does not apply); the 3-day counter is durably representable as a character condition entry over the owned clock (low-frequency state-ownership principle, as food/water) |
 | researching | downtime | unimplemented | PARTIAL | missing: canonical currency surface for the gp/day cost → F10 |
 | rituals | spellcasting | unimplemented | MODEL | +10 min, no-slot casting; ritual flags structured |
 | rolling-1-or-20 | combat-core | unimplemented | MODEL | natural die visible in `rolls[]`; auto-hit/miss applied per roll; candidate roll-tool annotation, not required — but F9's vs-AC/DC resolution MUST honor nat-1/20 overrides when it lands (spec note recorded in F9) |
@@ -338,7 +370,7 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | somatic-s | spellcasting | unimplemented | MODEL | free-hand gating ruling |
 | special-traits-spellcasting | monster-conventions | unimplemented | MODEL | statblock convention; entries structured |
 | special-weapons | gear-payload | unimplemented | PARTIAL | generic semantics MODEL; missing per-record payloads (net restraint DC/AC, lance rules) — clause externally owned by eshyra-o9bd.18.7.6 |
-| speed | movement-environment | unimplemented | MODEL | travel-pace table structured; forced-march DC (10 + hours past 8) derives from narrated march time, not structured data — slow-time frequency/stakes principle, auditable per save; exhaustion as condition entry |
+| speed | movement-environment | unimplemented | PARTIAL | travel-pace table structured; movement rates/costs stay MODEL (narrative-magnitude arithmetic, F2 deliberately excludes the movement budget); exhaustion as condition entry; missing: the forced-march save DC (10 + 1 per hour past 8) is a deterministic derived-number formula feeding a saving-throw DC, not narration — Hybrid Contract clause, not a frequency-exempt one → F9 |
 | speed-difficult-terrain | movement-environment | unimplemented | MODEL | half-pace ruling |
 | spell-slots | spellcasting | unimplemented | IMPL | F4: durable expenditure/restoration economy (expend ≥ spell level; long-rest restore); progression structured, live-state owner missing |
 | spellcasting | multiclassing | design-blocked | DESIGN | D1 (multiclass slot formula) |
@@ -378,23 +410,26 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 
 ## 3. Census and mechanical verification
 
-**code-enforced 0 · model-adjudicated-supported 99 · partial 45 ·
+**code-enforced 0 · model-adjudicated-supported 97 · partial 47 ·
 implementation-required 21 · design-blocked 10 = 175** (corrected census
-after the 2026-07-06 second (MODEL-integrity) revision; supersedes the
-initial 0/137/9/19/10 and the first-revision 0/107/37/21/10).
+after the 2026-07-06 third (slow-time-arithmetic-exception) revision;
+supersedes the initial 0/137/9/19/10, the first-revision 0/107/37/21/10, and
+the second (MODEL-integrity) revision 0/99/45/21/10 — `food` and `speed`
+move MODEL → PARTIAL, each for one F9 arithmetic clause; §0/§1 no longer
+carve out a frequency/stakes exception for deterministic arithmetic).
 
-- partial (45): abilities, ability-checks, ability-scores-and-modifiers,
+- partial (47): abilities, ability-checks, ability-scores-and-modifiers,
   armor-guidance, attack-rolls, backgrounds-equipment, beyond-1st-level,
   casting-a-spell-at-a-higher-level, casting-a-spell-saving-throws, charges,
   coinage, conflict, constitution-hit-points, contests, cover, crafting,
   critical-hits, damage-resistance-and-vulnerability, damage-rolls,
-  expenses-lifestyle-expenses, experience-points, falling,
+  expenses-lifestyle-expenses, experience-points, falling, food,
   grapple-rules-for-monsters, group-checks, healing, hiding, jumping,
   lifting-and-carrying, modifiers-to-the-roll, mounts-and-vehicles,
   passive-checks, practicing-a-profession, proficiency-bonus, researching,
   saving-throws, self-sufficiency, selling-treasure, silvered-weapons,
-  special-weapons, suffocating, surprise, training, two-weapon-fighting,
-  variant-encumbrance, wizard-your-spellbook.
+  special-weapons, speed, suffocating, surprise, training,
+  two-weapon-fighting, variant-encumbrance, wizard-your-spellbook.
 - implementation-required (21): advantage-and-disadvantage, attunement,
   backgrounds-proficiencies, bonus-action, bonus-actions, concentration,
   death-saving-throws, falling-unconscious, gaining-inspiration,
@@ -419,12 +454,14 @@ recomputed from the §2 rows and sums to 175. The #400-vs-#402 key sets were
 also re-verified equal. Regenerate mechanically whenever the matrix changes.
 
 Net movement from #402 (mechanically joined on key, 2026-07-06, corrected
-through the second revision): 148 `unimplemented` → 94 MODEL + 32 PARTIAL +
-20 IMPL + 2 DESIGN (feats, customizing-a-background); 19 `partial` → 5 MODEL
-(code-owned portion plus a legitimate ruling remainder) + 13 stay PARTIAL +
-1 IMPL (death-saving-throws); 8 `design-blocked` → 8 DESIGN. The headline
-stands: **the majority of PROC rules are already architecturally supported
-as rulings** — but the honest engine backlog is 21 IMPL rules + 45
+through the third (slow-time-arithmetic-exception) revision): 148
+`unimplemented` → 92 MODEL + 34 PARTIAL + 20 IMPL + 2 DESIGN (feats,
+customizing-a-background; `food` and `speed` moved from this revision's prior
+94 MODEL into PARTIAL for one F9 arithmetic clause each); 19 `partial` → 5
+MODEL (code-owned portion plus a legitimate ruling remainder) + 13 stay
+PARTIAL + 1 IMPL (death-saving-throws); 8 `design-blocked` → 8 DESIGN. The
+headline stands: **the majority of PROC rules are already architecturally
+supported as rulings** — but the honest engine backlog is 21 IMPL rules + 47
 clause-level PARTIALs, clustering into ten families, two of which (F9
 derived-math, F10 currency surface) are shared primitives that unblock many
 PARTIALs at once.
@@ -506,8 +543,12 @@ exact and artifact-backed; nothing else in the 175 belongs to a family.
   transform), falling (distance→dice-count derivation), proficiency-bonus
   (PB ×2/×½/×0 multiplier composition), two-weapon-fighting
   (omit-positive-ability-mod damage composition),
-  casting-a-spell-at-a-higher-level (upcast scaling transform), melee-attacks
-  and surprise (notes). Need: extend the roll tool with declared modifier
+  casting-a-spell-at-a-higher-level (upcast scaling transform), food
+  (deprivation day-threshold: 3 + Constitution modifier, minimum 1 — a
+  non-roll `calc` formula, corrected from a prior frequency-based MODEL
+  exception), speed (forced-march saving-throw DC: 10 + 1 per hour past 8 —
+  same correction), melee-attacks and surprise (notes). Need: extend the
+  roll tool with declared modifier
   lists, `vsDc`/opposed resolution, and post-roll transforms
   (half/double/min-0), plus a small deterministic `calc` primitive for
   non-roll formulas — the *choice of inputs* stays a DM ruling; the
@@ -578,9 +619,9 @@ artifact's current census (see item 5).
    against the registered tool list (`DEFAULT_TOOLS`) so a tool removal
    fails the register.
 5. **Census pins**: pin both censuses — semantic (PROC 175/REF 96/DEF 33/
-   TABLE 19/DUP 12) and execution-boundary (0/99/45/21/10 as of the
-   2026-07-06 second, MODEL-integrity revision) — so drift is a reviewed
-   diff. Do not pin
+   TABLE 19/DUP 12) and execution-boundary (0/97/47/21/10 as of the
+   2026-07-06 third, slow-time-arithmetic-exception revision) — so drift is
+   a reviewed diff. Do not pin
    any execution-boundary census into registry constants until this PR has
    been reviewed and merged; the numbers are review-gated, not
    self-certifying.
@@ -592,7 +633,7 @@ artifact's current census (see item 5).
 
 - Implementation of the disposition layer (per revised #401) — Codex; #401
   has been updated per §5, and its census pin tracks this artifact's current
-  census (0/99/45/21/10).
+  census (0/97/47/21/10).
 - Engine families F1–F10 — bead under an engine epic (not under 18.7.8);
   recommended agents per family in §4.
 - This artifact is the authoritative execution boundary. A future change of
