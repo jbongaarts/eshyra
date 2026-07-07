@@ -6,7 +6,7 @@ Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399
 This is the authoritative, record-by-record semantic disposition source for
 the reviewed creature-entry refs now represented by
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and for
-`ACCEPTED_METADATA_ONLY_SPELLS` (51 keys after C3 rollout) in
+`ACCEPTED_METADATA_ONLY_SPELLS` (34 keys after S2 rollout) in
 `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts` as of this
 branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
@@ -15,10 +15,10 @@ second follow-up rollout, while 40 residual refs remain represented in the
 per-ref registry. Of those 40 residual refs, 2 are permanent
 `accepted-prose-only` entries and 38 are pending `finding` entries routed to
 C1/C4-C9. Spell metadata-only membership remains represented separately by
-`ACCEPTED_METADATA_ONLY_SPELLS`. Every record's full pack text was read
-against SRD 5.1 source. **Do not repeat this audit.** Implementation agents
-should work from the slices in §3 and consult §1/§2/§1.6 only for per-record
-semantics.
+`ACCEPTED_METADATA_ONLY_SPELLS`; the 17 S2 small deterministic-clause spells
+have graduated out. Every record's full pack text was read against SRD 5.1
+source. **Do not repeat this audit.** Implementation agents should work from
+the slices in §3 and consult §1/§2/§1.6 only for per-record semantics.
 
 Disposition vocabulary:
 
@@ -319,7 +319,7 @@ remaining design decision.
 | `spell:phantom-steed` | riding-horse statblock with speed 100 ft override; travel 10 mph / 13 mph fast; 1-min fade on end; ends on any damage |
 | `spell:simulacrum` | duplicate at **half HP maximum**, no equipment; no learning/slot regen; repair 100 gp/HP; melts at 0 HP; recast destroys prior |
 
-### 2.2 Stochastic-clause family — 5 — disposition: model (slice S2)
+### 2.2 Stochastic-clause family — 5 — disposition: implemented (slice S2)
 
 One small contract covers all: `percentChance { percent, cumulative?, per,
 trigger, resetOn?, secret? }`.
@@ -345,14 +345,14 @@ trigger, resetOn?, secret? }`.
 | `spell:demiplane` | reclassified from accept 2026-07-06: deterministic extradimensional-space state — 30-ft room, trapped-on-end transition, reconnect-to-previous-demiplane option. Spatial-boundary payload designed with private-sanctum/tiny-hut |
 | `spell:passwall` | reclassified from accept 2026-07-06: exact passage dimensions (≤5×8×20 ft) and safe-ejection-on-end state transition. Contrast move-earth (retained accept): passwall creates a persistent traversable state with a creature-affecting end transition; move-earth explicitly cannot trap/injure and is narrative reshaping |
 
-### 2.4 Quantified-creation family — 2 — disposition: model (slice S2)
+### 2.4 Quantified-creation family — 2 — disposition: implemented (slice S2)
 
 | key | clauses |
 |---|---|
 | `spell:create-food-and-water` | 45 lb food + 30 gal water; sustains 15 humanoids / 5 steeds 24 h; food spoils in 24 h. Proposed `createsProvisions` payload |
 | `spell:create-or-destroy-water` | create/destroy 10 gal, or 30-ft-cube rain (extinguishes exposed flames) / fog destruction; scaling captured |
 
-### 2.5 Conjured-utility-object family — 2 — disposition: model (slice S2)
+### 2.5 Conjured-utility-object family — 2 — disposition: implemented (slice S2)
 
 | key | clauses |
 |---|---|
@@ -387,7 +387,7 @@ enforce.
 | `spell:purify-food-and-drink` | area in metadata; purification narrative |
 | `spell:stone-shape` | shaping utility; hinge/latch limits are parameters |
 
-### 2.8 Small deterministic clauses reclassified from accept — 8 — disposition: model (slice S2)
+### 2.8 Small deterministic clauses reclassified from accept — 8 — disposition: implemented (slice S2)
 
 Integrity pass 2026-07-06: these carried deterministic clauses that were
 previously waved through as "low value" / "narration parameters". Under the
@@ -425,7 +425,7 @@ None of the remaining slices below is started unless stated.
 | **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Implemented** |
 | **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 10 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Implemented** |
 | **S1** summoning | design summoning contract extension (option menus, control economy, statblock modification); 14 spells | yes — largest open design | **Opus** |
-| **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
+| **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Implemented** |
 | **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
 | **S4** membership bookkeeping | after each slice: exact removals/updates in the relevant registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` for creature-entry findings, `ACCEPTED_*` for accepted spell metadata/prose buckets), count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
 | **C4** reckless family | `recklessAttack` two-sided advantage-toggle contract; 2 refs (§1.6.2) | yes, small | **Opus** design, Codex rollout |
@@ -459,7 +459,8 @@ every membership key appears in exactly one disposition section):
 - spells originally classified here: 53 = S1 14 (§2.1) + S2 17 (§2.2 5 +
   §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after
-  C3 rollout: 51 (53 - 2 C3 implemented).
+  C3+S2 rollout: 34 (53 - 2 C3 implemented - 17 S2 implemented) = S1 14 +
+  S3 8 + accept 11 + accept\* 1.
 
 **14 records total (2 creatures + 12 spells) are closed permanently by this
 document.** An earlier revision claimed 26 permanent accepts (with

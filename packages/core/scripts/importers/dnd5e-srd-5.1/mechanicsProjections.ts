@@ -1360,6 +1360,197 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
   return effects;
 }
 
+function projectReviewedS2SpellEffects(
+  spell: SpellExtraction,
+): readonly Mechanics[] {
+  switch (spell.name.toLowerCase().replaceAll('’', "'")) {
+    case 'animal messenger':
+      return [
+        {
+          kind: 'messengerTravel',
+          ratesMilesPer24h: { flying: 50, other: 25 },
+          maxWords: 25,
+          lostIfUndelivered: true,
+        },
+      ];
+    case "arcanist's magic aura":
+      return [
+        {
+          kind: 'permanenceAfterRepetition',
+          period: 'day',
+          count: 30,
+          result: 'until-dispelled',
+        },
+      ];
+    case 'augury':
+      return [
+        {
+          kind: 'percentChance',
+          percent: 25,
+          per: 'extra-casting-before-long-rest',
+          cumulative: true,
+          trigger: 'repeat-cast-before-long-rest',
+          resetOn: 'long-rest',
+          effect: 'random-reading',
+          secret: true,
+        },
+      ];
+    case 'commune':
+      return [
+        { kind: 'questionLimit', maxQuestions: 3 },
+        {
+          kind: 'percentChance',
+          percent: 25,
+          per: 'extra-casting-before-long-rest',
+          cumulative: true,
+          trigger: 'repeat-cast-before-long-rest',
+          resetOn: 'long-rest',
+          effect: 'no-answer',
+        },
+      ];
+    case 'control weather':
+      return [
+        { kind: 'onsetTime', roll: '1d4', multiplierMinutes: 10 },
+        {
+          kind: 'stagedTableShift',
+          tableRefs: ['table:precipitation', 'table:temperature', 'table:wind'],
+          stepsPerChange: 1,
+        },
+      ];
+    case 'create food and water':
+      return [
+        {
+          kind: 'createsProvisions',
+          food: { pounds: 45, spoilsAfterHours: 24 },
+          water: { gallons: 30 },
+          sustains: { humanoids: 15, steeds: 5, hours: 24 },
+        },
+      ];
+    case 'create or destroy water':
+      return [
+        {
+          kind: 'createsOrDestroysWater',
+          gallons: 10,
+          areaAlternative: 'rain in a 30-foot cube',
+          destroyAlternative: 'fog in a 30-foot cube',
+        },
+      ];
+    case 'divination':
+      return [
+        {
+          kind: 'percentChance',
+          percent: 25,
+          per: 'extra-casting-before-long-rest',
+          cumulative: true,
+          trigger: 'repeat-cast-before-long-rest',
+          resetOn: 'long-rest',
+          effect: 'random-reading',
+          secret: true,
+        },
+      ];
+    case 'floating disk':
+      return [
+        {
+          kind: 'conjuredUtilityObject',
+          capacityPounds: 500,
+          leashFeet: 20,
+          endsBeyondFeet: 100,
+          restrictions: [
+            'immobile while you are within 20 feet',
+            'follows to remain within 20 feet',
+            'cannot cross an elevation change of 10 feet or more',
+          ],
+        },
+      ];
+    case 'mage hand':
+      return [
+        {
+          kind: 'conjuredUtilityObject',
+          capacityPounds: 10,
+          leashFeet: 30,
+          moveFeetPerUse: 30,
+          restrictions: [
+            'requires action to control',
+            'cannot attack',
+            'cannot activate magic items',
+            'cannot carry more than 10 pounds',
+          ],
+        },
+      ];
+    case 'message':
+      return [
+        {
+          kind: 'communicationBarriers',
+          magicalSilenceBlocks: true,
+          noStraightLineRequired: true,
+          materials: [
+            {
+              material: 'stone',
+              thickness: { amount: 1, unit: 'foot' },
+              threshold: 'blocks-at-or-above',
+            },
+            {
+              material: 'common-metal',
+              thickness: { amount: 1, unit: 'inch' },
+              threshold: 'blocks-at-or-above',
+            },
+            { material: 'lead', threshold: 'any-thin-sheet' },
+            {
+              material: 'wood',
+              thickness: { amount: 3, unit: 'foot' },
+              threshold: 'blocks-at-or-above',
+            },
+          ],
+        },
+      ];
+    case 'mirage arcane':
+      return [
+        {
+          kind: 'terrainAlteration',
+          canCreate: ['difficult-terrain'],
+          canRemove: ['difficult-terrain'],
+        },
+      ];
+    case 'prestidigitation':
+    case 'thaumaturgy':
+      return [{ kind: 'concurrentEffectLimit', max: 3, dismissCost: 'action' }];
+    case 'secret chest':
+      return [
+        {
+          kind: 'percentChance',
+          percent: 5,
+          per: 'day',
+          cumulative: true,
+          trigger: 'after-60-days',
+          effect: 'spell-ends',
+        },
+      ];
+    case 'sending':
+      return [
+        {
+          kind: 'percentChance',
+          percent: 5,
+          per: 'casting',
+          trigger: 'crossrealm-recipient',
+          effect: 'delivery-failure',
+        },
+      ];
+    case 'speak with dead':
+      return [
+        { kind: 'recastLockout', scope: 'per-target', days: 10 },
+        { kind: 'questionLimit', maxQuestions: 5 },
+        {
+          kind: 'corpseEligibility',
+          target: 'corpse',
+          requiresMouth: true,
+          excludesUndead: true,
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
 /**
  * Structured upcast scaling (eshyra-o9bd.18.7.4). The verbatim At Higher
  * Levels text always rides along as `sourceText`; the typed fields are added
@@ -1425,7 +1616,10 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     save.damageOnSuccess = 'half';
   }
   const conditions = parseConditions(text);
-  const effects = parseSpellEffects(spell.description);
+  const effects = [
+    ...parseSpellEffects(spell.description),
+    ...projectReviewedS2SpellEffects(spell),
+  ];
   // "takes force damage equal to 1d8 + your spellcasting ability modifier"
   // (Spiritual Weapon) — a dealt-damage form parseDamage's "<dice> <type>
   // damage" shape cannot see.

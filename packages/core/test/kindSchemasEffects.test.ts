@@ -740,6 +740,24 @@ describe('mechanics effect payload contracts', () => {
     expect(() =>
       validate({ kind: 'spellStoring', maximumSpellLevel: 10 }),
     ).toThrow(/<= 9/);
+    expect(() => validate({ kind: 'percentChance', percent: 101 })).toThrow(
+      /percent/,
+    );
+    expect(() =>
+      validate({ kind: 'createsProvisions', food: { pounds: 45 } }),
+    ).toThrow(/spoilsAfterHours/);
+    expect(() => validate({ kind: 'conjuredUtilityObject' })).toThrow(
+      /at least one boundary/,
+    );
+    expect(() =>
+      validate({ kind: 'communicationBarriers', magicalSilenceBlocks: true }),
+    ).toThrow(/materials/);
+    expect(() =>
+      validate({
+        kind: 'terrainAlteration',
+        canCreate: ['muddy-ground'],
+      }),
+    ).toThrow(/difficult-terrain/);
     expect(() =>
       validate({
         kind: 'illusoryDisguise',

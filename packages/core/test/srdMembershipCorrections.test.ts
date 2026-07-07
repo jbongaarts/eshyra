@@ -753,6 +753,147 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     ]);
   });
 
+  it('S2 stochastic and repeated-casting spells carry typed bookkeeping', () => {
+    expect(spellEffects('spell:augury')).toEqual([
+      {
+        kind: 'percentChance',
+        percent: 25,
+        per: 'extra-casting-before-long-rest',
+        cumulative: true,
+        trigger: 'repeat-cast-before-long-rest',
+        resetOn: 'long-rest',
+        effect: 'random-reading',
+        secret: true,
+      },
+    ]);
+    expect(spellEffects('spell:commune')).toEqual([
+      { kind: 'questionLimit', maxQuestions: 3 },
+      {
+        kind: 'percentChance',
+        percent: 25,
+        per: 'extra-casting-before-long-rest',
+        cumulative: true,
+        trigger: 'repeat-cast-before-long-rest',
+        resetOn: 'long-rest',
+        effect: 'no-answer',
+      },
+    ]);
+    expect(spellEffects('spell:secret-chest')).toEqual([
+      {
+        kind: 'percentChance',
+        percent: 5,
+        per: 'day',
+        cumulative: true,
+        trigger: 'after-60-days',
+        effect: 'spell-ends',
+      },
+    ]);
+    expect(spellEffects('spell:arcanists-magic-aura')).toEqual([
+      {
+        kind: 'permanenceAfterRepetition',
+        period: 'day',
+        count: 30,
+        result: 'until-dispelled',
+      },
+    ]);
+  });
+
+  it('S2 provision, utility-object, and environmental spells carry typed limits', () => {
+    expect(spellEffects('spell:create-food-and-water')).toEqual([
+      {
+        kind: 'createsProvisions',
+        food: { pounds: 45, spoilsAfterHours: 24 },
+        water: { gallons: 30 },
+        sustains: { humanoids: 15, steeds: 5, hours: 24 },
+      },
+    ]);
+    expect(spellEffects('spell:create-or-destroy-water')).toEqual([
+      {
+        kind: 'createsOrDestroysWater',
+        gallons: 10,
+        areaAlternative: 'rain in a 30-foot cube',
+        destroyAlternative: 'fog in a 30-foot cube',
+      },
+    ]);
+    expect(spellEffects('spell:floating-disk')).toEqual([
+      {
+        kind: 'conjuredUtilityObject',
+        capacityPounds: 500,
+        leashFeet: 20,
+        endsBeyondFeet: 100,
+        restrictions: [
+          'immobile while you are within 20 feet',
+          'follows to remain within 20 feet',
+          'cannot cross an elevation change of 10 feet or more',
+        ],
+      },
+    ]);
+    expect(spellEffects('spell:mirage-arcane')).toEqual([
+      {
+        kind: 'terrainAlteration',
+        canCreate: ['difficult-terrain'],
+        canRemove: ['difficult-terrain'],
+      },
+    ]);
+  });
+
+  it('S2 communication, travel, and recast limits carry typed clauses', () => {
+    expect(spellEffects('spell:animal-messenger')).toEqual([
+      {
+        kind: 'messengerTravel',
+        ratesMilesPer24h: { flying: 50, other: 25 },
+        maxWords: 25,
+        lostIfUndelivered: true,
+      },
+    ]);
+    expect(spellEffects('spell:message')).toEqual([
+      {
+        kind: 'communicationBarriers',
+        magicalSilenceBlocks: true,
+        noStraightLineRequired: true,
+        materials: [
+          {
+            material: 'stone',
+            thickness: { amount: 1, unit: 'foot' },
+            threshold: 'blocks-at-or-above',
+          },
+          {
+            material: 'common-metal',
+            thickness: { amount: 1, unit: 'inch' },
+            threshold: 'blocks-at-or-above',
+          },
+          { material: 'lead', threshold: 'any-thin-sheet' },
+          {
+            material: 'wood',
+            thickness: { amount: 3, unit: 'foot' },
+            threshold: 'blocks-at-or-above',
+          },
+        ],
+      },
+    ]);
+    expect(spellEffects('spell:speak-with-dead')).toEqual([
+      { kind: 'recastLockout', scope: 'per-target', days: 10 },
+      { kind: 'questionLimit', maxQuestions: 5 },
+      {
+        kind: 'corpseEligibility',
+        target: 'corpse',
+        requiresMouth: true,
+        excludesUndead: true,
+      },
+    ]);
+  });
+
+  it('S2 control weather carries onset and table-shift procedure mechanics', () => {
+    expect(spellEffects('spell:control-weather')).toEqual([
+      { kind: 'onsetTime', roll: '1d4', multiplierMinutes: 10 },
+      {
+        kind: 'stagedTableShift',
+        tableRefs: ['table:precipitation', 'table:temperature', 'table:wind'],
+        stepsPerChange: 1,
+      },
+    ]);
+  });
+
   it('Jump and Spare the Dying carry their deterministic semantics', () => {
     expect(spellEffects('spell:jump')).toEqual([
       { kind: 'jumpDistanceMultiplier', multiplier: 3 },

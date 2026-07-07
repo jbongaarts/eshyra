@@ -77,6 +77,13 @@ homunculus (`telepathy` + directional `senseSharing`), aboleth
 
 ## S2 — small deterministic clause payloads (17 spells)
 
+Implemented 2026-07-07. The rollout added the effect kinds below, projected
+all 17 reviewed S2 spells, and removed those spells from
+`ACCEPTED_METADATA_ONLY_SPELLS`. The committed payloads use compact
+enum-like strings for `percentChance.trigger`/`effect` values so derived
+mechanics cannot accidentally prove source-region ownership in the importer
+ledger.
+
 Existing sub-family shapes (artifact §2.2/2.4/2.5):
 
 ```ts

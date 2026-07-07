@@ -39,6 +39,12 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'carryingCapacitySize',
   'climbAnywhere',
   'communication',
+  'communicationBarriers',
+  'concurrentEffectLimit',
+  'conjuredUtilityObject',
+  'corpseEligibility',
+  'createsOrDestroysWater',
+  'createsProvisions',
   'dcIncrease',
   'endsCurses',
   'extraTurns',
@@ -48,13 +54,21 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'locationKnowledge',
   'mirrorImages',
   'movementCostMultiplier',
+  'messengerTravel',
   'naturalWeaponDamage',
+  'onsetTime',
   'pathMemory',
+  'percentChance',
+  'permanenceAfterRepetition',
+  'questionLimit',
+  'recastLockout',
   'senseSharing',
   'slowFall',
   'stabilize',
+  'stagedTableShift',
   'sleepException',
   'telepathy',
+  'terrainAlteration',
   'understandLanguages',
   'unlock',
   'walkOnLiquids',
@@ -1628,6 +1642,87 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       throw new RulesPackError(`${path}.with must be a non-empty array`);
     }
   },
+  communicationBarriers: (effect, path) => {
+    if (effect.magicalSilenceBlocks !== true) {
+      throw new RulesPackError(`${path}.magicalSilenceBlocks must be true`);
+    }
+    optBool(effect, 'noStraightLineRequired', path);
+    const materials = objArray(effect, 'materials', path);
+    if (materials === undefined || materials.length === 0) {
+      throw new RulesPackError(`${path}.materials must be a non-empty array`);
+    }
+    const allowedMaterials = new Set(['stone', 'common-metal', 'lead', 'wood']);
+    const allowedThresholds = new Set(['blocks-at-or-above', 'any-thin-sheet']);
+    materials.forEach((material, i) => {
+      const materialPath = `${path}.materials[${i}]`;
+      reqEnum(material, 'material', materialPath, allowedMaterials);
+      reqEnum(material, 'threshold', materialPath, allowedThresholds);
+      if (material.thickness !== undefined) {
+        const thickness = reqObj(material, 'thickness', materialPath);
+        reqInt(thickness, 'amount', `${materialPath}.thickness`, 1);
+        reqEnum(
+          thickness,
+          'unit',
+          `${materialPath}.thickness`,
+          new Set(['foot', 'inch']),
+        );
+      }
+    });
+  },
+  concurrentEffectLimit: (effect, path) => {
+    reqInt(effect, 'max', path, 1);
+    reqEnum(effect, 'dismissCost', path, new Set(['action']));
+  },
+  conjuredUtilityObject: (effect, path) => {
+    const hasBoundary =
+      effect.capacityPounds !== undefined ||
+      effect.leashFeet !== undefined ||
+      effect.endsBeyondFeet !== undefined ||
+      effect.moveFeetPerUse !== undefined ||
+      effect.restrictions !== undefined;
+    if (!hasBoundary) {
+      throw new RulesPackError(`${path} must carry at least one boundary`);
+    }
+    optInt(effect, 'capacityPounds', path, 1);
+    optInt(effect, 'leashFeet', path, 1);
+    optInt(effect, 'endsBeyondFeet', path, 1);
+    optInt(effect, 'moveFeetPerUse', path, 1);
+    optStrArray(effect, 'restrictions', path);
+  },
+  corpseEligibility: (effect, path) => {
+    reqEnum(effect, 'target', path, new Set(['corpse']));
+    optBool(effect, 'requiresMouth', path);
+    optBool(effect, 'excludesUndead', path);
+  },
+  createsOrDestroysWater: (effect, path) => {
+    reqInt(effect, 'gallons', path, 1);
+    optStr(effect, 'areaAlternative', path);
+    optStr(effect, 'destroyAlternative', path);
+  },
+  createsProvisions: (effect, path) => {
+    if (
+      effect.food === undefined &&
+      effect.water === undefined &&
+      effect.sustains === undefined
+    ) {
+      throw new RulesPackError(`${path} must carry food, water, or sustains`);
+    }
+    if (effect.food !== undefined) {
+      const food = reqObj(effect, 'food', path);
+      reqInt(food, 'pounds', `${path}.food`, 1);
+      reqInt(food, 'spoilsAfterHours', `${path}.food`, 1);
+    }
+    if (effect.water !== undefined) {
+      const water = reqObj(effect, 'water', path);
+      reqInt(water, 'gallons', `${path}.water`, 1);
+    }
+    if (effect.sustains !== undefined) {
+      const sustains = reqObj(effect, 'sustains', path);
+      reqInt(sustains, 'humanoids', `${path}.sustains`, 1);
+      reqInt(sustains, 'steeds', `${path}.sustains`, 1);
+      reqInt(sustains, 'hours', `${path}.sustains`, 1);
+    }
+  },
   dcIncrease: (effect, path) => {
     reqInt(effect, 'amount', path, 1);
     reqStr(effect, 'appliesTo', path);
@@ -1687,9 +1782,46 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   movementCostMultiplier: (effect, path) => {
     reqInt(effect, 'feetPerFoot', path, 2);
   },
+  messengerTravel: (effect, path) => {
+    const rates = reqObj(effect, 'ratesMilesPer24h', path);
+    reqInt(rates, 'flying', `${path}.ratesMilesPer24h`, 1);
+    reqInt(rates, 'other', `${path}.ratesMilesPer24h`, 1);
+    reqInt(effect, 'maxWords', path, 1);
+    if (effect.lostIfUndelivered !== true) {
+      throw new RulesPackError(`${path}.lostIfUndelivered must be true`);
+    }
+  },
+  onsetTime: (effect, path) => {
+    reqDice(effect, 'roll', path);
+    reqInt(effect, 'multiplierMinutes', path, 1);
+  },
   pathMemory: (effect, path) => {
     reqEnum(effect, 'scope', path, new Set(['any-previously-traveled-path']));
     reqEnum(effect, 'recall', path, new Set(['perfect']));
+  },
+  percentChance: (effect, path) => {
+    const percent = reqInt(effect, 'percent', path, 1);
+    if (percent > 100) {
+      throw new RulesPackError(`${path}.percent must be <= 100`);
+    }
+    reqStr(effect, 'per', path);
+    reqStr(effect, 'trigger', path);
+    reqStr(effect, 'effect', path);
+    optBool(effect, 'cumulative', path);
+    optEnum(effect, 'resetOn', path, new Set(['long-rest']));
+    optBool(effect, 'secret', path);
+  },
+  permanenceAfterRepetition: (effect, path) => {
+    reqEnum(effect, 'period', path, new Set(['day']));
+    reqInt(effect, 'count', path, 1);
+    reqEnum(effect, 'result', path, new Set(['until-dispelled', 'permanent']));
+  },
+  questionLimit: (effect, path) => {
+    reqInt(effect, 'maxQuestions', path, 1);
+  },
+  recastLockout: (effect, path) => {
+    reqEnum(effect, 'scope', path, new Set(['per-target']));
+    reqInt(effect, 'days', path, 1);
   },
   senseSharing: (effect, path) => {
     reqStr(effect, 'source', path);
@@ -1724,6 +1856,12 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   sleepException: (effect, path) => {
     reqStr(effect, 'detail', path);
+  },
+  stagedTableShift: (effect, path) => {
+    if (reqStrArray(effect, 'tableRefs', path).length === 0) {
+      throw new RulesPackError(`${path}.tableRefs must be a non-empty array`);
+    }
+    reqInt(effect, 'stepsPerChange', path, 1);
   },
   telepathy: (effect, path) => {
     if (effect.conveys !== undefined) {
@@ -1769,6 +1907,28 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
           );
         }
       });
+    }
+  },
+  terrainAlteration: (effect, path) => {
+    optStrArray(effect, 'canCreate', path);
+    optStrArray(effect, 'canRemove', path);
+    const allowed = new Set(['difficult-terrain']);
+    for (const key of ['canCreate', 'canRemove']) {
+      const values = effect[key];
+      if (values === undefined) continue;
+      if (!Array.isArray(values) || values.length === 0) {
+        throw new RulesPackError(`${path}.${key} must be non-empty`);
+      }
+      values.forEach((value, i) => {
+        if (typeof value !== 'string' || !allowed.has(value)) {
+          throw new RulesPackError(
+            `${path}.${key}[${i}] must be difficult-terrain`,
+          );
+        }
+      });
+    }
+    if (effect.canCreate === undefined && effect.canRemove === undefined) {
+      throw new RulesPackError(`${path} must carry canCreate or canRemove`);
     }
   },
   understandLanguages: (effect, path) => {

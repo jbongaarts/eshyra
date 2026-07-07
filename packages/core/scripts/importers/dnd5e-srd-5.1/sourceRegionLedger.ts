@@ -566,6 +566,10 @@ function collectFragments(
   }
   if (typeof value === 'object' && value !== null) {
     for (const [childKey, child] of Object.entries(value)) {
+      // Derived projections are not source prose. Letting mechanics strings
+      // prove label/header coverage can make a source region look owned even
+      // though the corresponding prose is absent from emitted source fields.
+      if (childKey === 'mechanics') continue;
       collectFragments(child, childKey, out);
     }
   }
@@ -939,7 +943,12 @@ function collectStrings(value: unknown, out: string[]): void {
     return;
   }
   if (typeof value === 'object' && value !== null) {
-    for (const child of Object.values(value)) collectStrings(child, out);
+    for (const [key, child] of Object.entries(value)) {
+      // Match collectEmissionStrings: mechanics are derived from sibling
+      // source text and must not prove source-region ownership.
+      if (key === 'mechanics') continue;
+      collectStrings(child, out);
+    }
   }
 }
 
