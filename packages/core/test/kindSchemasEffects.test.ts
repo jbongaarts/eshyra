@@ -868,6 +868,19 @@ describe('mechanics effect payload contracts', () => {
         skill: 'insight',
       }),
     ).toThrow(/discernDc/);
+    expect(() =>
+      validate({
+        kind: 'falseAppearance',
+        while: 'motionless',
+        indistinguishableFrom: '',
+      }),
+    ).toThrow(/indistinguishableFrom/);
+    expect(() =>
+      validate({
+        kind: 'falseAppearance',
+        indistinguishableFrom: 'a normal suit of armor',
+      }),
+    ).toThrow(/while/);
     expect(() => validate({ kind: 'limitedAmmunition', count: 24 })).toThrow(
       /replenish/,
     );

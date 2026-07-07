@@ -460,7 +460,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS to the eshyra-o9bd.18.7.9 §1 exhaustive per-ref classification (2 accepted + 64 pending findings = 66)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS to the eshyra-o9bd.18.7.9 §1 exhaustive per-ref classification (2 accepted + 48 pending findings = 50)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
     // future change to the registry (an addition, removal, or silent
     // reclassification) is caught here and forces an update to the
@@ -475,14 +475,14 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // policy can never hide reviewed-but-pending deterministic work behind
     // blanket acceptance.
     const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
-    expect(entries).toHaveLength(66);
+    expect(entries).toHaveLength(50);
 
     const accepted = entries.filter(
       ([, d]) => d.status === 'accepted-prose-only',
     );
     const findings = entries.filter(([, d]) => d.status === 'finding');
     expect(accepted).toHaveLength(2);
-    expect(findings).toHaveLength(64);
+    expect(findings).toHaveLength(48);
     expect(accepted.map(([ref]) => ref).sort()).toEqual([
       'creature:vampire#traits:Vampire Weaknesses',
       'creature:vampire-spawn#traits:Vampire Weaknesses',
@@ -507,7 +507,6 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     }
     expect(findingsBySlice).toEqual({
       C1: 22,
-      C2: 16,
       C3: 10,
       C4: 2,
       C5: 2,
@@ -529,6 +528,22 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:bugbear#traits:Surprise Attack',
         'creature:doppelganger#traits:Surprise Attack',
         'creature:water-elemental#traits:Freeze',
+        'creature:animated-armor#traits:False Appearance',
+        'creature:awakened-shrub#traits:False Appearance',
+        'creature:awakened-tree#traits:False Appearance',
+        'creature:cloaker#traits:False Appearance',
+        'creature:darkmantle#traits:False Appearance',
+        'creature:flying-sword#traits:False Appearance',
+        'creature:gargoyle#traits:False Appearance',
+        'creature:gray-ooze#traits:False Appearance',
+        'creature:ice-mephit#traits:False Appearance',
+        'creature:magma-mephit#traits:False Appearance',
+        'creature:mimic#traits:False Appearance (Object Form Only)',
+        'creature:roper#traits:False Appearance',
+        'creature:rug-of-smothering#traits:False Appearance',
+        'creature:shrieker#traits:False Appearance',
+        'creature:treant#traits:False Appearance',
+        'creature:violet-fungus#traits:False Appearance',
       ]),
     );
     // Refs newly classified into slices C4-C9 remain tracked as pending
@@ -615,7 +630,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // (eshyra-o9bd.18.7.9), NOT a blanket `accepted-prose-only` — record-
     // level creature buckets are gone because all 317 creatures now carry
     // typed nested mechanics, but the prose-entry buckets mix 2 genuinely
-    // accepted refs with 64 reviewed pending findings, so the bucket-level
+    // accepted refs with 48 reviewed pending findings, so the bucket-level
     // status must never claim blanket acceptance.
     expect(byKey.get('creature#partial-structure')).toBeUndefined();
     expect(byKey.get('creature-entry#mechanical-prose')?.status).toBe(
@@ -624,14 +639,13 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'reviewed-per-ref',
     );
-    // The per-ref breakdown is exact: 2 permanent accepts, 64 pending
+    // The per-ref breakdown is exact: 2 permanent accepts, 48 pending
     // findings across slices C1-C9.
     expect(report.creatureEntries.reviewedDispositions).toEqual({
       acceptedProseOnly: 2,
-      pendingFindings: 64,
+      pendingFindings: 48,
       findingsBySlice: {
         C1: 22,
-        C2: 16,
         C3: 10,
         C4: 2,
         C5: 2,

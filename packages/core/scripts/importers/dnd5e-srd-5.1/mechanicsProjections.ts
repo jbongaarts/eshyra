@@ -2436,6 +2436,17 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       skill: spotDc[3].toLowerCase().replaceAll(' ', '-'),
     });
   }
+  const falseAppearance =
+    /\bWhile the [\w'\u2019 -]+ remains ([^,]+), it is indistinguishable from ([^.]+)\./.exec(
+      text,
+    );
+  if (falseAppearance !== null) {
+    effects.push({
+      kind: 'falseAppearance',
+      while: falseAppearance[1].replaceAll('\u2019', "'"),
+      indistinguishableFrom: falseAppearance[2].replaceAll('\u2019', "'"),
+    });
+  }
   // Transparent's second deterministic clause: entering the unseen cube's
   // space grants it surprise.
   if (

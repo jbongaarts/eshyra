@@ -518,6 +518,112 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       },
     ]);
   });
+
+  it('C2 False Appearance records carry deterministic indistinguishability mechanics', () => {
+    const expected = [
+      [
+        'creature:animated-armor',
+        'False Appearance',
+        'motionless',
+        'a normal suit of armor',
+      ],
+      [
+        'creature:awakened-shrub',
+        'False Appearance',
+        'motionless',
+        'a normal shrub',
+      ],
+      [
+        'creature:awakened-tree',
+        'False Appearance',
+        'motionless',
+        'a normal tree',
+      ],
+      [
+        'creature:cloaker',
+        'False Appearance',
+        'motionless without its underside exposed',
+        'a dark leather cloak',
+      ],
+      [
+        'creature:darkmantle',
+        'False Appearance',
+        'motionless',
+        'a cave formation such as a stalactite or stalagmite',
+      ],
+      [
+        'creature:flying-sword',
+        'False Appearance',
+        "motionless and isn't flying",
+        'a normal sword',
+      ],
+      [
+        'creature:gargoyle',
+        'False Appearance',
+        'motionless',
+        'an inanimate statue',
+      ],
+      [
+        'creature:gray-ooze',
+        'False Appearance',
+        'motionless',
+        'an oily pool or wet rock',
+      ],
+      [
+        'creature:ice-mephit',
+        'False Appearance',
+        'motionless',
+        'an ordinary shard of ice',
+      ],
+      [
+        'creature:magma-mephit',
+        'False Appearance',
+        'motionless',
+        'an ordinary mound of magma',
+      ],
+      [
+        'creature:mimic',
+        'False Appearance (Object Form Only)',
+        'motionless',
+        'an ordinary object',
+      ],
+      [
+        'creature:roper',
+        'False Appearance',
+        'motionless',
+        'a normal cave formation, such as a stalagmite',
+      ],
+      [
+        'creature:rug-of-smothering',
+        'False Appearance',
+        'motionless',
+        'a normal rug',
+      ],
+      [
+        'creature:shrieker',
+        'False Appearance',
+        'motionless',
+        'an ordinary fungus',
+      ],
+      ['creature:treant', 'False Appearance', 'motionless', 'a normal tree'],
+      [
+        'creature:violet-fungus',
+        'False Appearance',
+        'motionless',
+        'an ordinary fungus',
+      ],
+    ] as const;
+
+    for (const [key, name, condition, indistinguishableFrom] of expected) {
+      expect(creatureEntry(key, 'traits', name).mechanics?.effects).toEqual([
+        {
+          kind: 'falseAppearance',
+          while: condition,
+          indistinguishableFrom,
+        },
+      ]);
+    }
+  });
 });
 
 describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {

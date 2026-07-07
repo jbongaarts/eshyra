@@ -41,6 +41,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'dcIncrease',
   'endsCurses',
   'extraTurns',
+  'falseAppearance',
   'illusionDiscernment',
   'jumpDistanceMultiplier',
   'mirrorImages',
@@ -1623,6 +1624,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   endsCurses: markerOnly,
   extraTurns: (effect, path) => {
     reqDice(effect, 'turnsDice', path);
+  },
+  falseAppearance: (effect, path) => {
+    reqStr(effect, 'while', path);
+    reqStr(effect, 'indistinguishableFrom', path);
   },
   illusionDiscernment: (effect, path) => {
     reqAbility(effect, 'ability', path);
