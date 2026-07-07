@@ -216,6 +216,73 @@ export const SRD_5_1_TABLE_OWNERS: Readonly<Record<string, string>> =
       'rule:challenge-experience-points', // p. 258
   });
 
+// Reviewed secondary rule references to tables whose primary owner is still the
+// single record in SRD_5_1_TABLE_OWNERS. These close 2026-07-06 audit gaps
+// where another rule explicitly depends on the same emitted table.
+export const SRD_5_1_TABLE_ADDITIONAL_REFERRERS: Readonly<
+  Record<string, readonly string[]>
+> = Object.freeze({
+  'table:character-advancement': ['rule:beyond-1st-level'],
+  'table:lifestyle-expenses': ['rule:expenses-lifestyle-expenses'],
+  'table:size-categories': ['rule:creature-size'],
+});
+
+export const SRD_5_1_RULE_DUPLICATE_CANONICAL_OWNERS: Readonly<
+  Record<string, readonly string[]>
+> = Object.freeze({
+  'rule:armor-class': [
+    'equipment:breastplate',
+    'equipment:chain-mail',
+    'equipment:chain-shirt',
+    'equipment:half-plate',
+    'equipment:hide',
+    'equipment:leather',
+    'equipment:padded',
+    'equipment:plate',
+    'equipment:ring-mail',
+    'equipment:scale-mail',
+    'equipment:shield',
+    'equipment:splint',
+    'equipment:studded-leather',
+    'rule:armor-guidance',
+  ],
+  'rule:charisma-spellcasting-ability': [
+    'class:bard',
+    'class:paladin',
+    'class:sorcerer',
+    'class:warlock',
+  ],
+  'rule:heavy-armor-category': [
+    'equipment:chain-mail',
+    'equipment:plate',
+    'equipment:ring-mail',
+    'equipment:splint',
+  ],
+  'rule:intelligence-spellcasting-ability': ['class:wizard'],
+  'rule:light-armor': [
+    'equipment:leather',
+    'equipment:padded',
+    'equipment:studded-leather',
+  ],
+  'rule:medium-armor': [
+    'equipment:breastplate',
+    'equipment:chain-shirt',
+    'equipment:half-plate',
+    'equipment:hide',
+    'equipment:scale-mail',
+  ],
+  'rule:oath-of-devotion-oath-spells': ['subclass:oath-of-devotion'],
+  'rule:senses-blindsight': ['rule:blindsight'],
+  'rule:senses-darkvision': ['rule:darkvision'],
+  'rule:senses-truesight': ['rule:truesight'],
+  'rule:the-fiend-expanded-spell-list': ['subclass:the-fiend'],
+  'rule:wisdom-spellcasting-ability': [
+    'class:cleric',
+    'class:druid',
+    'class:ranger',
+  ],
+});
+
 // Tables that are deliberately ownerless: cross-cutting reference tables
 // consulted directly from multiple rules rather than belonging to one entry, so
 // the `table-reachability` completeness gate (eshyra-o9bd.8.3) does not require
@@ -655,6 +722,12 @@ function checkTableOwnerLinks(pack: RulesPack): SrdAuditFinding[] {
   for (const [tableKey, expectedOwnerKey] of Object.entries(
     SRD_5_1_TABLE_OWNERS,
   )) {
+    const expectedReferrers = [
+      expectedOwnerKey,
+      ...(SRD_5_1_TABLE_ADDITIONAL_REFERRERS[tableKey] ?? []).filter(
+        (referrerKey) => recordsByKey.has(referrerKey),
+      ),
+    ].sort();
     const table = recordsByKey.get(tableKey);
     const owner = recordsByKey.get(expectedOwnerKey);
     // Reduced fixtures may omit this whole source region; once either side is
@@ -681,13 +754,19 @@ function checkTableOwnerLinks(pack: RulesPack): SrdAuditFinding[] {
       continue;
     }
     const actualOwners = referrers.get(tableKey) ?? [];
-    if (actualOwners.length !== 1 || actualOwners[0] !== expectedOwnerKey) {
+    const sortedActualOwners = [...actualOwners].sort();
+    if (
+      sortedActualOwners.length !== expectedReferrers.length ||
+      sortedActualOwners.some((ownerKey, index) => {
+        return ownerKey !== expectedReferrers[index];
+      })
+    ) {
       findings.push({
         category: 'table-owner-link',
         key: expectedOwnerKey,
         kind: owner.kind,
         name: owner.name,
-        detail: `${tableKey} must be referenced exactly once by ${expectedOwnerKey}; actual owners: ${actualOwners.join(', ') || 'none'}`,
+        detail: `${tableKey} must be referenced by ${expectedReferrers.join(', ')}; actual owners: ${sortedActualOwners.join(', ') || 'none'}`,
       });
     }
   }

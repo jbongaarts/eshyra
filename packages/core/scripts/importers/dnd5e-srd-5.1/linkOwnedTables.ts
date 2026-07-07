@@ -11,7 +11,10 @@
  * de-flattened by `stripEmbeddedTableProse`).
  */
 
-import { SRD_5_1_TABLE_OWNERS } from '../../../src/rules/srdAudit.js';
+import {
+  SRD_5_1_TABLE_ADDITIONAL_REFERRERS,
+  SRD_5_1_TABLE_OWNERS,
+} from '../../../src/rules/srdAudit.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
 export class OwnedTableLinkError extends Error {
@@ -35,18 +38,29 @@ export function linkOwnedTables(
   const byKey = new Map(records.map((record) => [record.key, record]));
   const refsByOwner = new Map<string, Set<string>>();
 
+  const reviewedTableLinks = new Map<string, string[]>();
   for (const [tableKey, ownerKey] of Object.entries(SRD_5_1_TABLE_OWNERS)) {
+    reviewedTableLinks.set(tableKey, [
+      ownerKey,
+      ...(SRD_5_1_TABLE_ADDITIONAL_REFERRERS[tableKey] ?? []),
+    ]);
+  }
+
+  for (const [tableKey, ownerKeys] of reviewedTableLinks) {
     const table = byKey.get(tableKey);
-    const owner = byKey.get(ownerKey);
-    if (table === undefined || owner === undefined) continue;
+    if (table === undefined) continue;
     if (table.kind !== 'table') {
       throw new OwnedTableLinkError(
-        `owned table key ${tableKey} (owner ${ownerKey}) resolved to a ${table.kind} record`,
+        `owned table key ${tableKey} resolved to a ${table.kind} record`,
       );
     }
-    const refs = refsByOwner.get(ownerKey) ?? new Set<string>();
-    refs.add(tableKey);
-    refsByOwner.set(ownerKey, refs);
+    for (const ownerKey of ownerKeys) {
+      const owner = byKey.get(ownerKey);
+      if (owner === undefined) continue;
+      const refs = refsByOwner.get(ownerKey) ?? new Set<string>();
+      refs.add(tableKey);
+      refsByOwner.set(ownerKey, refs);
+    }
   }
 
   return records.map((record) => {

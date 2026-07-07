@@ -45,7 +45,9 @@ import {
   auditPack,
   auditSrdStructure,
   loadRulesPackFromDirectory,
+  SRD_5_1_RULE_DUPLICATE_CANONICAL_OWNERS,
   SRD_5_1_STANDALONE_TABLES,
+  SRD_5_1_TABLE_ADDITIONAL_REFERRERS,
   validateRulesPack,
 } from '../src/internal.js';
 
@@ -775,6 +777,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-o9bd.8.3 adds thirteen more section-owning rules (four pantheons,
   // languages, coinage, getting-into-and-out-of-armor, ability-checks, speed,
   // trap-effects, hit-points, size, challenge-experience-points): 319 -> 306.
+  // eshyra-o9bd.18.7.8.2 adds three reviewed secondary rule table refs:
+  // beyond-1st-level, creature-size, and expenses-lifestyle-expenses.
   // eshyra-erf5.1: rule:skills alone carries the p78 skill-to-ability map.
   {
     kind: 'rule',
@@ -785,7 +789,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 306,
+    missingCount: 303,
     totalInKind: 335,
   },
   {
@@ -4142,6 +4146,87 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:damage-severity-by-level',
         'table:trap-save-dcs-and-attack-bonuses',
       ]);
+    });
+
+    it('links reviewed secondary rule references to existing tables (eshyra-o9bd.18.7.8.2)', () => {
+      const refsFor = (key: string) => {
+        const record = pack.records.find((candidate) => candidate.key === key);
+        expect(record, `expected ${key} in the committed pack`).toBeDefined();
+        return (record?.data as { tableRefs?: string[] }).tableRefs;
+      };
+
+      expect(SRD_5_1_TABLE_ADDITIONAL_REFERRERS).toEqual({
+        'table:character-advancement': ['rule:beyond-1st-level'],
+        'table:lifestyle-expenses': ['rule:expenses-lifestyle-expenses'],
+        'table:size-categories': ['rule:creature-size'],
+      });
+      expect(refsFor('rule:beyond-1st-level')).toEqual([
+        'table:character-advancement',
+      ]);
+      expect(refsFor('rule:creature-size')).toEqual(['table:size-categories']);
+      expect(refsFor('rule:expenses-lifestyle-expenses')).toEqual([
+        'table:lifestyle-expenses',
+      ]);
+    });
+
+    it('records canonical owners for reviewed duplicate rule rows (eshyra-o9bd.18.7.8.2)', () => {
+      expect(
+        Object.keys(SRD_5_1_RULE_DUPLICATE_CANONICAL_OWNERS).sort(),
+      ).toEqual([
+        'rule:armor-class',
+        'rule:charisma-spellcasting-ability',
+        'rule:heavy-armor-category',
+        'rule:intelligence-spellcasting-ability',
+        'rule:light-armor',
+        'rule:medium-armor',
+        'rule:oath-of-devotion-oath-spells',
+        'rule:senses-blindsight',
+        'rule:senses-darkvision',
+        'rule:senses-truesight',
+        'rule:the-fiend-expanded-spell-list',
+        'rule:wisdom-spellcasting-ability',
+      ]);
+      expect(
+        SRD_5_1_RULE_DUPLICATE_CANONICAL_OWNERS['rule:heavy-armor-category'],
+      ).toEqual([
+        'equipment:chain-mail',
+        'equipment:plate',
+        'equipment:ring-mail',
+        'equipment:splint',
+      ]);
+      expect(
+        SRD_5_1_RULE_DUPLICATE_CANONICAL_OWNERS['rule:light-armor'],
+      ).toEqual([
+        'equipment:leather',
+        'equipment:padded',
+        'equipment:studded-leather',
+      ]);
+      expect(
+        SRD_5_1_RULE_DUPLICATE_CANONICAL_OWNERS['rule:medium-armor'],
+      ).toEqual([
+        'equipment:breastplate',
+        'equipment:chain-shirt',
+        'equipment:half-plate',
+        'equipment:hide',
+        'equipment:scale-mail',
+      ]);
+
+      const keys = new Set(pack.records.map((record) => record.key));
+      for (const [duplicateKey, ownerKeys] of Object.entries(
+        SRD_5_1_RULE_DUPLICATE_CANONICAL_OWNERS,
+      )) {
+        expect(keys.has(duplicateKey), `expected ${duplicateKey}`).toBe(true);
+        expect(
+          ownerKeys.length,
+          `${duplicateKey} has no canonical owner`,
+        ).toBeGreaterThan(0);
+        for (const ownerKey of ownerKeys) {
+          expect(
+            keys.has(ownerKey),
+            `${duplicateKey} canonical owner ${ownerKey} must exist`,
+          ).toBe(true);
+        }
+      }
     });
 
     it('classifies every table as owned or deliberately standalone (eshyra-o9bd.8.3)', () => {
