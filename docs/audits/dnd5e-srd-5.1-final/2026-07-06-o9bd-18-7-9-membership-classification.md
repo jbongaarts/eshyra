@@ -4,12 +4,15 @@ Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399
 (`eshyra-o9bd-18-7-9-membership-corrections`).
 
 This is the authoritative, record-by-record semantic disposition of **every**
-entry remaining in `ACCEPTED_PROSE_CREATURE_ENTRY_REFS` (48 refs) and
+entry remaining in `ACCEPTED_PROSE_CREATURE_ENTRY_REFS` (48 refs as of the
+original 2026-07-06 pass; §1.6 below reconciles a further 24 refs that were
+restored to the array by the trigger-only-readiness fix and brings the
+artifact back to exact parity with the live 66-ref membership) and
 `ACCEPTED_METADATA_ONLY_SPELLS` (53 keys) in
 `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts` as of this
 branch. Every record's full pack text was read against SRD 5.1 source. **Do
 not repeat this audit.** Implementation agents should work from the slices in
-§3 and consult §1/§2 only for per-record semantics.
+§3 and consult §1/§2/§1.6 only for per-record semantics.
 
 Disposition vocabulary:
 
@@ -24,7 +27,7 @@ Disposition vocabulary:
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
-## 1. Creature-entry refs (48)
+## 1. Creature-entry refs (48 original + 24 residual = 72 reviewed; 66 pending)
 
 ### 1.1 Shape-change family — 22 refs — disposition: design (slice C1)
 
@@ -94,7 +97,7 @@ Exact refs (machine-checkable):
 - `creature:treant#traits:False Appearance`
 - `creature:violet-fungus#traits:False Appearance`
 
-### 1.3 Telepathy/communication family — 5 refs — disposition: model (slice C3)
+### 1.3 Telepathy/communication family — 6 refs — disposition: model (slice C3)
 
 No `telepathy` kind exists. Proposed contract: `telepathy { rangeFeet?,
 samePlane?, oneWay?, audience?, conveys? }` plus `communication { with }`
@@ -107,14 +110,16 @@ for the dryad.
 | `creature:pseudodragon#traits:Limited Telepathy` | 100 ft; simple ideas/emotions/images; requires target understands a language |
 | `creature:sahuagin#traits:Shark Telepathy` | command sharks within 120 ft; limited telepathy |
 | `creature:dryad#traits:Speak with Beasts and Plants` | communicate with beasts and plants as if shared language (cross-reference `spell:speak-with-animals` grammar) |
+| `creature:aboleth#traits:Probing Telepathy` | folded in 2026-07-06 (§1.6.9): when a creature telepathically communicates with the aboleth and the aboleth can see it, the aboleth learns that creature's greatest desires — same `telepathy` contract, `conveys: 'greatest-desires'` reverse-direction variant |
 
-### 1.4 Innate-knowledge/state family — 3 refs — disposition: model (slice C3)
+### 1.4 Innate-knowledge/state family — 4 refs — disposition: model (slice C3)
 
 | ref | semantics |
 |---|---|
 | `creature:invisible-stalker#traits:Faultless Tracker` | knows direction+distance to designated quarry while same-plane; also knows summoner's location. Related existing kind: `locationDetectableBy` (inverse direction) — new `locationKnowledge` payload proposed |
 | `creature:minotaur#traits:Labyrinthine Recall` | perfect recall of any traveled path (auto-success navigation); use path-memory semantics, not target-location knowledge |
 | `creature:hydra#traits:Wakeful` | deterministic sleep-state exception: at least one head awake while sleeping (defeats asleep-based surprise/unawareness). Reclassified from accept 2026-07-06: consistency with False Appearance — a dice-free deterministic gate is model, not accept. Small `sleepException`-style payload in the C3 contract set |
+| `creature:ettin#traits:Wakeful` | folded in 2026-07-06 (§1.6.9): identical grammar and semantics to the hydra's Wakeful ("when one of the ettin's heads is asleep, its other head is awake") — same `sleepException` payload, not a separate contract |
 
 ### 1.5 Genuinely accepted — 2 refs — disposition: accept\*
 
@@ -122,6 +127,129 @@ for the dryad.
 |---|---|
 | `creature:vampire#traits:Vampire Weaknesses` | accept\*: header line only ("has the following flaws:"); the four flaws (Forbiddance, Harmed by Running Water, Stake to the Heart, Sunlight Hypersensitivity) are separate sibling trait entries, each already typed — verified in pack 2026-07-06 |
 | `creature:vampire-spawn#traits:Vampire Weaknesses` | accept\*: same as vampire |
+
+### 1.6 Residual restored refs — 24 refs — reconciliation pass 2026-07-06
+
+The trigger-only-readiness fix (`hasReadinessCreditableEffect`: a
+`triggeredEffect` with no `result` no longer counts as substantive mechanics)
+correctly stopped crediting 24 entries whose only prior mechanics was a bare
+`triggeredEffect` trigger marker. Restoring them to
+`ACCEPTED_PROSE_CREATURE_ENTRY_REFS` to keep the build green was correct
+*mechanically*, but they were never carried into this artifact's per-record
+disposition — leaving §1's "48 refs" claim of exhaustiveness stale against a
+72-ref live array. This section closes that gap: every one of the 24 is
+classified below, mirroring the §1.1–§1.5 methodology. Two (aboleth, ettin)
+turned out to be members of existing families and were folded into §1.3/§1.4
+above rather than duplicated here; the accounting in §3 reflects that.
+
+#### 1.6.1 Implemented this pass — 6 refs — disposition: model, contract already existed
+
+No new contract was needed; each reused an existing typed kind with an
+existing validator (`rejuvenation`, `extraDamage`, `movementRestriction`),
+already established elsewhere in the pack (`rejuvenation` is the same shape
+used by `creature:lemure` and `creature:mummy-lord`). Implemented in this
+pass and **removed** from `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`.
+
+| ref | projection |
+|---|---|
+| `creature:guardian-naga#traits:Rejuvenation` | `rejuvenation { afterDaysDice: '1d6', condition: 'no-wish-spell-cast-to-prevent-it' }` |
+| `creature:spirit-naga#traits:Rejuvenation` | same as guardian naga |
+| `creature:lich#traits:Rejuvenation` | `rejuvenation { afterDaysDice: '1d10', condition: 'has-a-phylactery' }` |
+| `creature:bugbear#traits:Surprise Attack` | `extraDamage { dice: '2d6' }` |
+| `creature:doppelganger#traits:Surprise Attack` | `extraDamage { dice: '3d6' }` |
+| `creature:water-elemental#traits:Freeze` | `movementRestriction { restriction: 'speed-reduced-by-20-feet', endsBy: 'end-of-next-turn' }` |
+
+All six source texts open with "If …,", so each also carries the
+pre-existing generic `triggeredEffect { trigger }` fallback (unconditional
+except for `legendaryResistance`) alongside the specific typed effect above —
+consistent with other "If"-led entries already in the pack. It is harmless:
+`hasSubstantiveMechanicsProjection` credits the entry from the specific typed
+effect, not the marker.
+
+#### 1.6.2 Reckless family — 2 refs — disposition: design (new slice C4)
+
+Deterministic two-sided toggle: the creature can grant itself advantage on
+its own melee attack rolls for the turn, at the cost of granting advantage to
+attacks made against it until the start of its next turn. No existing kind
+captures a self-elected, symmetric advantage trade; needs a small new
+contract (e.g. `recklessAttack { grants: 'advantage-on-melee-attacks',
+tradeoff: 'advantage-to-attacks-against-self', until: 'start-of-next-turn' }`).
+
+- `creature:berserker#traits:Reckless`
+- `creature:minotaur#traits:Reckless`
+
+#### 1.6.3 Split family — 2 refs — disposition: model (new slice C5)
+
+Deterministic reproduction-on-damage: subjected to lightning/slashing damage
+while Medium-or-larger and at ≥10 HP, the creature splits into two
+half-HP (rounded down), one-size-smaller copies. Uniform grammar across both
+refs. Proposed contract: `splitOnDamage { damageTypes, minimumSize,
+minimumHitPoints, hitPointsFraction: 'half-rounded-down',
+sizeCategoriesDown: 1 }`.
+
+- `creature:black-pudding#reactions:Split`
+- `creature:ochre-jelly#reactions:Split`
+
+#### 1.6.4 Damage-absorption family — 4 refs — disposition: model (new slice C6)
+
+Deterministic immune-and-heal pattern: subjected to a named damage type, the
+creature takes no damage and instead regains hit points equal to the damage
+that would have been dealt. Uniform grammar across all four. Proposed
+contract: `damageAbsorption { type }`.
+
+- `creature:clay-golem#traits:Acid Absorption`
+- `creature:flesh-golem#traits:Lightning Absorption`
+- `creature:iron-golem#traits:Fire Absorption`
+- `creature:shambling-mound#traits:Lightning Absorption`
+
+#### 1.6.5 Berserk family — 2 refs — disposition: design (new slice C7)
+
+Stateful d6-roll threshold trigger (at ≤N HP, roll d6, on a 6 the golem
+enters a persistent "berserk" behavior state attacking the nearest creature
+or object, until destroyed or fully healed). The flesh golem variant adds a
+creator-calming sub-clause (DC 15 Charisma (Persuasion) check, action-cost,
+range- and hearing-gated). This is a genuine state machine, not a small
+payload extension — same design tier as C1 (shape-change) and S1
+(summoning).
+
+- `creature:clay-golem#traits:Berserk` (threshold 60 HP, no calming clause)
+- `creature:flesh-golem#traits:Berserk` (threshold 40 HP, plus calming clause)
+
+#### 1.6.6 Rampage family — 2 refs — disposition: model (new slice C8)
+
+Deterministic triggered bonus action: reducing a creature to 0 HP with a
+melee attack on its turn grants a bonus action to move up to half speed and
+make a bite attack. The existing `bonusAction` kind's `options` array models
+a *menu of choices* for an already-available bonus action, not a
+trigger-gated single bonus action — needs either a new `trigger` field on
+`bonusAction` (schema change, reviewed) or a small dedicated
+`triggeredBonusAction { trigger, action }` contract.
+
+- `creature:giant-hyena#traits:Rampage`
+- `creature:gnoll#traits:Rampage`
+
+#### 1.6.7 Single-record residuals — 4 refs — disposition: model (new slice C9)
+
+Five refs whose semantics don't share a family with each other; each needs
+its own small contract, but none is large enough to warrant its own design
+slice.
+
+| ref | semantics | proposed contract |
+|---|---|---|
+| `creature:shrieker#reactions:Shriek` | emits an audible-300-ft shriek when bright light or a creature comes within 30 ft; continues until the disturbance leaves and for 1d4 more of the shrieker's turns | `soundAlarm { rangeFeet: 30, audibleFeet: 300, trigger: 'bright-light-or-creature-within-range', continuesAfterDisturbanceLeavesDice: '1d4' }` |
+| `creature:djinni#traits:Elemental Demise` | on death, body disintegrates (warm breeze), leaving only worn/carried equipment behind | `onDeathBodyDisposal { manner: 'disintegrates', equipment: 'left-behind' }` |
+| `creature:efreeti#traits:Elemental Demise` | on death, body disintegrates (fire flash + smoke), leaving only worn/carried equipment behind | same contract as djinni |
+| `creature:shield-guardian#reactions:Shield` | reaction: when a creature attacks the wearer of the guardian's amulet, the guardian (if within 5 ft of the wearer) grants the wearer a +2 AC bonus against that attack | no existing kind combines a reaction trigger, a proximity condition, and an AC bonus to *another* creature; `acFormula`/`savingThrowBonus`/`attackOrDamageBonus` all cover different shapes. Needs a small `reactionAcBonus { amount, rangeFeet, subject: 'amulet-wearer' }` contract |
+
+Not in the same family as each other, but djinni/efreeti share one contract
+(2 refs, 1 contract) — counted together in §3.
+
+### 1.6 reconciliation
+
+24 = 6 implemented (§1.6.1, removed from the array) + 2 folded into existing
+families (§1.3/§1.4, aboleth and ettin) + 16 newly classified into slices
+C4–C9 (2 Reckless + 2 Split + 4 Absorption + 2 Berserk + 2 Rampage + 4
+single-record residuals: Shriek, Djinni, Efreeti, Shield).
 
 ## 2. Metadata-only spells (53)
 
@@ -267,16 +395,34 @@ None of the remaining slices below is started unless stated.
 | **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
 | **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
 | **S4** membership bookkeeping | after each slice: exact removals from `ACCEPTED_*`, count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
+| **C4** reckless family | `recklessAttack` two-sided advantage-toggle contract; 2 refs (§1.6.2) | yes, small | **Opus** design, Codex rollout |
+| **C5** split family | `splitOnDamage` reproduction-on-damage contract; 2 refs (§1.6.3) | yes, small | **Codex** (uniform grammar) |
+| **C6** damage-absorption family | `damageAbsorption` contract; 4 refs (§1.6.4) | yes, trivial shape | **Codex** (uniform grammar) |
+| **C7** berserk family | stateful d6-threshold behavior + Persuasion-DC calming sub-clause; 2 refs (§1.6.5) | yes — genuine state machine | **Opus** |
+| **C8** rampage family | triggered bonus action (`bonusAction` trigger field, or new `triggeredBonusAction`); 2 refs (§1.6.6) | yes, small (schema-reviewed extension or new small contract) | **Opus** design, Codex rollout |
+| **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Opus** payload sketch, Codex rollout |
 
 Ordering: C2 and S2 are low-risk warm-ups; C1/S1 are the substantive
-designs; S3 last (interacts with modeled teleport/planar kinds).
+designs; S3 last (interacts with modeled teleport/planar kinds). C4–C9
+(§1.6, residual reconciliation pass) are additive and can land in any order
+relative to C1–C3/S1–S4; none blocks another.
 
 Reconciliation (mechanically verified 2026-07-06 against
 `ACCEPTED_PROSE_CREATURE_ENTRY_REFS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
 every membership key appears in exactly one disposition section):
 
-- creatures 48 = C1 22 (§1.1) + C2 16 (§1.2) + C3 8 (§1.3 5 + §1.4 3) +
-  accept\* 2 (§1.5)
+- creatures, original pass: 48 = C1 22 (§1.1) + C2 16 (§1.2) + C3 8 (§1.3 5 +
+  §1.4 3) + accept\* 2 (§1.5)
+- creatures, §1.6 residual reconciliation: +24 = 6 implemented this pass
+  (§1.6.1, no longer in the accepted array) + 2 folded into the existing C3
+  family (§1.3/§1.4: aboleth, ettin — C3 is now 10) + 16 newly classified
+  (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
+  since djinni/efreeti share `onDeathBodyDisposal`)
+- creatures total reviewed by this artifact: 72 (48 + 24); live
+  `ACCEPTED_PROSE_CREATURE_ENTRY_REFS` membership after this pass: 66
+  (72 − 6 implemented) = C1 22 + C2 16 + C3 10 + accept\* 2 + C4 2 + C5 2 +
+  C6 4 + C7 2 + C8 2 + C9 4
+  (22+16+10+2+2+2+4+2+2+4 = 66)
 - spells 53 = S1 14 (§2.1) + S2 17 (§2.2 5 + §2.4 2 + §2.5 2 + §2.8 8) +
   S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) + accept\* 1 (§2.6)
 

@@ -443,6 +443,84 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       },
     ]);
   });
+
+  it('residual creature-entry reconciliation (eshyra-o9bd.18.7.9 §1.6): Rejuvenation, Surprise Attack, and Freeze reuse existing typed kinds', () => {
+    // Each source text opens with "If …,", so the generic trigger-marker
+    // fallback (unconditional except for legendaryResistance) also rides
+    // along after the specific typed effect — the same shape already seen on
+    // other "If"-led entries elsewhere in this pack. Its presence is
+    // harmless: readiness credit comes from the specific typed effect, not
+    // this marker.
+    expect(
+      creatureEntry('creature:guardian-naga', 'traits', 'Rejuvenation')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'rejuvenation',
+        afterDaysDice: '1d6',
+        condition: 'no-wish-spell-cast-to-prevent-it',
+      },
+      { kind: 'triggeredEffect', trigger: 'If it dies' },
+    ]);
+    expect(
+      creatureEntry('creature:spirit-naga', 'traits', 'Rejuvenation').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'rejuvenation',
+        afterDaysDice: '1d6',
+        condition: 'no-wish-spell-cast-to-prevent-it',
+      },
+      { kind: 'triggeredEffect', trigger: 'If it dies' },
+    ]);
+    expect(
+      creatureEntry('creature:lich', 'traits', 'Rejuvenation').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'rejuvenation',
+        afterDaysDice: '1d10',
+        condition: 'has-a-phylactery',
+      },
+      { kind: 'triggeredEffect', trigger: 'If it has a phylactery' },
+    ]);
+    expect(
+      creatureEntry('creature:bugbear', 'traits', 'Surprise Attack').mechanics
+        ?.effects,
+    ).toEqual([
+      { kind: 'extraDamage', dice: '2d6' },
+      {
+        kind: 'triggeredEffect',
+        trigger:
+          'If the bugbear surprises a creature and hits it with an attack during the first round of combat',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:doppelganger', 'traits', 'Surprise Attack')
+        .mechanics?.effects,
+    ).toEqual([
+      { kind: 'extraDamage', dice: '3d6' },
+      {
+        kind: 'triggeredEffect',
+        trigger:
+          'If the doppelganger surprises a creature and hits it with an attack during the first round of combat',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:water-elemental', 'traits', 'Freeze').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'movementRestriction',
+        restriction: 'speed-reduced-by-20-feet',
+        endsBy: 'end-of-next-turn',
+      },
+      {
+        kind: 'triggeredEffect',
+        trigger: 'If the elemental takes cold damage',
+      },
+    ]);
+  });
 });
 
 describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {

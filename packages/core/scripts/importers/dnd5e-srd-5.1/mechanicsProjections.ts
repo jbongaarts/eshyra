@@ -2163,6 +2163,28 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   ) {
     effects.push({ kind: 'damageTransfer', portion: 'half', rounding: 'down' });
   }
+  // Surprise Attack (bugbear, doppelganger): flat extra damage dice on a
+  // successful surprise hit during the first round of combat.
+  const surpriseAttackExtraDamage =
+    /\bIf the [\w'’ ]+ surprises a creature and hits it with an attack during the first round of combat, the target takes an extra \d+ \((\d+d\d+)\) damage from the attack\b/.exec(
+      text,
+    );
+  if (surpriseAttackExtraDamage !== null) {
+    effects.push({ kind: 'extraDamage', dice: surpriseAttackExtraDamage[1] });
+  }
+  // Freeze (water elemental): deterministic speed reduction on taking cold
+  // damage, expiring at the end of its next turn.
+  const coldFreeze =
+    /\bIf the [\w'’ ]+ takes cold damage, it partially freezes; its speed is reduced by (\d+) feet until the end of its next turn\b/.exec(
+      text,
+    );
+  if (coldFreeze !== null) {
+    effects.push({
+      kind: 'movementRestriction',
+      restriction: `speed-reduced-by-${coldFreeze[1]}-feet`,
+      endsBy: 'end-of-next-turn',
+    });
+  }
   // Shield guardian Bound: ranged half-damage transfer from the amulet's
   // wearer, plus always-known amulet direction/distance.
   const boundTransfer =
@@ -2258,6 +2280,40 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     effects.push({
       kind: 'rejuvenation',
       afterDaysDice: rejuvenationDice[1],
+    });
+  }
+  // Naga Rejuvenation (guardian naga, spirit naga): dies-then-returns
+  // wording distinct from the mummy lord's "comes back to life" phrasing,
+  // with the wish-spell suppression clause captured as the condition
+  // (eshyra-o9bd.18.7.9 residual membership correction).
+  const rejuvenationOnDeathDice =
+    /\bIf it dies, the [\w'’ ]+ returns to life in (\d+d\d+) days and regains all its hit points\b/.exec(
+      text,
+    );
+  if (rejuvenationOnDeathDice !== null) {
+    effects.push(
+      compact({
+        kind: 'rejuvenation',
+        afterDaysDice: rejuvenationOnDeathDice[1],
+        condition:
+          /\bOnly a wish spell can prevent this trait from functioning\b/.test(
+            text,
+          )
+            ? 'no-wish-spell-cast-to-prevent-it'
+            : undefined,
+      }),
+    );
+  }
+  // Lich Rejuvenation: phylactery-conditioned new-body clause.
+  const rejuvenationPhylactery =
+    /\bIf it has a phylactery, a destroyed [\w'’ ]+ gains a new body in (\d+d\d+) days\b/.exec(
+      text,
+    );
+  if (rejuvenationPhylactery !== null) {
+    effects.push({
+      kind: 'rejuvenation',
+      afterDaysDice: rejuvenationPhylactery[1],
+      condition: 'has-a-phylactery',
     });
   }
   if (

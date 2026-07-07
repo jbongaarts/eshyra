@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACCEPTED_METADATA_ONLY_SPELLS,
+  ACCEPTED_PROSE_CREATURE_ENTRY_REFS,
   assertGameplayReadinessDispositions,
   buildGameplayReadinessReport,
   buildOverlayParityReport,
@@ -453,6 +454,66 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:trigger-only#traits:Incomplete Trigger',
       ),
     ]);
+  });
+
+  it('pins ACCEPTED_PROSE_CREATURE_ENTRY_REFS to the eshyra-o9bd.18.7.9 §1.6 reconciliation arithmetic (48 original + 24 residual − 6 implemented = 66)', () => {
+    // This is a hard pin, not a derived recomputation: it exists so that a
+    // future change to the array (an addition, removal, or silent restore)
+    // is caught here and forces an update to the classification doc's own
+    // reconciliation arithmetic (docs/audits/dnd5e-srd-5.1-final/
+    // 2026-07-06-o9bd-18-7-9-membership-classification.md §1.6), rather than
+    // only being caught by the coarser bucket-level fail-closed check.
+    expect(ACCEPTED_PROSE_CREATURE_ENTRY_REFS['mechanical-prose']).toHaveLength(
+      21,
+    );
+    expect(ACCEPTED_PROSE_CREATURE_ENTRY_REFS['narrative-prose']).toHaveLength(
+      45,
+    );
+    const total =
+      ACCEPTED_PROSE_CREATURE_ENTRY_REFS['mechanical-prose'].length +
+      ACCEPTED_PROSE_CREATURE_ENTRY_REFS['narrative-prose'].length;
+    expect(total).toBe(66);
+    // The six refs implemented in the §1.6.1 reconciliation pass (existing
+    // typed kinds: rejuvenation, extraDamage, movementRestriction) must have
+    // graduated out of the accepted-prose membership entirely.
+    const allRefs = [
+      ...ACCEPTED_PROSE_CREATURE_ENTRY_REFS['mechanical-prose'],
+      ...ACCEPTED_PROSE_CREATURE_ENTRY_REFS['narrative-prose'],
+    ];
+    expect(allRefs).not.toEqual(
+      expect.arrayContaining([
+        'creature:guardian-naga#traits:Rejuvenation',
+        'creature:spirit-naga#traits:Rejuvenation',
+        'creature:lich#traits:Rejuvenation',
+        'creature:bugbear#traits:Surprise Attack',
+        'creature:doppelganger#traits:Surprise Attack',
+        'creature:water-elemental#traits:Freeze',
+      ]),
+    );
+    // Refs newly classified into slices C4-C9 remain tracked (pending their
+    // slice landing), each with an explicit rationale in the artifact.
+    expect(allRefs).toEqual(
+      expect.arrayContaining([
+        'creature:berserker#traits:Reckless',
+        'creature:minotaur#traits:Reckless',
+        'creature:black-pudding#reactions:Split',
+        'creature:ochre-jelly#reactions:Split',
+        'creature:clay-golem#traits:Acid Absorption',
+        'creature:flesh-golem#traits:Lightning Absorption',
+        'creature:iron-golem#traits:Fire Absorption',
+        'creature:shambling-mound#traits:Lightning Absorption',
+        'creature:clay-golem#traits:Berserk',
+        'creature:flesh-golem#traits:Berserk',
+        'creature:giant-hyena#traits:Rampage',
+        'creature:gnoll#traits:Rampage',
+        'creature:shrieker#reactions:Shriek',
+        'creature:djinni#traits:Elemental Demise',
+        'creature:efreeti#traits:Elemental Demise',
+        'creature:shield-guardian#reactions:Shield',
+        'creature:aboleth#traits:Probing Telepathy',
+        'creature:ettin#traits:Wakeful',
+      ]),
+    );
   });
 
   it('does not require dispositions for modeled records', () => {

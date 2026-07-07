@@ -22804,6 +22804,10 @@
           "mechanics": {
             "effects": [
               {
+                "kind": "extraDamage",
+                "dice": "2d6"
+              },
+              {
                 "kind": "triggeredEffect",
                 "trigger": "If the bugbear surprises a creature and hits it with an attack during the first round of combat"
               }
@@ -26737,6 +26741,10 @@
           "text": "If the doppelganger surprises a creature and hits it with an attack during the first round of combat, the target takes an extra 10 (3d6) damage from the attack.",
           "mechanics": {
             "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "3d6"
+              },
               {
                 "kind": "triggeredEffect",
                 "trigger": "If the doppelganger surprises a creature and hits it with an attack during the first round of combat"
@@ -38017,6 +38025,11 @@
           "mechanics": {
             "effects": [
               {
+                "kind": "rejuvenation",
+                "afterDaysDice": "1d6",
+                "condition": "no-wish-spell-cast-to-prevent-it"
+              },
+              {
                 "kind": "triggeredEffect",
                 "trigger": "If it dies"
               }
@@ -42682,6 +42695,11 @@
           "text": "If it has a phylactery, a destroyed lich gains a new body in 1d10 days, regaining all its hit points and becoming active again. The new body appears within 5 feet of the phylactery.",
           "mechanics": {
             "effects": [
+              {
+                "kind": "rejuvenation",
+                "afterDaysDice": "1d10",
+                "condition": "has-a-phylactery"
+              },
               {
                 "kind": "triggeredEffect",
                 "trigger": "If it has a phylactery"
@@ -54841,6 +54859,11 @@
           "mechanics": {
             "effects": [
               {
+                "kind": "rejuvenation",
+                "afterDaysDice": "1d6",
+                "condition": "no-wish-spell-cast-to-prevent-it"
+              },
+              {
                 "kind": "triggeredEffect",
                 "trigger": "If it dies"
               }
@@ -60359,6 +60382,11 @@
           "text": "If the elemental takes cold damage, it partially freezes; its speed is reduced by 20 feet until the end of its next turn.",
           "mechanics": {
             "effects": [
+              {
+                "kind": "movementRestriction",
+                "restriction": "speed-reduced-by-20-feet",
+                "endsBy": "end-of-next-turn"
+              },
               {
                 "kind": "triggeredEffect",
                 "trigger": "If the elemental takes cold damage"
