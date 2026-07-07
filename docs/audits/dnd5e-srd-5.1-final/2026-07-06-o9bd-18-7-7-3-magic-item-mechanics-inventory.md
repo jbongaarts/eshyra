@@ -84,9 +84,14 @@ integrate with a Phase 1 engine family from
 `2026-07-06-o9bd-18-7-8-execution-boundary-classification.md` (F1/F9 roll
 and deterministic-resolution primitives, F2 action economy, F3
 concentration, F4 spell slots, F5 reset/resource/recharge events, F6
-death/temp-HP, F7 rest, F10 canonical currency/trade surface). Hooks do not
-replace pack-side clause ownership or item live-state ownership; they name
-the shared engine primitive the item implementation must subscribe to.
+death/temp-HP, F7 rest, **F8 character-build gap closures — specifically the
+special-modifier application hook for `casting-a-spell-saving-throws`: the
+item's spell-save-DC/spell-attack bonus is pack-side C2 data, but its
+runtime application into the derived spellSaveDc/spellAttackModifier
+formula is F8's clause, per #406**, F10 canonical currency/trade surface).
+Hooks do not replace pack-side clause ownership or item live-state
+ownership; they name the shared engine primitive the item implementation
+must subscribe to.
 
 ## 2. Master inventory (all 240 items, by key; `magic-item:` prefix elided)
 
@@ -268,7 +273,7 @@ the shared engine primitive the item implementation must subscribe to.
 | robe-of-eyes | M3,C2 | all-direction vision; darkvision 120; see invisible + Ethereal 120: M3; adv Perception (sight); light/daylight → blinded 1 min w/ per-turn saves; cannot-avert drawback: C2 |
 | robe-of-scintillating-colors | C1,C2 | 3 charges, 1d3/dawn: C1; until-end-of-next-turn dazzle: attackers disadv, DC15 Wis stunned, bright light: C2 |
 | robe-of-stars | C2,C1,M6 | +1 saves; pull-star magic missile (5th level): C2; 6 stars, 1d6 regrow daily at dusk: C1; action-toggle Astral Plane travel + return: M6 |
-| robe-of-the-archmagi | M2,C2,S,M7 | base AC 15+Dex when unarmored; spell save DC +2 and spell attack +2: M2; adv saves vs spells/magic: C2; class attunement: S; alignment-match attunement gate: M7 (attunement-precondition note) |
+| robe-of-the-archmagi | M2,C2,S,M7 | base AC 15+Dex when unarmored: M2; spell save DC +2 and spell attack +2 (F8-hook: special-modifier application, corrected 2026-07-06 from a prior M2 misclassification — this is a C2 numeric save/attack bonus, not an AC/PB-formula change): C2; adv saves vs spells/magic: C2; class attunement: S; alignment-match attunement gate: M7 (attunement-precondition note) |
 | robe-of-useful-items | C1,M8,M5,S | per-patch depletion, robe→ordinary at 0: C1; 4d4 random extra patches: M8; patch→real object creation: M5; patch table: S |
 | rod-of-absorption | M9,M10 | absorb targeted spell energy (reaction), lifetime 50-level budget, stored-level tracking, convert to slots ≤5th for own prepared/known spells (F4-hook), 1d10 found-state, nonmagical at exhaustion: M9 (flagship); reaction cancel: M10 |
 | rod-of-alertness | C2,C1,M5,M3 | adv Perception + initiative; detect spells at will; aura +1 AC/saves: C2; aura 1/dawn: C1; planted-rod 10-min aura state: M5; sense invisible hostiles in aura: M3 |
@@ -290,12 +295,12 @@ the shared engine primitive the item implementation must subscribe to.
 | staff-of-fire | C1,C2,S | 10 charges, 1d6+4/dawn, last-charge d20 destruction: C1; fire resistance; burning hands/fireball/wall of fire at own DC: C2; class attunement: S |
 | staff-of-frost | C1,C2,S | as staff-of-fire (cold; cone of cold/fog cloud/ice storm/wall of ice) |
 | staff-of-healing | C1,C2,S | 10 charges, 1d6+4/dawn, d20 vanish: C1; cure wounds (1 charge/level ≤4th), lesser restoration, mass cure wounds w/ own DC/mod: C2; class attunement: S |
-| staff-of-power | C1,C2,M8,S | 20 charges, 2d8+4/dawn, last-charge d20 dual outcome (1: lose powers; 20: regain 1d8+2): C1; +2 weapon; +2 AC/saves/spell attacks; power strike +1d6/charge; 9-spell list w/ costs: C2; retributive strike (50% planar escape, 16×charges self-damage, distance-banded DC17 area damage): M8; attunement + damage table: S |
+| staff-of-power | C1,C2,M8,S | 20 charges, 2d8+4/dawn, last-charge d20 dual outcome (1: lose powers; 20: regain 1d8+2): C1; +2 weapon; +2 AC/saves/spell attacks (F8-hook on the spell-attack component); power strike +1d6/charge; 9-spell list w/ costs: C2; retributive strike (50% planar escape, 16×charges self-damage, distance-banded DC17 area damage): M8; attunement + damage table: S |
 | staff-of-striking | C1,C2 | 10 charges, 1d6+4/dawn, d20 depletion: C1; +3; +1d6 force per charge (≤3): C2 |
 | staff-of-swarming-insects | C1,C2,M5,S | 10 charges, 1d6+4/dawn, d20 destruction: C1; giant insect/insect plague: C2; 30-ft insect-cloud obscurement 10 min: M5; class attunement: S |
-| staff-of-the-magi | C1,C2,M9,M8,S | 50 charges, 4d6+2/dawn, last-charge d20 (20: regain): C1; +2 weapon/spell attacks; adv saves vs spells; 13-spell charged list + 6 free casts: C2; spell absorption → charges w/ >50 overflow explosion: M9; retributive strike: M8; attunement + damage table: S |
+| staff-of-the-magi | C1,C2,M9,M8,S | 50 charges, 4d6+2/dawn, last-charge d20 (20: regain): C1; +2 weapon/spell attacks (F8-hook on the spell-attack component); adv saves vs spells; 13-spell charged list + 6 free casts: C2; spell absorption → charges w/ >50 overflow explosion: M9; retributive strike: M8; attunement + damage table: S |
 | staff-of-the-python | M4,M5,S | snake form under owner control, mental command, 0-hp death → staff shatters, early revert heals: M4+M5; class attunement: S |
-| staff-of-the-woodlands | C1,C2,M5,S | 10 charges, 1d6+4/dawn, d20 depletion: C1; +2 weapon/spell attacks; 7-spell list + free pass without trace: C2; tree form plant/revert: M5; druid attunement: S |
+| staff-of-the-woodlands | C1,C2,M5,S | 10 charges, 1d6+4/dawn, d20 depletion: C1; +2 weapon/spell attacks (F8-hook on the spell-attack component); 7-spell list + free pass without trace: C2; tree form plant/revert: M5; druid attunement: S |
 | staff-of-thunder-and-lightning | C1,C2 | 5 named properties each 1/dawn + combined property meta-use: C1; lightning +2d6; thunder DC17 stun; line 9d6 DC17; thunderclap 2d6 DC17 deafened: C2 |
 | staff-of-withering | C1,C2,S | 3 charges, 1d3/dawn: C1; +2d10 necrotic/charge; DC15 Con or disadv Str/Con checks+saves 1 h: C2; class attunement: S |
 | stone-of-controlling-earth-elementals | C1,M4 | 1/dawn, ground-contact gate: C1; conjure-elemental summon: M4 |
@@ -304,7 +309,7 @@ the shared engine primitive the item implementation must subscribe to.
 | sword-of-life-stealing | C2 | nat-20: +3d6 necrotic (not construct/undead), wielder gains equal temp HP (F6-hook): C2 |
 | sword-of-sharpness | C2,M8,M5 | maximize damage dice vs objects; nat-20 +4d6 + nested d20 (20: sever limb, GM effect): C2+M8; light command toggle: M5 |
 | sword-of-wounding | M7,C2 | wound counters (1d4/wound at turn start), once-per-turn application, DC15 Con or Medicine ending, hp-loss recoverable only via rest (healing suppression; F6/F7-hooks): M7; hit application: C2 |
-| talisman-of-pure-good | C2,C1,M7,S | touch damage by alignment (6d6/8d6 radiant, per-turn); +2 spell attacks (good cleric/paladin); fissure DC20 Dex destroy: C2; 7 charges, destroyed at 0: C1; alignment interaction/eligibility: M7; good-creature attunement: S |
+| talisman-of-pure-good | C2,C1,M7,S | touch damage by alignment (6d6/8d6 radiant, per-turn); +2 spell attacks (good cleric/paladin; F8-hook); fissure DC20 Dex destroy: C2; 7 charges, destroyed at 0: C1; alignment interaction/eligibility: M7; good-creature attunement: S |
 | talisman-of-the-sphere | M11,M10,C2 | modifies sphere-of-annihilation control: M11; double PB on control checks (F9-hook): M10; enhanced levitation math (F9-hook): C2 |
 | talisman-of-ultimate-evil | C2,C1,M7,S | mirror of pure-good (necrotic; 6 charges): same owners |
 | tome-of-clear-thought | M2,C1 | Int +2 and max +2 (permanent): M2; study procedure + century recharge: C1 |
@@ -324,7 +329,7 @@ the shared engine primitive the item implementation must subscribe to.
 | wand-of-paralysis | C1,C2,S | 7 charges, 1d6+1/dawn, d20 destruction: C1; ray, DC15 Con paralyzed 1 min w/ repeat saves: C2; spellcaster attunement: S |
 | wand-of-polymorph | C1,C2,S | 7 charges, 1d6+1/dawn, d20 destruction: C1; polymorph DC15: C2; spellcaster attunement: S |
 | wand-of-secrets | C1,M3 | 3 charges, 1d3/dawn: C1; nearest secret door/trap pointer 30 ft: M3 |
-| wand-of-the-war-mage-1-2-or-3 | C2,S | +N spell attack by rarity; ignore half cover on spell attacks: C2; spellcaster attunement: S |
+| wand-of-the-war-mage-1-2-or-3 | C2,S | +N spell attack by rarity (F8-hook); ignore half cover on spell attacks: C2; spellcaster attunement: S |
 | wand-of-web | C1,C2,S | 7 charges, 1d6+1/dawn, d20 destruction: C1; web DC15: C2; spellcaster attunement: S |
 | wand-of-wonder | C1,M8,S | 7 charges, 1d6+1/dawn, d20 destruction: C1; d100 table procedure w/ range/centering/random-subject meta-rules: M8 (flagship); table + spellcaster attunement: S |
 | weapon-1-2-or-3 | C2 | +N atk/dmg by rarity: C2 |
@@ -374,8 +379,10 @@ grep the table; counts match §3).
   (amulet-of-health, gauntlets, headband, belts/potions of giant strength),
   score +2 w/ cap (belt-of-dwarvenkind, ioun variants), permanent +2 score &
   cap (3 manuals + 3 tomes), Str +4 max 30 (hammer), hp-max/level
-  (berserker-axe), PB +1 (ioun Mastery), AC formula 15+Dex + DC/attack +2
-  (robe-of-the-archmagi), proficiency grants (bracers-of-archery,
+  (berserker-axe), PB +1 (ioun Mastery), AC formula 15+Dex
+  (robe-of-the-archmagi — its spell save DC +2/spell attack +2 is a C2
+  numeric bonus with an F8 application hook, not an M2 clause; corrected
+  2026-07-06), proficiency grants (bracers-of-archery,
   elven-chain, sun-blade), languages, death/rest hooks
   (periapt-of-wound-closure F6/F7), clock healing (ring-of-regeneration,
   ioun Regeneration). Agent: Codex (regular shapes; Opus review of
@@ -451,7 +458,12 @@ grep the table; counts match §3).
 Engine-hook clauses recorded in §2 include: F2 scimitar-of-speed; F3
 concentration items; F4 pearl/rod/ring storage; F5 reset/resource/recharge
 events for C1 live economies; F6 temp-HP/stabilize/instant-death-adjacent
-items; F7 rest-coupled budgets; F9 deterministic arithmetic/derived
+items; F7 rest-coupled budgets; **F8 spell-save-DC/spell-attack
+special-modifier application (robe-of-the-archmagi, staff-of-power,
+staff-of-the-magi, staff-of-the-woodlands, talisman-of-pure-good,
+wand-of-the-war-mage-1-2-or-3 — corrected 2026-07-06 to record the
+dependency this artifact previously omitted; see #406
+`casting-a-spell-saving-throws`)**; F9 deterministic arithmetic/derived
 resolution; and F10 canonical currency/asset mutation. These hooks must be
 designed against the Phase 1 families, not duplicated.
 
@@ -461,9 +473,14 @@ Reuse existing children exactly: **18.7.7.1 owns every C1 clause** in §2
 (inventory embedded there — the C1 column is its exact worklist, including
 the hard budget economies flagged: boots-of-speed, winged-boots,
 candle-of-invocation, goat-of-traveling). **18.7.7.2 owns every C2 clause**
-(similarly exact, including spell-grant projections and rarity-scaled
-bonuses). Neither child may close green while any §2 row still carries its
-tag unmodeled.
+(similarly exact, including spell-grant projections, rarity-scaled bonuses,
+and the spell-save-DC/spell-attack bonuses newly corrected onto C2 —
+robe-of-the-archmagi, staff-of-power, staff-of-the-magi,
+staff-of-the-woodlands, talisman-of-pure-good,
+wand-of-the-war-mage-1-2-or-3; 18.7.7.2 owns the pack-side bonus value, F8
+owns the runtime application into the derived spell-save-DC/attack formula
+— the two are not the same clause). Neither child may close green while any
+§2 row still carries its tag unmodeled.
 
 New children (create after review; exact memberships = §4 tag lists):
 
