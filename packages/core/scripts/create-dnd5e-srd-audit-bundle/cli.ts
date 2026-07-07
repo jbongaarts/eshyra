@@ -901,6 +901,36 @@ function hasDeterministicGrants(record: RulesRecord): boolean {
  * undercounted `recordsWithMechanicsProjections` against the 314/317 figure
  * used elsewhere in the audit docs, which does scan these nested arrays.
  */
+function hasReadinessCreditableEffect(effect: unknown): boolean {
+  const obj = objectValue(effect);
+  if (obj === null) return false;
+  const kind = stringValue(obj.kind);
+  if (kind === null) return false;
+  if (kind !== 'triggeredEffect') return true;
+  return stringValue(obj.result) !== null;
+}
+
+function hasSubstantiveMechanicsProjection(mechanics: unknown): boolean {
+  const obj = objectValue(mechanics);
+  if (obj === null) return false;
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === 'effects') {
+      if (arrayValue(value).some(hasReadinessCreditableEffect)) return true;
+      continue;
+    }
+    if (Array.isArray(value)) {
+      if (value.length > 0) return true;
+      continue;
+    }
+    if (typeof value === 'object' && value !== null) {
+      if (Object.keys(value).length > 0) return true;
+      continue;
+    }
+    if (value !== undefined && value !== null) return true;
+  }
+  return false;
+}
+
 function hasNestedCreatureMechanicsProjection(
   data: Record<string, unknown>,
 ): boolean {
@@ -1058,8 +1088,28 @@ export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
     'creature:ancient-copper-dragon#actions:Change Shape',
     'creature:ancient-gold-dragon#actions:Change Shape',
     'creature:ancient-silver-dragon#actions:Change Shape',
+    'creature:berserker#traits:Reckless',
+    'creature:black-pudding#reactions:Split',
+    'creature:bugbear#traits:Surprise Attack',
+    'creature:clay-golem#traits:Acid Absorption',
+    'creature:clay-golem#traits:Berserk',
+    'creature:doppelganger#traits:Surprise Attack',
+    'creature:flesh-golem#traits:Berserk',
+    'creature:flesh-golem#traits:Lightning Absorption',
+    'creature:giant-hyena#traits:Rampage',
+    'creature:gnoll#traits:Rampage',
+    'creature:guardian-naga#traits:Rejuvenation',
+    'creature:iron-golem#traits:Fire Absorption',
+    'creature:lich#traits:Rejuvenation',
+    'creature:minotaur#traits:Reckless',
+    'creature:ochre-jelly#reactions:Split',
+    'creature:shambling-mound#traits:Lightning Absorption',
+    'creature:shrieker#reactions:Shriek',
+    'creature:spirit-naga#traits:Rejuvenation',
+    'creature:water-elemental#traits:Freeze',
   ],
   'narrative-prose': [
+    'creature:aboleth#traits:Probing Telepathy',
     'creature:animated-armor#traits:False Appearance',
     'creature:awakened-shrub#traits:False Appearance',
     'creature:awakened-tree#traits:False Appearance',
@@ -1067,8 +1117,11 @@ export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
     'creature:couatl#actions:Change Shape',
     'creature:darkmantle#traits:False Appearance',
     'creature:deva#actions:Change Shape',
+    'creature:djinni#traits:Elemental Demise',
     'creature:doppelganger#traits:Shapechanger',
     'creature:dryad#traits:Speak with Beasts and Plants',
+    'creature:efreeti#traits:Elemental Demise',
+    'creature:ettin#traits:Wakeful',
     'creature:flying-sword#traits:False Appearance',
     'creature:gargoyle#traits:False Appearance',
     'creature:gray-ooze#traits:False Appearance',
@@ -1089,6 +1142,7 @@ export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
     'creature:roper#traits:False Appearance',
     'creature:rug-of-smothering#traits:False Appearance',
     'creature:sahuagin#traits:Shark Telepathy',
+    'creature:shield-guardian#reactions:Shield',
     'creature:shrieker#traits:False Appearance',
     'creature:succubus-incubus#traits:Shapechanger',
     'creature:treant#traits:False Appearance',
@@ -1444,7 +1498,7 @@ export function buildGameplayReadinessReport(
         creatureEntryRefs.push({
           ref: `${record.key}#${section}:${name}`,
           text: stringValue(entry.text) ?? '',
-          hasMechanics: objectValue(entry.mechanics) !== null,
+          hasMechanics: hasSubstantiveMechanicsProjection(entry.mechanics),
         });
       }
     }

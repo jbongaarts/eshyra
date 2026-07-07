@@ -24184,7 +24184,8 @@
             "effects": [
               {
                 "kind": "damageTransfer",
-                "portion": "half"
+                "portion": "half",
+                "rounding": "down"
               }
             ]
           }
@@ -50091,6 +50092,7 @@
             "effects": [
               {
                 "kind": "tunneler",
+                "solidRockBurrowSpeedMultiplier": 0.5,
                 "tunnelDiameterFeet": 10
               }
             ]
@@ -53696,6 +53698,7 @@
               {
                 "kind": "damageTransfer",
                 "portion": "half",
+                "rounding": "up",
                 "from": "amulet-wearer",
                 "rangeFeet": 60
               },
@@ -56387,7 +56390,8 @@
               {
                 "kind": "swarm",
                 "canOccupyOtherCreaturesSpace": true,
-                "cannotRegainHitPoints": true
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
               }
             ]
           }
@@ -56502,7 +56506,8 @@
               {
                 "kind": "swarm",
                 "canOccupyOtherCreaturesSpace": true,
-                "cannotRegainHitPoints": true
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
               }
             ]
           }
@@ -56622,7 +56627,8 @@
               {
                 "kind": "swarm",
                 "canOccupyOtherCreaturesSpace": true,
-                "cannotRegainHitPoints": true
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
               }
             ]
           }
@@ -56761,7 +56767,8 @@
               {
                 "kind": "swarm",
                 "canOccupyOtherCreaturesSpace": true,
-                "cannotRegainHitPoints": true
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
               }
             ]
           }
@@ -56906,7 +56913,8 @@
               {
                 "kind": "swarm",
                 "canOccupyOtherCreaturesSpace": true,
-                "cannotRegainHitPoints": true
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
               }
             ]
           }
@@ -57021,7 +57029,8 @@
               {
                 "kind": "swarm",
                 "canOccupyOtherCreaturesSpace": true,
-                "cannotRegainHitPoints": true
+                "cannotRegainHitPoints": true,
+                "cannotGainTemporaryHitPoints": true
               }
             ]
           }

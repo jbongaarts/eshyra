@@ -192,7 +192,13 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
     expect(
       creatureEntry('creature:purple-worm', 'traits', 'Tunneler').mechanics
         ?.effects,
-    ).toEqual([{ kind: 'tunneler', tunnelDiameterFeet: 10 }]);
+    ).toEqual([
+      {
+        kind: 'tunneler',
+        solidRockBurrowSpeedMultiplier: 0.5,
+        tunnelDiameterFeet: 10,
+      },
+    ]);
     expect(
       creatureEntry('creature:dryad', 'traits', 'Tree Stride').mechanics
         ?.effects,
@@ -258,7 +264,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
     expect(
       creatureEntry('creature:cloaker', 'traits', 'Damage Transfer').mechanics
         ?.effects,
-    ).toEqual([{ kind: 'damageTransfer', portion: 'half' }]);
+    ).toEqual([{ kind: 'damageTransfer', portion: 'half', rounding: 'down' }]);
     expect(
       creatureEntry('creature:shield-guardian', 'traits', 'Bound').mechanics
         ?.effects,
@@ -266,6 +272,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       {
         kind: 'damageTransfer',
         portion: 'half',
+        rounding: 'up',
         from: 'amulet-wearer',
         rangeFeet: 60,
       },
@@ -290,6 +297,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         kind: 'swarm',
         canOccupyOtherCreaturesSpace: true,
         cannotRegainHitPoints: true,
+        cannotGainTemporaryHitPoints: true,
       },
     ]);
   });
@@ -423,6 +431,16 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         .mechanics?.effects,
     ).toEqual([
       { kind: 'limitedAmmunition', count: 24, replenish: 'long-rest' },
+    ]);
+    expect(
+      creatureEntry('creature:purple-worm', 'traits', 'Tunneler').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'tunneler',
+        solidRockBurrowSpeedMultiplier: 0.5,
+        tunnelDiameterFeet: 10,
+      },
     ]);
   });
 });

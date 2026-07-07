@@ -110,7 +110,9 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
               {
                 name: 'Bite',
                 text: 'Melee attack.',
-                mechanics: { attacks: [], damage: [] },
+                mechanics: {
+                  effects: [{ kind: 'makeAttack', attack: 'bite' }],
+                },
               },
             ],
           },
@@ -124,7 +126,7 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
               {
                 name: 'Parry',
                 text: 'Reaction.',
-                mechanics: { attacks: [] },
+                mechanics: { effects: [{ kind: 'acBonus', amount: 2 }] },
               },
             ],
           },
@@ -140,7 +142,9 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
                 {
                   name: 'Detect',
                   text: 'Perception check.',
-                  mechanics: { attacks: [] },
+                  mechanics: {
+                    effects: [{ kind: 'makeAbilityCheck', ability: 'wisdom' }],
+                  },
                 },
               ],
             },
@@ -409,6 +413,46 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(() => assertGameplayReadinessDispositions(report)).toThrow(
       /deity#prose-only/,
     );
+  });
+
+  it('does not count trigger-only creature-entry markers as modeled', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'creature',
+          key: 'creature:trigger-only',
+          name: 'Trigger Only',
+          data: {
+            traits: [
+              {
+                name: 'Incomplete Trigger',
+                text: 'When the creature is hit, it deals 2d6 fire damage.',
+                mechanics: {
+                  effects: [{ kind: 'triggeredEffect', trigger: 'When hit' }],
+                },
+              },
+            ],
+          },
+        }),
+      ]),
+      [],
+    );
+
+    expect(report.creatureEntries).toMatchObject({
+      totalEntries: 1,
+      entriesWithMechanics: 0,
+      mechanicalProse: 1,
+      narrativeProse: 0,
+    });
+    expect(
+      report.dispositionErrors.filter((error) =>
+        error.includes('not in the reviewed accepted-prose membership'),
+      ),
+    ).toEqual([
+      expect.stringContaining(
+        'creature:trigger-only#traits:Incomplete Trigger',
+      ),
+    ]);
   });
 
   it('does not require dispositions for modeled records', () => {

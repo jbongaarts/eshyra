@@ -127,6 +127,47 @@ describe('mechanics effect payload contracts', () => {
     ).toThrow(/scope/);
   });
 
+  it('validates corrected creature-entry cleanup effect payloads', () => {
+    expect(() =>
+      validate({
+        kind: 'damageTransfer',
+        portion: 'half',
+        rounding: 'down',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'damageTransfer',
+        portion: 'half',
+        rounding: 'up',
+      }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'damageTransfer', portion: 'half' })).toThrow(
+      /rounding/,
+    );
+    expect(() =>
+      validate({
+        kind: 'swarm',
+        canOccupyOtherCreaturesSpace: true,
+        cannotRegainHitPoints: true,
+        cannotGainTemporaryHitPoints: true,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'tunneler',
+        solidRockBurrowSpeedMultiplier: 0.5,
+        tunnelDiameterFeet: 10,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'tunneler',
+        tunnelDiameterFeet: 10,
+      }),
+    ).toThrow(/solidRockBurrowSpeedMultiplier/);
+  });
+
   it('accepts every emitted shape of the eshyra-o9bd.18.7.5 re-audit kinds', () => {
     const eligibility = {
       wielding: 'unarmed-or-monk-weapons-only',
@@ -379,7 +420,11 @@ describe('mechanics effect payload contracts', () => {
       { kind: 'moveThroughNarrowSpaces', widthInches: 1 },
       { kind: 'earthGlide' },
       { kind: 'enterHostileSpace' },
-      { kind: 'tunneler', tunnelDiameterFeet: 10 },
+      {
+        kind: 'tunneler',
+        solidRockBurrowSpeedMultiplier: 0.5,
+        tunnelDiameterFeet: 10,
+      },
       { kind: 'teleport', distanceFeet: 120 },
       { kind: 'teleport', destination: 'designated-sanctuary' },
       {
@@ -401,10 +446,11 @@ describe('mechanics effect payload contracts', () => {
       { kind: 'sense', sense: 'web-sense' },
       { kind: 'sense', sense: 'locate-named-beast-or-plant', rangeMiles: 5 },
       { kind: 'extraWeaponDamageDie', extraDice: 1 },
-      { kind: 'damageTransfer', portion: 'half' },
+      { kind: 'damageTransfer', portion: 'half', rounding: 'down' },
       {
         kind: 'damageTransfer',
         portion: 'half',
+        rounding: 'up',
         from: 'amulet-wearer',
         rangeFeet: 60,
       },
@@ -438,6 +484,7 @@ describe('mechanics effect payload contracts', () => {
         kind: 'swarm',
         canOccupyOtherCreaturesSpace: true,
         cannotRegainHitPoints: true,
+        cannotGainTemporaryHitPoints: true,
       },
       {
         kind: 'attackableAppendage',
@@ -809,9 +856,13 @@ describe('mechanics effect payload contracts', () => {
     expect(() => validate({ kind: 'limitedAmmunition', count: 24 })).toThrow(
       /replenish/,
     );
-    expect(() => validate({ kind: 'tunneler', tunnelDiameterFeet: 0 })).toThrow(
-      /tunnelDiameterFeet/,
-    );
+    expect(() =>
+      validate({
+        kind: 'tunneler',
+        solidRockBurrowSpeedMultiplier: 0.5,
+        tunnelDiameterFeet: 0,
+      }),
+    ).toThrow(/tunnelDiameterFeet/);
     expect(() => validate({ kind: 'moveThroughNarrowSpaces' })).toThrow(
       /widthInches/,
     );

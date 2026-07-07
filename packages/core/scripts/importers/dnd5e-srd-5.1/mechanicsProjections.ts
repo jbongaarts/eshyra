@@ -2001,6 +2001,7 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   if (tunneler !== null) {
     effects.push({
       kind: 'tunneler',
+      solidRockBurrowSpeedMultiplier: 0.5,
       tunnelDiameterFeet: Number(tunneler[1]),
     });
   }
@@ -2160,7 +2161,7 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       text,
     )
   ) {
-    effects.push({ kind: 'damageTransfer', portion: 'half' });
+    effects.push({ kind: 'damageTransfer', portion: 'half', rounding: 'down' });
   }
   // Shield guardian Bound: ranged half-damage transfer from the amulet's
   // wearer, plus always-known amulet direction/distance.
@@ -2172,6 +2173,7 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     effects.push({
       kind: 'damageTransfer',
       portion: 'half',
+      rounding: 'up',
       from: 'amulet-wearer',
       rangeFeet: Number(boundTransfer[1]),
     });
@@ -2277,6 +2279,12 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
         kind: 'swarm',
         canOccupyOtherCreaturesSpace: true,
         cannotRegainHitPoints:
+          /\bcan['\u2019]t regain hit points or gain temporary hit points\b/.test(
+            text,
+          )
+            ? true
+            : undefined,
+        cannotGainTemporaryHitPoints:
           /\bcan['\u2019]t regain hit points or gain temporary hit points\b/.test(
             text,
           )

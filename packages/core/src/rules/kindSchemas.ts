@@ -1696,6 +1696,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   damageTransfer: (effect, path) => {
     reqEnum(effect, 'portion', path, new Set(['half']));
+    reqEnum(effect, 'rounding', path, new Set(['down', 'up']));
     optStr(effect, 'from', path);
     optInt(effect, 'rangeFeet', path, 1);
   },
@@ -1892,6 +1893,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       );
     }
     optBool(effect, 'cannotRegainHitPoints', path);
+    optBool(effect, 'cannotGainTemporaryHitPoints', path);
   },
   teleport: (effect, path) => {
     // Either a fixed distance (creature Teleport actions, Misty Step) or a
@@ -1909,6 +1911,12 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optInt(effect, 'movementCostFeet', path, 1);
   },
   tunneler: (effect, path) => {
+    const multiplier = reqNum(effect, 'solidRockBurrowSpeedMultiplier', path);
+    if (multiplier !== 0.5) {
+      throw new RulesPackError(
+        `${path}.solidRockBurrowSpeedMultiplier must be 0.5`,
+      );
+    }
     reqInt(effect, 'tunnelDiameterFeet', path, 1);
   },
   weaponCorrosion: (effect, path) => {
