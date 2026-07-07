@@ -1557,6 +1557,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       );
     }
     optBool(effect, 'only', path);
+    // The condition under which the grant applies (eshyra-o9bd.18.7.7.5
+    // review): e.g. the cloak of the manta ray only breathes underwater
+    // while its hood is raised.
+    optStr(effect, 'condition', path);
   },
   obscurement: (effect, path) => {
     if (effect.level !== undefined) {
@@ -1653,6 +1657,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   jumpDistanceMultiplier: (effect, path) => {
     reqInt(effect, 'multiplier', path, 2);
+    // Boots of striding and springing's multiplied jump is still capped by
+    // remaining movement (eshyra-o9bd.18.7.7.5 review) — a source-printed
+    // exception, not a universal property of every multiplied jump.
+    optStr(effect, 'condition', path);
   },
   mirrorImages: (effect, path) => {
     reqInt(effect, 'images', path, 1);
@@ -1713,6 +1721,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   walkOnLiquids: (effect, path) => {
     optInt(effect, 'surfacingFeetPerRound', path, 1);
+    optStr(effect, 'condition', path);
   },
   damageTransfer: (effect, path) => {
     reqEnum(effect, 'portion', path, new Set(['half']));
@@ -2195,6 +2204,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
         `${path} must not carry both newMaximum and alsoIncreasesMaximum`,
       );
     }
+    // Hammer of Thunderbolts' Strength increase applies only while attuned
+    // AND holding the weapon — a narrower condition than ordinary attunement
+    // (eshyra-o9bd.18.7.7.5 review).
+    optStr(effect, 'condition', path);
   },
   // Ability-score FLOOR semantics (eshyra-o9bd.18.7.7.5): "your Strength
   // score is 19 while you wear these gauntlets... no effect if already 19 or

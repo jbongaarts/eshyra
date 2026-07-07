@@ -734,16 +734,16 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   },
   // eshyra-o9bd.18.7.7.5: the M2 (passive character-rule modifier) and M3
   // (movement/senses/environment) clause families from the magic-item
-  // mechanics inventory, projected as structured `mechanics.effects`. 56 of
-  // the 58 tagged items carry it; Ioun Stone and Ring of Elemental Command
-  // are deferred pending inline variant structuring (see
+  // mechanics inventory, projected as structured `mechanics.effects`. 55 of
+  // the 58 tagged items carry it; Ioun Stone, Ring of Elemental Command, and
+  // Crystal Ball are deferred pending inline variant structuring (see
   // `MAGIC_ITEM_M2_M3_DEFERRED` in magicItemPassiveEffects.ts). The other
   // clause families (charges, combat bonuses, state machines, curses, ...)
   // are out of scope for this projection and owned by sibling beads.
   {
     kind: 'magic-item',
     field: 'mechanics',
-    missingCount: 184,
+    missingCount: 185,
     totalInKind: 240,
   },
   // Deck of Many Things and Figurine of Wondrous Power reference their inline

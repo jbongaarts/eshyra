@@ -138,12 +138,17 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
           kind: 'ignoreMovementRestriction',
           source: 'being encumbered or wearing heavy armor',
         },
-        { kind: 'jumpDistanceMultiplier', multiplier: 3 },
+        {
+          kind: 'jumpDistanceMultiplier',
+          multiplier: 3,
+          condition:
+            'you can’t jump farther than your remaining movement would allow',
+        },
       ],
     });
   });
 
-  it('returns undefined and records a reason for the two deferred items', () => {
+  it('returns undefined and records a reason for the three deferred items', () => {
     expect(
       deriveMagicItemMechanics(
         item('Ioun Stone', 'An Ioun stone is named after Ioun...'),
@@ -157,10 +162,21 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         ),
       ),
     ).toBeUndefined();
+    expect(
+      deriveMagicItemMechanics(
+        item(
+          'Crystal Ball',
+          'While scrying with the crystal ball, you have truesight with a radius of 120 feet centered on the spell’s sensor.',
+        ),
+      ),
+    ).toBeUndefined();
     expect(MAGIC_ITEM_M2_M3_DEFERRED.get('Ioun Stone')).toMatch(
       /inline variant structuring/,
     );
     expect(MAGIC_ITEM_M2_M3_DEFERRED.get('Ring of Elemental Command')).toMatch(
+      /inline variant structuring/,
+    );
+    expect(MAGIC_ITEM_M2_M3_DEFERRED.get('Crystal Ball')).toMatch(
       /inline variant structuring/,
     );
   });

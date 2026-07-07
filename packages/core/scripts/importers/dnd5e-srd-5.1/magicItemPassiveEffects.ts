@@ -12,11 +12,13 @@
  * extracts ONLY the M2/M3-tagged clauses for each item; other clause types on
  * the same record are intentionally left unmodeled here.
  *
- * Two items — Ioun Stone and Ring of Elemental Command — are excluded even
- * though the inventory tags them M2/M3. Both need their prose variants
- * (Ioun Stone's 13 named stones; the ring's 4 elemental planes) lifted into a
- * structured `variants` field before their per-variant M2/M3 clauses can be
- * projected without conflating mutually exclusive benefits into one record
+ * Three items — Ioun Stone, Ring of Elemental Command, and Crystal Ball — are
+ * excluded even though the inventory tags them M2/M3. Each needs its prose
+ * variants (Ioun Stone's 13 named stones; the ring's 4 elemental planes;
+ * Crystal Ball's legendary "of Mind Reading"/"of Telepathy"/"of True Seeing"
+ * variants) lifted into a structured `variants` field before its per-variant
+ * M2/M3 clauses can be projected without conflating mutually exclusive
+ * benefits into one record
  * (`docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-magic-item-state-contract-design.md`
  * §7.4 names this as a prerequisite). `MAGIC_ITEM_M2_M3_DEFERRED` records the
  * reason so the audit gate can distinguish "not yet modeled, tracked" from
@@ -60,6 +62,10 @@ export const MAGIC_ITEM_M2_M3_DEFERRED: ReadonlyMap<string, string> = new Map([
     'Ring of Elemental Command',
     'inline variant structuring required first (4 linked-plane variants with mutually exclusive M2/M3 benefits; §0 gap in the mechanics inventory)',
   ],
+  [
+    'Crystal Ball',
+    'inline variant structuring required first (the truesight M3 clause belongs only to the legendary "Crystal Ball of True Seeing" variant; the item has no structured `variants` field yet, so projecting the effect onto the shared record would misrepresent every ordinary crystal ball as having it; §0 gap in the mechanics inventory, eshyra-o9bd.18.7.7.5 review)',
+  ],
 ]);
 
 type Extractor = (text: string, itemName: string) => readonly Mechanics[];
@@ -79,6 +85,11 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     'Belt of Dwarvenkind',
     (text, name) => {
       must(text, /Constitution score increases by 2, to a maximum of 20/, name);
+      must(
+        text,
+        /If you aren’t a dwarf, you gain the following additional benefits/,
+        name,
+      );
       must(text, /darkvision out to a range of 60 feet/, name);
       must(text, /speak, read, and write Dwarvish/, name);
       return [
@@ -88,8 +99,17 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           amount: 2,
           newMaximum: 20,
         },
-        { kind: 'proficiency', grant: 'speak, read, and write Dwarvish' },
-        { kind: 'sense', sense: 'darkvision', rangeFeet: 60 },
+        {
+          kind: 'proficiency',
+          grant: 'speak, read, and write Dwarvish',
+          condition: 'if you aren’t a dwarf',
+        },
+        {
+          kind: 'sense',
+          sense: 'darkvision',
+          rangeFeet: 60,
+          condition: 'if you aren’t a dwarf',
+        },
       ];
     },
   ],
@@ -161,7 +181,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     (text, name) => {
       must(
         text,
-        /Strength score increases by 4 and can exceed 20, but not 30/,
+        /While you are attuned to this weapon and holding it, your Strength score increases by 4 and can exceed 20, but not 30/,
         name,
       );
       return [
@@ -170,6 +190,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           abilities: ['strength'],
           amount: 4,
           newMaximum: 30,
+          condition: 'while attuned to this weapon and holding it',
         },
       ];
     },
@@ -400,13 +421,23 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         name,
       );
       must(text, /jump three times the normal distance/, name);
+      must(
+        text,
+        /can’t jump farther than your remaining movement would allow/,
+        name,
+      );
       return [
         { kind: 'speedSet', mode: 'walk', value: 30, floor: true },
         {
           kind: 'ignoreMovementRestriction',
           source: 'being encumbered or wearing heavy armor',
         },
-        { kind: 'jumpDistanceMultiplier', multiplier: 3 },
+        {
+          kind: 'jumpDistanceMultiplier',
+          multiplier: 3,
+          condition:
+            'you can’t jump farther than your remaining movement would allow',
+        },
       ];
     },
   ],
@@ -520,35 +551,20 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     (text, name) => {
       must(
         text,
-        /breathe underwater, and you have a swimming speed of 60 feet/,
+        /wearing this cloak with its hood up, you can breathe underwater, and you have a swimming speed of 60 feet/,
         name,
       );
       return [
-        { kind: 'breathes', environments: ['water'] },
+        {
+          kind: 'breathes',
+          environments: ['water'],
+          condition: 'while wearing the cloak with its hood up',
+        },
         {
           kind: 'speedSet',
           mode: 'swim',
           value: 60,
           condition: 'while wearing the cloak with its hood up',
-        },
-      ];
-    },
-  ],
-  [
-    'Crystal Ball',
-    (text, name) => {
-      must(
-        text,
-        /you have truesight with a radius of 120 feet centered on the spell’s sensor/,
-        name,
-      );
-      return [
-        {
-          kind: 'sense',
-          sense: 'truesight',
-          rangeFeet: 120,
-          condition:
-            'Crystal Ball of True Seeing variant only; centered on the scrying spell’s sensor while scrying',
         },
       ];
     },
@@ -640,6 +656,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     (text, name) => {
       must(text, /floating 4 inches above the ground/, name);
       must(text, /cross or stand above nonsolid or unstable surfaces/, name);
+      must(text, /leaves no tracks/, name);
       must(text, /ignores difficult terrain/, name);
       must(
         text,
@@ -648,7 +665,10 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
       );
       return [
         { kind: 'hover' },
-        { kind: 'walkOnLiquids' },
+        {
+          kind: 'walkOnLiquids',
+          condition: 'leaves no tracks',
+        },
         { kind: 'ignoreDifficultTerrain', terrain: ['all'] },
         {
           kind: 'immunity',
@@ -670,15 +690,41 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     (text, name) => {
       must(
         text,
+        /burns for 6 hours on 1 pint of oil, shedding bright light in a 30-foot radius and dim light for an additional 30 feet/,
+        name,
+      );
+      must(
+        text,
         /Invisible creatures and objects are visible as long as they are in the lantern’s bright light/,
+        name,
+      );
+      // Tolerates the known line-break dehyphenation artifact ("5- foot"
+      // instead of "5-foot"; tracked separately under eshyra-o9bd.18.8) —
+      // this extractor is not the place to fix that class of bug.
+      must(
+        text,
+        /lower the hood, reducing the light to dim light in a 5-\s*foot radius/,
         name,
       );
       return [
         {
+          kind: 'light',
+          level: 'bright',
+          radiusFeet: 30,
+          dimAdditionalFeet: 30,
+          condition: 'while lit; burns for 6 hours per pint of oil',
+        },
+        {
+          kind: 'light',
+          level: 'dim',
+          radiusFeet: 5,
+          condition: 'hood lowered (an action)',
+        },
+        {
           kind: 'sense',
           sense: 'reveal-invisible-in-bright-light',
           condition:
-            'creatures/objects in the lantern’s bright light are visible',
+            'creatures/objects in the lantern’s bright light are visible; lowering the hood (an action) removes the bright light, so the reveal does not apply while the hood is down',
         },
       ];
     },
@@ -687,7 +733,14 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     'Necklace of Adaptation',
     (text, name) => {
       must(text, /breathe normally in any environment/, name);
-      return [{ kind: 'breathes', environments: ['air', 'water'] }];
+      return [
+        {
+          kind: 'breathes',
+          environments: ['air', 'water'],
+          condition:
+            'the source grants breathing in literally any environment, not only air/water — a lossy simplification of the closed environments vocabulary',
+        },
+      ];
     },
   ],
   [
@@ -860,7 +913,19 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         name,
       );
       must(text, /indicates magnetic north/, name);
-      return [{ kind: 'sense', sense: 'magnetic-north-and-depth' }];
+      must(
+        text,
+        /Nothing happens if this function of the rod is used in a location that has no magnetic north/,
+        name,
+      );
+      return [
+        {
+          kind: 'sense',
+          sense: 'magnetic-north-and-depth',
+          condition:
+            'the magnetic-north function does nothing in a location with no magnetic north',
+        },
+      ];
     },
   ],
   [
@@ -878,7 +943,13 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         name,
       );
       return [
-        { kind: 'speedSet', mode: 'climb', value: 'walking-speed' },
+        {
+          kind: 'speedSet',
+          mode: 'climb',
+          value: 'walking-speed',
+          condition:
+            'does not work on a slippery surface, such as one covered by ice or oil',
+        },
         {
           kind: 'climbAnywhere',
         },
@@ -898,6 +969,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         /sense the presence of hostile creatures that are ethereal, invisible, disguised, or hidden/,
         name,
       );
+      must(text, /effect ends if you stop holding the wand/, name);
       return [
         {
           kind: 'sense',
@@ -906,6 +978,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           durationMinutes: 1,
           detects:
             'ethereal, invisible, disguised, or hidden hostile creatures, as well as those in plain sight (direction only, not distance)',
+          condition: 'ends if you stop holding the wand',
         },
       ];
     },

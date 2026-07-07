@@ -84360,12 +84360,14 @@
           },
           {
             "kind": "proficiency",
-            "grant": "speak, read, and write Dwarvish"
+            "grant": "speak, read, and write Dwarvish",
+            "condition": "if you aren’t a dwarf"
           },
           {
             "kind": "sense",
             "sense": "darkvision",
-            "rangeFeet": 60
+            "rangeFeet": 60,
+            "condition": "if you aren’t a dwarf"
           }
         ]
       }
@@ -84609,7 +84611,8 @@
           },
           {
             "kind": "jumpDistanceMultiplier",
-            "multiplier": 3
+            "multiplier": 3,
+            "condition": "you can’t jump farther than your remaining movement would allow"
           }
         ]
       }
@@ -85331,7 +85334,8 @@
             "kind": "breathes",
             "environments": [
               "water"
-            ]
+            ],
+            "condition": "while wearing the cloak with its hood up"
           },
           {
             "kind": "speedSet",
@@ -85373,17 +85377,7 @@
       "itemType": "Wondrous item",
       "rarity": "very rare or legendary",
       "requiresAttunement": true,
-      "description": "The typical crystal ball, a very rare item, is about 6 inches in diameter. While touching it, you can cast the scrying spell (save DC 17) with it. The following crystal ball variants are legendary items and have additional properties. Crystal Ball of Mind Reading. You can use an action to cast the detect thoughts spell (save DC 17) while you are scrying with the crystal ball, targeting creatures you can see within 30 feet of the spell’s sensor. You don’t need to concentrate on this detect thoughts to maintain it during its duration, but it ends if scrying ends. Crystal Ball of Telepathy. While scrying with the crystal ball, you can communicate telepathically with creatures you can see within 30 feet of the spell’s sensor. You can also use an action to cast the suggestion spell (save DC 17) through the sensor on one of those creatures. You don’t need to concentrate on this suggestion to maintain it during its duration, but it ends if scrying ends. Once used, the suggestion power of the crystal ball can’t be used again until the next dawn. Crystal Ball of True Seeing. While scrying with the crystal ball, you have truesight with a radius of 120 feet centered on the spell’s sensor.",
-      "mechanics": {
-        "effects": [
-          {
-            "kind": "sense",
-            "sense": "truesight",
-            "rangeFeet": 120,
-            "condition": "Crystal Ball of True Seeing variant only; centered on the scrying spell’s sensor while scrying"
-          }
-        ]
-      }
+      "description": "The typical crystal ball, a very rare item, is about 6 inches in diameter. While touching it, you can cast the scrying spell (save DC 17) with it. The following crystal ball variants are legendary items and have additional properties. Crystal Ball of Mind Reading. You can use an action to cast the detect thoughts spell (save DC 17) while you are scrying with the crystal ball, targeting creatures you can see within 30 feet of the spell’s sensor. You don’t need to concentrate on this detect thoughts to maintain it during its duration, but it ends if scrying ends. Crystal Ball of Telepathy. While scrying with the crystal ball, you can communicate telepathically with creatures you can see within 30 feet of the spell’s sensor. You can also use an action to cast the suggestion spell (save DC 17) through the sensor on one of those creatures. You don’t need to concentrate on this suggestion to maintain it during its duration, but it ends if scrying ends. Once used, the suggestion power of the crystal ball can’t be used again until the next dawn. Crystal Ball of True Seeing. While scrying with the crystal ball, you have truesight with a radius of 120 feet centered on the spell’s sensor."
     },
     "source": "SRD 5.1 pp. 214, 215",
     "license": {
@@ -86822,7 +86816,8 @@
               "strength"
             ],
             "amount": 4,
-            "newMaximum": 30
+            "newMaximum": 30,
+            "condition": "while attuned to this weapon and holding it"
           }
         ]
       }
@@ -87216,7 +87211,8 @@
             "kind": "hover"
           },
           {
-            "kind": "walkOnLiquids"
+            "kind": "walkOnLiquids",
+            "condition": "leaves no tracks"
           },
           {
             "kind": "ignoreDifficultTerrain",
@@ -87509,9 +87505,22 @@
       "mechanics": {
         "effects": [
           {
+            "kind": "light",
+            "level": "bright",
+            "radiusFeet": 30,
+            "dimAdditionalFeet": 30,
+            "condition": "while lit; burns for 6 hours per pint of oil"
+          },
+          {
+            "kind": "light",
+            "level": "dim",
+            "radiusFeet": 5,
+            "condition": "hood lowered (an action)"
+          },
+          {
             "kind": "sense",
             "sense": "reveal-invisible-in-bright-light",
-            "condition": "creatures/objects in the lantern’s bright light are visible"
+            "condition": "creatures/objects in the lantern’s bright light are visible; lowering the hood (an action) removes the bright light, so the reveal does not apply while the hood is down"
           }
         ]
       }
@@ -88023,7 +88032,8 @@
             "environments": [
               "air",
               "water"
-            ]
+            ],
+            "condition": "the source grants breathing in literally any environment, not only air/water — a lossy simplification of the closed environments vocabulary"
           }
         ]
       }
@@ -90329,7 +90339,8 @@
         "effects": [
           {
             "kind": "sense",
-            "sense": "magnetic-north-and-depth"
+            "sense": "magnetic-north-and-depth",
+            "condition": "the magnetic-north function does nothing in a location with no magnetic north"
           }
         ]
       }
@@ -90635,7 +90646,8 @@
           {
             "kind": "speedSet",
             "mode": "climb",
-            "value": "walking-speed"
+            "value": "walking-speed",
+            "condition": "does not work on a slippery surface, such as one covered by ice or oil"
           },
           {
             "kind": "climbAnywhere"
@@ -91841,7 +91853,8 @@
             "sense": "nearest-hostile-direction",
             "rangeFeet": 60,
             "durationMinutes": 1,
-            "detects": "ethereal, invisible, disguised, or hidden hostile creatures, as well as those in plain sight (direction only, not distance)"
+            "detects": "ethereal, invisible, disguised, or hidden hostile creatures, as well as those in plain sight (direction only, not distance)",
+            "condition": "ends if you stop holding the wand"
           }
         ]
       }

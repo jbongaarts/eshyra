@@ -1021,6 +1021,39 @@ describe('magic-item passive-modifier effect payload contracts', () => {
         alsoIncreasesMaximum: true,
       }),
     ).toThrow(/must not carry both newMaximum and alsoIncreasesMaximum/);
+    expect(() =>
+      validate({
+        kind: 'abilityScoreIncrease',
+        abilities: ['strength'],
+        amount: 4,
+        newMaximum: 30,
+        condition: 'while attuned to this weapon and holding it',
+      }),
+    ).not.toThrow();
+  });
+
+  it('extends breathes, jumpDistanceMultiplier, and walkOnLiquids with condition (eshyra-o9bd.18.7.7.5 review)', () => {
+    expect(() =>
+      validate({
+        kind: 'breathes',
+        environments: ['water'],
+        condition: 'while wearing the cloak with its hood up',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'jumpDistanceMultiplier',
+        multiplier: 3,
+        condition:
+          'you can’t jump farther than your remaining movement would allow',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'walkOnLiquids',
+        condition: 'leaves no tracks',
+      }),
+    ).not.toThrow();
   });
 
   it('extends hitPointMaximumIncrease with perLevel as an alternative to amount', () => {
