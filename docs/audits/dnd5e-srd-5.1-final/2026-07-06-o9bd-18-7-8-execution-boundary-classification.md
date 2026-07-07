@@ -21,8 +21,9 @@ Inputs (read, not re-derived):
   design-blocked 8).
 - PR #401 design artifact
   (`2026-07-06-o9bd-18-7-8-1-rule-disposition-layer-design.md`, branch
-  `eshyra-o9bd-18-7-8-1-disposition-design`) — provisional; §5 below is the
-  required delta.
+  `eshyra-o9bd-18-7-8-1-disposition-design`) — §5 below specified the
+  required delta, which has since been applied on that branch; §5 is kept as
+  the historical specification.
 
 ## 0. Runtime support evidence (surveyed 2026-07-06 on `main`)
 
@@ -93,7 +94,46 @@ surface, and (c) `overlay_facts` was misused as a generic counter store.
 added, and F2/F5/F6 gained clause members (surprise, conflict/inspiration,
 suffocating). A bounded sweep of all remaining MODEL rows for cross-turn
 counters, resets, once-per-X usage, and action restrictions was part of the
-pass. The censuses below are the corrected ones.
+pass.
+
+**Second revision 2026-07-06 (MODEL-integrity sweep):** a follow-up
+MODEL-only sweep against the terminal MODEL definition ("no deterministic
+derived-number production left to the model") found 8 further rows whose
+procedures still left deterministic arithmetic, dice-expression
+transformation, or formula-derived numbers with the model after input
+selection: `abilities`, `armor-guidance`, `casting-a-spell-at-a-higher-level`,
+`cover`, `critical-hits`, `falling`, `proficiency-bonus`,
+`two-weapon-fighting` — all reclassified to PARTIAL with exact clauses (7
+route to F1/F9/F2/F4; `armor-guidance`'s AC-derivation clause is externally
+owned by the pre-existing derived-values bead `eshyra-b69j.13`, which
+`packages/core/src/character/derivedValues.ts` already names as the AC/attack
+owner). The sweep also fixed notes on rows that stay MODEL so the boundary is
+principled, not accidental. Three calibration principles were made explicit
+(recorded here so future rows classify consistently):
+
+- **F9-clause criteria.** A deterministic derivation is an F9 clause when
+  (a) the derived number feeds a code-owned surface — a dice expression,
+  modifier composition, vs-DC/AC/opposed resolution, or an HP/damage
+  transform — or (b) it is a formula over structured character/creature data
+  yielding a reusable derived stat or threshold (passive score, carry
+  capacity, jump distance, escape DC).
+- **Narrative-magnitude arithmetic stays MODEL.** Arithmetic whose operands
+  and result live only in narration — movement costs/rates in this grid-less,
+  text-first game (difficult terrain, squeezing, crawl/climb costs,
+  cross-mode speed subtraction) — is part of narration under boundary rule 1,
+  because the movement budget is deliberately not code-owned (F2 excludes
+  it). One-shot slow-time derivations with durable condition-entry state and
+  low stakes (food/water deprivation thresholds, forced-march DC) also stay
+  MODEL under the already-stated frequency/stakes weighing; each such row's
+  note says so explicitly.
+- **Single-owner factoring.** Generic resolution gaps are owned once by the
+  generic rows (`ability-checks`/`saving-throws`/`attack-rolls`/`contests` own
+  vs-DC/AC/opposed resolution; `modifiers-to-the-roll` owns composition;
+  `limited-usage` owns X/Day-reset economies for monster entries). Rows that
+  merely *apply* those surfaces (search, hide, trap checks,
+  innate-spellcasting) stay MODEL rather than duplicating the clause.
+
+The censuses below are the corrected ones.
 
 ## 1. Execution-boundary taxonomy (final)
 
@@ -161,14 +201,14 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | key | family | #402 | boundary | notes |
 |---|---|---|---|---|
 | a-clear-path-to-the-target | spellcasting | unimplemented | MODEL | targeting/obstruction ruling; no grid; rule text retrievable |
-| abilities | magic-items | unimplemented | MODEL | GM-time sentient-item generation; 4d6-drop-lowest via four seeded rolls today; F1 keep/drop removes the workaround |
+| abilities | magic-items | unimplemented | PARTIAL | GM-time generation rulings (method choice, array assignment) stay adjudicated; missing: 4d6-drop-lowest keep/drop grammar → F1 — the four-roll workaround leaves the drop selection model-computed, the same defect that makes advantage-and-disadvantage IMPL |
 | ability-checks | core-d20 | partial | PARTIAL | seeded d20 + code-owned PC modifiers + visible ledger; DC setting is a ruling; missing: vs-DC resolution in the roll surface (Hybrid Contract: math is tool-owned) → F9 |
 | ability-scores-and-modifiers | core-d20 | partial | PARTIAL | formula + PC bounds code-owned; missing: generic 1–30 range validation on non-PC ability writes → F8 |
 | activating-an-item | magic-items | unimplemented | MODEL | activation-vs-Use-an-Object distinction is a per-turn ruling |
 | advantage-and-disadvantage | core-d20 | unimplemented | IMPL | F1: 2d20 keep-high/low + cancellation/no-stacking belong in the roll tool; highest-frequency mechanic; two-roll workaround leaves selection unenforced |
 | ammunition | monster-conventions | unimplemented | MODEL | statblock convention; inventory + ledger suffice |
 | areas-of-effect | spellcasting | unimplemented | MODEL | narrative geometry; shape rows retrievable |
-| armor-guidance | gear-payload | unimplemented | MODEL | per-armor stats structured in gear records; penalty application is per-roll adjudication; per-record payload completeness clause → eshyra-o9bd.18.7.6 |
+| armor-guidance | gear-payload | unimplemented | PARTIAL | per-armor stats structured; penalty application per roll stays a ruling; missing: AC derivation from equipped armor (base + Dex, medium cap 2, heavy flat, shield +2) — `derivedValues.ts` defers AC/attack bonuses to eshyra-b69j.13 (externally owned clause); per-record payload completeness clause → eshyra-o9bd.18.7.6 |
 | armor-weapon-and-tool-proficiencies | monster-conventions | unimplemented | MODEL | default statblock assumption; no state |
 | attack | combat-core | unimplemented | MODEL | one-attack grant adjudicated; F2 budget makes the action itself checkable; attack counting stays adjudicated (Extra Attack/Multiattack feature-dependent) |
 | attack-rolls | core-d20 | partial | PARTIAL | seeded attack rolls, natural die visible; missing: modifier composition + vs-AC resolution → F9 |
@@ -182,7 +222,7 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | bonus-actions | action-economy | unimplemented | IMPL | F2: one bonus action per turn — turn-budget state |
 | breaking-up-your-move | movement | unimplemented | MODEL | narrative movement |
 | burrow | movement-environment | unimplemented | MODEL | movement-mode ruling; speeds structured |
-| casting-a-spell-at-a-higher-level | spellcasting | unimplemented | MODEL | per-spell `scaling` structured; upcast arithmetic per cast; slot-level legality depends on F4 |
+| casting-a-spell-at-a-higher-level | spellcasting | unimplemented | PARTIAL | choosing to upcast is a ruling; missing: upcast scaling transform (extra dice/targets per slot level above base, from structured `scaling`) → F9; slot-level legality gate → F4 |
 | casting-a-spell-attack-rolls | spellcasting | partial | MODEL | spellAttackModifier code-owned for PCs; monster values structured; within-5-ft clause is a per-roll ruling |
 | casting-a-spell-range | spellcasting | unimplemented | MODEL | narrative range/targeting validation |
 | casting-a-spell-saving-throws | spellcasting | partial | PARTIAL | base DC code-owned; missing: special-modifier application in derivation; item-bonus data clause → eshyra-o9bd.18.7.7.2; application hook → F8 |
@@ -204,9 +244,9 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | consumables | magic-items | unimplemented | MODEL | one-shot consumption = `remove_item` mutation; supported today |
 | contests | core-d20 | unimplemented | PARTIAL | opposed seeded rolls code-owned; missing: opposed-comparison resolution (tie = status quo) → F9 |
 | controlling-a-mount | mounted | unimplemented | MODEL | controlled/independent ruling; initiative sync narratable |
-| cover | combat-core | unimplemented | MODEL | classic ruling; ±2/±5 applied per visible roll |
+| cover | combat-core | unimplemented | PARTIAL | degree-of-cover selection is the classic ruling; missing: ±2/±5 AC and Dex-save modifier composition into vs-AC/DC resolution → F9 |
 | crafting | downtime | unimplemented | PARTIAL | pacing/eligibility are rulings; missing: DM-accessible canonical currency read/write for costs and progress (currency.ts exists; no gameplay tool) → F10 |
-| critical-hits | combat-core | unimplemented | MODEL | double the dice per roll; natural die visible in ledger |
+| critical-hits | combat-core | unimplemented | PARTIAL | nat-20 detection visible in `rolls[]`; missing: crit dice-doubling transform on the damage-roll surface → F9 — today the model rewrites the dice expression (deterministic transformation) |
 | cube | spellcasting | unimplemented | MODEL | geometry ruling |
 | customizing-a-background | char-build | unimplemented | DESIGN | D2: whether the code-owned creation flow offers background customization is a product decision, not a play-time ruling |
 | cylinder | spellcasting | unimplemented | MODEL | geometry ruling |
@@ -225,12 +265,12 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | expenses-lifestyle-expenses | economy | unimplemented | PARTIAL | missing: canonical currency mutation surface for lifestyle costs → F10 |
 | experience-points | advancement | partial | PARTIAL | XP→level thresholds code-owned; multiclass total-level clause → D1 |
 | extra-attack | multiclassing | design-blocked | DESIGN | D1 |
-| falling | environment | unimplemented | MODEL | 1d6/10 ft, max 20d6, prone — per-event seeded dice |
+| falling | environment | unimplemented | PARTIAL | fall-distance determination and landing narration stay rulings; missing: distance → ⌊d/10⌋d6 (cap 20d6) dice-expression derivation → F9; prone via condition entry |
 | falling-unconscious | rest-death | unimplemented | IMPL | F6: 0 HP → unconscious should be an adjust_hp-time invariant, not a remembered step |
 | feats | char-build | unimplemented | DESIGN | D2: variant-feat adoption + prerequisite tracking in the code-owned advancement flow (SRD ships one feat) |
 | fly | movement-environment | unimplemented | MODEL | hover/death-fall ruling; flags structured |
 | flying-movement | movement | unimplemented | MODEL | fall-when-prone/speed-0 ruling |
-| food | survival | unimplemented | MODEL | deprivation-day state durably representable as character condition entries (semantically apt temporary character state, read back from the context snapshot); clock owned; low-frequency slow-time procedure |
+| food | survival | unimplemented | MODEL | deprivation-day state durably representable as character condition entries (semantically apt temporary character state, read back from the context snapshot); clock owned; the 3+Con-mod day threshold is a one-shot slow-time derivation, auditable in transcript (frequency/stakes principle) |
 | food-and-water | survival | unimplemented | MODEL | as `food` (condition-entry state); exhaustion-not-removable-until-fed gate is a rest-time ruling (F7 hook noted) |
 | gaining-inspiration | inspiration | unimplemented | IMPL | F5: inspiration is a durable boolean resource with a no-stockpile cap; overlay_facts is a world-template overlay store, not a mechanics resource, and conditions are semantically wrong for a resource — needs a character-state owner |
 | grapple-rules-for-monsters | monster-conventions | unimplemented | PARTIAL | missing: default escape DC derivation (10 + Str(Athletics) mod) as derived math → F9 |
@@ -244,12 +284,12 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | hit-points | monster-conventions | unimplemented | MODEL | per-creature HP/HD structured; the size-die formula is GM-time creature design |
 | hit-points-and-hit-dice | multiclassing | design-blocked | DESIGN | D1 |
 | improvised-weapons | gear-payload | unimplemented | MODEL | 1d4 / proficiency-analogy ruling; per-record payload clause → eshyra-o9bd.18.7.6 |
-| innate-spellcasting | monster-conventions | unimplemented | MODEL | statblock convention; per-creature entries structured |
+| innate-spellcasting | monster-conventions | unimplemented | MODEL | statblock convention; per-creature entries structured; the X/day usage economies are owned once by limited-usage → F5 (single-owner factoring) |
 | instant-death | rest-death | unimplemented | IMPL | F6: needs the damage overflow that `adjust_hp` currently clamps away — the tool surface hides the trigger; deterministic threshold, not a ruling |
 | interacting-with-objects | objects | unimplemented | MODEL | GM-set object stats; auto-fail/immunity rulings |
 | jumping | movement | unimplemented | PARTIAL | missing: long/high-jump distance formulas as derived math → F9; movement narration stays a ruling |
 | knocking-a-creature-out | rest-death | unimplemented | MODEL | declared choice at damage time → unconscious+stable conditions (durable once F6 defines stable) |
-| lair-actions | monster-conventions | unimplemented | MODEL | initiative-20 scheduling ruling |
+| lair-actions | monster-conventions | unimplemented | MODEL | initiative-20 scheduling ruling; once-per-round is structural when the lair is entered as an initiative-20 combatant in the code-owned turn order; F5's per-round reset vocabulary can host the no-repeat clause if drift is observed |
 | legendary-actions | monster-conventions | unimplemented | IMPL | F5: per-round counter economy (spend on others' turns, regain at start) — encounter-scoped reset state machine |
 | legendary-creatures | monster-conventions | unimplemented | MODEL | form-assumption exclusion gate; ruling over structured data |
 | lifting-and-carrying | encumbrance | unimplemented | PARTIAL | missing: capacity arithmetic (Str×15, push/drag ×2, size doubling) as derived math over structured Str + inventory → F9 |
@@ -266,7 +306,7 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | mounting-and-dismounting | mounted | unimplemented | MODEL | movement-cost + save rulings |
 | mounts-and-vehicles | economy | unimplemented | PARTIAL | mount stats structured as equipment records; missing: purchase currency surface → F10 and pull-capacity arithmetic → F9 |
 | movement-and-position | movement | unimplemented | MODEL | budget-spending narration |
-| movement-and-position-difficult-terrain | movement | unimplemented | MODEL | +1 ft/ft ruling |
+| movement-and-position-difficult-terrain | movement | unimplemented | MODEL | +1 ft/ft cost — narrative-magnitude arithmetic; movement costs live only in narration (boundary rule 1) |
 | moving-around-other-creatures | movement | unimplemented | MODEL | pass-through/occupancy ruling |
 | moving-between-attacks | movement | unimplemented | MODEL | narrative movement |
 | multiattack | combat-core | unimplemented | MODEL | no-OA restriction ruling; routines structured (18.7.9) |
@@ -279,15 +319,15 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | passive-checks | core-d20 | unimplemented | PARTIAL | missing: 10+mods (±5 adv/dis) derived-score computation → F9; which modifiers apply stays a ruling |
 | poisons | hazards | unimplemented | MODEL | delivery-type exposure rulings; hazard data structured |
 | practicing-a-profession | downtime | unimplemented | PARTIAL | missing: canonical currency surface for earnings → F10 |
-| proficiency-bonus | core-d20 | partial | MODEL | PB values code-owned; apply-once/multiply-once/×0 discipline is per-roll adjudication over visible rolls |
+| proficiency-bonus | core-d20 | partial | PARTIAL | PB values code-owned; whether PB applies stays a per-roll ruling; missing: PB multiplier composition (×2/×½/×0, apply-once) on the F9 declared-modifier surface — halved/doubled PB is a derived number the model currently computes |
 | range | combat-core | unimplemented | MODEL | normal/long-range disadv ruling; ranges structured |
 | ranged-attacks-in-close-combat | combat-core | unimplemented | MODEL | within-5-ft disadv ruling |
 | reactions | action-economy | unimplemented | IMPL | F2: one reaction per round crosses turn boundaries — budget state, not a ruling |
 | ready | action | unimplemented | MODEL | held trigger + readied-spell concentration representable as condition; reaction spend → F2 |
-| recuperating | downtime | unimplemented | MODEL | 3-day + DC 15 Con procedure; clock + dice |
+| recuperating | downtime | unimplemented | MODEL | fixed DC 15, no derivation; the 3-day counter is durably representable as a character condition entry over the owned clock (slow-time counter principle, as food/water) |
 | researching | downtime | unimplemented | PARTIAL | missing: canonical currency surface for the gp/day cost → F10 |
 | rituals | spellcasting | unimplemented | MODEL | +10 min, no-slot casting; ritual flags structured |
-| rolling-1-or-20 | combat-core | unimplemented | MODEL | natural die visible in `rolls[]`; auto-hit/miss applied per roll; candidate roll-tool annotation, not required |
+| rolling-1-or-20 | combat-core | unimplemented | MODEL | natural die visible in `rolls[]`; auto-hit/miss applied per roll; candidate roll-tool annotation, not required — but F9's vs-AC/DC resolution MUST honor nat-1/20 overrides when it lands (spec note recorded in F9) |
 | saving-throws | core-d20 | partial | PARTIAL | seeded saving_throw rolls + code-owned save modifiers; missing: vs-DC resolution → F9 |
 | search | action | unimplemented | MODEL | check-based action |
 | self-sufficiency | downtime | unimplemented | PARTIAL | lifestyle-equivalence is a ruling; missing: currency-offset accounting surface → F10 |
@@ -298,7 +338,7 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | somatic-s | spellcasting | unimplemented | MODEL | free-hand gating ruling |
 | special-traits-spellcasting | monster-conventions | unimplemented | MODEL | statblock convention; entries structured |
 | special-weapons | gear-payload | unimplemented | PARTIAL | generic semantics MODEL; missing per-record payloads (net restraint DC/AC, lance rules) — clause externally owned by eshyra-o9bd.18.7.6 |
-| speed | movement-environment | unimplemented | MODEL | travel-pace table structured; forced-march Con saves per hour over clock |
+| speed | movement-environment | unimplemented | MODEL | travel-pace table structured; forced-march DC (10 + hours past 8) derives from narrated march time, not structured data — slow-time frequency/stakes principle, auditable per save; exhaustion as condition entry |
 | speed-difficult-terrain | movement-environment | unimplemented | MODEL | half-pace ruling |
 | spell-slots | spellcasting | unimplemented | IMPL | F4: durable expenditure/restoration economy (expend ≥ spell level; long-rest restore); progression structured, live-state owner missing |
 | spellcasting | multiclassing | design-blocked | DESIGN | D1 (multiclass slot formula) |
@@ -318,12 +358,12 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 | training | downtime | unimplemented | PARTIAL | missing: canonical currency surface for 250 days × 1 gp → F10 |
 | tremorsense | perception-senses | unimplemented | MODEL | ground-contact detection ruling |
 | truesight | perception-senses | unimplemented | MODEL | auto-success bundle applied as per-event rulings; radii structured |
-| two-weapon-fighting | combat-core | unimplemented | MODEL | light-property check per roll; bonus-attack spend → F2; no-positive-mod per-roll arithmetic |
+| two-weapon-fighting | combat-core | unimplemented | PARTIAL | light-property/weapon eligibility stays a ruling; missing: omit-positive-ability-mod damage composition → F9; bonus-attack spend → F2 |
 | unarmored-defense | multiclassing | design-blocked | DESIGN | D1 |
 | underwater-combat | environment | unimplemented | MODEL | melee/ranged/fire-resistance rulings |
 | unseen-attackers-and-targets | combat-core | unimplemented | MODEL | adv/disadv + wrong-guess auto-miss rulings |
 | use-an-object | action | unimplemented | MODEL | action definition; interaction budget → F2 |
-| using-different-speeds | movement | unimplemented | MODEL | cross-mode subtraction arithmetic |
+| using-different-speeds | movement | unimplemented | MODEL | narrative-magnitude arithmetic (boundary rule 1): the movement budget is deliberately not code-owned, so the cross-mode subtraction operates on narrated quantities only; F9's calc primitive is an available aid once it lands, not a gap |
 | using-inspiration | inspiration | unimplemented | IMPL | F5: spend/gift semantics against the durable inspiration boolean; spend grants advantage (F1) |
 | variant-encumbrance | encumbrance | unimplemented | PARTIAL | missing: 5×Str / 10×Str threshold arithmetic → F9; variant adoption is a table ruling |
 | variant-skills-with-different-abilities | core-d20 | unimplemented | MODEL | optional recombination ruling, play-time |
@@ -338,22 +378,23 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 
 ## 3. Census and mechanical verification
 
-**code-enforced 0 · model-adjudicated-supported 107 · partial 37 ·
+**code-enforced 0 · model-adjudicated-supported 99 · partial 45 ·
 implementation-required 21 · design-blocked 10 = 175** (corrected census
-after the 2026-07-06 consistency revision; supersedes the initial
-0/137/9/19/10).
+after the 2026-07-06 second (MODEL-integrity) revision; supersedes the
+initial 0/137/9/19/10 and the first-revision 0/107/37/21/10).
 
-- partial (37): ability-checks, ability-scores-and-modifiers, attack-rolls,
-  backgrounds-equipment, beyond-1st-level, casting-a-spell-saving-throws,
-  charges, coinage, conflict, constitution-hit-points, contests, crafting,
-  damage-resistance-and-vulnerability, damage-rolls,
-  expenses-lifestyle-expenses, experience-points,
+- partial (45): abilities, ability-checks, ability-scores-and-modifiers,
+  armor-guidance, attack-rolls, backgrounds-equipment, beyond-1st-level,
+  casting-a-spell-at-a-higher-level, casting-a-spell-saving-throws, charges,
+  coinage, conflict, constitution-hit-points, contests, cover, crafting,
+  critical-hits, damage-resistance-and-vulnerability, damage-rolls,
+  expenses-lifestyle-expenses, experience-points, falling,
   grapple-rules-for-monsters, group-checks, healing, hiding, jumping,
   lifting-and-carrying, modifiers-to-the-roll, mounts-and-vehicles,
-  passive-checks, practicing-a-profession, researching, saving-throws,
-  self-sufficiency, selling-treasure, silvered-weapons, special-weapons,
-  suffocating, surprise, training, variant-encumbrance,
-  wizard-your-spellbook.
+  passive-checks, practicing-a-profession, proficiency-bonus, researching,
+  saving-throws, self-sufficiency, selling-treasure, silvered-weapons,
+  special-weapons, suffocating, surprise, training, two-weapon-fighting,
+  variant-encumbrance, wizard-your-spellbook.
 - implementation-required (21): advantage-and-disadvantage, attunement,
   backgrounds-proficiencies, bonus-action, bonus-actions, concentration,
   death-saving-throws, falling-unconscious, gaining-inspiration,
@@ -377,15 +418,16 @@ equality, no duplicates, no omissions, no stale extras**; the census above is
 recomputed from the §2 rows and sums to 175. The #400-vs-#402 key sets were
 also re-verified equal. Regenerate mechanically whenever the matrix changes.
 
-Net movement from #402 (mechanically joined on key, 2026-07-06, corrected):
-148 `unimplemented` → 101 MODEL + 25 PARTIAL + 20 IMPL + 2 DESIGN (feats,
-customizing-a-background); 19 `partial` → 6 MODEL (code-owned portion plus a
-legitimate ruling remainder) + 12 stay PARTIAL + 1 IMPL
-(death-saving-throws); 8 `design-blocked` → 8 DESIGN. The headline stands:
-**the majority of PROC rules are already architecturally supported as
-rulings** — but the honest engine backlog is 21 IMPL rules + 37 clause-level
-PARTIALs, clustering into ten families, two of which (F9 derived-math, F10
-currency surface) are shared primitives that unblock many PARTIALs at once.
+Net movement from #402 (mechanically joined on key, 2026-07-06, corrected
+through the second revision): 148 `unimplemented` → 94 MODEL + 32 PARTIAL +
+20 IMPL + 2 DESIGN (feats, customizing-a-background); 19 `partial` → 5 MODEL
+(code-owned portion plus a legitimate ruling remainder) + 13 stay PARTIAL +
+1 IMPL (death-saving-throws); 8 `design-blocked` → 8 DESIGN. The headline
+stands: **the majority of PROC rules are already architecturally supported
+as rulings** — but the honest engine backlog is 21 IMPL rules + 45
+clause-level PARTIALs, clustering into ten families, two of which (F9
+derived-math, F10 currency surface) are shared primitives that unblock many
+PARTIALs at once.
 
 ## 4. Actionable implementation families (derived from the completed corpus)
 
@@ -393,13 +435,15 @@ Only rules classified IMPL/PARTIAL/DESIGN generate work. Memberships are
 exact and artifact-backed; nothing else in the 175 belongs to a family.
 
 - **F1 — dice-grammar extension** (Codex). Members: advantage-and-disadvantage;
-  dependency beneficiaries: abilities (4d6kh3), every MODEL row that applies
-  adv/dis. Need: `2d20kh1`/`kl1` + `NdMkhX`/`klX`/drop notation in `dice.ts`
+  clause: abilities (4d6-drop-lowest keep/drop grammar); dependency
+  beneficiaries: every MODEL row that applies adv/dis. Need:
+  `2d20kh1`/`kl1` + `NdMkhX`/`klX`/drop notation in `dice.ts`
   + roll-tool schema; cancellation/no-stacking documented in the tool
   description. Small, highest leverage.
 - **F2 — action-economy turn budget** (Opus design, Codex rollout). Members:
   your-turn, bonus-actions, reactions, other-activity-on-your-turn,
-  bonus-action; clause: surprise (turn-1 no-move/action/reaction denial).
+  bonus-action; clauses: surprise (turn-1 no-move/action/reaction denial),
+  two-weapon-fighting (bonus-attack spend).
   Need: per-combatant per-turn budget record (action, bonus,
   reaction-per-round, free interaction, movement note) on encounter state +
   turn-loop reset + bonus-action-spell timing check + surprised-turn
@@ -411,11 +455,11 @@ exact and artifact-backed; nothing else in the 175 belongs to a family.
   prompt on damage (DC max(10, ⌊dmg/2⌋) per source), break-on
   incapacitated/death/new-concentration. Benefits combining-magical-effects
   visibility.
-- **F4 — spell-slot economy** (Codex, small design). Members: spell-slots.
-  Need: per-level slot counters on character live state seeded from the
-  code-owned progression; expend(≥ level) validation; long-rest restore hook
-  (F7). Unblocks upcast legality (casting-a-spell-at-a-higher-level stays
-  MODEL).
+- **F4 — spell-slot economy** (Codex, small design). Members: spell-slots;
+  clause: casting-a-spell-at-a-higher-level (slot-level legality gate; its
+  upcast scaling transform → F9). Need: per-level slot counters on character
+  live state seeded from the code-owned progression; expend(≥ level)
+  validation; long-rest restore hook (F7).
 - **F5 — usage/recharge, resource & attunement state** (Opus design, Codex
   rollout). Members: limited-usage, legendary-actions, attunement,
   gaining-inspiration, using-inspiration; clauses: charges (live
@@ -457,13 +501,19 @@ exact and artifact-backed; nothing else in the 175 belongs to a family.
   damage-resistance-and-vulnerability (halve/double transform),
   grapple-rules-for-monsters (derived DC), lifting-and-carrying /
   variant-encumbrance (capacity/threshold formulas), jumping (distance
-  formulas), mounts-and-vehicles (pull-capacity arithmetic), melee-attacks
+  formulas), mounts-and-vehicles (pull-capacity arithmetic), cover (±2/±5
+  AC/Dex-save modifier composition), critical-hits (crit dice-doubling
+  transform), falling (distance→dice-count derivation), proficiency-bonus
+  (PB ×2/×½/×0 multiplier composition), two-weapon-fighting
+  (omit-positive-ability-mod damage composition),
+  casting-a-spell-at-a-higher-level (upcast scaling transform), melee-attacks
   and surprise (notes). Need: extend the roll tool with declared modifier
   lists, `vsDc`/opposed resolution, and post-roll transforms
   (half/double/min-0), plus a small deterministic `calc` primitive for
   non-roll formulas — the *choice of inputs* stays a DM ruling; the
-  arithmetic becomes code-owned. High leverage: lands with F1 in the same
-  tool surface.
+  arithmetic becomes code-owned. Spec note: the vs-AC/DC resolution must
+  honor nat-1/20 auto-miss/hit overrides (rolling-1-or-20). High leverage:
+  lands with F1 in the same tool surface.
 - **F10 — canonical currency & trade gameplay surface** (Codex, small
   design; added in the 2026-07-06 revision). Deterministic wallet code
   exists (`currency.ts`, CLI `/money`) but no DM tool or context field
@@ -493,10 +543,14 @@ implemented separately. These are engine slices **outside** the
 importer/audit scope of 18.7.8 and belong under an engine epic, per the
 #402 recommendation.
 
-## 5. Required delta to PR #401 (disposition-layer design)
+## 5. Delta to PR #401 (disposition-layer design) — specified here, since applied
 
-The #401 design predates this classification and its coverage vocabulary is
-incomplete. Required revisions (do not merge #401 as-is):
+The original #401 design predated this classification and its coverage
+vocabulary was incomplete. The revisions below were specified by this
+artifact and **have since been applied on the #401 branch** (they are kept
+here, clearly labeled, as the historical specification). The one live
+dependency: #401's pinned execution-boundary census must track this
+artifact's current census (see item 5).
 
 1. **Coverage vocabulary**: `RuleCoverageStatus` gains
    `model-adjudicated-supported` as a first-class, *reviewed, evidence-backed*
@@ -524,8 +578,9 @@ incomplete. Required revisions (do not merge #401 as-is):
    against the registered tool list (`DEFAULT_TOOLS`) so a tool removal
    fails the register.
 5. **Census pins**: pin both censuses — semantic (PROC 175/REF 96/DEF 33/
-   TABLE 19/DUP 12) and execution-boundary (0/107/37/21/10 as of the
-   2026-07-06 corrected revision) — so drift is a reviewed diff. Do not pin
+   TABLE 19/DUP 12) and execution-boundary (0/99/45/21/10 as of the
+   2026-07-06 second, MODEL-integrity revision) — so drift is a reviewed
+   diff. Do not pin
    any execution-boundary census into registry constants until this PR has
    been reviewed and merged; the numbers are review-gated, not
    self-certifying.
@@ -535,8 +590,9 @@ incomplete. Required revisions (do not merge #401 as-is):
 
 ## 6. Handoff
 
-- Implementation of the disposition layer (per revised #401) — Codex, after
-  #401 is updated per §5.
+- Implementation of the disposition layer (per revised #401) — Codex; #401
+  has been updated per §5, and its census pin tracks this artifact's current
+  census (0/99/45/21/10).
 - Engine families F1–F10 — bead under an engine epic (not under 18.7.8);
   recommended agents per family in §4.
 - This artifact is the authoritative execution boundary. A future change of
