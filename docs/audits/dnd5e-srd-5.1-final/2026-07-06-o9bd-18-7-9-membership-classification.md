@@ -1,29 +1,33 @@
-# eshyra-o9bd.18.7.9 — Exhaustive classification of remaining accepted memberships
+# eshyra-o9bd.18.7.9 — Exhaustive classification of reviewed memberships
 
 Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399
 (`eshyra-o9bd-18-7-9-membership-corrections`).
 
-This is the authoritative, record-by-record semantic disposition of **every**
-entry remaining in `ACCEPTED_PROSE_CREATURE_ENTRY_REFS` (48 refs as of the
-original 2026-07-06 pass; §1.6 below reconciles a further 24 refs that were
-restored to the array by the trigger-only-readiness fix and brings the
-artifact back to exact parity with the live 66-ref membership) and
+This is the authoritative, record-by-record semantic disposition source for
+the reviewed creature-entry refs now represented by
+`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and for
 `ACCEPTED_METADATA_ONLY_SPELLS` (53 keys) in
 `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts` as of this
-branch. Every record's full pack text was read against SRD 5.1 source. **Do
-not repeat this audit.** Implementation agents should work from the slices in
-§3 and consult §1/§2/§1.6 only for per-record semantics.
+branch. Seventy-two creature-entry refs were reviewed in total: 6 were
+implemented and graduated out, while 66 residual refs remain represented in
+the per-ref registry. Of those 66 residual refs, 2 are permanent
+`accepted-prose-only` entries and 64 are pending `finding` entries routed to
+C1-C9. Spell metadata-only membership remains represented separately by
+`ACCEPTED_METADATA_ONLY_SPELLS`. Every record's full pack text was read
+against SRD 5.1 source. **Do not repeat this audit.** Implementation agents
+should work from the slices in §3 and consult §1/§2/§1.6 only for per-record
+semantics.
 
 Disposition vocabulary:
 
-- **accept** — genuinely narrative/reference-only; remains in the accepted
-  membership permanently.
+- **accept** — genuinely narrative/reference-only; remains represented as
+  `accepted-prose-only` permanently.
 - **accept\*** — contains deterministic clauses that are **already
   represented elsewhere** (casting metadata, `duration`, `area`, `scaling`,
-  `tableRefs`, or typed sibling entries); remains accepted, rationale
-  recorded.
+  `tableRefs`, or typed sibling entries); remains represented as accepted,
+  rationale recorded.
 - **model** — deterministic clauses still unmodeled; graduates out of the
-  accepted membership when its slice (§3) lands.
+  reviewed-disposition registry when its slice (§3) lands.
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
@@ -133,11 +137,11 @@ for the dryad.
 The trigger-only-readiness fix (`hasReadinessCreditableEffect`: a
 `triggeredEffect` with no `result` no longer counts as substantive mechanics)
 correctly stopped crediting 24 entries whose only prior mechanics was a bare
-`triggeredEffect` trigger marker. Restoring them to
-`ACCEPTED_PROSE_CREATURE_ENTRY_REFS` to keep the build green was correct
+`triggeredEffect` trigger marker. Historically, restoring them to the former
+`ACCEPTED_PROSE_CREATURE_ENTRY_REFS` array to keep the build green was correct
 *mechanically*, but they were never carried into this artifact's per-record
 disposition — leaving §1's "48 refs" claim of exhaustiveness stale against a
-72-ref live array. This section closes that gap: every one of the 24 is
+72-ref reviewed set. This section closes that gap: every one of the 24 is
 classified below, mirroring the §1.1–§1.5 methodology. Two (aboleth, ettin)
 turned out to be members of existing families and were folded into §1.3/§1.4
 above rather than duplicated here; the accounting in §3 reflects that.
@@ -148,7 +152,7 @@ No new contract was needed; each reused an existing typed kind with an
 existing validator (`rejuvenation`, `extraDamage`, `movementRestriction`),
 already established elsewhere in the pack (`rejuvenation` is the same shape
 used by `creature:lemure` and `creature:mummy-lord`). Implemented in this
-pass and **removed** from `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`.
+pass and **graduated out** of the reviewed-disposition registry.
 
 | ref | projection |
 |---|---|
@@ -411,13 +415,13 @@ None of the remaining slices below is started unless stated.
 
 | slice | content | new contract? | agent |
 |---|---|---|---|
-| **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove from accepted list; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
+| **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove/update their `finding` entries in the reviewed-disposition registry; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
 | **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Codex** (after 5-line design review) |
 | **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 8 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Opus** design, Codex rollout |
 | **S1** summoning | design summoning contract extension (option menus, control economy, statblock modification); 14 spells | yes — largest open design | **Opus** |
 | **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
 | **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
-| **S4** membership bookkeeping | after each slice: exact removals from `ACCEPTED_*`, count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
+| **S4** membership bookkeeping | after each slice: exact removals/updates in the relevant registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` for creature-entry findings, `ACCEPTED_*` for accepted spell metadata/prose buckets), count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
 | **C4** reckless family | `recklessAttack` two-sided advantage-toggle contract; 2 refs (§1.6.2) | yes, small | **Opus** design, Codex rollout |
 | **C5** split family | `splitOnDamage` reproduction-on-damage contract; 2 refs (§1.6.3) | yes, small | **Codex** (uniform grammar) |
 | **C6** damage-absorption family | `damageAbsorption` contract; 4 refs (§1.6.4) | yes, trivial shape | **Codex** (uniform grammar) |
@@ -431,7 +435,7 @@ designs; S3 last (interacts with modeled teleport/planar kinds). C4–C9
 relative to C1–C3/S1–S4; none blocks another.
 
 Reconciliation (mechanically verified 2026-07-06 against
-`ACCEPTED_PROSE_CREATURE_ENTRY_REFS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
+`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
 every membership key appears in exactly one disposition section):
 
 - creatures, original pass: 48 = C1 22 (§1.1) + C2 16 (§1.2) + C3 8 (§1.3 5 +
@@ -441,9 +445,9 @@ every membership key appears in exactly one disposition section):
   family (§1.3/§1.4: aboleth, ettin — C3 is now 10) + 16 newly classified
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
-- creatures total reviewed by this artifact: 72 (48 + 24); live
-  `ACCEPTED_PROSE_CREATURE_ENTRY_REFS` membership after this pass: 66
-  (72 − 6 implemented) = C1 22 + C2 16 + C3 10 + accept\* 2 + C4 2 + C5 2 +
+- creatures total reviewed by this artifact: 72 (48 + 24); residual
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after this pass: 66
+  (72 - 6 implemented) = C1 22 + C2 16 + C3 10 + accept\* 2 + C4 2 + C5 2 +
   C6 4 + C7 2 + C8 2 + C9 4
   (22+16+10+2+2+2+4+2+2+4 = 66)
 - spells 53 = S1 14 (§2.1) + S2 17 (§2.2 5 + §2.4 2 + §2.5 2 + §2.8 8) +

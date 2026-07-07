@@ -127,8 +127,10 @@ Remaining: deva (as couatl minus Bite retention, replaces senses),
 night-hag, doppelganger, quasit, mimic (object form), succubus/incubus
 (typed wing-dependent fly-speed loss), wereboar/wererat/weretiger/werewolf.
 
-Membership bookkeeping on completion: remove all 22 refs from
-`ACCEPTED_PROSE_CREATURE_ENTRY_REFS` (the 8 `mechanical-prose` +
-14 `narrative-prose` shape rows), recount, extend
-`kindSchemasEffects.test.ts` negative cases, committed-pack assertions per
-golden example, pack regeneration (S4 protocol).
+Membership bookkeeping on completion: the 22 C1 refs currently exist as
+`finding` entries in `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`; when C1
+projections land and become substantively modeled, remove those refs from the
+reviewed-disposition registry as part of the fail-closed bookkeeping. Recount,
+update readiness-report assertions/deltas, extend `kindSchemasEffects.test.ts`
+negative cases, add committed-pack assertions per golden example, and
+regenerate the pack (S4 protocol).
