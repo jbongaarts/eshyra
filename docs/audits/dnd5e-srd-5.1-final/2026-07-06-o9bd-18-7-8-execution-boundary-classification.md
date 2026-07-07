@@ -338,7 +338,7 @@ code-ownership status. `F*`/`D*` reference the §4 implementation families.
 
 ## 3. Census and mechanical verification
 
-**code-enforced 0 · model-adjudicated-supported 137 · partial 9 ·
+**code-enforced 0 · model-adjudicated-supported 107 · partial 37 ·
 implementation-required 21 · design-blocked 10 = 175** (corrected census
 after the 2026-07-06 consistency revision; supersedes the initial
 0/137/9/19/10).
@@ -531,13 +531,13 @@ incomplete. Required revisions (do not merge #401 as-is):
    self-certifying.
 6. **Seeding**: transcribe this artifact's §2 table (not "all
    unimplemented") as the initial `ENGINE_PROCEDURE_COVERAGE`. The families
-   F1–F8/D1–D2 map to the `missing`/`designOwner` fields.
+   F1–F10/D1–D2 map to the `missing`/`designOwner` fields.
 
 ## 6. Handoff
 
 - Implementation of the disposition layer (per revised #401) — Codex, after
   #401 is updated per §5.
-- Engine families F1–F8 — bead under an engine epic (not under 18.7.8);
+- Engine families F1–F10 — bead under an engine epic (not under 18.7.8);
   recommended agents per family in §4.
 - This artifact is the authoritative execution boundary. A future change of
   boundary for any rule is a reviewed diff to §2 with census update, not a
