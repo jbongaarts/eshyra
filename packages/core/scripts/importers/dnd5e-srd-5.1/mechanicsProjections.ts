@@ -2485,12 +2485,20 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       text,
     )
   ) {
-    effects.push({
-      kind: 'telepathy',
-      samePlaneOnly: true,
-      audience: 'master',
-      conveys: 'senses',
-    });
+    effects.push(
+      {
+        kind: 'telepathy',
+        samePlaneOnly: true,
+        audience: 'master',
+      },
+      {
+        kind: 'senseSharing',
+        source: 'homunculus',
+        recipient: 'master',
+        senses: 'what it senses',
+        condition: 'same plane of existence',
+      },
+    );
   }
   if (
     name === 'Limited Telepathy' &&
@@ -2509,7 +2517,6 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
           )
             ? true
             : undefined,
-        conveys: 'simple messages and images',
       }),
     );
   }
@@ -2523,7 +2530,6 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       kind: 'telepathy',
       rangeFeet: 100,
       requiresLanguage: true,
-      conveys: 'simple ideas, emotions, and images',
     });
   }
   if (
@@ -2555,9 +2561,9 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   ) {
     suppressGenericTrigger = true;
     effects.push({
-      kind: 'telepathy',
-      audience: 'creature communicating telepathically with the aboleth',
-      conveys: 'greatest desires',
+      kind: 'triggeredEffect',
+      trigger: 'a creature communicates telepathically with the aboleth',
+      result: "the aboleth learns the creature's greatest desires",
       condition: 'aboleth can see the creature',
     });
   }

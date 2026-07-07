@@ -50,6 +50,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'movementCostMultiplier',
   'naturalWeaponDamage',
   'pathMemory',
+  'senseSharing',
   'slowFall',
   'stabilize',
   'sleepException',
@@ -1690,6 +1691,12 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqEnum(effect, 'scope', path, new Set(['any-previously-traveled-path']));
     reqEnum(effect, 'recall', path, new Set(['perfect']));
   },
+  senseSharing: (effect, path) => {
+    reqStr(effect, 'source', path);
+    reqStr(effect, 'recipient', path);
+    reqStr(effect, 'senses', path);
+    optStr(effect, 'condition', path);
+  },
   naturalWeaponDamage: (effect, path) => {
     reqDice(effect, 'dice', path);
     const choice = effect.typeChoice;
@@ -1722,8 +1729,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     const hasBoundary =
       effect.rangeFeet !== undefined ||
       effect.audience !== undefined ||
-      effect.maxCreatures !== undefined ||
-      effect.conveys !== undefined;
+      effect.maxCreatures !== undefined;
     if (!hasBoundary) {
       throw new RulesPackError(
         `${path} must carry at least one telepathy boundary`,
@@ -1738,8 +1744,6 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optInt(effect, 'maxCreatures', path, 1);
     optBool(effect, 'willingOnly', path);
     optInt(effect, 'minIntelligence', path, 1);
-    optStr(effect, 'conveys', path);
-    optStr(effect, 'condition', path);
   },
   understandLanguages: (effect, path) => {
     if (effect.spoken !== true) {
@@ -1808,6 +1812,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   triggeredEffect: (effect, path) => {
     reqStr(effect, 'trigger', path);
     optStr(effect, 'result', path);
+    optStr(effect, 'condition', path);
   },
   extraReactions: (effect, path) => {
     if ((effect.perTurn === undefined) === (effect.formula === undefined)) {

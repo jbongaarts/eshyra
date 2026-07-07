@@ -634,7 +634,13 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         kind: 'telepathy',
         samePlaneOnly: true,
         audience: 'master',
-        conveys: 'senses',
+      },
+      {
+        kind: 'senseSharing',
+        source: 'homunculus',
+        recipient: 'master',
+        senses: 'what it senses',
+        condition: 'same plane of existence',
       },
     ]);
     expect(
@@ -646,7 +652,6 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         rangeFeet: 120,
         requiresLanguage: true,
         oneWay: true,
-        conveys: 'simple messages and images',
       },
     ]);
     expect(
@@ -657,7 +662,6 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         kind: 'telepathy',
         rangeFeet: 100,
         requiresLanguage: true,
-        conveys: 'simple ideas, emotions, and images',
       },
     ]);
     expect(
@@ -680,9 +684,9 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         ?.effects,
     ).toEqual([
       {
-        kind: 'telepathy',
-        audience: 'creature communicating telepathically with the aboleth',
-        conveys: 'greatest desires',
+        kind: 'triggeredEffect',
+        trigger: 'a creature communicates telepathically with the aboleth',
+        result: "the aboleth learns the creature's greatest desires",
         condition: 'aboleth can see the creature',
       },
     ]);

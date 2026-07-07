@@ -10924,9 +10924,9 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "telepathy",
-                "audience": "creature communicating telepathically with the aboleth",
-                "conveys": "greatest desires",
+                "kind": "triggeredEffect",
+                "trigger": "a creature communicates telepathically with the aboleth",
+                "result": "the aboleth learns the creature's greatest desires",
                 "condition": "aboleth can see the creature"
               }
             ]
@@ -39880,8 +39880,14 @@
               {
                 "kind": "telepathy",
                 "samePlaneOnly": true,
-                "audience": "master",
-                "conveys": "senses"
+                "audience": "master"
+              },
+              {
+                "kind": "senseSharing",
+                "source": "homunculus",
+                "recipient": "master",
+                "senses": "what it senses",
+                "condition": "same plane of existence"
               }
             ]
           }
@@ -48028,8 +48034,7 @@
                 "kind": "telepathy",
                 "rangeFeet": 120,
                 "requiresLanguage": true,
-                "oneWay": true,
-                "conveys": "simple messages and images"
+                "oneWay": true
               }
             ]
           }
@@ -50128,8 +50133,7 @@
               {
                 "kind": "telepathy",
                 "rangeFeet": 100,
-                "requiresLanguage": true,
-                "conveys": "simple ideas, emotions, and images"
+                "requiresLanguage": true
               }
             ]
           }

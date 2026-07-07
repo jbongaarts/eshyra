@@ -40,6 +40,12 @@ classification artifact's residual reconciliation.
 { kind: 'communication',
   with: string[] }               // ['beasts','plants'] dryad; ['beasts'] speak-with-animals
 
+{ kind: 'senseSharing',
+  source: string,                // 'homunculus'
+  recipient: string,             // 'master'
+  senses: string,
+  condition?: string }           // homunculus same-plane clause
+
 { kind: 'locationKnowledge',
   knows: ('direction'|'distance'|'location')[],
   of: string,                    // 'designated quarry' | 'summoner'
@@ -55,14 +61,16 @@ classification artifact's residual reconciliation.
 
 Validation: `telepathy` fields all optional but at least one of
 `rangeFeet`/`audience`/`maxCreatures` present (empty payload rejected);
-`communication.with` non-empty; `locationKnowledge.knows` non-empty.
+`communication.with` non-empty; `senseSharing` requires source, recipient, and
+senses; `locationKnowledge.knows` non-empty.
 Use `pathMemory`, not `locationKnowledge`, for navigation/path-recall
 semantics where no target entity location is being tracked.
 Global telepathy semantics (initiation, incapacitation, antimagic) live in
 `rule:telepathy` (engine procedure, 18.7.8.3) — payloads carry only the
 per-record boundaries. Goldens: otyugh (oneWay), invisible-stalker (two
 `locationKnowledge` effects: quarry + summoner), minotaur (`pathMemory`),
-`spell:telepathic-bond`.
+homunculus (`telepathy` + directional `senseSharing`), aboleth
+(`triggeredEffect` with result + condition), `spell:telepathic-bond`.
 
 ## S2 — small deterministic clause payloads (17 spells)
 

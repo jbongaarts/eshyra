@@ -885,7 +885,17 @@ describe('mechanics effect payload contracts', () => {
     expect(() => validate({ kind: 'telepathy', rangeFeet: 0 })).toThrow(
       /rangeFeet/,
     );
+    expect(() => validate({ kind: 'telepathy', conveys: 'senses' })).toThrow(
+      /telepathy boundary/,
+    );
     expect(() => validate({ kind: 'communication', with: [] })).toThrow(/with/);
+    expect(() =>
+      validate({
+        kind: 'senseSharing',
+        source: 'homunculus',
+        senses: 'what it senses',
+      }),
+    ).toThrow(/recipient/);
     expect(() =>
       validate({ kind: 'locationKnowledge', knows: ['bearing'], of: 'quarry' }),
     ).toThrow(/knows/);

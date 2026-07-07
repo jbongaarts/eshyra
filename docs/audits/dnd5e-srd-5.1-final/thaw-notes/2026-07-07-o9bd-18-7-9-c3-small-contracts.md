@@ -26,13 +26,19 @@ Yes. Ten creature records now carry C3 typed effects on the reviewed entries:
 aboleth, dryad, ettin, homunculus, hydra, invisible stalker, minotaur, otyugh,
 pseudodragon, and sahuagin. Two spell records now carry typed C3 effects:
 `spell:speak-with-animals` and `spell:telepathic-bond`. No records were added
-or removed.
+or removed. A post-review correction kept the same record set but refined four
+payload shapes: homunculus now separates two-way telepathy from directional
+sense sharing, aboleth now uses `triggeredEffect { trigger, result, condition
+}`, and otyugh/pseudodragon no longer put communicated content in the
+`telepathy` payload.
 
 ## Importer changed?
 
 Yes. Creature-entry and spell mechanics projection now recognize the reviewed
 C3 SRD sentence shapes and suppress duplicate bare trigger markers when the
-typed C3 effect owns the trigger/condition.
+typed C3 effect owns the trigger/condition. `telepathy` is limited to
+communication boundaries; directional sense sharing and triggered information
+learning are separate effects.
 
 ## Commands run
 

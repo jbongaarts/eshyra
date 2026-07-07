@@ -18,7 +18,7 @@
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json",
-      "sha256": "6a4f5f6cf1dd8825af6023547b06af6c53844d3e0061d42654f38e9b23f9439d"
+      "sha256": "307c52babd76ace9353ffc00d3b7264d5f8648f27aa4af35abd3042230088e10"
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json",

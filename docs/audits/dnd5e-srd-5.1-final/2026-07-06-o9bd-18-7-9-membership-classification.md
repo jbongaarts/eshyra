@@ -107,8 +107,10 @@ Exact refs (machine-checkable):
 
 Implemented 2026-07-07: `telepathy` payloads carry per-record boundaries
 (`rangeFeet`, `samePlaneOnly`, `oneWay`, `audience`, `commands`,
-`maxCreatures`, `willingOnly`, `minIntelligence`, `conveys`, `condition`);
-`communication { with }` covers the dryad and `speak-with-animals`.
+`maxCreatures`, `willingOnly`, `minIntelligence`); `communication { with }`
+covers the dryad and `speak-with-animals`; homunculus sense sharing uses a
+directional `senseSharing` effect; aboleth Probing Telepathy uses
+`triggeredEffect` with an explicit result and sight condition.
 
 | ref | deterministic boundaries |
 |---|---|
@@ -117,7 +119,7 @@ Implemented 2026-07-07: `telepathy` payloads carry per-record boundaries
 | `creature:pseudodragon#traits:Limited Telepathy` | 100 ft; simple ideas/emotions/images; requires target understands a language |
 | `creature:sahuagin#traits:Shark Telepathy` | command sharks within 120 ft; limited telepathy |
 | `creature:dryad#traits:Speak with Beasts and Plants` | communicate with beasts and plants as if shared language (cross-reference `spell:speak-with-animals` grammar) |
-| `creature:aboleth#traits:Probing Telepathy` | folded in 2026-07-06 (§1.6.9): when a creature telepathically communicates with the aboleth and the aboleth can see it, the aboleth learns that creature's greatest desires — same `telepathy` contract, `conveys: 'greatest-desires'` reverse-direction variant |
+| `creature:aboleth#traits:Probing Telepathy` | folded in 2026-07-06 (§1.6.9): when a creature telepathically communicates with the aboleth and the aboleth can see it, the aboleth learns that creature's greatest desires — modeled as `triggeredEffect { trigger, result, condition }`, not as telepathy payload content |
 
 ### 1.4 Innate-knowledge/state family — 4 refs — disposition: implemented (slice C3)
 
