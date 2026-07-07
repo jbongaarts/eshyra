@@ -224,7 +224,10 @@ registry introduction remains possible. The report never collapses
 1. Types + constants skeleton + validation functions + unit tests.
 2. Mechanical transcription of the 335 dispositions from the artifact
    (script-assisted; verify with the census check).
-3. Coverage seeding: all engine-procedure keys `unimplemented` (or from
-   the 18.7.8.3 inventory if it exists by then).
+3. Coverage seeding: mechanically seed `ENGINE_PROCEDURE_COVERAGE` from
+   the reviewed PR #406 execution-boundary artifact, preserving its status
+   mapping exactly: MODEL → `model-adjudicated-supported`, PARTIAL →
+   `partial` with the exact missing clause/family, IMPL →
+   `unimplemented`, DESIGN → `design-blocked`.
 4. Readiness-report wiring + report snapshot test.
 5. Audit-bundle assertion wiring (fail-closed on gaps in CI).
