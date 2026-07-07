@@ -19,7 +19,11 @@ indistinguishability state; discovery is DM adjudication (contrast
 `illusoryDisguise`/`mimicry`, which carry `discernDc`). Golden:
 `animated-armor`; the other 15 are grammar-identical.
 
-## C3 — communication/knowledge/state contracts (8 creature refs + 2 spells)
+## C3 — communication/knowledge/state contracts (10 creature refs + 2 spells)
+
+Implemented 2026-07-07. The rollout included the original 8 creature refs plus
+the folded aboleth Probing Telepathy and ettin Wakeful refs from the
+classification artifact's residual reconciliation.
 
 ```ts
 { kind: 'telepathy',

@@ -38,17 +38,22 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'cannotWearOrCarry',
   'carryingCapacitySize',
   'climbAnywhere',
+  'communication',
   'dcIncrease',
   'endsCurses',
   'extraTurns',
   'falseAppearance',
   'illusionDiscernment',
   'jumpDistanceMultiplier',
+  'locationKnowledge',
   'mirrorImages',
   'movementCostMultiplier',
   'naturalWeaponDamage',
+  'pathMemory',
   'slowFall',
   'stabilize',
+  'sleepException',
+  'telepathy',
   'understandLanguages',
   'unlock',
   'walkOnLiquids',
@@ -1617,6 +1622,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   climbWithoutCheck: (effect, path) => {
     optStr(effect, 'surfaces', path);
   },
+  communication: (effect, path) => {
+    if (reqStrArray(effect, 'with', path).length === 0) {
+      throw new RulesPackError(`${path}.with must be a non-empty array`);
+    }
+  },
   dcIncrease: (effect, path) => {
     reqInt(effect, 'amount', path, 1);
     reqStr(effect, 'appliesTo', path);
@@ -1643,6 +1653,22 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   jumpDistanceMultiplier: (effect, path) => {
     reqInt(effect, 'multiplier', path, 2);
   },
+  locationKnowledge: (effect, path) => {
+    const knows = reqStrArray(effect, 'knows', path);
+    if (knows.length === 0) {
+      throw new RulesPackError(`${path}.knows must be a non-empty array`);
+    }
+    const allowed = new Set(['direction', 'distance', 'location']);
+    knows.forEach((value, i) => {
+      if (!allowed.has(value)) {
+        throw new RulesPackError(
+          `${path}.knows[${i}] must be one of direction, distance, location`,
+        );
+      }
+    });
+    reqStr(effect, 'of', path);
+    optStr(effect, 'condition', path);
+  },
   mirrorImages: (effect, path) => {
     reqInt(effect, 'images', path, 1);
     const thresholds = objArray(effect, 'redirectThresholds', path);
@@ -1659,6 +1685,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   movementCostMultiplier: (effect, path) => {
     reqInt(effect, 'feetPerFoot', path, 2);
+  },
+  pathMemory: (effect, path) => {
+    reqEnum(effect, 'scope', path, new Set(['any-previously-traveled-path']));
+    reqEnum(effect, 'recall', path, new Set(['perfect']));
   },
   naturalWeaponDamage: (effect, path) => {
     reqDice(effect, 'dice', path);
@@ -1684,6 +1714,32 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   stabilize: (effect, path) => {
     optStr(effect, 'target', path);
+  },
+  sleepException: (effect, path) => {
+    reqStr(effect, 'detail', path);
+  },
+  telepathy: (effect, path) => {
+    const hasBoundary =
+      effect.rangeFeet !== undefined ||
+      effect.audience !== undefined ||
+      effect.maxCreatures !== undefined ||
+      effect.conveys !== undefined;
+    if (!hasBoundary) {
+      throw new RulesPackError(
+        `${path} must carry at least one telepathy boundary`,
+      );
+    }
+    optInt(effect, 'rangeFeet', path, 1);
+    optBool(effect, 'samePlaneOnly', path);
+    optBool(effect, 'oneWay', path);
+    optBool(effect, 'requiresLanguage', path);
+    optStr(effect, 'audience', path);
+    optBool(effect, 'commands', path);
+    optInt(effect, 'maxCreatures', path, 1);
+    optBool(effect, 'willingOnly', path);
+    optInt(effect, 'minIntelligence', path, 1);
+    optStr(effect, 'conveys', path);
+    optStr(effect, 'condition', path);
   },
   understandLanguages: (effect, path) => {
     if (effect.spoken !== true) {

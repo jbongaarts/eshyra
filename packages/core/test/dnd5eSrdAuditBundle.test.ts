@@ -198,10 +198,10 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     // promote a spell into this bucket. The exact membership of the
     // metadata-only complement is pinned by ACCEPTED_METADATA_ONLY_SPELLS,
     // so these counts are exact, not floors. The eshyra-o9bd.18.7.9
-    // membership re-audit moved 56 spells with deterministic semantics
+    // membership re-audit moved 58 spells with deterministic semantics
     // (senses, teleports, resistances, action economy, stabilization, …)
-    // out of the metadata-only bucket: 210 → 266.
-    expect(spells.spellsWithDeterministicEffects).toBe(266);
+    // out of the metadata-only bucket: 210 → 268.
+    expect(spells.spellsWithDeterministicEffects).toBe(268);
     expect(spells.metadataOnlySpells).toBe(
       ACCEPTED_METADATA_ONLY_SPELLS.length,
     );
@@ -460,7 +460,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS to the eshyra-o9bd.18.7.9 §1 exhaustive per-ref classification (2 accepted + 48 pending findings = 50)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS to the eshyra-o9bd.18.7.9 §1 exhaustive per-ref classification (2 accepted + 38 pending findings = 40)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
     // future change to the registry (an addition, removal, or silent
     // reclassification) is caught here and forces an update to the
@@ -475,14 +475,14 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // policy can never hide reviewed-but-pending deterministic work behind
     // blanket acceptance.
     const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
-    expect(entries).toHaveLength(50);
+    expect(entries).toHaveLength(40);
 
     const accepted = entries.filter(
       ([, d]) => d.status === 'accepted-prose-only',
     );
     const findings = entries.filter(([, d]) => d.status === 'finding');
     expect(accepted).toHaveLength(2);
-    expect(findings).toHaveLength(48);
+    expect(findings).toHaveLength(38);
     expect(accepted.map(([ref]) => ref).sort()).toEqual([
       'creature:vampire#traits:Vampire Weaknesses',
       'creature:vampire-spawn#traits:Vampire Weaknesses',
@@ -507,7 +507,6 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     }
     expect(findingsBySlice).toEqual({
       C1: 22,
-      C3: 10,
       C4: 2,
       C5: 2,
       C6: 4,
@@ -528,6 +527,16 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:bugbear#traits:Surprise Attack',
         'creature:doppelganger#traits:Surprise Attack',
         'creature:water-elemental#traits:Freeze',
+        'creature:homunculus#traits:Telepathic Bond',
+        'creature:otyugh#traits:Limited Telepathy',
+        'creature:pseudodragon#traits:Limited Telepathy',
+        'creature:sahuagin#traits:Shark Telepathy',
+        'creature:dryad#traits:Speak with Beasts and Plants',
+        'creature:aboleth#traits:Probing Telepathy',
+        'creature:invisible-stalker#traits:Faultless Tracker',
+        'creature:minotaur#traits:Labyrinthine Recall',
+        'creature:hydra#traits:Wakeful',
+        'creature:ettin#traits:Wakeful',
         'creature:animated-armor#traits:False Appearance',
         'creature:awakened-shrub#traits:False Appearance',
         'creature:awakened-tree#traits:False Appearance',
@@ -566,8 +575,6 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:djinni#traits:Elemental Demise',
         'creature:efreeti#traits:Elemental Demise',
         'creature:shield-guardian#reactions:Shield',
-        'creature:aboleth#traits:Probing Telepathy',
-        'creature:ettin#traits:Wakeful',
       ]),
     );
   });
@@ -639,14 +646,13 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'reviewed-per-ref',
     );
-    // The per-ref breakdown is exact: 2 permanent accepts, 48 pending
-    // findings across slices C1-C9.
+    // The per-ref breakdown is exact: 2 permanent accepts, 38 pending
+    // findings across the remaining slices.
     expect(report.creatureEntries.reviewedDispositions).toEqual({
       acceptedProseOnly: 2,
-      pendingFindings: 48,
+      pendingFindings: 38,
       findingsBySlice: {
         C1: 22,
-        C3: 10,
         C4: 2,
         C5: 2,
         C6: 4,

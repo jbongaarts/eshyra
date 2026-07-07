@@ -10924,8 +10924,10 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "If a creature communicates telepathically with the aboleth"
+                "kind": "telepathy",
+                "audience": "creature communicating telepathically with the aboleth",
+                "conveys": "greatest desires",
+                "condition": "aboleth can see the creature"
               }
             ]
           }
@@ -27915,7 +27917,18 @@
         },
         {
           "name": "Speak with Beasts and Plants",
-          "text": "The dryad can communicate with beasts and plants as if they shared a language."
+          "text": "The dryad can communicate with beasts and plants as if they shared a language.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "communication",
+                "with": [
+                  "beasts",
+                  "plants"
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "Tree Stride",
@@ -29866,8 +29879,8 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "When one of the ettin’s heads is asleep"
+                "kind": "sleepException",
+                "detail": "When one of the ettin's heads is asleep, its other head is awake"
               }
             ]
           }
@@ -39861,7 +39874,17 @@
       "traits": [
         {
           "name": "Telepathic Bond",
-          "text": "While the homunculus is on the same plane of existence as its master, it can magically convey what it senses to its master, and the two can communicate telepathically."
+          "text": "While the homunculus is on the same plane of existence as its master, it can magically convey what it senses to its master, and the two can communicate telepathically.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "telepathy",
+                "samePlaneOnly": true,
+                "audience": "master",
+                "conveys": "senses"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -40354,7 +40377,15 @@
         },
         {
           "name": "Wakeful",
-          "text": "While the hydra sleeps, at least one of its heads is awake."
+          "text": "While the hydra sleeps, at least one of its heads is awake.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "sleepException",
+                "detail": "While the hydra sleeps, at least one of its heads is awake"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -41197,7 +41228,27 @@
         },
         {
           "name": "Faultless Tracker",
-          "text": "The stalker is given a quarry by its summoner. The stalker knows the direction and distance to its quarry as long as the two of them are on the same plane of existence. The stalker also knows the location of its summoner."
+          "text": "The stalker is given a quarry by its summoner. The stalker knows the direction and distance to its quarry as long as the two of them are on the same plane of existence. The stalker also knows the location of its summoner.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "locationKnowledge",
+                "knows": [
+                  "direction",
+                  "distance"
+                ],
+                "of": "designated quarry",
+                "condition": "same plane of existence"
+              },
+              {
+                "kind": "locationKnowledge",
+                "knows": [
+                  "location"
+                ],
+                "of": "summoner"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -45545,7 +45596,16 @@
         },
         {
           "name": "Labyrinthine Recall",
-          "text": "The minotaur can perfectly recall any path it has traveled."
+          "text": "The minotaur can perfectly recall any path it has traveled.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "pathMemory",
+                "scope": "any-previously-traveled-path",
+                "recall": "perfect"
+              }
+            ]
+          }
         },
         {
           "name": "Reckless",
@@ -47961,7 +48021,18 @@
       "traits": [
         {
           "name": "Limited Telepathy",
-          "text": "The otyugh can magically transmit simple messages and images to any creature within 120 feet of it that can understand a language. This form of telepathy doesn’t allow the receiving creature to telepathically respond."
+          "text": "The otyugh can magically transmit simple messages and images to any creature within 120 feet of it that can understand a language. This form of telepathy doesn’t allow the receiving creature to telepathically respond.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "telepathy",
+                "rangeFeet": 120,
+                "requiresLanguage": true,
+                "oneWay": true,
+                "conveys": "simple messages and images"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -50051,7 +50122,17 @@
         },
         {
           "name": "Limited Telepathy",
-          "text": "The pseudodragon can magically communicate simple ideas, emotions, and images telepathically with any creature within 100 feet of it that can understand a language."
+          "text": "The pseudodragon can magically communicate simple ideas, emotions, and images telepathically with any creature within 100 feet of it that can understand a language.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "telepathy",
+                "rangeFeet": 100,
+                "requiresLanguage": true,
+                "conveys": "simple ideas, emotions, and images"
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -52483,7 +52564,17 @@
         },
         {
           "name": "Shark Telepathy",
-          "text": "The sahuagin can magically command any shark within 120 feet of it, using a limited telepathy."
+          "text": "The sahuagin can magically command any shark within 120 feet of it, using a limited telepathy.",
+          "mechanics": {
+            "effects": [
+              {
+                "kind": "telepathy",
+                "rangeFeet": 120,
+                "audience": "sharks",
+                "commands": true
+              }
+            ]
+          }
         }
       ],
       "actions": [
@@ -119818,7 +119909,15 @@
           "kind": "timed",
           "amount": 10,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "communication",
+            "with": [
+              "beasts"
+            ]
+          }
+        ]
       },
       "ritual": true
     },
@@ -120949,7 +121048,16 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "telepathy",
+            "maxCreatures": 8,
+            "willingOnly": true,
+            "minIntelligence": 3,
+            "samePlaneOnly": true
+          }
+        ]
       },
       "componentMaterials": "pieces of eggshell from two different kinds of creatures",
       "ritual": true

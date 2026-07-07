@@ -6,14 +6,15 @@ Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399
 This is the authoritative, record-by-record semantic disposition source for
 the reviewed creature-entry refs now represented by
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and for
-`ACCEPTED_METADATA_ONLY_SPELLS` (53 keys) in
+`ACCEPTED_METADATA_ONLY_SPELLS` (51 keys after C3 rollout) in
 `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts` as of this
 branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
-implemented in the follow-up rollout, while 50 residual refs remain
-represented in the per-ref registry. Of those 50 residual refs, 2 are
-permanent `accepted-prose-only` entries and 48 are pending `finding` entries
-routed to C1/C3-C9. Spell metadata-only membership remains represented separately by
+implemented in the follow-up rollout, and the 10 C3 refs were implemented in a
+second follow-up rollout, while 40 residual refs remain represented in the
+per-ref registry. Of those 40 residual refs, 2 are permanent
+`accepted-prose-only` entries and 38 are pending `finding` entries routed to
+C1/C4-C9. Spell metadata-only membership remains represented separately by
 `ACCEPTED_METADATA_ONLY_SPELLS`. Every record's full pack text was read
 against SRD 5.1 source. **Do not repeat this audit.** Implementation agents
 should work from the slices in §3 and consult §1/§2/§1.6 only for per-record
@@ -102,11 +103,12 @@ Exact refs (machine-checkable):
 - `creature:treant#traits:False Appearance`
 - `creature:violet-fungus#traits:False Appearance`
 
-### 1.3 Telepathy/communication family — 6 refs — disposition: model (slice C3)
+### 1.3 Telepathy/communication family — 6 refs — disposition: implemented (slice C3)
 
-No `telepathy` kind exists. Proposed contract: `telepathy { rangeFeet?,
-samePlane?, oneWay?, audience?, conveys? }` plus `communication { with }`
-for the dryad.
+Implemented 2026-07-07: `telepathy` payloads carry per-record boundaries
+(`rangeFeet`, `samePlaneOnly`, `oneWay`, `audience`, `commands`,
+`maxCreatures`, `willingOnly`, `minIntelligence`, `conveys`, `condition`);
+`communication { with }` covers the dryad and `speak-with-animals`.
 
 | ref | deterministic boundaries |
 |---|---|
@@ -117,7 +119,7 @@ for the dryad.
 | `creature:dryad#traits:Speak with Beasts and Plants` | communicate with beasts and plants as if shared language (cross-reference `spell:speak-with-animals` grammar) |
 | `creature:aboleth#traits:Probing Telepathy` | folded in 2026-07-06 (§1.6.9): when a creature telepathically communicates with the aboleth and the aboleth can see it, the aboleth learns that creature's greatest desires — same `telepathy` contract, `conveys: 'greatest-desires'` reverse-direction variant |
 
-### 1.4 Innate-knowledge/state family — 4 refs — disposition: model (slice C3)
+### 1.4 Innate-knowledge/state family — 4 refs — disposition: implemented (slice C3)
 
 | ref | semantics |
 |---|---|
@@ -399,7 +401,7 @@ artifact's own taxonomy they are model.
 | `spell:thaumaturgy` | concurrent-effect cap: ≤3 one-minute effects active; action to dismiss (shared payload with prestidigitation) |
 | `spell:arcanists-magic-aura` | permanence-after-repeated-casting: same effect daily × 30 days → until dispelled (shared payload shape with private-sanctum's 1-year clause in S3) |
 
-### 2.9 C3-contract spells — 2 — disposition: model (contract shared with slice C3)
+### 2.9 C3-contract spells — 2 — disposition: implemented (contract shared with slice C3)
 
 | key | deterministic boundaries |
 |---|---|
@@ -418,7 +420,7 @@ None of the remaining slices below is started unless stated.
 |---|---|---|---|
 | **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove/update their `finding` entries in the reviewed-disposition registry; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
 | **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Implemented** |
-| **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 8 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Opus** design, Codex rollout |
+| **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 10 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Implemented** |
 | **S1** summoning | design summoning contract extension (option menus, control economy, statblock modification); 14 spells | yes — largest open design | **Opus** |
 | **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Opus** payload sketch, **Codex** rollout |
 | **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
@@ -433,7 +435,7 @@ None of the remaining slices below is started unless stated.
 Ordering: C2 and S2 are low-risk warm-ups; C1/S1 are the substantive
 designs; S3 last (interacts with modeled teleport/planar kinds). C4–C9
 (§1.6, residual reconciliation pass) are additive and can land in any order
-relative to C1–C3/S1–S4; none blocks another.
+relative to C1/S1–S4; none blocks another.
 
 Reconciliation (mechanically verified 2026-07-06 against
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
@@ -447,12 +449,14 @@ every membership key appears in exactly one disposition section):
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
-  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after C2 rollout: 50
-  (72 - 6 implemented - 16 C2 implemented) = C1 22 + C3 10 + accept\* 2 + C4 2 + C5 2 +
-  C6 4 + C7 2 + C8 2 + C9 4
-  (22+10+2+2+2+4+2+2+4 = 50)
-- spells 53 = S1 14 (§2.1) + S2 17 (§2.2 5 + §2.4 2 + §2.5 2 + §2.8 8) +
-  S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) + accept\* 1 (§2.6)
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after C2+C3 rollout: 40
+  (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented) = C1 22 +
+  accept\* 2 + C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4
+  (22+2+2+2+4+2+2+4 = 40)
+- spells originally classified here: 53 = S1 14 (§2.1) + S2 17 (§2.2 5 +
+  §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
+  accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after
+  C3 rollout: 51 (53 - 2 C3 implemented).
 
 **14 records total (2 creatures + 12 spells) are closed permanently by this
 document.** An earlier revision claimed 26 permanent accepts (with

@@ -624,9 +624,129 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       ]);
     }
   });
+
+  it('C3 telepathy and communication creature entries carry typed boundaries', () => {
+    expect(
+      creatureEntry('creature:homunculus', 'traits', 'Telepathic Bond')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'telepathy',
+        samePlaneOnly: true,
+        audience: 'master',
+        conveys: 'senses',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:otyugh', 'traits', 'Limited Telepathy').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'telepathy',
+        rangeFeet: 120,
+        requiresLanguage: true,
+        oneWay: true,
+        conveys: 'simple messages and images',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:pseudodragon', 'traits', 'Limited Telepathy')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'telepathy',
+        rangeFeet: 100,
+        requiresLanguage: true,
+        conveys: 'simple ideas, emotions, and images',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:sahuagin', 'traits', 'Shark Telepathy').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'telepathy',
+        rangeFeet: 120,
+        audience: 'sharks',
+        commands: true,
+      },
+    ]);
+    expect(
+      creatureEntry('creature:dryad', 'traits', 'Speak with Beasts and Plants')
+        .mechanics?.effects,
+    ).toEqual([{ kind: 'communication', with: ['beasts', 'plants'] }]);
+    expect(
+      creatureEntry('creature:aboleth', 'traits', 'Probing Telepathy').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'telepathy',
+        audience: 'creature communicating telepathically with the aboleth',
+        conveys: 'greatest desires',
+        condition: 'aboleth can see the creature',
+      },
+    ]);
+  });
+
+  it('C3 knowledge and wakeful creature entries carry typed state mechanics', () => {
+    expect(
+      creatureEntry('creature:invisible-stalker', 'traits', 'Faultless Tracker')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'locationKnowledge',
+        knows: ['direction', 'distance'],
+        of: 'designated quarry',
+        condition: 'same plane of existence',
+      },
+      { kind: 'locationKnowledge', knows: ['location'], of: 'summoner' },
+    ]);
+    expect(
+      creatureEntry('creature:minotaur', 'traits', 'Labyrinthine Recall')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'pathMemory',
+        scope: 'any-previously-traveled-path',
+        recall: 'perfect',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:hydra', 'traits', 'Wakeful').mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'sleepException',
+        detail: 'While the hydra sleeps, at least one of its heads is awake',
+      },
+    ]);
+    expect(
+      creatureEntry('creature:ettin', 'traits', 'Wakeful').mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'sleepException',
+        detail:
+          "When one of the ettin's heads is asleep, its other head is awake",
+      },
+    ]);
+  });
 });
 
 describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
+  it('C3 spells carry communication and telepathy mechanics', () => {
+    expect(spellEffects('spell:speak-with-animals')).toEqual([
+      { kind: 'communication', with: ['beasts'] },
+    ]);
+    expect(spellEffects('spell:telepathic-bond')).toEqual([
+      {
+        kind: 'telepathy',
+        maxCreatures: 8,
+        willingOnly: true,
+        minIntelligence: 3,
+        samePlaneOnly: true,
+      },
+    ]);
+  });
+
   it('Jump and Spare the Dying carry their deterministic semantics', () => {
     expect(spellEffects('spell:jump')).toEqual([
       { kind: 'jumpDistanceMultiplier', multiplier: 3 },

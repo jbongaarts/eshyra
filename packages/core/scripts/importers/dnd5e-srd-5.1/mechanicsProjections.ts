@@ -446,6 +446,32 @@ const SPELL_MODIFIER_SUBJECTS: ReadonlyMap<string, string> = new Map([
 
 function parseSpellEffects(text: string): readonly Mechanics[] {
   const effects: Mechanics[] = [];
+  if (
+    /\bYou gain the ability to comprehend and verbally communicate with beasts for the duration\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'communication', with: ['beasts'] });
+  }
+  if (
+    /\bYou forge a telepathic link among up to eight willing creatures of your choice within range\b/.test(
+      text,
+    ) &&
+    /\bCreatures with Intelligence scores of 2 or less aren['\u2019]t affected by this spell\b/.test(
+      text,
+    ) &&
+    /\bThe communication is possible over any distance, though it can['\u2019]t extend to other planes of existence\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'telepathy',
+      maxCreatures: 8,
+      willingOnly: true,
+      minIntelligence: 3,
+      samePlaneOnly: true,
+    });
+  }
   // Healing: dice ("regains a number of hit points equal to 1d8 + your
   // spellcasting ability modifier"), dice-with-average, or flat ("regains
   // 70 hit points").
@@ -2448,6 +2474,137 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
         ? `in object form and ${whileCondition}`
         : whileCondition,
       indistinguishableFrom: falseAppearance[2].replaceAll('\u2019', "'"),
+    });
+  }
+  if (
+    name === 'Telepathic Bond' &&
+    /\bWhile the homunculus is on the same plane of existence as its master\b/.test(
+      text,
+    ) &&
+    /\bit can magically convey what it senses to its master, and the two can communicate telepathically\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'telepathy',
+      samePlaneOnly: true,
+      audience: 'master',
+      conveys: 'senses',
+    });
+  }
+  if (
+    name === 'Limited Telepathy' &&
+    /\bThe otyugh can magically transmit simple messages and images to any creature within 120 feet of it that can understand a language\b/.test(
+      text,
+    )
+  ) {
+    effects.push(
+      compact({
+        kind: 'telepathy',
+        rangeFeet: 120,
+        requiresLanguage: true,
+        oneWay:
+          /\bThis form of telepathy doesn['\u2019]t allow the receiving creature to telepathically respond\b/.test(
+            text,
+          )
+            ? true
+            : undefined,
+        conveys: 'simple messages and images',
+      }),
+    );
+  }
+  if (
+    name === 'Limited Telepathy' &&
+    /\bThe pseudodragon can magically communicate simple ideas, emotions, and images telepathically with any creature within 100 feet of it that can understand a language\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'telepathy',
+      rangeFeet: 100,
+      requiresLanguage: true,
+      conveys: 'simple ideas, emotions, and images',
+    });
+  }
+  if (
+    name === 'Shark Telepathy' &&
+    /\bThe sahuagin can magically command any shark within 120 feet of it, using a limited telepathy\b/.test(
+      text,
+    )
+  ) {
+    effects.push({
+      kind: 'telepathy',
+      rangeFeet: 120,
+      audience: 'sharks',
+      commands: true,
+    });
+  }
+  if (
+    name === 'Speak with Beasts and Plants' &&
+    /\bThe dryad can communicate with beasts and plants as if they shared a language\b/.test(
+      text,
+    )
+  ) {
+    effects.push({ kind: 'communication', with: ['beasts', 'plants'] });
+  }
+  if (
+    name === 'Probing Telepathy' &&
+    /\bIf a creature communicates telepathically with the aboleth, the aboleth learns the creature['\u2019]s greatest desires if the aboleth can see the creature\b/.test(
+      text,
+    )
+  ) {
+    suppressGenericTrigger = true;
+    effects.push({
+      kind: 'telepathy',
+      audience: 'creature communicating telepathically with the aboleth',
+      conveys: 'greatest desires',
+      condition: 'aboleth can see the creature',
+    });
+  }
+  if (
+    name === 'Faultless Tracker' &&
+    /\bThe stalker knows the direction and distance to its quarry as long as the two of them are on the same plane of existence\b/.test(
+      text,
+    ) &&
+    /\bThe stalker also knows the location of its summoner\b/.test(text)
+  ) {
+    effects.push(
+      {
+        kind: 'locationKnowledge',
+        knows: ['direction', 'distance'],
+        of: 'designated quarry',
+        condition: 'same plane of existence',
+      },
+      {
+        kind: 'locationKnowledge',
+        knows: ['location'],
+        of: 'summoner',
+      },
+    );
+  }
+  if (
+    name === 'Labyrinthine Recall' &&
+    /\bThe minotaur can perfectly recall any path it has traveled\b/.test(text)
+  ) {
+    effects.push({
+      kind: 'pathMemory',
+      scope: 'any-previously-traveled-path',
+      recall: 'perfect',
+    });
+  }
+  if (
+    name === 'Wakeful' &&
+    (/\bWhile the hydra sleeps, at least one of its heads is awake\b/.test(
+      text,
+    ) ||
+      /\bWhen one of the ettin['\u2019]s heads is asleep, its other head is awake\b/.test(
+        text,
+      ))
+  ) {
+    suppressGenericTrigger = true;
+    effects.push({
+      kind: 'sleepException',
+      detail: text.replace(/\.$/, '').replaceAll('\u2019', "'"),
     });
   }
   // Transparent's second deterministic clause: entering the unseen cube's
