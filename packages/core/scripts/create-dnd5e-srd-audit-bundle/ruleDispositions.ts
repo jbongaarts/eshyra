@@ -2541,6 +2541,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['give_item', 'lookup_rules', 'remove_item', 'roll'],
     contextRequirement:
       'item-casting procedure ruling; per-item spell data completeness → 18.7.7 corpus work',
+    externalClauses: [
+      {
+        clause: 'per-item spell-data completeness',
+        bead: 'eshyra-o9bd.18.7.7',
+      },
+    ],
   },
   'rule:sphere': {
     status: 'model-adjudicated-supported',
@@ -2587,6 +2593,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'roll'],
     contextRequirement:
       'communication semantics ruling; per-creature payloads (18.7.9 C3)',
+    externalClauses: [
+      {
+        clause: 'per-creature payload contracts (18.7.9 C3 slice)',
+        bead: 'eshyra-o9bd.18.7.9',
+      },
+    ],
   },
   'rule:temporary-hit-points': {
     status: 'unimplemented',

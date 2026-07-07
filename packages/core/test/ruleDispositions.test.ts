@@ -86,9 +86,11 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     expect(report.engineProcedure.partial).toHaveLength(47);
     expect(report.engineProcedure.unimplemented).toHaveLength(21);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
-    // 6 rows carry an externally owned clause; armor-guidance carries two,
-    // so the flattened list has 7 entries.
-    expect(report.engineProcedure.externalClauses).toHaveLength(7);
+    // 8 rows carry an externally owned clause (armor-guidance,
+    // casting-a-spell-saving-throws, charges, special-weapons,
+    // improvised-weapons, weapon-properties, spells, telepathy);
+    // armor-guidance carries two, so the flattened list has 9 entries.
+    expect(report.engineProcedure.externalClauses).toHaveLength(9);
     expect(Object.keys(RULE_DISPOSITIONS)).toHaveLength(335);
     expect(Object.keys(ENGINE_PROCEDURE_COVERAGE)).toHaveLength(175);
   });
@@ -115,6 +117,26 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       clause: 'per-record payload completeness',
       bead: 'eshyra-o9bd.18.7.6',
     });
+    // spells' per-item spell-data completeness routes to the (open)
+    // magic-item epic — a genuine pending gap, not this engine epic's
+    // own F1-F10 backlog.
+    expect(report.engineProcedure.externalClauses).toContainEqual({
+      key: 'rule:spells',
+      clause: 'per-item spell-data completeness',
+      bead: 'eshyra-o9bd.18.7.7',
+    });
+    // telepathy's per-creature payload contracts are the still-pending
+    // C3 slice tracked in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — unlike
+    // multiattack's "(18.7.9)" mention, which credits already-typed
+    // routine data and correctly carries no external clause.
+    expect(report.engineProcedure.externalClauses).toContainEqual({
+      key: 'rule:telepathy',
+      clause: 'per-creature payload contracts (18.7.9 C3 slice)',
+      bead: 'eshyra-o9bd.18.7.9',
+    });
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:multiattack']?.externalClauses,
+    ).toBeUndefined();
     // armor-guidance carries two distinct externally owned clauses.
     expect(
       report.engineProcedure.externalClauses.filter(
