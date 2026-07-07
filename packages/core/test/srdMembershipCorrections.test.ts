@@ -584,7 +584,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       [
         'creature:mimic',
         'False Appearance (Object Form Only)',
-        'motionless',
+        'in object form and motionless',
         'an ordinary object',
       ],
       [

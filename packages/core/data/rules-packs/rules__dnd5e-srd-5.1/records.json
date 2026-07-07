@@ -45359,7 +45359,7 @@
             "effects": [
               {
                 "kind": "falseAppearance",
-                "while": "motionless",
+                "while": "in object form and motionless",
                 "indistinguishableFrom": "an ordinary object"
               }
             ]

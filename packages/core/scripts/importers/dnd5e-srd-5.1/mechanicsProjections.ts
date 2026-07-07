@@ -2441,9 +2441,12 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       text,
     );
   if (falseAppearance !== null) {
+    const whileCondition = falseAppearance[1].replaceAll('\u2019', "'");
     effects.push({
       kind: 'falseAppearance',
-      while: falseAppearance[1].replaceAll('\u2019', "'"),
+      while: name.includes('Object Form Only')
+        ? `in object form and ${whileCondition}`
+        : whileCondition,
       indistinguishableFrom: falseAppearance[2].replaceAll('\u2019', "'"),
     });
   }
