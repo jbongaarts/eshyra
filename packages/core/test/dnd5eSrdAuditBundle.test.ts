@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACCEPTED_METADATA_ONLY_SPELLS,
-  ACCEPTED_PROSE_CREATURE_ENTRY_REFS,
   assertGameplayReadinessDispositions,
   buildGameplayReadinessReport,
   buildOverlayParityReport,
+  CREATURE_ENTRY_REVIEWED_DISPOSITIONS,
 } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
 import {
   getBundledDnd5eSrdPack,
@@ -309,13 +309,15 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     );
     expect(
       regressed.dispositionErrors.filter((error) =>
-        error.includes('not in the reviewed accepted-prose membership'),
+        error.includes(
+          'has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS',
+        ),
       ),
     ).toEqual([
       expect.stringContaining('creature:regressed#traits:Newly Unmodeled'),
     ]);
     expect(() => assertGameplayReadinessDispositions(regressed)).toThrow(
-      /not in the reviewed accepted-prose membership/,
+      /has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS/,
     );
   });
 });
@@ -447,7 +449,9 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     });
     expect(
       report.dispositionErrors.filter((error) =>
-        error.includes('not in the reviewed accepted-prose membership'),
+        error.includes(
+          'has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS',
+        ),
       ),
     ).toEqual([
       expect.stringContaining(
@@ -456,30 +460,67 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins ACCEPTED_PROSE_CREATURE_ENTRY_REFS to the eshyra-o9bd.18.7.9 §1.6 reconciliation arithmetic (48 original + 24 residual − 6 implemented = 66)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS to the eshyra-o9bd.18.7.9 §1 exhaustive per-ref classification (2 accepted + 64 pending findings = 66)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
-    // future change to the array (an addition, removal, or silent restore)
-    // is caught here and forces an update to the classification doc's own
-    // reconciliation arithmetic (docs/audits/dnd5e-srd-5.1-final/
-    // 2026-07-06-o9bd-18-7-9-membership-classification.md §1.6), rather than
-    // only being caught by the coarser bucket-level fail-closed check.
-    expect(ACCEPTED_PROSE_CREATURE_ENTRY_REFS['mechanical-prose']).toHaveLength(
-      21,
+    // future change to the registry (an addition, removal, or silent
+    // reclassification) is caught here and forces an update to the
+    // classification doc's own reconciliation arithmetic
+    // (docs/audits/dnd5e-srd-5.1-final/
+    // 2026-07-06-o9bd-18-7-9-membership-classification.md §1/§3), rather
+    // than only being caught by the coarser bucket-level fail-closed check.
+    //
+    // The critical invariant this test guards: only the 2 genuinely accepted
+    // refs may carry `accepted-prose-only` — every other reviewed ref MUST
+    // be a `finding` with an explicit bead + slice, so a broad bucket-level
+    // policy can never hide reviewed-but-pending deterministic work behind
+    // blanket acceptance.
+    const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
+    expect(entries).toHaveLength(66);
+
+    const accepted = entries.filter(
+      ([, d]) => d.status === 'accepted-prose-only',
     );
-    expect(ACCEPTED_PROSE_CREATURE_ENTRY_REFS['narrative-prose']).toHaveLength(
-      45,
-    );
-    const total =
-      ACCEPTED_PROSE_CREATURE_ENTRY_REFS['mechanical-prose'].length +
-      ACCEPTED_PROSE_CREATURE_ENTRY_REFS['narrative-prose'].length;
-    expect(total).toBe(66);
+    const findings = entries.filter(([, d]) => d.status === 'finding');
+    expect(accepted).toHaveLength(2);
+    expect(findings).toHaveLength(64);
+    expect(accepted.map(([ref]) => ref).sort()).toEqual([
+      'creature:vampire#traits:Vampire Weaknesses',
+      'creature:vampire-spawn#traits:Vampire Weaknesses',
+    ]);
+
+    // Every finding names the parent bead and an explicit slice — the
+    // per-ref owner/slice metadata the fail-closed MEMBERSHIP check and the
+    // human-readable report both rely on.
+    for (const [ref, disposition] of findings) {
+      expect(disposition.status).toBe('finding');
+      if (disposition.status !== 'finding') continue;
+      expect(disposition.bead).toBe('eshyra-o9bd.18.7.9');
+      expect(disposition.slice).toMatch(/^C[1-9]$/);
+      expect(disposition.reason.length, ref).toBeGreaterThan(0);
+    }
+
+    const findingsBySlice: Record<string, number> = {};
+    for (const [, disposition] of findings) {
+      if (disposition.status !== 'finding') continue;
+      findingsBySlice[disposition.slice] =
+        (findingsBySlice[disposition.slice] ?? 0) + 1;
+    }
+    expect(findingsBySlice).toEqual({
+      C1: 22,
+      C2: 16,
+      C3: 10,
+      C4: 2,
+      C5: 2,
+      C6: 4,
+      C7: 2,
+      C8: 2,
+      C9: 4,
+    });
+
     // The six refs implemented in the §1.6.1 reconciliation pass (existing
     // typed kinds: rejuvenation, extraDamage, movementRestriction) must have
-    // graduated out of the accepted-prose membership entirely.
-    const allRefs = [
-      ...ACCEPTED_PROSE_CREATURE_ENTRY_REFS['mechanical-prose'],
-      ...ACCEPTED_PROSE_CREATURE_ENTRY_REFS['narrative-prose'],
-    ];
+    // graduated out of the registry entirely.
+    const allRefs = entries.map(([ref]) => ref);
     expect(allRefs).not.toEqual(
       expect.arrayContaining([
         'creature:guardian-naga#traits:Rejuvenation',
@@ -490,8 +531,8 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:water-elemental#traits:Freeze',
       ]),
     );
-    // Refs newly classified into slices C4-C9 remain tracked (pending their
-    // slice landing), each with an explicit rationale in the artifact.
+    // Refs newly classified into slices C4-C9 remain tracked as pending
+    // findings (not blanket accepted), each with an explicit rationale.
     expect(allRefs).toEqual(
       expect.arrayContaining([
         'creature:berserker#traits:Reckless',
@@ -547,9 +588,12 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // finding is linked to a bead so a future audit cannot rediscover the
     // bucket without a tracked closure decision.
     for (const disposition of report.dispositions) {
-      expect(['accepted-prose-only', 'unsupported', 'finding']).toContain(
-        disposition.status,
-      );
+      expect([
+        'accepted-prose-only',
+        'unsupported',
+        'finding',
+        'reviewed-per-ref',
+      ]).toContain(disposition.status);
       if (disposition.status === 'finding') {
         expect(disposition.bead).toMatch(/^eshyra-/);
       }
@@ -567,16 +611,36 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // Feature runtime projections landed (eshyra-o9bd.18.7.5): the residual
     // prose-only bucket is a reviewed accepted closure, not an open finding.
     expect(byKey.get('feature#prose-only')?.status).toBe('accepted-prose-only');
-    // The nested creature-entry buckets carry explicit accepted-prose-only
-    // closures (eshyra-o9bd.18.7.3) — record-level creature buckets are gone
-    // because all 317 creatures now carry typed nested mechanics.
+    // The nested creature-entry buckets are `reviewed-per-ref`
+    // (eshyra-o9bd.18.7.9), NOT a blanket `accepted-prose-only` — record-
+    // level creature buckets are gone because all 317 creatures now carry
+    // typed nested mechanics, but the prose-entry buckets mix 2 genuinely
+    // accepted refs with 64 reviewed pending findings, so the bucket-level
+    // status must never claim blanket acceptance.
     expect(byKey.get('creature#partial-structure')).toBeUndefined();
     expect(byKey.get('creature-entry#mechanical-prose')?.status).toBe(
-      'accepted-prose-only',
+      'reviewed-per-ref',
     );
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
-      'accepted-prose-only',
+      'reviewed-per-ref',
     );
+    // The per-ref breakdown is exact: 2 permanent accepts, 64 pending
+    // findings across slices C1-C9.
+    expect(report.creatureEntries.reviewedDispositions).toEqual({
+      acceptedProseOnly: 2,
+      pendingFindings: 64,
+      findingsBySlice: {
+        C1: 22,
+        C2: 16,
+        C3: 10,
+        C4: 2,
+        C5: 2,
+        C6: 4,
+        C7: 2,
+        C8: 2,
+        C9: 4,
+      },
+    });
   });
 
   it('fails closed by MEMBERSHIP on unreviewed accepted-prose feature records (eshyra-o9bd.18.7.5 review)', () => {

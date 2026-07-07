@@ -444,13 +444,16 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
     ]);
   });
 
-  it('residual creature-entry reconciliation (eshyra-o9bd.18.7.9 §1.6): Rejuvenation, Surprise Attack, and Freeze reuse existing typed kinds', () => {
-    // Each source text opens with "If …,", so the generic trigger-marker
-    // fallback (unconditional except for legendaryResistance) also rides
-    // along after the specific typed effect — the same shape already seen on
-    // other "If"-led entries elsewhere in this pack. Its presence is
-    // harmless: readiness credit comes from the specific typed effect, not
-    // this marker.
+  it('residual creature-entry reconciliation (eshyra-o9bd.18.7.9 §1.6, trigger/result linkage per §2): Rejuvenation, Surprise Attack, and Freeze reuse existing typed kinds', () => {
+    // Each source text opens with "If …,". Surprise Attack and Freeze carry
+    // that trigger directly on the substantive typed effect (`extraDamage` /
+    // `movementRestriction`) rather than as a separate bare `triggeredEffect`
+    // marker, so the conditional relationship is unambiguous instead of
+    // depending on array adjacency (eshyra-o9bd.18.7.9 §2). Rejuvenation's
+    // "if it dies" / "if it has a phylactery" clauses are already fully
+    // captured by the `rejuvenation` effect's own condition/timing fields, so
+    // no separate trigger marker is emitted at all — nothing would be added
+    // beyond what the kind itself already means.
     expect(
       creatureEntry('creature:guardian-naga', 'traits', 'Rejuvenation')
         .mechanics?.effects,
@@ -460,7 +463,6 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         afterDaysDice: '1d6',
         condition: 'no-wish-spell-cast-to-prevent-it',
       },
-      { kind: 'triggeredEffect', trigger: 'If it dies' },
     ]);
     expect(
       creatureEntry('creature:spirit-naga', 'traits', 'Rejuvenation').mechanics
@@ -471,7 +473,6 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         afterDaysDice: '1d6',
         condition: 'no-wish-spell-cast-to-prevent-it',
       },
-      { kind: 'triggeredEffect', trigger: 'If it dies' },
     ]);
     expect(
       creatureEntry('creature:lich', 'traits', 'Rejuvenation').mechanics
@@ -482,15 +483,14 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         afterDaysDice: '1d10',
         condition: 'has-a-phylactery',
       },
-      { kind: 'triggeredEffect', trigger: 'If it has a phylactery' },
     ]);
     expect(
       creatureEntry('creature:bugbear', 'traits', 'Surprise Attack').mechanics
         ?.effects,
     ).toEqual([
-      { kind: 'extraDamage', dice: '2d6' },
       {
-        kind: 'triggeredEffect',
+        kind: 'extraDamage',
+        dice: '2d6',
         trigger:
           'If the bugbear surprises a creature and hits it with an attack during the first round of combat',
       },
@@ -499,9 +499,9 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       creatureEntry('creature:doppelganger', 'traits', 'Surprise Attack')
         .mechanics?.effects,
     ).toEqual([
-      { kind: 'extraDamage', dice: '3d6' },
       {
-        kind: 'triggeredEffect',
+        kind: 'extraDamage',
+        dice: '3d6',
         trigger:
           'If the doppelganger surprises a creature and hits it with an attack during the first round of combat',
       },
@@ -514,9 +514,6 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         kind: 'movementRestriction',
         restriction: 'speed-reduced-by-20-feet',
         endsBy: 'end-of-next-turn',
-      },
-      {
-        kind: 'triggeredEffect',
         trigger: 'If the elemental takes cold damage',
       },
     ]);

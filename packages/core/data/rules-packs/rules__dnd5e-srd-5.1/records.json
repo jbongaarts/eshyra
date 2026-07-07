@@ -22805,10 +22805,7 @@
             "effects": [
               {
                 "kind": "extraDamage",
-                "dice": "2d6"
-              },
-              {
-                "kind": "triggeredEffect",
+                "dice": "2d6",
                 "trigger": "If the bugbear surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -26743,10 +26740,7 @@
             "effects": [
               {
                 "kind": "extraDamage",
-                "dice": "3d6"
-              },
-              {
-                "kind": "triggeredEffect",
+                "dice": "3d6",
                 "trigger": "If the doppelganger surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -38028,10 +38022,6 @@
                 "kind": "rejuvenation",
                 "afterDaysDice": "1d6",
                 "condition": "no-wish-spell-cast-to-prevent-it"
-              },
-              {
-                "kind": "triggeredEffect",
-                "trigger": "If it dies"
               }
             ]
           }
@@ -42699,10 +42689,6 @@
                 "kind": "rejuvenation",
                 "afterDaysDice": "1d10",
                 "condition": "has-a-phylactery"
-              },
-              {
-                "kind": "triggeredEffect",
-                "trigger": "If it has a phylactery"
               }
             ]
           }
@@ -54862,10 +54848,6 @@
                 "kind": "rejuvenation",
                 "afterDaysDice": "1d6",
                 "condition": "no-wish-spell-cast-to-prevent-it"
-              },
-              {
-                "kind": "triggeredEffect",
-                "trigger": "If it dies"
               }
             ]
           }
@@ -60385,10 +60367,7 @@
               {
                 "kind": "movementRestriction",
                 "restriction": "speed-reduced-by-20-feet",
-                "endsBy": "end-of-next-turn"
-              },
-              {
-                "kind": "triggeredEffect",
+                "endsBy": "end-of-next-turn",
                 "trigger": "If the elemental takes cold damage"
               }
             ]

@@ -1645,6 +1645,24 @@ function parseModifierEffects(text: string): readonly Mechanics[] {
  */
 function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   const effects: Mechanics[] = [...parseModifierEffects(text)];
+  // Some entries (Surprise Attack, Freeze, the three Rejuvenation variants)
+  // attach their trigger directly to the substantive typed effect below
+  // instead of emitting the generic bare `triggeredEffect` marker at the end
+  // of this function — that marker carries no link back to the effect it
+  // governs (eshyra-o9bd.18.7.9 §2 trigger/result linkage). This flag
+  // suppresses the generic marker for those specific matches only.
+  let suppressGenericTrigger = false;
+  // Computed once and reused both by the specific-effect trigger attachment
+  // below and by the generic trailing fallback marker at the end of this
+  // function, so both sites agree on the exact same verbatim trigger text.
+  const genericTriggerMatch =
+    /^(When(?:ever)?|If|The first time|At the start of|At the end of|Immediately after) ([^,]+),/.exec(
+      text,
+    );
+  const genericTriggerText =
+    genericTriggerMatch === null
+      ? undefined
+      : `${genericTriggerMatch[1]} ${genericTriggerMatch[2]}`;
   if (/\bfails a saving throw, it can choose to succeed instead\b/.test(text)) {
     effects.push({ kind: 'legendaryResistance' });
   }
@@ -2170,7 +2188,14 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       text,
     );
   if (surpriseAttackExtraDamage !== null) {
-    effects.push({ kind: 'extraDamage', dice: surpriseAttackExtraDamage[1] });
+    effects.push(
+      compact({
+        kind: 'extraDamage',
+        dice: surpriseAttackExtraDamage[1],
+        trigger: genericTriggerText,
+      }),
+    );
+    suppressGenericTrigger = true;
   }
   // Freeze (water elemental): deterministic speed reduction on taking cold
   // damage, expiring at the end of its next turn.
@@ -2179,11 +2204,15 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       text,
     );
   if (coldFreeze !== null) {
-    effects.push({
-      kind: 'movementRestriction',
-      restriction: `speed-reduced-by-${coldFreeze[1]}-feet`,
-      endsBy: 'end-of-next-turn',
-    });
+    effects.push(
+      compact({
+        kind: 'movementRestriction',
+        restriction: `speed-reduced-by-${coldFreeze[1]}-feet`,
+        endsBy: 'end-of-next-turn',
+        trigger: genericTriggerText,
+      }),
+    );
+    suppressGenericTrigger = true;
   }
   // Shield guardian Bound: ranged half-damage transfer from the amulet's
   // wearer, plus always-known amulet direction/distance.
@@ -2303,6 +2332,12 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
             : undefined,
       }),
     );
+    // "If it dies" is inherent to the `rejuvenation` kind itself (it is
+    // always a dies-then-returns effect); the generic trailing marker would
+    // add no information beyond what afterDaysDice/condition already carry
+    // (eshyra-o9bd.18.7.9 §2), so it is suppressed rather than left
+    // ambiguously dangling.
+    suppressGenericTrigger = true;
   }
   // Lich Rejuvenation: phylactery-conditioned new-body clause.
   const rejuvenationPhylactery =
@@ -2315,6 +2350,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
       afterDaysDice: rejuvenationPhylactery[1],
       condition: 'has-a-phylactery',
     });
+    // "If it has a phylactery" duplicates the `condition` field above
+    // verbatim; the generic trailing marker adds nothing (eshyra-o9bd.18.7.9
+    // §2), so it is suppressed rather than left ambiguously dangling.
+    suppressGenericTrigger = true;
   }
   if (
     /\bcan grant resistance to fire damage to anyone riding it\b/.test(text)
@@ -2612,18 +2651,19 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   }
   // Triggered marker: the entry activates on a stated trigger rather than by
   // spending an action. Captures the trigger clause verbatim. Suppressed for
-  // Legendary Resistance, whose trigger is already the typed effect itself.
-  const trigger = effects.some(
-    (effect) => effect.kind === 'legendaryResistance',
-  )
-    ? null
-    : /^(When(?:ever)?|If|The first time|At the start of|At the end of|Immediately after) ([^,]+),/.exec(
-        text,
-      );
-  if (trigger !== null) {
+  // Legendary Resistance, whose trigger is already the typed effect itself,
+  // and for entries whose specific typed effect above already carries this
+  // same trigger directly (`suppressGenericTrigger`) — leaving both would
+  // duplicate the trigger ambiguously disconnected from its effect
+  // (eshyra-o9bd.18.7.9 §2).
+  if (
+    !suppressGenericTrigger &&
+    !effects.some((effect) => effect.kind === 'legendaryResistance') &&
+    genericTriggerMatch !== null
+  ) {
     effects.push({
       kind: 'triggeredEffect',
-      trigger: `${trigger[1]} ${trigger[2]}`,
+      trigger: genericTriggerText,
     });
   }
   return effects;

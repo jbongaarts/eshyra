@@ -155,16 +155,39 @@ pass and **removed** from `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`.
 | `creature:guardian-naga#traits:Rejuvenation` | `rejuvenation { afterDaysDice: '1d6', condition: 'no-wish-spell-cast-to-prevent-it' }` |
 | `creature:spirit-naga#traits:Rejuvenation` | same as guardian naga |
 | `creature:lich#traits:Rejuvenation` | `rejuvenation { afterDaysDice: '1d10', condition: 'has-a-phylactery' }` |
-| `creature:bugbear#traits:Surprise Attack` | `extraDamage { dice: '2d6' }` |
-| `creature:doppelganger#traits:Surprise Attack` | `extraDamage { dice: '3d6' }` |
-| `creature:water-elemental#traits:Freeze` | `movementRestriction { restriction: 'speed-reduced-by-20-feet', endsBy: 'end-of-next-turn' }` |
+| `creature:bugbear#traits:Surprise Attack` | `extraDamage { dice: '2d6', trigger }` |
+| `creature:doppelganger#traits:Surprise Attack` | `extraDamage { dice: '3d6', trigger }` |
+| `creature:water-elemental#traits:Freeze` | `movementRestriction { restriction: 'speed-reduced-by-20-feet', endsBy: 'end-of-next-turn', trigger }` |
 
-All six source texts open with "If …,", so each also carries the
-pre-existing generic `triggeredEffect { trigger }` fallback (unconditional
-except for `legendaryResistance`) alongside the specific typed effect above —
-consistent with other "If"-led entries already in the pack. It is harmless:
-`hasSubstantiveMechanicsProjection` credits the entry from the specific typed
-effect, not the marker.
+**Trigger/result linkage (final, closes out §1.6.1's original note):** all six
+source texts open with "If …,". The original pass left this as the
+pre-existing generic `triggeredEffect { trigger }` fallback riding alongside
+the specific typed effect as a second, disconnected array entry — harmless
+for readiness credit, but ambiguous: nothing in the typed representation
+proved the trigger governed that particular sibling effect. The final #399
+correction resolves this with explicit trigger/result linkage in the typed
+mechanics themselves, per record:
+
+- **Surprise Attack** (bugbear, doppelganger) and **Freeze** (water
+  elemental): the trigger clause is attached directly to the substantive
+  effect via a new optional `trigger` field on `extraDamage` and
+  `movementRestriction` (`kindSchemas.ts`), and the generic trailing marker is
+  suppressed for these matches. The conditional relationship is now
+  unambiguous without relying on array adjacency.
+- **Rejuvenation** (guardian naga, spirit naga, lich): "if it dies" / "if it
+  has a phylactery" add no information beyond what the `rejuvenation` effect's
+  own `condition`/timing fields already mean (a `rejuvenation` effect is
+  inherently a dies-then-returns effect); the generic trailing marker is
+  suppressed with no replacement field, since nothing would be added by one.
+
+The bundle's readiness registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` in
+`create-dnd5e-srd-audit-bundle/cli.ts`, superseding the former
+`ACCEPTED_PROSE_CREATURE_ENTRY_REFS`) additionally now records a per-ref
+disposition — `accepted-prose-only` for the 2 genuine accepts (§1.5) or
+`finding` (with `bead`/`slice`) for the other 64 residual refs classified in
+this document — so the bucket-level `creature-entry#mechanical-prose` /
+`creature-entry#narrative-prose` policy entries can never again blanket-bless
+the C1–C9 pending work as accepted prose.
 
 #### 1.6.2 Reckless family — 2 refs — disposition: design (new slice C4)
 
@@ -230,7 +253,7 @@ trigger-gated single bonus action — needs either a new `trigger` field on
 
 #### 1.6.7 Single-record residuals — 4 refs — disposition: model (new slice C9)
 
-Five refs whose semantics don't share a family with each other; each needs
+Four refs whose semantics don't share a family with each other; each needs
 its own small contract, but none is large enough to warrant its own design
 slice.
 

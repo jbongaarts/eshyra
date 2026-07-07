@@ -1742,6 +1742,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optStr(effect, 'subject', path);
     optStr(effect, 'target', path);
     optStr(effect, 'endsBy', path);
+    optStr(effect, 'trigger', path);
   },
   triggeredEffect: (effect, path) => {
     reqStr(effect, 'trigger', path);
@@ -2218,6 +2219,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   extraDamage: (effect, path) => {
     reqDice(effect, 'dice', path);
+    optStr(effect, 'trigger', path);
     if (effect.type !== undefined) {
       const type = reqStr(effect, 'type', path);
       if (!SRD_5_1_DAMAGE_TYPES.has(type)) {

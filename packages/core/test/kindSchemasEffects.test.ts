@@ -616,6 +616,21 @@ describe('mechanics effect payload contracts', () => {
         cost: 'action',
       },
       { kind: 'speedSet', mode: 'swim', value: 'walking-speed' },
+      // Explicit trigger/result linkage (eshyra-o9bd.18.7.9 §2): Surprise
+      // Attack and Freeze attach their governing trigger directly to the
+      // substantive effect instead of a disconnected bare triggeredEffect.
+      {
+        kind: 'extraDamage',
+        dice: '2d6',
+        trigger:
+          'If the bugbear surprises a creature and hits it with an attack during the first round of combat',
+      },
+      {
+        kind: 'movementRestriction',
+        restriction: 'speed-reduced-by-20-feet',
+        endsBy: 'end-of-next-turn',
+        trigger: 'If the elemental takes cold damage',
+      },
     ];
     for (const effect of emitted) {
       expect(() => validate(effect), JSON.stringify(effect)).not.toThrow();

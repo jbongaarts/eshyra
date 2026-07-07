@@ -1043,6 +1043,10 @@ export type GameplayReadinessBucket =
  *   - `unsupported` — a projection is not applicable; `reason` documents it.
  *   - `finding` — deterministic modeling is owed and `bead` names the open
  *     issue that will drive the bucket to zero.
+ *   - `reviewed-per-ref` — the bucket mixes genuinely accepted prose with
+ *     reviewed pending findings; this bucket-level entry only certifies that
+ *     per-ref review is in force (see `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`)
+ *     — it must never itself be read as blanket acceptance.
  *
  * Records that are already modeled never need an entry. The policy is
  * fail-closed both ways (`assertGameplayReadinessDispositions`): a non-empty
@@ -1052,7 +1056,11 @@ export type GameplayReadinessBucket =
  * lose) a broad readiness bucket (eshyra-o9bd.18.9.6).
  */
 export interface GameplayReadinessDispositionPolicyEntry {
-  readonly status: 'accepted-prose-only' | 'unsupported' | 'finding';
+  readonly status:
+    | 'accepted-prose-only'
+    | 'unsupported'
+    | 'finding'
+    | 'reviewed-per-ref';
   readonly reason: string;
   /** Required when `status` is `finding`. */
   readonly bead?: string;
@@ -1068,87 +1076,197 @@ export const CREATURE_ENTRY_MECHANICAL_SIGNAL =
   /\bDC\s*\d|\b\d+d\d+\b|saving throw|advantage|disadvantage|hit point|attack roll|to hit|damage|\bimmune\b|resistance|is (?:blinded|charmed|deafened|frightened|grappled|incapacitated|paralyzed|petrified|poisoned|prone|restrained|stunned|unconscious)\b/i;
 
 /**
- * Reviewed accepted-prose creature-entry MEMBERSHIP (eshyra-o9bd.18.7.3
- * review). The bucket dispositions below accept these exact entries and no
- * others: an entry that newly loses its typed mechanics (or a new unmodeled
- * entry) is NOT covered by the blanket disposition — it fails the build
- * until explicitly reviewed here, and an entry that gains mechanics goes
- * stale here and must be removed. This is what makes the accepted buckets
- * fail-closed at the entry level rather than only at the bucket level.
+ * A reviewed decision about one creature-entry ref (eshyra-o9bd.18.7.9 §1
+ * exhaustive per-record classification):
+ *
+ *   - `accepted-prose-only` — the prose IS the intended representation
+ *     (SRD §1.5 "accept*"); permanent, no deterministic projection is owed.
+ *   - `finding` — deterministic modeling is reviewed and owed; `bead` names
+ *     the parent issue and `slice` names the implementation slice (C1–C9)
+ *     from the artifact's §3 routing table that will drive it to zero.
  */
-export const ACCEPTED_PROSE_CREATURE_ENTRY_REFS: Readonly<
-  Record<'mechanical-prose' | 'narrative-prose', readonly string[]>
+export type CreatureEntryReviewedDisposition =
+  | {
+      readonly status: 'accepted-prose-only';
+      readonly reason: string;
+    }
+  | {
+      readonly status: 'finding';
+      readonly bead: string;
+      readonly slice: string;
+      readonly reason: string;
+    };
+
+const CREATURE_ENTRY_FINDINGS_BEAD = 'eshyra-o9bd.18.7.9';
+
+function creatureEntryFinding(
+  slice: string,
+  reason: string,
+): CreatureEntryReviewedDisposition {
+  return {
+    status: 'finding',
+    bead: CREATURE_ENTRY_FINDINGS_BEAD,
+    slice,
+    reason,
+  };
+}
+
+function creatureEntryAcceptedProse(
+  reason: string,
+): CreatureEntryReviewedDisposition {
+  return { status: 'accepted-prose-only', reason };
+}
+
+const CREATURE_ENTRY_SLICE_REASONS: Readonly<Record<string, string>> =
+  Object.freeze({
+    C1: 'Shape-change family: deterministic polymorph (form constraint, retained/replaced stats, equipment disposition, reversion-on-death) with no existing contract; needs a new changeShape design (eshyra-o9bd.18.7.9 §1.1).',
+    C2: 'False Appearance family: uniform motionless/indistinguishable auto-rule; needs a small falseAppearance contract (eshyra-o9bd.18.7.9 §1.2).',
+    C3: 'Telepathy/communication/innate-knowledge family: no telepathy/communication/locationKnowledge/pathMemory/sleep-exception kind exists yet; needs small new contracts (eshyra-o9bd.18.7.9 §1.3–§1.4).',
+    C4: 'Reckless family: self-elected symmetric advantage trade-off with no existing kind; needs a small recklessAttack contract (eshyra-o9bd.18.7.9 §1.6.2).',
+    C5: 'Split family: deterministic reproduction-on-damage; needs a small splitOnDamage contract (eshyra-o9bd.18.7.9 §1.6.3).',
+    C6: 'Damage-absorption family: deterministic immune-and-heal pattern; needs a small damageAbsorption contract (eshyra-o9bd.18.7.9 §1.6.4).',
+    C7: 'Berserk family: stateful d6-threshold behavior (plus a calming sub-clause on the flesh golem); a genuine state machine, not a small payload (eshyra-o9bd.18.7.9 §1.6.5).',
+    C8: 'Rampage family: triggered bonus action on reducing a creature to 0 HP; needs a trigger field on bonusAction or a new triggeredBonusAction contract (eshyra-o9bd.18.7.9 §1.6.6).',
+    C9: 'Single-record residuals (Shriek, Elemental Demise ×2, Shield): three small shared contracts — soundAlarm, onDeathBodyDisposal, reactionAcBonus (eshyra-o9bd.18.7.9 §1.6.7).',
+  });
+
+function creatureEntrySliceFinding(
+  slice: keyof typeof CREATURE_ENTRY_SLICE_REASONS,
+): CreatureEntryReviewedDisposition {
+  return creatureEntryFinding(slice, CREATURE_ENTRY_SLICE_REASONS[slice]);
+}
+
+/**
+ * Per-ref reviewed disposition for every creature-entry ref currently
+ * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 66
+ * currently residual). Only the two vampire "Vampire Weaknesses" header refs
+ * are genuinely permanent prose acceptance (§1.5); the other 64 are reviewed
+ * deterministic findings bucketed into slices C1–C9 (§1.1–§1.4, §1.6.2–
+ * §1.6.7). This registry — not the bucket-level
+ * `creature-entry#mechanical-prose` / `creature-entry#narrative-prose`
+ * dispositions — is what the fail-closed MEMBERSHIP check consults per ref,
+ * so a broad bucket-level policy can never hide a reviewed-but-pending
+ * finding behind blanket "accepted-prose-only" status: a ref missing from
+ * this registry fails the build (newly unclassified), and a reviewed ref
+ * that gains substantive mechanics goes stale here and must be explicitly
+ * removed.
+ */
+export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
+  Record<string, CreatureEntryReviewedDisposition>
 > = Object.freeze({
-  'mechanical-prose': [
-    'creature:adult-bronze-dragon#actions:Change Shape',
-    'creature:adult-gold-dragon#actions:Change Shape',
-    'creature:adult-silver-dragon#actions:Change Shape',
-    'creature:ancient-brass-dragon#actions:Change Shape',
-    'creature:ancient-bronze-dragon#actions:Change Shape',
-    'creature:ancient-copper-dragon#actions:Change Shape',
-    'creature:ancient-gold-dragon#actions:Change Shape',
-    'creature:ancient-silver-dragon#actions:Change Shape',
-    'creature:berserker#traits:Reckless',
-    'creature:black-pudding#reactions:Split',
-    'creature:clay-golem#traits:Acid Absorption',
-    'creature:clay-golem#traits:Berserk',
-    'creature:flesh-golem#traits:Berserk',
-    'creature:flesh-golem#traits:Lightning Absorption',
-    'creature:giant-hyena#traits:Rampage',
-    'creature:gnoll#traits:Rampage',
-    'creature:iron-golem#traits:Fire Absorption',
-    'creature:minotaur#traits:Reckless',
-    'creature:ochre-jelly#reactions:Split',
-    'creature:shambling-mound#traits:Lightning Absorption',
-    'creature:shrieker#reactions:Shriek',
-  ],
-  'narrative-prose': [
-    'creature:aboleth#traits:Probing Telepathy',
-    'creature:animated-armor#traits:False Appearance',
-    'creature:awakened-shrub#traits:False Appearance',
-    'creature:awakened-tree#traits:False Appearance',
-    'creature:cloaker#traits:False Appearance',
-    'creature:couatl#actions:Change Shape',
-    'creature:darkmantle#traits:False Appearance',
-    'creature:deva#actions:Change Shape',
-    'creature:djinni#traits:Elemental Demise',
-    'creature:doppelganger#traits:Shapechanger',
-    'creature:dryad#traits:Speak with Beasts and Plants',
-    'creature:efreeti#traits:Elemental Demise',
-    'creature:ettin#traits:Wakeful',
-    'creature:flying-sword#traits:False Appearance',
-    'creature:gargoyle#traits:False Appearance',
-    'creature:gray-ooze#traits:False Appearance',
-    'creature:homunculus#traits:Telepathic Bond',
-    'creature:hydra#traits:Wakeful',
-    'creature:ice-mephit#traits:False Appearance',
-    'creature:imp#traits:Shapechanger',
-    'creature:invisible-stalker#traits:Faultless Tracker',
-    'creature:magma-mephit#traits:False Appearance',
-    'creature:mimic#traits:False Appearance (Object Form Only)',
-    'creature:mimic#traits:Shapechanger',
-    'creature:minotaur#traits:Labyrinthine Recall',
-    'creature:night-hag#actions:Change Shape',
-    'creature:oni#actions:Change Shape',
-    'creature:otyugh#traits:Limited Telepathy',
-    'creature:pseudodragon#traits:Limited Telepathy',
-    'creature:quasit#traits:Shapechanger',
-    'creature:roper#traits:False Appearance',
-    'creature:rug-of-smothering#traits:False Appearance',
-    'creature:sahuagin#traits:Shark Telepathy',
-    'creature:shield-guardian#reactions:Shield',
-    'creature:shrieker#traits:False Appearance',
-    'creature:succubus-incubus#traits:Shapechanger',
-    'creature:treant#traits:False Appearance',
-    'creature:vampire#traits:Vampire Weaknesses',
-    'creature:vampire-spawn#traits:Vampire Weaknesses',
-    'creature:violet-fungus#traits:False Appearance',
-    'creature:werebear#traits:Shapechanger',
-    'creature:wereboar#traits:Shapechanger',
-    'creature:wererat#traits:Shapechanger',
-    'creature:weretiger#traits:Shapechanger',
-    'creature:werewolf#traits:Shapechanger',
-  ],
+  // §1.5 — genuinely accepted (2).
+  'creature:vampire#traits:Vampire Weaknesses': creatureEntryAcceptedProse(
+    'Header line only ("has the following flaws:"); the four flaws (Forbiddance, Harmed by Running Water, Stake to the Heart, Sunlight Hypersensitivity) are separate sibling trait entries, each already typed (eshyra-o9bd.18.7.9 §1.5).',
+  ),
+  'creature:vampire-spawn#traits:Vampire Weaknesses':
+    creatureEntryAcceptedProse('Same as vampire (eshyra-o9bd.18.7.9 §1.5).'),
+
+  // C1 — shape-change family (22, §1.1).
+  'creature:adult-bronze-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:adult-gold-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:adult-silver-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:ancient-brass-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:ancient-bronze-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:ancient-copper-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:ancient-gold-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:ancient-silver-dragon#actions:Change Shape':
+    creatureEntrySliceFinding('C1'),
+  'creature:couatl#actions:Change Shape': creatureEntrySliceFinding('C1'),
+  'creature:deva#actions:Change Shape': creatureEntrySliceFinding('C1'),
+  'creature:night-hag#actions:Change Shape': creatureEntrySliceFinding('C1'),
+  'creature:oni#actions:Change Shape': creatureEntrySliceFinding('C1'),
+  'creature:doppelganger#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:imp#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:quasit#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:mimic#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:succubus-incubus#traits:Shapechanger':
+    creatureEntrySliceFinding('C1'),
+  'creature:werebear#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:wereboar#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:wererat#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:weretiger#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+  'creature:werewolf#traits:Shapechanger': creatureEntrySliceFinding('C1'),
+
+  // C2 — False Appearance family (16, §1.2).
+  'creature:animated-armor#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:awakened-shrub#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:awakened-tree#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:cloaker#traits:False Appearance': creatureEntrySliceFinding('C2'),
+  'creature:darkmantle#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:flying-sword#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:gargoyle#traits:False Appearance': creatureEntrySliceFinding('C2'),
+  'creature:gray-ooze#traits:False Appearance': creatureEntrySliceFinding('C2'),
+  'creature:ice-mephit#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:magma-mephit#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:mimic#traits:False Appearance (Object Form Only)':
+    creatureEntrySliceFinding('C2'),
+  'creature:roper#traits:False Appearance': creatureEntrySliceFinding('C2'),
+  'creature:rug-of-smothering#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+  'creature:shrieker#traits:False Appearance': creatureEntrySliceFinding('C2'),
+  'creature:treant#traits:False Appearance': creatureEntrySliceFinding('C2'),
+  'creature:violet-fungus#traits:False Appearance':
+    creatureEntrySliceFinding('C2'),
+
+  // C3 — telepathy/communication/innate-knowledge family (10, §1.3–§1.4).
+  'creature:homunculus#traits:Telepathic Bond': creatureEntrySliceFinding('C3'),
+  'creature:otyugh#traits:Limited Telepathy': creatureEntrySliceFinding('C3'),
+  'creature:pseudodragon#traits:Limited Telepathy':
+    creatureEntrySliceFinding('C3'),
+  'creature:sahuagin#traits:Shark Telepathy': creatureEntrySliceFinding('C3'),
+  'creature:dryad#traits:Speak with Beasts and Plants':
+    creatureEntrySliceFinding('C3'),
+  'creature:aboleth#traits:Probing Telepathy': creatureEntrySliceFinding('C3'),
+  'creature:invisible-stalker#traits:Faultless Tracker':
+    creatureEntrySliceFinding('C3'),
+  'creature:minotaur#traits:Labyrinthine Recall':
+    creatureEntrySliceFinding('C3'),
+  'creature:hydra#traits:Wakeful': creatureEntrySliceFinding('C3'),
+  'creature:ettin#traits:Wakeful': creatureEntrySliceFinding('C3'),
+
+  // C4 — Reckless family (2, §1.6.2).
+  'creature:berserker#traits:Reckless': creatureEntrySliceFinding('C4'),
+  'creature:minotaur#traits:Reckless': creatureEntrySliceFinding('C4'),
+
+  // C5 — Split family (2, §1.6.3).
+  'creature:black-pudding#reactions:Split': creatureEntrySliceFinding('C5'),
+  'creature:ochre-jelly#reactions:Split': creatureEntrySliceFinding('C5'),
+
+  // C6 — damage-absorption family (4, §1.6.4).
+  'creature:clay-golem#traits:Acid Absorption': creatureEntrySliceFinding('C6'),
+  'creature:flesh-golem#traits:Lightning Absorption':
+    creatureEntrySliceFinding('C6'),
+  'creature:iron-golem#traits:Fire Absorption': creatureEntrySliceFinding('C6'),
+  'creature:shambling-mound#traits:Lightning Absorption':
+    creatureEntrySliceFinding('C6'),
+
+  // C7 — Berserk family (2, §1.6.5).
+  'creature:clay-golem#traits:Berserk': creatureEntrySliceFinding('C7'),
+  'creature:flesh-golem#traits:Berserk': creatureEntrySliceFinding('C7'),
+
+  // C8 — Rampage family (2, §1.6.6).
+  'creature:giant-hyena#traits:Rampage': creatureEntrySliceFinding('C8'),
+  'creature:gnoll#traits:Rampage': creatureEntrySliceFinding('C8'),
+
+  // C9 — single-record residuals (4, §1.6.7).
+  'creature:shrieker#reactions:Shriek': creatureEntrySliceFinding('C9'),
+  'creature:djinni#traits:Elemental Demise': creatureEntrySliceFinding('C9'),
+  'creature:efreeti#traits:Elemental Demise': creatureEntrySliceFinding('C9'),
+  'creature:shield-guardian#reactions:Shield': creatureEntrySliceFinding('C9'),
 });
 
 /**
@@ -1246,20 +1364,23 @@ export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
 export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   Record<string, GameplayReadinessDispositionPolicyEntry>
 > = Object.freeze({
-  // Nested creature-entry dispositions (eshyra-o9bd.18.7.3). The typed
-  // entry projections cover attacks, saves, damage, conditions, recharge,
+  // Nested creature-entry dispositions (eshyra-o9bd.18.7.3, refined by the
+  // eshyra-o9bd.18.7.9 §1 exhaustive per-ref review). The typed entry
+  // projections cover attacks, saves, damage, conditions, recharge,
   // per-day/rest use economies, legendary resistance, regeneration, healing,
   // multiattack counts, save/check/attack-roll modifiers, spellcasting spell
-  // lists, breathing/jump grammars, and triggered-effect markers. The
-  // remaining unmodeled entries were reviewed with that bead: their
-  // adjudication is inherently situational (form changes, telepathic bonds,
-  // terrain interaction, sensory description), so the verbatim prose is the
-  // intended representation for the DM model, with numeric hooks already
-  // projected wherever the entry prints them.
+  // lists, breathing/jump grammars, and triggered-effect markers. Each
+  // remaining unmodeled entry is individually reviewed in
+  // `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`: 2 refs are genuinely permanent
+  // prose acceptance (the Vampire Weaknesses header, §1.5); the other 64 are
+  // reviewed deterministic findings pending an implementation slice
+  // (C1–C9). This bucket-level entry status is `reviewed-per-ref` — NOT
+  // `accepted-prose-only` — precisely so it cannot itself grant blanket
+  // acceptance and hide those 64 pending findings.
   'creature-entry#mechanical-prose': {
-    status: 'accepted-prose-only',
+    status: 'reviewed-per-ref',
     reason:
-      'Entries whose remaining mechanical language is situational (movement-style traits, form/terrain interactions, rider clauses on already-projected attacks); the deterministic hooks these entries print (DCs, dice, conditions, uses) are projected — the residue is DM-adjudicated prose by design (eshyra-o9bd.18.7.3).',
+      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slices C1–C9 (eshyra-o9bd.18.7.9 §1.1–§1.4, §1.6.2–§1.6.7). This bucket-level entry does not itself accept or close any record.',
   },
   'spell#metadata-only': {
     status: 'accepted-prose-only',
@@ -1267,9 +1388,9 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
       'Spells whose remaining behavior is inherently DM-mediated or open-ended (conjuring stat-blocked allies, divination answers, utility/social effects, movement forms); casting metadata (concentration, structured duration, save DCs, areas) is projected, and every printed deterministic hook (damage dice, conditions, healing, modifiers, scaling) is typed where the SRD states one (eshyra-o9bd.18.7.4).',
   },
   'creature-entry#narrative-prose': {
-    status: 'accepted-prose-only',
+    status: 'reviewed-per-ref',
     reason:
-      'Entries with no mechanical vocabulary at all (descriptive/sensory traits such as False Appearance or Illumination); prose is the intended representation (eshyra-o9bd.18.7.3).',
+      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slices C1–C9 (eshyra-o9bd.18.7.9 §1.1–§1.4, §1.6.2–§1.6.7). This bucket-level entry does not itself accept or close any record.',
   },
   'hazard#prose-only': {
     status: 'finding',
@@ -1385,6 +1506,17 @@ export type GameplayReadinessReport = {
     readonly examples: {
       readonly mechanicalProse: readonly string[];
       readonly narrativeProse: readonly string[];
+    };
+    /**
+     * Per-ref reviewed disposition breakdown (eshyra-o9bd.18.7.9 §1): the
+     * genuinely-accepted count must never be conflated with the
+     * reviewed-but-pending finding count, and every finding is attributed to
+     * its implementation slice (C1–C9).
+     */
+    readonly reviewedDispositions: {
+      readonly acceptedProseOnly: number;
+      readonly pendingFindings: number;
+      readonly findingsBySlice: Readonly<Record<string, number>>;
     };
   };
   /**
@@ -1504,6 +1636,24 @@ export function buildGameplayReadinessReport(
   const narrativeProseEntries = proseEntries.filter(
     (entry) => !CREATURE_ENTRY_MECHANICAL_SIGNAL.test(entry.text),
   );
+  // Per-ref reviewed-disposition breakdown (eshyra-o9bd.18.7.9 §1): computed
+  // directly from the live prose-entry set against the reviewed registry, so
+  // "accepted" vs "pending finding" counts can never be conflated by a
+  // broad bucket-level status.
+  const findingsBySlice: Record<string, number> = {};
+  let acceptedProseOnlyCount = 0;
+  let pendingFindingCount = 0;
+  for (const entry of [...mechanicalProseEntries, ...narrativeProseEntries]) {
+    const disposition = CREATURE_ENTRY_REVIEWED_DISPOSITIONS[entry.ref];
+    if (disposition === undefined) continue; // surfaced as a fail-closed error below
+    if (disposition.status === 'accepted-prose-only') {
+      acceptedProseOnlyCount += 1;
+    } else {
+      pendingFindingCount += 1;
+      findingsBySlice[disposition.slice] =
+        (findingsBySlice[disposition.slice] ?? 0) + 1;
+    }
+  }
   const creatureEntries: GameplayReadinessReport['creatureEntries'] = {
     totalEntries: creatureEntryRefs.length,
     entriesWithMechanics: creatureEntryRefs.filter(
@@ -1520,6 +1670,11 @@ export function buildGameplayReadinessReport(
         .map((entry) => entry.ref)
         .sort()
         .slice(0, 5),
+    },
+    reviewedDispositions: {
+      acceptedProseOnly: acceptedProseOnlyCount,
+      pendingFindings: pendingFindingCount,
+      findingsBySlice: Object.freeze(findingsBySlice),
     },
   };
   // Resolve dispositions (eshyra-o9bd.18.9.6): every non-empty bucket of
@@ -1701,8 +1856,12 @@ export function buildGameplayReadinessReport(
     }
   }
   // Nested creature-entry buckets go through the same fail-closed policy
-  // (eshyra-o9bd.18.7.3): a non-empty prose bucket without a reviewed
-  // disposition fails, and an entry naming a now-empty bucket goes stale.
+  // (eshyra-o9bd.18.7.3), refined by the eshyra-o9bd.18.7.9 §1 per-ref
+  // review: a non-empty prose bucket without a reviewed bucket-level
+  // disposition still fails, but MEMBERSHIP is now checked per ref against
+  // `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` rather than a blanket
+  // accepted-prose-only bucket status — so a reviewed-but-pending finding
+  // (C1–C9) can never be silently blessed by the bucket disposition.
   const entryBuckets: ReadonlyArray<
     readonly [GameplayReadinessBucket, readonly { readonly ref: string }[]]
   > = [
@@ -1723,38 +1882,25 @@ export function buildGameplayReadinessReport(
       );
       continue;
     }
-    // Fail closed by MEMBERSHIP, not just bucket type: the accepted
-    // disposition covers exactly the reviewed refs. A projection regression
-    // (entry newly losing mechanics) or a new unmodeled entry surfaces as an
-    // unreviewed ref; an entry that gained mechanics goes stale in the list.
-    const reviewed = new Set(
-      ACCEPTED_PROSE_CREATURE_ENTRY_REFS[
-        bucket as keyof typeof ACCEPTED_PROSE_CREATURE_ENTRY_REFS
-      ] ?? [],
-    );
-    const present = new Set(bucketEntries.map((entry) => entry.ref));
-    const unreviewed = bucketEntries
-      .map((entry) => entry.ref)
-      .filter((ref) => !reviewed.has(ref));
-    if (unreviewed.length > 0) {
-      dispositionErrors.push(
-        `${policyKey}: ${unreviewed.length} entr(ies) not in the reviewed accepted-prose membership (e.g. ${unreviewed
-          .slice(0, 3)
-          .join(', ')}) — review and add, or restore the typed projection`,
-      );
-    }
-    const staleRefs = [...reviewed].filter((ref) => !present.has(ref));
-    if (staleRefs.length > 0) {
-      dispositionErrors.push(
-        `${policyKey}: ${staleRefs.length} reviewed ref(s) no longer in the bucket (e.g. ${staleRefs
-          .slice(0, 3)
-          .join(', ')}) — remove them from ACCEPTED_PROSE_CREATURE_ENTRY_REFS`,
-      );
-    }
-    if (policy.status === 'finding' && policy.bead === undefined) {
-      dispositionErrors.push(
-        `${policyKey}: disposition is a finding but names no bead`,
-      );
+    // Fail closed by per-ref MEMBERSHIP: every entry currently in this
+    // bucket must have an explicit reviewed disposition (accepted or
+    // finding); a newly unclassified ref fails the build.
+    for (const entry of bucketEntries) {
+      const disposition = CREATURE_ENTRY_REVIEWED_DISPOSITIONS[entry.ref];
+      if (disposition === undefined) {
+        dispositionErrors.push(
+          `${policyKey}: ${entry.ref} has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — review and classify (accepted-prose-only or finding), or restore the typed projection`,
+        );
+        continue;
+      }
+      if (
+        disposition.status === 'finding' &&
+        (disposition.bead.length === 0 || disposition.slice.length === 0)
+      ) {
+        dispositionErrors.push(
+          `${policyKey}: ${entry.ref} is a finding but names no bead/slice`,
+        );
+      }
     }
     dispositions.push({
       kind: 'creature-entry',
@@ -1765,6 +1911,29 @@ export function buildGameplayReadinessReport(
       reason: policy.reason,
       ...(policy.bead === undefined ? {} : { bead: policy.bead }),
     });
+  }
+  // Stale-registry check across both buckets combined (eshyra-o9bd.18.7.9):
+  // a reviewed ref that gains substantive mechanics (e.g. the six refs
+  // implemented in this pass) disappears from both prose buckets entirely
+  // and must be explicitly removed from CREATURE_ENTRY_REVIEWED_DISPOSITIONS
+  // rather than lingering as a stale finding/acceptance.
+  {
+    const presentCreatureEntryRefs = new Set([
+      ...mechanicalProseEntries.map((entry) => entry.ref),
+      ...narrativeProseEntries.map((entry) => entry.ref),
+    ]);
+    const staleCreatureEntryRefs = Object.keys(
+      CREATURE_ENTRY_REVIEWED_DISPOSITIONS,
+    ).filter((ref) => !presentCreatureEntryRefs.has(ref));
+    if (staleCreatureEntryRefs.length > 0) {
+      dispositionErrors.push(
+        `creature-entry: ${staleCreatureEntryRefs.length} reviewed ref(s) no longer prose-only (e.g. ${staleCreatureEntryRefs
+          .slice(0, 3)
+          .join(
+            ', ',
+          )}) — remove them from CREATURE_ENTRY_REVIEWED_DISPOSITIONS`,
+      );
+    }
   }
   for (const policyKey of Object.keys(GAMEPLAY_READINESS_DISPOSITIONS)) {
     if (!seenPolicyKeys.has(policyKey)) {
@@ -1832,6 +2001,15 @@ export function formatGameplayReadinessReport(
     `- entries: ${report.creatureEntries.totalEntries}; with typed mechanics: ${report.creatureEntries.entriesWithMechanics}; mechanical prose: ${report.creatureEntries.mechanicalProse}; narrative prose: ${report.creatureEntries.narrativeProse}`,
     `- mechanical-prose examples: [${report.creatureEntries.examples.mechanicalProse.join(', ') || 'none'}]`,
     `- narrative-prose examples: [${report.creatureEntries.examples.narrativeProse.join(', ') || 'none'}]`,
+    '',
+    'Creature-entry reviewed dispositions (eshyra-o9bd.18.7.9)',
+    `- accepted-prose-only (permanent): ${report.creatureEntries.reviewedDispositions.acceptedProseOnly}`,
+    `- pending findings (C1-C9, reviewed but not yet implemented): ${report.creatureEntries.reviewedDispositions.pendingFindings}`,
+    ...Object.entries(
+      report.creatureEntries.reviewedDispositions.findingsBySlice,
+    )
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([slice, count]) => `  - ${slice}: ${count}`),
   );
   lines.push(
     '',
