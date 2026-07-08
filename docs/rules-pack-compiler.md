@@ -283,7 +283,7 @@ But "situational" rarely means "wholly model-adjudicated" — ownership is
 clause-level, not rule-level. Take **cover**: the model adjudicates the
 *context* — geometry, fictional positioning, terrain interpretation, line of
 sight, and whether the circumstances qualify for half or three-quarters cover;
-the *deterministic consequences that follow that ruling* — the ±2 / ±5 AC and
+the *deterministic consequences that follow that ruling* — the +2 / +5 AC and
 Dex-save modifier composition into vs-AC/DC resolution — are owned by the
 derived-math engine primitive (`cover` is a clause-level engine gap in the final
 execution-boundary classification, not a fully terminal ruling). The same shape
@@ -472,7 +472,7 @@ bonus is a pack `effects` entry *and* waits on the derived-math application
 hook). And a single rule can span all three of pack representation,
 model-adjudicated context, and a deterministic engine dependency — **cover** is
 the canonical case (§6): the qualify-for-cover determination is
-model-adjudicated context, the ±2 / ±5 AC and Dex-save modifier composition is a
+model-adjudicated context, the +2 / +5 AC and Dex-save modifier composition is a
 derived-math engine dependency, and the cover degrees are structured reference
 data. Represent each clause where its data lives, mark the model-adjudicated
 clauses as such, and record every engine hook each clause needs.
