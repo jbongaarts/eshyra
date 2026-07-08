@@ -117,8 +117,9 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         {
           kind: 'speedMultiplier',
           multiplier: 0.5,
-          condition:
-            'carrying more than the table’s capacity (up to twice that amount)',
+          thresholdTableRef: 'table:carpet-of-flying',
+          thresholdMultiplier: 2,
+          condition: 'carrying more than the (doubled) table capacity',
         },
       ],
     });

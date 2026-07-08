@@ -1718,6 +1718,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   movementCostMultiplier: (effect, path) => {
     reqInt(effect, 'feetPerFoot', path, 2);
+    // The terrain/subject this multiplier applies to is effect SCOPE, not a
+    // gating condition — mirrors `ignoreDifficultTerrain.terrain`
+    // (eshyra-o9bd.18.7.7.5 review: cloak of arachnida's web movement).
+    optStrArray(effect, 'terrain', path);
   },
   naturalWeaponDamage: (effect, path) => {
     reqDice(effect, 'dice', path);
@@ -1761,6 +1765,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   walkOnLiquids: (effect, path) => {
     optInt(effect, 'surfacingFeetPerRound', path, 1);
+    // What the grant lets you walk on is effect SCOPE, not a gating
+    // condition — kept distinct from `condition` (eshyra-o9bd.18.7.7.5
+    // review: horseshoes of a zephyr's nonsolid/unstable surfaces).
+    optStr(effect, 'surfaces', path);
     optStr(effect, 'condition', path);
   },
   damageTransfer: (effect, path) => {
@@ -2216,6 +2224,90 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optBool(effect, 'floor', path);
     optBool(effect, 'hover', path);
     optStr(effect, 'condition', path);
+    // A weight-based speed reduction with a hard capacity ceiling (broom of
+    // flying: "flying speed becomes 30 feet while carrying over 200 pounds"
+    // under a 400-pound cap) — structured rather than folded into
+    // `condition`, since a consumer must not have to parse prose to
+    // determine movement speed (eshyra-o9bd.18.7.7.5 review round 3).
+    const weightCapacity = effect.weightCapacity;
+    if (weightCapacity !== undefined) {
+      if (
+        typeof weightCapacity !== 'object' ||
+        weightCapacity === null ||
+        Array.isArray(weightCapacity)
+      ) {
+        throw new RulesPackError(
+          `${path}.weightCapacity must be a non-null object when present`,
+        );
+      }
+      const wc = weightCapacity as Obj;
+      const wcPath = `${path}.weightCapacity`;
+      reqInt(wc, 'maximumPounds', wcPath, 1);
+      const hasReducedValue = wc.reducedValue !== undefined;
+      const hasThreshold = wc.reducedAboveWeightPounds !== undefined;
+      if (hasReducedValue !== hasThreshold) {
+        throw new RulesPackError(
+          `${wcPath} must carry both reducedValue and reducedAboveWeightPounds, or neither`,
+        );
+      }
+      if (hasReducedValue) {
+        const reducedValue = wc.reducedValue;
+        if (
+          reducedValue !== 'current-speed' &&
+          reducedValue !== 'walking-speed' &&
+          (typeof reducedValue !== 'number' ||
+            !Number.isInteger(reducedValue) ||
+            reducedValue < 0)
+        ) {
+          throw new RulesPackError(
+            `${wcPath}.reducedValue must be "current-speed", "walking-speed", or a non-negative integer, got ${JSON.stringify(reducedValue)}`,
+          );
+        }
+        reqInt(wc, 'reducedAboveWeightPounds', wcPath, 1);
+      }
+    }
+  },
+  // No dedicated validator previously existed (any payload was accepted).
+  // Adding one now (eshyra-o9bd.18.7.7.5 review round 3) is scoped to this
+  // bead's own new usage: carpet of flying's "flies at half speed if it
+  // carries more than its normal capacity" needs the capacity THRESHOLD
+  // structured, not just the multiplier — `thresholdTableRef` points at the
+  // same by-size table `speedSet.valueTableRef` already references (capacity
+  // column), and `thresholdMultiplier` is the printed "up to twice" factor
+  // applied to that column. Existing callers are unaffected: they all set
+  // only `multiplier` (+ optional `subject`/`condition`).
+  speedMultiplier: (effect, path) => {
+    const multiplier = effect.multiplier;
+    if (typeof multiplier !== 'number' || !Number.isFinite(multiplier)) {
+      throw new RulesPackError(`${path}.multiplier must be a finite number`);
+    }
+    optStr(effect, 'subject', path);
+    optStr(effect, 'condition', path);
+    const hasThresholdTableRef = effect.thresholdTableRef !== undefined;
+    const hasThresholdMultiplier = effect.thresholdMultiplier !== undefined;
+    if (hasThresholdTableRef !== hasThresholdMultiplier) {
+      throw new RulesPackError(
+        `${path} must carry both thresholdTableRef and thresholdMultiplier, or neither`,
+      );
+    }
+    if (hasThresholdTableRef) {
+      const ref = reqStr(effect, 'thresholdTableRef', path);
+      if (!ref.startsWith('table:')) {
+        throw new RulesPackError(
+          `${path}.thresholdTableRef must be a 'table:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+      const thresholdMultiplier = effect.thresholdMultiplier;
+      if (
+        typeof thresholdMultiplier !== 'number' ||
+        !Number.isFinite(thresholdMultiplier) ||
+        thresholdMultiplier <= 0
+      ) {
+        throw new RulesPackError(
+          `${path}.thresholdMultiplier must be a positive finite number`,
+        );
+      }
+    }
   },
   abilityScoreIncrease: (effect, path) => {
     const raw = effect.abilities;
@@ -2294,7 +2386,20 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   // Horseshoes of a Zephyr's hover requires all four horseshoes affixed
   // (eshyra-o9bd.18.7.7.5 review) — an item-specific prerequisite, so
   // `condition` stays optional rather than a universal requirement.
-  hover: markerWithOptionalCondition,
+  // `heightInches` is the fixed hover height that item prints (4 inches) —
+  // structured rather than folded into `condition` (review round 3). Both
+  // fields stay optional and fail-closed against any other key.
+  hover: (effect, path) => {
+    for (const key of Object.keys(effect)) {
+      if (key !== 'kind' && key !== 'heightInches' && key !== 'condition') {
+        throw new RulesPackError(
+          `${path} has unexpected payload key ${JSON.stringify(key)}`,
+        );
+      }
+    }
+    optInt(effect, 'heightInches', path, 1);
+    optStr(effect, 'condition', path);
+  },
   // A standalone effect (eshyra-o9bd.18.7.7.5 review): the horseshoes of a
   // zephyr's "leaves no tracks" is an independent benefit, not a qualifier
   // nested inside `walkOnLiquids`.

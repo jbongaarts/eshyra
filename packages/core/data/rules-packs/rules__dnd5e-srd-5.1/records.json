@@ -84877,7 +84877,11 @@
             "kind": "speedSet",
             "mode": "fly",
             "value": 50,
-            "condition": "reduced to 30 feet while carrying more than 200 pounds (400-pound maximum capacity)"
+            "weightCapacity": {
+              "maximumPounds": 400,
+              "reducedValue": 30,
+              "reducedAboveWeightPounds": 200
+            }
           }
         ]
       }
@@ -84993,7 +84997,9 @@
           {
             "kind": "speedMultiplier",
             "multiplier": 0.5,
-            "condition": "carrying more than the table’s capacity (up to twice that amount)"
+            "thresholdTableRef": "table:carpet-of-flying",
+            "thresholdMultiplier": 2,
+            "condition": "carrying more than the (doubled) table capacity"
           }
         ]
       },
@@ -85149,7 +85155,9 @@
           {
             "kind": "movementCostMultiplier",
             "feetPerFoot": 2,
-            "condition": "moving through webs"
+            "terrain": [
+              "webs"
+            ]
           }
         ]
       }
@@ -87209,11 +87217,13 @@
         "effects": [
           {
             "kind": "hover",
+            "heightInches": 4,
             "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature"
           },
           {
             "kind": "walkOnLiquids",
-            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature; the creature can cross or stand above nonsolid or unstable surfaces, such as water or lava"
+            "surfaces": "nonsolid or unstable surfaces, such as water or lava",
+            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature"
           },
           {
             "kind": "leavesNoTracks",

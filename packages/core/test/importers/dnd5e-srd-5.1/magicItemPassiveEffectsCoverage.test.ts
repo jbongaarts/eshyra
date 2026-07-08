@@ -16,7 +16,7 @@
  *
  * Fixture descriptions and expected mechanics are taken verbatim from the
  * reviewed committed pack (`packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json`)
- * after the PR #415 review-round-2 fixes; re-derive this fixture only when a
+ * after the PR #415 review-round-3 fixes; re-derive this fixture only when a
  * change to `magicItemPassiveEffects.ts` is intentional and reviewed.
  */
 import { describe, expect, it } from 'vitest';
@@ -176,8 +176,11 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
           kind: 'speedSet',
           mode: 'fly',
           value: 50,
-          condition:
-            'reduced to 30 feet while carrying more than 200 pounds (400-pound maximum capacity)',
+          weightCapacity: {
+            maximumPounds: 400,
+            reducedValue: 30,
+            reducedAboveWeightPounds: 200,
+          },
         },
       ],
     },
@@ -196,8 +199,9 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
         {
           kind: 'speedMultiplier',
           multiplier: 0.5,
-          condition:
-            'carrying more than the table’s capacity (up to twice that amount)',
+          thresholdTableRef: 'table:carpet-of-flying',
+          thresholdMultiplier: 2,
+          condition: 'carrying more than the (doubled) table capacity',
         },
       ],
     },
@@ -223,7 +227,7 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
         {
           kind: 'movementCostMultiplier',
           feetPerFoot: 2,
-          condition: 'moving through webs',
+          terrain: ['webs'],
         },
       ],
     },
@@ -439,13 +443,15 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
       effects: [
         {
           kind: 'hover',
+          heightInches: 4,
           condition:
             'requires all four horseshoes affixed to the hooves of a horse or similar creature',
         },
         {
           kind: 'walkOnLiquids',
+          surfaces: 'nonsolid or unstable surfaces, such as water or lava',
           condition:
-            'requires all four horseshoes affixed to the hooves of a horse or similar creature; the creature can cross or stand above nonsolid or unstable surfaces, such as water or lava',
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature',
         },
         {
           kind: 'leavesNoTracks',

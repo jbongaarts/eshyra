@@ -469,6 +469,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     'Broom of Flying',
     (text, name) => {
       must(text, /flying speed of 50 feet/, name);
+      must(text, /can carry up to 400 pounds/, name);
       must(
         text,
         /flying speed becomes 30 feet while carrying over 200 pounds/,
@@ -479,8 +480,11 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           kind: 'speedSet',
           mode: 'fly',
           value: 50,
-          condition:
-            'reduced to 30 feet while carrying more than 200 pounds (400-pound maximum capacity)',
+          weightCapacity: {
+            maximumPounds: 400,
+            reducedValue: 30,
+            reducedAboveWeightPounds: 200,
+          },
         },
       ];
     },
@@ -488,6 +492,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
   [
     'Carpet of Flying',
     (text, name) => {
+      must(text, /carry up to twice the weight shown on the table/, name);
       must(
         text,
         /flies at half speed if it carries more than its normal capacity/,
@@ -502,8 +507,9 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         {
           kind: 'speedMultiplier',
           multiplier: 0.5,
-          condition:
-            'carrying more than the table’s capacity (up to twice that amount)',
+          thresholdTableRef: 'table:carpet-of-flying',
+          thresholdMultiplier: 2,
+          condition: 'carrying more than the (doubled) table capacity',
         },
       ];
     },
@@ -526,7 +532,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         {
           kind: 'movementCostMultiplier',
           feetPerFoot: 2,
-          condition: 'moving through webs',
+          terrain: ['webs'],
         },
       ];
     },
@@ -666,10 +672,11 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
       const allFourShoesAffixed =
         'requires all four horseshoes affixed to the hooves of a horse or similar creature';
       return [
-        { kind: 'hover', condition: allFourShoesAffixed },
+        { kind: 'hover', heightInches: 4, condition: allFourShoesAffixed },
         {
           kind: 'walkOnLiquids',
-          condition: `${allFourShoesAffixed}; the creature can cross or stand above nonsolid or unstable surfaces, such as water or lava`,
+          surfaces: 'nonsolid or unstable surfaces, such as water or lava',
+          condition: allFourShoesAffixed,
         },
         { kind: 'leavesNoTracks', condition: allFourShoesAffixed },
         {
