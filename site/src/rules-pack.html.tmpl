@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0700" />
+    <title>
+      How and why the Eshyra rules pack is built - a source-grounded D&amp;D 5e
+      SRD rules compiler
+    </title>
+    <meta
+      name="description"
+      content="An engineering retrospective on the machine-readable D&D 5e SRD 5.1 rules pack behind Eshyra's AI Dungeon Master: how a deterministic importer became a source-grounded rules compiler with executable curation, how provenance and reproducibility are enforced, and where LLM reasoning ends and a deterministic rules engine begins."
+    />
+    <link rel="canonical" href="https://eshyra.app/rules-pack/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://eshyra.app/rules-pack/" />
+    <meta
+      property="og:title"
+      content="How and why the Eshyra rules pack is built"
+    />
+    <meta
+      property="og:description"
+      content="From deterministic importer to source-grounded rules compiler with executable curation: the machine-readable D&D 5e SRD 5.1 rules pack, its provenance model, and the boundary between an AI Dungeon Master and a deterministic rules engine."
+    />
+    <meta property="og:image" content="https://eshyra.app/art/backdrop-mural.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="mural-bg" aria-hidden="true"></div>
+    <header class="site-banner">
+      <div class="banner-inner">
+        <a class="brand-mark" href="/">
+          <span aria-hidden="true">&gt;</span>
+          <span>ESHYRA</span>
+        </a>
+        <span class="status-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          UNDER CONSTRUCTION
+        </span>
+      </div>
+    </header>
+
+    <main class="page-shell page-shell-article">
+      <article
+        class="terminal-panel"
+        aria-labelledby="story-title"
+      >
+        <header class="terminal-titlebar">
+          <span>eshyra://rules-pack/how-and-why</span>
+          <span class="window-controls" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </header>
+        <div class="terminal-body">
+          <nav class="doc-nav" aria-label="Page navigation">
+            <a href="/">&larr; Home</a>
+            <a href="/#rules-pack">Download the rules pack &darr;</a>
+          </nav>
+
+          <div class="article">
+            <p class="comment">// engineering retrospective</p>
+            <h1 id="story-title">
+              How and why the Eshyra rules pack is built
+            </h1>
+
+            <p class="lede">
+              Eshyra ships an openly licensed, machine-readable
+              <strong>D&amp;D 5e SRD 5.1 rules pack</strong> &mdash;
+              {{RECORD_COUNT}} structured records with per-record provenance,
+              regenerated deterministically from the licensed source document.
+              This is the story of why that artifact exists, how the tool that
+              produces it stopped being a simple &ldquo;importer&rdquo; and
+              became a source-grounded rules compiler, and what we learned about
+              the boundary between what a language model should decide and what
+              deterministic software should own.
+            </p>
+
+            <p>
+              It is written for people who like the same things we do:
+              AI game systems, deterministic rules engines, structured game
+              data, compiler and data-pipeline design, provenance and
+              reproducibility, and the practical seam between LLM reasoning and
+              ordinary software. You do not need to know anything about Eshyra
+              to read it. If you just want the download, it is on the
+              <a href="/#rules-pack">home page</a>; everything below is the
+              engineering behind it.
+            </p>
+
+            <h2 id="why-authoritative-data">
+              Why an AI Dungeon Master needs authoritative rules data
+            </h2>
+
+            <p>
+              Eshyra is a text-first, persistent AI Dungeon Master built for
+              long-running fantasy campaigns &mdash; the kind that unfold over
+              months, remember what happened forty sessions ago, and expect the
+              world to stay consistent while you play. A large language model is
+              remarkably good at most of what that job asks for:
+            </p>
+
+            <ul>
+              <li>understanding what a player actually meant;</li>
+              <li>improvising a scene, an NPC, a consequence;</li>
+              <li>narration and tone;</li>
+              <li>living with ambiguity;</li>
+              <li>contextual judgment;</li>
+              <li>reasoning inside the fiction.</li>
+            </ul>
+
+            <p>
+              What a model is <em>not</em> the right authority for is the part
+              of a tabletop game that has to come out the same way every single
+              time:
+            </p>
+
+            <ul>
+              <li>arithmetic;</li>
+              <li>whether an action is legal by the rules;</li>
+              <li>resource accounting;</li>
+              <li>derived values;</li>
+              <li>the action economy;</li>
+              <li>reset and recharge behavior;</li>
+              <li>persistent state transitions from one turn to the next.</li>
+            </ul>
+
+            <p>
+              None of this is hostility toward language models. It is a division
+              of responsibility. Asking a model to re-derive a character&rsquo;s
+              current hit points, remaining spell slots, and encumbrance from a
+              prose transcript on every turn is asking it to be a database and an
+              arithmetic-logic unit as well as a storyteller &mdash; and to do it
+              identically forever. That is exactly the class of work where you
+              want boring, testable, deterministic code.
+            </p>
+
+            <p>
+              That still leaves a question the architecture cannot dodge:
+              <em>where do the rules come from?</em> We wanted the mechanics
+              grounded in openly licensed primary source material &mdash; not a
+              model&rsquo;s training-data memory, not opaque generated text, and
+              not some unexplained third-party database whose chain of custody we
+              could not inspect. The natural candidate is Wizards of the
+              Coast&rsquo;s
+              <strong>System Reference Document 5.1</strong>, released under a
+              Creative Commons Attribution license. It is authoritative, it is
+              redistributable, and it can be pinned and hashed. So the first job
+              was to turn that document into data.
+            </p>
+
+            <h2 id="original-bet">
+              The original bet: a machine-readable reference pack
+            </h2>
+
+            <p>
+              The initial architecture was a reasonable hypothesis, and it is
+              worth stating without hindsight sneering at it. The plan was:
+            </p>
+
+            <ul>
+              <li>build an accurate, complete, machine-readable reference pack;</li>
+              <li>
+                give the DM model reliable access to authoritative rules prose
+                and a set of useful structured fields;
+              </li>
+              <li>automate the operations that are clearly deterministic;</li>
+              <li>
+                let the DM model adjudicate much of the rest of the game
+                directly from the prose.
+              </li>
+            </ul>
+
+            <p>
+              In other words: get a faithful, source-complete reference corpus
+              into the machine, automate the obvious math, and lean on the
+              model&rsquo;s judgment for everything situational. That is a
+              defensible first design. It scopes the ingestion work, it avoids
+              prematurely building a rules engine, and it plays to the
+              model&rsquo;s strengths. We built it, and then we tested it. Most
+              of this article is about what the test revealed.
+            </p>
+
+            <h2 id="deterministic-importer">The deterministic importer</h2>
+
+            <p>
+              The reference pack is produced by a pipeline, not typed by hand.
+              The original shape of that pipeline was:
+            </p>
+
+            <ul>
+              <li>a licensed source corpus, vendored in the repository;</li>
+              <li>a pinned source identity and SHA-256 hash;</li>
+              <li>deterministic extraction from that source;</li>
+              <li>generated records with stable keys and typed record kinds;</li>
+              <li>per-record provenance naming the source location;</li>
+              <li>reproducible generation &mdash; same input, same output;</li>
+              <li>schema validation, plus tests and audits over the result.</li>
+            </ul>
+
+            <p>
+              The single most important rule sits underneath all of that, and it
+              is worth being explicit about because it is easy to get wrong when
+              the tool building your data is itself a language model:
+            </p>
+
+            <blockquote class="principle">
+              A model can help build, inspect, and review the machinery. It is
+              not the authoritative source of the rules.
+            </blockquote>
+
+            <p>
+              A coding agent is genuinely useful here. It can write parser code,
+              propose how a source field maps onto our schema, spot anomalies in
+              the output, audit records for suspicious values, and suggest test
+              cases. What it must never do is <em>fill in canonical mechanics
+              from its own training-data memory.</em> If the model &ldquo;knows&rdquo;
+              that a particular cantrip deals 1d10 fire damage, that knowledge is
+              not admissible as pack content &mdash; even when it happens to be
+              correct &mdash; because it is not reproducible from the vendored
+              source and cannot be audited against it. The authoritative bit of
+              every record has to trace back to the licensed document.
+            </p>
+
+            <p>
+              This is the boundary the project&rsquo;s architecture decision
+              records call the model-assistance boundary: <strong>the licensed
+              primary corpus is authoritative; the model is a development tool,
+              not a data source.</strong> Everything the pipeline emits is
+              reproducible by re-running it over the pinned source, and reviewable
+              in isolation from the data it produces. A change to the records has
+              to show the change to the code or the curated input that produced
+              them.
+            </p>
+
+            <h2 id="first-freeze">
+              The first freeze, and what playtesting taught us
+            </h2>
+
+            <p>
+              The project reached an initial quality bar, froze the pack, and
+              started using it in real play. The freeze was not ceremonial: the
+              artifact was source-complete, every record carried provenance, an
+              independent audit accounted for the source document
+              region-by-region, and regeneration was byte-for-byte reproducible.
+              As a <em>reference corpus</em>, it was solid.
+            </p>
+
+            <p>
+              Then we played. And the lesson from early playtesting &mdash;
+              especially character creation and combat &mdash; was not
+              &ldquo;we found some extraction bugs.&rdquo; It was something more
+              structural: the runtime needed a <em>different kind of
+              artifact</em> than the one we had frozen.
+            </p>
+
+            <p>
+              A source-complete prose reference database turned out to be
+              necessary but not sufficient. When you actually try to build a
+              first-level character, or resolve a round of combat, deterministically,
+              you discover that the pack has to carry far more than accurate
+              text reachable by key. It has to carry machine-readable
+              <em>semantics</em> around things like:
+            </p>
+
+            <ul>
+              <li>dependent choices and prerequisites;</li>
+              <li>legality and eligibility;</li>
+              <li>derived values and formulas;</li>
+              <li>dice-expression transformations;</li>
+              <li>action economy;</li>
+              <li>spell slots and concentration;</li>
+              <li>conditions and how effects relate to one another;</li>
+              <li>usage limits and resource consumption;</li>
+              <li>reset and recharge contracts;</li>
+              <li>stateful items;</li>
+              <li>the repeated cross-turn state transitions that make a rule &ldquo;work.&rdquo;</li>
+            </ul>
+
+            <p>
+              You cannot deterministically own concentration, spell slots, death
+              saves, attunement, or a magic item&rsquo;s charge economy if the
+              pack only contains a faithful paragraph <em>describing</em> them.
+              The engine needs the effects, the formulas, the usage contracts,
+              and the hook requirements named as structured data. That was the
+              major architectural learning:
+            </p>
+
+            <blockquote class="principle">
+              The pack needed to become a semantic substrate for the
+              model/engine execution boundary &mdash; not merely an authoritative
+              reference corpus.
+            </blockquote>
+
+            <h2 id="two-stages">Two product stages, not six moving targets</h2>
+
+            <p>
+              It would be dishonest to describe this as the goal changing six
+              times. It changed once, meaningfully. There were two product
+              stages:
+            </p>
+
+            <h3>Initial stage</h3>
+            <p>
+              A complete, accurate, source-grounded reference pack, with
+              deterministic structure wherever that was clearly useful. This
+              remains necessary &mdash; nothing about the second stage repeals
+              it.
+            </p>
+
+            <h3>Post-playtest stage</h3>
+            <p>
+              A richer source-grounded <em>semantic substrate</em> capable of
+              supporting a substantially more deterministic gameplay engine.
+            </p>
+
+            <p>
+              What we gained <em>within</em> those two stages was a vocabulary
+              for talking about correctness as several independent dimensions
+              rather than one vague notion of &ldquo;done.&rdquo; It is useful to
+              separate them because an artifact can be strong on one and weak on
+              another:
+            </p>
+
+            <ul>
+              <li>
+                <strong>reproducibility</strong> &mdash; does re-running the
+                compiler over the pinned source reproduce the pack exactly?
+              </li>
+              <li>
+                <strong>source completeness</strong> &mdash; is every source
+                rules element accounted for, rather than quietly dropped?
+              </li>
+              <li>
+                <strong>structural fidelity</strong> &mdash; are stat blocks,
+                tables, and rows reconstructed faithfully, source typos and all?
+              </li>
+              <li>
+                <strong>semantic modeling</strong> &mdash; does the pack carry
+                the typed mechanics the execution boundary needs?
+              </li>
+              <li>
+                <strong>runtime ownership</strong> &mdash; is each rule&rsquo;s
+                behavior explicitly owned, rather than left unclassified?
+              </li>
+              <li>
+                <strong>end-to-end playable validation</strong> &mdash; does the
+                rule actually work in a played turn over the real engine?
+              </li>
+            </ul>
+
+            <p>
+              These are evaluation lenses, not six historical rewrites of the
+              project. A reference-complete pack with no semantic layer is a real
+              thing; so is a semantically rich record whose engine hook has not
+              been built yet. Keeping the lenses distinct is what lets us say
+              precisely which one is failing.
+            </p>
+
+            <h2 id="from-importer-to-compiler">
+              From importer to rules compiler and executable curator
+            </h2>
+
+            <p>
+              This is the conceptual center of the story. A lot of paths,
+              commands, and issue IDs in the codebase still say
+              <code>importer</code>, and we deliberately did not rename them
+              &mdash; churn is not architecture. But the thing those names point
+              at is better described now as a
+              <strong>source-grounded rules compiler with executable
+              curation</strong>.
+            </p>
+
+            <p>
+              The system is <em>not</em> valuable because it is a magic
+              general-purpose PDF parser. It is not one, and pretending
+              otherwise would be the wrong lesson to take from it. The SRD is a
+              specific document with:
+            </p>
+
+            <ul>
+              <li>document-specific typography;</li>
+              <li>irregular heading structure;</li>
+              <li>multi-column text and wrapped table cells;</li>
+              <li>continuation pages;</li>
+              <li>mechanics expressed in prose;</li>
+              <li>exceptional tables;</li>
+              <li>
+                semantics that simply cannot be honestly inferred by generic
+                parsing alone.
+              </li>
+            </ul>
+
+            <p>
+              So the compiler uses different techniques for different shapes of
+              source, and it picks the cheapest technique that is still
+              trustworthy. The ordering matters:
+            </p>
+
+            <h3>1. Structural parsers &mdash; where real grammar exists</h3>
+            <p>
+              Where the source repeats a genuine structural grammar, parse it.
+              Stat blocks, spell metadata, table rows, equipment rows, class
+              progression, consistent headings &mdash; these have enough
+              regularity that a parser is both cheaper and more trustworthy than
+              curating each record by hand.
+            </p>
+
+            <h3>2. Shared semantic grammars &mdash; for recurring mechanics</h3>
+            <p>
+              Some <em>meaning</em> recurs even when the typography does not:
+              recurring forms of damage, healing, saving throws, usage limits,
+              recharge language, modifiers, common effect structures. For those,
+              a reusable semantic grammar earns its keep. Crucially, these
+              grammars <strong>fail closed</strong>: prose that falls outside the
+              reviewed shape contributes no semantics at all, rather than being
+              guessed at. A near-miss produces nothing, not a plausible-looking
+              fabrication.
+            </p>
+
+            <h3>3. Declarative executable curation &mdash; for irregular families</h3>
+            <p>
+              Then there are the irregular semantic families &mdash; the ones
+              where a human already has to read and classify each clause
+              individually before <em>any</em> extraction logic could be written.
+              The magic items are the archetype: a couple hundred items with
+              bespoke economies, state machines, curses, and containment
+              semantics that share no parseable grammar.
+            </p>
+            <p>
+              For those, the honest move is to represent the reviewed decisions
+              <em>explicitly</em>, as source-grounded deterministic compiler
+              inputs &mdash; a registry of clauses, each with a stable id, bound
+              to its representation and the engine hooks it needs. This is what we
+              mean by <strong>executable curation</strong>. It is usually clearer
+              and more maintainable than building ever-more-elaborate
+              natural-language heuristics that merely re-encode, in fragile
+              regular expressions, decisions a human already made during review.
+            </p>
+
+            <h3>4. Exceptional procedural handling &mdash; for genuine one-offs</h3>
+            <p>
+              Finally, narrow one-off code is acceptable for true exceptions: a
+              single item with a bespoke state shape, one table whose columns are
+              irrecoverably interleaved. What it must not become is the silent
+              default. If you find yourself writing per-record
+              <code>if (key === &hellip;)</code> branches across dozens of
+              records, you actually wanted a shared grammar or a curated
+              specification.
+            </p>
+
+            <p>The point of the whole hierarchy is one sentence:</p>
+
+            <blockquote class="principle">
+              The goal is trustworthy, source-grounded semantics &mdash; not
+              maximizing how much English the software appears to infer
+              automatically.
+            </blockquote>
+
+            <p>
+              And there is one distinction here that is easy to misread, so it is
+              worth stating flatly. <strong>Executable curation is not the same
+              thing as hand-editing the generated output.</strong> A curated
+              clause registry is an <em>input</em> the compiler consumes,
+              validates, and can regenerate from; it is source-grounded,
+              deterministic, schema-checked, and it fails loudly if the source
+              drifts underneath it. The generated <code>records.json</code>
+              remains an <em>output</em>. Nobody hand-edits it. If a record needs
+              to change, an input changes and the pack is recompiled. That line
+              &mdash; curated input yes, hand-edited output no &mdash; is what
+              keeps the artifact reproducible and auditable even as its semantics
+              get richer.
+            </p>
+
+            <h2 id="three-layers">
+              Three layers: pack semantics, live state, engine services
+            </h2>
+
+            <p>
+              As the semantics grew, a three-layer separation emerged that keeps
+              the whole thing sane. The compiler owns exactly <em>one</em> of
+              these layers.
+            </p>
+
+            <h3>Pack-side semantics &mdash; immutable, source-derived</h3>
+            <p>
+              What a rule or item <em>can do</em>: effects, formulas, operations,
+              prerequisites, usage and recharge contracts, engine-hook
+              requirements. This is compiled from the source and never carries
+              play-state. It is the layer the compiler produces.
+            </p>
+
+            <h3>Live game state &mdash; mutable, per-campaign</h3>
+            <p>
+              What is <em>currently true</em> in one campaign: current hit
+              points, current charges, attunement, resource counters, current
+              form, stored spells, ownership, the identity of a specific item in
+              an inventory. This lives in a per-campaign store, keyed per
+              instance. The compiler never emits it, and pack records never carry
+              it.
+            </p>
+
+            <h3>Deterministic engine services &mdash; shared behavior</h3>
+            <p>
+              The shared runtime machinery: dice grammar, action economy,
+              concentration, spell slots, resource reset and recharge, death and
+              dying, temporary hit points, rest processing, character-build
+              resolution, derived math, currency and trade. A magic item
+              subscribes to the shared dawn/rest reset behavior; it does not carry
+              its own private recharge loop. A rule that needs a value-versus-DC
+              check names the shared derived-math primitive; it does not embed a
+              bespoke comparator.
+            </p>
+
+            <p>
+              The rules records describe <em>what mechanics require</em>. The
+              engine owns <em>executing shared deterministic behavior</em>. The
+              rules compiler is emphatically not the game engine &mdash; it
+              produces the semantics and the hook requirements the engine
+              consumes.
+            </p>
+
+            <h2 id="hybrid-execution">The hybrid execution model</h2>
+
+            <p>The division of responsibility, stated plainly:</p>
+
+            <ul>
+              <li>
+                <strong>The model</strong> interprets intent, handles ambiguity,
+                narrates, and makes contextual rulings.
+              </li>
+              <li>
+                <strong>The rules pack</strong> supplies authoritative
+                source-grounded reference material and structured mechanics.
+              </li>
+              <li>
+                <strong>Deterministic tools and engine services</strong> perform
+                arithmetic and own the state transitions that need reliable
+                repeatability. All dice and math go through a tool; the model
+                never invents a die result.
+              </li>
+            </ul>
+
+            <p>
+              The subtle part &mdash; the part it took playtesting to see clearly
+              &mdash; is that a single rule does not always belong wholly to
+              &ldquo;the model&rdquo; or &ldquo;the engine.&rdquo; Ownership is
+              often <em>clause-level</em>. Cover is the canonical example:
+            </p>
+
+            <ul>
+              <li>
+                the <strong>model</strong> reads the fiction &mdash; positioning,
+                terrain, line of sight &mdash; and decides whether a creature
+                qualifies for half cover or three-quarters cover;
+              </li>
+              <li>
+                the <strong>deterministic rules surface</strong> owns applying the
+                corresponding +2 or +5 bonus to Armor Class and Dexterity saving
+                throws once that determination is made.
+              </li>
+            </ul>
+
+            <p>
+              One rule; two owners; a clean seam between them. That is the general
+              shape of most &ldquo;situational&rdquo; rules: the contextual
+              determination is a model judgment, and the numeric modifiers, dice
+              transformations, state changes, and resource effects that follow are
+              deterministic.
+            </p>
+
+            <p>
+              This cuts both ways, and it is important not to over-engineer. Not
+              every rule needs a dedicated rigid subsystem. Some rules are
+              <em>correctly</em> left as terminal model adjudications &mdash; when
+              the remaining question is genuinely contextual, when deterministic
+              primitives for randomness, arithmetic, and state already exist, and
+              when that ownership was <em>consciously reviewed</em> rather than
+              accidentally omitted. The non-negotiable requirement is not
+              &ldquo;build an engine for everything.&rdquo; It is that ownership is
+              <strong>explicit</strong>: every deterministic rule is either
+              code-enforced, a known engine gap, a deliberately deferred decision,
+              or a reviewed model ruling &mdash; by classification, never by
+              accident.
+            </p>
+
+            <h2 id="knowing-when-wrong">
+              How the project tries to know when it is wrong
+            </h2>
+
+            <p>
+              A pipeline like this is only as trustworthy as its ability to catch
+              itself failing. Over time the verification philosophy became at
+              least as important as the extraction. Representative mechanisms
+              include:
+            </p>
+
+            <ul>
+              <li>source hashing and pinning;</li>
+              <li>per-record provenance;</li>
+              <li>source-structure inventories and explicit coverage accounting;</li>
+              <li>bounded extraction regions with ownership, so owned source content must prove it was emitted;</li>
+              <li>an independent, deep source-versus-pack comparison;</li>
+              <li>schema validation and reference-integrity checks;</li>
+              <li>semantic projections that fail closed;</li>
+              <li>reviewed, fail-closed dispositions for anything not yet modeled;</li>
+              <li>explicit execution-boundary classification;</li>
+              <li>runtime readiness checks.</li>
+            </ul>
+
+            <p>The guiding instinct is this:</p>
+
+            <blockquote class="principle">
+              When you discover a failure class, the best response is usually to
+              turn it into a broader invariant that makes the whole class visible
+              &mdash; not to patch the one record.
+            </blockquote>
+
+            <p>
+              But there is a real tension to hold here, and the architecture docs
+              are candid about it: not every finding should spawn a new registry,
+              census, or parallel proof system. Audit machinery has a cost and can
+              drift from the thing it claims to measure. So the project now
+              deliberately asks, before adding another checker, whether an
+              existing invariant can be strengthened or consolidated instead. The
+              aim is strong, converging evidence and fail-closed checks &mdash;
+              <em>not</em> a claim of mathematically proven, perfect correctness.
+              We are trying to make being wrong loud, not to pretend it is
+              impossible.
+            </p>
+
+            <h2 id="why-not-hand-author">
+              The skeptical question: why not just hand-write records.json?
+            </h2>
+
+            <p>
+              A fair challenge deserves a direct answer. If so much of the hard
+              part is human review anyway, why not skip the parsers and just
+              curate a database by hand?
+            </p>
+
+            <p>
+              Honestly: in some areas, hand-authoring might have been faster. We
+              are not going to pretend every parser was economically superior to
+              simply writing the data down. For irregular, low-repetition
+              material, careful curation is a legitimate technique &mdash; which
+              is exactly why executable curation is a first-class part of the
+              design.
+            </p>
+
+            <p>
+              The reason the source-bound compiler model still earns its place is
+              everything that a bag of hand-typed JSON quietly gives up:
+            </p>
+
+            <ul>
+              <li>a chain of custody from source to artifact;</li>
+              <li>reproducible regeneration;</li>
+              <li>reviewable transformations rather than opaque values;</li>
+              <li>bulk schema evolution and corpus-wide migrations;</li>
+              <li>independent auditing against the source;</li>
+              <li>preservation of past corrections;</li>
+              <li>a visible distinction between repeated grammar and reviewed exceptions;</li>
+              <li>detection when the source itself drifts.</li>
+            </ul>
+
+            <p>
+              So the useful question was never the binary &ldquo;parser or
+              hand-edited JSON.&rdquo; It is sharper than that:
+            </p>
+
+            <blockquote class="principle">
+              Which source structures should be parsed, which recurring semantics
+              deserve shared grammars, and which irregular families should be
+              represented as explicit, source-grounded executable curation?
+            </blockquote>
+
+            <p>
+              Answering that question per-family &mdash; rather than committing to
+              one technique for the whole document &mdash; is most of what
+              &ldquo;compiler with executable curation&rdquo; actually means in
+              practice.
+            </p>
+
+            <h2 id="what-transfers">
+              What transfers to future systems such as Pathfinder
+            </h2>
+
+            <p>
+              A natural question is whether all of this is throwaway D&amp;D-specific
+              plumbing. The answer is that the D&amp;D PDF heuristics <em>are</em>
+              largely throwaway &mdash; and that is fine, because they were never
+              the asset. The transferable asset is the architecture and the
+              methodology. A curator building a future system (Pathfinder is the
+              obvious next test) would reuse the <em>contracts</em>, not the
+              document tricks:
+            </p>
+
+            <ul>
+              <li>establish source and licensing policy first;</li>
+              <li>pin authoritative versions;</li>
+              <li>inventory the source&rsquo;s structures early, and fail closed on anything unaccounted for;</li>
+              <li>establish a stable extraction boundary appropriate to that format;</li>
+              <li>distinguish structural extraction from semantic projection;</li>
+              <li>parse where grammar exists, share grammars where mechanics recur, curate where irregularity dominates;</li>
+              <li>preserve provenance and enforce reference integrity;</li>
+              <li>keep generated-output verification;</li>
+              <li>classify runtime ownership explicitly;</li>
+              <li>define the quality model <em>before</em> the first freeze.</li>
+            </ul>
+
+            <p>
+              And a specific warning falls out of this: a Pathfinder source built
+              from HTML or structured text should <em>not</em> imitate PDF-layout
+              reconstruction just because the D&amp;D compiler does. The right
+              intermediate representation is whatever gives semantic parsers a
+              stable structural boundary for <em>that</em> format. The principle
+              the docs land on is deliberately compact:
+            </p>
+
+            <blockquote class="principle">Reuse contracts, not document heuristics.</blockquote>
+
+            <p>
+              We are also honest that we do not yet know which abstractions are
+              genuinely cross-system. Generalizing from a sample size of one is how
+              you end up with a &ldquo;framework&rdquo; shaped exactly like D&amp;D.
+              The second system is the real test of the abstraction, so the plan is
+              to make the shared extension points explicit and let implementation
+              pressure &mdash; not speculation &mdash; reveal what is truly shared.
+              To be clear about status: Pathfinder support is <em>not</em> shipped;
+              it is a deferred, planned direction.
+            </p>
+
+            <h2 id="download-today">What you can download today</h2>
+
+            <p>
+              The <a href="/#rules-pack">downloadable rules pack</a> is a
+              structured, machine-friendly representation of the D&amp;D 5e SRD
+              5.1: {{RECORD_COUNT}} records across {{KIND_COUNT}} record kinds, in
+              a single JSON array, alongside a manifest with license and source
+              provenance. It is roughly {{ZIP_SIZE}} zipped. Every record carries a
+              <code>kind</code>, a stable <code>key</code>, a <code>name</code>, a
+              <code>data</code> payload, and a <code>provenance</code> block naming
+              the SRD location it came from. The bundle is built from the same
+              committed pack data the project uses, on {{BUILD_DATE}}, and both the
+              source document and the ZIP publish their SHA-256 hashes so you can
+              verify exactly what you have.
+            </p>
+
+            <p>Plausible uses:</p>
+
+            <ul>
+              <li>rules lookup;</li>
+              <li>search and indexing;</li>
+              <li>tabletop software experiments;</li>
+              <li>AI assistants and bots;</li>
+              <li>structured data analysis;</li>
+              <li>rule-reference tooling;</li>
+              <li>other source-attributed software.</li>
+            </ul>
+
+            <p>
+              A precise word on status, because overclaiming here would be exactly
+              the wrong note to end on. The pack is
+              <strong>source-complete, provenance-tracked, and reproducibly
+              generated</strong>. It was frozen once as an audited reference
+              artifact, and it is currently <strong>thawed for an active
+              re-audit</strong> under a stricter complete/accurate/playable bar
+              &mdash; the semantic substrate described above is still being closed
+              out and will be re-frozen when it meets that bar. The freeze guard
+              stays active throughout: the source and pack hashes are pinned, and
+              every protected-path change requires its own dated note. So: this is
+              a genuinely useful, openly licensed, verifiable structured
+              representation of the SRD &mdash; not a claim of perfect,
+              certified-complete gameplay semantics. We would rather you find it
+              solid than find it oversold.
+            </p>
+
+            <p>
+              It is distributed under the Creative Commons Attribution 4.0
+              International License. If you redistribute the records or
+              derivatives, preserve the attribution notice that ships with the
+              bundle. The pack is reference data derived from CC BY 4.0 source
+              material; it is not original game content and not an endorsement by
+              Wizards of the Coast.
+            </p>
+
+            <nav class="doc-nav doc-nav-foot" aria-label="Page navigation">
+              <a href="/">&larr; Back to home</a>
+              <a href="/#rules-pack">Download the rules pack &darr;</a>
+            </nav>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        Eshyra &middot; early pre-release &middot;
+        <a href="https://github.com/jbongaarts/eshyra">source on GitHub</a>
+      </p>
+      <p aria-hidden="true">&lt; end of transmission &gt;</p>
+    </footer>
+  </body>
+</html>

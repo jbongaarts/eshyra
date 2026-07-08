@@ -17,3 +17,19 @@ npx --yes serve dist      # preview locally
 - Output: `dist/` (generated, git-ignored, rebuilt on every deploy).
 - Hosting + CI + credential setup: see
   [`../docs/site-deployment.md`](../docs/site-deployment.md).
+
+## Pages
+
+`build.mjs` renders every `*.html.tmpl` in `src/` through one shared
+substitution table (record counts, pack size, source hash, build date), so page
+metadata cannot drift apart. Add a page by adding a template and one
+`renderTemplate(...)` call — no framework, bundler, or static-site generator is
+involved.
+
+- `src/index.html.tmpl` → `dist/index.html` — the landing page + download.
+- `src/rules-pack.html.tmpl` → `dist/rules-pack/index.html` (served at
+  `/rules-pack/`) — a long-form engineering article on why the rules pack
+  exists and how the source-grounded rules compiler / executable-curation
+  pipeline that produces it works. It links to and from the homepage download
+  section. See `docs/rules-pack-compiler.md`, ADR 0017, and ADR 0007 for the
+  canonical architecture the article narrates.

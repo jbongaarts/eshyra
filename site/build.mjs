@@ -199,14 +199,32 @@ const replacements = {
   BUILD_DATE: buildDate,
 };
 
-let html = readFileSync(join(srcDir, 'index.html.tmpl'), 'utf8');
-for (const [key, value] of Object.entries(replacements)) {
-  html = html.replaceAll(`{{${key}}}`, value);
+// Render every `.tmpl` under `src/` with the shared dynamic replacements above.
+// The homepage and the long-form rules-pack story share one substitution table
+// (record counts, pack size, source hash, build date) so their metadata can
+// never drift apart. Add a page by adding a template + one `renderTemplate`
+// call; no framework, bundler, or generator is involved.
+function renderTemplate(templateName, outputPath) {
+  let html = readFileSync(join(srcDir, templateName), 'utf8');
+  for (const [key, value] of Object.entries(replacements)) {
+    html = html.replaceAll(`{{${key}}}`, value);
+  }
+  const leftover = html.match(/\{\{[A-Z_]+\}\}/);
+  if (leftover) {
+    throw new Error(
+      `Unsubstituted template placeholder in ${templateName}: ${leftover[0]}`,
+    );
+  }
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, html);
+  log(`rendered ${templateName} -> ${outputPath}`);
 }
-const leftover = html.match(/\{\{[A-Z_]+\}\}/);
-if (leftover) {
-  throw new Error(`Unsubstituted template placeholder: ${leftover[0]}`);
-}
-writeFileSync(join(distDir, 'index.html'), html);
+
+renderTemplate('index.html.tmpl', join(distDir, 'index.html'));
+// Long-form story lives at a clean URL: dist/rules-pack/index.html -> /rules-pack/
+renderTemplate(
+  'rules-pack.html.tmpl',
+  join(distDir, 'rules-pack', 'index.html'),
+);
 
 log(`done -> ${distDir}`);
