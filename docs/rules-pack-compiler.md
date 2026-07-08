@@ -120,8 +120,10 @@ specification, or the source manifest) and the pack is regenerated, under
 unchanged.
 
 What ADR 0017 adds: a **source-grounded curated semantic specification** is a
-legitimate *authoritative input* — an "executable curation." Examples already in
-the tree:
+legitimate *compiler input* — an "executable curation." It is not itself an
+authoritative source; the licensed primary corpus remains the authoritative
+source, and the curated spec is a source-grounded input that carries decisions
+derived from it into the compiler. Examples already in the tree:
 
 - the document-wide table specs (`SRD_5_1_DOCUMENT_TABLE_SPECS`,
   `classProgressionTables.ts`) — each pins an anchor, an exact column-header
@@ -132,8 +134,8 @@ the tree:
 - the rule-disposition and engine-procedure coverage registers
   (`RULE_DISPOSITIONS`, `ENGINE_PROCEDURE_COVERAGE`).
 
-A curated semantic specification may be treated as authoritative **only when all
-of these hold** (ADR 0017 §3):
+A curated semantic specification may be treated as a legitimate compiler input
+**only when all of these hold** (ADR 0017 §3):
 
 - [ ] derived from the licensed source, not from model memory;
 - [ ] identifies or is mechanically tied to the relevant source region / record
@@ -273,9 +275,25 @@ behavior can be a deliberate terminal architecture** when the required
 deterministic primitives already exist and the remaining work is genuinely
 contextual judgment. That status has a name — `model-adjudicated-supported` — and
 it is a **reviewed, evidence-backed green** disposition, not a synonym for
-"unimplemented." In a text-first, grid-less game, most situational rules (cover,
-geometry, terrain, hiding, downtime) are correctly terminal rulings; building
-geometry engines for them would contradict the product architecture.
+"unimplemented." In a text-first, grid-less game, the *contextual* half of most
+situational rules is correctly a terminal ruling; building geometry engines for
+that half would contradict the product architecture.
+
+But "situational" rarely means "wholly model-adjudicated" — ownership is
+clause-level, not rule-level. Take **cover**: the model adjudicates the
+*context* — geometry, fictional positioning, terrain interpretation, line of
+sight, and whether the circumstances qualify for half or three-quarters cover;
+the *deterministic consequences that follow that ruling* — the ±2 / ±5 AC and
+Dex-save modifier composition into vs-AC/DC resolution — are owned by the
+derived-math engine primitive (`cover` is a clause-level engine gap in the final
+execution-boundary classification, not a fully terminal ruling). The same shape
+holds for hiding, terrain, and most "situational" rules: **contextual
+determination is model-adjudicated; the numerical modifiers, dice
+transformations, state transitions, and resource changes that follow are owned
+by deterministic tools/engine primitives.** This is exactly the clause-level
+hybrid ownership the decision procedure (§10) formalizes — one rule can
+simultaneously carry pack representation, a model-adjudicated context clause, and
+a deterministic engine dependency.
 
 The non-negotiable requirement is **explicit ownership**. A procedure must not be
 left to model arithmetic or accidental conversational state merely because nobody
@@ -322,8 +340,10 @@ agents working during it:
   made authoritative instead (§9). Audit machinery is subordinate to the product
   goal; avoid parallel proof systems that measure the same invariant differently
   without necessity.
-- **Finish the current semantic closure honestly, re-freeze** (the freeze
-  manifest + thaw-note gate, and the `eshyra-2zyy` readiness re-freeze gate),
+- **Finish the current semantic closure honestly, re-freeze** (`eshyra-o9bd.14`
+  is the regeneration + full-audit + re-freeze gate — re-freeze only when all
+  re-freeze-bar items are green; `eshyra-2zyy` then re-enables normal thaw-note
+  gating on the new frozen baseline),
   **then move the center of gravity toward consuming the rules system in
   gameplay.**
 
@@ -434,21 +454,28 @@ of parallel proof systems measuring the same invariant differently.
 ## 10. The decision procedure
 
 **When you encounter a source rule that needs to become usable Eshyra
-semantics**, decide among five outcomes — and attach the required evidence:
+semantics**, decide among six outcomes — and attach the required evidence:
 
 | Outcome | Choose when | Required evidence |
 |---|---|---|
-| **Write a structural parser** | The source has repeated grammar across many records (§4.1). | The grammar; representative records; fail-closed behavior on non-matching prose; regeneration diff explained. |
-| **Add a declarative curated specification** | The semantics are irregular and you must classify each clause individually anyway (§4.3); or a shared grammar (§4.2) fits a recurring semantic form. | The §3 curated-input checklist: source grounding + locator/clause id, determinism, schema validation, resolving references, parity/conservation for exhaustive sets, loud source-drift failure, round-trip regeneration. |
+| **Write a structural parser** | The source has repeated *typographic/structural* grammar across many records — stat blocks, rows, tables, headings (§4.1). | The grammar; representative records; fail-closed behavior on non-matching prose; regeneration diff explained. |
+| **Use a shared semantic grammar** | Recurring mechanical *language* appears across multiple records and can be bounded by a reviewed fail-closed grammar — recurring effect/usage/damage/save forms (§4.2). | Corpus / membership review where practical; representative positive cases; meaningful near-miss negatives; fail-closed behavior for unmatched prose; source grounding; generated-diff review. Prefer extending a proven grammar over a parallel one. |
+| **Add a declarative curated specification** | The semantics are genuinely irregular and each clause already requires individual classification before any extraction logic could be written (§4.3). | The §3 curated-input checklist: source grounding + locator/clause id, determinism, schema validation, resolving references, parity/conservation for exhaustive sets, loud source-drift failure, round-trip regeneration. |
 | **Write an exceptional procedural projection** | A genuine one-off no rule or spec can cover cleanly (§4.4). | Why it is a true exception, not a hidden default; the single record/table it applies to; a note so a reviewer sees the seam. |
 | **Leave it for model adjudication** | The remaining work is contextual judgment and the required deterministic primitives already exist (§6). | A reviewed `model-adjudicated-supported` disposition: the tool primitives relied on (checked against the registered tool surface) and the context requirement (what must be retrievable/structured at play time). Never left implicit. |
 | **Identify an engine dependency** | Correct behavior needs a deterministic owner that does not yet exist — a state machine, invariant, dice-grammar extension, derived-math primitive, or reset hook (§5.3). | The pack-side representation *plus* an explicit engine-hook binding (which family / owner). The clause stays `engine-pending` until the owner lands; bead closure alone never upgrades it — new runtime evidence in a reviewed diff does. |
 
-Two decisions can apply to one rule at clause granularity: a clause can be
-**pack-represented and engine-pending at the same time** (e.g. Robe of the
-Archmagi's spell-save-DC bonus is a pack `effects` entry *and* waits on the
-derived-math application hook). Represent the clause where its data lives, and
-record every engine hook it needs — do not force a single answer.
+More than one outcome can apply to a single rule at **clause granularity** — do
+not force one answer for a whole rule. A clause can be **pack-represented and
+engine-pending at the same time** (e.g. Robe of the Archmagi's spell-save-DC
+bonus is a pack `effects` entry *and* waits on the derived-math application
+hook). And a single rule can span all three of pack representation,
+model-adjudicated context, and a deterministic engine dependency — **cover** is
+the canonical case (§6): the qualify-for-cover determination is
+model-adjudicated context, the ±2 / ±5 AC and Dex-save modifier composition is a
+derived-math engine dependency, and the cover degrees are structured reference
+data. Represent each clause where its data lives, mark the model-adjudicated
+clauses as such, and record every engine hook each clause needs.
 
 If applying this procedure uncovers a genuine implementation contradiction that
 needs code, **create or update a concrete bead** rather than broadening the

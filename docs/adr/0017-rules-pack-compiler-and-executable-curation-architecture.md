@@ -104,14 +104,21 @@ dimensions**, not sequential milestones. See the canonical guide
 runtime ownership/support, end-to-end playable validation) and how they are
 used as evaluation lenses rather than a mandatory waterfall.
 
-### 3. Curated semantic input is authoritative; hand-curated output is not
+### 3. Curated semantic input is a legitimate compiler input; hand-curated output is not
+
+The licensed primary corpus remains the one **authoritative source**. A curated
+semantic specification is not a source — it is a **legitimate, source-grounded
+compiler input** that carries source-derived decisions into the compiler. Keep
+the three roles distinct throughout: the licensed source is *authoritative*;
+source-grounded curated specifications are *legitimate compiler inputs*;
+generated `records.json` is *output* and is never hand-edited.
 
 The compiler admits a class of input ADR 0007 did not name explicitly:
 **source-grounded curated semantic specifications** — explicit mechanical
 decisions, encoded as deterministic compiler inputs (data tables, clause
 registries, reviewed reconstruction specs). This is **executable curation**.
 
-Curated semantic input is a legitimate authoritative source **when all** of
+Curated semantic input is a legitimate compiler input **when all** of
 the following hold:
 
 - it is derived from the licensed source, not from model memory;
@@ -242,7 +249,9 @@ proof systems measuring the same invariant differently.
   everything the compiler emits, including the new semantic layers.
 - "Complete" now has two independently-tracked meanings — reference-complete and
   semantically/runtime-ready — and the readiness and re-freeze gates report and
-  enforce them separately (`eshyra-2zyy` re-freeze gate).
+  enforce them separately (`eshyra-o9bd.14` is the regeneration + full-audit +
+  re-freeze gate; `eshyra-2zyy` re-enables normal thaw-note gating on the new
+  frozen baseline afterward).
 - Curated semantic specifications become first-class, reviewable compiler
   inputs with their own integrity checks (existence, reference resolution,
   census/parity, source-drift failure). They are held to the same
