@@ -180,8 +180,11 @@
               model&rsquo;s judgment for everything situational. That is a
               defensible first design. It scopes the ingestion work, it avoids
               prematurely building a rules engine, and it plays to the
-              model&rsquo;s strengths. We built it, and then we tested it. Most
-              of this article is about what the test revealed.
+              model&rsquo;s strengths. The open question &mdash; the kind you can
+              only answer by playing, not by reasoning about it from a design
+              doc &mdash; was whether authoritative prose plus a little selective
+              deterministic tooling would actually hold up at the table. We built
+              it and went to find out.
             </p>
 
             <h2 id="deterministic-importer">The deterministic importer</h2>
@@ -246,15 +249,17 @@
               artifact was source-complete, every record carried provenance, an
               independent audit accounted for the source document
               region-by-region, and regeneration was byte-for-byte reproducible.
-              As a <em>reference corpus</em>, it was solid.
+              As a <em>reference corpus</em>, it was solid. Wasn&rsquo;t that the
+              goal?
             </p>
 
             <p>
-              Then we played. And the lesson from early playtesting &mdash;
-              especially character creation and combat &mdash; was not
-              &ldquo;we found some extraction bugs.&rdquo; It was something more
-              structural: the runtime needed a <em>different kind of
-              artifact</em> than the one we had frozen.
+              As a reference artifact, yes. Then we actually played it, and
+              character creation and combat exposed a different problem. The
+              lesson was not that we had found a handful of extraction bugs
+              &mdash; that would have been the easy case to fix. It was
+              structural: the runtime needed a <em>different kind of artifact</em>
+              than the one we had frozen.
             </p>
 
             <p>
@@ -637,18 +642,19 @@
             </h2>
 
             <p>
-              A fair challenge deserves a direct answer. If so much of the hard
-              part is human review anyway, why not skip the parsers and just
-              curate a database by hand?
+              This is the objection I find hardest to wave away, so it is worth
+              sitting with rather than swatting. If so much of the hard part is
+              human review anyway, why not skip the parsers and just curate a
+              database by hand?
             </p>
 
             <p>
-              Honestly: in some areas, hand-authoring might have been faster. We
-              are not going to pretend every parser was economically superior to
-              simply writing the data down. For irregular, low-repetition
-              material, careful curation is a legitimate technique &mdash; which
-              is exactly why executable curation is a first-class part of the
-              design.
+              Honestly: in some areas, hand-authoring would have been faster, and
+              I won&rsquo;t pretend every parser paid for itself against simply
+              writing the data down. For irregular, low-repetition material,
+              careful curation is a legitimate technique &mdash; which is exactly
+              why executable curation is a first-class part of the design rather
+              than a grudging exception to it.
             </p>
 
             <p>
@@ -690,13 +696,13 @@
             </h2>
 
             <p>
-              A natural question is whether all of this is throwaway D&amp;D-specific
-              plumbing. The answer is that the D&amp;D PDF heuristics <em>are</em>
-              largely throwaway &mdash; and that is fine, because they were never
-              the asset. The transferable asset is the architecture and the
-              methodology. A curator building a future system (Pathfinder is the
-              obvious next test) would reuse the <em>contracts</em>, not the
-              document tricks:
+              So here is the uncomfortable question. If the D&amp;D PDF
+              heuristics are largely disposable &mdash; and they are &mdash; what
+              did we actually build that outlasts this one document? The
+              heuristics were never the asset, which is why losing them costs
+              nothing. What transfers is the architecture and the methodology. A
+              curator building a future system (Pathfinder is the obvious next
+              test) would reuse the <em>contracts</em>, not the document tricks:
             </p>
 
             <ul>
