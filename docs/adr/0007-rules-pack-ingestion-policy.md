@@ -4,6 +4,13 @@ Status: accepted
 
 Date: 2026-05-25
 
+Refined by: [ADR 0017](0017-rules-pack-compiler-and-executable-curation-architecture.md).
+The source-authority and model-assistance boundary below (§2–§4) remains in
+force. ADR 0017 refines the §1 goal statement: the pack must be a semantic
+substrate for the model/engine execution boundary, not only a reference
+corpus with mechanical automation deferred to a separate track. Read ADR 0017
+and `docs/rules-pack-compiler.md` before compiler/curator work.
+
 ## Context
 
 The deterministic rules-pack ingestion pipeline (beads epic `loreweaver-0m9`)
@@ -64,6 +71,18 @@ of complete reference data. Importer scope targets reference completeness first.
 Mechanical correctness of derived computations (e.g. a computed `modifier` from
 a stat block) is desirable but secondary to having the source-accurate field
 values present.
+
+> **Refined by [ADR 0017](0017-rules-pack-compiler-and-executable-curation-architecture.md).**
+> Playtesting during the D&D SRD thaw (`eshyra-o9bd`) showed the
+> reference-first / automation-later split is too clean: the agreed
+> model/engine execution boundary requires the pack to carry a source-grounded
+> **semantic substrate** (typed effects, formulas, usage/recharge contracts,
+> operation definitions, explicit engine-hook requirements) — not only accurate
+> prose reachable by key. Reference completeness and semantic readiness are
+> distinct correctness dimensions tracked separately, not sequential
+> milestones. This paragraph's "reference completeness first" ordering is
+> superseded to that extent; the source-authority rule (§2–§4) it rests on is
+> not.
 
 ### 2. Allowed model-assistance uses
 

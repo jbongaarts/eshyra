@@ -325,6 +325,14 @@ All live beads issues now use the `eshyra-*` prefix. The migration from `lorewea
 <!-- BEGIN IMPORTER FIX PROTOCOL POINTER -->
 ### Deterministic rules-pack importer work
 
+The "importer" is the source-grounded **rules-pack compiler** with an
+executable-curation stage: it must make the pack a semantic substrate for the
+model/engine execution boundary, not only a reference corpus. Before
+compiler/curator work read `docs/rules-pack-compiler.md` (architecture + the
+parser / curated-spec / procedural / model-adjudication / engine-hook decision
+hierarchy) and [ADR 0017](docs/adr/0017-rules-pack-compiler-and-executable-curation-architecture.md)
+(refines [ADR 0007](docs/adr/0007-rules-pack-ingestion-policy.md)).
+
 When touching SRD importer, extractor, parser, audit, generated rules-pack, or importer test files, follow `docs/importer-fix-protocol.md`.
 
 This applies to changes under:
