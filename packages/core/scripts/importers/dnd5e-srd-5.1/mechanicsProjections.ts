@@ -1363,8 +1363,36 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
 function projectReviewedS2SpellEffects(
   spell: SpellExtraction,
 ): readonly Mechanics[] {
+  const requireClauses = (
+    clauses: readonly { readonly label: string; readonly pattern: RegExp }[],
+  ): void => {
+    const missing = clauses.find(
+      ({ pattern }) => !pattern.test(spell.description),
+    );
+    if (missing !== undefined) {
+      throw new Error(
+        `S2 spell projection for ${spell.name} is missing reviewed source clause: ${missing.label}`,
+      );
+    }
+  };
   switch (spell.name.toLowerCase().replaceAll('’', "'")) {
     case 'animal messenger':
+      requireClauses([
+        {
+          label: '25-word message',
+          pattern: /\bmessage of up to twenty-five words\b/,
+        },
+        {
+          label: 'messenger travel rates',
+          pattern:
+            /\bcovering about 50 miles per 24 hours for a flying messenger, or 25 miles for other animals\b/,
+        },
+        {
+          label: 'message lost if undelivered',
+          pattern:
+            /\bIf the messenger doesn[’']t reach its destination before the spell ends, the message is lost\b/,
+        },
+      ]);
       return [
         {
           kind: 'messengerTravel',
@@ -1374,6 +1402,13 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case "arcanist's magic aura":
+      requireClauses([
+        {
+          label: '30-day permanence',
+          pattern:
+            /\bIf you cast this spell on the same creature or object every day for 30 days, placing the same effect on it each time, the illusion lasts until it is dispelled\b/,
+        },
+      ]);
       return [
         {
           kind: 'permanenceAfterRepetition',
@@ -1383,6 +1418,17 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'augury':
+      requireClauses([
+        {
+          label: 'repeat-casting chance',
+          pattern:
+            /\bthere is a cumulative 25 percent chance for each casting after the first that you get a random reading\b/,
+        },
+        {
+          label: 'secret roll',
+          pattern: /\bThe GM makes this roll in secret\b/,
+        },
+      ]);
       return [
         {
           kind: 'percentChance',
@@ -1396,6 +1442,22 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'commune':
+      requireClauses([
+        {
+          label: 'three questions',
+          pattern:
+            /\bask up to three questions that can be answered with a yes or no\b/,
+        },
+        {
+          label: 'repeat-casting chance',
+          pattern:
+            /\bthere is a cumulative 25 percent chance for each casting after the first that you get no answer\b/,
+        },
+        {
+          label: 'secret roll',
+          pattern: /\bThe GM makes this roll in secret\b/,
+        },
+      ]);
       return [
         { kind: 'questionLimit', maxQuestions: 3 },
         {
@@ -1406,9 +1468,22 @@ function projectReviewedS2SpellEffects(
           trigger: 'repeat-cast-before-long-rest',
           resetOn: 'long-rest',
           effect: 'no-answer',
+          secret: true,
         },
       ];
     case 'control weather':
+      requireClauses([
+        {
+          label: 'onset roll',
+          pattern:
+            /\bIt takes 1d4 × 10 minutes for the new conditions to take effect\b/,
+        },
+        {
+          label: 'one-stage table shift',
+          pattern:
+            /\bfind a current condition on the following tables and change its stage by one, up or down\b/,
+        },
+      ]);
       return [
         { kind: 'onsetTime', roll: '1d4', multiplierMinutes: 10 },
         {
@@ -1418,6 +1493,21 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'create food and water':
+      requireClauses([
+        {
+          label: 'provision amounts',
+          pattern: /\bcreate 45 pounds of food and 30 gallons of water\b/,
+        },
+        {
+          label: 'sustenance limit',
+          pattern:
+            /\benough to sustain up to fifteen humanoids or five steeds for 24 hours\b/,
+        },
+        {
+          label: 'food spoilage',
+          pattern: /\bspoils if uneaten after 24 hours\b/,
+        },
+      ]);
       return [
         {
           kind: 'createsProvisions',
@@ -1427,15 +1517,42 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'create or destroy water':
+      requireClauses([
+        {
+          label: 'water amount',
+          pattern: /\bcreate up to 10 gallons of clean water\b/,
+        },
+        {
+          label: 'rain cube extinguishes exposed flames',
+          pattern:
+            /\bwater falls as rain in a 30-foot cube within range, extinguishing exposed flames in the area\b/,
+        },
+        {
+          label: 'fog destruction',
+          pattern: /\byou destroy fog in a 30-foot cube within range\b/,
+        },
+      ]);
       return [
         {
           kind: 'createsOrDestroysWater',
           gallons: 10,
           areaAlternative: 'rain in a 30-foot cube',
+          extinguishesExposedFlames: true,
           destroyAlternative: 'fog in a 30-foot cube',
         },
       ];
     case 'divination':
+      requireClauses([
+        {
+          label: 'repeat-casting chance',
+          pattern:
+            /\bthere is a cumulative 25 percent chance for each casting after the first that you get a random reading\b/,
+        },
+        {
+          label: 'secret roll',
+          pattern: /\bThe GM makes this roll in secret\b/,
+        },
+      ]);
       return [
         {
           kind: 'percentChance',
@@ -1449,6 +1566,25 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'floating disk':
+      requireClauses([
+        {
+          label: 'capacity',
+          pattern: /\bcan hold up to 500 pounds\b/,
+        },
+        {
+          label: '20-foot following leash',
+          pattern:
+            /\bIf you move more than 20 feet away from it, the disk follows you so that it remains within 20 feet of you\b/,
+        },
+        {
+          label: '10-foot elevation restriction',
+          pattern: /\bcan[’']t cross an elevation change of 10 feet or more\b/,
+        },
+        {
+          label: '100-foot ending distance',
+          pattern: /\bIf you move more than 100 feet from the disk\b/,
+        },
+      ]);
       return [
         {
           kind: 'conjuredUtilityObject',
@@ -1463,6 +1599,27 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'mage hand':
+      requireClauses([
+        {
+          label: '30-foot leash',
+          pattern:
+            /\bThe hand vanishes if it is ever more than 30 feet away from you\b/,
+        },
+        {
+          label: 'action control',
+          pattern: /\bYou can use your action to control the hand\b/,
+        },
+        {
+          label: '30-foot movement per use',
+          pattern:
+            /\bYou can move the hand up to 30 feet each time you use it\b/,
+        },
+        {
+          label: 'attack/magic-item/carry restrictions',
+          pattern:
+            /\bThe hand can[’']t attack, activate magic items, or carry more than 10 pounds\b/,
+        },
+      ]);
       return [
         {
           kind: 'conjuredUtilityObject',
@@ -1478,6 +1635,17 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'message':
+      requireClauses([
+        {
+          label: 'magical silence and material barriers',
+          pattern:
+            /\bMagical silence, 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood blocks the spell\b/,
+        },
+        {
+          label: 'no straight line required',
+          pattern: /\bdoesn[’']t have to follow a straight line\b/,
+        },
+      ]);
       return [
         {
           kind: 'communicationBarriers',
@@ -1504,17 +1672,74 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'mirage arcane':
+      requireClauses([
+        {
+          label: 'difficult terrain creation/removal',
+          pattern:
+            /\bit can turn clear ground into difficult terrain \(or vice versa\) or otherwise impede movement through the area\b/,
+        },
+        {
+          label: 'removed piece disappears',
+          pattern:
+            /\bAny piece of the illusory terrain .* that is removed from the spell[’']s area disappears immediately\b/,
+        },
+      ]);
       return [
         {
           kind: 'terrainAlteration',
           canCreate: ['difficult-terrain'],
           canRemove: ['difficult-terrain'],
+          removedPiecesDisappear: true,
         },
       ];
     case 'prestidigitation':
+      requireClauses([
+        {
+          label: 'non-instantaneous concurrent limit',
+          pattern:
+            /\byou can have up to three of its non-instantaneous effects active at a time\b/,
+        },
+        {
+          label: 'dismiss cost',
+          pattern: /\byou can dismiss such an effect as an action\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'concurrentEffectLimit',
+          max: 3,
+          scope: 'non-instantaneous-effects',
+          dismissCost: 'action',
+        },
+      ];
     case 'thaumaturgy':
-      return [{ kind: 'concurrentEffectLimit', max: 3, dismissCost: 'action' }];
+      requireClauses([
+        {
+          label: 'one-minute concurrent limit',
+          pattern:
+            /\byou can have up to three of its 1-minute effects active at a time\b/,
+        },
+        {
+          label: 'dismiss cost',
+          pattern: /\byou can dismiss such an effect as an action\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'concurrentEffectLimit',
+          max: 3,
+          scope: 'one-minute-effects',
+          dismissCost: 'action',
+        },
+      ];
     case 'secret chest':
+      requireClauses([
+        {
+          label: '60-day cumulative chance',
+          pattern:
+            /\bAfter 60 days, there is a cumulative 5 percent chance per day that the spell[’']s effect ends\b/,
+        },
+      ]);
       return [
         {
           kind: 'percentChance',
@@ -1526,6 +1751,13 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'sending':
+      requireClauses([
+        {
+          label: 'cross-plane delivery chance',
+          pattern:
+            /\bif the target is on a different plane than you, there is a 5 percent chance that the message doesn[’']t arrive\b/,
+        },
+      ]);
       return [
         {
           kind: 'percentChance',
@@ -1536,6 +1768,22 @@ function projectReviewedS2SpellEffects(
         },
       ];
     case 'speak with dead':
+      requireClauses([
+        {
+          label: 'corpse eligibility',
+          pattern:
+            /\bThe corpse must still have a mouth and can[’']t be undead\b/,
+        },
+        {
+          label: '10-day recast lockout',
+          pattern:
+            /\bThe spell fails if the corpse was the target of this spell within the last 10 days\b/,
+        },
+        {
+          label: 'five-question limit',
+          pattern: /\byou can ask the corpse up to five questions\b/,
+        },
+      ]);
       return [
         { kind: 'recastLockout', scope: 'per-target', days: 10 },
         { kind: 'questionLimit', maxQuestions: 5 },

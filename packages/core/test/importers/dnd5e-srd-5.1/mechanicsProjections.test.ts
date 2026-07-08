@@ -44,7 +44,9 @@ describe('deriveCreatureEntryMechanics recharge parsing (eshyra-54di)', () => {
   });
 });
 
-function spell(partial: Pick<SpellExtraction, 'description'>): SpellExtraction {
+function spell(
+  partial: Partial<SpellExtraction> & Pick<SpellExtraction, 'description'>,
+): SpellExtraction {
   return {
     name: 'Test Spell',
     level: 1,
@@ -842,6 +844,18 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
     description: '',
     sourcePage: 1,
     ...over,
+  });
+
+  it('fails closed for S2 reviewed spell names when the reviewed source clause is absent', () => {
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Augury',
+          description:
+            'By casting marked sticks, you receive a harmless narrative omen.',
+        }),
+      ),
+    ).toThrow(/missing reviewed source clause: repeat-casting chance/);
   });
 
   it('parses structured durations from the closed SRD vocabulary', () => {

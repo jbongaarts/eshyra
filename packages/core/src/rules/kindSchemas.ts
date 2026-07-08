@@ -1671,15 +1671,22 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   concurrentEffectLimit: (effect, path) => {
     reqInt(effect, 'max', path, 1);
+    reqEnum(
+      effect,
+      'scope',
+      path,
+      new Set(['non-instantaneous-effects', 'one-minute-effects']),
+    );
     reqEnum(effect, 'dismissCost', path, new Set(['action']));
   },
   conjuredUtilityObject: (effect, path) => {
+    const restrictions = effect.restrictions;
     const hasBoundary =
       effect.capacityPounds !== undefined ||
       effect.leashFeet !== undefined ||
       effect.endsBeyondFeet !== undefined ||
       effect.moveFeetPerUse !== undefined ||
-      effect.restrictions !== undefined;
+      (Array.isArray(restrictions) && restrictions.length > 0);
     if (!hasBoundary) {
       throw new RulesPackError(`${path} must carry at least one boundary`);
     }
@@ -1687,7 +1694,14 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optInt(effect, 'leashFeet', path, 1);
     optInt(effect, 'endsBeyondFeet', path, 1);
     optInt(effect, 'moveFeetPerUse', path, 1);
-    optStrArray(effect, 'restrictions', path);
+    if (restrictions !== undefined) {
+      if (!Array.isArray(restrictions) || restrictions.length === 0) {
+        throw new RulesPackError(
+          `${path}.restrictions must be a non-empty array when present`,
+        );
+      }
+      optStrArray(effect, 'restrictions', path);
+    }
   },
   corpseEligibility: (effect, path) => {
     reqEnum(effect, 'target', path, new Set(['corpse']));
@@ -1697,6 +1711,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   createsOrDestroysWater: (effect, path) => {
     reqInt(effect, 'gallons', path, 1);
     optStr(effect, 'areaAlternative', path);
+    optBool(effect, 'extinguishesExposedFlames', path);
     optStr(effect, 'destroyAlternative', path);
   },
   createsProvisions: (effect, path) => {
@@ -1930,6 +1945,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     if (effect.canCreate === undefined && effect.canRemove === undefined) {
       throw new RulesPackError(`${path} must carry canCreate or canRemove`);
     }
+    optBool(effect, 'removedPiecesDisappear', path);
   },
   understandLanguages: (effect, path) => {
     if (effect.spoken !== true) {

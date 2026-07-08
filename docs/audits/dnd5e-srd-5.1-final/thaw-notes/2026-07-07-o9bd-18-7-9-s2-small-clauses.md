@@ -32,6 +32,12 @@ Yes. Seventeen spell records now carry S2 typed effects:
 `spell:speak-with-dead`, and `spell:thaumaturgy`. No records were added or
 removed.
 
+PR #416 review corrections refined five emitted payloads without changing the
+record set: Commune's repeat-casting chance now carries `secret: true`; Create
+or Destroy Water records exposed-flame extinguishing; Mirage Arcane records
+removed-piece disappearance; Prestidigitation and Thaumaturgy now carry
+distinct concurrent-effect scopes.
+
 `source-region-ledger.json` also changed by one classification count
 (`childOf` to direct `record` for an already-contained guard region) after the
 ledger was tightened so derived `mechanics` strings cannot prove source-region
@@ -45,6 +51,10 @@ stage-shift procedure, messenger travel, communication barriers, difficult
 terrain alteration, recast lockout, question/corpse limits, concurrent-effect
 limits, and permanence after repeated casting.
 
+Each keyed S2 projection now verifies the reviewed source clause shapes before
+emitting constants, so a name-preserving description parsing regression fails
+closed instead of retaining stale mechanics.
+
 The source-region ledger now excludes `mechanics` from ownership and
 label-fragment matching, matching its existing emission rule that derived
 mechanics cannot prove source prose was emitted.
@@ -54,6 +64,7 @@ mechanics cannot prove source prose was emitted.
 ```
 npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1
 npx vitest run packages/core/test/kindSchemasEffects.test.ts packages/core/test/srdMembershipCorrections.test.ts packages/core/test/dnd5eSrdAuditBundle.test.ts
+npx vitest run packages/core/test/importers/dnd5e-srd-5.1/mechanicsProjections.test.ts packages/core/test/kindSchemasEffects.test.ts packages/core/test/srdMembershipCorrections.test.ts packages/core/test/dnd5eSrdAuditBundle.test.ts
 npm run verify:dnd5e-srd-pack
 npm run verify:dnd5e-srd-freeze
 npm run verify:worktree
@@ -72,7 +83,9 @@ verification, and audit bundle generation passed.
 Verify that the generated record diff is limited to the 17 S2 spell mechanics
 projections, that those spell keys graduated out of
 `ACCEPTED_METADATA_ONLY_SPELLS`, and that the source-ledger diff is limited to
-the mechanics-ownership tightening described above.
+the mechanics-ownership tightening described above. Also verify the PR #416
+review corrections listed in "Pack records changed?" are present and that all
+17 graduated spells have exact committed-pack assertions.
 
 ## Audit bundle path
 

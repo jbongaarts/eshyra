@@ -750,6 +750,23 @@ describe('mechanics effect payload contracts', () => {
       /at least one boundary/,
     );
     expect(() =>
+      validate({ kind: 'conjuredUtilityObject', restrictions: [] }),
+    ).toThrow(/at least one boundary|restrictions/);
+    expect(() =>
+      validate({
+        kind: 'conjuredUtilityObject',
+        capacityPounds: 10,
+        restrictions: [],
+      }),
+    ).toThrow(/restrictions/);
+    expect(() =>
+      validate({
+        kind: 'concurrentEffectLimit',
+        max: 3,
+        dismissCost: 'action',
+      }),
+    ).toThrow(/scope/);
+    expect(() =>
       validate({ kind: 'communicationBarriers', magicalSilenceBlocks: true }),
     ).toThrow(/materials/);
     expect(() =>

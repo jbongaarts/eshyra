@@ -776,6 +776,19 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         trigger: 'repeat-cast-before-long-rest',
         resetOn: 'long-rest',
         effect: 'no-answer',
+        secret: true,
+      },
+    ]);
+    expect(spellEffects('spell:divination')).toEqual([
+      {
+        kind: 'percentChance',
+        percent: 25,
+        per: 'extra-casting-before-long-rest',
+        cumulative: true,
+        trigger: 'repeat-cast-before-long-rest',
+        resetOn: 'long-rest',
+        effect: 'random-reading',
+        secret: true,
       },
     ]);
     expect(spellEffects('spell:secret-chest')).toEqual([
@@ -812,6 +825,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         kind: 'createsOrDestroysWater',
         gallons: 10,
         areaAlternative: 'rain in a 30-foot cube',
+        extinguishesExposedFlames: true,
         destroyAlternative: 'fog in a 30-foot cube',
       },
     ]);
@@ -828,11 +842,42 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         ],
       },
     ]);
+    expect(spellEffects('spell:mage-hand')).toEqual([
+      {
+        kind: 'conjuredUtilityObject',
+        capacityPounds: 10,
+        leashFeet: 30,
+        moveFeetPerUse: 30,
+        restrictions: [
+          'requires action to control',
+          'cannot attack',
+          'cannot activate magic items',
+          'cannot carry more than 10 pounds',
+        ],
+      },
+    ]);
     expect(spellEffects('spell:mirage-arcane')).toEqual([
       {
         kind: 'terrainAlteration',
         canCreate: ['difficult-terrain'],
         canRemove: ['difficult-terrain'],
+        removedPiecesDisappear: true,
+      },
+    ]);
+    expect(spellEffects('spell:prestidigitation')).toEqual([
+      {
+        kind: 'concurrentEffectLimit',
+        max: 3,
+        scope: 'non-instantaneous-effects',
+        dismissCost: 'action',
+      },
+    ]);
+    expect(spellEffects('spell:thaumaturgy')).toEqual([
+      {
+        kind: 'concurrentEffectLimit',
+        max: 3,
+        scope: 'one-minute-effects',
+        dismissCost: 'action',
       },
     ]);
   });
@@ -879,6 +924,15 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         target: 'corpse',
         requiresMouth: true,
         excludesUndead: true,
+      },
+    ]);
+    expect(spellEffects('spell:sending')).toEqual([
+      {
+        kind: 'percentChance',
+        percent: 5,
+        per: 'casting',
+        trigger: 'crossrealm-recipient',
+        effect: 'delivery-failure',
       },
     ]);
   });

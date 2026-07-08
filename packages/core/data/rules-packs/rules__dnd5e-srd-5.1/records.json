@@ -105259,7 +105259,8 @@
             "cumulative": true,
             "trigger": "repeat-cast-before-long-rest",
             "resetOn": "long-rest",
-            "effect": "no-answer"
+            "effect": "no-answer",
+            "secret": true
           }
         ]
       },
@@ -106563,6 +106564,7 @@
             "kind": "createsOrDestroysWater",
             "gallons": 10,
             "areaAlternative": "rain in a 30-foot cube",
+            "extinguishesExposedFlames": true,
             "destroyAlternative": "fog in a 30-foot cube"
           }
         ],
@@ -115853,7 +115855,8 @@
             ],
             "canRemove": [
               "difficult-terrain"
-            ]
+            ],
+            "removedPiecesDisappear": true
           }
         ]
       }
@@ -117188,6 +117191,7 @@
           {
             "kind": "concurrentEffectLimit",
             "max": 3,
+            "scope": "non-instantaneous-effects",
             "dismissCost": "action"
           }
         ]
@@ -121464,6 +121468,7 @@
           {
             "kind": "concurrentEffectLimit",
             "max": 3,
+            "scope": "one-minute-effects",
             "dismissCost": "action"
           }
         ]
