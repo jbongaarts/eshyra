@@ -507,9 +507,11 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         {
           kind: 'speedMultiplier',
           multiplier: 0.5,
-          thresholdTableRef: 'table:carpet-of-flying',
-          thresholdMultiplier: 2,
-          condition: 'carrying more than the (doubled) table capacity',
+          threshold: { tableRef: 'table:carpet-of-flying', multiplier: 1 },
+          maximumCapacity: {
+            tableRef: 'table:carpet-of-flying',
+            multiplier: 2,
+          },
         },
       ];
     },

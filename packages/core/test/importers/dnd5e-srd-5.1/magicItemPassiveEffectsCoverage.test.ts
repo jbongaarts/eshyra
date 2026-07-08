@@ -16,7 +16,7 @@
  *
  * Fixture descriptions and expected mechanics are taken verbatim from the
  * reviewed committed pack (`packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json`)
- * after the PR #415 review-round-3 fixes; re-derive this fixture only when a
+ * after the PR #415 review-round-4 fixes; re-derive this fixture only when a
  * change to `magicItemPassiveEffects.ts` is intentional and reviewed.
  */
 import { describe, expect, it } from 'vitest';
@@ -199,9 +199,14 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
         {
           kind: 'speedMultiplier',
           multiplier: 0.5,
-          thresholdTableRef: 'table:carpet-of-flying',
-          thresholdMultiplier: 2,
-          condition: 'carrying more than the (doubled) table capacity',
+          threshold: {
+            tableRef: 'table:carpet-of-flying',
+            multiplier: 1,
+          },
+          maximumCapacity: {
+            tableRef: 'table:carpet-of-flying',
+            multiplier: 2,
+          },
         },
       ],
     },

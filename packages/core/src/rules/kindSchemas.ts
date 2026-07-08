@@ -2268,14 +2268,17 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     }
   },
   // No dedicated validator previously existed (any payload was accepted).
-  // Adding one now (eshyra-o9bd.18.7.7.5 review round 3) is scoped to this
-  // bead's own new usage: carpet of flying's "flies at half speed if it
-  // carries more than its normal capacity" needs the capacity THRESHOLD
-  // structured, not just the multiplier — `thresholdTableRef` points at the
-  // same by-size table `speedSet.valueTableRef` already references (capacity
-  // column), and `thresholdMultiplier` is the printed "up to twice" factor
-  // applied to that column. Existing callers are unaffected: they all set
-  // only `multiplier` (+ optional `subject`/`condition`).
+  // Adding one now (eshyra-o9bd.18.7.7.5 review round 3, corrected round 4)
+  // is scoped to this bead's own new usage: carpet of flying's "carries up
+  // to TWICE the table capacity, but flies at half speed if it carries more
+  // than its NORMAL [table] capacity" names two independent table-derived
+  // numbers, not one — the half-speed threshold is the table value itself
+  // (×1), and the hard carrying ceiling is a further, separate ×2 of that
+  // same value. Collapsing them into one `thresholdMultiplier` (round 3)
+  // wrongly pushed the half-speed threshold up to ×2. `threshold` and
+  // `maximumCapacity` are independent optional table-derived facts.
+  // Existing callers are unaffected: they all set only `multiplier` (+
+  // optional `subject`/`condition`).
   speedMultiplier: (effect, path) => {
     const multiplier = effect.multiplier;
     if (typeof multiplier !== 'number' || !Number.isFinite(multiplier)) {
@@ -2283,28 +2286,30 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     }
     optStr(effect, 'subject', path);
     optStr(effect, 'condition', path);
-    const hasThresholdTableRef = effect.thresholdTableRef !== undefined;
-    const hasThresholdMultiplier = effect.thresholdMultiplier !== undefined;
-    if (hasThresholdTableRef !== hasThresholdMultiplier) {
-      throw new RulesPackError(
-        `${path} must carry both thresholdTableRef and thresholdMultiplier, or neither`,
-      );
-    }
-    if (hasThresholdTableRef) {
-      const ref = reqStr(effect, 'thresholdTableRef', path);
-      if (!ref.startsWith('table:')) {
+    for (const key of ['threshold', 'maximumCapacity'] as const) {
+      const value = effect[key];
+      if (value === undefined) continue;
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new RulesPackError(
-          `${path}.thresholdTableRef must be a 'table:' ref, got ${JSON.stringify(ref)}`,
+          `${path}.${key} must be a non-null object when present`,
         );
       }
-      const thresholdMultiplier = effect.thresholdMultiplier;
+      const obj = value as Obj;
+      const objPath = `${path}.${key}`;
+      const ref = reqStr(obj, 'tableRef', objPath);
+      if (!ref.startsWith('table:')) {
+        throw new RulesPackError(
+          `${objPath}.tableRef must be a 'table:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+      const tableMultiplier = obj.multiplier;
       if (
-        typeof thresholdMultiplier !== 'number' ||
-        !Number.isFinite(thresholdMultiplier) ||
-        thresholdMultiplier <= 0
+        typeof tableMultiplier !== 'number' ||
+        !Number.isFinite(tableMultiplier) ||
+        tableMultiplier <= 0
       ) {
         throw new RulesPackError(
-          `${path}.thresholdMultiplier must be a positive finite number`,
+          `${objPath}.multiplier must be a positive finite number`,
         );
       }
     }
