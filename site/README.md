@@ -20,10 +20,11 @@ npx --yes serve dist      # preview locally
 
 ## Pages
 
-`build.mjs` renders every `*.html.tmpl` in `src/` through one shared
+`build.mjs` renders each registered HTML template in `src/` through one shared
 substitution table (record counts, pack size, source hash, build date), so page
-metadata cannot drift apart. Add a page by adding a template and one
-`renderTemplate(...)` call — no framework, bundler, or static-site generator is
+metadata cannot drift apart. Templates are registered explicitly with
+`renderTemplate(...)` calls; add a page by adding a template and one such call —
+no framework, bundler, static-site generator, or automatic template discovery is
 involved.
 
 - `src/index.html.tmpl` → `dist/index.html` — the landing page + download.

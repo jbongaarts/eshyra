@@ -770,11 +770,15 @@
               artifact, and it is currently <strong>thawed for an active
               re-audit</strong> under a stricter complete/accurate/playable bar
               &mdash; the semantic substrate described above is still being closed
-              out and will be re-frozen when it meets that bar. The freeze guard
-              stays active throughout: the source and pack hashes are pinned, and
-              every protected-path change requires its own dated note. So: this is
-              a genuinely useful, openly licensed, verifiable structured
-              representation of the SRD &mdash; not a claim of perfect,
+              out and will be re-frozen when it meets that bar. The pack stays
+              under controlled re-audit throughout: its source and pack hashes are
+              pinned and hash-manifest verification remains active. The normal
+              per-change thaw-note requirement is temporarily suspended for the
+              duration of the active re-audit &mdash; it adds churn without value
+              while the artifact is already in its re-audit state &mdash; and is
+              scheduled to return once the pack is re-frozen against a new
+              baseline. So: this is a genuinely useful, openly licensed, verifiable
+              structured representation of the SRD &mdash; not a claim of perfect,
               certified-complete gameplay semantics. We would rather you find it
               solid than find it oversold.
             </p>

@@ -199,11 +199,13 @@ const replacements = {
   BUILD_DATE: buildDate,
 };
 
-// Render every `.tmpl` under `src/` with the shared dynamic replacements above.
-// The homepage and the long-form rules-pack story share one substitution table
-// (record counts, pack size, source hash, build date) so their metadata can
-// never drift apart. Add a page by adding a template + one `renderTemplate`
-// call; no framework, bundler, or generator is involved.
+// Render each registered HTML template through the shared dynamic replacements
+// above. Templates are registered explicitly via the `renderTemplate(...)` calls
+// below (no automatic discovery). The homepage and the long-form rules-pack
+// story share one substitution table (record counts, pack size, source hash,
+// build date) so their metadata can never drift apart. Add a page by adding a
+// template + one `renderTemplate` call; no framework, bundler, or generator is
+// involved.
 function renderTemplate(templateName, outputPath) {
   let html = readFileSync(join(srcDir, templateName), 'utf8');
   for (const [key, value] of Object.entries(replacements)) {
