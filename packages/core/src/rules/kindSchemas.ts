@@ -190,6 +190,18 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'visibility',
   'weaponAttacksMagical',
   'weightMultiplier',
+  // Magic-item passive modifier vocabulary (eshyra-o9bd.18.7.7.5, M2+M3):
+  // ability-score floor semantics, proficiency-bonus grants, healing-rate
+  // modifiers, and marker traits with no existing kind.
+  'abilityScoreSet',
+  'proficiencyBonusIncrease',
+  'healingMultiplier',
+  'hover',
+  'leavesNoTracks',
+  'sustenance',
+  'swimWithoutExtraMovement',
+  'telepathicRelay',
+  'temperatureTolerance',
 ]);
 
 const ACTION_ECONOMY_COSTS: ReadonlySet<string> = new Set([
@@ -1460,6 +1472,24 @@ function markerOnly(effect: Obj, path: string): void {
 }
 
 /**
+ * Like `markerOnly`, but also allows an optional free-text `condition` —
+ * for marker kinds that are sometimes qualified by a source-printed
+ * exception or prerequisite (eshyra-o9bd.18.7.7.5 review: e.g. slippers of
+ * spider climbing's `climbAnywhere` excludes slippery surfaces). Still
+ * fail-closed against any other unexpected key.
+ */
+function markerWithOptionalCondition(effect: Obj, path: string): void {
+  for (const key of Object.keys(effect)) {
+    if (key !== 'kind' && key !== 'condition') {
+      throw new RulesPackError(
+        `${path} is a marker effect with an optional condition; unexpected payload key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+  optStr(effect, 'condition', path);
+}
+
+/**
  * Shared equipment-state eligibility rider (Martial Arts, Dragon Wings):
  * `wielding` is a closed wielding constraint, `armor` is `false` (none
  * allowed) or `"accommodating-armor-only"`, `shield` is a boolean.
@@ -1563,6 +1593,23 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     );
   },
   breathes: (effect, path) => {
+    // Necklace of Adaptation grants breathing in literally any environment
+    // (not merely air/water) — `anyEnvironment: true` represents that
+    // faithfully instead of forcing a lossy `environments` list
+    // (eshyra-o9bd.18.7.7.5 review). Mutually exclusive with `environments`.
+    if (effect.anyEnvironment !== undefined) {
+      if (effect.anyEnvironment !== true) {
+        throw new RulesPackError(`${path}.anyEnvironment must be true`);
+      }
+      if (effect.environments !== undefined) {
+        throw new RulesPackError(
+          `${path} must not carry both anyEnvironment and environments`,
+        );
+      }
+      optBool(effect, 'only', path);
+      optStr(effect, 'condition', path);
+      return;
+    }
     const environments = effect.environments;
     if (
       !Array.isArray(environments) ||
@@ -1572,10 +1619,14 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       )
     ) {
       throw new RulesPackError(
-        `${path}.environments must be a non-empty array of "air"/"water"`,
+        `${path}.environments must be a non-empty array of "air"/"water", or anyEnvironment: true`,
       );
     }
     optBool(effect, 'only', path);
+    // The condition under which the grant applies (eshyra-o9bd.18.7.7.5
+    // review): e.g. the cloak of the manta ray only breathes underwater
+    // while its hood is raised.
+    optStr(effect, 'condition', path);
   },
   obscurement: (effect, path) => {
     if (effect.level !== undefined) {
@@ -1643,7 +1694,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     );
   },
   cannotWearOrCarry: markerOnly,
-  climbAnywhere: markerOnly,
+  // Slippers of spider climbing's surface-climbing grant is excluded on a
+  // slippery surface such as ice or oil (eshyra-o9bd.18.7.7.5 review) — an
+  // exception to the special movement this kind represents, not a universal
+  // property of every `climbAnywhere` grant, so it stays optional.
+  climbAnywhere: markerWithOptionalCondition,
   climbWithoutCheck: (effect, path) => {
     optStr(effect, 'surfaces', path);
   },
@@ -1773,6 +1828,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   jumpDistanceMultiplier: (effect, path) => {
     reqInt(effect, 'multiplier', path, 2);
+    // Boots of striding and springing's multiplied jump is still capped by
+    // remaining movement (eshyra-o9bd.18.7.7.5 review) — a source-printed
+    // exception, not a universal property of every multiplied jump.
+    optStr(effect, 'condition', path);
   },
   locationKnowledge: (effect, path) => {
     const knows = reqStrArray(effect, 'knows', path);
@@ -1806,6 +1865,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   movementCostMultiplier: (effect, path) => {
     reqInt(effect, 'feetPerFoot', path, 2);
+    // The terrain/subject this multiplier applies to is effect SCOPE, not a
+    // gating condition — mirrors `ignoreDifficultTerrain.terrain`
+    // (eshyra-o9bd.18.7.7.5 review: cloak of arachnida's web movement).
+    optStrArray(effect, 'terrain', path);
   },
   messengerTravel: (effect, path) => {
     const rates = reqObj(effect, 'ratesMilesPer24h', path);
@@ -1878,6 +1941,10 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   stabilize: (effect, path) => {
     optStr(effect, 'target', path);
+    // The periapt of wound closure ties auto-stabilization to a specific
+    // moment (start of the wearer's turn) rather than an unconditional grant
+    // (eshyra-o9bd.18.7.7.5).
+    optStr(effect, 'trigger', path);
   },
   sleepException: (effect, path) => {
     reqStr(effect, 'detail', path);
@@ -1970,6 +2037,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   walkOnLiquids: (effect, path) => {
     optInt(effect, 'surfacingFeetPerRound', path, 1);
+    // What the grant lets you walk on is effect SCOPE, not a gating
+    // condition — kept distinct from `condition` (eshyra-o9bd.18.7.7.5
+    // review: horseshoes of a zephyr's nonsolid/unstable surfaces).
+    optStr(effect, 'surfaces', path);
+    optStr(effect, 'condition', path);
   },
   damageTransfer: (effect, path) => {
     reqEnum(effect, 'portion', path, new Set(['half']));
@@ -2052,6 +2124,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     if (reqStrArray(effect, 'terrain', path).length === 0) {
       throw new RulesPackError(`${path}.terrain must not be empty`);
     }
+    optStr(effect, 'condition', path);
   },
   ignoreMovementRestriction: (effect, path) => {
     reqStr(effect, 'source', path);
@@ -2283,6 +2356,13 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optInt(effect, 'rangeFeet', path, 1);
     optInt(effect, 'rangeMiles', path, 1);
     optStr(effect, 'detects', path);
+    // Magic-item grants (eshyra-o9bd.18.7.7.5): a time-boxed activation
+    // (gem of seeing's 10-minute truesight window), a conditional range
+    // increase when the wearer already has the sense (goggles of night's
+    // "+60 feet if you already have darkvision"), and free-text scoping.
+    optInt(effect, 'durationMinutes', path, 1);
+    optInt(effect, 'bonusRangeFeetIfAlreadyHasSense', path, 1);
+    optStr(effect, 'condition', path);
   },
   jumpDistance: (effect, path) => {
     reqInt(effect, 'longJumpFeet', path, 1);
@@ -2378,19 +2458,134 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       path,
       new Set(['walk', 'fly', 'swim', 'climb', 'burrow']),
     );
-    const value = effect.value;
-    if (
-      value !== 'current-speed' &&
-      value !== 'walking-speed' &&
-      (typeof value !== 'number' || !Number.isInteger(value) || value < 0)
-    ) {
+    // The magnitude is either an inline value or (carpet of flying) a
+    // pointer to the printed by-size table (eshyra-o9bd.18.7.7.5) — never
+    // both, and never neither.
+    const hasValue = effect.value !== undefined;
+    const hasValueTableRef = effect.valueTableRef !== undefined;
+    if (hasValue === hasValueTableRef) {
       throw new RulesPackError(
-        `${path}.value must be "current-speed", "walking-speed", or a non-negative integer, got ${JSON.stringify(value)}`,
+        `${path} must carry exactly one of value or valueTableRef`,
       );
+    }
+    if (hasValueTableRef) {
+      const ref = reqStr(effect, 'valueTableRef', path);
+      if (!ref.startsWith('table:')) {
+        throw new RulesPackError(
+          `${path}.valueTableRef must be a 'table:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+    } else {
+      const value = effect.value;
+      if (
+        value !== 'current-speed' &&
+        value !== 'walking-speed' &&
+        (typeof value !== 'number' || !Number.isInteger(value) || value < 0)
+      ) {
+        throw new RulesPackError(
+          `${path}.value must be "current-speed", "walking-speed", or a non-negative integer, got ${JSON.stringify(value)}`,
+        );
+      }
     }
     optActionCost(effect, 'activation', path);
     optActionCost(effect, 'deactivation', path);
     optEligibility(effect, path);
+    // Magic-item extensions (eshyra-o9bd.18.7.7.5): `floor` marks a minimum
+    // rather than an absolute set (boots of striding and springing never
+    // reduce an already-higher walking speed), and `hover` marks a granted
+    // flying/floating mode as including the ability to hover in place.
+    optBool(effect, 'floor', path);
+    optBool(effect, 'hover', path);
+    optStr(effect, 'condition', path);
+    // A weight-based speed reduction with a hard capacity ceiling (broom of
+    // flying: "flying speed becomes 30 feet while carrying over 200 pounds"
+    // under a 400-pound cap) — structured rather than folded into
+    // `condition`, since a consumer must not have to parse prose to
+    // determine movement speed (eshyra-o9bd.18.7.7.5 review round 3).
+    const weightCapacity = effect.weightCapacity;
+    if (weightCapacity !== undefined) {
+      if (
+        typeof weightCapacity !== 'object' ||
+        weightCapacity === null ||
+        Array.isArray(weightCapacity)
+      ) {
+        throw new RulesPackError(
+          `${path}.weightCapacity must be a non-null object when present`,
+        );
+      }
+      const wc = weightCapacity as Obj;
+      const wcPath = `${path}.weightCapacity`;
+      reqInt(wc, 'maximumPounds', wcPath, 1);
+      const hasReducedValue = wc.reducedValue !== undefined;
+      const hasThreshold = wc.reducedAboveWeightPounds !== undefined;
+      if (hasReducedValue !== hasThreshold) {
+        throw new RulesPackError(
+          `${wcPath} must carry both reducedValue and reducedAboveWeightPounds, or neither`,
+        );
+      }
+      if (hasReducedValue) {
+        const reducedValue = wc.reducedValue;
+        if (
+          reducedValue !== 'current-speed' &&
+          reducedValue !== 'walking-speed' &&
+          (typeof reducedValue !== 'number' ||
+            !Number.isInteger(reducedValue) ||
+            reducedValue < 0)
+        ) {
+          throw new RulesPackError(
+            `${wcPath}.reducedValue must be "current-speed", "walking-speed", or a non-negative integer, got ${JSON.stringify(reducedValue)}`,
+          );
+        }
+        reqInt(wc, 'reducedAboveWeightPounds', wcPath, 1);
+      }
+    }
+  },
+  // No dedicated validator previously existed (any payload was accepted).
+  // Adding one now (eshyra-o9bd.18.7.7.5 review round 3, corrected round 4)
+  // is scoped to this bead's own new usage: carpet of flying's "carries up
+  // to TWICE the table capacity, but flies at half speed if it carries more
+  // than its NORMAL [table] capacity" names two independent table-derived
+  // numbers, not one — the half-speed threshold is the table value itself
+  // (×1), and the hard carrying ceiling is a further, separate ×2 of that
+  // same value. Collapsing them into one `thresholdMultiplier` (round 3)
+  // wrongly pushed the half-speed threshold up to ×2. `threshold` and
+  // `maximumCapacity` are independent optional table-derived facts.
+  // Existing callers are unaffected: they all set only `multiplier` (+
+  // optional `subject`/`condition`).
+  speedMultiplier: (effect, path) => {
+    const multiplier = effect.multiplier;
+    if (typeof multiplier !== 'number' || !Number.isFinite(multiplier)) {
+      throw new RulesPackError(`${path}.multiplier must be a finite number`);
+    }
+    optStr(effect, 'subject', path);
+    optStr(effect, 'condition', path);
+    for (const key of ['threshold', 'maximumCapacity'] as const) {
+      const value = effect[key];
+      if (value === undefined) continue;
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        throw new RulesPackError(
+          `${path}.${key} must be a non-null object when present`,
+        );
+      }
+      const obj = value as Obj;
+      const objPath = `${path}.${key}`;
+      const ref = reqStr(obj, 'tableRef', objPath);
+      if (!ref.startsWith('table:')) {
+        throw new RulesPackError(
+          `${objPath}.tableRef must be a 'table:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+      const tableMultiplier = obj.multiplier;
+      if (
+        typeof tableMultiplier !== 'number' ||
+        !Number.isFinite(tableMultiplier) ||
+        tableMultiplier <= 0
+      ) {
+        throw new RulesPackError(
+          `${objPath}.multiplier must be a positive finite number`,
+        );
+      }
+    }
   },
   abilityScoreIncrease: (effect, path) => {
     const raw = effect.abilities;
@@ -2407,6 +2602,155 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     }
     reqInt(effect, 'amount', path, 1);
     optInt(effect, 'newMaximum', path, 1);
+    // The manuals/tomes of +2 ("your score increases by 2, as does your
+    // maximum for that score") raise the character's ability-score maximum
+    // by the same relative amount rather than setting it to a fixed printed
+    // number, so this is distinct from `newMaximum` (eshyra-o9bd.18.7.7.5).
+    optBool(effect, 'alsoIncreasesMaximum', path);
+    if (
+      effect.newMaximum !== undefined &&
+      effect.alsoIncreasesMaximum !== undefined
+    ) {
+      throw new RulesPackError(
+        `${path} must not carry both newMaximum and alsoIncreasesMaximum`,
+      );
+    }
+    // Hammer of Thunderbolts' Strength increase applies only while attuned
+    // AND holding the weapon — a narrower condition than ordinary attunement
+    // (eshyra-o9bd.18.7.7.5 review).
+    optStr(effect, 'condition', path);
+  },
+  // Ability-score FLOOR semantics (eshyra-o9bd.18.7.7.5): "your Strength
+  // score is 19 while you wear these gauntlets... no effect if already 19 or
+  // higher" is a minimum, not a `+N` delta, so it does not fit
+  // `abilityScoreIncrease`. `value` is a fixed floor (amulet of health,
+  // gauntlets of ogre power, headband of intellect); `tableRef` is used
+  // instead when the floor varies by a printed variant table (belt/potion of
+  // giant strength), which already carries the table via `data.tableRefs`.
+  abilityScoreSet: (effect, path) => {
+    reqAbility(effect, 'ability', path);
+    const hasValue = effect.value !== undefined;
+    const hasTableRef = effect.tableRef !== undefined;
+    if (hasValue === hasTableRef) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of value or tableRef`,
+      );
+    }
+    if (hasValue) reqInt(effect, 'value', path, 1);
+    if (hasTableRef) {
+      const ref = reqStr(effect, 'tableRef', path);
+      if (!ref.startsWith('table:')) {
+        throw new RulesPackError(
+          `${path}.tableRef must be a 'table:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+    }
+  },
+  // Ioun stone of Mastery: "your proficiency bonus increases by 1"
+  // (eshyra-o9bd.18.7.7.5) — no existing kind models a flat PB delta.
+  proficiencyBonusIncrease: (effect, path) => {
+    reqInt(effect, 'amount', path, 1);
+  },
+  // A multiplier on a healing ROLL, distinct from `maximizeHealingDice`
+  // (which sets dice to their maximum rather than scaling the result). The
+  // periapt of wound closure doubles Hit Die healing (eshyra-o9bd.18.7.7.5).
+  healingMultiplier: (effect, path) => {
+    const multiplier = effect.multiplier;
+    if (typeof multiplier !== 'number' || !Number.isFinite(multiplier)) {
+      throw new RulesPackError(`${path}.multiplier must be a finite number`);
+    }
+    reqStr(effect, 'appliesTo', path);
+  },
+  // Horseshoes of a Zephyr's hover requires all four horseshoes affixed
+  // (eshyra-o9bd.18.7.7.5 review) — an item-specific prerequisite, so
+  // `condition` stays optional rather than a universal requirement.
+  // `heightInches` is the fixed hover height that item prints (4 inches) —
+  // structured rather than folded into `condition` (review round 3). Both
+  // fields stay optional and fail-closed against any other key.
+  hover: (effect, path) => {
+    for (const key of Object.keys(effect)) {
+      if (key !== 'kind' && key !== 'heightInches' && key !== 'condition') {
+        throw new RulesPackError(
+          `${path} has unexpected payload key ${JSON.stringify(key)}`,
+        );
+      }
+    }
+    optInt(effect, 'heightInches', path, 1);
+    optStr(effect, 'condition', path);
+  },
+  // A standalone effect (eshyra-o9bd.18.7.7.5 review): the horseshoes of a
+  // zephyr's "leaves no tracks" is an independent benefit, not a qualifier
+  // nested inside `walkOnLiquids`.
+  leavesNoTracks: markerWithOptionalCondition,
+  sustenance: markerOnly,
+  swimWithoutExtraMovement: markerOnly,
+  // Helm of telepathy's bonus-action message relay while concentrating on
+  // its detect thoughts cast (eshyra-o9bd.18.7.7.5). The F3 concentration
+  // dependency is named in the mechanics inventory, not modeled here.
+  telepathicRelay: (effect, path) => {
+    optStr(effect, 'requires', path);
+  },
+  // Shared by boots of the winterlands and the ring of warmth
+  // (eshyra-o9bd.18.7.7.5): tolerance of extreme cold without additional
+  // protection, down to a fixed floor.
+  temperatureTolerance: (effect, path) => {
+    reqInt(effect, 'minimumFahrenheit', path);
+    optInt(effect, 'withHeavyClothesMinimumFahrenheit', path);
+  },
+  // No dedicated validator previously existed for these two kinds (any
+  // payload was accepted). Adding one now (eshyra-o9bd.18.7.7.5) is scoped to
+  // this bead's own new usage: the berserker axe's "+1 [hit point maximum]
+  // for each level you have attained" is a scaling rate, not the flat
+  // `amount` the existing creature-trait callers always emitted, so `amount`
+  // and `perLevel` are accepted as alternatives; existing callers are
+  // unaffected since they all set `amount`.
+  hitPointMaximumIncrease: (effect, path) => {
+    const hasAmount = effect.amount !== undefined;
+    const hasPerLevel = effect.perLevel !== undefined;
+    if (hasAmount === hasPerLevel) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of amount or perLevel`,
+      );
+    }
+    if (hasAmount) reqInt(effect, 'amount', path, 1);
+    if (hasPerLevel) reqInt(effect, 'perLevel', path, 1);
+    optBool(effect, 'alsoCurrentHitPoints', path);
+  },
+  // Regeneration previously had no dedicated validator. This shape covers
+  // both the existing creature-trait usage (fixed `hitPoints`, `timing`
+  // `"start-of-turn"`) and the ring of regeneration / ioun stone of
+  // regeneration's dice-based, interval-timed healing plus the ring's
+  // separate limb-regrowth clause (eshyra-o9bd.18.7.7.5).
+  regeneration: (effect, path) => {
+    const hasHitPoints = effect.hitPoints !== undefined;
+    const hasHitDice = effect.hitDice !== undefined;
+    if (hasHitPoints === hasHitDice) {
+      throw new RulesPackError(
+        `${path} must carry exactly one of hitPoints or hitDice`,
+      );
+    }
+    if (hasHitPoints) reqInt(effect, 'hitPoints', path, 1);
+    if (hasHitDice) reqDice(effect, 'hitDice', path);
+    reqStr(effect, 'timing', path);
+    optStr(effect, 'condition', path);
+    optStr(effect, 'suppressedBy', path);
+    const suppressedByDamageTypes = effect.suppressedByDamageTypes;
+    if (suppressedByDamageTypes !== undefined) {
+      if (
+        !Array.isArray(suppressedByDamageTypes) ||
+        !suppressedByDamageTypes.every(
+          (type) => typeof type === 'string' && SRD_5_1_DAMAGE_TYPES.has(type),
+        )
+      ) {
+        throw new RulesPackError(
+          `${path}.suppressedByDamageTypes must be an array of canonical damage types`,
+        );
+      }
+    }
+    if (effect.limbRegrowthDays !== undefined) {
+      reqDice(effect, 'limbRegrowthDays', path);
+    }
+    optStr(effect, 'limbRegrowthCondition', path);
   },
   acFormula: (effect, path) => {
     reqInt(effect, 'base', path, 1);
@@ -3590,6 +3934,12 @@ function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
   // Avatar of Death) points at the emitted `stat-block` record(s) it summons or
   // becomes via `statBlockRefs` (eshyra-4a7.4). Optional: most items have none.
   optStrArray(data, 'statBlockRefs', `${path}.data`);
+  // Structured passive-modifier projection (eshyra-o9bd.18.7.7.5, M2+M3):
+  // reuses the shared `mechanics.effects` vocabulary already validated for
+  // creatures/spells/features/conditions. Most magic items carry no
+  // `mechanics` yet — the charge/combat-bonus/state-machine/curse clause
+  // families owned by sibling beads are out of scope here.
+  optMechanics(data, 'mechanics', `${path}.data`);
 }
 
 function validatePf2eAncestry(record: RulesRecord, path: string): void {

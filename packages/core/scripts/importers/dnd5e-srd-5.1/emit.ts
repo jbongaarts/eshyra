@@ -36,6 +36,7 @@ import {
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
+import { deriveMagicItemMechanics } from './magicItemPassiveEffects.js';
 import {
   deriveActionMechanics,
   deriveCreatureEntryMechanics,
@@ -1289,6 +1290,10 @@ function buildMagicItemData(
   // (eshyra-4a7.4). Sorted for byte-stable JSON.
   if (statBlockRefs !== undefined && statBlockRefs.length > 0) {
     data.statBlockRefs = [...statBlockRefs].sort();
+  }
+  const mechanics = deriveMagicItemMechanics(item);
+  if (mechanics !== undefined) {
+    data.mechanics = mechanics;
   }
   return data;
 }
