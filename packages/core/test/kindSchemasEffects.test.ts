@@ -740,6 +740,55 @@ describe('mechanics effect payload contracts', () => {
     expect(() =>
       validate({ kind: 'spellStoring', maximumSpellLevel: 10 }),
     ).toThrow(/<= 9/);
+    expect(() => validate({ kind: 'percentChance', percent: 101 })).toThrow(
+      /percent/,
+    );
+    expect(() =>
+      validate({ kind: 'createsProvisions', food: { pounds: 45 } }),
+    ).toThrow(/spoilsAfterHours/);
+    expect(() => validate({ kind: 'conjuredUtilityObject' })).toThrow(
+      /at least one boundary/,
+    );
+    expect(() =>
+      validate({ kind: 'conjuredUtilityObject', restrictions: [] }),
+    ).toThrow(/at least one boundary|restrictions/);
+    expect(() =>
+      validate({
+        kind: 'conjuredUtilityObject',
+        capacityPounds: 10,
+        restrictions: [],
+      }),
+    ).toThrow(/restrictions/);
+    expect(() =>
+      validate({
+        kind: 'concurrentEffectLimit',
+        max: 3,
+        dismissCost: 'action',
+      }),
+    ).toThrow(/scope/);
+    expect(() =>
+      validate({ kind: 'communicationBarriers', magicalSilenceBlocks: true }),
+    ).toThrow(/materials/);
+    expect(() =>
+      validate({
+        kind: 'terrainAlteration',
+        canCreate: ['muddy-ground'],
+      }),
+    ).toThrow(/difficult-terrain/);
+    expect(() =>
+      validate({
+        kind: 'createsOrDestroysWater',
+        gallons: 10,
+        extinguishesExposedFlames: false,
+      }),
+    ).toThrow(/must be true/);
+    expect(() =>
+      validate({
+        kind: 'terrainAlteration',
+        canCreate: ['difficult-terrain'],
+        removedPiecesDisappear: false,
+      }),
+    ).toThrow(/must be true/);
     expect(() =>
       validate({
         kind: 'illusoryDisguise',

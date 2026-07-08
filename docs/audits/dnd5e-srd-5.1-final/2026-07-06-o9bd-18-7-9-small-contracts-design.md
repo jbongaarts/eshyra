@@ -77,6 +77,19 @@ homunculus (`telepathy` + directional `senseSharing`), aboleth
 
 ## S2 — small deterministic clause payloads (17 spells)
 
+Implemented 2026-07-07. The rollout added the effect kinds below, projected
+all 17 reviewed S2 spells, and removed those spells from
+`ACCEPTED_METADATA_ONLY_SPELLS`. The committed payloads use compact
+enum-like strings for `percentChance.trigger`/`effect` values so derived
+mechanics cannot accidentally prove source-region ownership in the importer
+ledger.
+Post-review fixes on PR #416 made every keyed projection fail closed on the
+reviewed source clause shapes before emitting constants, restored Commune's
+secret-roll boundary, represented Create or Destroy Water's exposed-flame
+extinguishing consequence, represented Mirage Arcane's removed-piece
+disappearance rule, and split Prestidigitation/Thaumaturgy concurrent limits by
+scope.
+
 Existing sub-family shapes (artifact §2.2/2.4/2.5):
 
 ```ts
@@ -92,12 +105,13 @@ Existing sub-family shapes (artifact §2.2/2.4/2.5):
   sustains?: { humanoids: number, steeds: number, hours: number } }
 // create-food-and-water; create-or-destroy-water uses water + destroy mode:
 { kind: 'createsOrDestroysWater',
-  gallons: number, areaAlternative?: string, destroyAlternative?: string }
+  gallons: number, areaAlternative?: string, extinguishesExposedFlames?: true,
+  destroyAlternative?: string }
 
 { kind: 'conjuredUtilityObject',
   capacityPounds?: number,        // mage-hand 10, floating-disk 500
-  leashFeet?: number,             // hand 30; disk follow-within 20
-  endsBeyondFeet?: number,        // disk 100
+  leashFeet?: number,             // disk follow-within 20
+  endsBeyondFeet?: number,        // hand vanishes beyond 30; disk ends beyond 100
   moveFeetPerUse?: number,        // hand 30
   restrictions?: string[] }       // "can't attack/activate magic items", "can't cross ≥10 ft elevation change"
 ```
@@ -116,14 +130,17 @@ Reclassified-clause payloads (artifact §2.8):
     thickness?: { amount: number, unit: 'foot'|'inch' },
     threshold: 'blocks-at-or-above'|'any-thin-sheet'
   }[] } // message: 1 ft stone, 1 in common metal, thin lead sheet, 3 ft wood
-{ kind: 'terrainAlteration', canCreate: ['difficult-terrain'], canRemove: ['difficult-terrain'] } // mirage-arcane
+{ kind: 'terrainAlteration', canCreate: ['difficult-terrain'], canRemove: ['difficult-terrain'],
+  removedPiecesDisappear?: true } // mirage-arcane
 { kind: 'recastLockout', scope: 'per-target', days: number }     // speak-with-dead 10
 { kind: 'questionLimit', maxQuestions: number }                  // commune 3, speak-with-dead 5
 { kind: 'corpseEligibility',
   target: 'corpse',
   requiresMouth?: boolean,
   excludesUndead?: boolean }                                     // speak-with-dead
-{ kind: 'concurrentEffectLimit', max: 3, dismissCost: 'action' } // prestidigitation, thaumaturgy
+{ kind: 'concurrentEffectLimit', max: 3,
+  scope: 'non-instantaneous-effects' | 'one-minute-effects',
+  dismissCost: 'action' } // prestidigitation, thaumaturgy
 { kind: 'permanenceAfterRepetition', period: 'day', count: number, result: 'until-dispelled' | 'permanent' }
 // arcanists-magic-aura {count:30}; private-sanctum {count:365, result:'permanent'} (S3 record, shared payload)
 ```

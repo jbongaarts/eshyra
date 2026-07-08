@@ -102530,6 +102530,17 @@
           "amount": 24,
           "unit": "hour"
         },
+        "effects": [
+          {
+            "kind": "messengerTravel",
+            "ratesMilesPer24h": {
+              "flying": 50,
+              "other": 25
+            },
+            "maxWords": 25,
+            "lostIfUndelivered": true
+          }
+        ],
         "scaling": {
           "sourceText": "If you cast this spell using a spell slot of 3nd level or higher, the duration of the spell increases by 48 hours for each slot level above 2nd."
         }
@@ -103223,7 +103234,15 @@
           "kind": "timed",
           "amount": 24,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "permanenceAfterRepetition",
+            "period": "day",
+            "count": 30,
+            "result": "until-dispelled"
+          }
+        ]
       },
       "componentMaterials": "a small square of silk"
     },
@@ -103333,7 +103352,19 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "percentChance",
+            "percent": 25,
+            "per": "extra-casting-before-long-rest",
+            "cumulative": true,
+            "trigger": "repeat-cast-before-long-rest",
+            "resetOn": "long-rest",
+            "effect": "random-reading",
+            "secret": true
+          }
+        ]
       },
       "componentMaterials": "specially marked sticks, bones, or similar tokens worth at least 25 gp",
       "ritual": true
@@ -105215,7 +105246,23 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "questionLimit",
+            "maxQuestions": 3
+          },
+          {
+            "kind": "percentChance",
+            "percent": 25,
+            "per": "extra-casting-before-long-rest",
+            "cumulative": true,
+            "trigger": "repeat-cast-before-long-rest",
+            "resetOn": "long-rest",
+            "effect": "no-answer",
+            "secret": true
+          }
+        ]
       },
       "componentMaterials": "incense and a vial of holy or unholy water",
       "ritual": true
@@ -106310,7 +106357,23 @@
           "size": 5,
           "unit": "mile",
           "origin": "self"
-        }
+        },
+        "effects": [
+          {
+            "kind": "onsetTime",
+            "roll": "1d4",
+            "multiplierMinutes": 10
+          },
+          {
+            "kind": "stagedTableShift",
+            "tableRefs": [
+              "table:precipitation",
+              "table:temperature",
+              "table:wind"
+            ],
+            "stepsPerChange": 1
+          }
+        ]
       },
       "componentMaterials": "burning incense and bits of earth and wood mixed in water",
       "tableRefs": [
@@ -106427,7 +106490,24 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "createsProvisions",
+            "food": {
+              "pounds": 45,
+              "spoilsAfterHours": 24
+            },
+            "water": {
+              "gallons": 30
+            },
+            "sustains": {
+              "humanoids": 15,
+              "steeds": 5,
+              "hours": 24
+            }
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 131",
@@ -106479,6 +106559,15 @@
         "duration": {
           "kind": "instantaneous"
         },
+        "effects": [
+          {
+            "kind": "createsOrDestroysWater",
+            "gallons": 10,
+            "areaAlternative": "rain in a 30-foot cube",
+            "extinguishesExposedFlames": true,
+            "destroyAlternative": "fog in a 30-foot cube"
+          }
+        ],
         "scaling": {
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, you create or destroy 10 additional gallons of water, or the size of the cube increases by 5 feet, for each slot level above 1st."
         }
@@ -107745,7 +107834,19 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "percentChance",
+            "percent": 25,
+            "per": "extra-casting-before-long-rest",
+            "cumulative": true,
+            "trigger": "repeat-cast-before-long-rest",
+            "resetOn": "long-rest",
+            "effect": "random-reading",
+            "secret": true
+          }
+        ]
       },
       "componentMaterials": "incense and a sacrificial offering appropriate to your religion, together worth at least 25 gp, which the spell consumes",
       "ritual": true
@@ -110258,7 +110359,20 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "conjuredUtilityObject",
+            "capacityPounds": 500,
+            "leashFeet": 20,
+            "endsBeyondFeet": 100,
+            "restrictions": [
+              "immobile while you are within 20 feet",
+              "follows to remain within 20 feet",
+              "cannot cross an elevation change of 10 feet or more"
+            ]
+          }
+        ]
       },
       "componentMaterials": "a drop of mercury",
       "ritual": true
@@ -114496,7 +114610,21 @@
           "kind": "timed",
           "amount": 1,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "conjuredUtilityObject",
+            "capacityPounds": 10,
+            "endsBeyondFeet": 30,
+            "moveFeetPerUse": 30,
+            "restrictions": [
+              "requires action to control",
+              "cannot attack",
+              "cannot activate magic items",
+              "cannot carry more than 10 pounds"
+            ]
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 160",
@@ -115439,7 +115567,44 @@
           "kind": "timed",
           "amount": 1,
           "unit": "round"
-        }
+        },
+        "effects": [
+          {
+            "kind": "communicationBarriers",
+            "magicalSilenceBlocks": true,
+            "noStraightLineRequired": true,
+            "materials": [
+              {
+                "material": "stone",
+                "thickness": {
+                  "amount": 1,
+                  "unit": "foot"
+                },
+                "threshold": "blocks-at-or-above"
+              },
+              {
+                "material": "common-metal",
+                "thickness": {
+                  "amount": 1,
+                  "unit": "inch"
+                },
+                "threshold": "blocks-at-or-above"
+              },
+              {
+                "material": "lead",
+                "threshold": "any-thin-sheet"
+              },
+              {
+                "material": "wood",
+                "thickness": {
+                  "amount": 3,
+                  "unit": "foot"
+                },
+                "threshold": "blocks-at-or-above"
+              }
+            ]
+          }
+        ]
       },
       "componentMaterials": "a short piece of copper wire"
     },
@@ -115681,7 +115846,19 @@
           "kind": "timed",
           "amount": 10,
           "unit": "day"
-        }
+        },
+        "effects": [
+          {
+            "kind": "terrainAlteration",
+            "canCreate": [
+              "difficult-terrain"
+            ],
+            "canRemove": [
+              "difficult-terrain"
+            ],
+            "removedPiecesDisappear": true
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 165",
@@ -117009,7 +117186,15 @@
           "amount": 1,
           "unit": "hour",
           "upTo": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "concurrentEffectLimit",
+            "max": 3,
+            "scope": "non-instantaneous-effects",
+            "dismissCost": "action"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 170",
@@ -118771,7 +118956,17 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
-        }
+        },
+        "effects": [
+          {
+            "kind": "percentChance",
+            "percent": 5,
+            "per": "day",
+            "cumulative": true,
+            "trigger": "after-60-days",
+            "effect": "spell-ends"
+          }
+        ]
       },
       "componentMaterials": "an exquisite chest, 3 feet by 2 feet by 2 feet, constructed from rare materials worth at least 5,000 gp, and a Tiny replica made from the same materials worth at least 50 gp"
     },
@@ -118954,7 +119149,16 @@
           "kind": "timed",
           "amount": 1,
           "unit": "round"
-        }
+        },
+        "effects": [
+          {
+            "kind": "percentChance",
+            "percent": 5,
+            "per": "casting",
+            "trigger": "crossrealm-recipient",
+            "effect": "delivery-failure"
+          }
+        ]
       },
       "componentMaterials": "a short piece of fine copper wire"
     },
@@ -119984,7 +120188,24 @@
           "kind": "timed",
           "amount": 10,
           "unit": "minute"
-        }
+        },
+        "effects": [
+          {
+            "kind": "recastLockout",
+            "scope": "per-target",
+            "days": 10
+          },
+          {
+            "kind": "questionLimit",
+            "maxQuestions": 5
+          },
+          {
+            "kind": "corpseEligibility",
+            "target": "corpse",
+            "requiresMouth": true,
+            "excludesUndead": true
+          }
+        ]
       },
       "componentMaterials": "burning incense"
     },
@@ -121242,7 +121463,15 @@
           "amount": 1,
           "unit": "minute",
           "upTo": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "concurrentEffectLimit",
+            "max": 3,
+            "scope": "one-minute-effects",
+            "dismissCost": "action"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 187",

@@ -200,8 +200,9 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     // so these counts are exact, not floors. The eshyra-o9bd.18.7.9
     // membership re-audit moved 58 spells with deterministic semantics
     // (senses, teleports, resistances, action economy, stabilization, …)
-    // out of the metadata-only bucket: 210 → 268.
-    expect(spells.spellsWithDeterministicEffects).toBe(268);
+    // out of the metadata-only bucket: 210 → 268; the S2 rollout then moved
+    // 17 reviewed small deterministic-clause spells into typed mechanics.
+    expect(spells.spellsWithDeterministicEffects).toBe(285);
     expect(spells.metadataOnlySpells).toBe(
       ACCEPTED_METADATA_ONLY_SPELLS.length,
     );
