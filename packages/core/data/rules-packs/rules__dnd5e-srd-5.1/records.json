@@ -87208,22 +87208,28 @@
       "mechanics": {
         "effects": [
           {
-            "kind": "hover"
+            "kind": "hover",
+            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature"
           },
           {
             "kind": "walkOnLiquids",
-            "condition": "leaves no tracks"
+            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature; the creature can cross or stand above nonsolid or unstable surfaces, such as water or lava"
+          },
+          {
+            "kind": "leavesNoTracks",
+            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature"
           },
           {
             "kind": "ignoreDifficultTerrain",
             "terrain": [
               "all"
-            ]
+            ],
+            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature"
           },
           {
             "kind": "immunity",
             "to": "exhaustion from a forced march",
-            "condition": "for up to 12 hours per day"
+            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature; for up to 12 hours per day"
           }
         ]
       }
@@ -87264,7 +87270,8 @@
         "effects": [
           {
             "kind": "speedBonus",
-            "amountFeet": 30
+            "amountFeet": 30,
+            "condition": "requires all four horseshoes affixed to the hooves of a horse or similar creature"
           }
         ]
       }
@@ -88029,11 +88036,7 @@
         "effects": [
           {
             "kind": "breathes",
-            "environments": [
-              "air",
-              "water"
-            ],
-            "condition": "the source grants breathing in literally any environment, not only air/water — a lossy simplification of the closed environments vocabulary"
+            "anyEnvironment": true
           }
         ]
       }
@@ -90650,7 +90653,8 @@
             "condition": "does not work on a slippery surface, such as one covered by ice or oil"
           },
           {
-            "kind": "climbAnywhere"
+            "kind": "climbAnywhere",
+            "condition": "does not work on a slippery surface, such as one covered by ice or oil"
           }
         ]
       }

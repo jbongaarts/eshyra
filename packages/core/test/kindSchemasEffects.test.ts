@@ -777,7 +777,7 @@ describe('mechanics effect payload contracts', () => {
       validate({ kind: 'slowFall', noFallingDamageOnLanding: true }),
     ).toThrow(/descentFeetPerRound/);
     expect(() => validate({ kind: 'climbAnywhere', speed: 30 })).toThrow(
-      /marker-only/,
+      /unexpected payload key/,
     );
     expect(() =>
       validate({ kind: 'understandLanguages', written: true }),
@@ -974,12 +974,27 @@ describe('magic-item passive-modifier effect payload contracts', () => {
     ).toThrow(/multiplier must be a finite number/);
   });
 
-  it('accepts marker-only hover/sustenance/swimWithoutExtraMovement and rejects extra payload', () => {
+  it('accepts hover/sustenance/swimWithoutExtraMovement/leavesNoTracks/climbAnywhere and rejects unexpected payload', () => {
     expect(() => validate({ kind: 'hover' })).not.toThrow();
     expect(() => validate({ kind: 'sustenance' })).not.toThrow();
     expect(() => validate({ kind: 'swimWithoutExtraMovement' })).not.toThrow();
-    expect(() => validate({ kind: 'hover', extra: true })).toThrow(
+    expect(() =>
+      validate({ kind: 'hover', condition: 'requires all four horseshoes' }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'leavesNoTracks',
+        condition: 'requires all four horseshoes',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({ kind: 'climbAnywhere', condition: 'not on ice or oil' }),
+    ).not.toThrow();
+    expect(() => validate({ kind: 'sustenance', extra: true })).toThrow(
       /marker-only effect/,
+    );
+    expect(() => validate({ kind: 'hover', extra: true })).toThrow(
+      /unexpected payload key/,
     );
   });
 

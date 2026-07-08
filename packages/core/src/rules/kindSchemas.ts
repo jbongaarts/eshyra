@@ -177,6 +177,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'proficiencyBonusIncrease',
   'healingMultiplier',
   'hover',
+  'leavesNoTracks',
   'sustenance',
   'swimWithoutExtraMovement',
   'telepathicRelay',
@@ -1441,6 +1442,24 @@ function markerOnly(effect: Obj, path: string): void {
 }
 
 /**
+ * Like `markerOnly`, but also allows an optional free-text `condition` —
+ * for marker kinds that are sometimes qualified by a source-printed
+ * exception or prerequisite (eshyra-o9bd.18.7.7.5 review: e.g. slippers of
+ * spider climbing's `climbAnywhere` excludes slippery surfaces). Still
+ * fail-closed against any other unexpected key.
+ */
+function markerWithOptionalCondition(effect: Obj, path: string): void {
+  for (const key of Object.keys(effect)) {
+    if (key !== 'kind' && key !== 'condition') {
+      throw new RulesPackError(
+        `${path} is a marker effect with an optional condition; unexpected payload key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+  optStr(effect, 'condition', path);
+}
+
+/**
  * Shared equipment-state eligibility rider (Martial Arts, Dragon Wings):
  * `wielding` is a closed wielding constraint, `armor` is `false` (none
  * allowed) or `"accommodating-armor-only"`, `shield` is a boolean.
@@ -1544,6 +1563,23 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     );
   },
   breathes: (effect, path) => {
+    // Necklace of Adaptation grants breathing in literally any environment
+    // (not merely air/water) — `anyEnvironment: true` represents that
+    // faithfully instead of forcing a lossy `environments` list
+    // (eshyra-o9bd.18.7.7.5 review). Mutually exclusive with `environments`.
+    if (effect.anyEnvironment !== undefined) {
+      if (effect.anyEnvironment !== true) {
+        throw new RulesPackError(`${path}.anyEnvironment must be true`);
+      }
+      if (effect.environments !== undefined) {
+        throw new RulesPackError(
+          `${path} must not carry both anyEnvironment and environments`,
+        );
+      }
+      optBool(effect, 'only', path);
+      optStr(effect, 'condition', path);
+      return;
+    }
     const environments = effect.environments;
     if (
       !Array.isArray(environments) ||
@@ -1553,7 +1589,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       )
     ) {
       throw new RulesPackError(
-        `${path}.environments must be a non-empty array of "air"/"water"`,
+        `${path}.environments must be a non-empty array of "air"/"water", or anyEnvironment: true`,
       );
     }
     optBool(effect, 'only', path);
@@ -1628,7 +1664,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     );
   },
   cannotWearOrCarry: markerOnly,
-  climbAnywhere: markerOnly,
+  // Slippers of spider climbing's surface-climbing grant is excluded on a
+  // slippery surface such as ice or oil (eshyra-o9bd.18.7.7.5 review) — an
+  // exception to the special movement this kind represents, not a universal
+  // property of every `climbAnywhere` grant, so it stays optional.
+  climbAnywhere: markerWithOptionalCondition,
   climbWithoutCheck: (effect, path) => {
     optStr(effect, 'surfaces', path);
   },
@@ -1803,6 +1843,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     if (reqStrArray(effect, 'terrain', path).length === 0) {
       throw new RulesPackError(`${path}.terrain must not be empty`);
     }
+    optStr(effect, 'condition', path);
   },
   ignoreMovementRestriction: (effect, path) => {
     reqStr(effect, 'source', path);
@@ -2250,7 +2291,14 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     }
     reqStr(effect, 'appliesTo', path);
   },
-  hover: markerOnly,
+  // Horseshoes of a Zephyr's hover requires all four horseshoes affixed
+  // (eshyra-o9bd.18.7.7.5 review) — an item-specific prerequisite, so
+  // `condition` stays optional rather than a universal requirement.
+  hover: markerWithOptionalCondition,
+  // A standalone effect (eshyra-o9bd.18.7.7.5 review): the horseshoes of a
+  // zephyr's "leaves no tracks" is an independent benefit, not a qualifier
+  // nested inside `walkOnLiquids`.
+  leavesNoTracks: markerWithOptionalCondition,
   sustenance: markerOnly,
   swimWithoutExtraMovement: markerOnly,
   // Helm of telepathy's bonus-action message relay while concentrating on

@@ -663,17 +663,24 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         /move at normal speed for up to 12 hours a day without suffering exhaustion from a forced march/,
         name,
       );
+      const allFourShoesAffixed =
+        'requires all four horseshoes affixed to the hooves of a horse or similar creature';
       return [
-        { kind: 'hover' },
+        { kind: 'hover', condition: allFourShoesAffixed },
         {
           kind: 'walkOnLiquids',
-          condition: 'leaves no tracks',
+          condition: `${allFourShoesAffixed}; the creature can cross or stand above nonsolid or unstable surfaces, such as water or lava`,
         },
-        { kind: 'ignoreDifficultTerrain', terrain: ['all'] },
+        { kind: 'leavesNoTracks', condition: allFourShoesAffixed },
+        {
+          kind: 'ignoreDifficultTerrain',
+          terrain: ['all'],
+          condition: allFourShoesAffixed,
+        },
         {
           kind: 'immunity',
           to: 'exhaustion from a forced march',
-          condition: 'for up to 12 hours per day',
+          condition: `${allFourShoesAffixed}; for up to 12 hours per day`,
         },
       ];
     },
@@ -682,7 +689,14 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     'Horseshoes of Speed',
     (text, name) => {
       must(text, /increase the creature’s walking speed by 30 feet/, name);
-      return [{ kind: 'speedBonus', amountFeet: 30 }];
+      return [
+        {
+          kind: 'speedBonus',
+          amountFeet: 30,
+          condition:
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature',
+        },
+      ];
     },
   ],
   [
@@ -733,14 +747,7 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     'Necklace of Adaptation',
     (text, name) => {
       must(text, /breathe normally in any environment/, name);
-      return [
-        {
-          kind: 'breathes',
-          environments: ['air', 'water'],
-          condition:
-            'the source grants breathing in literally any environment, not only air/water — a lossy simplification of the closed environments vocabulary',
-        },
-      ];
+      return [{ kind: 'breathes', anyEnvironment: true }];
     },
   ],
   [
@@ -942,16 +949,18 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         /don’t allow you to move this way on a slippery surface/,
         name,
       );
+      const notOnSlipperySurfaces =
+        'does not work on a slippery surface, such as one covered by ice or oil';
       return [
         {
           kind: 'speedSet',
           mode: 'climb',
           value: 'walking-speed',
-          condition:
-            'does not work on a slippery surface, such as one covered by ice or oil',
+          condition: notOnSlipperySurfaces,
         },
         {
           kind: 'climbAnywhere',
+          condition: notOnSlipperySurfaces,
         },
       ];
     },

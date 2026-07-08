@@ -8,10 +8,16 @@
  * whereas the earlier `must()` source-drift assertions alone only prove a
  * phrase is present, not that it was faithfully modeled.
  *
+ * This fixture locks in regressions against the module's OWN current output
+ * (re-derived here, not independently authored), so it cannot by itself prove
+ * completeness relative to the source inventory — see
+ * `magicItemPassiveEffectsMembership.test.ts` for the independent,
+ * artifact-transcribed membership + clause-count baseline that complements it.
+ *
  * Fixture descriptions and expected mechanics are taken verbatim from the
  * reviewed committed pack (`packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json`)
- * after the PR #415 review fixes; re-derive this fixture only when a change
- * to `magicItemPassiveEffects.ts` is intentional and reviewed.
+ * after the PR #415 review-round-2 fixes; re-derive this fixture only when a
+ * change to `magicItemPassiveEffects.ts` is intentional and reviewed.
  */
 import { describe, expect, it } from 'vitest';
 import { deriveMagicItemMechanics } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemPassiveEffects.js';
@@ -419,6 +425,8 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
         {
           kind: 'speedBonus',
           amountFeet: 30,
+          condition:
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature',
         },
       ],
     },
@@ -431,19 +439,30 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
       effects: [
         {
           kind: 'hover',
+          condition:
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature',
         },
         {
           kind: 'walkOnLiquids',
-          condition: 'leaves no tracks',
+          condition:
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature; the creature can cross or stand above nonsolid or unstable surfaces, such as water or lava',
+        },
+        {
+          kind: 'leavesNoTracks',
+          condition:
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature',
         },
         {
           kind: 'ignoreDifficultTerrain',
           terrain: ['all'],
+          condition:
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature',
         },
         {
           kind: 'immunity',
           to: 'exhaustion from a forced march',
-          condition: 'for up to 12 hours per day',
+          condition:
+            'requires all four horseshoes affixed to the hooves of a horse or similar creature; for up to 12 hours per day',
         },
       ],
     },
@@ -535,9 +554,7 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
       effects: [
         {
           kind: 'breathes',
-          environments: ['air', 'water'],
-          condition:
-            'the source grants breathing in literally any environment, not only air/water — a lossy simplification of the closed environments vocabulary',
+          anyEnvironment: true,
         },
       ],
     },
@@ -812,6 +829,8 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
         },
         {
           kind: 'climbAnywhere',
+          condition:
+            'does not work on a slippery surface, such as one covered by ice or oil',
         },
       ],
     },
@@ -957,6 +976,11 @@ function item(name: string, description: string): MagicItemExtraction {
 }
 
 describe('deriveMagicItemMechanics exhaustive coverage (eshyra-o9bd.18.7.7.5)', () => {
+  it('the fixture has no duplicate item names', () => {
+    const names = COVERAGE_CASES.map((c) => c.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
   it.each(COVERAGE_CASES)('projects the exact reviewed mechanics for $name', ({
     name,
     description,
