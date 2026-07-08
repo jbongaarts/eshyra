@@ -4,6 +4,17 @@ This protocol applies to deterministic rules-pack importer work, including extra
 
 The goal is to prevent importer fixes from becoming local, symptom-driven patches that make one record look better while weakening regression coverage or breaking another part of the generated pack.
 
+> **Architecture context.** The "importer" is the source-grounded **rules-pack
+> compiler** with an executable-curation stage — see `docs/rules-pack-compiler.md`
+> and [ADR 0017](adr/0017-rules-pack-compiler-and-executable-curation-architecture.md)
+> (which refines [ADR 0007](adr/0007-rules-pack-ingestion-policy.md)). This
+> protocol governs the *mechanics* of a regression-sensitive change; the guide
+> governs *which technique* to reach for (parser vs. declarative curated spec
+> vs. exceptional procedural code vs. engine hook) and the evidence each needs.
+> A source-grounded **curated semantic specification** is a legitimate compiler
+> input, not a hand-edit of output — the two rules below (generated records are
+> outputs; curated specs are inputs) are distinct and both hold.
+
 ## Core rule
 
 Regression tests and audit expectations are contracts.
@@ -78,7 +89,7 @@ When changing importer tests, state whether the change preserves, strengthens, o
 
 Do not hand-edit generated rules-pack records.
 
-Generated records must be changed by updating the importer, extractor, parser, or source manifest and then rerunning the generation workflow. The verification command must show that committed output matches importer output.
+Generated records must be changed by updating the importer, extractor, parser, source manifest, or a **source-grounded curated semantic specification** (a deterministic, schema-validated, source-tied compiler input — see `docs/rules-pack-compiler.md` §3) and then rerunning the generation workflow. Editing a curated spec and regenerating is allowed; editing `records.json` by hand is not. The verification command must show that committed output matches importer output.
 
 If generated records change outside the targeted failure class, explain why. If there is no clear explanation, treat the diff as suspicious.
 
