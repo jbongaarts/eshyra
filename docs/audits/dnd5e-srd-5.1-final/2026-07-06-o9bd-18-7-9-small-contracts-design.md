@@ -110,8 +110,8 @@ Existing sub-family shapes (artifact §2.2/2.4/2.5):
 
 { kind: 'conjuredUtilityObject',
   capacityPounds?: number,        // mage-hand 10, floating-disk 500
-  leashFeet?: number,             // hand 30; disk follow-within 20
-  endsBeyondFeet?: number,        // disk 100
+  leashFeet?: number,             // disk follow-within 20
+  endsBeyondFeet?: number,        // hand vanishes beyond 30; disk ends beyond 100
   moveFeetPerUse?: number,        // hand 30
   restrictions?: string[] }       // "can't attack/activate magic items", "can't cross ≥10 ft elevation change"
 ```

@@ -777,6 +777,20 @@ describe('mechanics effect payload contracts', () => {
     ).toThrow(/difficult-terrain/);
     expect(() =>
       validate({
+        kind: 'createsOrDestroysWater',
+        gallons: 10,
+        extinguishesExposedFlames: false,
+      }),
+    ).toThrow(/must be true/);
+    expect(() =>
+      validate({
+        kind: 'terrainAlteration',
+        canCreate: ['difficult-terrain'],
+        removedPiecesDisappear: false,
+      }),
+    ).toThrow(/must be true/);
+    expect(() =>
+      validate({
         kind: 'illusoryDisguise',
         discernDc: 20,
         ability: 'intelligence',

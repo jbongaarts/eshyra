@@ -38,6 +38,11 @@ or Destroy Water records exposed-flame extinguishing; Mirage Arcane records
 removed-piece disappearance; Prestidigitation and Thaumaturgy now carry
 distinct concurrent-effect scopes.
 
+A follow-up PR #416 review correction changed Mage Hand's 30-foot disappearance
+boundary from `leashFeet` to `endsBeyondFeet` and made the two `?: true`
+marker fields (`extinguishesExposedFlames`, `removedPiecesDisappear`) reject
+`false` when present.
+
 `source-region-ledger.json` also changed by one classification count
 (`childOf` to direct `record` for an already-contained guard region) after the
 ledger was tightened so derived `mechanics` strings cannot prove source-region

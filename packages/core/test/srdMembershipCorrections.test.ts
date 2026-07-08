@@ -846,7 +846,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
       {
         kind: 'conjuredUtilityObject',
         capacityPounds: 10,
-        leashFeet: 30,
+        endsBeyondFeet: 30,
         moveFeetPerUse: 30,
         restrictions: [
           'requires action to control',

@@ -392,6 +392,16 @@ function optBool(parent: Obj, key: string, path: string): void {
   }
 }
 
+function optTrue(parent: Obj, key: string, path: string): void {
+  const value = parent[key];
+  if (value === undefined) {
+    return;
+  }
+  if (value !== true) {
+    throw new RulesPackError(`${path}.${key} must be true when present`);
+  }
+}
+
 function optInt(parent: Obj, key: string, path: string, min?: number): void {
   const value = parent[key];
   if (value === undefined) {
@@ -1711,7 +1721,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   createsOrDestroysWater: (effect, path) => {
     reqInt(effect, 'gallons', path, 1);
     optStr(effect, 'areaAlternative', path);
-    optBool(effect, 'extinguishesExposedFlames', path);
+    optTrue(effect, 'extinguishesExposedFlames', path);
     optStr(effect, 'destroyAlternative', path);
   },
   createsProvisions: (effect, path) => {
@@ -1945,7 +1955,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     if (effect.canCreate === undefined && effect.canRemove === undefined) {
       throw new RulesPackError(`${path} must carry canCreate or canRemove`);
     }
-    optBool(effect, 'removedPiecesDisappear', path);
+    optTrue(effect, 'removedPiecesDisappear', path);
   },
   understandLanguages: (effect, path) => {
     if (effect.spoken !== true) {
