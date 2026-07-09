@@ -201,8 +201,9 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     // membership re-audit moved 58 spells with deterministic semantics
     // (senses, teleports, resistances, action economy, stabilization, …)
     // out of the metadata-only bucket: 210 → 268; the S2 rollout then moved
-    // 17 reviewed small deterministic-clause spells into typed mechanics.
-    expect(spells.spellsWithDeterministicEffects).toBe(285);
+    // 17 reviewed small deterministic-clause spells into typed mechanics, and
+    // the S1 rollout moved 14 summoning/control spells.
+    expect(spells.spellsWithDeterministicEffects).toBe(299);
     expect(spells.metadataOnlySpells).toBe(
       ACCEPTED_METADATA_ONLY_SPELLS.length,
     );

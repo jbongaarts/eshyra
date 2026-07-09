@@ -1,7 +1,7 @@
 # eshyra-o9bd.18.7.9 slice S1 — summoning/controlled-creature contract design
 
-Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. Status: **design** — rollout
-of the 14 spells is Codex work after review. Source semantics: §2.1 of
+Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. Status: **implemented
+2026-07-08** — the 14 spells now emit typed `summoning` effects. Source semantics: §2.1 of
 `2026-07-06-o9bd-18-7-9-membership-classification.md`.
 
 ## 1. Why a new kind
@@ -217,7 +217,7 @@ find-steed, phantom-steed — all instances of the golden shapes above
 steed has persistent identity across castings — represent it as the same
 persistent actor, restored to HP maximum, never as a new instance).
 
-Membership bookkeeping on completion: remove the 14 keys from
-`ACCEPTED_METADATA_ONLY_SPELLS`, recount, negative tests per Appearance/
-Control variant, committed-pack assertions per golden, pack regeneration
-(S4 protocol).
+Membership bookkeeping completed 2026-07-08: removed the 14 keys from
+`ACCEPTED_METADATA_ONLY_SPELLS` (34 -> 20), added negative tests for
+representative Appearance/Control/Lifecycle variants, added committed-pack
+assertions per golden shape, and regenerated the pack through the importer.

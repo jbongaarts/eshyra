@@ -28,6 +28,106 @@ const validate = (effect: Record<string, unknown>): void =>
   validateRecordKindSchema(featureWithEffect(effect), 'records[0]');
 
 describe('mechanics effect payload contracts', () => {
+  it('accepts representative summoning payloads', () => {
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'option-menu',
+          options: [
+            { count: 1, maxChallenge: '2' },
+            { count: 2, maxChallenge: '1' },
+          ],
+          higherSlotMultipliers: { 5: 2 },
+        },
+        creatureType: { treatedAs: ['fey'] },
+        control: {
+          mode: 'friendly-commanded',
+          commandEconomy: { cost: 'verbal-no-action' },
+          defaultBehavior: 'defends-only',
+          initiative: 'group',
+        },
+        lifecycle: [
+          { event: 'spell-ends', result: 'summoned-creature-disappears' },
+        ],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'target-transformation',
+          targets: [
+            { count: 1, from: 'scorpion', toRef: 'creature:giant-scorpion' },
+          ],
+        },
+        control: {
+          mode: 'obedient',
+          commandEconomy: { cost: 'on-your-turn' },
+          defaultBehavior: 'defends-otherwise-idle',
+          initiative: 'own-turn',
+        },
+        lifecycle: [
+          { event: 'zero-hit-points', result: 'transformed-target-reverts' },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects malformed summoning payloads', () => {
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'option-menu',
+          options: [{ count: 1, maxChallenge: 'two' }],
+        },
+        control: {
+          mode: 'friendly-commanded',
+          defaultBehavior: 'defends-only',
+          initiative: 'group',
+        },
+        lifecycle: [
+          { event: 'spell-ends', result: 'summoned-creature-disappears' },
+        ],
+      }),
+    ).toThrow(/challenge token/);
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'target-transformation',
+          targets: [
+            { count: 1, from: 'scorpion', toRef: 'creature:giant-scorpion' },
+          ],
+        },
+        control: {
+          mode: 'obedient',
+          commandEconomy: { cost: 'on-your-turn' },
+          defaultBehavior: 'defends-otherwise-idle',
+          initiative: 'own-turn',
+        },
+        lifecycle: [
+          { event: 'spell-ends', result: 'summoned-creature-disappears' },
+        ],
+      }),
+    ).toThrow(/transformed-target-reverts/);
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
+        control: {
+          mode: 'obedient',
+          defaultBehavior: 'defends-otherwise-idle',
+          initiative: 'own-turn',
+        },
+        lifecycle: [
+          { event: 'recast', result: 'prior-duplicates-instantly-destroyed' },
+        ],
+      }),
+    ).toThrow(/exclusiveInstance/);
+  });
+
   it('accepts the emitted damageReduction shapes', () => {
     expect(() =>
       validate({

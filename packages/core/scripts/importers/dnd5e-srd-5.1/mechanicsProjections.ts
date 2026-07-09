@@ -1799,6 +1799,740 @@ function projectReviewedS2SpellEffects(
   }
 }
 
+function projectReviewedS1SpellEffects(
+  spell: SpellExtraction,
+): readonly Mechanics[] {
+  const requireClauses = (
+    clauses: readonly { readonly label: string; readonly pattern: RegExp }[],
+  ): void => {
+    const source = `${spell.description} ${spell.higherLevels ?? ''}`;
+    const missing = clauses.find(({ pattern }) => {
+      const flags = pattern.flags.includes('i')
+        ? pattern.flags
+        : `${pattern.flags}i`;
+      return !new RegExp(pattern.source, flags).test(source);
+    });
+    if (missing !== undefined) {
+      throw new Error(
+        `S1 spell projection for ${spell.name} is missing reviewed source clause: ${missing.label}`,
+      );
+    }
+  };
+  switch (spell.name.toLowerCase().replaceAll('’', "'")) {
+    case 'animate dead':
+      requireClauses([
+        {
+          label: 'skeleton or zombie',
+          pattern:
+            /\braising it as an undead creature\b[\s\S]*?\bThe target becomes a skeleton if you chose bones or a zombie if you chose a corpse\b/,
+        },
+        {
+          label: 'bonus action command range',
+          pattern:
+            /\bon each of your turns, you can use a bonus action to mentally command any creature you made with this spell if the creature is within 60 feet of you\b/,
+        },
+        {
+          label: '24-hour control window',
+          pattern: /\bThe creature is under your control for 24 hours\b/,
+        },
+        {
+          label: 'reassert four',
+          pattern:
+            /\breasserts? your control over up to four creatures you (?:have|[’']ve) animated with this spell\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'corpse-animation',
+            sources: [
+              { material: 'pile of bones', becomesRef: 'creature:skeleton' },
+              { material: 'corpse', becomesRef: 'creature:zombie' },
+            ],
+          },
+          control: {
+            mode: 'obedient',
+            commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'own-turn',
+            window: { amount: 24, unit: 'hour' },
+            reassert: { maxCreatures: 4 },
+          },
+          lifecycle: [
+            {
+              event: 'control-window-expires',
+              result: 'animated-creature-persists-uncontrolled',
+              window: { amount: 24, unit: 'hour' },
+              reassertableByRecast: { maxCreatures: 4 },
+            },
+          ],
+        },
+      ];
+    case 'animate objects':
+      requireClauses([
+        {
+          label: 'ten objects',
+          pattern:
+            /\bObjects come to life at your command\b[\s\S]*?\bChoose up to ten nonmagical objects within range\b/,
+        },
+        {
+          label: 'size costs',
+          pattern:
+            /\bMedium targets count as two objects, Large targets count as four objects, Huge targets count as eight objects\b/,
+        },
+        {
+          label: 'command range',
+          pattern:
+            /\bwithin 500 feet of you\b[\s\S]*?\bIf you command an object to attack\b/,
+        },
+        {
+          label: 'damage carryover',
+          pattern:
+            /\bWhen the animated object drops to 0 hit points, it reverts to its original object form, and any remaining damage carries over\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'object-animation',
+            maxObjects: 10,
+            sizeCosts: { medium: 2, large: 4, huge: 8 },
+            statTableRef: 'table:animated-object-statistics',
+          },
+          control: {
+            mode: 'obedient',
+            commandEconomy: { cost: 'bonus-action', rangeFeet: 500 },
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'own-turn',
+          },
+          lifecycle: [
+            {
+              event: 'spell-ends',
+              result: 'animated-object-reverts',
+              damageCarriesOver: true,
+            },
+          ],
+        },
+      ];
+    case 'conjure animals':
+      requireClauses([
+        {
+          label: 'option menu',
+          pattern:
+            /\bOne beast of challenge rating 2 or lower\b[\s\S]*?\bTwo beasts of challenge rating 1 or lower\b[\s\S]*?\bFour beasts of challenge rating 1\/2 or lower\b[\s\S]*?\bEight beasts of challenge rating 1\/4 or lower\b/,
+        },
+        {
+          label: 'fey type and group initiative',
+          pattern:
+            /\bEach beast is also considered fey\b[\s\S]*?\bRoll initiative for the summoned creatures as a group\b/,
+        },
+        {
+          label: 'verbal commands',
+          pattern:
+            /\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'option-menu',
+            options: [
+              { count: 1, maxChallenge: '2' },
+              { count: 2, maxChallenge: '1' },
+              { count: 4, maxChallenge: '1/2' },
+              { count: 8, maxChallenge: '1/4' },
+            ],
+            higherSlotMultipliers: { 5: 2, 7: 3, 9: 4 },
+          },
+          creatureType: { treatedAs: ['fey'] },
+          control: {
+            mode: 'friendly-commanded',
+            commandEconomy: { cost: 'verbal-no-action' },
+            defaultBehavior: 'defends-only',
+            initiative: 'group',
+          },
+          lifecycle: [
+            { event: 'spell-ends', result: 'summoned-creature-disappears' },
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+          ],
+        },
+      ];
+    case 'conjure celestial':
+      requireClauses([
+        {
+          label: 'challenge cap',
+          pattern: /\ba celestial of challenge rating 4 or lower\b/,
+        },
+        {
+          label: 'alignment command limit',
+          pattern:
+            /\bIt obeys any verbal commands that you issue to it \(no action required by you\), as long as they don[’']t violate its alignment\b/,
+        },
+        {
+          label: 'ninth level cap',
+          pattern: /\bsummon a celestial of challenge rating 5 or lower\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'cr-cap',
+            maxChallenge: '4',
+            ofTypes: ['celestial'],
+            higherSlot: { level: 9, maxChallenge: '5' },
+          },
+          control: {
+            mode: 'friendly-commanded',
+            commandEconomy: { cost: 'verbal-no-action' },
+            alignmentLimited: true,
+            defaultBehavior: 'defends-only',
+            initiative: 'own-turn',
+          },
+          lifecycle: [
+            { event: 'spell-ends', result: 'summoned-creature-disappears' },
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+          ],
+        },
+      ];
+    case 'conjure elemental':
+      requireClauses([
+        {
+          label: 'source cube',
+          pattern:
+            /\barea of air, earth, fire, or water that fills a 10-foot cube within range\b/,
+        },
+        {
+          label: 'challenge cap',
+          pattern: /\ban elemental of challenge rating 5 or lower\b/,
+        },
+        {
+          label: 'concentration broken hostile',
+          pattern:
+            /\bIf your concentration is broken, the elemental doesn[’']t disappear\. Instead, you lose control of the elemental, it becomes hostile\b[\s\S]*?\bcan[’']t be dismissed by you\b[\s\S]*?\bdisappears 1 hour after you summoned it\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'cr-cap',
+            maxChallenge: '5',
+            ofTypes: ['elemental'],
+            higherSlot: { perSlotAbove: 5, challengeIncrease: 1 },
+          },
+          sourceRequirement: {
+            shape: 'cube',
+            sizeFeet: 10,
+            materialOrTerrain: ['air', 'earth', 'fire', 'water'],
+          },
+          control: {
+            mode: 'friendly-commanded',
+            commandEconomy: { cost: 'verbal-no-action' },
+            defaultBehavior: 'defends-only',
+            initiative: 'own-turn',
+          },
+          lifecycle: [
+            { event: 'spell-ends', result: 'summoned-creature-disappears' },
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+            {
+              event: 'concentration-broken',
+              result: 'uncontrolled-hostile',
+              dismissable: false,
+              disappearsAfter: { amount: 1, unit: 'hour' },
+            },
+          ],
+        },
+      ];
+    case 'conjure fey':
+      requireClauses([
+        {
+          label: 'challenge cap',
+          pattern: /\ba fey creature of challenge rating 6 or lower\b/,
+        },
+        {
+          label: 'alignment command limit',
+          pattern:
+            /\bIt obeys any verbal commands that you issue to it \(no action required by you\), as long as they don[’']t violate its alignment\b/,
+        },
+        {
+          label: 'concentration broken hostile',
+          pattern:
+            /\bIf your concentration is broken, the fey creature doesn[’']t disappear\. Instead, you lose control of the fey creature, it becomes hostile\b[\s\S]*?\bcan[’']t be dismissed by you\b[\s\S]*?\bdisappears 1 hour after you summoned it\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'cr-cap',
+            maxChallenge: '6',
+            ofTypes: ['fey'],
+            higherSlot: { perSlotAbove: 6, challengeIncrease: 1 },
+          },
+          control: {
+            mode: 'friendly-commanded',
+            commandEconomy: { cost: 'verbal-no-action' },
+            alignmentLimited: true,
+            defaultBehavior: 'defends-only',
+            initiative: 'own-turn',
+          },
+          lifecycle: [
+            { event: 'spell-ends', result: 'summoned-creature-disappears' },
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+            {
+              event: 'concentration-broken',
+              result: 'uncontrolled-hostile',
+              dismissable: false,
+              disappearsAfter: { amount: 1, unit: 'hour' },
+            },
+          ],
+        },
+      ];
+    case 'conjure minor elementals':
+      requireClauses([
+        {
+          label: 'option menu',
+          pattern:
+            /\bOne elemental of challenge rating 2 or lower\b[\s\S]*?\bTwo elementals of challenge rating 1 or lower\b[\s\S]*?\bFour elementals of challenge rating 1\/2 or lower\b[\s\S]*?\bEight elementals of challenge rating 1\/4 or lower\b/,
+        },
+        {
+          label: 'group initiative and commands',
+          pattern:
+            /\bRoll initiative for the summoned creatures as a group\b[\s\S]*?\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'option-menu',
+            options: [
+              { count: 1, maxChallenge: '2' },
+              { count: 2, maxChallenge: '1' },
+              { count: 4, maxChallenge: '1/2' },
+              { count: 8, maxChallenge: '1/4' },
+            ],
+            higherSlotMultipliers: { 6: 2, 8: 3 },
+          },
+          control: {
+            mode: 'friendly-commanded',
+            commandEconomy: { cost: 'verbal-no-action' },
+            defaultBehavior: 'defends-only',
+            initiative: 'group',
+          },
+          lifecycle: [
+            { event: 'spell-ends', result: 'summoned-creature-disappears' },
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+          ],
+        },
+      ];
+    case 'conjure woodland beings':
+      requireClauses([
+        {
+          label: 'option menu',
+          pattern:
+            /\bOne fey creature of challenge rating 2 or lower\b[\s\S]*?\bTwo fey creatures of challenge rating 1 or lower\b[\s\S]*?\bFour fey creatures of challenge rating 1\/2 or lower\b[\s\S]*?\bEight fey creatures of challenge rating 1\/4 or lower\b/,
+        },
+        {
+          label: 'group initiative and commands',
+          pattern:
+            /\bRoll initiative for the summoned creatures as a group\b[\s\S]*?\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'option-menu',
+            options: [
+              { count: 1, maxChallenge: '2' },
+              { count: 2, maxChallenge: '1' },
+              { count: 4, maxChallenge: '1/2' },
+              { count: 8, maxChallenge: '1/4' },
+            ],
+            higherSlotMultipliers: { 6: 2, 8: 3 },
+          },
+          control: {
+            mode: 'friendly-commanded',
+            commandEconomy: { cost: 'verbal-no-action' },
+            defaultBehavior: 'defends-only',
+            initiative: 'group',
+          },
+          lifecycle: [
+            { event: 'spell-ends', result: 'summoned-creature-disappears' },
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+          ],
+        },
+      ];
+    case 'create undead':
+      requireClauses([
+        {
+          label: 'night only',
+          pattern: /\bYou can cast this spell only at night\b/,
+        },
+        {
+          label: 'three ghouls',
+          pattern:
+            /\bChoose up to three corpses of Medium or Small humanoids within range\. Each corpse becomes a ghoul\b/,
+        },
+        {
+          label: 'bonus-action command range',
+          pattern:
+            /\bAs a bonus action on each of your turns, you can mentally command any creature you animated with this spell if the creature is within 120 feet of you\b/,
+        },
+        {
+          label: '24-hour control window',
+          pattern: /\bThe creature is under your control for 24 hours\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'corpse-animation',
+            sources: [{ material: 'corpse', becomesRef: 'creature:ghoul' }],
+            castingConstraint: 'night-only',
+          },
+          control: {
+            mode: 'obedient',
+            commandEconomy: { cost: 'bonus-action', rangeFeet: 120 },
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'own-turn',
+            window: { amount: 24, unit: 'hour' },
+            reassert: { maxCreatures: 3 },
+          },
+          lifecycle: [
+            {
+              event: 'control-window-expires',
+              result: 'animated-creature-persists-uncontrolled',
+              window: { amount: 24, unit: 'hour' },
+              reassertableByRecast: { maxCreatures: 3 },
+            },
+          ],
+        },
+      ];
+    case 'find familiar':
+      requireClauses([
+        {
+          label: 'familiar form list',
+          pattern:
+            /\bbat, cat, crab, frog \(toad\), hawk, lizard, octopus, owl, poisonous snake, fish \(quipper\), rat, raven, sea horse, spider, or weasel\b[\s\S]*?\bthe familiar has the statistics of the chosen form\b/,
+        },
+        {
+          label: 'celestial fey fiend',
+          pattern:
+            /\bit is a celestial, fey, or fiend \(your choice\) instead of a beast\b/,
+        },
+        { label: 'cannot attack', pattern: /\bA familiar can[’']?t attack\b/ },
+        {
+          label: 'telepathy and senses',
+          pattern:
+            /\bwithin 100 feet of you, you can communicate with it telepathically\b[\s\S]*?\bas an action, you can see through your familiar[’']s eyes and hear what it hears\b/,
+        },
+        {
+          label: 'touch spell delivery',
+          pattern:
+            /\bwhen you cast a spell with a range of touch\b[\s\S]*?\byour familiar can deliver the spell as if it had cast the spell\b[\s\S]*?\buse its reaction to deliver the spell\b/,
+        },
+        {
+          label: 'recast form',
+          pattern:
+            /\bIf you cast this spell while you already have a familiar, you instead cause it to adopt a new form\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'form-list',
+            forms: [
+              { name: 'bat', creatureRef: 'creature:bat' },
+              { name: 'cat', creatureRef: 'creature:cat' },
+              { name: 'crab', creatureRef: 'creature:crab' },
+              { name: 'frog (toad)', creatureRef: 'creature:frog' },
+              { name: 'hawk', creatureRef: 'creature:hawk' },
+              { name: 'lizard', creatureRef: 'creature:lizard' },
+              { name: 'octopus', creatureRef: 'creature:octopus' },
+              { name: 'owl', creatureRef: 'creature:owl' },
+              {
+                name: 'poisonous snake',
+                creatureRef: 'creature:poisonous-snake',
+              },
+              { name: 'fish (quipper)', creatureRef: 'creature:quipper' },
+              { name: 'rat', creatureRef: 'creature:rat' },
+              { name: 'raven', creatureRef: 'creature:raven' },
+              { name: 'sea horse', creatureRef: 'creature:sea-horse' },
+              { name: 'spider', creatureRef: 'creature:spider' },
+              { name: 'weasel', creatureRef: 'creature:weasel' },
+            ],
+          },
+          creatureType: {
+            treatedAs: ['celestial', 'fey', 'fiend'],
+            chooseOne: true,
+          },
+          control: {
+            mode: 'independent-obedient',
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'own-turn',
+            exclusiveInstance: true,
+          },
+          lifecycle: [
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+            { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+          ],
+          dismissal: {
+            cost: 'action',
+            temporary: {
+              to: 'pocket-dimension',
+              recall: { cost: 'action', rangeFeet: 30 },
+            },
+          },
+          modifications: [{ attribute: 'cannot-attack' }],
+          telepathy: { rangeFeet: 100 },
+          senseSharing: {
+            cost: 'action',
+            casterConditionWhileSharing: ['deaf', 'blind'],
+          },
+          spellDelivery: { spellRange: 'touch', cost: 'reaction' },
+        },
+      ];
+    case 'find steed':
+      requireClauses([
+        {
+          label: 'steed form list',
+          pattern:
+            /\bthe steed takes on a form that you choose: a warhorse, a pony, a camel, an elk, or a mastiff\b/,
+        },
+        {
+          label: 'intelligence and language',
+          pattern:
+            /\bif your steed has an Intelligence of 5 or less, its Intelligence becomes 6\b[\s\S]*?\bgains the ability to understand one language of your choice\b/,
+        },
+        {
+          label: 'telepathy one mile',
+          pattern:
+            /\bWhile your steed is within 1 mile of you, you can communicate with it telepathically\b/,
+        },
+        {
+          label: 'spell sharing',
+          pattern:
+            /\bwhile mounted on your steed, you can make any spell you cast that targets only you also target your steed\b/,
+        },
+        {
+          label: 'same steed restored',
+          pattern:
+            /\bWhen the steed drops to 0 hit points\b[\s\S]*?\bcasting this spell again summons the same steed\b[\s\S]*?\brestored to its hit point maximum\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'form-list',
+            forms: [
+              { name: 'warhorse', creatureRef: 'creature:warhorse' },
+              { name: 'pony', creatureRef: 'creature:pony' },
+              { name: 'camel', creatureRef: 'creature:camel' },
+              { name: 'elk', creatureRef: 'creature:elk' },
+              { name: 'mastiff', creatureRef: 'creature:mastiff' },
+            ],
+          },
+          creatureType: {
+            treatedAs: ['celestial', 'fey', 'fiend'],
+            chooseOne: true,
+          },
+          control: {
+            mode: 'independent-obedient',
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'own-turn',
+            exclusiveInstance: true,
+          },
+          lifecycle: [
+            {
+              event: 'zero-hit-points',
+              result: 'summoned-creature-disappears',
+            },
+            { event: 'recast', result: 'same-steed-returns-restored' },
+          ],
+          modifications: [
+            { attribute: 'intelligence-floor', value: 6, grantsLanguage: 1 },
+          ],
+          telepathy: { rangeFeet: 5280 },
+          spellSharing: {
+            when: 'caster-targets-only-self',
+            requiresMounted: true,
+            alsoAffects: 'steed',
+          },
+        },
+      ];
+    case 'giant insect':
+      requireClauses([
+        {
+          label: 'target transformation menu',
+          pattern:
+            /\bup to ten centipedes, three spiders, five wasps, or one scorpion\b[\s\S]*?\binto giant versions of their natural forms\b/,
+        },
+        {
+          label: 'command on turn',
+          pattern:
+            /\bEach creature obeys your verbal commands, and in combat, they act on your turn each round\b/,
+        },
+        {
+          label: 'reversion',
+          pattern:
+            /\bA creature remains in its giant size for the duration, until it drops to 0 hit points, or until you use an action to dismiss the effect on it\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'target-transformation',
+            targets: [
+              {
+                count: 10,
+                from: 'centipede',
+                toRef: 'creature:giant-centipede',
+              },
+              { count: 3, from: 'spider', toRef: 'creature:giant-spider' },
+              { count: 5, from: 'wasp', toRef: 'creature:giant-wasp' },
+              { count: 1, from: 'scorpion', toRef: 'creature:giant-scorpion' },
+            ],
+          },
+          control: {
+            mode: 'obedient',
+            commandEconomy: { cost: 'on-your-turn' },
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'own-turn',
+          },
+          lifecycle: [
+            { event: 'spell-ends', result: 'transformed-target-reverts' },
+            { event: 'zero-hit-points', result: 'transformed-target-reverts' },
+          ],
+          dismissal: { cost: 'action' },
+        },
+      ];
+    case 'phantom steed':
+      requireClauses([
+        {
+          label: 'riding horse',
+          pattern: /\buses the statistics for a riding horse\b/,
+        },
+        { label: 'speed', pattern: /\bit has a speed of 100 feet\b/ },
+        {
+          label: 'fade on damage or end',
+          pattern:
+            /\bWhen the spell ends, the steed gradually fades\b[\s\S]*?\bThe spell ends if you use an action to dismiss it or if the steed takes any damage\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: {
+            kind: 'form-list',
+            forms: [
+              {
+                name: 'riding horse',
+                creatureRef: 'creature:riding-horse',
+                speedOverrides: { walk: 100 },
+              },
+            ],
+          },
+          control: {
+            mode: 'obedient',
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'acts-on-casters-turn',
+          },
+          lifecycle: [
+            {
+              event: 'spell-ends',
+              result: 'effect-fades',
+              transition: { amount: 1, unit: 'minute' },
+            },
+            {
+              event: 'damage-taken',
+              result: 'effect-fades',
+              transition: { amount: 1, unit: 'minute' },
+            },
+          ],
+          modifications: [{ attribute: 'speed', mode: 'walk', value: 100 }],
+        },
+      ];
+    case 'simulacrum':
+      requireClauses([
+        {
+          label: 'duplicate',
+          pattern: /\bshape an illusory duplicate of one beast or humanoid\b/,
+        },
+        {
+          label: 'half hit points and no equipment',
+          pattern:
+            /\bhas half the creature[’']s hit point maximum\b[\s\S]*?\bis formed without any equipment\b/,
+        },
+        {
+          label: 'no advancement',
+          pattern:
+            /\bThe simulacrum lacks the ability to learn or become more powerful\b[\s\S]*?\bnever increases its level or other abilities\b[\s\S]*?\bnor can it regain expended spell slots\b/,
+        },
+        { label: 'repair', pattern: /\b100 gp per hit point it regains\b/ },
+        {
+          label: 'destroyed at zero and recast',
+          pattern:
+            /\bIf the simulacrum is damaged, you can repair it\b[\s\S]*?\bThe simulacrum lasts until it drops to 0 hit points\b[\s\S]*?\bIf you cast this spell again, any currently active duplicates you created with this spell are instantly destroyed\b/,
+        },
+      ]);
+      return [
+        {
+          kind: 'summoning',
+          appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
+          control: {
+            mode: 'obedient',
+            defaultBehavior: 'defends-otherwise-idle',
+            initiative: 'own-turn',
+            exclusiveInstance: true,
+          },
+          lifecycle: [
+            { event: 'zero-hit-points', result: 'duplicate-destroyed' },
+            { event: 'recast', result: 'prior-duplicates-instantly-destroyed' },
+          ],
+          modifications: [
+            { attribute: 'hit-point-maximum', value: 'half-of-original' },
+            { attribute: 'no-equipment' },
+            { attribute: 'no-advancement-or-slot-recovery' },
+          ],
+          repair: { costGpPerHitPoint: 100 },
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
 /**
  * Structured upcast scaling (eshyra-o9bd.18.7.4). The verbatim At Higher
  * Levels text always rides along as `sourceText`; the typed fields are added
@@ -1866,6 +2600,7 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
   const conditions = parseConditions(text);
   const effects = [
     ...parseSpellEffects(spell.description),
+    ...projectReviewedS1SpellEffects(spell),
     ...projectReviewedS2SpellEffects(spell),
   ];
   // "takes force damage equal to 1d8 + your spellcasting ability modifier"

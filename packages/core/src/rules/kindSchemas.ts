@@ -67,6 +67,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'stabilize',
   'stagedTableShift',
   'sleepException',
+  'summoning',
   'telepathy',
   'terrainAlteration',
   'understandLanguages',
@@ -1489,6 +1490,374 @@ function markerWithOptionalCondition(effect: Obj, path: string): void {
   optStr(effect, 'condition', path);
 }
 
+const SRD_CHALLENGE_TOKENS: ReadonlySet<string> = new Set([
+  '0',
+  '1/8',
+  '1/4',
+  '1/2',
+  ...Array.from({ length: 30 }, (_, i) => String(i + 1)),
+]);
+
+function reqChallenge(parent: Obj, key: string, path: string): void {
+  const value = reqStr(parent, key, path);
+  if (!SRD_CHALLENGE_TOKENS.has(value)) {
+    throw new RulesPackError(
+      `${path}.${key} must be an SRD challenge token, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+function validatePositiveIntRecord(value: unknown, path: string): void {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(`${path} must be an object`);
+  }
+  for (const [key, entry] of Object.entries(value as Obj)) {
+    if (!Number.isInteger(entry) || (entry as number) < 1) {
+      throw new RulesPackError(`${path}.${key} must be a positive integer`);
+    }
+  }
+}
+
+function validateSummoningAppearance(appearance: Obj, path: string): string {
+  const kind = reqStr(appearance, 'kind', path);
+  switch (kind) {
+    case 'option-menu': {
+      const options = appearance.options;
+      if (!Array.isArray(options) || options.length === 0) {
+        throw new RulesPackError(`${path}.options must be a non-empty array`);
+      }
+      options.forEach((option, i) => {
+        const optionObj = option as Obj;
+        reqInt(optionObj, 'count', `${path}.options[${i}]`, 1);
+        reqChallenge(optionObj, 'maxChallenge', `${path}.options[${i}]`);
+      });
+      if (appearance.higherSlotMultipliers !== undefined) {
+        validatePositiveIntRecord(
+          appearance.higherSlotMultipliers,
+          `${path}.higherSlotMultipliers`,
+        );
+      }
+      return kind;
+    }
+    case 'cr-cap': {
+      reqChallenge(appearance, 'maxChallenge', path);
+      if (reqStrArray(appearance, 'ofTypes', path).length === 0) {
+        throw new RulesPackError(`${path}.ofTypes must be non-empty`);
+      }
+      const higherSlot = appearance.higherSlot;
+      if (higherSlot !== undefined) {
+        const higher = higherSlot as Obj;
+        if (higher.level !== undefined) {
+          reqInt(higher, 'level', `${path}.higherSlot`, 1);
+          reqChallenge(higher, 'maxChallenge', `${path}.higherSlot`);
+        } else {
+          reqInt(higher, 'perSlotAbove', `${path}.higherSlot`, 1);
+          reqInt(higher, 'challengeIncrease', `${path}.higherSlot`, 1);
+        }
+      }
+      return kind;
+    }
+    case 'form-list': {
+      const forms = appearance.forms;
+      if (!Array.isArray(forms) || forms.length === 0) {
+        throw new RulesPackError(`${path}.forms must be a non-empty array`);
+      }
+      forms.forEach((form, i) => {
+        const formObj = form as Obj;
+        reqStr(formObj, 'name', `${path}.forms[${i}]`);
+        optStr(formObj, 'creatureRef', `${path}.forms[${i}]`);
+        const ref = formObj.creatureRef;
+        if (typeof ref === 'string' && !ref.startsWith('creature:')) {
+          throw new RulesPackError(
+            `${path}.forms[${i}].creatureRef must be a 'creature:' ref`,
+          );
+        }
+        if (formObj.speedOverrides !== undefined) {
+          validatePositiveIntRecord(
+            formObj.speedOverrides,
+            `${path}.forms[${i}].speedOverrides`,
+          );
+        }
+      });
+      return kind;
+    }
+    case 'target-transformation': {
+      const targets = appearance.targets;
+      if (!Array.isArray(targets) || targets.length === 0) {
+        throw new RulesPackError(`${path}.targets must be a non-empty array`);
+      }
+      targets.forEach((target, i) => {
+        const targetObj = target as Obj;
+        reqInt(targetObj, 'count', `${path}.targets[${i}]`, 1);
+        reqStr(targetObj, 'from', `${path}.targets[${i}]`);
+        const ref = reqStr(targetObj, 'toRef', `${path}.targets[${i}]`);
+        if (!ref.startsWith('creature:')) {
+          throw new RulesPackError(
+            `${path}.targets[${i}].toRef must be a 'creature:' ref`,
+          );
+        }
+      });
+      return kind;
+    }
+    case 'corpse-animation': {
+      const sources = appearance.sources;
+      if (!Array.isArray(sources) || sources.length === 0) {
+        throw new RulesPackError(`${path}.sources must be a non-empty array`);
+      }
+      sources.forEach((source, i) => {
+        const sourceObj = source as Obj;
+        reqStr(sourceObj, 'material', `${path}.sources[${i}]`);
+        const ref = reqStr(sourceObj, 'becomesRef', `${path}.sources[${i}]`);
+        if (!ref.startsWith('creature:')) {
+          throw new RulesPackError(
+            `${path}.sources[${i}].becomesRef must be a 'creature:' ref`,
+          );
+        }
+      });
+      optStr(appearance, 'castingConstraint', path);
+      return kind;
+    }
+    case 'object-animation':
+      reqInt(appearance, 'maxObjects', path, 1);
+      validatePositiveIntRecord(appearance.sizeCosts, `${path}.sizeCosts`);
+      if (!reqStr(appearance, 'statTableRef', path).startsWith('table:')) {
+        throw new RulesPackError(`${path}.statTableRef must be a 'table:' ref`);
+      }
+      return kind;
+    case 'duplicate':
+      reqStr(appearance, 'of', path);
+      return kind;
+    default:
+      throw new RulesPackError(`${path}.kind has unknown summoning appearance`);
+  }
+}
+
+function validateSummoningControl(control: Obj, path: string): boolean {
+  reqEnum(
+    control,
+    'mode',
+    path,
+    new Set(['obedient', 'friendly-commanded', 'independent-obedient']),
+  );
+  reqEnum(
+    control,
+    'defaultBehavior',
+    path,
+    new Set(['defends-only', 'defends-otherwise-idle']),
+  );
+  reqEnum(
+    control,
+    'initiative',
+    path,
+    new Set(['own-turn', 'group', 'acts-on-casters-turn']),
+  );
+  const commandEconomy = control.commandEconomy;
+  if (commandEconomy !== undefined) {
+    const command = commandEconomy as Obj;
+    reqEnum(
+      command,
+      'cost',
+      `${path}.commandEconomy`,
+      new Set(['bonus-action', 'verbal-no-action', 'on-your-turn']),
+    );
+    optInt(command, 'rangeFeet', `${path}.commandEconomy`, 1);
+  }
+  optBool(control, 'alignmentLimited', path);
+  const window = control.window;
+  if (window !== undefined) {
+    const windowObj = window as Obj;
+    reqInt(windowObj, 'amount', `${path}.window`, 1);
+    reqEnum(windowObj, 'unit', `${path}.window`, new Set(['hour']));
+    if (commandEconomy === undefined) {
+      throw new RulesPackError(`${path}.window requires commandEconomy`);
+    }
+  }
+  const reassert = control.reassert;
+  if (reassert !== undefined) {
+    reqInt(reassert as Obj, 'maxCreatures', `${path}.reassert`, 1);
+    if (commandEconomy === undefined) {
+      throw new RulesPackError(`${path}.reassert requires commandEconomy`);
+    }
+  }
+  optBool(control, 'exclusiveInstance', path);
+  if (control.exclusiveInstance === true && window !== undefined) {
+    throw new RulesPackError(`${path}.exclusiveInstance forbids window`);
+  }
+  return control.exclusiveInstance === true;
+}
+
+function validateSummoningLifecycle(
+  lifecycle: unknown,
+  path: string,
+  appearanceKind: string,
+  exclusiveInstance: boolean,
+): void {
+  if (!Array.isArray(lifecycle) || lifecycle.length === 0) {
+    throw new RulesPackError(`${path}.lifecycle must be a non-empty array`);
+  }
+  let recastCount = 0;
+  let hasTargetReversion = false;
+  for (const [i, entry] of lifecycle.entries()) {
+    const item = entry as Obj;
+    const itemPath = `${path}.lifecycle[${i}]`;
+    const event = reqStr(item, 'event', itemPath);
+    const result = reqStr(item, 'result', itemPath);
+    if (event === 'recast') recastCount += 1;
+    if (result === 'transformed-target-reverts') hasTargetReversion = true;
+    if (event === 'recast' && !exclusiveInstance) {
+      throw new RulesPackError(
+        `${itemPath}.event recast requires exclusiveInstance`,
+      );
+    }
+    if (
+      result === 'transformed-target-reverts' &&
+      item.damageCarriesOver !== undefined
+    ) {
+      throw new RulesPackError(
+        `${itemPath}.damageCarriesOver is not valid for transformed-target-reverts`,
+      );
+    }
+    if (item.window !== undefined) {
+      const windowObj = item.window as Obj;
+      reqInt(windowObj, 'amount', `${itemPath}.window`, 1);
+      reqEnum(windowObj, 'unit', `${itemPath}.window`, new Set(['hour']));
+    }
+    if (item.reassertableByRecast !== undefined) {
+      reqInt(
+        item.reassertableByRecast as Obj,
+        'maxCreatures',
+        `${itemPath}.reassertableByRecast`,
+        1,
+      );
+    }
+    if (item.disappearsAfter !== undefined) {
+      const after = item.disappearsAfter as Obj;
+      reqInt(after, 'amount', `${itemPath}.disappearsAfter`, 1);
+      reqEnum(
+        after,
+        'unit',
+        `${itemPath}.disappearsAfter`,
+        new Set(['hour', 'minute']),
+      );
+    }
+    if (item.transition !== undefined) {
+      const transition = item.transition as Obj;
+      reqInt(transition, 'amount', `${itemPath}.transition`, 1);
+      reqEnum(
+        transition,
+        'unit',
+        `${itemPath}.transition`,
+        new Set(['minute']),
+      );
+    }
+    optBool(item, 'damageCarriesOver', itemPath);
+    optBool(item, 'dismissable', itemPath);
+  }
+  if (exclusiveInstance && recastCount !== 1) {
+    throw new RulesPackError(
+      `${path}.lifecycle must carry exactly one recast entry when exclusiveInstance is true`,
+    );
+  }
+  if (appearanceKind === 'target-transformation' && !hasTargetReversion) {
+    throw new RulesPackError(
+      `${path}.lifecycle target-transformation requires transformed-target-reverts`,
+    );
+  }
+}
+
+function validateSummoningEffect(effect: Obj, path: string): void {
+  const appearanceKind = validateSummoningAppearance(
+    reqObj(effect, 'appears', path),
+    `${path}.appears`,
+  );
+  const exclusiveInstance = validateSummoningControl(
+    reqObj(effect, 'control', path),
+    `${path}.control`,
+  );
+  validateSummoningLifecycle(
+    effect.lifecycle,
+    path,
+    appearanceKind,
+    exclusiveInstance,
+  );
+  const creatureType = effect.creatureType;
+  if (creatureType !== undefined) {
+    const typeObj = creatureType as Obj;
+    if (
+      reqStrArray(typeObj, 'treatedAs', `${path}.creatureType`).length === 0
+    ) {
+      throw new RulesPackError(
+        `${path}.creatureType.treatedAs must be non-empty`,
+      );
+    }
+    optBool(typeObj, 'chooseOne', `${path}.creatureType`);
+  }
+  const sourceRequirement = effect.sourceRequirement;
+  if (sourceRequirement !== undefined) {
+    const source = sourceRequirement as Obj;
+    reqEnum(source, 'shape', `${path}.sourceRequirement`, new Set(['cube']));
+    reqInt(source, 'sizeFeet', `${path}.sourceRequirement`, 1);
+    if (
+      reqStrArray(source, 'materialOrTerrain', `${path}.sourceRequirement`)
+        .length === 0
+    ) {
+      throw new RulesPackError(
+        `${path}.sourceRequirement.materialOrTerrain must be non-empty`,
+      );
+    }
+  }
+  if (effect.telepathy !== undefined) {
+    reqInt(effect.telepathy as Obj, 'rangeFeet', `${path}.telepathy`, 1);
+  }
+  if (effect.senseSharing !== undefined) {
+    const sharing = effect.senseSharing as Obj;
+    reqEnum(sharing, 'cost', `${path}.senseSharing`, new Set(['action']));
+    if (
+      reqStrArray(
+        sharing,
+        'casterConditionWhileSharing',
+        `${path}.senseSharing`,
+      ).length === 0
+    ) {
+      throw new RulesPackError(
+        `${path}.senseSharing.casterConditionWhileSharing must be non-empty`,
+      );
+    }
+  }
+  if (effect.spellDelivery !== undefined) {
+    const delivery = effect.spellDelivery as Obj;
+    reqEnum(
+      delivery,
+      'spellRange',
+      `${path}.spellDelivery`,
+      new Set(['touch']),
+    );
+    reqEnum(delivery, 'cost', `${path}.spellDelivery`, new Set(['reaction']));
+  }
+  if (effect.spellSharing !== undefined) {
+    const sharing = effect.spellSharing as Obj;
+    reqEnum(
+      sharing,
+      'when',
+      `${path}.spellSharing`,
+      new Set(['caster-targets-only-self']),
+    );
+    if (sharing.requiresMounted !== true) {
+      throw new RulesPackError(
+        `${path}.spellSharing.requiresMounted must be true`,
+      );
+    }
+    reqEnum(sharing, 'alsoAffects', `${path}.spellSharing`, new Set(['steed']));
+  }
+  if (effect.repair !== undefined) {
+    reqInt(effect.repair as Obj, 'costGpPerHitPoint', `${path}.repair`, 1);
+  }
+  if (effect.dismissal !== undefined) {
+    const dismissal = effect.dismissal as Obj;
+    reqEnum(dismissal, 'cost', `${path}.dismissal`, new Set(['action']));
+  }
+}
+
 /**
  * Shared equipment-state eligibility rider (Martial Arts, Dragon Wings):
  * `wielding` is a closed wielding constraint, `armor` is `false` (none
@@ -2085,6 +2454,9 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqInt(effect, 'rangeFeet', path, 1);
     optStr(effect, 'target', path);
     optInt(effect, 'maximumControlled', path, 1);
+  },
+  summoning: (effect, path) => {
+    validateSummoningEffect(effect, path);
   },
   movementRestriction: (effect, path) => {
     reqStr(effect, 'restriction', path);

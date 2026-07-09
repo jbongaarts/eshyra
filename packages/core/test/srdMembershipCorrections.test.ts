@@ -882,6 +882,136 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     ]);
   });
 
+  it('S1 summoning spells carry typed appearance, control, and lifecycle contracts', () => {
+    const s1SpellKeys = [
+      'spell:animate-dead',
+      'spell:animate-objects',
+      'spell:conjure-animals',
+      'spell:conjure-celestial',
+      'spell:conjure-elemental',
+      'spell:conjure-fey',
+      'spell:conjure-minor-elementals',
+      'spell:conjure-woodland-beings',
+      'spell:create-undead',
+      'spell:find-familiar',
+      'spell:find-steed',
+      'spell:giant-insect',
+      'spell:phantom-steed',
+      'spell:simulacrum',
+    ];
+    for (const key of s1SpellKeys) {
+      expect(spellEffects(key)[0]).toEqual(
+        expect.objectContaining({ kind: 'summoning' }),
+      );
+    }
+    expect(spellEffects('spell:conjure-animals')[0]).toEqual(
+      expect.objectContaining({
+        appears: {
+          kind: 'option-menu',
+          options: [
+            { count: 1, maxChallenge: '2' },
+            { count: 2, maxChallenge: '1' },
+            { count: 4, maxChallenge: '1/2' },
+            { count: 8, maxChallenge: '1/4' },
+          ],
+          higherSlotMultipliers: { 5: 2, 7: 3, 9: 4 },
+        },
+        creatureType: { treatedAs: ['fey'] },
+        control: expect.objectContaining({
+          commandEconomy: { cost: 'verbal-no-action' },
+          initiative: 'group',
+        }),
+      }),
+    );
+    expect(spellEffects('spell:conjure-elemental')[0]).toEqual(
+      expect.objectContaining({
+        sourceRequirement: {
+          shape: 'cube',
+          sizeFeet: 10,
+          materialOrTerrain: ['air', 'earth', 'fire', 'water'],
+        },
+        lifecycle: expect.arrayContaining([
+          {
+            event: 'concentration-broken',
+            result: 'uncontrolled-hostile',
+            dismissable: false,
+            disappearsAfter: { amount: 1, unit: 'hour' },
+          },
+        ]),
+      }),
+    );
+    expect(spellEffects('spell:animate-dead')[0]).toEqual(
+      expect.objectContaining({
+        appears: {
+          kind: 'corpse-animation',
+          sources: [
+            { material: 'pile of bones', becomesRef: 'creature:skeleton' },
+            { material: 'corpse', becomesRef: 'creature:zombie' },
+          ],
+        },
+        control: expect.objectContaining({
+          commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
+          window: { amount: 24, unit: 'hour' },
+          reassert: { maxCreatures: 4 },
+        }),
+      }),
+    );
+    expect(spellEffects('spell:animate-objects')[0]).toEqual(
+      expect.objectContaining({
+        appears: {
+          kind: 'object-animation',
+          maxObjects: 10,
+          sizeCosts: { medium: 2, large: 4, huge: 8 },
+          statTableRef: 'table:animated-object-statistics',
+        },
+        control: expect.objectContaining({
+          commandEconomy: { cost: 'bonus-action', rangeFeet: 500 },
+        }),
+        lifecycle: [
+          {
+            event: 'spell-ends',
+            result: 'animated-object-reverts',
+            damageCarriesOver: true,
+          },
+        ],
+      }),
+    );
+    expect(spellEffects('spell:find-familiar')[0]).toEqual(
+      expect.objectContaining({
+        control: expect.objectContaining({ exclusiveInstance: true }),
+        lifecycle: expect.arrayContaining([
+          { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+        ]),
+        modifications: [{ attribute: 'cannot-attack' }],
+        telepathy: { rangeFeet: 100 },
+        senseSharing: {
+          cost: 'action',
+          casterConditionWhileSharing: ['deaf', 'blind'],
+        },
+        spellDelivery: { spellRange: 'touch', cost: 'reaction' },
+      }),
+    );
+    expect(spellEffects('spell:giant-insect')[0]).toEqual(
+      expect.objectContaining({
+        appears: expect.objectContaining({ kind: 'target-transformation' }),
+        lifecycle: [
+          { event: 'spell-ends', result: 'transformed-target-reverts' },
+          { event: 'zero-hit-points', result: 'transformed-target-reverts' },
+        ],
+      }),
+    );
+    expect(spellEffects('spell:simulacrum')[0]).toEqual(
+      expect.objectContaining({
+        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
+        lifecycle: [
+          { event: 'zero-hit-points', result: 'duplicate-destroyed' },
+          { event: 'recast', result: 'prior-duplicates-instantly-destroyed' },
+        ],
+        repair: { costGpPerHitPoint: 100 },
+      }),
+    );
+  });
+
   it('S2 communication, travel, and recast limits carry typed clauses', () => {
     expect(spellEffects('spell:animal-messenger')).toEqual([
       {

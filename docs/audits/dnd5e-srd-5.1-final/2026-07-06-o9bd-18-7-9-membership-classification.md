@@ -6,7 +6,7 @@ Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399
 This is the authoritative, record-by-record semantic disposition source for
 the reviewed creature-entry refs now represented by
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and for
-`ACCEPTED_METADATA_ONLY_SPELLS` (34 keys after S2 rollout) in
+`ACCEPTED_METADATA_ONLY_SPELLS` (20 keys after S1 rollout) in
 `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts` as of this
 branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
@@ -15,10 +15,11 @@ second follow-up rollout, while 40 residual refs remain represented in the
 per-ref registry. Of those 40 residual refs, 2 are permanent
 `accepted-prose-only` entries and 38 are pending `finding` entries routed to
 C1/C4-C9. Spell metadata-only membership remains represented separately by
-`ACCEPTED_METADATA_ONLY_SPELLS`; the 17 S2 small deterministic-clause spells
-have graduated out. Every record's full pack text was read against SRD 5.1
-source. **Do not repeat this audit.** Implementation agents should work from
-the slices in §3 and consult §1/§2/§1.6 only for per-record semantics.
+`ACCEPTED_METADATA_ONLY_SPELLS`; the 14 S1 summoning/control spells and the 17
+S2 small deterministic-clause spells have graduated out. Every record's full
+pack text was read against SRD 5.1 source. **Do not repeat this audit.**
+Implementation agents should work from the slices in §3 and consult
+§1/§2/§1.6 only for per-record semantics.
 
 Disposition vocabulary:
 
@@ -290,7 +291,7 @@ All 53 carry casting metadata, structured `duration`, `concentration`,
 `scaling.sourceText` where printed, and `area` where geometric — the
 disposition below concerns clauses **beyond** that baseline.
 
-### 2.1 Summoned/controlled-creature family — 14 — disposition: design (slice S1)
+### 2.1 Summoned/controlled-creature family — 14 — disposition: implemented (slice S1)
 
 Shared deterministic core: what appears (fixed form list or count×CR option
 menu), statblock source (pack creature refs exist for skeleton, zombie,
@@ -301,6 +302,11 @@ economy (bonus-action/verbal, command range), disappearance conditions
 only the single-fixed-creature case — needs a designed extension (option
 menus, control economy, statblock modification). This is the largest
 remaining design decision.
+
+Implemented 2026-07-08: new `summoning` effect kind with source-gated
+per-spell projections, schema validation, committed-pack assertions, and
+generated pack regeneration. The 14 keys below graduated out of
+`ACCEPTED_METADATA_ONLY_SPELLS`.
 
 | key | beyond-baseline deterministic clauses |
 |---|---|
@@ -424,7 +430,7 @@ None of the remaining slices below is started unless stated.
 | **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove/update their `finding` entries in the reviewed-disposition registry; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
 | **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Implemented** |
 | **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 10 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Implemented** |
-| **S1** summoning | design summoning contract extension (option menus, control economy, statblock modification); 14 spells | yes — largest open design | **Opus** |
+| **S1** summoning | `summoning` payload extension (option menus, control economy, lifecycle transitions, statblock modification); 14 spells | yes — implemented | **Implemented** |
 | **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Implemented** |
 | **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
 | **S4** membership bookkeeping | after each slice: exact removals/updates in the relevant registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` for creature-entry findings, `ACCEPTED_*` for accepted spell metadata/prose buckets), count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
@@ -435,10 +441,10 @@ None of the remaining slices below is started unless stated.
 | **C8** rampage family | triggered bonus action (`bonusAction` trigger field, or new `triggeredBonusAction`); 2 refs (§1.6.6) | yes, small (schema-reviewed extension or new small contract) | **Opus** design, Codex rollout |
 | **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Opus** payload sketch, Codex rollout |
 
-Ordering: C2 and S2 are low-risk warm-ups; C1/S1 are the substantive
-designs; S3 last (interacts with modeled teleport/planar kinds). C4–C9
+Ordering: C2 and S2 were low-risk warm-ups; S1 is implemented; C1 remains a
+substantive design/rollout. S3 last (interacts with modeled teleport/planar kinds). C4–C9
 (§1.6, residual reconciliation pass) are additive and can land in any order
-relative to C1/S1–S4; none blocks another.
+relative to C1/S3–S4; none blocks another.
 
 Reconciliation (mechanically verified 2026-07-06 against
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
@@ -460,13 +466,15 @@ every membership key appears in exactly one disposition section):
   §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after
   C3+S2 rollout: 34 (53 - 2 C3 implemented - 17 S2 implemented) = S1 14 +
-  S3 8 + accept 11 + accept\* 1.
+  S3 8 + accept 11 + accept\* 1. Residual membership after S1 rollout: 20
+  (34 - 14 S1 implemented) = S3 8 + accept 11 + accept\* 1.
 
 **14 records total (2 creatures + 12 spells) are closed permanently by this
 document.** An earlier revision claimed 26 permanent accepts (with
 internally inconsistent section counts of 3+2+23); the 2026-07-06 integrity
 pass reclassified 13 spells and 1 creature ref out of the acceptance bucket
 under the strict taxonomy and corrected the arithmetic. Note in particular:
-`spell:animate-objects` is and remains **S1** — its object-statistics table
-being structured (`tableRefs`) covers only the stat lookup, not the
-summoning/control/command-economy semantics.
+`spell:animate-objects` was **S1** before the 2026-07-08 rollout — its
+object-statistics table being structured (`tableRefs`) covered only the stat
+lookup, not the summoning/control/command-economy semantics. It now carries a
+typed `summoning` effect for those semantics.
