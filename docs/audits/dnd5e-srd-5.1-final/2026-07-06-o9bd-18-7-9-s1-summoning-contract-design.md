@@ -22,15 +22,21 @@ in this slice.)
   appears: Appearance,
   creatureType?: { treatedAs: string[],           // ['fey'] "considered fey"
                    chooseOne?: boolean },         // familiar/steed: celestial/fey/fiend, caster's choice
-  control: Control,
+  control?: Control,                               // optional: omit where the source
+                                                   // states no command/initiative rule
+                                                   // (phantom-steed is a pure mount)
   lifecycle: Lifecycle[],                          // non-empty; see source-backed union below
   sourceRequirement?: { shape: 'cube',
                         sizeFeet: number,
                         materialOrTerrain: string[] }, // conjure-elemental 10-ft cube
+  // Dismissal destination and recall economy are a discriminated pair, not two
+  // free knobs: pocket-dimension ⟺ action recall (with range); dismissed ⟺
+  // recast recall (no range). Impossible cross-combinations are rejected.
   dismissal?: { cost: 'action',
-                temporary?: { to: 'pocket-dimension' | 'dismissed',
-                              recall?: { cost: 'action' | 'recast',
-                                         rangeFeet?: number } },
+                temporary?: { to: 'pocket-dimension',
+                              recall: { cost: 'action', rangeFeet: number } }
+                           | { to: 'dismissed',
+                              recall: { cost: 'recast' } },
                 permanent?: { cost: 'action',
                               result: 'dismissed-forever' | 'bond-released' } },
   modifications?: Modification[],                 // deltas against the source statblock
@@ -62,6 +68,10 @@ type Appearance =
       targets: { count: number, from: string, toRef: string }[] }
   | { kind: 'corpse-animation',                             // animate-dead, create-undead
       sources: { material: string, becomesRef: string, count?: number }[],  // bones→skeleton, corpse→zombie, corpse→ghoul
+      targetEligibility?: { creatureType: string,           // creation gate: Medium/Small humanoid
+                            sizes: string[] },
+      baseCount?: number,                                   // animate-dead: one target at base slot
+      distinctSourcePerCreature?: true,                     // animate-dead: each creature a different corpse/bones
       castingConstraint?: string,                           // create-undead: 'night-only'
       higherSlotScaling?: { perSlotAbove: number, additionalTargets: number },
       higherSlotOptions?: { level: number,
@@ -71,16 +81,24 @@ type Appearance =
       maxObjects: number,
       sizeCosts: Record<string, number>,                    // {medium:2, large:4, huge:8}
       statTableRef: string,                                 // table:animated-object-statistics
+      targetEligibility?: { nonmagical?: true,              // creation gate: nonmagical, unworn/uncarried,
+                            notWornOrCarried?: true,        // no larger than Huge
+                            maxSize?: string },
       higherSlotScaling?: { perSlotAbove: number, additionalTargets: number } }
   | { kind: 'duplicate', of: string }                       // simulacrum: 'beast-or-humanoid'
 
+// A structured field must not force the importer to invent a rule the source
+// doesn't state. mode/defaultBehavior/initiative are therefore all optional and
+// emitted only where the SRD defines them; a control block that would be empty
+// is omitted entirely (phantom-steed). At least one field is required when
+// control is present.
 type Control = {
-  mode: 'obedient' | 'friendly-commanded' | 'independent-obedient',
+  mode?: 'obedient' | 'friendly-commanded' | 'independent-obedient',
   commandEconomy?: { cost: 'bonus-action' | 'verbal-no-action' | 'on-your-turn',
                      rangeFeet?: number },       // animate-dead 60, create-undead 120, animate-objects 500
   alignmentLimited?: boolean,                    // celestial/fey refuse violating commands
-  defaultBehavior: 'defends-only' | 'defends-otherwise-idle' | 'follows-caster-wishes',
-  initiative: 'own-turn' | 'group' | 'acts-on-casters-turn',
+  defaultBehavior?: 'defends-only' | 'defends-otherwise-idle' | 'follows-caster-wishes',
+  initiative?: 'own-turn' | 'group' | 'acts-on-casters-turn',
   window?: { amount: number, unit: 'hour' },     // 24 h control window
   reassert?: { maxCreatures: number,             // recast reasserts ≤N
                higherSlotScaling?: { perSlotAbove: number, additionalTargets: number },
@@ -125,17 +143,23 @@ type Lifecycle =
   | { event: 'action-release',
       result: 'bond-ends-creature-disappears' }  // find-steed bond release
   // Recast semantics under exclusiveInstance are per-spell and source-backed —
-  // deliberately NOT a shared generic rule:
-  | { event: 'recast',
+  // deliberately NOT a shared generic rule. Each is state-sensitive: `priorState`
+  // ('active' | 'gone') says whether the persistent actor still existed when the
+  // spell was recast, and recast entries in one record must have distinct
+  // priorStates. Find-familiar carries BOTH transitions (source defines two):
+  | { event: 'recast', priorState: 'active',
       result: 'existing-familiar-adopts-new-form' } // find-familiar: recasting while you
                                                  // have a familiar causes it to adopt a
                                                  // new form — nothing is destroyed
-  | { event: 'recast',
+  | { event: 'recast', priorState: 'gone',
+      result: 'familiar-reappears' }             // find-familiar: recasting after the
+                                                 // familiar dropped to 0 HP re-summons it
+  | { event: 'recast', priorState: 'gone',
       result: 'same-steed-returns-restored' }    // find-steed: casting again after the
-                                                 // steed disappeared summons the SAME
-                                                 // steed, restored to its HP maximum —
-                                                 // persistent identity, not replacement
-  | { event: 'recast',
+                                                 // steed disappeared (0 HP or dismissed)
+                                                 // summons the SAME steed, restored to its
+                                                 // HP maximum — persistent identity
+  | { event: 'recast', priorState: 'active',
       result: 'prior-duplicates-instantly-destroyed' } // simulacrum only: active
                                                  // duplicates are instantly destroyed
 
@@ -185,13 +209,31 @@ as statline `sourceText`.
   `summoned-creature-disappears` and `animated-object-reverts` (the
   transformed creatures are pre-existing targets, not summons or objects).
   `transformed-target-reverts` carries no `damageCarriesOver` field.
-- `control.exclusiveInstance: true` requires exactly one `recast` lifecycle
-  entry, and the three recast results are spell-specific: schema-level the
-  union admits all three, but committed-pack assertions pin
-  `existing-familiar-adopts-new-form` to find-familiar,
-  `same-steed-returns-restored` to find-steed, and
+- `control.exclusiveInstance: true` requires at least one `recast` lifecycle
+  entry (find-familiar carries two — see below), and the four recast results are
+  spell-specific: schema-level the union admits all four, but committed-pack
+  assertions pin `existing-familiar-adopts-new-form` + `familiar-reappears` to
+  find-familiar, `same-steed-returns-restored` to find-steed, and
   `prior-duplicates-instantly-destroyed` to simulacrum. A `recast` lifecycle
   entry is invalid without `exclusiveInstance: true`.
+- Every `recast` entry carries a required `priorState` ('active' | 'gone') that
+  the result implies (`existing-familiar-adopts-new-form` and
+  `prior-duplicates-instantly-destroyed` ⇒ 'active';
+  `familiar-reappears`/`same-steed-returns-restored` ⇒ 'gone'), and the recast
+  entries within one record must have distinct `priorState` values. This makes
+  Find Familiar's two source-defined recast transitions (re-form an active
+  familiar; re-summon one that dropped to 0 HP) both expressible.
+- `control` is optional; when present it must declare at least one field.
+  `mode`, `defaultBehavior`, and `initiative` are each optional and emitted only
+  where the SRD states them, so the schema never forces an invented rule.
+- `corpse-animation.targetEligibility` (creature type + SRD sizes),
+  `baseCount`, and `distinctSourcePerCreature`, and
+  `object-animation.targetEligibility` (nonmagical / not-worn-or-carried /
+  maxSize) are typed creation gates — they decide whether a cast is legal and
+  how many valid targets exist, so they are structured, not narrative residue.
+- `dismissal.temporary` is a discriminated pair: `to: 'pocket-dimension'`
+  requires an `action` recall with `rangeFeet`; `to: 'dismissed'` requires a
+  `recast` recall and forbids `rangeFeet`.
 
 ## 4. Runtime integration boundaries
 
@@ -230,10 +272,12 @@ rider count per golden record so silent rider growth fails the gate.
    spell-end reversion plus zero-HP reversion with damage carryover.
 5. `find-familiar` — form-list with creatureRefs, chooseOne type,
    cannot-attack modification, pocket-dimension dismissal, permanent dismissal,
-   exclusiveInstance, recast → existing-familiar-adopts-new-form (the
-   familiar is never destroyed by recasting), zero-HP disappearance, typed
-   telepathy 100 ft, sense-sharing action, and touch-spell delivery via
-   reaction with the 100-foot familiar-distance requirement.
+   exclusiveInstance, control with no defaultBehavior (source states none), and
+   BOTH source-defined recast transitions: recast while active →
+   existing-familiar-adopts-new-form (nothing destroyed), recast after 0 HP →
+   familiar-reappears. Zero-HP disappearance, typed telepathy 100 ft,
+   sense-sharing action, and touch-spell delivery via reaction with the
+   100-foot familiar-distance requirement.
 6. `simulacrum` — duplicate + modifications (half HP max, no equipment,
    no advancement), exclusiveInstance, recast →
    prior-duplicates-instantly-destroyed, zero-HP duplicate destruction,
@@ -246,12 +290,16 @@ rider count per golden record so silent rider growth fails the gate.
 Remaining 7 after goldens: conjure-celestial, conjure-fey,
 conjure-minor-elementals, conjure-woodland-beings, create-undead,
 find-steed, phantom-steed — all instances of the golden shapes above
-(Codex). find-steed must use recast → same-steed-returns-restored (the
-steed has persistent identity across castings — represent it as the same
-persistent actor, restored to HP maximum, never as a new instance), plus
-action dismissal and action bond release. create-undead must carry its
-higher-slot ghast/wight/mummy count options for both creation and reassertion,
-and phantom-steed must carry its 10 mph normal / 13 mph fast travel rates.
+(Codex). find-steed must use recast (priorState 'gone') →
+same-steed-returns-restored (the steed has persistent identity across castings —
+represent it as the same persistent actor, restored to HP maximum, never as a
+new instance), plus action dismissal and action bond release; its control block
+carries only exclusiveInstance because the source states no obedience,
+default-behavior, or initiative rule for the steed itself. create-undead must
+carry its higher-slot ghast/wight/mummy count options for both creation and
+reassertion plus its Medium/Small humanoid target eligibility, and phantom-steed
+carries its 10 mph normal / 13 mph fast travel rates and NO control block (it
+defines a rideable mount, not a commanded creature).
 
 Membership bookkeeping completed 2026-07-08: removed the 14 keys from
 `ACCEPTED_METADATA_ONLY_SPELLS` (34 -> 20), added negative tests for

@@ -103333,6 +103333,15 @@
                   "becomesRef": "creature:zombie"
                 }
               ],
+              "targetEligibility": {
+                "creatureType": "humanoid",
+                "sizes": [
+                  "medium",
+                  "small"
+                ]
+              },
+              "baseCount": 1,
+              "distinctSourcePerCreature": true,
               "higherSlotScaling": {
                 "perSlotAbove": 3,
                 "additionalTargets": 2
@@ -103449,6 +103458,11 @@
                 "huge": 8
               },
               "statTableRef": "table:animated-object-statistics",
+              "targetEligibility": {
+                "nonmagical": true,
+                "notWornOrCarried": true,
+                "maxSize": "huge"
+              },
               "higherSlotScaling": {
                 "perSlotAbove": 5,
                 "additionalTargets": 2
@@ -107678,6 +107692,13 @@
                   "count": 3
                 }
               ],
+              "targetEligibility": {
+                "creatureType": "humanoid",
+                "sizes": [
+                  "medium",
+                  "small"
+                ]
+              },
               "castingConstraint": "night-only",
               "higherSlotOptions": [
                 {
@@ -110841,7 +110862,6 @@
             },
             "control": {
               "mode": "independent-obedient",
-              "defaultBehavior": "defends-otherwise-idle",
               "initiative": "own-turn",
               "exclusiveInstance": true
             },
@@ -110852,7 +110872,13 @@
               },
               {
                 "event": "recast",
-                "result": "existing-familiar-adopts-new-form"
+                "result": "existing-familiar-adopts-new-form",
+                "priorState": "active"
+              },
+              {
+                "event": "recast",
+                "result": "familiar-reappears",
+                "priorState": "gone"
               }
             ],
             "dismissal": {
@@ -110979,9 +111005,6 @@
               "chooseOne": true
             },
             "control": {
-              "mode": "independent-obedient",
-              "defaultBehavior": "defends-otherwise-idle",
-              "initiative": "own-turn",
               "exclusiveInstance": true
             },
             "lifecycle": [
@@ -110999,7 +111022,8 @@
               },
               {
                 "event": "recast",
-                "result": "same-steed-returns-restored"
+                "result": "same-steed-returns-restored",
+                "priorState": "gone"
               }
             ],
             "dismissal": {
@@ -112676,7 +112700,6 @@
               "commandEconomy": {
                 "cost": "on-your-turn"
               },
-              "defaultBehavior": "defends-otherwise-idle",
               "initiative": "acts-on-casters-turn"
             },
             "lifecycle": [
@@ -118119,11 +118142,6 @@
                 }
               ]
             },
-            "control": {
-              "mode": "obedient",
-              "defaultBehavior": "defends-otherwise-idle",
-              "initiative": "acts-on-casters-turn"
-            },
             "lifecycle": [
               {
                 "event": "spell-ends",
@@ -121400,7 +121418,8 @@
               },
               {
                 "event": "recast",
-                "result": "prior-duplicates-instantly-destroyed"
+                "result": "prior-duplicates-instantly-destroyed",
+                "priorState": "active"
               }
             ],
             "modifications": [

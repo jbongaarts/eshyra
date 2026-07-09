@@ -1822,6 +1822,16 @@ function projectReviewedS1SpellEffects(
     case 'animate dead':
       requireClauses([
         {
+          label: 'medium or small humanoid target',
+          pattern:
+            /\bChoose a pile of bones or a corpse of a Medium or Small humanoid within range\b/,
+        },
+        {
+          label: 'different corpse per creature',
+          pattern:
+            /\bEach of the creatures must come from a different corpse or pile of bones\b/,
+        },
+        {
           label: 'skeleton or zombie',
           pattern:
             /\braising it as an undead creature\b[\s\S]*?\bThe target becomes a skeleton if you chose bones or a zombie if you chose a corpse\b/,
@@ -1855,6 +1865,12 @@ function projectReviewedS1SpellEffects(
               { material: 'pile of bones', becomesRef: 'creature:skeleton' },
               { material: 'corpse', becomesRef: 'creature:zombie' },
             ],
+            targetEligibility: {
+              creatureType: 'humanoid',
+              sizes: ['medium', 'small'],
+            },
+            baseCount: 1,
+            distinctSourcePerCreature: true,
             higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
           },
           control: {
@@ -1889,6 +1905,15 @@ function projectReviewedS1SpellEffects(
             /\bObjects come to life at your command\b[\s\S]*?\bChoose up to ten nonmagical objects within range\b/,
         },
         {
+          label: 'not worn or carried',
+          pattern:
+            /\bnonmagical objects within range that are not being worn or carried\b/,
+        },
+        {
+          label: 'no larger than huge',
+          pattern: /\bYou can[’']t animate any object larger than Huge\b/,
+        },
+        {
           label: 'size costs',
           pattern:
             /\bMedium targets count as two objects, Large targets count as four objects, Huge targets count as eight objects\b/,
@@ -1917,6 +1942,11 @@ function projectReviewedS1SpellEffects(
             maxObjects: 10,
             sizeCosts: { medium: 2, large: 4, huge: 8 },
             statTableRef: 'table:animated-object-statistics',
+            targetEligibility: {
+              nonmagical: true,
+              notWornOrCarried: true,
+              maxSize: 'huge',
+            },
             higherSlotScaling: { perSlotAbove: 5, additionalTargets: 2 },
           },
           control: {
@@ -2267,6 +2297,10 @@ function projectReviewedS1SpellEffects(
             sources: [
               { material: 'corpse', becomesRef: 'creature:ghoul', count: 3 },
             ],
+            targetEligibility: {
+              creatureType: 'humanoid',
+              sizes: ['medium', 'small'],
+            },
             castingConstraint: 'night-only',
             higherSlotOptions: [
               {
@@ -2476,6 +2510,11 @@ function projectReviewedS1SpellEffects(
         },
         { label: 'cannot attack', pattern: /\bA familiar can[’']?t attack\b/ },
         {
+          label: 'reappears on recast after zero hit points',
+          pattern:
+            /\bWhen the familiar drops to 0 hit points, it disappears, leaving behind no physical form\. It reappears after you cast this spell again\b/,
+        },
+        {
           label: 'telepathy and senses',
           pattern:
             /\bwithin 100 feet of you, you can communicate with it telepathically\b[\s\S]*?\bas an action, you can see through your familiar[’']s eyes and hear what it hears\b/,
@@ -2535,8 +2574,10 @@ function projectReviewedS1SpellEffects(
             chooseOne: true,
           },
           control: {
+            // Source states independence, obedience, and own-turn initiative,
+            // but no no-command default behavior — so defaultBehavior is
+            // omitted rather than invented (o9bd.18.7.9 review 3).
             mode: 'independent-obedient',
-            defaultBehavior: 'defends-otherwise-idle',
             initiative: 'own-turn',
             exclusiveInstance: true,
           },
@@ -2545,7 +2586,19 @@ function projectReviewedS1SpellEffects(
               event: 'zero-hit-points',
               result: 'summoned-creature-disappears',
             },
-            { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+            // Two state-sensitive recast transitions: recasting while the
+            // familiar is active re-forms it; recasting after it dropped to 0
+            // HP re-summons it (o9bd.18.7.9 review 3).
+            {
+              event: 'recast',
+              result: 'existing-familiar-adopts-new-form',
+              priorState: 'active',
+            },
+            {
+              event: 'recast',
+              result: 'familiar-reappears',
+              priorState: 'gone',
+            },
           ],
           dismissal: {
             cost: 'action',
@@ -2629,9 +2682,10 @@ function projectReviewedS1SpellEffects(
             chooseOne: true,
           },
           control: {
-            mode: 'independent-obedient',
-            defaultBehavior: 'defends-otherwise-idle',
-            initiative: 'own-turn',
+            // Source establishes an exclusive bond but no obedience, default
+            // behavior, or initiative rule for the steed itself, so only
+            // exclusiveInstance is emitted rather than inventing the rest
+            // (o9bd.18.7.9 review 3).
             exclusiveInstance: true,
           },
           lifecycle: [
@@ -2647,7 +2701,13 @@ function projectReviewedS1SpellEffects(
               event: 'action-release',
               result: 'bond-ends-creature-disappears',
             },
-            { event: 'recast', result: 'same-steed-returns-restored' },
+            // Recast after the steed is gone (0 HP or dismissed) re-summons the
+            // same steed restored to its HP maximum (o9bd.18.7.9 review 3).
+            {
+              event: 'recast',
+              result: 'same-steed-returns-restored',
+              priorState: 'gone',
+            },
           ],
           dismissal: {
             cost: 'action',
@@ -2700,9 +2760,11 @@ function projectReviewedS1SpellEffects(
             ],
           },
           control: {
+            // Source states obedience to verbal commands and acting on the
+            // caster's turn, but no no-command default behavior, so
+            // defaultBehavior is omitted (o9bd.18.7.9 review 3).
             mode: 'obedient',
             commandEconomy: { cost: 'on-your-turn' },
-            defaultBehavior: 'defends-otherwise-idle',
             initiative: 'acts-on-casters-turn',
           },
           lifecycle: [
@@ -2743,11 +2805,10 @@ function projectReviewedS1SpellEffects(
               },
             ],
           },
-          control: {
-            mode: 'obedient',
-            defaultBehavior: 'defends-otherwise-idle',
-            initiative: 'acts-on-casters-turn',
-          },
+          // No control block: the source defines a rideable mount (riding-horse
+          // statistics, speed/travel overrides) but establishes no command,
+          // default-behavior, or initiative rule, so none is invented
+          // (o9bd.18.7.9 review 3).
           lifecycle: [
             {
               event: 'spell-ends',
@@ -2804,7 +2865,13 @@ function projectReviewedS1SpellEffects(
           },
           lifecycle: [
             { event: 'zero-hit-points', result: 'duplicate-destroyed' },
-            { event: 'recast', result: 'prior-duplicates-instantly-destroyed' },
+            // Recasting while a duplicate is active instantly destroys it
+            // (o9bd.18.7.9 review 3).
+            {
+              event: 'recast',
+              result: 'prior-duplicates-instantly-destroyed',
+              priorState: 'active',
+            },
           ],
           modifications: [
             { attribute: 'hit-point-maximum', value: 'half-of-original' },

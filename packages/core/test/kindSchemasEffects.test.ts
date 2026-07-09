@@ -134,13 +134,20 @@ describe('mechanics effect payload contracts', () => {
         kind: 'summoning',
         appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
         control: {
+          // No defaultBehavior: the source states independence and initiative
+          // but no no-command default behavior.
           mode: 'independent-obedient',
-          defaultBehavior: 'defends-otherwise-idle',
           initiative: 'own-turn',
           exclusiveInstance: true,
         },
         lifecycle: [
-          { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+          { event: 'zero-hit-points', result: 'summoned-creature-disappears' },
+          {
+            event: 'recast',
+            result: 'existing-familiar-adopts-new-form',
+            priorState: 'active',
+          },
+          { event: 'recast', result: 'familiar-reappears', priorState: 'gone' },
         ],
         dismissal: {
           cost: 'action',
@@ -155,6 +162,65 @@ describe('mechanics effect payload contracts', () => {
           cost: 'reaction',
           familiarWithinFeet: 100,
         },
+      }),
+    ).not.toThrow();
+    // Phantom Steed: a rideable mount with no control block at all.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'form-list',
+          forms: [
+            {
+              name: 'riding horse',
+              creatureRef: 'creature:riding-horse',
+              speedOverrides: { walk: 100 },
+            },
+          ],
+        },
+        lifecycle: [
+          {
+            event: 'spell-ends',
+            result: 'effect-fades',
+            transition: { amount: 1, unit: 'minute' },
+          },
+        ],
+        travel: { normalMilesPerHour: 10, fastMilesPerHour: 13 },
+      }),
+    ).not.toThrow();
+    // Animate Dead: corpse-animation creation eligibility gates.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'corpse-animation',
+          sources: [
+            { material: 'pile of bones', becomesRef: 'creature:skeleton' },
+            { material: 'corpse', becomesRef: 'creature:zombie' },
+          ],
+          targetEligibility: {
+            creatureType: 'humanoid',
+            sizes: ['medium', 'small'],
+          },
+          baseCount: 1,
+          distinctSourcePerCreature: true,
+          higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
+        },
+        control: {
+          mode: 'obedient',
+          commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
+          defaultBehavior: 'defends-otherwise-idle',
+          initiative: 'own-turn',
+          window: { amount: 24, unit: 'hour' },
+        },
+        lifecycle: [
+          {
+            event: 'control-window-expires',
+            result: 'animated-creature-persists-uncontrolled',
+            window: { amount: 24, unit: 'hour' },
+            reassertableByRecast: { maxCreatures: 4 },
+          },
+        ],
       }),
     ).not.toThrow();
   });
@@ -219,7 +285,11 @@ describe('mechanics effect payload contracts', () => {
           initiative: 'own-turn',
         },
         lifecycle: [
-          { event: 'recast', result: 'prior-duplicates-instantly-destroyed' },
+          {
+            event: 'recast',
+            result: 'prior-duplicates-instantly-destroyed',
+            priorState: 'active',
+          },
         ],
       }),
     ).toThrow(/exclusiveInstance/);
@@ -289,7 +359,11 @@ describe('mechanics effect payload contracts', () => {
           exclusiveInstance: true,
         },
         lifecycle: [
-          { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+          {
+            event: 'recast',
+            result: 'existing-familiar-adopts-new-form',
+            priorState: 'active',
+          },
         ],
         senseSharing: {
           cost: 'action',
@@ -321,6 +395,124 @@ describe('mechanics effect payload contracts', () => {
         ],
       }),
     ).toThrow(/concentration duration/);
+    // A recast transition must carry the priorState its result implies.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
+        control: { mode: 'obedient', exclusiveInstance: true },
+        lifecycle: [
+          {
+            event: 'recast',
+            result: 'prior-duplicates-instantly-destroyed',
+            priorState: 'gone',
+          },
+        ],
+      }),
+    ).toThrow(/priorState must be active/);
+    // Two recast entries may not share a priorState.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
+        control: { mode: 'independent-obedient', exclusiveInstance: true },
+        lifecycle: [
+          {
+            event: 'recast',
+            result: 'existing-familiar-adopts-new-form',
+            priorState: 'active',
+          },
+          {
+            event: 'recast',
+            result: 'prior-duplicates-instantly-destroyed',
+            priorState: 'active',
+          },
+        ],
+      }),
+    ).toThrow(/distinct priorState/);
+    // An empty control object must be omitted, not emitted empty.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
+        control: {},
+        lifecycle: [
+          { event: 'zero-hit-points', result: 'duplicate-destroyed' },
+        ],
+      }),
+    ).toThrow(/at least one control field/);
+    // Corpse target eligibility must use SRD creature sizes.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'corpse-animation',
+          sources: [{ material: 'corpse', becomesRef: 'creature:zombie' }],
+          targetEligibility: {
+            creatureType: 'humanoid',
+            sizes: ['enormous'],
+          },
+        },
+        control: {
+          mode: 'obedient',
+          commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
+          window: { amount: 24, unit: 'hour' },
+        },
+        lifecycle: [
+          {
+            event: 'control-window-expires',
+            result: 'animated-creature-persists-uncontrolled',
+            window: { amount: 24, unit: 'hour' },
+            reassertableByRecast: { maxCreatures: 4 },
+          },
+        ],
+      }),
+    ).toThrow(/SRD creature size/);
+    // Dismissal recall pairing: a pocket-dimension familiar cannot be recalled
+    // by recasting.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
+        control: { mode: 'independent-obedient', exclusiveInstance: true },
+        lifecycle: [
+          {
+            event: 'recast',
+            result: 'existing-familiar-adopts-new-form',
+            priorState: 'active',
+          },
+        ],
+        dismissal: {
+          cost: 'action',
+          temporary: {
+            to: 'pocket-dimension',
+            recall: { cost: 'recast' },
+          },
+        },
+      }),
+    ).toThrow(/recall.cost must be one of action/);
+    // Dismissal recall pairing: a dismissed steed cannot carry an action range.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'form-list', forms: [{ name: 'warhorse' }] },
+        control: { exclusiveInstance: true },
+        lifecycle: [
+          {
+            event: 'recast',
+            result: 'same-steed-returns-restored',
+            priorState: 'gone',
+          },
+        ],
+        dismissal: {
+          cost: 'action',
+          temporary: {
+            to: 'dismissed',
+            recall: { cost: 'action', rangeFeet: 30 },
+          },
+        },
+      }),
+    ).toThrow(/recall.cost must be one of recast/);
   });
 
   it('accepts the emitted damageReduction shapes', () => {

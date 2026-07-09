@@ -948,6 +948,12 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
             { material: 'pile of bones', becomesRef: 'creature:skeleton' },
             { material: 'corpse', becomesRef: 'creature:zombie' },
           ],
+          targetEligibility: {
+            creatureType: 'humanoid',
+            sizes: ['medium', 'small'],
+          },
+          baseCount: 1,
+          distinctSourcePerCreature: true,
           higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
         },
         control: expect.objectContaining({
@@ -967,6 +973,11 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
           maxObjects: 10,
           sizeCosts: { medium: 2, large: 4, huge: 8 },
           statTableRef: 'table:animated-object-statistics',
+          targetEligibility: {
+            nonmagical: true,
+            notWornOrCarried: true,
+            maxSize: 'huge',
+          },
           higherSlotScaling: { perSlotAbove: 5, additionalTargets: 2 },
         },
         control: expect.objectContaining({
@@ -992,6 +1003,10 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
           sources: [
             { material: 'corpse', becomesRef: 'creature:ghoul', count: 3 },
           ],
+          targetEligibility: {
+            creatureType: 'humanoid',
+            sizes: ['medium', 'small'],
+          },
           castingConstraint: 'night-only',
           higherSlotOptions: [
             {
@@ -1085,9 +1100,19 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     );
     expect(spellEffects('spell:find-familiar')[0]).toEqual(
       expect.objectContaining({
-        control: expect.objectContaining({ exclusiveInstance: true }),
+        // No defaultBehavior: source states no no-command default behavior.
+        control: {
+          mode: 'independent-obedient',
+          initiative: 'own-turn',
+          exclusiveInstance: true,
+        },
         lifecycle: expect.arrayContaining([
-          { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+          {
+            event: 'recast',
+            result: 'existing-familiar-adopts-new-form',
+            priorState: 'active',
+          },
+          { event: 'recast', result: 'familiar-reappears', priorState: 'gone' },
         ]),
         modifications: [{ attribute: 'cannot-attack' }],
         telepathy: { rangeFeet: 100 },
@@ -1112,10 +1137,17 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     );
     expect(spellEffects('spell:find-steed')[0]).toEqual(
       expect.objectContaining({
+        // Source establishes only an exclusive bond, no obedience/initiative/
+        // default-behavior rule for the steed itself.
+        control: { exclusiveInstance: true },
         lifecycle: expect.arrayContaining([
           { event: 'action-dismissal', result: 'summoned-creature-disappears' },
           { event: 'action-release', result: 'bond-ends-creature-disappears' },
-          { event: 'recast', result: 'same-steed-returns-restored' },
+          {
+            event: 'recast',
+            result: 'same-steed-returns-restored',
+            priorState: 'gone',
+          },
         ]),
         dismissal: {
           cost: 'action',
@@ -1127,19 +1159,28 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     expect(spellEffects('spell:giant-insect')[0]).toEqual(
       expect.objectContaining({
         appears: expect.objectContaining({ kind: 'target-transformation' }),
-        control: expect.objectContaining({
+        // No defaultBehavior: source states obedience and caster-turn action
+        // but no no-command default behavior.
+        control: {
+          mode: 'obedient',
+          commandEconomy: { cost: 'on-your-turn' },
           initiative: 'acts-on-casters-turn',
-        }),
+        },
         lifecycle: [
           { event: 'spell-ends', result: 'transformed-target-reverts' },
           { event: 'zero-hit-points', result: 'transformed-target-reverts' },
         ],
       }),
     );
+    // Phantom Steed defines a rideable mount with no control semantics, so it
+    // carries no control block at all.
     expect(spellEffects('spell:phantom-steed')[0]).toEqual(
       expect.objectContaining({
         travel: { normalMilesPerHour: 10, fastMilesPerHour: 13 },
       }),
+    );
+    expect(spellEffects('spell:phantom-steed')[0]).not.toHaveProperty(
+      'control',
     );
     expect(spellEffects('spell:simulacrum')[0]).toEqual(
       expect.objectContaining({
@@ -1152,7 +1193,11 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         },
         lifecycle: [
           { event: 'zero-hit-points', result: 'duplicate-destroyed' },
-          { event: 'recast', result: 'prior-duplicates-instantly-destroyed' },
+          {
+            event: 'recast',
+            result: 'prior-duplicates-instantly-destroyed',
+            priorState: 'active',
+          },
         ],
         repair: { costGpPerHitPoint: 100 },
       }),

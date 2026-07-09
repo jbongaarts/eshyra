@@ -1469,9 +1469,10 @@ function reqEnum(
   key: string,
   path: string,
   allowed: ReadonlySet<string>,
-): void {
-  reqStr(parent, key, path);
+): string {
+  const value = reqStr(parent, key, path);
   optEnum(parent, key, path, allowed);
+  return value;
 }
 
 /**
@@ -1514,6 +1515,15 @@ const SRD_CHALLENGE_TOKENS: ReadonlySet<string> = new Set([
   '1/4',
   '1/2',
   ...Array.from({ length: 30 }, (_, i) => String(i + 1)),
+]);
+
+const SRD_CREATURE_SIZES: ReadonlySet<string> = new Set([
+  'tiny',
+  'small',
+  'medium',
+  'large',
+  'huge',
+  'gargantuan',
 ]);
 
 function reqChallenge(parent: Obj, key: string, path: string): void {
@@ -1582,6 +1592,9 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       'targets',
       'sources',
       'castingConstraint',
+      'targetEligibility',
+      'baseCount',
+      'distinctSourcePerCreature',
       'higherSlotOptions',
       'maxObjects',
       'sizeCosts',
@@ -1718,6 +1731,9 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
           'kind',
           'sources',
           'castingConstraint',
+          'targetEligibility',
+          'baseCount',
+          'distinctSourcePerCreature',
           'higherSlotScaling',
           'higherSlotOptions',
         ]),
@@ -1727,6 +1743,16 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       });
       validateCorpseAnimationHigherSlotOptions(appearance, path);
       optStr(appearance, 'castingConstraint', path);
+      optInt(appearance, 'baseCount', path, 1);
+      if (appearance.distinctSourcePerCreature !== undefined) {
+        optBool(appearance, 'distinctSourcePerCreature', path);
+        if (appearance.distinctSourcePerCreature !== true) {
+          throw new RulesPackError(
+            `${path}.distinctSourcePerCreature must be true when present`,
+          );
+        }
+      }
+      validateCorpseTargetEligibility(appearance, path);
       validateSummoningHigherSlotScaling(appearance, path);
       return kind;
     }
@@ -1739,6 +1765,7 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
           'maxObjects',
           'sizeCosts',
           'statTableRef',
+          'targetEligibility',
           'higherSlotScaling',
         ]),
       );
@@ -1754,6 +1781,7 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       if (!reqStr(appearance, 'statTableRef', path).startsWith('table:')) {
         throw new RulesPackError(`${path}.statTableRef must be a 'table:' ref`);
       }
+      validateObjectTargetEligibility(appearance, path);
       validateSummoningHigherSlotScaling(appearance, path);
       return kind;
     case 'duplicate':
@@ -1792,6 +1820,79 @@ function validateSummoningHigherSlotScaling(parent: Obj, path: string): void {
   }
   optInt(scalingObj, 'additionalTargets', `${path}.higherSlotScaling`, 1);
   optInt(scalingObj, 'challengeIncrease', `${path}.higherSlotScaling`, 1);
+}
+
+/**
+ * Corpse-animation creation eligibility (o9bd.18.7.9 review 3): Animate Dead
+ * and Create Undead can only target corpses/bones of Medium or Small
+ * humanoids. These gates decide whether a cast is legal, so they are typed,
+ * not narrative residue.
+ */
+function validateCorpseTargetEligibility(parent: Obj, path: string): void {
+  const eligibility = parent.targetEligibility;
+  if (eligibility === undefined) return;
+  if (
+    typeof eligibility !== 'object' ||
+    eligibility === null ||
+    Array.isArray(eligibility)
+  ) {
+    throw new RulesPackError(`${path}.targetEligibility must be an object`);
+  }
+  const obj = eligibility as Obj;
+  assertOnlyKeys(
+    obj,
+    `${path}.targetEligibility`,
+    new Set(['creatureType', 'sizes']),
+  );
+  reqStr(obj, 'creatureType', `${path}.targetEligibility`);
+  const sizes = reqStrArray(obj, 'sizes', `${path}.targetEligibility`);
+  if (sizes.length === 0) {
+    throw new RulesPackError(
+      `${path}.targetEligibility.sizes must be non-empty`,
+    );
+  }
+  sizes.forEach((size, i) => {
+    if (!SRD_CREATURE_SIZES.has(size)) {
+      throw new RulesPackError(
+        `${path}.targetEligibility.sizes[${i}] must be an SRD creature size, got ${JSON.stringify(size)}`,
+      );
+    }
+  });
+}
+
+/**
+ * Object-animation creation eligibility (o9bd.18.7.9 review 3): Animate
+ * Objects may only target nonmagical objects that are not worn or carried and
+ * no larger than Huge. Typed because these gates decide how many valid
+ * targets can be selected.
+ */
+function validateObjectTargetEligibility(parent: Obj, path: string): void {
+  const eligibility = parent.targetEligibility;
+  if (eligibility === undefined) return;
+  if (
+    typeof eligibility !== 'object' ||
+    eligibility === null ||
+    Array.isArray(eligibility)
+  ) {
+    throw new RulesPackError(`${path}.targetEligibility must be an object`);
+  }
+  const obj = eligibility as Obj;
+  assertOnlyKeys(
+    obj,
+    `${path}.targetEligibility`,
+    new Set(['nonmagical', 'notWornOrCarried', 'maxSize']),
+  );
+  if (obj.nonmagical !== undefined && obj.nonmagical !== true) {
+    throw new RulesPackError(
+      `${path}.targetEligibility.nonmagical must be true when present`,
+    );
+  }
+  if (obj.notWornOrCarried !== undefined && obj.notWornOrCarried !== true) {
+    throw new RulesPackError(
+      `${path}.targetEligibility.notWornOrCarried must be true when present`,
+    );
+  }
+  optEnum(obj, 'maxSize', `${path}.targetEligibility`, SRD_CREATURE_SIZES);
 }
 
 function validateCorpseAnimationSource(sourceObj: Obj, path: string): void {
@@ -1860,13 +1961,22 @@ function validateSummoningControl(control: Obj, path: string): boolean {
       'exclusiveInstance',
     ]),
   );
-  reqEnum(
+  if (Object.keys(control).length === 0) {
+    throw new RulesPackError(
+      `${path} must declare at least one control field or be omitted`,
+    );
+  }
+  // mode/defaultBehavior/initiative are optional: a structured field must not
+  // force the importer to invent a rule the source doesn't state (o9bd.18.7.9
+  // review 3). They are emitted only where the SRD defines an obedience/command
+  // mode, a no-command default behavior, or an initiative rule respectively.
+  optEnum(
     control,
     'mode',
     path,
     new Set(['obedient', 'friendly-commanded', 'independent-obedient']),
   );
-  reqEnum(
+  optEnum(
     control,
     'defaultBehavior',
     path,
@@ -1876,7 +1986,7 @@ function validateSummoningControl(control: Obj, path: string): boolean {
       'follows-caster-wishes',
     ]),
   );
-  reqEnum(
+  optEnum(
     control,
     'initiative',
     path,
@@ -1942,6 +2052,7 @@ function validateSummoningLifecycle(
     throw new RulesPackError(`${path}.lifecycle must be a non-empty array`);
   }
   let recastCount = 0;
+  const recastPriorStates: string[] = [];
   let hasTargetReversion = false;
   for (const [i, entry] of lifecycle.entries()) {
     const item = entry as Obj;
@@ -1952,6 +2063,7 @@ function validateSummoningLifecycle(
       new Set([
         'event',
         'result',
+        'priorState',
         'damageCarriesOver',
         'window',
         'reassertableByRecast',
@@ -1978,6 +2090,7 @@ function validateSummoningLifecycle(
       'action-dismissal:summoned-creature-disappears',
       'action-release:bond-ends-creature-disappears',
       'recast:existing-familiar-adopts-new-form',
+      'recast:familiar-reappears',
       'recast:same-steed-returns-restored',
       'recast:prior-duplicates-instantly-destroyed',
     ]);
@@ -1992,11 +2105,34 @@ function validateSummoningLifecycle(
       case 'zero-hit-points:duplicate-destroyed':
       case 'spell-ends:transformed-target-reverts':
       case 'zero-hit-points:transformed-target-reverts':
-      case 'recast:existing-familiar-adopts-new-form':
-      case 'recast:same-steed-returns-restored':
-      case 'recast:prior-duplicates-instantly-destroyed':
         assertOnlyKeys(item, itemPath, new Set(['event', 'result']));
         break;
+      case 'recast:existing-familiar-adopts-new-form':
+      case 'recast:familiar-reappears':
+      case 'recast:same-steed-returns-restored':
+      case 'recast:prior-duplicates-instantly-destroyed': {
+        // A recast transition is state-sensitive: what a re-cast does depends
+        // on whether the persistent actor is still active or already gone
+        // (o9bd.18.7.9 review 3). e.g. Find Familiar re-forms an active
+        // familiar but re-summons a familiar that dropped to 0 HP.
+        assertOnlyKeys(
+          item,
+          itemPath,
+          new Set(['event', 'result', 'priorState']),
+        );
+        const requiredPriorState =
+          result === 'existing-familiar-adopts-new-form' ||
+          result === 'prior-duplicates-instantly-destroyed'
+            ? 'active'
+            : 'gone';
+        const priorState = reqStr(item, 'priorState', itemPath);
+        if (priorState !== requiredPriorState) {
+          throw new RulesPackError(
+            `${itemPath}.priorState must be ${requiredPriorState} for ${result}`,
+          );
+        }
+        break;
+      }
       case 'spell-ends:animated-object-reverts':
         assertOnlyKeys(item, itemPath, new Set(['event', 'result']));
         break;
@@ -2052,7 +2188,12 @@ function validateSummoningLifecycle(
         }
         break;
     }
-    if (event === 'recast') recastCount += 1;
+    if (event === 'recast') {
+      recastCount += 1;
+      if (typeof item.priorState === 'string') {
+        recastPriorStates.push(item.priorState);
+      }
+    }
     if (result === 'transformed-target-reverts') hasTargetReversion = true;
     if (event === 'recast' && !exclusiveInstance) {
       throw new RulesPackError(
@@ -2164,9 +2305,14 @@ function validateSummoningLifecycle(
     optBool(item, 'damageCarriesOver', itemPath);
     optBool(item, 'dismissable', itemPath);
   }
-  if (exclusiveInstance && recastCount !== 1) {
+  if (exclusiveInstance && recastCount < 1) {
     throw new RulesPackError(
-      `${path}.lifecycle must carry exactly one recast entry when exclusiveInstance is true`,
+      `${path}.lifecycle must carry at least one recast entry when exclusiveInstance is true`,
+    );
+  }
+  if (recastPriorStates.length !== new Set(recastPriorStates).size) {
+    throw new RulesPackError(
+      `${path}.lifecycle recast entries must have distinct priorState values`,
     );
   }
   if (appearanceKind === 'target-transformation' && !hasTargetReversion) {
@@ -2202,10 +2348,16 @@ function validateSummoningEffect(effect: Obj, path: string): void {
     reqObj(effect, 'appears', path),
     `${path}.appears`,
   );
-  const exclusiveInstance = validateSummoningControl(
-    reqObj(effect, 'control', path),
-    `${path}.control`,
-  );
+  // control is optional: a spell such as Phantom Steed conjures a mount without
+  // stating any command/initiative rule, and forcing a control block would
+  // require inventing one (o9bd.18.7.9 review 3).
+  const exclusiveInstance =
+    effect.control === undefined
+      ? false
+      : validateSummoningControl(
+          reqObj(effect, 'control', path),
+          `${path}.control`,
+        );
   validateSummoningLifecycle(
     effect.lifecycle,
     path,
@@ -2346,33 +2498,41 @@ function validateSummoningEffect(effect: Obj, path: string): void {
         `${path}.dismissal.temporary`,
         new Set(['to', 'recall']),
       );
-      reqEnum(
+      const to = reqEnum(
         temporary,
         'to',
         `${path}.dismissal.temporary`,
         new Set(['pocket-dimension', 'dismissed']),
       );
-      if (temporary.recall !== undefined) {
-        const recall = reqObj(
-          temporary,
-          'recall',
-          `${path}.dismissal.temporary`,
-        );
-        assertOnlyKeys(
-          recall,
-          `${path}.dismissal.temporary.recall`,
-          new Set(['cost', 'rangeFeet']),
-        );
+      // Destination and recall economy are a discriminated pair, not two free
+      // knobs (o9bd.18.7.9 review 4): a familiar sent to a pocket dimension is
+      // recalled by an action within range (Find Familiar), while a steed that
+      // is simply dismissed returns only by recasting (Find Steed). Reject the
+      // impossible cross-combinations.
+      const recall = reqObj(temporary, 'recall', `${path}.dismissal.temporary`);
+      assertOnlyKeys(
+        recall,
+        `${path}.dismissal.temporary.recall`,
+        new Set(['cost', 'rangeFeet']),
+      );
+      if (to === 'pocket-dimension') {
         reqEnum(
           recall,
           'cost',
           `${path}.dismissal.temporary.recall`,
-          new Set(['action', 'recast']),
+          new Set(['action']),
         );
-        optInt(recall, 'rangeFeet', `${path}.dismissal.temporary.recall`, 1);
-        if (recall.cost === 'action' && recall.rangeFeet === undefined) {
+        reqInt(recall, 'rangeFeet', `${path}.dismissal.temporary.recall`, 1);
+      } else {
+        reqEnum(
+          recall,
+          'cost',
+          `${path}.dismissal.temporary.recall`,
+          new Set(['recast']),
+        );
+        if (recall.rangeFeet !== undefined) {
           throw new RulesPackError(
-            `${path}.dismissal.temporary.recall.rangeFeet is required for action recall`,
+            `${path}.dismissal.temporary.recall.rangeFeet is not valid for a recast recall`,
           );
         }
       }
