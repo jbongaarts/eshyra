@@ -1840,6 +1840,11 @@ function projectReviewedS1SpellEffects(
           pattern:
             /\breasserts? your control over up to four creatures you (?:have|[’']ve) animated with this spell\b/,
         },
+        {
+          label: 'higher-slot two additional undead',
+          pattern:
+            /\byou animate or reassert control over two additional undead creatures for each slot level above 3rd\b/,
+        },
       ]);
       return [
         {
@@ -1850,6 +1855,7 @@ function projectReviewedS1SpellEffects(
               { material: 'pile of bones', becomesRef: 'creature:skeleton' },
               { material: 'corpse', becomesRef: 'creature:zombie' },
             ],
+            higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
           },
           control: {
             mode: 'obedient',
@@ -1891,6 +1897,11 @@ function projectReviewedS1SpellEffects(
           pattern:
             /\bWhen the animated object drops to 0 hit points, it reverts to its original object form, and any remaining damage carries over\b/,
         },
+        {
+          label: 'higher-slot two additional objects',
+          pattern:
+            /\byou can animate two additional objects for each slot level above 5th\b/,
+        },
       ]);
       return [
         {
@@ -1900,6 +1911,7 @@ function projectReviewedS1SpellEffects(
             maxObjects: 10,
             sizeCosts: { medium: 2, large: 4, huge: 8 },
             statTableRef: 'table:animated-object-statistics',
+            higherSlotScaling: { perSlotAbove: 5, additionalTargets: 2 },
           },
           control: {
             mode: 'obedient',
@@ -1932,6 +1944,11 @@ function projectReviewedS1SpellEffects(
           label: 'verbal commands',
           pattern:
             /\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
+        },
+        {
+          label: 'higher-slot multipliers',
+          pattern:
+            /\btwice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot\b/,
         },
       ]);
       return [
@@ -2020,6 +2037,11 @@ function projectReviewedS1SpellEffects(
           pattern:
             /\bIf your concentration is broken, the elemental doesn[’']t disappear\. Instead, you lose control of the elemental, it becomes hostile\b[\s\S]*?\bcan[’']t be dismissed by you\b[\s\S]*?\bdisappears 1 hour after you summoned it\b/,
         },
+        {
+          label: 'higher-slot challenge increase',
+          pattern:
+            /\bthe challenge rating increases by 1 for each slot level above 5th\b/,
+        },
       ]);
       return [
         {
@@ -2072,6 +2094,11 @@ function projectReviewedS1SpellEffects(
           pattern:
             /\bIf your concentration is broken, the fey creature doesn[’']t disappear\. Instead, you lose control of the fey creature, it becomes hostile\b[\s\S]*?\bcan[’']t be dismissed by you\b[\s\S]*?\bdisappears 1 hour after you summoned it\b/,
         },
+        {
+          label: 'higher-slot challenge increase',
+          pattern:
+            /\bthe challenge rating increases by 1 for each slot level above 6th\b/,
+        },
       ]);
       return [
         {
@@ -2116,6 +2143,11 @@ function projectReviewedS1SpellEffects(
           pattern:
             /\bRoll initiative for the summoned creatures as a group\b[\s\S]*?\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
         },
+        {
+          label: 'higher-slot multipliers',
+          pattern:
+            /\btwice as many with a 6th-level slot and three times as many with an 8th-level slot\b/,
+        },
       ]);
       return [
         {
@@ -2156,6 +2188,11 @@ function projectReviewedS1SpellEffects(
           label: 'group initiative and commands',
           pattern:
             /\bRoll initiative for the summoned creatures as a group\b[\s\S]*?\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
+        },
+        {
+          label: 'higher-slot multipliers',
+          pattern:
+            /\btwice as many with a 6th-level slot and three times as many with an 8th-level slot\b/,
         },
       ]);
       return [
@@ -2206,14 +2243,78 @@ function projectReviewedS1SpellEffects(
           label: '24-hour control window',
           pattern: /\bThe creature is under your control for 24 hours\b/,
         },
+        {
+          label: 'higher-slot undead variants',
+          pattern:
+            /\b7th-level spell slot\b[\s\S]*?\bfour ghouls\b[\s\S]*?\b8th-level spell slot\b[\s\S]*?\bfive ghouls or two ghasts or wights\b[\s\S]*?\b9th-level spell slot\b[\s\S]*?\bsix ghouls, three ghasts or wights, or two mummies\b/,
+        },
       ]);
       return [
         {
           kind: 'summoning',
           appears: {
             kind: 'corpse-animation',
-            sources: [{ material: 'corpse', becomesRef: 'creature:ghoul' }],
+            sources: [
+              { material: 'corpse', becomesRef: 'creature:ghoul', count: 3 },
+            ],
             castingConstraint: 'night-only',
+            higherSlotOptions: [
+              {
+                level: 7,
+                options: [
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghoul',
+                    count: 4,
+                  },
+                ],
+              },
+              {
+                level: 8,
+                options: [
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghoul',
+                    count: 5,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghast',
+                    count: 2,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:wight',
+                    count: 2,
+                  },
+                ],
+              },
+              {
+                level: 9,
+                options: [
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghoul',
+                    count: 6,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghast',
+                    count: 3,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:wight',
+                    count: 3,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:mummy',
+                    count: 2,
+                  },
+                ],
+              },
+            ],
           },
           control: {
             mode: 'obedient',
@@ -2260,6 +2361,15 @@ function projectReviewedS1SpellEffects(
           label: 'recast form',
           pattern:
             /\bIf you cast this spell while you already have a familiar, you instead cause it to adopt a new form\b/,
+        },
+        {
+          label: 'pocket dimension dismissal and recall',
+          pattern:
+            /\bAs an action, you can temporarily dismiss your familiar\b[\s\S]*?\bpocket dimension\b[\s\S]*?\bAs an action while it is temporarily dismissed, you can cause it to reappear in any unoccupied space within 30 feet of you\b/,
+        },
+        {
+          label: 'exclusive familiar',
+          pattern: /\bYou can[’']t have more than one familiar at a time\b/,
         },
       ]);
       return [
@@ -2329,6 +2439,11 @@ function projectReviewedS1SpellEffects(
             /\bthe steed takes on a form that you choose: a warhorse, a pony, a camel, an elk, or a mastiff\b/,
         },
         {
+          label: 'celestial fey fiend',
+          pattern:
+            /\bit is a celestial, fey, or fiend \(your choice\) instead of its normal type\b/,
+        },
+        {
           label: 'intelligence and language',
           pattern:
             /\bif your steed has an Intelligence of 5 or less, its Intelligence becomes 6\b[\s\S]*?\bgains the ability to understand one language of your choice\b/,
@@ -2347,6 +2462,11 @@ function projectReviewedS1SpellEffects(
           label: 'same steed restored',
           pattern:
             /\bWhen the steed drops to 0 hit points\b[\s\S]*?\bcasting this spell again summons the same steed\b[\s\S]*?\brestored to its hit point maximum\b/,
+        },
+        {
+          label: 'exclusive steed',
+          pattern:
+            /\bYou can[’']t have more than one steed bonded by this spell at a time\b/,
         },
       ]);
       return [
@@ -2428,7 +2548,7 @@ function projectReviewedS1SpellEffects(
             mode: 'obedient',
             commandEconomy: { cost: 'on-your-turn' },
             defaultBehavior: 'defends-otherwise-idle',
-            initiative: 'own-turn',
+            initiative: 'acts-on-casters-turn',
           },
           lifecycle: [
             { event: 'spell-ends', result: 'transformed-target-reverts' },
@@ -2444,6 +2564,11 @@ function projectReviewedS1SpellEffects(
           pattern: /\buses the statistics for a riding horse\b/,
         },
         { label: 'speed', pattern: /\bit has a speed of 100 feet\b/ },
+        {
+          label: 'travel rates',
+          pattern:
+            /\bcan travel 10 miles in an hour, or 13 miles at a fast pace\b/,
+        },
         {
           label: 'fade on damage or end',
           pattern:
@@ -2481,6 +2606,7 @@ function projectReviewedS1SpellEffects(
             },
           ],
           modifications: [{ attribute: 'speed', mode: 'walk', value: 100 }],
+          travel: { normalMilesPerHour: 10, fastMilesPerHour: 13 },
         },
       ];
     case 'simulacrum':

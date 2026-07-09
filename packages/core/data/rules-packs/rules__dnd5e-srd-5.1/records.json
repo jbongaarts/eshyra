@@ -103332,7 +103332,11 @@
                   "material": "corpse",
                   "becomesRef": "creature:zombie"
                 }
-              ]
+              ],
+              "higherSlotScaling": {
+                "perSlotAbove": 3,
+                "additionalTargets": 2
+              }
             },
             "control": {
               "mode": "obedient",
@@ -103436,7 +103440,11 @@
                 "large": 4,
                 "huge": 8
               },
-              "statTableRef": "table:animated-object-statistics"
+              "statTableRef": "table:animated-object-statistics",
+              "higherSlotScaling": {
+                "perSlotAbove": 5,
+                "additionalTargets": 2
+              }
             },
             "control": {
               "mode": "obedient",
@@ -107654,10 +107662,68 @@
               "sources": [
                 {
                   "material": "corpse",
-                  "becomesRef": "creature:ghoul"
+                  "becomesRef": "creature:ghoul",
+                  "count": 3
                 }
               ],
-              "castingConstraint": "night-only"
+              "castingConstraint": "night-only",
+              "higherSlotOptions": [
+                {
+                  "level": 7,
+                  "options": [
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:ghoul",
+                      "count": 4
+                    }
+                  ]
+                },
+                {
+                  "level": 8,
+                  "options": [
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:ghoul",
+                      "count": 5
+                    },
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:ghast",
+                      "count": 2
+                    },
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:wight",
+                      "count": 2
+                    }
+                  ]
+                },
+                {
+                  "level": 9,
+                  "options": [
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:ghoul",
+                      "count": 6
+                    },
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:ghast",
+                      "count": 3
+                    },
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:wight",
+                      "count": 3
+                    },
+                    {
+                      "material": "corpse",
+                      "becomesRef": "creature:mummy",
+                      "count": 2
+                    }
+                  ]
+                }
+              ]
             },
             "control": {
               "mode": "obedient",
@@ -112459,7 +112525,7 @@
                 "cost": "on-your-turn"
               },
               "defaultBehavior": "defends-otherwise-idle",
-              "initiative": "own-turn"
+              "initiative": "acts-on-casters-turn"
             },
             "lifecycle": [
               {
@@ -117930,7 +117996,11 @@
                 "mode": "walk",
                 "value": 100
               }
-            ]
+            ],
+            "travel": {
+              "normalMilesPerHour": 10,
+              "fastMilesPerHour": 13
+            }
           }
         ]
       },

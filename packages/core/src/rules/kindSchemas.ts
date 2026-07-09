@@ -983,6 +983,24 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     effects.forEach((effect, i) => {
       validateMechanicsEffect(effect, `${path}.${key}.effects[${i}]`);
     });
+    effects.forEach((effect, i) => {
+      if (
+        effect.kind === 'summoning' &&
+        summoningHasLifecycleEvent(effect, 'concentration-broken')
+      ) {
+        const duration = mechanics.duration;
+        const isConcentration =
+          typeof duration === 'object' &&
+          duration !== null &&
+          !Array.isArray(duration) &&
+          (duration as Obj).concentration === true;
+        if (!isConcentration) {
+          throw new RulesPackError(
+            `${path}.${key}.effects[${i}] concentration-broken lifecycle requires a concentration duration`,
+          );
+        }
+      }
+    });
   }
   const levelApplication = mechanics.levelApplication;
   if (
@@ -1511,6 +1529,9 @@ function validatePositiveIntRecord(value: unknown, path: string): void {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new RulesPackError(`${path} must be an object`);
   }
+  if (Object.keys(value as Obj).length === 0) {
+    throw new RulesPackError(`${path} must not be empty`);
+  }
   for (const [key, entry] of Object.entries(value as Obj)) {
     if (!Number.isInteger(entry) || (entry as number) < 1) {
       throw new RulesPackError(`${path}.${key} must be a positive integer`);
@@ -1518,16 +1539,70 @@ function validatePositiveIntRecord(value: unknown, path: string): void {
   }
 }
 
+function assertOnlyKeys(
+  obj: Obj,
+  path: string,
+  allowed: ReadonlySet<string>,
+): void {
+  for (const key of Object.keys(obj)) {
+    if (!allowed.has(key)) {
+      throw new RulesPackError(
+        `${path} has unexpected payload key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+}
+
+function reqObjArray(parent: Obj, key: string, path: string): readonly Obj[] {
+  const value = parent[key];
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new RulesPackError(`${path}.${key} must be a non-empty array`);
+  }
+  return value.map((item, i) => {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      throw new RulesPackError(`${path}.${key}[${i}] must be an object`);
+    }
+    return item as Obj;
+  });
+}
+
 function validateSummoningAppearance(appearance: Obj, path: string): string {
+  assertOnlyKeys(
+    appearance,
+    path,
+    new Set([
+      'kind',
+      'options',
+      'higherSlotMultipliers',
+      'maxChallenge',
+      'ofTypes',
+      'higherSlot',
+      'higherSlotScaling',
+      'forms',
+      'targets',
+      'sources',
+      'castingConstraint',
+      'higherSlotOptions',
+      'maxObjects',
+      'sizeCosts',
+      'statTableRef',
+      'of',
+    ]),
+  );
   const kind = reqStr(appearance, 'kind', path);
   switch (kind) {
     case 'option-menu': {
-      const options = appearance.options;
-      if (!Array.isArray(options) || options.length === 0) {
-        throw new RulesPackError(`${path}.options must be a non-empty array`);
-      }
-      options.forEach((option, i) => {
-        const optionObj = option as Obj;
+      assertOnlyKeys(
+        appearance,
+        path,
+        new Set(['kind', 'options', 'higherSlotMultipliers']),
+      );
+      reqObjArray(appearance, 'options', path).forEach((optionObj, i) => {
+        assertOnlyKeys(
+          optionObj,
+          `${path}.options[${i}]`,
+          new Set(['count', 'maxChallenge']),
+        );
         reqInt(optionObj, 'count', `${path}.options[${i}]`, 1);
         reqChallenge(optionObj, 'maxChallenge', `${path}.options[${i}]`);
       });
@@ -1536,10 +1611,24 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
           appearance.higherSlotMultipliers,
           `${path}.higherSlotMultipliers`,
         );
+        for (const level of Object.keys(
+          appearance.higherSlotMultipliers as Obj,
+        )) {
+          if (!/^\d+$/.test(level) || Number(level) < 1) {
+            throw new RulesPackError(
+              `${path}.higherSlotMultipliers keys must be positive spell levels`,
+            );
+          }
+        }
       }
       return kind;
     }
     case 'cr-cap': {
+      assertOnlyKeys(
+        appearance,
+        path,
+        new Set(['kind', 'maxChallenge', 'ofTypes', 'higherSlot']),
+      );
       reqChallenge(appearance, 'maxChallenge', path);
       if (reqStrArray(appearance, 'ofTypes', path).length === 0) {
         throw new RulesPackError(`${path}.ofTypes must be non-empty`);
@@ -1547,6 +1636,16 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       const higherSlot = appearance.higherSlot;
       if (higherSlot !== undefined) {
         const higher = higherSlot as Obj;
+        assertOnlyKeys(
+          higher,
+          `${path}.higherSlot`,
+          new Set([
+            'level',
+            'maxChallenge',
+            'perSlotAbove',
+            'challengeIncrease',
+          ]),
+        );
         if (higher.level !== undefined) {
           reqInt(higher, 'level', `${path}.higherSlot`, 1);
           reqChallenge(higher, 'maxChallenge', `${path}.higherSlot`);
@@ -1558,12 +1657,13 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       return kind;
     }
     case 'form-list': {
-      const forms = appearance.forms;
-      if (!Array.isArray(forms) || forms.length === 0) {
-        throw new RulesPackError(`${path}.forms must be a non-empty array`);
-      }
-      forms.forEach((form, i) => {
-        const formObj = form as Obj;
+      assertOnlyKeys(appearance, path, new Set(['kind', 'forms']));
+      reqObjArray(appearance, 'forms', path).forEach((formObj, i) => {
+        assertOnlyKeys(
+          formObj,
+          `${path}.forms[${i}]`,
+          new Set(['name', 'creatureRef', 'speedOverrides']),
+        );
         reqStr(formObj, 'name', `${path}.forms[${i}]`);
         optStr(formObj, 'creatureRef', `${path}.forms[${i}]`);
         const ref = formObj.creatureRef;
@@ -1582,12 +1682,13 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       return kind;
     }
     case 'target-transformation': {
-      const targets = appearance.targets;
-      if (!Array.isArray(targets) || targets.length === 0) {
-        throw new RulesPackError(`${path}.targets must be a non-empty array`);
-      }
-      targets.forEach((target, i) => {
-        const targetObj = target as Obj;
+      assertOnlyKeys(appearance, path, new Set(['kind', 'targets']));
+      reqObjArray(appearance, 'targets', path).forEach((targetObj, i) => {
+        assertOnlyKeys(
+          targetObj,
+          `${path}.targets[${i}]`,
+          new Set(['count', 'from', 'toRef']),
+        );
         reqInt(targetObj, 'count', `${path}.targets[${i}]`, 1);
         reqStr(targetObj, 'from', `${path}.targets[${i}]`);
         const ref = reqStr(targetObj, 'toRef', `${path}.targets[${i}]`);
@@ -1600,31 +1701,91 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       return kind;
     }
     case 'corpse-animation': {
-      const sources = appearance.sources;
-      if (!Array.isArray(sources) || sources.length === 0) {
-        throw new RulesPackError(`${path}.sources must be a non-empty array`);
-      }
-      sources.forEach((source, i) => {
-        const sourceObj = source as Obj;
-        reqStr(sourceObj, 'material', `${path}.sources[${i}]`);
-        const ref = reqStr(sourceObj, 'becomesRef', `${path}.sources[${i}]`);
-        if (!ref.startsWith('creature:')) {
+      assertOnlyKeys(
+        appearance,
+        path,
+        new Set([
+          'kind',
+          'sources',
+          'castingConstraint',
+          'higherSlotScaling',
+          'higherSlotOptions',
+        ]),
+      );
+      reqObjArray(appearance, 'sources', path).forEach((sourceObj, i) => {
+        validateCorpseAnimationSource(sourceObj, `${path}.sources[${i}]`);
+      });
+      const higherSlotOptions = appearance.higherSlotOptions;
+      if (higherSlotOptions !== undefined) {
+        if (
+          !Array.isArray(higherSlotOptions) ||
+          higherSlotOptions.length === 0
+        ) {
           throw new RulesPackError(
-            `${path}.sources[${i}].becomesRef must be a 'creature:' ref`,
+            `${path}.higherSlotOptions must be a non-empty array`,
           );
         }
-      });
+        higherSlotOptions.forEach((option, i) => {
+          if (
+            typeof option !== 'object' ||
+            option === null ||
+            Array.isArray(option)
+          ) {
+            throw new RulesPackError(
+              `${path}.higherSlotOptions[${i}] must be an object`,
+            );
+          }
+          const optionObj = option as Obj;
+          assertOnlyKeys(
+            optionObj,
+            `${path}.higherSlotOptions[${i}]`,
+            new Set(['level', 'options']),
+          );
+          reqInt(optionObj, 'level', `${path}.higherSlotOptions[${i}]`, 1);
+          reqObjArray(
+            optionObj,
+            'options',
+            `${path}.higherSlotOptions[${i}]`,
+          ).forEach((sourceObj, j) => {
+            validateCorpseAnimationSource(
+              sourceObj,
+              `${path}.higherSlotOptions[${i}].options[${j}]`,
+            );
+          });
+        });
+      }
       optStr(appearance, 'castingConstraint', path);
+      validateSummoningHigherSlotScaling(appearance, path);
       return kind;
     }
     case 'object-animation':
+      assertOnlyKeys(
+        appearance,
+        path,
+        new Set([
+          'kind',
+          'maxObjects',
+          'sizeCosts',
+          'statTableRef',
+          'higherSlotScaling',
+        ]),
+      );
       reqInt(appearance, 'maxObjects', path, 1);
       validatePositiveIntRecord(appearance.sizeCosts, `${path}.sizeCosts`);
+      for (const size of Object.keys(appearance.sizeCosts as Obj)) {
+        if (!new Set(['medium', 'large', 'huge']).has(size)) {
+          throw new RulesPackError(
+            `${path}.sizeCosts has unsupported size ${size}`,
+          );
+        }
+      }
       if (!reqStr(appearance, 'statTableRef', path).startsWith('table:')) {
         throw new RulesPackError(`${path}.statTableRef must be a 'table:' ref`);
       }
+      validateSummoningHigherSlotScaling(appearance, path);
       return kind;
     case 'duplicate':
+      assertOnlyKeys(appearance, path, new Set(['kind', 'of']));
       reqStr(appearance, 'of', path);
       return kind;
     default:
@@ -1632,7 +1793,60 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
   }
 }
 
+function validateSummoningHigherSlotScaling(parent: Obj, path: string): void {
+  const scaling = parent.higherSlotScaling;
+  if (scaling === undefined) return;
+  if (
+    typeof scaling !== 'object' ||
+    scaling === null ||
+    Array.isArray(scaling)
+  ) {
+    throw new RulesPackError(`${path}.higherSlotScaling must be an object`);
+  }
+  const scalingObj = scaling as Obj;
+  assertOnlyKeys(
+    scalingObj,
+    `${path}.higherSlotScaling`,
+    new Set(['perSlotAbove', 'additionalTargets', 'challengeIncrease']),
+  );
+  reqInt(scalingObj, 'perSlotAbove', `${path}.higherSlotScaling`, 1);
+  if (
+    scalingObj.additionalTargets === undefined &&
+    scalingObj.challengeIncrease === undefined
+  ) {
+    throw new RulesPackError(
+      `${path}.higherSlotScaling must carry additionalTargets or challengeIncrease`,
+    );
+  }
+  optInt(scalingObj, 'additionalTargets', `${path}.higherSlotScaling`, 1);
+  optInt(scalingObj, 'challengeIncrease', `${path}.higherSlotScaling`, 1);
+}
+
+function validateCorpseAnimationSource(sourceObj: Obj, path: string): void {
+  assertOnlyKeys(sourceObj, path, new Set(['material', 'becomesRef', 'count']));
+  reqStr(sourceObj, 'material', path);
+  const ref = reqStr(sourceObj, 'becomesRef', path);
+  if (!ref.startsWith('creature:')) {
+    throw new RulesPackError(`${path}.becomesRef must be a 'creature:' ref`);
+  }
+  optInt(sourceObj, 'count', path, 1);
+}
+
 function validateSummoningControl(control: Obj, path: string): boolean {
+  assertOnlyKeys(
+    control,
+    path,
+    new Set([
+      'mode',
+      'commandEconomy',
+      'alignmentLimited',
+      'defaultBehavior',
+      'initiative',
+      'window',
+      'reassert',
+      'exclusiveInstance',
+    ]),
+  );
   reqEnum(
     control,
     'mode',
@@ -1654,6 +1868,11 @@ function validateSummoningControl(control: Obj, path: string): boolean {
   const commandEconomy = control.commandEconomy;
   if (commandEconomy !== undefined) {
     const command = commandEconomy as Obj;
+    assertOnlyKeys(
+      command,
+      `${path}.commandEconomy`,
+      new Set(['cost', 'rangeFeet']),
+    );
     reqEnum(
       command,
       'cost',
@@ -1666,6 +1885,7 @@ function validateSummoningControl(control: Obj, path: string): boolean {
   const window = control.window;
   if (window !== undefined) {
     const windowObj = window as Obj;
+    assertOnlyKeys(windowObj, `${path}.window`, new Set(['amount', 'unit']));
     reqInt(windowObj, 'amount', `${path}.window`, 1);
     reqEnum(windowObj, 'unit', `${path}.window`, new Set(['hour']));
     if (commandEconomy === undefined) {
@@ -1674,7 +1894,9 @@ function validateSummoningControl(control: Obj, path: string): boolean {
   }
   const reassert = control.reassert;
   if (reassert !== undefined) {
-    reqInt(reassert as Obj, 'maxCreatures', `${path}.reassert`, 1);
+    const reassertObj = reassert as Obj;
+    assertOnlyKeys(reassertObj, `${path}.reassert`, new Set(['maxCreatures']));
+    reqInt(reassertObj, 'maxCreatures', `${path}.reassert`, 1);
     if (commandEconomy === undefined) {
       throw new RulesPackError(`${path}.reassert requires commandEconomy`);
     }
@@ -1691,6 +1913,7 @@ function validateSummoningLifecycle(
   path: string,
   appearanceKind: string,
   exclusiveInstance: boolean,
+  controlHasWindow: boolean,
 ): void {
   if (!Array.isArray(lifecycle) || lifecycle.length === 0) {
     throw new RulesPackError(`${path}.lifecycle must be a non-empty array`);
@@ -1700,8 +1923,104 @@ function validateSummoningLifecycle(
   for (const [i, entry] of lifecycle.entries()) {
     const item = entry as Obj;
     const itemPath = `${path}.lifecycle[${i}]`;
+    assertOnlyKeys(
+      item,
+      itemPath,
+      new Set([
+        'event',
+        'result',
+        'damageCarriesOver',
+        'window',
+        'reassertableByRecast',
+        'dismissable',
+        'disappearsAfter',
+        'transition',
+      ]),
+    );
     const event = reqStr(item, 'event', itemPath);
     const result = reqStr(item, 'result', itemPath);
+    const pair = `${event}:${result}`;
+    const allowedLifecyclePairs = new Set([
+      'spell-ends:summoned-creature-disappears',
+      'zero-hit-points:summoned-creature-disappears',
+      'spell-ends:animated-object-reverts',
+      'control-window-expires:animated-creature-persists-uncontrolled',
+      'concentration-broken:uncontrolled-hostile',
+      'damage-taken:effect-fades',
+      'spell-ends:effect-fades',
+      'zero-hit-points:duplicate-destroyed',
+      'spell-ends:transformed-target-reverts',
+      'zero-hit-points:transformed-target-reverts',
+      'recast:existing-familiar-adopts-new-form',
+      'recast:same-steed-returns-restored',
+      'recast:prior-duplicates-instantly-destroyed',
+    ]);
+    if (!allowedLifecyclePairs.has(pair)) {
+      throw new RulesPackError(`${itemPath} has unsupported lifecycle pair`);
+    }
+    switch (pair) {
+      case 'spell-ends:summoned-creature-disappears':
+      case 'zero-hit-points:summoned-creature-disappears':
+      case 'zero-hit-points:duplicate-destroyed':
+      case 'spell-ends:transformed-target-reverts':
+      case 'zero-hit-points:transformed-target-reverts':
+      case 'recast:existing-familiar-adopts-new-form':
+      case 'recast:same-steed-returns-restored':
+      case 'recast:prior-duplicates-instantly-destroyed':
+        assertOnlyKeys(item, itemPath, new Set(['event', 'result']));
+        break;
+      case 'spell-ends:animated-object-reverts':
+        assertOnlyKeys(
+          item,
+          itemPath,
+          new Set(['event', 'result', 'damageCarriesOver']),
+        );
+        if (item.damageCarriesOver !== true) {
+          throw new RulesPackError(
+            `${itemPath}.damageCarriesOver must be true`,
+          );
+        }
+        break;
+      case 'control-window-expires:animated-creature-persists-uncontrolled':
+        assertOnlyKeys(
+          item,
+          itemPath,
+          new Set(['event', 'result', 'window', 'reassertableByRecast']),
+        );
+        if (item.window === undefined) {
+          throw new RulesPackError(`${itemPath}.window is required`);
+        }
+        if (item.reassertableByRecast === undefined) {
+          throw new RulesPackError(
+            `${itemPath}.reassertableByRecast is required`,
+          );
+        }
+        break;
+      case 'concentration-broken:uncontrolled-hostile':
+        assertOnlyKeys(
+          item,
+          itemPath,
+          new Set(['event', 'result', 'dismissable', 'disappearsAfter']),
+        );
+        if (item.dismissable !== false) {
+          throw new RulesPackError(`${itemPath}.dismissable must be false`);
+        }
+        if (item.disappearsAfter === undefined) {
+          throw new RulesPackError(`${itemPath}.disappearsAfter is required`);
+        }
+        break;
+      case 'damage-taken:effect-fades':
+      case 'spell-ends:effect-fades':
+        assertOnlyKeys(
+          item,
+          itemPath,
+          new Set(['event', 'result', 'transition']),
+        );
+        if (item.transition === undefined) {
+          throw new RulesPackError(`${itemPath}.transition is required`);
+        }
+        break;
+    }
     if (event === 'recast') recastCount += 1;
     if (result === 'transformed-target-reverts') hasTargetReversion = true;
     if (event === 'recast' && !exclusiveInstance) {
@@ -1717,12 +2036,53 @@ function validateSummoningLifecycle(
         `${itemPath}.damageCarriesOver is not valid for transformed-target-reverts`,
       );
     }
+    if (
+      result === 'animated-creature-persists-uncontrolled' &&
+      !controlHasWindow
+    ) {
+      throw new RulesPackError(`${itemPath}.result requires control.window`);
+    }
+    if (
+      appearanceKind === 'corpse-animation' &&
+      result === 'summoned-creature-disappears'
+    ) {
+      throw new RulesPackError(
+        `${itemPath}.result summoned-creature-disappears is not valid for corpse-animation`,
+      );
+    }
+    if (
+      appearanceKind === 'target-transformation' &&
+      (result === 'summoned-creature-disappears' ||
+        result === 'animated-object-reverts')
+    ) {
+      throw new RulesPackError(
+        `${itemPath}.result is not valid for target-transformation`,
+      );
+    }
+    if (
+      result === 'animated-object-reverts' &&
+      appearanceKind !== 'object-animation'
+    ) {
+      throw new RulesPackError(
+        `${itemPath}.result animated-object-reverts requires object-animation`,
+      );
+    }
     if (item.window !== undefined) {
       const windowObj = item.window as Obj;
+      assertOnlyKeys(
+        windowObj,
+        `${itemPath}.window`,
+        new Set(['amount', 'unit']),
+      );
       reqInt(windowObj, 'amount', `${itemPath}.window`, 1);
       reqEnum(windowObj, 'unit', `${itemPath}.window`, new Set(['hour']));
     }
     if (item.reassertableByRecast !== undefined) {
+      assertOnlyKeys(
+        item.reassertableByRecast as Obj,
+        `${itemPath}.reassertableByRecast`,
+        new Set(['maxCreatures']),
+      );
       reqInt(
         item.reassertableByRecast as Obj,
         'maxCreatures',
@@ -1732,6 +2092,11 @@ function validateSummoningLifecycle(
     }
     if (item.disappearsAfter !== undefined) {
       const after = item.disappearsAfter as Obj;
+      assertOnlyKeys(
+        after,
+        `${itemPath}.disappearsAfter`,
+        new Set(['amount', 'unit']),
+      );
       reqInt(after, 'amount', `${itemPath}.disappearsAfter`, 1);
       reqEnum(
         after,
@@ -1742,6 +2107,11 @@ function validateSummoningLifecycle(
     }
     if (item.transition !== undefined) {
       const transition = item.transition as Obj;
+      assertOnlyKeys(
+        transition,
+        `${itemPath}.transition`,
+        new Set(['amount', 'unit']),
+      );
       reqInt(transition, 'amount', `${itemPath}.transition`, 1);
       reqEnum(
         transition,
@@ -1766,6 +2136,27 @@ function validateSummoningLifecycle(
 }
 
 function validateSummoningEffect(effect: Obj, path: string): void {
+  assertOnlyKeys(
+    effect,
+    path,
+    new Set([
+      'kind',
+      'appears',
+      'creatureType',
+      'control',
+      'lifecycle',
+      'sourceRequirement',
+      'dismissal',
+      'modifications',
+      'telepathy',
+      'senseSharing',
+      'spellDelivery',
+      'spellSharing',
+      'repair',
+      'travel',
+      'riders',
+    ]),
+  );
   const appearanceKind = validateSummoningAppearance(
     reqObj(effect, 'appears', path),
     `${path}.appears`,
@@ -1779,10 +2170,16 @@ function validateSummoningEffect(effect: Obj, path: string): void {
     path,
     appearanceKind,
     exclusiveInstance,
+    (effect.control as Obj | undefined)?.window !== undefined,
   );
   const creatureType = effect.creatureType;
   if (creatureType !== undefined) {
     const typeObj = creatureType as Obj;
+    assertOnlyKeys(
+      typeObj,
+      `${path}.creatureType`,
+      new Set(['treatedAs', 'chooseOne']),
+    );
     if (
       reqStrArray(typeObj, 'treatedAs', `${path}.creatureType`).length === 0
     ) {
@@ -1795,6 +2192,11 @@ function validateSummoningEffect(effect: Obj, path: string): void {
   const sourceRequirement = effect.sourceRequirement;
   if (sourceRequirement !== undefined) {
     const source = sourceRequirement as Obj;
+    assertOnlyKeys(
+      source,
+      `${path}.sourceRequirement`,
+      new Set(['shape', 'sizeFeet', 'materialOrTerrain']),
+    );
     reqEnum(source, 'shape', `${path}.sourceRequirement`, new Set(['cube']));
     reqInt(source, 'sizeFeet', `${path}.sourceRequirement`, 1);
     if (
@@ -1807,25 +2209,43 @@ function validateSummoningEffect(effect: Obj, path: string): void {
     }
   }
   if (effect.telepathy !== undefined) {
-    reqInt(effect.telepathy as Obj, 'rangeFeet', `${path}.telepathy`, 1);
+    const telepathy = effect.telepathy as Obj;
+    assertOnlyKeys(telepathy, `${path}.telepathy`, new Set(['rangeFeet']));
+    reqInt(telepathy, 'rangeFeet', `${path}.telepathy`, 1);
   }
   if (effect.senseSharing !== undefined) {
     const sharing = effect.senseSharing as Obj;
+    assertOnlyKeys(
+      sharing,
+      `${path}.senseSharing`,
+      new Set(['cost', 'casterConditionWhileSharing']),
+    );
     reqEnum(sharing, 'cost', `${path}.senseSharing`, new Set(['action']));
-    if (
-      reqStrArray(
-        sharing,
-        'casterConditionWhileSharing',
-        `${path}.senseSharing`,
-      ).length === 0
-    ) {
+    const conditions = reqStrArray(
+      sharing,
+      'casterConditionWhileSharing',
+      `${path}.senseSharing`,
+    );
+    if (conditions.length === 0) {
       throw new RulesPackError(
         `${path}.senseSharing.casterConditionWhileSharing must be non-empty`,
       );
     }
+    conditions.forEach((condition, i) => {
+      if (!new Set(['deaf', 'blind']).has(condition)) {
+        throw new RulesPackError(
+          `${path}.senseSharing.casterConditionWhileSharing[${i}] must be deaf or blind`,
+        );
+      }
+    });
   }
   if (effect.spellDelivery !== undefined) {
     const delivery = effect.spellDelivery as Obj;
+    assertOnlyKeys(
+      delivery,
+      `${path}.spellDelivery`,
+      new Set(['spellRange', 'cost']),
+    );
     reqEnum(
       delivery,
       'spellRange',
@@ -1836,6 +2256,11 @@ function validateSummoningEffect(effect: Obj, path: string): void {
   }
   if (effect.spellSharing !== undefined) {
     const sharing = effect.spellSharing as Obj;
+    assertOnlyKeys(
+      sharing,
+      `${path}.spellSharing`,
+      new Set(['when', 'requiresMounted', 'alsoAffects']),
+    );
     reqEnum(
       sharing,
       'when',
@@ -1850,12 +2275,135 @@ function validateSummoningEffect(effect: Obj, path: string): void {
     reqEnum(sharing, 'alsoAffects', `${path}.spellSharing`, new Set(['steed']));
   }
   if (effect.repair !== undefined) {
-    reqInt(effect.repair as Obj, 'costGpPerHitPoint', `${path}.repair`, 1);
+    const repair = effect.repair as Obj;
+    assertOnlyKeys(repair, `${path}.repair`, new Set(['costGpPerHitPoint']));
+    reqInt(repair, 'costGpPerHitPoint', `${path}.repair`, 1);
+  }
+  if (effect.travel !== undefined) {
+    const travel = effect.travel as Obj;
+    assertOnlyKeys(
+      travel,
+      `${path}.travel`,
+      new Set(['normalMilesPerHour', 'fastMilesPerHour']),
+    );
+    reqInt(travel, 'normalMilesPerHour', `${path}.travel`, 1);
+    reqInt(travel, 'fastMilesPerHour', `${path}.travel`, 1);
   }
   if (effect.dismissal !== undefined) {
     const dismissal = effect.dismissal as Obj;
+    assertOnlyKeys(
+      dismissal,
+      `${path}.dismissal`,
+      new Set(['cost', 'temporary']),
+    );
     reqEnum(dismissal, 'cost', `${path}.dismissal`, new Set(['action']));
+    if (dismissal.temporary !== undefined) {
+      const temporary = dismissal.temporary as Obj;
+      assertOnlyKeys(
+        temporary,
+        `${path}.dismissal.temporary`,
+        new Set(['to', 'recall']),
+      );
+      reqEnum(
+        temporary,
+        'to',
+        `${path}.dismissal.temporary`,
+        new Set(['pocket-dimension']),
+      );
+      const recall = reqObj(temporary, 'recall', `${path}.dismissal.temporary`);
+      assertOnlyKeys(
+        recall,
+        `${path}.dismissal.temporary.recall`,
+        new Set(['cost', 'rangeFeet']),
+      );
+      reqEnum(
+        recall,
+        'cost',
+        `${path}.dismissal.temporary.recall`,
+        new Set(['action']),
+      );
+      reqInt(recall, 'rangeFeet', `${path}.dismissal.temporary.recall`, 1);
+    }
   }
+  if (effect.modifications !== undefined) {
+    validateSummoningModifications(
+      effect.modifications,
+      `${path}.modifications`,
+    );
+  }
+  if (effect.riders !== undefined) {
+    if (!Array.isArray(effect.riders) || effect.riders.length === 0) {
+      throw new RulesPackError(`${path}.riders must be a non-empty array`);
+    }
+    effect.riders.forEach((rider, i) => {
+      if (typeof rider !== 'string' || rider.length === 0) {
+        throw new RulesPackError(
+          `${path}.riders[${i}] must be a non-empty string`,
+        );
+      }
+    });
+  }
+}
+
+function summoningHasLifecycleEvent(effect: Obj, event: string): boolean {
+  const lifecycle = effect.lifecycle;
+  return (
+    Array.isArray(lifecycle) &&
+    lifecycle.some(
+      (entry) =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        !Array.isArray(entry) &&
+        (entry as Obj).event === event,
+    )
+  );
+}
+
+function validateSummoningModifications(value: unknown, path: string): void {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new RulesPackError(`${path} must be a non-empty array`);
+  }
+  value.forEach((modification, i) => {
+    if (
+      typeof modification !== 'object' ||
+      modification === null ||
+      Array.isArray(modification)
+    ) {
+      throw new RulesPackError(`${path}[${i}] must be an object`);
+    }
+    const item = modification as Obj;
+    const itemPath = `${path}[${i}]`;
+    const attribute = reqStr(item, 'attribute', itemPath);
+    switch (attribute) {
+      case 'hit-point-maximum':
+        assertOnlyKeys(item, itemPath, new Set(['attribute', 'value']));
+        reqEnum(item, 'value', itemPath, new Set(['half-of-original']));
+        break;
+      case 'speed':
+        assertOnlyKeys(item, itemPath, new Set(['attribute', 'mode', 'value']));
+        reqStr(item, 'mode', itemPath);
+        reqInt(item, 'value', itemPath, 1);
+        break;
+      case 'intelligence-floor':
+        assertOnlyKeys(
+          item,
+          itemPath,
+          new Set(['attribute', 'value', 'grantsLanguage']),
+        );
+        reqInt(item, 'value', itemPath, 1);
+        optInt(item, 'grantsLanguage', itemPath, 1);
+        break;
+      case 'no-equipment':
+      case 'cannot-attack':
+      case 'no-advancement-or-slot-recovery':
+        assertOnlyKeys(item, itemPath, new Set(['attribute']));
+        break;
+      default:
+        throw new RulesPackError(
+          `${itemPath}.attribute has unknown summoning modification`,
+        );
+    }
+  });
 }
 
 /**

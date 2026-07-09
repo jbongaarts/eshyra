@@ -39,6 +39,7 @@ in this slice.)
                    requiresMounted: true,
                    alsoAffects: 'steed' },
   repair?: { costGpPerHitPoint: number },
+  travel?: { normalMilesPerHour: number, fastMilesPerHour: number },
   riders?: string[],                              // narrative residue only (see §5)
 }
 
@@ -55,12 +56,17 @@ type Appearance =
   | { kind: 'target-transformation',                        // giant-insect
       targets: { count: number, from: string, toRef: string }[] }
   | { kind: 'corpse-animation',                             // animate-dead, create-undead
-      sources: { material: string, becomesRef: string }[],  // bones→skeleton, corpse→zombie, corpse→ghoul
-      castingConstraint?: string }                          // create-undead: 'night-only'
+      sources: { material: string, becomesRef: string, count?: number }[],  // bones→skeleton, corpse→zombie, corpse→ghoul
+      castingConstraint?: string,                           // create-undead: 'night-only'
+      higherSlotScaling?: { perSlotAbove: number, additionalTargets: number },
+      higherSlotOptions?: { level: number,
+                            options: { material: string, becomesRef: string,
+                                       count: number }[] }[] }
   | { kind: 'object-animation',                             // animate-objects
       maxObjects: number,
       sizeCosts: Record<string, number>,                    // {medium:2, large:4, huge:8}
-      statTableRef: string }                                // table:animated-object-statistics
+      statTableRef: string,                                 // table:animated-object-statistics
+      higherSlotScaling?: { perSlotAbove: number, additionalTargets: number } }
   | { kind: 'duplicate', of: string }                       // simulacrum: 'beast-or-humanoid'
 
 type Control = {
@@ -148,8 +154,11 @@ as statline `sourceText`.
   for `corpse-animation`, because animate-dead/create-undead creatures
   persist when control expires.
 - `sourceRequirement`, `telepathy`, `senseSharing`, `spellDelivery`,
-  `spellSharing`, and `repair` are typed deterministic protocols, not
+  `spellSharing`, `repair`, and `travel` are typed deterministic protocols, not
   riders. Range/cost/size fields are positive integers / closed enums.
+  Appearance scaling fields are likewise typed: spell-level keys/levels are
+  positive integers, multipliers are positive integers, and corpse-animation
+  higher-slot options must use concrete corpse-to-creature/count entries.
 - `appears.kind = 'target-transformation'` requires a
   `transformed-target-reverts` lifecycle entry and forbids
   `summoned-creature-disappears` and `animated-object-reverts` (the
@@ -192,10 +201,12 @@ rider count per golden record so silent rider growth fails the gate.
    requirement, concentration-broken lifecycle to uncontrolled hostile for
    1 hour.
 3. `animate-dead` — corpse-animation (bones→skeleton, corpse→zombie),
-   bonus-action commands ≤60 ft, lifecycle control-window expiry to
-   uncontrolled persistent undead, reassert 4.
+   higher-slot +2 targets per slot above 3rd, bonus-action commands ≤60 ft,
+   lifecycle control-window expiry to uncontrolled persistent undead,
+   reassert 4.
 4. `animate-objects` — object-animation with sizeCosts + statTableRef,
-   commands ≤500 ft; lifecycle spell-end reversion with damage carryover.
+   higher-slot +2 targets per slot above 5th, commands ≤500 ft; lifecycle
+   spell-end reversion with damage carryover.
 5. `find-familiar` — form-list with creatureRefs, chooseOne type,
    cannot-attack modification, pocket-dimension dismissal,
    exclusiveInstance, recast → existing-familiar-adopts-new-form (the
@@ -216,6 +227,8 @@ find-steed, phantom-steed — all instances of the golden shapes above
 (Codex). find-steed must use recast → same-steed-returns-restored (the
 steed has persistent identity across castings — represent it as the same
 persistent actor, restored to HP maximum, never as a new instance).
+create-undead must carry its higher-slot ghast/wight/mummy count options, and
+phantom-steed must carry its 10 mph normal / 13 mph fast travel rates.
 
 Membership bookkeeping completed 2026-07-08: removed the 14 keys from
 `ACCEPTED_METADATA_ONLY_SPELLS` (34 -> 20), added negative tests for

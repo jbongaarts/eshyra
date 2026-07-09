@@ -948,6 +948,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
             { material: 'pile of bones', becomesRef: 'creature:skeleton' },
             { material: 'corpse', becomesRef: 'creature:zombie' },
           ],
+          higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
         },
         control: expect.objectContaining({
           commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
@@ -963,6 +964,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
           maxObjects: 10,
           sizeCosts: { medium: 2, large: 4, huge: 8 },
           statTableRef: 'table:animated-object-statistics',
+          higherSlotScaling: { perSlotAbove: 5, additionalTargets: 2 },
         },
         control: expect.objectContaining({
           commandEconomy: { cost: 'bonus-action', rangeFeet: 500 },
@@ -974,6 +976,42 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
             damageCarriesOver: true,
           },
         ],
+      }),
+    );
+    expect(spellEffects('spell:create-undead')[0]).toEqual(
+      expect.objectContaining({
+        appears: {
+          kind: 'corpse-animation',
+          sources: [
+            { material: 'corpse', becomesRef: 'creature:ghoul', count: 3 },
+          ],
+          castingConstraint: 'night-only',
+          higherSlotOptions: [
+            {
+              level: 7,
+              options: [
+                { material: 'corpse', becomesRef: 'creature:ghoul', count: 4 },
+              ],
+            },
+            {
+              level: 8,
+              options: [
+                { material: 'corpse', becomesRef: 'creature:ghoul', count: 5 },
+                { material: 'corpse', becomesRef: 'creature:ghast', count: 2 },
+                { material: 'corpse', becomesRef: 'creature:wight', count: 2 },
+              ],
+            },
+            {
+              level: 9,
+              options: [
+                { material: 'corpse', becomesRef: 'creature:ghoul', count: 6 },
+                { material: 'corpse', becomesRef: 'creature:ghast', count: 3 },
+                { material: 'corpse', becomesRef: 'creature:wight', count: 3 },
+                { material: 'corpse', becomesRef: 'creature:mummy', count: 2 },
+              ],
+            },
+          ],
+        },
       }),
     );
     expect(spellEffects('spell:find-familiar')[0]).toEqual(
@@ -994,10 +1032,18 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     expect(spellEffects('spell:giant-insect')[0]).toEqual(
       expect.objectContaining({
         appears: expect.objectContaining({ kind: 'target-transformation' }),
+        control: expect.objectContaining({
+          initiative: 'acts-on-casters-turn',
+        }),
         lifecycle: [
           { event: 'spell-ends', result: 'transformed-target-reverts' },
           { event: 'zero-hit-points', result: 'transformed-target-reverts' },
         ],
+      }),
+    );
+    expect(spellEffects('spell:phantom-steed')[0]).toEqual(
+      expect.objectContaining({
+        travel: { normalMilesPerHour: 10, fastMilesPerHour: 13 },
       }),
     );
     expect(spellEffects('spell:simulacrum')[0]).toEqual(

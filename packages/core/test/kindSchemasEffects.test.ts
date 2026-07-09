@@ -72,9 +72,55 @@ describe('mechanics effect payload contracts', () => {
         ],
       }),
     ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'corpse-animation',
+          sources: [
+            { material: 'corpse', becomesRef: 'creature:ghoul', count: 3 },
+          ],
+          higherSlotOptions: [
+            {
+              level: 8,
+              options: [
+                { material: 'corpse', becomesRef: 'creature:ghast', count: 2 },
+              ],
+            },
+          ],
+        },
+        control: {
+          mode: 'obedient',
+          commandEconomy: { cost: 'bonus-action', rangeFeet: 120 },
+          defaultBehavior: 'defends-otherwise-idle',
+          initiative: 'own-turn',
+          window: { amount: 24, unit: 'hour' },
+        },
+        lifecycle: [
+          {
+            event: 'control-window-expires',
+            result: 'animated-creature-persists-uncontrolled',
+            window: { amount: 24, unit: 'hour' },
+            reassertableByRecast: { maxCreatures: 4 },
+          },
+        ],
+      }),
+    ).not.toThrow();
   });
 
   it('rejects malformed summoning payloads', () => {
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
+        control: {
+          mode: 'obedient',
+          defaultBehavior: 'defends-only',
+          initiative: 'own-turn',
+        },
+        lifecycle: [{ event: 'banana', result: 'also-banana' }],
+      }),
+    ).toThrow(/unsupported lifecycle pair/);
     expect(() =>
       validate({
         kind: 'summoning',
@@ -111,7 +157,7 @@ describe('mechanics effect payload contracts', () => {
           { event: 'spell-ends', result: 'summoned-creature-disappears' },
         ],
       }),
-    ).toThrow(/transformed-target-reverts/);
+    ).toThrow(/not valid for target-transformation/);
     expect(() =>
       validate({
         kind: 'summoning',
@@ -126,6 +172,80 @@ describe('mechanics effect payload contracts', () => {
         ],
       }),
     ).toThrow(/exclusiveInstance/);
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'object-animation',
+          maxObjects: 10,
+          sizeCosts: { tiny: 1 },
+          statTableRef: 'table:animated-object-statistics',
+        },
+        control: {
+          mode: 'obedient',
+          defaultBehavior: 'defends-only',
+          initiative: 'own-turn',
+        },
+        lifecycle: [{ event: 'spell-ends', result: 'animated-object-reverts' }],
+      }),
+    ).toThrow(/unsupported size/);
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'duplicate', of: 'beast-or-humanoid', stray: true },
+        control: {
+          mode: 'obedient',
+          defaultBehavior: 'defends-only',
+          initiative: 'own-turn',
+        },
+        lifecycle: [
+          { event: 'zero-hit-points', result: 'duplicate-destroyed' },
+        ],
+      }),
+    ).toThrow(/unexpected payload key/);
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
+        control: {
+          mode: 'independent-obedient',
+          defaultBehavior: 'defends-otherwise-idle',
+          initiative: 'own-turn',
+          exclusiveInstance: true,
+        },
+        lifecycle: [
+          { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+        ],
+        senseSharing: {
+          cost: 'action',
+          casterConditionWhileSharing: ['distracted'],
+        },
+      }),
+    ).toThrow(/deaf or blind/);
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'cr-cap',
+          maxChallenge: '5',
+          ofTypes: ['elemental'],
+        },
+        control: {
+          mode: 'friendly-commanded',
+          commandEconomy: { cost: 'verbal-no-action' },
+          defaultBehavior: 'defends-only',
+          initiative: 'own-turn',
+        },
+        lifecycle: [
+          {
+            event: 'concentration-broken',
+            result: 'uncontrolled-hostile',
+            dismissable: false,
+            disappearsAfter: { amount: 1, unit: 'hour' },
+          },
+        ],
+      }),
+    ).toThrow(/concentration duration/);
   });
 
   it('accepts the emitted damageReduction shapes', () => {
