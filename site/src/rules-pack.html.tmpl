@@ -81,14 +81,15 @@
             </p>
 
             <p>
-              It is written for people who like the same things we do:
+              It is written for people who might be interested in:
               AI game systems, deterministic rules engines, structured game
               data, compiler and data-pipeline design, provenance and
-              reproducibility, and the practical seam between LLM reasoning and
-              ordinary software. You do not need to know anything about Eshyra
-              to read it. If you just want the download, it is on the
-              <a href="/#rules-pack">home page</a>; everything below is the
-              engineering behind it.
+              reproducibility, the practical seam between LLM reasoning and
+              ordinary software and the general process of working through a
+              problem that turns out to be bigger than expected. You do not
+              need to know anything about Eshyra to read it. If you just want
+              the download, it is on the <a href="/#rules-pack">home page</a>/
+              Everything below is the engineering behind it.
             </p>
 
             <h2 id="why-authoritative-data">
@@ -104,11 +105,11 @@
             </p>
 
             <ul>
-              <li>understanding what a player actually meant;</li>
-              <li>improvising a scene, an NPC, a consequence;</li>
-              <li>narration and tone;</li>
-              <li>living with ambiguity;</li>
-              <li>contextual judgment;</li>
+              <li>understanding what a player actually meant</li>
+              <li>improvising a scene, an NPC, a consequence</li>
+              <li>narration and tone</li>
+              <li>living with ambiguity</li>
+              <li>contextual judgment</li>
               <li>reasoning inside the fiction.</li>
             </ul>
 
@@ -119,27 +120,28 @@
             </p>
 
             <ul>
-              <li>arithmetic;</li>
-              <li>whether an action is legal by the rules;</li>
-              <li>resource accounting;</li>
-              <li>derived values;</li>
-              <li>the action economy;</li>
-              <li>reset and recharge behavior;</li>
+              <li>arithmetic</li>
+              <li>whether an action is legal by the rules</li>
+              <li>resource accounting</li>
+              <li>derived values</li>
+              <li>the action economy</li>
+              <li>reset and recharge behavior</li>
               <li>persistent state transitions from one turn to the next.</li>
             </ul>
 
             <p>
-              None of this is hostility toward language models. It is a division
+              None of this is hostility toward language models (it would be pretty
+              awkward to be building an AI DM if we were anti-LLM) It is a division
               of responsibility. Asking a model to re-derive a character&rsquo;s
               current hit points, remaining spell slots, and encumbrance from a
               prose transcript on every turn is asking it to be a database and an
               arithmetic-logic unit as well as a storyteller, and to do it
               identically forever. That is exactly the class of work where you
-              want boring, testable, deterministic code.
+              want boring, delightfully uneventful, deterministic code.
             </p>
 
             <p>
-              That still leaves a question the architecture cannot dodge:
+              That still leaves a question the architecture cannot avoid:
               <em>where do the rules come from?</em> We wanted the mechanics
               grounded in openly licensed primary source material: not a
               model&rsquo;s training-data memory, not opaque generated text, and
@@ -158,7 +160,8 @@
 
             <p>
               The initial architecture was a reasonable hypothesis, and it is
-              worth stating without hindsight sneering at it. The plan was:
+              worth stating without hindsight&rsquo;s smug, condesending glare.
+              The plan was:
             </p>
 
             <ul>
@@ -182,8 +185,8 @@
               prematurely building a rules engine, and it plays to the
               model&rsquo;s strengths. The open question was whether
               authoritative prose plus selective deterministic tooling would
-              actually hold up at the table. That was not something we could
-              answer from a design doc, so we built it and went to find out.
+              actually hold up to actual game play. That was not something we could
+              answer from a design doc, so we built it and went to find out!
             </p>
 
             <h2 id="deterministic-importer">The deterministic importer</h2>
@@ -248,49 +251,203 @@
               artifact was source-complete, every record carried provenance, an
               independent audit accounted for the source document
               region-by-region, and regeneration was byte-for-byte reproducible.
-              As a <em>reference corpus</em>, it was solid. Wasn&rsquo;t that the
-              goal?
+              As a <em>reference corpus</em>, it was solid. Better than solid,
+              it&rsquo;s exactly what we said we needed! Surely our DM will now
+              be a wise and knowledgeable Rules Lawyer: Eshyra Esq. Attorney at Law!
             </p>
 
             <p>
-              As a reference artifact, yes. Then we actually played it, and
-              character creation and combat exposed a different problem. The
-              lesson was not that we had found a handful of extraction bugs. That
-              would have been the easy case to fix. It was structural: the
-              runtime needed a <em>different kind of artifact</em> than the one
-              we had frozen.
+              Then we actually played it. Oof. Like our favorite ace attorney,
+              every beautifully narrated scene the DM proposed was met with a
+              vigorous <em>Objection!</em> from the auditor
+              LLM<span class="tip"><button type="button" class="tip-marker" aria-describedby="fn-objection"><span aria-hidden="true">*</span><span class="tip-label"> author&rsquo;s aside</span></button><span role="tooltip" id="fn-objection" class="tip-bubble">If you are thinking that it is the lawyers who object, not the (LLM-as-)judge, then you are my kind of people. But also, look over there, a shiny object!</span></span>,
+              which kept refusing to sign off because it could not prove what the
+              canon mutation tools needed proven. And character creation, without a
+              deterministic curated experience underneath it, was a hot mess.
             </p>
 
             <p>
-              A source-complete prose reference database turned out to be
-              necessary but not sufficient. When you actually try to build a
-              first-level character, or resolve a round of combat, deterministically,
-              you discover that the pack has to carry far more than accurate
-              text reachable by key. It has to carry machine-readable
-              <em>semantics</em> around things like:
+              What matters here is not that the auditor complained. It is
+              <em>what</em> it kept tripping over. So let me start with the
+              failures themselves, before I pretend I understood them.
             </p>
 
-            <ul>
-              <li>dependent choices and prerequisites;</li>
-              <li>legality and eligibility;</li>
-              <li>derived values and formulas;</li>
-              <li>dice-expression transformations;</li>
-              <li>action economy;</li>
-              <li>spell slots and concentration;</li>
-              <li>conditions and how effects relate to one another;</li>
-              <li>usage limits and resource consumption;</li>
-              <li>reset and recharge contracts;</li>
-              <li>stateful items;</li>
-              <li>the repeated cross-turn state transitions that make a rule &ldquo;work.&rdquo;</li>
-            </ul>
+            <h2 id="what-broke">What actually broke</h2>
 
+            <h3>Character creation</h3>
             <p>
-              You cannot deterministically own concentration, spell slots, death
-              saves, attunement, or a magic item&rsquo;s charge economy if the
-              pack only contains a faithful paragraph <em>describing</em> them.
-              The engine needs the effects, the formulas, the usage contracts,
-              and the hook requirements named as structured data. That was the
-              major architectural learning:
+              The early character-creation runs did not produce subtly wrong
+              characters. They produced nonsense. The system would cheerfully offer
+              class and ancestry combinations the source does not support, hand
+              back ability-score arrays no legal method could generate, and, my
+              personal favorite, fail a level-one hit-point check by announcing
+              that the maximum allowed value was <code>-4</code>. A first-level
+              character with a negative hit-point ceiling is a strong hint that
+              something upstream has stopped meaning anything.
+            </p>
+            <p>
+              The shape of the mistake was consistent. We were asking the model to
+              generate a whole interdependent character in a single pass, then
+              validating the result and trying to repair it after the fact. Build
+              first, ask questions later.
+            </p>
+            <p>
+              The first reaction was the obvious one: fix the validator. Some of
+              those messages really were plain bugs, and fixing them helped. But
+              past a certain point the validator kept being <em>right</em> while
+              the generation kept being wrong, and no amount of after-the-fact
+              checking closed that gap. The trouble was not that we validated
+              badly. It was that character creation is not a single object you can
+              emit and then inspect. It is a dependency graph. Earlier choices
+              constrain which later choices are even legal. Picking a class and an
+              ancestry exposes new required decisions. Prerequisites gate options.
+              Derived values depend on prior state, and some choices unlock further
+              choices that did not exist a moment before. Generate the whole thing
+              at once and you have already discarded the ordering that made any of
+              it valid.
+            </p>
+
+            <h3>Combat</h3>
+            <p>
+              Combat failed more quietly, which made it easier to overlook. Attacks
+              and damage were routed through deterministic tools, so at least the
+              dice were honest. But many of those rolls never reached the player as
+              a coherent chain of cause and effect. You would feel a result without
+              seeing the roll that produced it. Underneath that presentation problem
+              sat a sharper one: the system could look up a creature and read its
+              rules, and that lookup told the runtime nothing about how any given
+              mechanic was supposed to <em>execute</em>. Knowing what a
+              monster&rsquo;s ability says is a long way from knowing when it
+              triggers, what it changes, and who applies the change. That the model
+              could read the rules was never in doubt. What it could not do, and
+              should never have been asked to do, was reliably execute them turn
+              after turn as though it were a rules engine.
+            </p>
+
+            <h2 id="just-bugs">Were these just bugs?</h2>
+            <p>
+              For a while I assumed so, and that we were working through an unlucky
+              pile of unrelated defects. Fix the character validator. Fix the roll
+              presentation. Add the missing state. Tighten the auditor. Some of
+              that was genuinely true, and those fixes stuck. But every one of them
+              seemed to uncover another version of the same question underneath:
+              did the rules pack actually contain the information the deterministic
+              parts of the system needed, or only an accurate description of it?
+              The symptoms looked unrelated. The thing they kept pointing back at
+              did not.
+            </p>
+
+            <h2 id="the-real-pattern">Following the failures back to a pattern</h2>
+            <p>
+              The three examples that finally made it click were not things we
+              watched happen in that first playtest. They came out of the follow-up
+              work: the debugging, the audits, and the design sessions we ran to
+              work out what the playtest failures had been telling us. Each one
+              starts from a rule the frozen pack described perfectly well and ends
+              at a place where a deterministic consumer still could not do its job.
+            </p>
+
+            <h3>The choice was in the prose, not in a structure you could enforce</h3>
+            <p>
+              A lot of character creation is choosing from constrained menus:
+              Warlock Pact Boons, Eldritch Invocations, Fighting Styles, Metamagic,
+              the starting-equipment options. The pack carried the prose for every
+              one of these faithfully. A person could read it. A model could read
+              it. But a deterministic character builder does not want the
+              paragraph. It needs to know whether the choice is required, how many
+              selections are allowed, the closed set of legal options, a stable
+              identifier for each option, and the prerequisites that gate them.
+              None of that survives as English. The clearest single symptom was an
+              Eldritch Invocation whose prerequisite the builder had boiled down to
+              the string <code>Pact of</code>. Prerequisite satisfied: Pact of.
+              Pact of <em>what</em> was, apparently, not load-bearing. The source
+              was right there, complete and correct. The representation had simply
+              never captured the part of the rule the consumer actually relied on.
+            </p>
+
+            <h3>A condition reference is weak until you say what it means</h3>
+            <p>
+              The second example is subtler, and I think more important. When a
+              mechanic mentions a condition, the mention on its own tells the
+              runtime almost nothing. Does the rule <em>impose</em> the condition,
+              remove it, require it as a precondition, grant immunity to it, or end
+              when the condition ends? Those are five different behaviors wearing
+              the same word.
+            </p>
+            <p>
+              The Mimic&rsquo;s False Appearance is where this caught us. An early
+              structured projection captured that the creature is indistinguishable
+              while <em>motionless</em>, and quietly dropped the qualifier that it
+              is indistinguishable while motionless <em>and in object form</em>.
+              The result was typed, machine-readable, and noticeably cleaner than
+              the prose it came from. It was also wrong. That is the uncomfortable
+              lesson of this one. Adding structure does not make a rule more correct
+              by itself. The structure has to preserve the rule&rsquo;s
+              applicability, its triggers, its relationships, and its consequences,
+              or all you have built is a tidier way to be mistaken.
+            </p>
+
+            <h3>A stateful rule runs straight into the execution boundary</h3>
+            <p>
+              The third example looks trivial and is not. Take a magic item with 7
+              charges that regains <code>1d6+1</code> charges at dawn. One
+              paragraph of source prose. Follow what a system actually has to do
+              with it and you cross three separate concerns.
+            </p>
+            <p>
+              Some of it is <strong>pack semantics</strong>, fixed by the source
+              and true of every copy of the item: the maximum charge count, what an
+              activation costs, the recharge formula, and the trigger that resets
+              it. Some of it is <strong>live state</strong>, true only of one
+              particular item in one particular campaign at one moment: this wand
+              has 3 charges left. And some of it is <strong>deterministic
+              behavior</strong> that has to come out the same way every time:
+              reject an activation that would cost more than the charges remaining,
+              subtract the charges when the use is legal, notice dawn, roll
+              <code>1d6+1</code>, add the result without exceeding the maximum, and
+              persist the new value for next time. A single paragraph of source,
+              describing behavior that lands in three different architectural
+              layers.
+            </p>
+
+            <h2 id="what-was-missing">What the pack was actually missing</h2>
+            <p>
+              Put the three examples side by side and the common cause is hard to
+              miss. The problem was never that the pack needed <em>more data</em>.
+              The frozen pack was genuinely strong at the question it had been built
+              to answer:
+            </p>
+            <blockquote class="principle">What does the source say?</blockquote>
+            <p>
+              Actual play, and the digging that followed it, forced a second
+              question the reference corpus had never been asked to answer:
+            </p>
+            <blockquote class="principle">
+              What does the system need to know, and who is responsible for making
+              it happen?
+            </blockquote>
+            <p>
+              That distinction is where the rest of this article comes from. It is
+              what pushed us toward richer semantic structure in the pack, explicit
+              engine-hook requirements attached to the rules that need them, a hard
+              separation between immutable pack semantics and mutable live state,
+              deterministic engine ownership for anything that has to repeat
+              identically, and the clause-level split where one rule has a
+              contextual part the model judges and a mechanical part the engine
+              executes. Every one of those gets its own section below; the point
+              for now is only that the playtest is what made us go looking for
+              them.
+            </p>
+            <p>
+              One clarification matters first, because it is easy to over-read.
+              None of this makes the rules compiler own the game. The compiler does
+              not hold live state and it is not the engine. It produces immutable,
+              source-grounded semantics and it <em>names</em> the execution
+              requirements each rule implies. Holding the state, and running the
+              deterministic behavior, stay in separate layers. What the playtest
+              changed was not the boundary between those layers. It was our sense of
+              how much the pack itself had to say for the layers on the other side
+              of it to function at all.
             </p>
 
             <blockquote class="principle">
@@ -483,9 +640,11 @@
             </h2>
 
             <p>
-              As the semantics grew, a three-layer separation emerged that keeps
-              the whole thing sane. The compiler owns exactly <em>one</em> of
-              these layers.
+              The charge example earlier already fell apart into three concerns,
+              and that was not a quirk of magic items. As the semantics grew, the
+              same three-layer separation kept surfacing, and naming it explicitly
+              is what keeps the whole thing sane. The compiler owns exactly
+              <em>one</em> of these layers.
             </p>
 
             <h3>Pack-side semantics: immutable, source-derived</h3>
