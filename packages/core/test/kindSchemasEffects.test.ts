@@ -76,6 +76,29 @@ describe('mechanics effect payload contracts', () => {
       validate({
         kind: 'summoning',
         appears: {
+          kind: 'object-animation',
+          maxObjects: 10,
+          sizeCosts: { medium: 2, large: 4, huge: 8 },
+          statTableRef: 'table:animated-object-statistics',
+        },
+        control: {
+          mode: 'obedient',
+          defaultBehavior: 'defends-only',
+          initiative: 'own-turn',
+        },
+        lifecycle: [
+          {
+            event: 'zero-hit-points',
+            result: 'animated-object-reverts',
+            damageCarriesOver: true,
+          },
+        ],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
           kind: 'corpse-animation',
           sources: [
             { material: 'corpse', becomesRef: 'creature:ghoul', count: 3 },
@@ -104,6 +127,34 @@ describe('mechanics effect payload contracts', () => {
             reassertableByRecast: { maxCreatures: 4 },
           },
         ],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
+        control: {
+          mode: 'independent-obedient',
+          defaultBehavior: 'defends-otherwise-idle',
+          initiative: 'own-turn',
+          exclusiveInstance: true,
+        },
+        lifecycle: [
+          { event: 'recast', result: 'existing-familiar-adopts-new-form' },
+        ],
+        dismissal: {
+          cost: 'action',
+          temporary: {
+            to: 'pocket-dimension',
+            recall: { cost: 'action', rangeFeet: 30 },
+          },
+          permanent: { cost: 'action', result: 'dismissed-forever' },
+        },
+        spellDelivery: {
+          spellRange: 'touch',
+          cost: 'reaction',
+          familiarWithinFeet: 100,
+        },
       }),
     ).not.toThrow();
   });
@@ -172,6 +223,30 @@ describe('mechanics effect payload contracts', () => {
         ],
       }),
     ).toThrow(/exclusiveInstance/);
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'cr-cap',
+          maxChallenge: '4',
+          ofTypes: ['celestial'],
+          higherSlot: {
+            level: 9,
+            maxChallenge: '5',
+            perSlotAbove: 6,
+            challengeIncrease: 1,
+          },
+        },
+        control: {
+          mode: 'friendly-commanded',
+          defaultBehavior: 'defends-only',
+          initiative: 'own-turn',
+        },
+        lifecycle: [
+          { event: 'spell-ends', result: 'summoned-creature-disappears' },
+        ],
+      }),
+    ).toThrow(/unexpected payload key/);
     expect(() =>
       validate({
         kind: 'summoning',

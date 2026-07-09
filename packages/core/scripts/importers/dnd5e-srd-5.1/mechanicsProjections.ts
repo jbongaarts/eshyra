@@ -1863,14 +1863,20 @@ function projectReviewedS1SpellEffects(
             defaultBehavior: 'defends-otherwise-idle',
             initiative: 'own-turn',
             window: { amount: 24, unit: 'hour' },
-            reassert: { maxCreatures: 4 },
+            reassert: {
+              maxCreatures: 4,
+              higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
+            },
           },
           lifecycle: [
             {
               event: 'control-window-expires',
               result: 'animated-creature-persists-uncontrolled',
               window: { amount: 24, unit: 'hour' },
-              reassertableByRecast: { maxCreatures: 4 },
+              reassertableByRecast: {
+                maxCreatures: 4,
+                higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
+              },
             },
           ],
         },
@@ -1922,6 +1928,10 @@ function projectReviewedS1SpellEffects(
           lifecycle: [
             {
               event: 'spell-ends',
+              result: 'animated-object-reverts',
+            },
+            {
+              event: 'zero-hit-points',
               result: 'animated-object-reverts',
               damageCarriesOver: true,
             },
@@ -2322,14 +2332,132 @@ function projectReviewedS1SpellEffects(
             defaultBehavior: 'defends-otherwise-idle',
             initiative: 'own-turn',
             window: { amount: 24, unit: 'hour' },
-            reassert: { maxCreatures: 3 },
+            reassert: {
+              maxCreatures: 3,
+              higherSlotOptions: [
+                {
+                  level: 7,
+                  options: [
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:ghoul',
+                      count: 4,
+                    },
+                  ],
+                },
+                {
+                  level: 8,
+                  options: [
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:ghoul',
+                      count: 5,
+                    },
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:ghast',
+                      count: 2,
+                    },
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:wight',
+                      count: 2,
+                    },
+                  ],
+                },
+                {
+                  level: 9,
+                  options: [
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:ghoul',
+                      count: 6,
+                    },
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:ghast',
+                      count: 3,
+                    },
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:wight',
+                      count: 3,
+                    },
+                    {
+                      material: 'corpse',
+                      becomesRef: 'creature:mummy',
+                      count: 2,
+                    },
+                  ],
+                },
+              ],
+            },
           },
           lifecycle: [
             {
               event: 'control-window-expires',
               result: 'animated-creature-persists-uncontrolled',
               window: { amount: 24, unit: 'hour' },
-              reassertableByRecast: { maxCreatures: 3 },
+              reassertableByRecast: {
+                maxCreatures: 3,
+                higherSlotOptions: [
+                  {
+                    level: 7,
+                    options: [
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:ghoul',
+                        count: 4,
+                      },
+                    ],
+                  },
+                  {
+                    level: 8,
+                    options: [
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:ghoul',
+                        count: 5,
+                      },
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:ghast',
+                        count: 2,
+                      },
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:wight',
+                        count: 2,
+                      },
+                    ],
+                  },
+                  {
+                    level: 9,
+                    options: [
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:ghoul',
+                        count: 6,
+                      },
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:ghast',
+                        count: 3,
+                      },
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:wight',
+                        count: 3,
+                      },
+                      {
+                        material: 'corpse',
+                        becomesRef: 'creature:mummy',
+                        count: 2,
+                      },
+                    ],
+                  },
+                ],
+              },
             },
           ],
         },
@@ -2355,7 +2483,7 @@ function projectReviewedS1SpellEffects(
         {
           label: 'touch spell delivery',
           pattern:
-            /\bwhen you cast a spell with a range of touch\b[\s\S]*?\byour familiar can deliver the spell as if it had cast the spell\b[\s\S]*?\buse its reaction to deliver the spell\b/,
+            /\bwhen you cast a spell with a range of touch\b[\s\S]*?\byour familiar can deliver the spell as if it had cast the spell\b[\s\S]*?\byour familiar must be within 100 feet of you\b[\s\S]*?\buse its reaction to deliver the spell\b/,
         },
         {
           label: 'recast form',
@@ -2366,6 +2494,10 @@ function projectReviewedS1SpellEffects(
           label: 'pocket dimension dismissal and recall',
           pattern:
             /\bAs an action, you can temporarily dismiss your familiar\b[\s\S]*?\bpocket dimension\b[\s\S]*?\bAs an action while it is temporarily dismissed, you can cause it to reappear in any unoccupied space within 30 feet of you\b/,
+        },
+        {
+          label: 'permanent dismissal',
+          pattern: /\bAlternatively, you can dismiss it forever\b/,
         },
         {
           label: 'exclusive familiar',
@@ -2421,6 +2553,7 @@ function projectReviewedS1SpellEffects(
               to: 'pocket-dimension',
               recall: { cost: 'action', rangeFeet: 30 },
             },
+            permanent: { cost: 'action', result: 'dismissed-forever' },
           },
           modifications: [{ attribute: 'cannot-attack' }],
           telepathy: { rangeFeet: 100 },
@@ -2428,7 +2561,11 @@ function projectReviewedS1SpellEffects(
             cost: 'action',
             casterConditionWhileSharing: ['deaf', 'blind'],
           },
-          spellDelivery: { spellRange: 'touch', cost: 'reaction' },
+          spellDelivery: {
+            spellRange: 'touch',
+            cost: 'reaction',
+            familiarWithinFeet: 100,
+          },
         },
       ];
     case 'find steed':
@@ -2464,6 +2601,11 @@ function projectReviewedS1SpellEffects(
             /\bWhen the steed drops to 0 hit points\b[\s\S]*?\bcasting this spell again summons the same steed\b[\s\S]*?\brestored to its hit point maximum\b/,
         },
         {
+          label: 'dismiss or release steed',
+          pattern:
+            /\bYou can also dismiss your steed at any time as an action, causing it to disappear\b[\s\S]*?\bAs an action, you can release the steed from its bond at any time, causing it to disappear\b/,
+        },
+        {
           label: 'exclusive steed',
           pattern:
             /\bYou can[’']t have more than one steed bonded by this spell at a time\b/,
@@ -2497,8 +2639,21 @@ function projectReviewedS1SpellEffects(
               event: 'zero-hit-points',
               result: 'summoned-creature-disappears',
             },
+            {
+              event: 'action-dismissal',
+              result: 'summoned-creature-disappears',
+            },
+            {
+              event: 'action-release',
+              result: 'bond-ends-creature-disappears',
+            },
             { event: 'recast', result: 'same-steed-returns-restored' },
           ],
+          dismissal: {
+            cost: 'action',
+            temporary: { to: 'dismissed', recall: { cost: 'recast' } },
+            permanent: { cost: 'action', result: 'bond-released' },
+          },
           modifications: [
             { attribute: 'intelligence-floor', value: 6, grantsLanguage: 1 },
           ],
@@ -2625,6 +2780,11 @@ function projectReviewedS1SpellEffects(
           pattern:
             /\bThe simulacrum lacks the ability to learn or become more powerful\b[\s\S]*?\bnever increases its level or other abilities\b[\s\S]*?\bnor can it regain expended spell slots\b/,
         },
+        {
+          label: 'control on caster turn',
+          pattern:
+            /\bThe simulacrum is friendly to you and creatures you designate\b[\s\S]*?\bobeys your spoken commands\b[\s\S]*?\bmoving and acting in accordance with your wishes and acting on your turn in combat\b/,
+        },
         { label: 'repair', pattern: /\b100 gp per hit point it regains\b/ },
         {
           label: 'destroyed at zero and recast',
@@ -2638,8 +2798,8 @@ function projectReviewedS1SpellEffects(
           appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
           control: {
             mode: 'obedient',
-            defaultBehavior: 'defends-otherwise-idle',
-            initiative: 'own-turn',
+            defaultBehavior: 'follows-caster-wishes',
+            initiative: 'acts-on-casters-turn',
             exclusiveInstance: true,
           },
           lifecycle: [

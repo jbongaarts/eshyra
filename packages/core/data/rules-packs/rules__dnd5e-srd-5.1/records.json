@@ -103351,7 +103351,11 @@
                 "unit": "hour"
               },
               "reassert": {
-                "maxCreatures": 4
+                "maxCreatures": 4,
+                "higherSlotScaling": {
+                  "perSlotAbove": 3,
+                  "additionalTargets": 2
+                }
               }
             },
             "lifecycle": [
@@ -103363,7 +103367,11 @@
                   "unit": "hour"
                 },
                 "reassertableByRecast": {
-                  "maxCreatures": 4
+                  "maxCreatures": 4,
+                  "higherSlotScaling": {
+                    "perSlotAbove": 3,
+                    "additionalTargets": 2
+                  }
                 }
               }
             ]
@@ -103458,6 +103466,10 @@
             "lifecycle": [
               {
                 "event": "spell-ends",
+                "result": "animated-object-reverts"
+              },
+              {
+                "event": "zero-hit-points",
                 "result": "animated-object-reverts",
                 "damageCarriesOver": true
               }
@@ -107738,7 +107750,64 @@
                 "unit": "hour"
               },
               "reassert": {
-                "maxCreatures": 3
+                "maxCreatures": 3,
+                "higherSlotOptions": [
+                  {
+                    "level": 7,
+                    "options": [
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:ghoul",
+                        "count": 4
+                      }
+                    ]
+                  },
+                  {
+                    "level": 8,
+                    "options": [
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:ghoul",
+                        "count": 5
+                      },
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:ghast",
+                        "count": 2
+                      },
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:wight",
+                        "count": 2
+                      }
+                    ]
+                  },
+                  {
+                    "level": 9,
+                    "options": [
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:ghoul",
+                        "count": 6
+                      },
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:ghast",
+                        "count": 3
+                      },
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:wight",
+                        "count": 3
+                      },
+                      {
+                        "material": "corpse",
+                        "becomesRef": "creature:mummy",
+                        "count": 2
+                      }
+                    ]
+                  }
+                ]
               }
             },
             "lifecycle": [
@@ -107750,7 +107819,64 @@
                   "unit": "hour"
                 },
                 "reassertableByRecast": {
-                  "maxCreatures": 3
+                  "maxCreatures": 3,
+                  "higherSlotOptions": [
+                    {
+                      "level": 7,
+                      "options": [
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:ghoul",
+                          "count": 4
+                        }
+                      ]
+                    },
+                    {
+                      "level": 8,
+                      "options": [
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:ghoul",
+                          "count": 5
+                        },
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:ghast",
+                          "count": 2
+                        },
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:wight",
+                          "count": 2
+                        }
+                      ]
+                    },
+                    {
+                      "level": 9,
+                      "options": [
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:ghoul",
+                          "count": 6
+                        },
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:ghast",
+                          "count": 3
+                        },
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:wight",
+                          "count": 3
+                        },
+                        {
+                          "material": "corpse",
+                          "becomesRef": "creature:mummy",
+                          "count": 2
+                        }
+                      ]
+                    }
+                  ]
                 }
               }
             ]
@@ -110737,6 +110863,10 @@
                   "cost": "action",
                   "rangeFeet": 30
                 }
+              },
+              "permanent": {
+                "cost": "action",
+                "result": "dismissed-forever"
               }
             },
             "modifications": [
@@ -110756,7 +110886,8 @@
             },
             "spellDelivery": {
               "spellRange": "touch",
-              "cost": "reaction"
+              "cost": "reaction",
+              "familiarWithinFeet": 100
             }
           }
         ]
@@ -110859,10 +110990,31 @@
                 "result": "summoned-creature-disappears"
               },
               {
+                "event": "action-dismissal",
+                "result": "summoned-creature-disappears"
+              },
+              {
+                "event": "action-release",
+                "result": "bond-ends-creature-disappears"
+              },
+              {
                 "event": "recast",
                 "result": "same-steed-returns-restored"
               }
             ],
+            "dismissal": {
+              "cost": "action",
+              "temporary": {
+                "to": "dismissed",
+                "recall": {
+                  "cost": "recast"
+                }
+              },
+              "permanent": {
+                "cost": "action",
+                "result": "bond-released"
+              }
+            },
             "modifications": [
               {
                 "attribute": "intelligence-floor",
@@ -121237,8 +121389,8 @@
             },
             "control": {
               "mode": "obedient",
-              "defaultBehavior": "defends-otherwise-idle",
-              "initiative": "own-turn",
+              "defaultBehavior": "follows-caster-wishes",
+              "initiative": "acts-on-casters-turn",
               "exclusiveInstance": true
             },
             "lifecycle": [

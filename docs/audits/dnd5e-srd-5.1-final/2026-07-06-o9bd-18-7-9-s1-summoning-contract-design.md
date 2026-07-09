@@ -28,13 +28,18 @@ in this slice.)
                         sizeFeet: number,
                         materialOrTerrain: string[] }, // conjure-elemental 10-ft cube
   dismissal?: { cost: 'action',
-                temporary?: { to: 'pocket-dimension',
-                              recall: { cost: 'action', rangeFeet: number } } },
+                temporary?: { to: 'pocket-dimension' | 'dismissed',
+                              recall?: { cost: 'action' | 'recast',
+                                         rangeFeet?: number } },
+                permanent?: { cost: 'action',
+                              result: 'dismissed-forever' | 'bond-released' } },
   modifications?: Modification[],                 // deltas against the source statblock
   telepathy?: { rangeFeet: number },
   senseSharing?: { cost: 'action',
                    casterConditionWhileSharing: ('deaf'|'blind')[] },
-  spellDelivery?: { spellRange: 'touch', cost: 'reaction' },
+  spellDelivery?: { spellRange: 'touch',
+                    cost: 'reaction',
+                    familiarWithinFeet?: number },
   spellSharing?: { when: 'caster-targets-only-self',
                    requiresMounted: true,
                    alsoAffects: 'steed' },
@@ -74,10 +79,14 @@ type Control = {
   commandEconomy?: { cost: 'bonus-action' | 'verbal-no-action' | 'on-your-turn',
                      rangeFeet?: number },       // animate-dead 60, create-undead 120, animate-objects 500
   alignmentLimited?: boolean,                    // celestial/fey refuse violating commands
-  defaultBehavior: 'defends-only' | 'defends-otherwise-idle',
+  defaultBehavior: 'defends-only' | 'defends-otherwise-idle' | 'follows-caster-wishes',
   initiative: 'own-turn' | 'group' | 'acts-on-casters-turn',
   window?: { amount: number, unit: 'hour' },     // 24 h control window
-  reassert?: { maxCreatures: number },           // recast reasserts ≤N
+  reassert?: { maxCreatures: number,             // recast reasserts ≤N
+               higherSlotScaling?: { perSlotAbove: number, additionalTargets: number },
+               higherSlotOptions?: { level: number,
+                                     options: { material: string, becomesRef: string,
+                                                count: number }[] }[] },
   exclusiveInstance?: boolean,                   // familiar/steed/simulacrum one-at-a-time
 }
 
@@ -85,12 +94,18 @@ type Lifecycle =
   | { event: 'spell-ends' | 'zero-hit-points',
       result: 'summoned-creature-disappears' }   // find-familiar and concentration summons
   | { event: 'spell-ends',
+      result: 'animated-object-reverts' }        // animate-objects duration end
+  | { event: 'zero-hit-points',
       result: 'animated-object-reverts',
-      damageCarriesOver: true }                  // animate-objects
+      damageCarriesOver: true }                  // animate-objects damage carryover
   | { event: 'control-window-expires',
       result: 'animated-creature-persists-uncontrolled',
       window: { amount: 24, unit: 'hour' },
-      reassertableByRecast: { maxCreatures: number } } // animate-dead/create-undead
+      reassertableByRecast: { maxCreatures: number,
+                              higherSlotScaling?: { perSlotAbove: number, additionalTargets: number },
+                              higherSlotOptions?: { level: number,
+                                                    options: { material: string, becomesRef: string,
+                                                               count: number }[] }[] } } // animate-dead/create-undead
   | { event: 'concentration-broken',
       result: 'uncontrolled-hostile',
       dismissable: false,
@@ -105,6 +120,10 @@ type Lifecycle =
                                                  // to its natural form; NO damage
                                                  // carryover claim (source states none —
                                                  // do not import polymorph semantics)
+  | { event: 'action-dismissal',
+      result: 'summoned-creature-disappears' }   // find-steed action dismissal
+  | { event: 'action-release',
+      result: 'bond-ends-creature-disappears' }  // find-steed bond release
   // Recast semantics under exclusiveInstance are per-spell and source-backed —
   // deliberately NOT a shared generic rule:
   | { event: 'recast',
@@ -156,9 +175,11 @@ as statline `sourceText`.
 - `sourceRequirement`, `telepathy`, `senseSharing`, `spellDelivery`,
   `spellSharing`, `repair`, and `travel` are typed deterministic protocols, not
   riders. Range/cost/size fields are positive integers / closed enums.
-  Appearance scaling fields are likewise typed: spell-level keys/levels are
-  positive integers, multipliers are positive integers, and corpse-animation
-  higher-slot options must use concrete corpse-to-creature/count entries.
+  Appearance and reassert-control scaling fields are likewise typed:
+  spell-level keys/levels are positive integers, multipliers are positive
+  integers, and corpse-animation higher-slot options must use concrete
+  corpse-to-creature/count entries. `cr-cap.higherSlot` is an exact alternate
+  union: fixed-level cap or per-slot challenge increase, never a hybrid.
 - `appears.kind = 'target-transformation'` requires a
   `transformed-target-reverts` lifecycle entry and forbids
   `summoned-creature-disappears` and `animated-object-reverts` (the
@@ -203,20 +224,21 @@ rider count per golden record so silent rider growth fails the gate.
 3. `animate-dead` — corpse-animation (bones→skeleton, corpse→zombie),
    higher-slot +2 targets per slot above 3rd, bonus-action commands ≤60 ft,
    lifecycle control-window expiry to uncontrolled persistent undead,
-   reassert 4.
+   reassert 4 with the same higher-slot +2 scaling.
 4. `animate-objects` — object-animation with sizeCosts + statTableRef,
    higher-slot +2 targets per slot above 5th, commands ≤500 ft; lifecycle
-   spell-end reversion with damage carryover.
+   spell-end reversion plus zero-HP reversion with damage carryover.
 5. `find-familiar` — form-list with creatureRefs, chooseOne type,
-   cannot-attack modification, pocket-dimension dismissal,
+   cannot-attack modification, pocket-dimension dismissal, permanent dismissal,
    exclusiveInstance, recast → existing-familiar-adopts-new-form (the
    familiar is never destroyed by recasting), zero-HP disappearance, typed
    telepathy 100 ft, sense-sharing action, and touch-spell delivery via
-   reaction.
+   reaction with the 100-foot familiar-distance requirement.
 6. `simulacrum` — duplicate + modifications (half HP max, no equipment,
    no advancement), exclusiveInstance, recast →
    prior-duplicates-instantly-destroyed, zero-HP duplicate destruction,
-   repair 100 gp/HP.
+   acts on the caster's turn according to the caster's wishes, repair
+   100 gp/HP.
 7. `giant-insect` — target-transformation + transformed-target-reverts
    lifecycle (spell end / 0 HP → natural form, no carryover), commands on
    caster's turn, per-target dismissal.
@@ -226,9 +248,10 @@ conjure-minor-elementals, conjure-woodland-beings, create-undead,
 find-steed, phantom-steed — all instances of the golden shapes above
 (Codex). find-steed must use recast → same-steed-returns-restored (the
 steed has persistent identity across castings — represent it as the same
-persistent actor, restored to HP maximum, never as a new instance).
-create-undead must carry its higher-slot ghast/wight/mummy count options, and
-phantom-steed must carry its 10 mph normal / 13 mph fast travel rates.
+persistent actor, restored to HP maximum, never as a new instance), plus
+action dismissal and action bond release. create-undead must carry its
+higher-slot ghast/wight/mummy count options for both creation and reassertion,
+and phantom-steed must carry its 10 mph normal / 13 mph fast travel rates.
 
 Membership bookkeeping completed 2026-07-08: removed the 14 keys from
 `ACCEPTED_METADATA_ONLY_SPELLS` (34 -> 20), added negative tests for

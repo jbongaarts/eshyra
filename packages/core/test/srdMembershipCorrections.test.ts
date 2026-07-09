@@ -953,7 +953,10 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         control: expect.objectContaining({
           commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
           window: { amount: 24, unit: 'hour' },
-          reassert: { maxCreatures: 4 },
+          reassert: {
+            maxCreatures: 4,
+            higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
+          },
         }),
       }),
     );
@@ -972,6 +975,10 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         lifecycle: [
           {
             event: 'spell-ends',
+            result: 'animated-object-reverts',
+          },
+          {
+            event: 'zero-hit-points',
             result: 'animated-object-reverts',
             damageCarriesOver: true,
           },
@@ -1012,6 +1019,68 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
             },
           ],
         },
+        control: expect.objectContaining({
+          reassert: expect.objectContaining({
+            maxCreatures: 3,
+            higherSlotOptions: [
+              {
+                level: 7,
+                options: [
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghoul',
+                    count: 4,
+                  },
+                ],
+              },
+              {
+                level: 8,
+                options: [
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghoul',
+                    count: 5,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghast',
+                    count: 2,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:wight',
+                    count: 2,
+                  },
+                ],
+              },
+              {
+                level: 9,
+                options: [
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghoul',
+                    count: 6,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:ghast',
+                    count: 3,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:wight',
+                    count: 3,
+                  },
+                  {
+                    material: 'corpse',
+                    becomesRef: 'creature:mummy',
+                    count: 2,
+                  },
+                ],
+              },
+            ],
+          }),
+        }),
       }),
     );
     expect(spellEffects('spell:find-familiar')[0]).toEqual(
@@ -1026,7 +1095,33 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
           cost: 'action',
           casterConditionWhileSharing: ['deaf', 'blind'],
         },
-        spellDelivery: { spellRange: 'touch', cost: 'reaction' },
+        dismissal: {
+          cost: 'action',
+          temporary: {
+            to: 'pocket-dimension',
+            recall: { cost: 'action', rangeFeet: 30 },
+          },
+          permanent: { cost: 'action', result: 'dismissed-forever' },
+        },
+        spellDelivery: {
+          spellRange: 'touch',
+          cost: 'reaction',
+          familiarWithinFeet: 100,
+        },
+      }),
+    );
+    expect(spellEffects('spell:find-steed')[0]).toEqual(
+      expect.objectContaining({
+        lifecycle: expect.arrayContaining([
+          { event: 'action-dismissal', result: 'summoned-creature-disappears' },
+          { event: 'action-release', result: 'bond-ends-creature-disappears' },
+          { event: 'recast', result: 'same-steed-returns-restored' },
+        ]),
+        dismissal: {
+          cost: 'action',
+          temporary: { to: 'dismissed', recall: { cost: 'recast' } },
+          permanent: { cost: 'action', result: 'bond-released' },
+        },
       }),
     );
     expect(spellEffects('spell:giant-insect')[0]).toEqual(
@@ -1049,6 +1144,12 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     expect(spellEffects('spell:simulacrum')[0]).toEqual(
       expect.objectContaining({
         appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
+        control: {
+          mode: 'obedient',
+          defaultBehavior: 'follows-caster-wishes',
+          initiative: 'acts-on-casters-turn',
+          exclusiveInstance: true,
+        },
         lifecycle: [
           { event: 'zero-hit-points', result: 'duplicate-destroyed' },
           { event: 'recast', result: 'prior-duplicates-instantly-destroyed' },
