@@ -1842,6 +1842,15 @@ function projectReviewedS1SpellEffects(
             /\bon each of your turns, you can use a bonus action to mentally command any creature you made with this spell if the creature is within 60 feet of you\b/,
         },
         {
+          label: 'own-turn initiative',
+          pattern: /\bwhere it will move during its next turn\b/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bIf you issue no commands, the creature only defends itself against hostile creatures\b/,
+        },
+        {
           label: '24-hour control window',
           pattern: /\bThe creature is under your control for 24 hours\b/,
         },
@@ -1924,6 +1933,15 @@ function projectReviewedS1SpellEffects(
             /\bwithin 500 feet of you\b[\s\S]*?\bIf you command an object to attack\b/,
         },
         {
+          label: 'own-turn initiative',
+          pattern: /\bwhere it will move during its next turn\b/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bIf you issue no commands, the creature only defends itself against hostile creatures\b/,
+        },
+        {
           label: 'damage carryover',
           pattern:
             /\bWhen the animated object drops to 0 hit points, it reverts to its original object form, and any remaining damage carries over\b/,
@@ -1981,9 +1999,19 @@ function projectReviewedS1SpellEffects(
             /\bEach beast is also considered fey\b[\s\S]*?\bRoll initiative for the summoned creatures as a group\b/,
         },
         {
+          label: 'friendly mode',
+          pattern:
+            /\bThe summoned creatures are friendly to you and your companions\b/,
+        },
+        {
           label: 'verbal commands',
           pattern:
             /\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bthey defend themselves from hostile creatures, but otherwise take no actions\b/,
         },
         {
           label: 'higher-slot multipliers',
@@ -1996,6 +2024,10 @@ function projectReviewedS1SpellEffects(
           kind: 'summoning',
           appears: {
             kind: 'option-menu',
+            // Candidates must be beasts; the summoned beasts are also treated
+            // as fey (creatureType) — two distinct mechanics (o9bd.18.7.9
+            // review 4).
+            eligibleTypes: ['beast'],
             options: [
               { count: 1, maxChallenge: '2' },
               { count: 2, maxChallenge: '1' },
@@ -2030,6 +2062,16 @@ function projectReviewedS1SpellEffects(
           label: 'alignment command limit',
           pattern:
             /\bIt obeys any verbal commands that you issue to it \(no action required by you\), as long as they don[’']t violate its alignment\b/,
+        },
+        {
+          label: 'friendly mode and own-turn initiative',
+          pattern:
+            /\bThe celestial is friendly to you and your companions for the duration\. Roll initiative for the celestial, which has its own turns\b/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bit defends itself from hostile creatures but otherwise takes no actions\b/,
         },
         {
           label: 'ninth level cap',
@@ -2071,6 +2113,21 @@ function projectReviewedS1SpellEffects(
         {
           label: 'challenge cap',
           pattern: /\ban elemental of challenge rating 5 or lower\b/,
+        },
+        {
+          label: 'friendly mode and own-turn initiative',
+          pattern:
+            /\bThe elemental is friendly to you and your companions for the duration\. Roll initiative for the elemental, which has its own turns\b/,
+        },
+        {
+          label: 'verbal commands',
+          pattern:
+            /\bIt obeys any verbal commands that you issue to it \(no action required by you\)/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bit defends itself from hostile creatures but otherwise takes no actions\b/,
         },
         {
           label: 'concentration broken hostile',
@@ -2130,6 +2187,16 @@ function projectReviewedS1SpellEffects(
             /\bIt obeys any verbal commands that you issue to it \(no action required by you\), as long as they don[’']t violate its alignment\b/,
         },
         {
+          label: 'friendly mode and own-turn initiative',
+          pattern:
+            /\bThe fey creature is friendly to you and your companions for the duration\. Roll initiative for the creature, which has its own turns\b/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bit defends itself from hostile creatures but otherwise takes no actions\b/,
+        },
+        {
           label: 'concentration broken hostile',
           pattern:
             /\bIf your concentration is broken, the fey creature doesn[’']t disappear\. Instead, you lose control of the fey creature, it becomes hostile\b[\s\S]*?\bcan[’']t be dismissed by you\b[\s\S]*?\bdisappears 1 hour after you summoned it\b/,
@@ -2184,6 +2251,16 @@ function projectReviewedS1SpellEffects(
             /\bRoll initiative for the summoned creatures as a group\b[\s\S]*?\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
         },
         {
+          label: 'friendly mode',
+          pattern:
+            /\bThe summoned creatures are friendly to you and your companions\b/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bthey defend themselves from hostile creatures, but otherwise take no actions\b/,
+        },
+        {
           label: 'higher-slot multipliers',
           pattern:
             /\btwice as many with a 6th-level slot and three times as many with an 8th-level slot\b/,
@@ -2194,6 +2271,8 @@ function projectReviewedS1SpellEffects(
           kind: 'summoning',
           appears: {
             kind: 'option-menu',
+            // Candidates must be elementals (o9bd.18.7.9 review 4).
+            eligibleTypes: ['elemental'],
             options: [
               { count: 1, maxChallenge: '2' },
               { count: 2, maxChallenge: '1' },
@@ -2230,6 +2309,16 @@ function projectReviewedS1SpellEffects(
             /\bRoll initiative for the summoned creatures as a group\b[\s\S]*?\bThey obey any verbal commands that you issue to them \(no action required by you\)/,
         },
         {
+          label: 'friendly mode',
+          pattern:
+            /\bThe summoned creatures are friendly to you and your companions\b/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bthey defend themselves from hostile creatures, but otherwise take no actions\b/,
+        },
+        {
           label: 'higher-slot multipliers',
           pattern:
             /\btwice as many with a 6th-level slot and three times as many with an 8th-level slot\b/,
@@ -2240,6 +2329,8 @@ function projectReviewedS1SpellEffects(
           kind: 'summoning',
           appears: {
             kind: 'option-menu',
+            // Candidates must be fey creatures (o9bd.18.7.9 review 4).
+            eligibleTypes: ['fey'],
             options: [
               { count: 1, maxChallenge: '2' },
               { count: 2, maxChallenge: '1' },
@@ -2278,6 +2369,15 @@ function projectReviewedS1SpellEffects(
           label: 'bonus-action command range',
           pattern:
             /\bAs a bonus action on each of your turns, you can mentally command any creature you animated with this spell if the creature is within 120 feet of you\b/,
+        },
+        {
+          label: 'own-turn initiative',
+          pattern: /\bwhere it will move during its next turn\b/,
+        },
+        {
+          label: 'default behavior defends only',
+          pattern:
+            /\bIf you issue no commands, the creature only defends itself against hostile creatures\b/,
         },
         {
           label: '24-hour control window',
@@ -2508,6 +2608,11 @@ function projectReviewedS1SpellEffects(
           pattern:
             /\bit is a celestial, fey, or fiend \(your choice\) instead of a beast\b/,
         },
+        {
+          label: 'independent-obedient mode and own-turn initiative',
+          pattern:
+            /\bYour familiar acts independently of you, but it always obeys your commands\. In combat, it rolls its own initiative and acts on its own turn\b/,
+        },
         { label: 'cannot attack', pattern: /\bA familiar can[’']?t attack\b/ },
         {
           label: 'reappears on recast after zero hit points',
@@ -2585,6 +2690,10 @@ function projectReviewedS1SpellEffects(
             {
               event: 'zero-hit-points',
               result: 'summoned-creature-disappears',
+              // Gone but recoverable: recasting re-summons this familiar.
+              // Permanent dismissal (dismissal.permanent) is the terminated
+              // state and has no recast restoration (o9bd.18.7.9 review 4).
+              resultingState: 'absent-recoverable',
             },
             // Two state-sensitive recast transitions: recasting while the
             // familiar is active re-forms it; recasting after it dropped to 0
@@ -2597,7 +2706,7 @@ function projectReviewedS1SpellEffects(
             {
               event: 'recast',
               result: 'familiar-reappears',
-              priorState: 'gone',
+              priorState: 'absent-recoverable',
             },
           ],
           dismissal: {
@@ -2689,24 +2798,31 @@ function projectReviewedS1SpellEffects(
             exclusiveInstance: true,
           },
           lifecycle: [
+            // 0 HP and action dismissal leave the bond intact, so the same
+            // steed can be re-summoned; bond release terminates it and cannot
+            // (o9bd.18.7.9 review 4).
             {
               event: 'zero-hit-points',
               result: 'summoned-creature-disappears',
+              resultingState: 'absent-recoverable',
             },
             {
               event: 'action-dismissal',
               result: 'summoned-creature-disappears',
+              resultingState: 'absent-recoverable',
             },
             {
               event: 'action-release',
               result: 'bond-ends-creature-disappears',
+              resultingState: 'terminated',
             },
-            // Recast after the steed is gone (0 HP or dismissed) re-summons the
-            // same steed restored to its HP maximum (o9bd.18.7.9 review 3).
+            // Recast only restores a steed that is gone but bonded (0 HP or
+            // dismissed), never one whose bond was released (o9bd.18.7.9
+            // reviews 3-4).
             {
               event: 'recast',
               result: 'same-steed-returns-restored',
-              priorState: 'gone',
+              priorState: 'absent-recoverable',
             },
           ],
           dismissal: {
@@ -2761,17 +2877,20 @@ function projectReviewedS1SpellEffects(
           },
           control: {
             // Source states obedience to verbal commands and acting on the
-            // caster's turn, but no no-command default behavior, so
-            // defaultBehavior is omitted (o9bd.18.7.9 review 3).
+            // caster's turn, but neither a no-command default behavior nor a
+            // special command economy — the "act on your turn" clause is
+            // initiative, not command timing — so only mode and initiative are
+            // emitted (o9bd.18.7.9 reviews 3-4).
             mode: 'obedient',
-            commandEconomy: { cost: 'on-your-turn' },
             initiative: 'acts-on-casters-turn',
           },
           lifecycle: [
             { event: 'spell-ends', result: 'transformed-target-reverts' },
             { event: 'zero-hit-points', result: 'transformed-target-reverts' },
           ],
-          dismissal: { cost: 'action' },
+          // Dismissal is per transformed creature ("dismiss the effect on it"),
+          // not the whole spell (o9bd.18.7.9 review 4).
+          dismissal: { cost: 'action', scope: 'per-target' },
         },
       ];
     case 'phantom steed':
@@ -2812,6 +2931,15 @@ function projectReviewedS1SpellEffects(
           lifecycle: [
             {
               event: 'spell-ends',
+              result: 'effect-fades',
+              transition: { amount: 1, unit: 'minute' },
+            },
+            // The spell also ends — with the same 1-minute fade — when the
+            // caster dismisses the steed as an action; the source states this
+            // action economy explicitly, so it is a typed transition, not
+            // prose residue (o9bd.18.7.9 review 4).
+            {
+              event: 'action-dismissal',
               result: 'effect-fades',
               transition: { amount: 1, unit: 'minute' },
             },
@@ -2864,7 +2992,13 @@ function projectReviewedS1SpellEffects(
             exclusiveInstance: true,
           },
           lifecycle: [
-            { event: 'zero-hit-points', result: 'duplicate-destroyed' },
+            {
+              event: 'zero-hit-points',
+              result: 'duplicate-destroyed',
+              // A melted duplicate is gone for good; recasting destroys active
+              // duplicates rather than restoring them (o9bd.18.7.9 review 4).
+              resultingState: 'terminated',
+            },
             // Recasting while a duplicate is active instantly destroys it
             // (o9bd.18.7.9 review 3).
             {

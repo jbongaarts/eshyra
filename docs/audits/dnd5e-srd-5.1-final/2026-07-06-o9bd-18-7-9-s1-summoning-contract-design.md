@@ -33,6 +33,7 @@ in this slice.)
   // free knobs: pocket-dimension ⟺ action recall (with range); dismissed ⟺
   // recast recall (no range). Impossible cross-combinations are rejected.
   dismissal?: { cost: 'action',
+                scope?: 'per-target' | 'whole-effect',   // giant-insect: dismiss one transformed creature
                 temporary?: { to: 'pocket-dimension',
                               recall: { cost: 'action', rangeFeet: number } }
                            | { to: 'dismissed',
@@ -56,6 +57,9 @@ in this slice.)
 
 type Appearance =
   | { kind: 'option-menu',                        // conjure-animals/minor-elementals/woodland-beings
+      eligibleTypes?: string[],                             // candidate selection gate: ['beast'] /
+                                                            // ['elemental'] / ['fey'] — distinct from
+                                                            // any post-summon `creatureType` change
       options: { count: number, maxChallenge: string }[],   // '2','1','1/2','1/4'
       higherSlotMultipliers?: Record<number, number> }      // {5:2, 7:3, 9:4} — structured scaling
   | { kind: 'cr-cap', maxChallenge: string, ofTypes: string[],
@@ -142,23 +146,33 @@ type Lifecycle =
       result: 'summoned-creature-disappears' }   // find-steed action dismissal
   | { event: 'action-release',
       result: 'bond-ends-creature-disappears' }  // find-steed bond release
+  // Actor-removal transitions may declare the state they leave a persistent
+  // companion in — `resultingState: 'absent-recoverable' | 'terminated'`. An
+  // absent-recoverable actor can be restored by recasting; a terminated one
+  // (bond released, destroyed) cannot. This is what keeps a post-release Find
+  // Steed recast from routing to same-steed-returns-restored.
+  //
   // Recast semantics under exclusiveInstance are per-spell and source-backed —
-  // deliberately NOT a shared generic rule. Each is state-sensitive: `priorState`
-  // ('active' | 'gone') says whether the persistent actor still existed when the
-  // spell was recast, and recast entries in one record must have distinct
-  // priorStates. Find-familiar carries BOTH transitions (source defines two):
+  // deliberately NOT a shared generic rule. Each is state-sensitive:
+  // `priorState` ('active' | 'absent-recoverable') is the precondition the
+  // transition fires from; 'terminated' is never a recast precondition. Recast
+  // entries in one record must have distinct priorStates. Find-familiar carries
+  // BOTH transitions (source defines two):
   | { event: 'recast', priorState: 'active',
       result: 'existing-familiar-adopts-new-form' } // find-familiar: recasting while you
                                                  // have a familiar causes it to adopt a
                                                  // new form — nothing is destroyed
-  | { event: 'recast', priorState: 'gone',
+  | { event: 'recast', priorState: 'absent-recoverable',
       result: 'familiar-reappears' }             // find-familiar: recasting after the
                                                  // familiar dropped to 0 HP re-summons it
-  | { event: 'recast', priorState: 'gone',
+                                                 // (permanent dismissal is 'terminated'
+                                                 // and has no recast restoration)
+  | { event: 'recast', priorState: 'absent-recoverable',
       result: 'same-steed-returns-restored' }    // find-steed: casting again after the
-                                                 // steed disappeared (0 HP or dismissed)
-                                                 // summons the SAME steed, restored to its
-                                                 // HP maximum — persistent identity
+                                                 // steed disappeared (0 HP or dismissed,
+                                                 // bond retained) summons the SAME steed,
+                                                 // restored to its HP maximum — NOT after
+                                                 // action bond release ('terminated')
   | { event: 'recast', priorState: 'active',
       result: 'prior-duplicates-instantly-destroyed' } // simulacrum only: active
                                                  // duplicates are instantly destroyed
@@ -216,13 +230,34 @@ as statline `sourceText`.
   find-familiar, `same-steed-returns-restored` to find-steed, and
   `prior-duplicates-instantly-destroyed` to simulacrum. A `recast` lifecycle
   entry is invalid without `exclusiveInstance: true`.
-- Every `recast` entry carries a required `priorState` ('active' | 'gone') that
-  the result implies (`existing-familiar-adopts-new-form` and
-  `prior-duplicates-instantly-destroyed` ⇒ 'active';
-  `familiar-reappears`/`same-steed-returns-restored` ⇒ 'gone'), and the recast
-  entries within one record must have distinct `priorState` values. This makes
-  Find Familiar's two source-defined recast transitions (re-form an active
-  familiar; re-summon one that dropped to 0 HP) both expressible.
+- Every `recast` entry carries a required `priorState`
+  ('active' | 'absent-recoverable') that the result implies
+  (`existing-familiar-adopts-new-form` and `prior-duplicates-instantly-destroyed`
+  ⇒ 'active'; `familiar-reappears`/`same-steed-returns-restored` ⇒
+  'absent-recoverable'), and the recast entries within one record must have
+  distinct `priorState` values. This makes Find Familiar's two source-defined
+  recast transitions (re-form an active familiar; re-summon one that dropped to
+  0 HP) both expressible.
+- Actor-removal transitions (`summoned-creature-disappears`,
+  `bond-ends-creature-disappears`, `duplicate-destroyed`) may carry an optional
+  `resultingState` ('absent-recoverable' | 'terminated'). It is the state a
+  persistent companion is left in, so a deterministic consumer can tell a
+  recoverable absence (0 HP, temporary dismissal) from a terminal one (bond
+  release, destruction) and never route a post-release/permanently-dismissed
+  recast to a restoration transition. `terminated` is never a recast
+  precondition. `resultingState` is not valid on `effect-fades`.
+- `option-menu.eligibleTypes` is the candidate-selection gate (beasts /
+  elementals / fey). It is distinct from and may coexist with a post-summon
+  `creatureType` change (Conjure Animals: beasts treated as fey).
+- `dismissal.scope` ('per-target' | 'whole-effect') distinguishes dismissing one
+  transformed creature (Giant Insect) from ending the whole effect.
+- `action-dismissal:effect-fades` is a valid transition (Phantom Steed's
+  action-cost dismissal ends the spell with the same fade as any spell-end),
+  keeping that action economy typed rather than inferred from `spell-ends`.
+- Fail-closed source gating covers emitted control constants too: every emitted
+  `mode`/`defaultBehavior`/`initiative`/`commandEconomy`/`eligibleTypes` literal
+  has a `requireClauses` guard for the exact source prose it derives from, so a
+  name-preserving prose drift fails closed.
 - `control` is optional; when present it must declare at least one field.
   `mode`, `defaultBehavior`, and `initiative` are each optional and emitted only
   where the SRD states them, so the schema never forces an invented rule.
@@ -284,16 +319,19 @@ rider count per golden record so silent rider growth fails the gate.
    acts on the caster's turn according to the caster's wishes, repair
    100 gp/HP.
 7. `giant-insect` — target-transformation + transformed-target-reverts
-   lifecycle (spell end / 0 HP → natural form, no carryover), commands on
-   caster's turn, per-target dismissal.
+   lifecycle (spell end / 0 HP → natural form, no carryover), obedient mode and
+   acts-on-casters-turn initiative (no invented command economy), per-target
+   dismissal scope.
 
 Remaining 7 after goldens: conjure-celestial, conjure-fey,
 conjure-minor-elementals, conjure-woodland-beings, create-undead,
 find-steed, phantom-steed — all instances of the golden shapes above
-(Codex). find-steed must use recast (priorState 'gone') →
+(Codex). find-steed must use recast (priorState 'absent-recoverable') →
 same-steed-returns-restored (the steed has persistent identity across castings —
 represent it as the same persistent actor, restored to HP maximum, never as a
-new instance), plus action dismissal and action bond release; its control block
+new instance), with its 0-HP and action-dismissal removals marked
+`resultingState: absent-recoverable` and action bond release marked
+`terminated`, so a post-release recast is not restorable; its control block
 carries only exclusiveInstance because the source states no obedience,
 default-behavior, or initiative rule for the steed itself. create-undead must
 carry its higher-slot ghast/wight/mummy count options for both creation and

@@ -34,6 +34,7 @@ describe('mechanics effect payload contracts', () => {
         kind: 'summoning',
         appears: {
           kind: 'option-menu',
+          eligibleTypes: ['beast'],
           options: [
             { count: 1, maxChallenge: '2' },
             { count: 2, maxChallenge: '1' },
@@ -141,13 +142,21 @@ describe('mechanics effect payload contracts', () => {
           exclusiveInstance: true,
         },
         lifecycle: [
-          { event: 'zero-hit-points', result: 'summoned-creature-disappears' },
+          {
+            event: 'zero-hit-points',
+            result: 'summoned-creature-disappears',
+            resultingState: 'absent-recoverable',
+          },
           {
             event: 'recast',
             result: 'existing-familiar-adopts-new-form',
             priorState: 'active',
           },
-          { event: 'recast', result: 'familiar-reappears', priorState: 'gone' },
+          {
+            event: 'recast',
+            result: 'familiar-reappears',
+            priorState: 'absent-recoverable',
+          },
         ],
         dismissal: {
           cost: 'action',
@@ -405,7 +414,7 @@ describe('mechanics effect payload contracts', () => {
           {
             event: 'recast',
             result: 'prior-duplicates-instantly-destroyed',
-            priorState: 'gone',
+            priorState: 'absent-recoverable',
           },
         ],
       }),
@@ -501,7 +510,7 @@ describe('mechanics effect payload contracts', () => {
           {
             event: 'recast',
             result: 'same-steed-returns-restored',
-            priorState: 'gone',
+            priorState: 'absent-recoverable',
           },
         ],
         dismissal: {
@@ -513,6 +522,73 @@ describe('mechanics effect payload contracts', () => {
         },
       }),
     ).toThrow(/recall.cost must be one of recast/);
+    // resultingState is a closed enum on actor-removal transitions.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'form-list', forms: [{ name: 'warhorse' }] },
+        control: { exclusiveInstance: true },
+        lifecycle: [
+          {
+            event: 'action-release',
+            result: 'bond-ends-creature-disappears',
+            resultingState: 'gone',
+          },
+          {
+            event: 'recast',
+            result: 'same-steed-returns-restored',
+            priorState: 'absent-recoverable',
+          },
+        ],
+      }),
+    ).toThrow(/resultingState must be one of/);
+    // resultingState is not valid on a fade transition.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: { kind: 'form-list', forms: [{ name: 'riding horse' }] },
+        lifecycle: [
+          {
+            event: 'spell-ends',
+            result: 'effect-fades',
+            transition: { amount: 1, unit: 'minute' },
+            resultingState: 'terminated',
+          },
+        ],
+      }),
+    ).toThrow(/unexpected payload key/);
+    // A dismissal scope must be a known enum.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'target-transformation',
+          targets: [
+            { count: 1, from: 'scorpion', toRef: 'creature:giant-scorpion' },
+          ],
+        },
+        control: { mode: 'obedient', initiative: 'acts-on-casters-turn' },
+        lifecycle: [
+          { event: 'zero-hit-points', result: 'transformed-target-reverts' },
+        ],
+        dismissal: { cost: 'action', scope: 'half-the-swarm' },
+      }),
+    ).toThrow(/scope must be one of/);
+    // An empty eligibleTypes list is rejected.
+    expect(() =>
+      validate({
+        kind: 'summoning',
+        appears: {
+          kind: 'option-menu',
+          eligibleTypes: [],
+          options: [{ count: 1, maxChallenge: '2' }],
+        },
+        control: { mode: 'friendly-commanded', initiative: 'group' },
+        lifecycle: [
+          { event: 'spell-ends', result: 'summoned-creature-disappears' },
+        ],
+      }),
+    ).toThrow(/eligibleTypes must be non-empty/);
   });
 
   it('accepts the emitted damageReduction shapes', () => {

@@ -106425,6 +106425,9 @@
             "kind": "summoning",
             "appears": {
               "kind": "option-menu",
+              "eligibleTypes": [
+                "beast"
+              ],
               "options": [
                 {
                   "count": 1,
@@ -106844,6 +106847,9 @@
             "kind": "summoning",
             "appears": {
               "kind": "option-menu",
+              "eligibleTypes": [
+                "elemental"
+              ],
               "options": [
                 {
                   "count": 1,
@@ -106951,6 +106957,9 @@
             "kind": "summoning",
             "appears": {
               "kind": "option-menu",
+              "eligibleTypes": [
+                "fey"
+              ],
               "options": [
                 {
                   "count": 1,
@@ -110868,7 +110877,8 @@
             "lifecycle": [
               {
                 "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
+                "result": "summoned-creature-disappears",
+                "resultingState": "absent-recoverable"
               },
               {
                 "event": "recast",
@@ -110878,7 +110888,7 @@
               {
                 "event": "recast",
                 "result": "familiar-reappears",
-                "priorState": "gone"
+                "priorState": "absent-recoverable"
               }
             ],
             "dismissal": {
@@ -111010,20 +111020,23 @@
             "lifecycle": [
               {
                 "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
+                "result": "summoned-creature-disappears",
+                "resultingState": "absent-recoverable"
               },
               {
                 "event": "action-dismissal",
-                "result": "summoned-creature-disappears"
+                "result": "summoned-creature-disappears",
+                "resultingState": "absent-recoverable"
               },
               {
                 "event": "action-release",
-                "result": "bond-ends-creature-disappears"
+                "result": "bond-ends-creature-disappears",
+                "resultingState": "terminated"
               },
               {
                 "event": "recast",
                 "result": "same-steed-returns-restored",
-                "priorState": "gone"
+                "priorState": "absent-recoverable"
               }
             ],
             "dismissal": {
@@ -112697,9 +112710,6 @@
             },
             "control": {
               "mode": "obedient",
-              "commandEconomy": {
-                "cost": "on-your-turn"
-              },
               "initiative": "acts-on-casters-turn"
             },
             "lifecycle": [
@@ -112713,7 +112723,8 @@
               }
             ],
             "dismissal": {
-              "cost": "action"
+              "cost": "action",
+              "scope": "per-target"
             }
           }
         ]
@@ -118152,6 +118163,14 @@
                 }
               },
               {
+                "event": "action-dismissal",
+                "result": "effect-fades",
+                "transition": {
+                  "amount": 1,
+                  "unit": "minute"
+                }
+              },
+              {
                 "event": "damage-taken",
                 "result": "effect-fades",
                 "transition": {
@@ -121414,7 +121433,8 @@
             "lifecycle": [
               {
                 "event": "zero-hit-points",
-                "result": "duplicate-destroyed"
+                "result": "duplicate-destroyed",
+                "resultingState": "terminated"
               },
               {
                 "event": "recast",

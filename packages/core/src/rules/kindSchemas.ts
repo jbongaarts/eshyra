@@ -1583,6 +1583,7 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
     new Set([
       'kind',
       'options',
+      'eligibleTypes',
       'higherSlotMultipliers',
       'maxChallenge',
       'ofTypes',
@@ -1608,8 +1609,17 @@ function validateSummoningAppearance(appearance: Obj, path: string): string {
       assertOnlyKeys(
         appearance,
         path,
-        new Set(['kind', 'options', 'higherSlotMultipliers']),
+        new Set(['kind', 'options', 'eligibleTypes', 'higherSlotMultipliers']),
       );
+      // The candidate set is restricted by creature type (o9bd.18.7.9 review 4):
+      // Conjure Animals draws from beasts, Conjure Minor Elementals from
+      // elementals, Conjure Woodland Beings from fey. This is the selection
+      // eligibility rule, distinct from any post-summon `creatureType` change.
+      if (appearance.eligibleTypes !== undefined) {
+        if (reqStrArray(appearance, 'eligibleTypes', path).length === 0) {
+          throw new RulesPackError(`${path}.eligibleTypes must be non-empty`);
+        }
+      }
       reqObjArray(appearance, 'options', path).forEach((optionObj, i) => {
         assertOnlyKeys(
           optionObj,
@@ -2064,6 +2074,7 @@ function validateSummoningLifecycle(
         'event',
         'result',
         'priorState',
+        'resultingState',
         'damageCarriesOver',
         'window',
         'reassertableByRecast',
@@ -2084,6 +2095,7 @@ function validateSummoningLifecycle(
       'concentration-broken:uncontrolled-hostile',
       'damage-taken:effect-fades',
       'spell-ends:effect-fades',
+      'action-dismissal:effect-fades',
       'zero-hit-points:duplicate-destroyed',
       'spell-ends:transformed-target-reverts',
       'zero-hit-points:transformed-target-reverts',
@@ -2103,6 +2115,23 @@ function validateSummoningLifecycle(
       case 'action-dismissal:summoned-creature-disappears':
       case 'action-release:bond-ends-creature-disappears':
       case 'zero-hit-points:duplicate-destroyed':
+        // An actor-removal transition may declare the state it leaves a
+        // persistent companion in (o9bd.18.7.9 review 4): an absent but
+        // recoverable actor can be restored by recasting; a terminated one
+        // (bond released, destroyed) cannot. This keeps a post-release Find
+        // Steed recast from being routed to same-steed-returns-restored.
+        assertOnlyKeys(
+          item,
+          itemPath,
+          new Set(['event', 'result', 'resultingState']),
+        );
+        optEnum(
+          item,
+          'resultingState',
+          itemPath,
+          new Set(['absent-recoverable', 'terminated']),
+        );
+        break;
       case 'spell-ends:transformed-target-reverts':
       case 'zero-hit-points:transformed-target-reverts':
         assertOnlyKeys(item, itemPath, new Set(['event', 'result']));
@@ -2112,9 +2141,11 @@ function validateSummoningLifecycle(
       case 'recast:same-steed-returns-restored':
       case 'recast:prior-duplicates-instantly-destroyed': {
         // A recast transition is state-sensitive: what a re-cast does depends
-        // on whether the persistent actor is still active or already gone
-        // (o9bd.18.7.9 review 3). e.g. Find Familiar re-forms an active
-        // familiar but re-summons a familiar that dropped to 0 HP.
+        // on the persistent actor's prior state (o9bd.18.7.9 reviews 3-4).
+        // `active` re-forms/destroys a still-present actor; `absent-recoverable`
+        // restores one that is gone but whose summon relationship survives.
+        // `terminated` is never a recast precondition — a released/destroyed
+        // actor is not restorable.
         assertOnlyKeys(
           item,
           itemPath,
@@ -2124,7 +2155,7 @@ function validateSummoningLifecycle(
           result === 'existing-familiar-adopts-new-form' ||
           result === 'prior-duplicates-instantly-destroyed'
             ? 'active'
-            : 'gone';
+            : 'absent-recoverable';
         const priorState = reqStr(item, 'priorState', itemPath);
         if (priorState !== requiredPriorState) {
           throw new RulesPackError(
@@ -2178,6 +2209,7 @@ function validateSummoningLifecycle(
         break;
       case 'damage-taken:effect-fades':
       case 'spell-ends:effect-fades':
+      case 'action-dismissal:effect-fades':
         assertOnlyKeys(
           item,
           itemPath,
@@ -2488,9 +2520,18 @@ function validateSummoningEffect(effect: Obj, path: string): void {
     assertOnlyKeys(
       dismissal,
       `${path}.dismissal`,
-      new Set(['cost', 'temporary', 'permanent']),
+      new Set(['cost', 'scope', 'temporary', 'permanent']),
     );
     reqEnum(dismissal, 'cost', `${path}.dismissal`, new Set(['action']));
+    // Scope distinguishes dismissing one transformed creature (Giant Insect:
+    // "dismiss the effect on it") from ending the whole effect
+    // (o9bd.18.7.9 review 4).
+    optEnum(
+      dismissal,
+      'scope',
+      `${path}.dismissal`,
+      new Set(['per-target', 'whole-effect']),
+    );
     if (dismissal.temporary !== undefined) {
       const temporary = dismissal.temporary as Obj;
       assertOnlyKeys(

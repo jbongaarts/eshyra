@@ -908,6 +908,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
       expect.objectContaining({
         appears: {
           kind: 'option-menu',
+          eligibleTypes: ['beast'],
           options: [
             { count: 1, maxChallenge: '2' },
             { count: 2, maxChallenge: '1' },
@@ -922,6 +923,16 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
           initiative: 'group',
         }),
       }),
+    );
+    // option-menu creature-type eligibility (distinct from post-summon type).
+    expect(spellEffects('spell:conjure-animals')[0].appears).toEqual(
+      expect.objectContaining({ eligibleTypes: ['beast'] }),
+    );
+    expect(spellEffects('spell:conjure-minor-elementals')[0].appears).toEqual(
+      expect.objectContaining({ eligibleTypes: ['elemental'] }),
+    );
+    expect(spellEffects('spell:conjure-woodland-beings')[0].appears).toEqual(
+      expect.objectContaining({ eligibleTypes: ['fey'] }),
     );
     expect(spellEffects('spell:conjure-elemental')[0]).toEqual(
       expect.objectContaining({
@@ -1108,11 +1119,20 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         },
         lifecycle: expect.arrayContaining([
           {
+            event: 'zero-hit-points',
+            result: 'summoned-creature-disappears',
+            resultingState: 'absent-recoverable',
+          },
+          {
             event: 'recast',
             result: 'existing-familiar-adopts-new-form',
             priorState: 'active',
           },
-          { event: 'recast', result: 'familiar-reappears', priorState: 'gone' },
+          {
+            event: 'recast',
+            result: 'familiar-reappears',
+            priorState: 'absent-recoverable',
+          },
         ]),
         modifications: [{ attribute: 'cannot-attack' }],
         telepathy: { rangeFeet: 100 },
@@ -1140,13 +1160,23 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
         // Source establishes only an exclusive bond, no obedience/initiative/
         // default-behavior rule for the steed itself.
         control: { exclusiveInstance: true },
+        // 0 HP and action dismissal are recoverable (same steed can return);
+        // bond release terminates the bond, so recast cannot restore it.
         lifecycle: expect.arrayContaining([
-          { event: 'action-dismissal', result: 'summoned-creature-disappears' },
-          { event: 'action-release', result: 'bond-ends-creature-disappears' },
+          {
+            event: 'action-dismissal',
+            result: 'summoned-creature-disappears',
+            resultingState: 'absent-recoverable',
+          },
+          {
+            event: 'action-release',
+            result: 'bond-ends-creature-disappears',
+            resultingState: 'terminated',
+          },
           {
             event: 'recast',
             result: 'same-steed-returns-restored',
-            priorState: 'gone',
+            priorState: 'absent-recoverable',
           },
         ]),
         dismissal: {
@@ -1159,24 +1189,33 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     expect(spellEffects('spell:giant-insect')[0]).toEqual(
       expect.objectContaining({
         appears: expect.objectContaining({ kind: 'target-transformation' }),
-        // No defaultBehavior: source states obedience and caster-turn action
-        // but no no-command default behavior.
+        // No defaultBehavior and no commandEconomy: source states obedience and
+        // caster-turn initiative, but not a no-command default behavior or a
+        // special command economy.
         control: {
           mode: 'obedient',
-          commandEconomy: { cost: 'on-your-turn' },
           initiative: 'acts-on-casters-turn',
         },
         lifecycle: [
           { event: 'spell-ends', result: 'transformed-target-reverts' },
           { event: 'zero-hit-points', result: 'transformed-target-reverts' },
         ],
+        // Dismissal is per transformed creature, not the whole effect.
+        dismissal: { cost: 'action', scope: 'per-target' },
       }),
     );
     // Phantom Steed defines a rideable mount with no control semantics, so it
-    // carries no control block at all.
+    // carries no control block at all; the action-dismissal end is still typed.
     expect(spellEffects('spell:phantom-steed')[0]).toEqual(
       expect.objectContaining({
         travel: { normalMilesPerHour: 10, fastMilesPerHour: 13 },
+        lifecycle: expect.arrayContaining([
+          {
+            event: 'action-dismissal',
+            result: 'effect-fades',
+            transition: { amount: 1, unit: 'minute' },
+          },
+        ]),
       }),
     );
     expect(spellEffects('spell:phantom-steed')[0]).not.toHaveProperty(
@@ -1192,7 +1231,11 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
           exclusiveInstance: true,
         },
         lifecycle: [
-          { event: 'zero-hit-points', result: 'duplicate-destroyed' },
+          {
+            event: 'zero-hit-points',
+            result: 'duplicate-destroyed',
+            resultingState: 'terminated',
+          },
           {
             event: 'recast',
             result: 'prior-duplicates-instantly-destroyed',
