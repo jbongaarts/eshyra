@@ -58,6 +58,7 @@ import {
   getClassSpellcasting,
   getClassStartingEquipment,
   loadRulesPackFromDirectory,
+  type RulesAmbiguity,
   type RulesPack,
   RulesPackError,
   type RulesRecord,
@@ -1239,25 +1240,13 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
  */
 export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
   'spell:alarm',
-  'spell:animate-dead',
-  'spell:animate-objects',
   'spell:commune-with-nature',
-  'spell:conjure-animals',
-  'spell:conjure-celestial',
-  'spell:conjure-elemental',
-  'spell:conjure-fey',
-  'spell:conjure-minor-elementals',
-  'spell:conjure-woodland-beings',
   'spell:contingency',
-  'spell:create-undead',
   'spell:creation',
   'spell:demiplane',
   'spell:druidcraft',
   'spell:fabricate',
-  'spell:find-familiar',
-  'spell:find-steed',
   'spell:gate',
-  'spell:giant-insect',
   'spell:identify',
   'spell:illusory-script',
   'spell:legend-lore',
@@ -1265,11 +1254,9 @@ export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
   'spell:mending',
   'spell:move-earth',
   'spell:passwall',
-  'spell:phantom-steed',
   'spell:planar-ally',
   'spell:private-sanctum',
   'spell:purify-food-and-drink',
-  'spell:simulacrum',
   'spell:stone-shape',
   'spell:tiny-hut',
 ]);
@@ -1475,6 +1462,14 @@ export type GameplayReadinessReport = {
       readonly metadataOnly: readonly string[];
     };
   };
+  /** Unresolved source questions emitted as first-class immutable pack data. */
+  readonly sourceAmbiguities: {
+    readonly total: number;
+    readonly entries: readonly {
+      readonly recordKey: string;
+      readonly ambiguity: RulesAmbiguity;
+    }[];
+  };
   /**
    * Resolved kind×bucket dispositions for not-yet-modeled records
    * (eshyra-o9bd.18.9.6): every non-empty bucket paired with its reviewed
@@ -1508,6 +1503,18 @@ export function buildGameplayReadinessReport(
 ): GameplayReadinessReport {
   const choiceFindingKeys = new Set(choiceProseFindings.map((f) => f.key));
   const kinds = [...new Set(pack.records.map((record) => record.kind))].sort();
+  const sourceAmbiguityEntries = pack.records
+    .flatMap((record) => {
+      const mechanics = objectValue(dataObject(record)?.mechanics);
+      const ambiguities = arrayValue(
+        mechanics?.ambiguities,
+      ) as RulesAmbiguity[];
+      return ambiguities.map((ambiguity) => ({
+        recordKey: record.key,
+        ambiguity,
+      }));
+    })
+    .sort((a, b) => a.ambiguity.id.localeCompare(b.ambiguity.id));
   const byKind: GameplayReadinessReport['byKind'] = {};
   for (const kind of kinds) {
     const records = pack.records
@@ -1910,6 +1917,10 @@ export function buildGameplayReadinessReport(
     byKind,
     creatureEntries,
     spellEffects,
+    sourceAmbiguities: {
+      total: sourceAmbiguityEntries.length,
+      entries: sourceAmbiguityEntries,
+    },
     highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
       key: finding.key,
       kind: finding.kind,
@@ -1979,6 +1990,17 @@ export function formatGameplayReadinessReport(
     'Spell effect depth (eshyra-o9bd.18.7.4)',
     `- spells: ${report.spellEffects.totalSpells}; deterministic effect semantics: ${report.spellEffects.spellsWithDeterministicEffects}; metadata-only: ${report.spellEffects.metadataOnlySpells}`,
     `- metadata-only examples: [${report.spellEffects.examples.metadataOnly.join(', ') || 'none'}]`,
+  );
+  lines.push(
+    '',
+    'Unresolved authoritative-source ambiguities',
+    `- total: ${report.sourceAmbiguities.total}`,
+    ...(report.sourceAmbiguities.entries.length === 0
+      ? ['(none)']
+      : report.sourceAmbiguities.entries.map(
+          ({ recordKey, ambiguity }) =>
+            `- ${ambiguity.id} (${recordKey}; ${ambiguity.runtimeDisposition.status} -> ${ambiguity.runtimeDisposition.owner}): ${ambiguity.question}`,
+        )),
   );
   lines.push('', 'High-impact unresolved choice-prose examples');
   if (report.highImpactExamples.length === 0) {

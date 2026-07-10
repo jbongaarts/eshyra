@@ -898,6 +898,9 @@ export type {
 export { normalizeRulesRecordName, resolveRulesStack } from './rules/stack.js';
 export type {
   RecordProvenance,
+  RulesAmbiguity,
+  RulesAmbiguityInterpretation,
+  RulesAmbiguitySource,
   RulesPackSource,
   RulesRecord,
   RulesRecordKind,

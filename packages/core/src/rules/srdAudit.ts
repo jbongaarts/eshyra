@@ -903,6 +903,50 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
     }
   }
 
+  const mechanics = data.mechanics;
+  if (
+    typeof mechanics === 'object' &&
+    mechanics !== null &&
+    !Array.isArray(mechanics) &&
+    Array.isArray((mechanics as { effects?: unknown }).effects)
+  ) {
+    const effects = (mechanics as { effects: unknown[] }).effects;
+    effects.forEach((effect, effectIndex) => {
+      if (
+        typeof effect !== 'object' ||
+        effect === null ||
+        Array.isArray(effect) ||
+        (effect as { kind?: unknown }).kind !== 'summoning'
+      ) {
+        return;
+      }
+      const visit = (value: unknown, field: string): void => {
+        if (Array.isArray(value)) {
+          value.forEach((entry, index) => {
+            visit(entry, `${field}[${index}]`);
+          });
+          return;
+        }
+        if (typeof value !== 'object' || value === null) return;
+        for (const [key, entry] of Object.entries(value)) {
+          const nestedField = `${field}.${key}`;
+          if (key === 'creatureRef' || key === 'resultRef') {
+            push(entry, ['creature'], nestedField);
+          } else if (key === 'creatureRefs' && Array.isArray(entry)) {
+            entry.forEach((ref, refIndex) => {
+              push(ref, ['creature'], `${nestedField}[${refIndex}]`);
+            });
+          } else if (key === 'tableRef') {
+            push(entry, ['table'], nestedField);
+          } else {
+            visit(entry, nestedField);
+          }
+        }
+      };
+      visit(effect, `mechanics.effects[${effectIndex}]`);
+    });
+  }
+
   if (Array.isArray(data.choices)) {
     data.choices.forEach((choice, choiceIndex) => {
       const c = choice as {

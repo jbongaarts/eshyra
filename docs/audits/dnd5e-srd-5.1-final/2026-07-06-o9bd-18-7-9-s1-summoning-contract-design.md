@@ -1,223 +1,181 @@
-# eshyra-o9bd.18.7.9 slice S1 — summoning/controlled-creature contract design
+# eshyra-o9bd.18.7.9 slice S1: summoning contract design
 
-Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. Status: **design** — rollout
-of the 14 spells is Codex work after review. Source semantics: §2.1 of
-`2026-07-06-o9bd-18-7-9-membership-classification.md`.
+Date: 2026-07-06. Reconciled: 2026-07-09. Bead:
+`eshyra-o9bd.18.7.9`.
 
-## 1. Why a new kind
+This is the source-derived design for the 14 S1 spells classified in
+`2026-07-06-o9bd-18-7-9-membership-classification.md`. The licensed SRD 5.1
+source is authoritative. `S1_SUMMONING_SPECS` is the sole executable semantic
+registry; this document records the reviewed contract and transition matrix but
+is not a second compiler input.
 
-The existing `summonCreature { creature, rangeFeet, target?,
-maximumControlled? }` models a single fixed creature and stays for the
-creature-trait uses it already serves. The 14 S1 spells need option menus,
-control economies, loss-of-control transitions, and statblock
-modifications; stretching `summonCreature` would break its existing
-payloads. New kind: `summoning`. (Do not migrate `summonCreature` callers
-in this slice.)
+## 1. Architecture decision
 
-## 2. Payload schema
+The existing `summonCreature` effect remains for fixed creature-trait uses. S1
+uses `summoning`, split into orthogonal immutable rule axes:
 
-```ts
-{
-  kind: 'summoning',
-  appears: Appearance,
-  creatureType?: { treatedAs: string[],           // ['fey'] "considered fey"
-                   chooseOne?: boolean },         // familiar/steed: celestial/fey/fiend, caster's choice
-  control: Control,
-  lifecycle: Lifecycle[],                          // non-empty; see source-backed union below
-  sourceRequirement?: { shape: 'cube',
-                        sizeFeet: number,
-                        materialOrTerrain: string[] }, // conjure-elemental 10-ft cube
-  dismissal?: { cost: 'action',
-                temporary?: { to: 'pocket-dimension',
-                              recall: { cost: 'action', rangeFeet: number } } },
-  modifications?: Modification[],                 // deltas against the source statblock
-  telepathy?: { rangeFeet: number },
-  senseSharing?: { cost: 'action',
-                   casterConditionWhileSharing: ('deaf'|'blind')[] },
-  spellDelivery?: { spellRange: 'touch', cost: 'reaction' },
-  spellSharing?: { when: 'caster-targets-only-self',
-                   requiresMounted: true,
-                   alsoAffects: 'steed' },
-  repair?: { costGpPerHitPoint: number },
-  riders?: string[],                              // narrative residue only (see §5)
-}
+- `creation`: selection eligibility, cardinality, placement, and fixed stat
+  overlays. Candidate eligibility never implies a resulting creature type.
+- `typeTreatment`: an explicit type addition or replacement, when the source
+  changes type after selection.
+- `control`: relationship, initiative, and an optional command protocol.
+  Command channel, cost, timing, batching, order persistence, and no-command
+  behavior are independent fields and are omitted when the source is silent.
+- `initialState` and `transitions`: source-defined changes to independent
+  `effect`, `presence`, `link`, `control`, `attitude`, `form`, and `integrity`
+  axes. They describe rules, not live actor state.
+- `identity`: ordinary instances, persistent linked actors, or duplicate actors.
+- `protocols`, `modifications`, `scaling`, and `hooks`: spell-specific
+  deterministic rules and explicit external execution owners.
+- `mechanics.ambiguities`: unresolved questions in the authoritative source,
+  with stable IDs, exact clause locators, affected semantic paths, known
+  interpretations, and an explicit null canonical resolution. Campaign rulings
+  are not rules-pack data.
 
-type Appearance =
-  | { kind: 'option-menu',                        // conjure-animals/minor-elementals/woodland-beings
-      options: { count: number, maxChallenge: string }[],   // '2','1','1/2','1/4'
-      higherSlotMultipliers?: Record<number, number> }      // {5:2, 7:3, 9:4} — structured scaling
-  | { kind: 'cr-cap', maxChallenge: string, ofTypes: string[],
-      higherSlot?: { level: number, maxChallenge: string }  // conjure-celestial 9th → CR 5
-      | { perSlotAbove: number, challengeIncrease: number } }  // conjure-elemental/fey
-  | { kind: 'form-list',
-      forms: { name: string, creatureRef?: string,          // 'creature:riding-horse'
-               speedOverrides?: Record<string, number> }[] } // familiar, find-steed, phantom-steed
-  | { kind: 'target-transformation',                        // giant-insect
-      targets: { count: number, from: string, toRef: string }[] }
-  | { kind: 'corpse-animation',                             // animate-dead, create-undead
-      sources: { material: string, becomesRef: string }[],  // bones→skeleton, corpse→zombie, corpse→ghoul
-      castingConstraint?: string }                          // create-undead: 'night-only'
-  | { kind: 'object-animation',                             // animate-objects
-      maxObjects: number,
-      sizeCosts: Record<string, number>,                    // {medium:2, large:4, huge:8}
-      statTableRef: string }                                // table:animated-object-statistics
-  | { kind: 'duplicate', of: string }                       // simulacrum: 'beast-or-humanoid'
+The profile discriminant is a semantic license, not merely a label. It limits
+which state axes, values, triggers, operations, protocols, and identity policy a
+record may use. This makes structurally valid but meaningless combinations fail
+validation without constructing a universal summon runtime.
 
-type Control = {
-  mode: 'obedient' | 'friendly-commanded' | 'independent-obedient',
-  commandEconomy?: { cost: 'bonus-action' | 'verbal-no-action' | 'on-your-turn',
-                     rangeFeet?: number },       // animate-dead 60, create-undead 120, animate-objects 500
-  alignmentLimited?: boolean,                    // celestial/fey refuse violating commands
-  defaultBehavior: 'defends-only' | 'defends-otherwise-idle',
-  initiative: 'own-turn' | 'group' | 'acts-on-casters-turn',
-  window?: { amount: number, unit: 'hour' },     // 24 h control window
-  reassert?: { maxCreatures: number },           // recast reasserts ≤N
-  exclusiveInstance?: boolean,                   // familiar/steed/simulacrum one-at-a-time
-}
+Profiles:
 
-type Lifecycle =
-  | { event: 'spell-ends' | 'zero-hit-points',
-      result: 'summoned-creature-disappears' }   // find-familiar and concentration summons
-  | { event: 'spell-ends',
-      result: 'animated-object-reverts',
-      damageCarriesOver: true }                  // animate-objects
-  | { event: 'control-window-expires',
-      result: 'animated-creature-persists-uncontrolled',
-      window: { amount: 24, unit: 'hour' },
-      reassertableByRecast: { maxCreatures: number } } // animate-dead/create-undead
-  | { event: 'concentration-broken',
-      result: 'uncontrolled-hostile',
-      dismissable: false,
-      disappearsAfter: { amount: number, unit: 'hour' | 'minute' } } // conjure-elemental/fey
-  | { event: 'damage-taken' | 'spell-ends',
-      result: 'effect-fades',
-      transition: { amount: 1, unit: 'minute' } } // phantom-steed
-  | { event: 'zero-hit-points',
-      result: 'duplicate-destroyed' }            // simulacrum melts
-  | { event: 'spell-ends' | 'zero-hit-points',
-      result: 'transformed-target-reverts' }     // giant-insect: each target reverts
-                                                 // to its natural form; NO damage
-                                                 // carryover claim (source states none —
-                                                 // do not import polymorph semantics)
-  // Recast semantics under exclusiveInstance are per-spell and source-backed —
-  // deliberately NOT a shared generic rule:
-  | { event: 'recast',
-      result: 'existing-familiar-adopts-new-form' } // find-familiar: recasting while you
-                                                 // have a familiar causes it to adopt a
-                                                 // new form — nothing is destroyed
-  | { event: 'recast',
-      result: 'same-steed-returns-restored' }    // find-steed: casting again after the
-                                                 // steed disappeared summons the SAME
-                                                 // steed, restored to its HP maximum —
-                                                 // persistent identity, not replacement
-  | { event: 'recast',
-      result: 'prior-duplicates-instantly-destroyed' } // simulacrum only: active
-                                                 // duplicates are instantly destroyed
+| Profile | Licensed state axes | S1 users |
+| --- | --- | --- |
+| `control-window-undead` | `control` | Animate Dead, Create Undead |
+| `animated-object` | `effect`, `form` | Animate Objects |
+| `ordinary-summon` | `effect`, `presence` | Animals, Celestial, Minor Elementals, Woodland Beings |
+| `exceptional-concentration-summon` | `effect`, `presence`, `control`, `attitude` | Elemental, Fey |
+| `persistent-familiar` | `presence`, `link` | Find Familiar |
+| `persistent-steed` | `presence`, `link` | Find Steed |
+| `target-transformation` | `effect`, `form` | Giant Insect |
+| `phantom-steed` | `effect`, `presence` | Phantom Steed |
+| `simulacrum` | `effect`, `integrity` | Simulacrum |
 
-type Modification =
-  | { attribute: 'hit-point-maximum', value: 'half-of-original' }        // simulacrum
-  | { attribute: 'speed', mode: string, value: number }                  // phantom steed 100
-  | { attribute: 'intelligence-floor', value: number, grantsLanguage?: 1 } // find-steed Int 6
-  | { attribute: 'no-equipment' }                                        // simulacrum
-  | { attribute: 'cannot-attack' }                                       // find-familiar
-  | { attribute: 'no-advancement-or-slot-recovery' }                     // simulacrum
-```
+Runtime boundaries follow ADR 0017. Pack records contain source-derived rules,
+transition preconditions, timers, and hook declarations. Encounter state,
+action/reaction budgets, concentration execution, clock scheduling, derived
+math, and currency spending remain external to the compiler. Contextual target
+or terrain adjudication remains model-supported when the source assigns it to
+the GM. Resolving a published-source ambiguity is engine-pending and owned by a
+future campaign-ruling surface; the compiler neither prefers an interpretation
+nor writes campaign state.
 
-`scaling.sourceText` remains on every spell verbatim; where the scaling is
-menu-shaped it is ALSO structured in `appears`
-(`higherSlotMultipliers`/`higherSlot`) — same both-representations policy
-as statline `sourceText`.
+## 2. Shared contract invariants
 
-## 3. Validation rules (kindSchemas)
+1. Cardinality is `exact` or `maximum`. Alternatives use an exclusive
+   `choose-one` menu; they are never interpreted as cumulative.
+2. Candidate eligibility (`creatureTypes`, CR, forms, source objects) is
+   separate from `typeTreatment`. Type `add` preserves the original type;
+   `replace` removes it and selects exactly one replacement.
+3. Placement records only deterministic source constraints. A `visible`,
+   `unoccupied`, `onGround`, or source-relative constraint is immutable rule
+   data; deciding whether a scene satisfies it is model/engine adjudication.
+4. A command protocol never infers its channel from its cost. Missing cost or
+   fallback fields mean the source is silent, not a shared default.
+5. State selectors and changes are closed and profile-licensed. Every transition
+   has an explicit trigger, precondition, changes, and (where relevant) an
+   operation. The validator proves every precondition is reachable from the
+   initial state or a prior transition result.
+6. Relative timers carry an anchor. Elemental/Fey removal after lost
+   concentration is anchored to `spell-cast`, not to the concentration break.
+   Their ordinary `spell-ended` removal excludes the `concentration-broken`
+   cause, so both outcomes cannot fire.
+7. Control reassertion requires `control=controlled`, the actor was created by
+   that spell, and completion before the current control window expires. It
+   resets the window; uncontrolled actors are not eligible.
+8. Persistent identity requires an active link. Physical absence does not end a
+   Familiar/Steed link. A terminal link state is never a same-identity recast
+   precondition.
+9. Every source-derived semantic value or relationship in a spec is named by a
+   semantic binding to one or more source clauses. Structural IDs,
+   discriminants, and grouping keys do not require artificial prose bindings.
+10. Nested `creature:*` and `table:*` references must resolve and be kind-correct
+    both in curated specs and in the committed pack.
+11. An ambiguity-gated mechanic cites a declared `ambiguity:*` ID. Ambiguity
+    objects are closed, have at least two machine-readable interpretations,
+    carry non-empty source and affected-path sets, and require
+    `canonicalResolution: null`. An unknown reference, an unused ambiguity, or
+    a non-null winner fails validation.
 
-- Discriminated unions exactly as above; unknown fields rejected per kind
-  (marker-only discipline). `options`, `forms`, `sources`, `targets`
-  non-empty; counts/ranges positive integers; `maxChallenge` from the CR
-  token set (`0`,`1/8`,`1/4`,`1/2`,`1`..`30`).
-- `creatureRef`/`toRef`/`becomesRef` must be `creature:*` refs; ref
-  integrity against the pack is a committed-pack test (schema cannot see
-  siblings). `statTableRef` must be a `table:*` ref present in the
-  record's `tableRefs`.
-- `lifecycle.event = 'concentration-broken'` only valid when the spell's
-  structured duration has `concentration: true`.
-- `reassert`/`window` require `commandEconomy`; `exclusiveInstance`
-  forbids `window`.
-- `lifecycle` non-empty. `animated-creature-persists-uncontrolled` requires
-  `control.window`; `reassertableByRecast.maxCreatures` must match the
-  spell's recast-control clause. `summoned-creature-disappears` is not valid
-  for `corpse-animation`, because animate-dead/create-undead creatures
-  persist when control expires.
-- `sourceRequirement`, `telepathy`, `senseSharing`, `spellDelivery`,
-  `spellSharing`, and `repair` are typed deterministic protocols, not
-  riders. Range/cost/size fields are positive integers / closed enums.
-- `appears.kind = 'target-transformation'` requires a
-  `transformed-target-reverts` lifecycle entry and forbids
-  `summoned-creature-disappears` and `animated-object-reverts` (the
-  transformed creatures are pre-existing targets, not summons or objects).
-  `transformed-target-reverts` carries no `damageCarriesOver` field.
-- `control.exclusiveInstance: true` requires exactly one `recast` lifecycle
-  entry, and the three recast results are spell-specific: schema-level the
-  union admits all three, but committed-pack assertions pin
-  `existing-familiar-adopts-new-form` to find-familiar,
-  `same-steed-returns-restored` to find-steed, and
-  `prior-duplicates-instantly-destroyed` to simulacrum. A `recast` lifecycle
-  entry is invalid without `exclusiveInstance: true`.
+## 3. Source-derived matrix
 
-## 4. Runtime integration boundaries
+Legend: `N/A` means the source does not define the axis. `MA` is intentionally
+model-adjudicated. `EH` is an external engine hook. Counts marked `max` are not
+exact. All placement satisfaction and GM-expanded option decisions are MA.
 
-- Pack carries data; live summon instances (current HP, control clock,
-  uncontrolled state) are session state owned by encounter tools
-  (`start_encounter`/`update_combatant`), not the pack.
-- The 24 h control window and concentration-break transitions are timers:
-  integration point is the clock tool + turn loop, tracked as engine
-  procedures (18.7.8.3 inventory), not spell payload behavior.
-- XP for summoned creatures (rule:challenge-experience-points) reads the
-  referenced statblock; no payload field needed.
+### 3.1 Creation, type, placement, control, and scaling
 
-## 5. Riders policy (explicit, bounded)
+| Spell | Creation / eligibility / cardinality | Candidate / resulting type / placement | Control and command | Scaling |
+| --- | --- | --- | --- | --- |
+| Animate Dead | One M/S humanoid bones/corpse; distinct source per added actor | Bones -> skeleton; corpse -> zombie; appears in source place | Obedient; own turn; mental bonus action within 60 ft; any/all receive same command; general order persists; without active order defends itself | Create or reassert +2/slot above 3rd |
+| Animate Objects | Capacity max 10; nonmagical, unworn/un-carried, <= Huge; M=2, L=4, H=8 | Existing targets animate in place; become constructs; fixed overlay below | Obedient; own turn; mental bonus action within 500 ft; any/all same command; general order persists; without active order defends itself | +2 capacity/slot above 5th |
+| Conjure Animals | Choose one exact menu: 1 CR2, 2 CR1, 4 CR1/2, 8 CR1/4 | Beast candidates; add fey; visible unoccupied spaces in range | Friendly; grouped own turns; verbal, no action; without new command defend, otherwise no actions | Menu counts x2 at 5, x3 at 7, x4 at 9 |
+| Conjure Celestial | Exact 1, celestial CR4 | Celestial; visible unoccupied space in range | Friendly; own turn; verbal, no action, alignment-limited; without new command defend, otherwise no actions | CR5 at slot 9 |
+| Conjure Elemental | Exact 1, elemental CR5 appropriate to selected air/earth/fire/water 10-ft cube | Elemental; unoccupied within 10 ft of selected source | Friendly/controlled; own turn; verbal, no action; without new command defend, otherwise no actions | CR +1/slot above 5th |
+| Conjure Fey | Choose one exact alternative: fey CR6, or beast-form fey spirit CR6 | Fey candidate unchanged; beast candidate has type replaced by fey; visible unoccupied space in range | Friendly; own turn; verbal, no action, alignment-limited; without new command defend, otherwise no actions | CR +1/slot above 6th |
+| Conjure Minor Elementals | Choose one exact menu: 1 CR2, 2 CR1, 4 CR1/2, 8 CR1/4 | Elemental candidates; visible unoccupied spaces in range | Friendly; grouped own turns; verbal, no action; without new command defend, otherwise no actions | Menu counts x2 at 6, x3 at 8 |
+| Conjure Woodland Beings | Choose one exact menu: 1 CR2, 2 CR1, 4 CR1/2, 8 CR1/4 | Fey candidates; visible unoccupied spaces in range | Friendly; grouped own turns; verbal, no action; without new command defend, otherwise no actions | Menu counts x2 at 6, x3 at 8 |
+| Create Undead | Night only; max 3 M/S humanoid corpses -> ghouls | Corpse mapping; actor appears in source place | Obedient; own turn; mental bonus action within 120 ft; any/all same command; general order persists; without active order defends itself | Slot 7 max4 ghouls; 8 max5 ghouls or max2 selected from ghast/wight eligibility; 9 max6 ghouls, max3 selected from ghast/wight eligibility, or max2 mummies; applies to create/reassert. Whether the ghast/wight group may mix is unresolved (`ambiguity:create-undead-ghast-wight-composition`) |
+| Find Familiar | Choose exact 1 from 15 fixed forms | Form stat block; replace beast with exactly one celestial/fey/fiend; unoccupied in range | Independent, always obedient; own turn; no source-defined channel/cost/fallback | N/A |
+| Find Steed | Choose exact 1 from 5 fixed forms; GM may allow others | Form stat block; replace normal type with exactly one celestial/fey/fiend; unoccupied in range | Long-lasting bond and service as mount; no source-defined command/initiative economy | N/A |
+| Giant Insect | Choose one maximum alternative: 10 centipedes, 3 spiders, 5 wasps, 1 scorpion | Fixed source-to-giant refs; targets transform in place; GM may allow analogous targets | Obedient to verbal commands; acts on caster turn; cost/timing/fallback unstated | N/A |
+| Phantom Steed | Exact 1 Large quasi-real horselike actor; riding-horse stats | Ground, unoccupied, in range; appearance chosen | Designated rider; no command/initiative rule | Speed 100 fixed override |
+| Simulacrum | Exact 1 beast/humanoid remains in touch range for full 12-hour cast | Duplicate of selected target; appears as original | Friendly to caster/designated; spoken commands; acts on caster turn; cost/fallback unstated | N/A |
 
-`riders` are allowed only for genuinely narrative or source-location
-residue that does not affect deterministic execution. They must not hide
-eligibility gates, action/reaction economy, ranges, lifecycle transitions,
-exclusive-instance limits, telepathy, sense sharing, touch-spell delivery,
-mounted spell sharing, repair costs, or retained/lost capabilities.
-`riders` non-empty strings, and committed-pack assertions pin the exact
-rider count per golden record so silent rider growth fails the gate.
+### 3.2 Lifecycle and protocols
 
-## 6. Golden examples for rollout
+| Spell | Initial state and transitions | Recast / control window | Protocols and external ownership |
+| --- | --- | --- | --- |
+| Animate Dead | `control=controlled`; no spell-end/0-HP summon transition | At 24 h -> uncontrolled. Before expiry, controlled actors made by this spell may be reasserted (max4 plus scaling), resetting 24 h | F2 command budget; F3 control timer |
+| Animate Objects | `effect=active, form=manifested`; spell/concentration end -> ended/original; 0 HP -> ended/original and remaining damage carries | N/A | Complete construct overlay and attack procedure; F2 command; F3 concentration; F9 attack/math execution |
+| Conjure Animals | `effect=active, presence=present`; spell/concentration end or 0 HP -> ended/absent | N/A | F2 command; F3 concentration/removal |
+| Conjure Celestial | Same ordinary summon lifecycle | N/A | F2/F3 |
+| Conjure Elemental | Active/present/controlled/friendly; 0 HP -> ended/absent; ordinary spell end -> ended/absent except when cause is concentration break; concentration break -> uncontrolled/hostile and stays present; cast+1 h -> ended/absent | N/A | F2/F3; absolute cast-anchored timer |
+| Conjure Fey | Same exceptional-concentration lifecycle as Elemental | N/A | F2/F3; absolute cast-anchored timer |
+| Conjure Minor Elementals | Ordinary summon lifecycle | N/A | F2/F3 |
+| Conjure Woodland Beings | Ordinary summon lifecycle | N/A | F2/F3 |
+| Create Undead | Same control state lifecycle as Animate Dead | Pre-expiry reassert max3/base menu; scaling menu applies identically | F2/F3 |
+| Find Familiar | `presence=present, link=active`; 0 HP -> absent/active; temporary dismissal -> pocket/active; recall -> present/active; permanent dismissal from present/pocket -> absent/none. Availability of permanent dismissal from 0-HP absence is unresolved (`ambiguity:find-familiar-permanent-dismissal-after-zero-hp`) | With active link, cast changes form; if absent it also restores presence; if pocketed it remains pocketed. With no link a cast creates a new familiar | Telepathy 100 ft; sense share action within 100 ft until next turn with special senses and own-sense blind/deaf; touch delivery from familiar using reaction within 100 ft and caster attack modifier. F2 budgets |
+| Find Steed | `presence=present, link=active`; 0 HP/action dismiss -> absent/active; release -> absent/none | Recast from absent+active link restores same actor to max HP; active link prevents a second bond; no restoration after release | Telepathy 1 mile; mounted self-only spell sharing; Int floor 6 and one caster-spoken language. F2 budgets |
+| Giant Insect | `effect=active, form=manifested`; spell/concentration end, 0 HP, or per-target action dismissal -> ended/original | N/A | F2 dismissal; F3 concentration |
+| Phantom Steed | `effect=active, presence=present`; duration end, damage, or action dismissal -> fading; one minute after trigger -> ended/absent | N/A | Saddle/bit/bridle vanish when >10 ft from steed; designated rider; 10/13 mph. F2 dismissal, F3 timer |
+| Simulacrum | `effect=active, integrity=intact`; 0 HP -> ended/destroyed, reverts to snow and melts; dispelled -> effect ended | Recast destroys every active duplicate made by caster, then creates a new ordinary duplicate; no persistent relationship | Lab repair with rare herbs/minerals worth 100 gp/HP; F3 dispel/end, F9 stat derivation, F10 asset spend |
 
-1. `conjure-animals` — option-menu (4 options) + multipliers {5:2,7:3,9:4},
-   group initiative, verbal-no-action commands, treatedAs ['fey'].
-2. `conjure-elemental` — cr-cap + perSlotAbove, 10-ft source cube
-   requirement, concentration-broken lifecycle to uncontrolled hostile for
-   1 hour.
-3. `animate-dead` — corpse-animation (bones→skeleton, corpse→zombie),
-   bonus-action commands ≤60 ft, lifecycle control-window expiry to
-   uncontrolled persistent undead, reassert 4.
-4. `animate-objects` — object-animation with sizeCosts + statTableRef,
-   commands ≤500 ft; lifecycle spell-end reversion with damage carryover.
-5. `find-familiar` — form-list with creatureRefs, chooseOne type,
-   cannot-attack modification, pocket-dimension dismissal,
-   exclusiveInstance, recast → existing-familiar-adopts-new-form (the
-   familiar is never destroyed by recasting), zero-HP disappearance, typed
-   telepathy 100 ft, sense-sharing action, and touch-spell delivery via
-   reaction.
-6. `simulacrum` — duplicate + modifications (half HP max, no equipment,
-   no advancement), exclusiveInstance, recast →
-   prior-duplicates-instantly-destroyed, zero-HP duplicate destruction,
-   repair 100 gp/HP.
-7. `giant-insect` — target-transformation + transformed-target-reverts
-   lifecycle (spell end / 0 HP → natural form, no carryover), commands on
-   caster's turn, per-target dismissal.
+## 4. Fixed overlays and spell protocols
 
-Remaining 7 after goldens: conjure-celestial, conjure-fey,
-conjure-minor-elementals, conjure-woodland-beings, create-undead,
-find-steed, phantom-steed — all instances of the golden shapes above
-(Codex). find-steed must use recast → same-steed-returns-restored (the
-steed has persistent identity across castings — represent it as the same
-persistent actor, restored to HP maximum, never as a new instance).
+Animate Objects carries source-owned mechanics independently of the referenced
+size table: creature type construct; Constitution 10, Intelligence 3, Wisdom 3,
+Charisma 1; walk 30 if it has locomoting appendages, otherwise fly 30 and hover,
+or speed 0 while securely attached; blindsight 30 and blind beyond; one melee
+attack against a target within 5 ft; table-derived attack bonus and damage;
+bludgeoning by default with contextual slashing/piercing adjudication. Object
+shape classification is MA; attack and movement execution is F9.
 
-Membership bookkeeping on completion: remove the 14 keys from
-`ACCEPTED_METADATA_ONLY_SPELLS`, recount, negative tests per Appearance/
-Control variant, committed-pack assertions per golden, pack regeneration
-(S4 protocol).
+Find Familiar records duration/range/origin/attack-modifier relationships for
+sense sharing and spell delivery rather than only their action costs. Phantom
+Steed records the created-equipment distance tether. Simulacrum records full-cast
+target continuity, repair location/material/value prerequisites, zero-HP form,
+dispel end behavior, and recast cleanup.
+
+## 5. Source grounding and verification
+
+Each `S1_SUMMONING_SPECS` entry owns:
+
+- the immutable `effect` payload;
+- exact source-clause assertions against the parsed spell description and
+  higher-level text; and
+- semantic bindings grouping every source-derived value or relationship under
+  one or more clause IDs.
+
+Projection fails if any asserted clause drifts or any binding names an unknown
+clause. Tests prove exact 14-key membership, remove every bound source clause to
+prove fail-closed behavior, assert exact committed payloads for all 14 records,
+exercise transition reachability and profile-invalid state combinations, and
+verify every nested creature/table reference resolves to the required kind.
+
+## 6. Readiness
+
+The compiler slice is complete when all immutable semantics above are emitted
+and validated. Spells that declare F2/F3/F9/F10 remain engine-pending until those
+runtime surfaces exist. This PR does not implement those surfaces and does not
+promote live state into rules-pack data.

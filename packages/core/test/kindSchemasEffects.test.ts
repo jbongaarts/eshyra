@@ -1,4 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import {
+  materializeS1RulesAmbiguities,
+  materializeS1SummoningEffect,
+  S1_SUMMONING_SPELL_KEYS,
+  type S1SummoningSpellKey,
+} from '../scripts/importers/dnd5e-srd-5.1/s1SummoningSpecs.js';
 import { validateRecordKindSchema } from '../src/rules/kindSchemas.js';
 import type { RulesRecord } from '../src/rules/types.js';
 
@@ -9,7 +15,11 @@ import type { RulesRecord } from '../src/rules/types.js';
  * whitelist alone.
  */
 
-function featureWithEffect(effect: Record<string, unknown>): RulesRecord {
+function featureWithEffect(
+  effect: Record<string, unknown>,
+  concentration = false,
+  ambiguities?: readonly unknown[],
+): RulesRecord {
   return {
     systemId: 'dnd5e-srd',
     kind: 'feature',
@@ -19,15 +29,398 @@ function featureWithEffect(effect: Record<string, unknown>): RulesRecord {
       source: 'class:test',
       level: 1,
       description: 'Test feature.',
-      mechanics: { effects: [effect] },
+      mechanics: {
+        effects: [effect],
+        ...(ambiguities === undefined ? {} : { ambiguities }),
+        ...(concentration
+          ? {
+              duration: {
+                kind: 'timed',
+                amount: 1,
+                unit: 'hour',
+                upTo: true,
+                concentration: true,
+              },
+            }
+          : {}),
+      },
     },
   } as RulesRecord;
 }
 
-const validate = (effect: Record<string, unknown>): void =>
-  validateRecordKindSchema(featureWithEffect(effect), 'records[0]');
+const validate = (
+  effect: Record<string, unknown>,
+  concentration = false,
+): void => {
+  const serialized = JSON.stringify(effect);
+  const ambiguities = serialized.includes(
+    'ambiguity:create-undead-ghast-wight-composition',
+  )
+    ? materializeS1RulesAmbiguities('spell:create-undead')
+    : serialized.includes(
+          'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+        )
+      ? materializeS1RulesAmbiguities('spell:find-familiar')
+      : undefined;
+  validateRecordKindSchema(
+    featureWithEffect(effect, concentration, ambiguities),
+    'records[0]',
+  );
+};
+
+const validateWithAmbiguities = (
+  effect: Record<string, unknown>,
+  ambiguities: readonly unknown[],
+): void =>
+  validateRecordKindSchema(
+    featureWithEffect(effect, false, ambiguities),
+    'records[0]',
+  );
+
+function setAt(
+  root: Record<string, unknown>,
+  path: readonly (string | number)[],
+  value: unknown,
+): void {
+  let cursor: unknown = root;
+  for (const segment of path.slice(0, -1)) {
+    if (typeof cursor !== 'object' || cursor === null) {
+      throw new Error(`Invalid mutation path: ${path.join('.')}`);
+    }
+    cursor = (cursor as Record<PropertyKey, unknown>)[segment];
+  }
+  if (typeof cursor !== 'object' || cursor === null) {
+    throw new Error(`Invalid mutation path: ${path.join('.')}`);
+  }
+  (cursor as Record<PropertyKey, unknown>)[path.at(-1) as string | number] =
+    value;
+}
 
 describe('mechanics effect payload contracts', () => {
+  it('accepts all curated S1 summoning profiles', () => {
+    expect([...S1_SUMMONING_SPELL_KEYS]).toHaveLength(14);
+    for (const key of S1_SUMMONING_SPELL_KEYS) {
+      expect(
+        () =>
+          validate(
+            materializeS1SummoningEffect(key),
+            key === 'spell:conjure-elemental' || key === 'spell:conjure-fey',
+          ),
+        key,
+      ).not.toThrow();
+    }
+  });
+
+  it('rejects impossible S1 state, creation, control, and protocol combinations', () => {
+    const mutate = (
+      key: S1SummoningSpellKey,
+      change: (effect: Record<string, unknown>) => void,
+    ): Record<string, unknown> => {
+      const effect = structuredClone(materializeS1SummoningEffect(key));
+      change(effect);
+      return effect;
+    };
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-animals', (effect) => {
+          setAt(effect, ['unreviewed'], true);
+        }),
+      ),
+    ).toThrow(/unexpected payload key/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-animals', (effect) => {
+          setAt(effect, ['initialState', 'link'], 'active');
+        }),
+      ),
+    ).toThrow(/unexpected payload key "link"/);
+
+    expect(() =>
+      validate(
+        mutate('spell:find-steed', (effect) => {
+          setAt(effect, ['initialState', 'presence'], 'pocket-dimension');
+        }),
+      ),
+    ).toThrow(/unsupported state value pocket-dimension/);
+
+    expect(() =>
+      validate(
+        mutate('spell:animate-dead', (effect) => {
+          setAt(effect, ['transitions', 1, 'when', 'control'], 'uncontrolled');
+        }),
+      ),
+    ).toThrow(/reassert-control requires controlled state before expiry/);
+
+    expect(() =>
+      validate(
+        mutate('spell:animate-dead', (effect) => {
+          setAt(
+            effect,
+            ['transitions', 1, 'operation', 'deadline'],
+            'after-expiry',
+          );
+        }),
+      ),
+    ).toThrow(/invalid reassert-control eligibility or deadline/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-elemental', (effect) => {
+          setAt(
+            effect,
+            ['transitions', 3, 'timer', 'anchor'],
+            'transition-trigger',
+          );
+        }),
+      ),
+    ).toThrow(/must be anchored to spell-cast/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-fey', (effect) => {
+          setAt(effect, ['transitions', 0, 'exceptCauses'], undefined);
+        }),
+      ),
+    ).toThrow(/must exclude concentration-broken/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-elemental', (effect) => {
+          setAt(effect, ['causePrecedence'], {
+            higher: 'spell-ended',
+            lower: 'concentration-broken',
+          });
+        }),
+      ),
+    ).toThrow(/give concentration-broken precedence/);
+
+    expect(() =>
+      validate(
+        mutate('spell:giant-insect', (effect) => {
+          setAt(
+            effect,
+            ['creation', 'options', 0, 'cardinality', 'mode'],
+            'exact',
+          );
+        }),
+      ),
+    ).toThrow(/target alternatives require maximum counts/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-animals', (effect) => {
+          setAt(
+            effect,
+            ['creation', 'options', 0, 'cardinality', 'mode'],
+            'maximum',
+          );
+        }),
+      ),
+    ).toThrow(/candidate menus require exact counts/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-fey', (effect) => {
+          setAt(effect, ['typeTreatment', 'whenCandidateType'], 'dragon');
+        }),
+      ),
+    ).toThrow(/must name an eligible candidate type/);
+
+    expect(() =>
+      validate(
+        mutate('spell:giant-insect', (effect) => {
+          setAt(effect, ['control', 'command', 'cost'], 'none');
+        }),
+      ),
+    ).toThrow(/command keys must be exactly/);
+
+    expect(() =>
+      validate(
+        mutate('spell:simulacrum', (effect) => {
+          setAt(effect, ['control', 'command', 'fallback'], {
+            when: 'no-new-command',
+            behavior: 'defend-self-only',
+          });
+        }),
+      ),
+    ).toThrow(/command keys must be exactly/);
+
+    expect(() =>
+      validate(
+        mutate('spell:find-familiar', (effect) => {
+          setAt(effect, ['transitions', 5, 'when', 'link'], 'none');
+        }),
+      ),
+    ).toThrow(/terminated link|active persistent link/);
+
+    expect(() =>
+      validate(
+        mutate('spell:find-familiar', (effect) => {
+          setAt(effect, ['transitions', 2, 'when'], {
+            presence: 'pocket-dimension',
+            link: 'none',
+          });
+        }),
+      ),
+    ).toThrow(/terminated link|unreachable precondition/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-celestial', (effect) => {
+          setAt(effect, ['identity'], {
+            kind: 'persistent-linked',
+            maximumLinked: 1,
+          });
+        }),
+      ),
+    ).toThrow(/must be ordinary/);
+
+    expect(() =>
+      validate(
+        mutate('spell:animate-objects', (effect) => {
+          setAt(
+            effect,
+            ['statBlockOverlay', 'tableRef'],
+            'creature:animated-object',
+          );
+        }),
+      ),
+    ).toThrow(/table:\* reference/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-minor-elementals', (effect) => {
+          setAt(effect, ['protocols'], [{ kind: 'telepathy', rangeFeet: 100 }]);
+        }),
+      ),
+    ).toThrow(/is not licensed by profile ordinary-summon/);
+
+    expect(() =>
+      validate(
+        mutate('spell:phantom-steed', (effect) => {
+          setAt(effect, ['transitions', 0, 'when', 'effect'], 'ended');
+        }),
+      ),
+    ).toThrow(/ended state|unreachable precondition/);
+
+    expect(() =>
+      validate(
+        mutate('spell:simulacrum', (effect) => {
+          setAt(effect, ['hooks'], ['F10']);
+        }),
+      ),
+    ).toThrow(/must be exactly \[F3, F9, F10\]/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-elemental', (effect) => {
+          setAt(effect, ['creation', 'sourceEligibility'], undefined);
+        }),
+        true,
+      ),
+    ).toThrow(/sourceEligibility is required/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-fey', (effect) => {
+          setAt(effect, ['transitions', 2, 'restrictions'], undefined);
+        }),
+        true,
+      ),
+    ).toThrow(/must prohibit caster dismissal/);
+
+    expect(() =>
+      validate(
+        mutate('spell:find-familiar', (effect) => {
+          setAt(effect, ['control', 'command'], { channel: 'mental' });
+        }),
+      ),
+    ).toThrow(/command is not licensed/);
+
+    expect(() =>
+      validate(
+        mutate('spell:simulacrum', (effect) => {
+          setAt(effect, ['statBlockBasis'], undefined);
+        }),
+      ),
+    ).toThrow(/statBlockBasis is required/);
+
+    expect(() =>
+      validate(
+        mutate('spell:create-undead', (effect) => {
+          setAt(effect, ['scaling', 0, 'selection'], 'choose-all');
+        }),
+      ),
+    ).toThrow(/selection must be choose-one/);
+
+    expect(() =>
+      validate(
+        mutate('spell:find-steed', (effect) => {
+          setAt(effect, ['transitions', 3, 'reappearancePlacement'], undefined);
+        }),
+      ),
+    ).toThrow(/must reuse creation-placement/);
+
+    expect(() =>
+      validate(
+        mutate('spell:phantom-steed', (effect) => {
+          setAt(effect, ['modifications'], undefined);
+        }),
+      ),
+    ).toThrow(/modifications kinds must be exactly/);
+  });
+
+  it('rejects malformed, resolved, dangling, and semantically detached source ambiguities', () => {
+    const createEffect = materializeS1SummoningEffect('spell:create-undead');
+    const createAmbiguities = structuredClone(
+      materializeS1RulesAmbiguities('spell:create-undead'),
+    ) as Record<string, unknown>[];
+
+    const malformed = structuredClone(createAmbiguities);
+    malformed[0].preferredInterpretation = 'mixed-within-total';
+    expect(() => validateWithAmbiguities(createEffect, malformed)).toThrow(
+      /unsupported key "preferredInterpretation"/,
+    );
+
+    const resolved = structuredClone(createAmbiguities);
+    resolved[0].canonicalResolution = 'homogeneous-alternative';
+    expect(() => validateWithAmbiguities(createEffect, resolved)).toThrow(
+      /canonicalResolution must be null/,
+    );
+
+    const singleInterpretation = structuredClone(createAmbiguities);
+    singleInterpretation[0].interpretations = (
+      singleInterpretation[0].interpretations as unknown[]
+    ).slice(0, 1);
+    expect(() =>
+      validateWithAmbiguities(createEffect, singleInterpretation),
+    ).toThrow(/interpretations must contain at least two entries/);
+
+    const dangling = structuredClone(createEffect);
+    setAt(
+      dangling,
+      ['scaling', 0, 'options', 1, 'choices', 1, 'composition', 'ambiguityId'],
+      'ambiguity:unknown',
+    );
+    expect(() => validateWithAmbiguities(dangling, createAmbiguities)).toThrow(
+      /references unknown mechanics ambiguity/,
+    );
+
+    expect(() =>
+      validateWithAmbiguities({ kind: 'cannotSee' }, createAmbiguities),
+    ).toThrow(/without an affected mechanic reference/);
+
+    const unguardedFamiliar = materializeS1SummoningEffect(
+      'spell:find-familiar',
+    );
+    setAt(unguardedFamiliar, ['transitions', 4, 'availability'], undefined);
+    expect(() => validate(unguardedFamiliar)).toThrow(
+      /zero-HP-absence permanent dismissal must be gated by its source ambiguity/,
+    );
+  });
+
   it('accepts the emitted damageReduction shapes', () => {
     expect(() =>
       validate({

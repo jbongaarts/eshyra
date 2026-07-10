@@ -201,8 +201,9 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     // membership re-audit moved 58 spells with deterministic semantics
     // (senses, teleports, resistances, action economy, stabilization, …)
     // out of the metadata-only bucket: 210 → 268; the S2 rollout then moved
-    // 17 reviewed small deterministic-clause spells into typed mechanics.
-    expect(spells.spellsWithDeterministicEffects).toBe(285);
+    // 17 reviewed small deterministic-clause spells into typed mechanics, and
+    // the S1 rollout moved 14 summoning/control spells.
+    expect(spells.spellsWithDeterministicEffects).toBe(299);
     expect(spells.metadataOnlySpells).toBe(
       ACCEPTED_METADATA_ONLY_SPELLS.length,
     );
@@ -211,6 +212,41 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
       (entry) => entry.kind === 'spell' && entry.bucket === 'metadata-only',
     );
     expect(disposition?.status).toBe('accepted-prose-only');
+  });
+
+  it('surfaces the exact unresolved source ambiguities in gameplay readiness', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    expect(report.sourceAmbiguities.total).toBe(2);
+    expect(
+      report.sourceAmbiguities.entries.map(({ recordKey, ambiguity }) => ({
+        recordKey,
+        id: ambiguity.id,
+        canonicalResolution: ambiguity.canonicalResolution,
+        interpretationIds: ambiguity.interpretations.map(({ id }) => id),
+        disposition: ambiguity.runtimeDisposition,
+      })),
+    ).toEqual([
+      {
+        recordKey: 'spell:create-undead',
+        id: 'ambiguity:create-undead-ghast-wight-composition',
+        canonicalResolution: null,
+        interpretationIds: ['homogeneous-alternative', 'mixed-within-total'],
+        disposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      },
+      {
+        recordKey: 'spell:find-familiar',
+        id: 'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+        canonicalResolution: null,
+        interpretationIds: ['presence-required', 'active-link-sufficient'],
+        disposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      },
+    ]);
   });
 
   it('fails closed by MEMBERSHIP on unreviewed metadata-only spells (eshyra-o9bd.18.7.4 review)', () => {
