@@ -42,6 +42,17 @@ function spellEffects(key: string): unknown[] {
   return mechanics.effects as unknown[];
 }
 
+function spellAmbiguities(key: string): unknown[] | undefined {
+  const record = getBundledDnd5eSrdPack().records.find(
+    (candidate) => candidate.key === key,
+  );
+  expect(record, `${key} must exist`).toBeDefined();
+  const mechanics = (record?.data as Record<string, unknown>).mechanics as {
+    ambiguities?: unknown[];
+  };
+  return mechanics.ambiguities;
+}
+
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
   it('Hydra Multiattack is a per-head formula, Medusa an either/or option set, Violet Fungus a dice count', () => {
     expect(
@@ -904,6 +915,27 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     for (const key of reviewedS1Keys) {
       expect(spellEffects(key)).toMatchSnapshot(key);
     }
+  });
+
+  it('pins the exact generated ambiguity payload and exact two-record membership', () => {
+    const recordsWithAmbiguities = getBundledDnd5eSrdPack()
+      .records.filter((record) => {
+        const mechanics = (record.data as { mechanics?: unknown }).mechanics as
+          | { ambiguities?: unknown }
+          | undefined;
+        return Array.isArray(mechanics?.ambiguities);
+      })
+      .map((record) => record.key);
+    expect(recordsWithAmbiguities).toEqual([
+      'spell:create-undead',
+      'spell:find-familiar',
+    ]);
+    expect(spellAmbiguities('spell:create-undead')).toMatchSnapshot(
+      'spell:create-undead ambiguities',
+    );
+    expect(spellAmbiguities('spell:find-familiar')).toMatchSnapshot(
+      'spell:find-familiar ambiguities',
+    );
   });
 
   it('S2 communication, travel, and recast limits carry typed clauses', () => {

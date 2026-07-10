@@ -1264,7 +1264,9 @@ exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact ge
                   "count": 4,
                   "mode": "maximum",
                 },
-                "creatureRef": "creature:ghoul",
+                "creatureRefs": [
+                  "creature:ghoul",
+                ],
               },
             ],
             "slotLevel": 7,
@@ -1276,21 +1278,23 @@ exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact ge
                   "count": 5,
                   "mode": "maximum",
                 },
-                "creatureRef": "creature:ghoul",
+                "creatureRefs": [
+                  "creature:ghoul",
+                ],
               },
               {
                 "cardinality": {
                   "count": 2,
                   "mode": "maximum",
                 },
-                "creatureRef": "creature:ghast",
-              },
-              {
-                "cardinality": {
-                  "count": 2,
-                  "mode": "maximum",
+                "composition": {
+                  "ambiguityId": "ambiguity:create-undead-ghast-wight-composition",
+                  "kind": "source-ambiguity",
                 },
-                "creatureRef": "creature:wight",
+                "creatureRefs": [
+                  "creature:ghast",
+                  "creature:wight",
+                ],
               },
             ],
             "slotLevel": 8,
@@ -1302,28 +1306,32 @@ exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact ge
                   "count": 6,
                   "mode": "maximum",
                 },
-                "creatureRef": "creature:ghoul",
+                "creatureRefs": [
+                  "creature:ghoul",
+                ],
               },
               {
                 "cardinality": {
                   "count": 3,
                   "mode": "maximum",
                 },
-                "creatureRef": "creature:ghast",
-              },
-              {
-                "cardinality": {
-                  "count": 3,
-                  "mode": "maximum",
+                "composition": {
+                  "ambiguityId": "ambiguity:create-undead-ghast-wight-composition",
+                  "kind": "source-ambiguity",
                 },
-                "creatureRef": "creature:wight",
+                "creatureRefs": [
+                  "creature:ghast",
+                  "creature:wight",
+                ],
               },
               {
                 "cardinality": {
                   "count": 2,
                   "mode": "maximum",
                 },
-                "creatureRef": "creature:mummy",
+                "creatureRefs": [
+                  "creature:mummy",
+                ],
               },
             ],
             "slotLevel": 9,
@@ -1555,15 +1563,36 @@ exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact ge
             "to": "none",
           },
         ],
-        "id": "permanent-dismissal",
+        "id": "permanent-dismissal-from-present-or-pocket",
         "trigger": "action-permanent-dismissal",
         "when": {
           "link": "active",
           "presence": [
             "present",
-            "absent",
             "pocket-dimension",
           ],
+        },
+      },
+      {
+        "availability": {
+          "ambiguityId": "ambiguity:find-familiar-permanent-dismissal-after-zero-hp",
+          "kind": "source-ambiguity",
+        },
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+          {
+            "axis": "link",
+            "to": "none",
+          },
+        ],
+        "id": "permanent-dismissal-from-zero-hp-absence",
+        "trigger": "action-permanent-dismissal",
+        "when": {
+          "link": "active",
+          "presence": "absent",
         },
       },
       {
@@ -2186,6 +2215,77 @@ exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact ge
           "effect": "active",
           "integrity": "intact",
         },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated ambiguity payload and exact two-record membership > spell:create-undead ambiguities 1`] = `
+[
+  {
+    "affects": [
+      "effects[summoning].scaling[slot-option-menu].options[slot=8].choices[ghast-or-wight].composition",
+      "effects[summoning].scaling[slot-option-menu].options[slot=9].choices[ghast-or-wight].composition",
+    ],
+    "canonicalResolution": null,
+    "id": "ambiguity:create-undead-ghast-wight-composition",
+    "interpretations": [
+      {
+        "id": "homogeneous-alternative",
+        "summary": "Choose ghasts or wights for the group; every creature in that group has the chosen stat block.",
+      },
+      {
+        "id": "mixed-within-total",
+        "summary": "Choose any mixture of ghasts and wights up to the shared creature limit.",
+      },
+    ],
+    "question": "When a higher-level Create Undead casting permits N ghasts or wights, may the N creatures be a mixture of ghasts and wights, or must the selected group be homogeneous?",
+    "runtimeDisposition": {
+      "owner": "campaign-ruling",
+      "status": "engine-pending",
+    },
+    "source": [
+      {
+        "clauseId": "scaling",
+        "locator": "p. 132, higher-slot exclusive maximum menus",
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated ambiguity payload and exact two-record membership > spell:find-familiar ambiguities 1`] = `
+[
+  {
+    "affects": [
+      "effects[summoning].transitions[permanent-dismissal-from-zero-hp-absence].availability",
+    ],
+    "canonicalResolution": null,
+    "id": "ambiguity:find-familiar-permanent-dismissal-after-zero-hp",
+    "interpretations": [
+      {
+        "id": "presence-required",
+        "summary": "Permanent dismissal is available only while the familiar is present or temporarily dismissed in its pocket dimension.",
+      },
+      {
+        "id": "active-link-sufficient",
+        "summary": "An active familiar relationship is sufficient for permanent dismissal even while the familiar is absent after reaching 0 hit points.",
+      },
+    ],
+    "question": "Can permanent dismissal terminate an active familiar relationship while the familiar is physically absent after reaching 0 hit points?",
+    "runtimeDisposition": {
+      "owner": "campaign-ruling",
+      "status": "engine-pending",
+    },
+    "source": [
+      {
+        "clauseId": "zero",
+        "locator": "p. 143, zero-hit-point absence and recast return",
+      },
+      {
+        "clauseId": "dismissal",
+        "locator": "p. 143, pocket dismissal, recall, and permanent dismissal",
       },
     ],
   },

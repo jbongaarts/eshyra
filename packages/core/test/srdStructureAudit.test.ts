@@ -729,6 +729,42 @@ describe('cross-record reference integrity (eshyra-o9bd.10)', () => {
     expect(findings[0].detail).toContain('creature:does-not-exist');
   });
 
+  it('flags every dangling ref in a summoning eligibility group', () => {
+    const spell = record({
+      kind: 'spell',
+      key: 'spell:test-summoning-group',
+      name: 'Test Summoning Group',
+      data: {
+        description: 'x',
+        mechanics: {
+          effects: [
+            {
+              kind: 'summoning',
+              scaling: [
+                {
+                  choices: [
+                    {
+                      creatureRefs: [
+                        'creature:sentinel',
+                        'creature:does-not-exist',
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const findings = refFindings([spell, sentinelCreature]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain(
+      'mechanics.effects[0].scaling[0].choices[0].creatureRefs[1]',
+    );
+    expect(findings[0].detail).toContain('creature:does-not-exist');
+  });
+
   it('flags a nested summoning table ref that resolves to the wrong kind', () => {
     const spell = record({
       kind: 'spell',

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  materializeS1RulesAmbiguities,
   materializeS1SummoningEffect,
   S1_SUMMONING_SPELL_KEYS,
   type S1SummoningSpellKey,
@@ -17,6 +18,7 @@ import type { RulesRecord } from '../src/rules/types.js';
 function featureWithEffect(
   effect: Record<string, unknown>,
   concentration = false,
+  ambiguities?: readonly unknown[],
 ): RulesRecord {
   return {
     systemId: 'dnd5e-srd',
@@ -29,6 +31,7 @@ function featureWithEffect(
       description: 'Test feature.',
       mechanics: {
         effects: [effect],
+        ...(ambiguities === undefined ? {} : { ambiguities }),
         ...(concentration
           ? {
               duration: {
@@ -48,9 +51,29 @@ function featureWithEffect(
 const validate = (
   effect: Record<string, unknown>,
   concentration = false,
+): void => {
+  const serialized = JSON.stringify(effect);
+  const ambiguities = serialized.includes(
+    'ambiguity:create-undead-ghast-wight-composition',
+  )
+    ? materializeS1RulesAmbiguities('spell:create-undead')
+    : serialized.includes(
+          'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+        )
+      ? materializeS1RulesAmbiguities('spell:find-familiar')
+      : undefined;
+  validateRecordKindSchema(
+    featureWithEffect(effect, concentration, ambiguities),
+    'records[0]',
+  );
+};
+
+const validateWithAmbiguities = (
+  effect: Record<string, unknown>,
+  ambiguities: readonly unknown[],
 ): void =>
   validateRecordKindSchema(
-    featureWithEffect(effect, concentration),
+    featureWithEffect(effect, false, ambiguities),
     'records[0]',
   );
 
@@ -227,7 +250,7 @@ describe('mechanics effect payload contracts', () => {
     expect(() =>
       validate(
         mutate('spell:find-familiar', (effect) => {
-          setAt(effect, ['transitions', 4, 'when', 'link'], 'none');
+          setAt(effect, ['transitions', 5, 'when', 'link'], 'none');
         }),
       ),
     ).toThrow(/terminated link|active persistent link/);
@@ -347,6 +370,55 @@ describe('mechanics effect payload contracts', () => {
         }),
       ),
     ).toThrow(/modifications kinds must be exactly/);
+  });
+
+  it('rejects malformed, resolved, dangling, and semantically detached source ambiguities', () => {
+    const createEffect = materializeS1SummoningEffect('spell:create-undead');
+    const createAmbiguities = structuredClone(
+      materializeS1RulesAmbiguities('spell:create-undead'),
+    ) as Record<string, unknown>[];
+
+    const malformed = structuredClone(createAmbiguities);
+    malformed[0].preferredInterpretation = 'mixed-within-total';
+    expect(() => validateWithAmbiguities(createEffect, malformed)).toThrow(
+      /unsupported key "preferredInterpretation"/,
+    );
+
+    const resolved = structuredClone(createAmbiguities);
+    resolved[0].canonicalResolution = 'homogeneous-alternative';
+    expect(() => validateWithAmbiguities(createEffect, resolved)).toThrow(
+      /canonicalResolution must be null/,
+    );
+
+    const singleInterpretation = structuredClone(createAmbiguities);
+    singleInterpretation[0].interpretations = (
+      singleInterpretation[0].interpretations as unknown[]
+    ).slice(0, 1);
+    expect(() =>
+      validateWithAmbiguities(createEffect, singleInterpretation),
+    ).toThrow(/interpretations must contain at least two entries/);
+
+    const dangling = structuredClone(createEffect);
+    setAt(
+      dangling,
+      ['scaling', 0, 'options', 1, 'choices', 1, 'composition', 'ambiguityId'],
+      'ambiguity:unknown',
+    );
+    expect(() => validateWithAmbiguities(dangling, createAmbiguities)).toThrow(
+      /references unknown mechanics ambiguity/,
+    );
+
+    expect(() =>
+      validateWithAmbiguities({ kind: 'cannotSee' }, createAmbiguities),
+    ).toThrow(/without an affected mechanic reference/);
+
+    const unguardedFamiliar = materializeS1SummoningEffect(
+      'spell:find-familiar',
+    );
+    setAt(unguardedFamiliar, ['transitions', 4, 'availability'], undefined);
+    expect(() => validate(unguardedFamiliar)).toThrow(
+      /zero-HP-absence permanent dismissal must be gated by its source ambiguity/,
+    );
   });
 
   it('accepts the emitted damageReduction shapes', () => {

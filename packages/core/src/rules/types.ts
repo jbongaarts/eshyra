@@ -78,6 +78,35 @@ export interface RecordProvenance {
   readonly note?: string;
 }
 
+/** A precise source location that gives rise to an unresolved rules question. */
+export interface RulesAmbiguitySource {
+  readonly locator: string;
+  readonly clauseId: string;
+}
+
+export interface RulesAmbiguityInterpretation {
+  readonly id: string;
+  readonly summary: string;
+}
+
+/**
+ * An ambiguity in the authoritative source itself. This is immutable pack
+ * semantics, not a campaign ruling: downstream runtime may resolve it only by
+ * recording campaign-owned prose outside the rules pack.
+ */
+export interface RulesAmbiguity {
+  readonly id: string;
+  readonly question: string;
+  readonly source: readonly RulesAmbiguitySource[];
+  readonly affects: readonly string[];
+  readonly interpretations: readonly RulesAmbiguityInterpretation[];
+  readonly canonicalResolution: null;
+  readonly runtimeDisposition: {
+    readonly status: 'engine-pending';
+    readonly owner: 'campaign-ruling';
+  };
+}
+
 export interface RulesPackMeta {
   readonly packId: string;
   readonly title: string;

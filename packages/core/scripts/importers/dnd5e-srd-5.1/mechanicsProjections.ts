@@ -4,7 +4,7 @@ import {
   parseCreatureSpellcasting,
   type SpellRefResolver,
 } from './creatureSpellcasting.js';
-import { projectS1SummoningEffects } from './s1SummoningSpecs.js';
+import { projectS1SummoningMechanics } from './s1SummoningSpecs.js';
 import type {
   ActionExtraction,
   FeatExtraction,
@@ -1865,9 +1865,10 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     save.damageOnSuccess = 'half';
   }
   const conditions = parseConditions(text);
+  const s1Summoning = projectS1SummoningMechanics(spell);
   const effects = [
     ...parseSpellEffects(spell.description),
-    ...projectS1SummoningEffects(spell),
+    ...s1Summoning.effects,
     ...projectReviewedS2SpellEffects(spell),
   ];
   // "takes force damage equal to 1d8 + your spellcasting ability modifier"
@@ -1901,6 +1902,7 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     weaponDamageModifiers,
     conditions,
     effects: effects.length > 0 ? [...effects] : undefined,
+    ambiguities: s1Summoning.ambiguities,
     scaling: parseSpellScaling(spell.higherLevels, spell.description),
   });
 }

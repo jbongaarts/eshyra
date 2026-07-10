@@ -27,6 +27,10 @@ uses `summoning`, split into orthogonal immutable rule axes:
 - `identity`: ordinary instances, persistent linked actors, or duplicate actors.
 - `protocols`, `modifications`, `scaling`, and `hooks`: spell-specific
   deterministic rules and explicit external execution owners.
+- `mechanics.ambiguities`: unresolved questions in the authoritative source,
+  with stable IDs, exact clause locators, affected semantic paths, known
+  interpretations, and an explicit null canonical resolution. Campaign rulings
+  are not rules-pack data.
 
 The profile discriminant is a semantic license, not merely a label. It limits
 which state axes, values, triggers, operations, protocols, and identity policy a
@@ -52,7 +56,9 @@ transition preconditions, timers, and hook declarations. Encounter state,
 action/reaction budgets, concentration execution, clock scheduling, derived
 math, and currency spending remain external to the compiler. Contextual target
 or terrain adjudication remains model-supported when the source assigns it to
-the GM.
+the GM. Resolving a published-source ambiguity is engine-pending and owned by a
+future campaign-ruling surface; the compiler neither prefers an interpretation
+nor writes campaign state.
 
 ## 2. Shared contract invariants
 
@@ -85,6 +91,11 @@ the GM.
    discriminants, and grouping keys do not require artificial prose bindings.
 10. Nested `creature:*` and `table:*` references must resolve and be kind-correct
     both in curated specs and in the committed pack.
+11. An ambiguity-gated mechanic cites a declared `ambiguity:*` ID. Ambiguity
+    objects are closed, have at least two machine-readable interpretations,
+    carry non-empty source and affected-path sets, and require
+    `canonicalResolution: null`. An unknown reference, an unused ambiguity, or
+    a non-null winner fails validation.
 
 ## 3. Source-derived matrix
 
@@ -104,7 +115,7 @@ exact. All placement satisfaction and GM-expanded option decisions are MA.
 | Conjure Fey | Choose one exact alternative: fey CR6, or beast-form fey spirit CR6 | Fey candidate unchanged; beast candidate has type replaced by fey; visible unoccupied space in range | Friendly; own turn; verbal, no action, alignment-limited; without new command defend, otherwise no actions | CR +1/slot above 6th |
 | Conjure Minor Elementals | Choose one exact menu: 1 CR2, 2 CR1, 4 CR1/2, 8 CR1/4 | Elemental candidates; visible unoccupied spaces in range | Friendly; grouped own turns; verbal, no action; without new command defend, otherwise no actions | Menu counts x2 at 6, x3 at 8 |
 | Conjure Woodland Beings | Choose one exact menu: 1 CR2, 2 CR1, 4 CR1/2, 8 CR1/4 | Fey candidates; visible unoccupied spaces in range | Friendly; grouped own turns; verbal, no action; without new command defend, otherwise no actions | Menu counts x2 at 6, x3 at 8 |
-| Create Undead | Night only; max 3 M/S humanoid corpses -> ghouls | Corpse mapping; actor appears in source place | Obedient; own turn; mental bonus action within 120 ft; any/all same command; general order persists; without active order defends itself | Slot 7 max4 ghouls; 8 max5 ghouls or max2 ghasts/wights; 9 max6 ghouls, max3 ghasts/wights, or max2 mummies; applies to create/reassert |
+| Create Undead | Night only; max 3 M/S humanoid corpses -> ghouls | Corpse mapping; actor appears in source place | Obedient; own turn; mental bonus action within 120 ft; any/all same command; general order persists; without active order defends itself | Slot 7 max4 ghouls; 8 max5 ghouls or max2 selected from ghast/wight eligibility; 9 max6 ghouls, max3 selected from ghast/wight eligibility, or max2 mummies; applies to create/reassert. Whether the ghast/wight group may mix is unresolved (`ambiguity:create-undead-ghast-wight-composition`) |
 | Find Familiar | Choose exact 1 from 15 fixed forms | Form stat block; replace beast with exactly one celestial/fey/fiend; unoccupied in range | Independent, always obedient; own turn; no source-defined channel/cost/fallback | N/A |
 | Find Steed | Choose exact 1 from 5 fixed forms; GM may allow others | Form stat block; replace normal type with exactly one celestial/fey/fiend; unoccupied in range | Long-lasting bond and service as mount; no source-defined command/initiative economy | N/A |
 | Giant Insect | Choose one maximum alternative: 10 centipedes, 3 spiders, 5 wasps, 1 scorpion | Fixed source-to-giant refs; targets transform in place; GM may allow analogous targets | Obedient to verbal commands; acts on caster turn; cost/timing/fallback unstated | N/A |
@@ -124,7 +135,7 @@ exact. All placement satisfaction and GM-expanded option decisions are MA.
 | Conjure Minor Elementals | Ordinary summon lifecycle | N/A | F2/F3 |
 | Conjure Woodland Beings | Ordinary summon lifecycle | N/A | F2/F3 |
 | Create Undead | Same control state lifecycle as Animate Dead | Pre-expiry reassert max3/base menu; scaling menu applies identically | F2/F3 |
-| Find Familiar | `presence=present, link=active`; 0 HP -> absent/active; temporary dismissal -> pocket/active; recall -> present/active; permanent dismissal -> absent/none | With active link, cast changes form; if absent it also restores presence; if pocketed it remains pocketed. With no link a cast creates a new familiar | Telepathy 100 ft; sense share action within 100 ft until next turn with special senses and own-sense blind/deaf; touch delivery from familiar using reaction within 100 ft and caster attack modifier. F2 budgets |
+| Find Familiar | `presence=present, link=active`; 0 HP -> absent/active; temporary dismissal -> pocket/active; recall -> present/active; permanent dismissal from present/pocket -> absent/none. Availability of permanent dismissal from 0-HP absence is unresolved (`ambiguity:find-familiar-permanent-dismissal-after-zero-hp`) | With active link, cast changes form; if absent it also restores presence; if pocketed it remains pocketed. With no link a cast creates a new familiar | Telepathy 100 ft; sense share action within 100 ft until next turn with special senses and own-sense blind/deaf; touch delivery from familiar using reaction within 100 ft and caster attack modifier. F2 budgets |
 | Find Steed | `presence=present, link=active`; 0 HP/action dismiss -> absent/active; release -> absent/none | Recast from absent+active link restores same actor to max HP; active link prevents a second bond; no restoration after release | Telepathy 1 mile; mounted self-only spell sharing; Int floor 6 and one caster-spoken language. F2 budgets |
 | Giant Insect | `effect=active, form=manifested`; spell/concentration end, 0 HP, or per-target action dismissal -> ended/original | N/A | F2 dismissal; F3 concentration |
 | Phantom Steed | `effect=active, presence=present`; duration end, damage, or action dismissal -> fading; one minute after trigger -> ended/absent | N/A | Saddle/bit/bridle vanish when >10 ft from steed; designated rider; 10/13 mph. F2 dismissal, F3 timer |

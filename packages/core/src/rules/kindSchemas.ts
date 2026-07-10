@@ -895,6 +895,172 @@ const SRD_5_1_DAMAGE_TYPES: ReadonlySet<string> = new Set([
   'thunder',
 ]);
 
+function requireOnlyKeys(
+  obj: Obj,
+  allowed: readonly string[],
+  path: string,
+): void {
+  const allowedSet = new Set(allowed);
+  for (const key of Object.keys(obj)) {
+    if (!allowedSet.has(key)) {
+      throw new RulesPackError(
+        `${path} has unsupported key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+}
+
+function optRulesAmbiguities(
+  mechanics: Obj,
+  path: string,
+): ReadonlySet<string> {
+  const entries = objArray(mechanics, 'ambiguities', path);
+  if (entries === undefined) return new Set();
+  if (entries.length === 0) {
+    throw new RulesPackError(`${path}.ambiguities must not be empty`);
+  }
+  const ids = new Set<string>();
+  entries.forEach((ambiguity, index) => {
+    const ambiguityPath = `${path}.ambiguities[${index}]`;
+    requireOnlyKeys(
+      ambiguity,
+      [
+        'id',
+        'question',
+        'source',
+        'affects',
+        'interpretations',
+        'canonicalResolution',
+        'runtimeDisposition',
+      ],
+      ambiguityPath,
+    );
+    const id = reqStr(ambiguity, 'id', ambiguityPath);
+    if (!/^ambiguity:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
+      throw new RulesPackError(
+        `${ambiguityPath}.id must be a stable ambiguity:<kebab-case> ID`,
+      );
+    }
+    if (ids.has(id)) {
+      throw new RulesPackError(`${ambiguityPath}.id must be unique`);
+    }
+    ids.add(id);
+    reqStr(ambiguity, 'question', ambiguityPath);
+    const sources = objArray(ambiguity, 'source', ambiguityPath);
+    if (sources === undefined || sources.length === 0) {
+      throw new RulesPackError(`${ambiguityPath}.source must be non-empty`);
+    }
+    const sourceKeys = new Set<string>();
+    sources.forEach((source, sourceIndex) => {
+      const sourcePath = `${ambiguityPath}.source[${sourceIndex}]`;
+      requireOnlyKeys(source, ['locator', 'clauseId'], sourcePath);
+      const locator = reqStr(source, 'locator', sourcePath);
+      const clauseId = reqStr(source, 'clauseId', sourcePath);
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(clauseId)) {
+        throw new RulesPackError(
+          `${sourcePath}.clauseId must be a stable kebab-case clause ID`,
+        );
+      }
+      const sourceKey = `${locator}:${clauseId}`;
+      if (sourceKeys.has(sourceKey)) {
+        throw new RulesPackError(`${sourcePath} duplicates a source binding`);
+      }
+      sourceKeys.add(sourceKey);
+    });
+    const affects = reqStrArray(ambiguity, 'affects', ambiguityPath);
+    if (affects.length === 0 || new Set(affects).size !== affects.length) {
+      throw new RulesPackError(
+        `${ambiguityPath}.affects must be non-empty and unique`,
+      );
+    }
+    const interpretations = objArray(
+      ambiguity,
+      'interpretations',
+      ambiguityPath,
+    );
+    if (interpretations === undefined || interpretations.length < 2) {
+      throw new RulesPackError(
+        `${ambiguityPath}.interpretations must contain at least two entries`,
+      );
+    }
+    const interpretationIds = new Set<string>();
+    interpretations.forEach((interpretation, interpretationIndex) => {
+      const interpretationPath = `${ambiguityPath}.interpretations[${interpretationIndex}]`;
+      requireOnlyKeys(interpretation, ['id', 'summary'], interpretationPath);
+      const interpretationId = reqStr(interpretation, 'id', interpretationPath);
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(interpretationId)) {
+        throw new RulesPackError(
+          `${interpretationPath}.id must be a stable kebab-case ID`,
+        );
+      }
+      if (interpretationIds.has(interpretationId)) {
+        throw new RulesPackError(`${interpretationPath}.id must be unique`);
+      }
+      interpretationIds.add(interpretationId);
+      reqStr(interpretation, 'summary', interpretationPath);
+    });
+    if (ambiguity.canonicalResolution !== null) {
+      throw new RulesPackError(
+        `${ambiguityPath}.canonicalResolution must be null`,
+      );
+    }
+    const disposition = reqObj(ambiguity, 'runtimeDisposition', ambiguityPath);
+    requireOnlyKeys(
+      disposition,
+      ['status', 'owner'],
+      `${ambiguityPath}.runtimeDisposition`,
+    );
+    if (
+      disposition.status !== 'engine-pending' ||
+      disposition.owner !== 'campaign-ruling'
+    ) {
+      throw new RulesPackError(
+        `${ambiguityPath}.runtimeDisposition must declare engine-pending campaign-ruling ownership`,
+      );
+    }
+  });
+  return ids;
+}
+
+function validateAmbiguityReferences(
+  effects: readonly Obj[] | undefined,
+  ambiguityIds: ReadonlySet<string>,
+  path: string,
+): void {
+  const referenced = new Set<string>();
+  const visit = (value: unknown, valuePath: string): void => {
+    if (Array.isArray(value)) {
+      value.forEach((entry, index) => {
+        visit(entry, `${valuePath}[${index}]`);
+      });
+      return;
+    }
+    if (typeof value !== 'object' || value === null) return;
+    const object = value as Obj;
+    if (typeof object.ambiguityId === 'string') {
+      if (!ambiguityIds.has(object.ambiguityId)) {
+        throw new RulesPackError(
+          `${valuePath}.ambiguityId references unknown mechanics ambiguity ${JSON.stringify(object.ambiguityId)}`,
+        );
+      }
+      referenced.add(object.ambiguityId);
+    }
+    for (const [key, entry] of Object.entries(object)) {
+      visit(entry, `${valuePath}.${key}`);
+    }
+  };
+  effects?.forEach((effect, index) => {
+    visit(effect, `${path}.effects[${index}]`);
+  });
+  for (const ambiguityId of ambiguityIds) {
+    if (!referenced.has(ambiguityId)) {
+      throw new RulesPackError(
+        `${path}.ambiguities declares ${JSON.stringify(ambiguityId)} without an affected mechanic reference`,
+      );
+    }
+  }
+}
+
 function optMechanics(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -902,6 +1068,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     throw new RulesPackError(`${path}.${key} must be an object when present`);
   }
   const mechanics = value as Obj;
+  const ambiguityIds = optRulesAmbiguities(mechanics, `${path}.${key}`);
   const actionEconomy = mechanics.actionEconomy;
   if (actionEconomy !== undefined) {
     if (
@@ -1006,6 +1173,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       }
     });
   }
+  validateAmbiguityReferences(effects, ambiguityIds, `${path}.${key}`);
   const levelApplication = mechanics.levelApplication;
   if (
     levelApplication !== undefined &&
@@ -1513,6 +1681,11 @@ function markerWithOptionalCondition(effect: Obj, path: string): void {
   optStr(effect, 'condition', path);
 }
 
+/**
+ * Shared equipment-state eligibility rider (Martial Arts, Dragon Wings):
+ * `wielding` is a closed wielding constraint, `armor` is `false` (none
+ * allowed) or `"accommodating-armor-only"`, `shield` is a boolean.
+ */
 function optEligibility(effect: Obj, path: string): void {
   const value = effect.eligibility;
   if (value === undefined) {

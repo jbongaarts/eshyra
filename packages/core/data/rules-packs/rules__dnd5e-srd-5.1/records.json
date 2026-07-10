@@ -108555,7 +108555,9 @@
                     "slotLevel": 7,
                     "choices": [
                       {
-                        "creatureRef": "creature:ghoul",
+                        "creatureRefs": [
+                          "creature:ghoul"
+                        ],
                         "cardinality": {
                           "mode": "maximum",
                           "count": 4
@@ -108567,24 +108569,26 @@
                     "slotLevel": 8,
                     "choices": [
                       {
-                        "creatureRef": "creature:ghoul",
+                        "creatureRefs": [
+                          "creature:ghoul"
+                        ],
                         "cardinality": {
                           "mode": "maximum",
                           "count": 5
                         }
                       },
                       {
-                        "creatureRef": "creature:ghast",
+                        "creatureRefs": [
+                          "creature:ghast",
+                          "creature:wight"
+                        ],
                         "cardinality": {
                           "mode": "maximum",
                           "count": 2
-                        }
-                      },
-                      {
-                        "creatureRef": "creature:wight",
-                        "cardinality": {
-                          "mode": "maximum",
-                          "count": 2
+                        },
+                        "composition": {
+                          "kind": "source-ambiguity",
+                          "ambiguityId": "ambiguity:create-undead-ghast-wight-composition"
                         }
                       }
                     ]
@@ -108593,28 +108597,32 @@
                     "slotLevel": 9,
                     "choices": [
                       {
-                        "creatureRef": "creature:ghoul",
+                        "creatureRefs": [
+                          "creature:ghoul"
+                        ],
                         "cardinality": {
                           "mode": "maximum",
                           "count": 6
                         }
                       },
                       {
-                        "creatureRef": "creature:ghast",
+                        "creatureRefs": [
+                          "creature:ghast",
+                          "creature:wight"
+                        ],
                         "cardinality": {
                           "mode": "maximum",
                           "count": 3
+                        },
+                        "composition": {
+                          "kind": "source-ambiguity",
+                          "ambiguityId": "ambiguity:create-undead-ghast-wight-composition"
                         }
                       },
                       {
-                        "creatureRef": "creature:wight",
-                        "cardinality": {
-                          "mode": "maximum",
-                          "count": 3
-                        }
-                      },
-                      {
-                        "creatureRef": "creature:mummy",
+                        "creatureRefs": [
+                          "creature:mummy"
+                        ],
                         "cardinality": {
                           "mode": "maximum",
                           "count": 2
@@ -108628,6 +108636,37 @@
             "hooks": [
               "F2",
               "F3"
+            ]
+          }
+        ],
+        "ambiguities": [
+          {
+            "id": "ambiguity:create-undead-ghast-wight-composition",
+            "question": "When a higher-level Create Undead casting permits N ghasts or wights, may the N creatures be a mixture of ghasts and wights, or must the selected group be homogeneous?",
+            "affects": [
+              "effects[summoning].scaling[slot-option-menu].options[slot=8].choices[ghast-or-wight].composition",
+              "effects[summoning].scaling[slot-option-menu].options[slot=9].choices[ghast-or-wight].composition"
+            ],
+            "interpretations": [
+              {
+                "id": "homogeneous-alternative",
+                "summary": "Choose ghasts or wights for the group; every creature in that group has the chosen stat block."
+              },
+              {
+                "id": "mixed-within-total",
+                "summary": "Choose any mixture of ghasts and wights up to the shared creature limit."
+              }
+            ],
+            "canonicalResolution": null,
+            "runtimeDisposition": {
+              "status": "engine-pending",
+              "owner": "campaign-ruling"
+            },
+            "source": [
+              {
+                "locator": "p. 132, higher-slot exclusive maximum menus",
+                "clauseId": "scaling"
+              }
             ]
           }
         ],
@@ -111659,12 +111698,11 @@
                 }
               },
               {
-                "id": "permanent-dismissal",
+                "id": "permanent-dismissal-from-present-or-pocket",
                 "trigger": "action-permanent-dismissal",
                 "when": {
                   "presence": [
                     "present",
-                    "absent",
                     "pocket-dimension"
                   ],
                   "link": "active"
@@ -111679,6 +111717,28 @@
                     "to": "none"
                   }
                 ]
+              },
+              {
+                "id": "permanent-dismissal-from-zero-hp-absence",
+                "trigger": "action-permanent-dismissal",
+                "when": {
+                  "presence": "absent",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  },
+                  {
+                    "axis": "link",
+                    "to": "none"
+                  }
+                ],
+                "availability": {
+                  "kind": "source-ambiguity",
+                  "ambiguityId": "ambiguity:find-familiar-permanent-dismissal-after-zero-hp"
+                }
               },
               {
                 "id": "reform-present-familiar",
@@ -111754,6 +111814,40 @@
             ],
             "hooks": [
               "F2"
+            ]
+          }
+        ],
+        "ambiguities": [
+          {
+            "id": "ambiguity:find-familiar-permanent-dismissal-after-zero-hp",
+            "question": "Can permanent dismissal terminate an active familiar relationship while the familiar is physically absent after reaching 0 hit points?",
+            "affects": [
+              "effects[summoning].transitions[permanent-dismissal-from-zero-hp-absence].availability"
+            ],
+            "interpretations": [
+              {
+                "id": "presence-required",
+                "summary": "Permanent dismissal is available only while the familiar is present or temporarily dismissed in its pocket dimension."
+              },
+              {
+                "id": "active-link-sufficient",
+                "summary": "An active familiar relationship is sufficient for permanent dismissal even while the familiar is absent after reaching 0 hit points."
+              }
+            ],
+            "canonicalResolution": null,
+            "runtimeDisposition": {
+              "status": "engine-pending",
+              "owner": "campaign-ruling"
+            },
+            "source": [
+              {
+                "locator": "p. 143, zero-hit-point absence and recast return",
+                "clauseId": "zero"
+              },
+              {
+                "locator": "p. 143, pocket dismissal, recall, and permanent dismissal",
+                "clauseId": "dismissal"
+              }
             ]
           }
         ]

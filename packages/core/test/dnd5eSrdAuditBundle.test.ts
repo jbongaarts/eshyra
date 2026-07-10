@@ -214,6 +214,41 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     expect(disposition?.status).toBe('accepted-prose-only');
   });
 
+  it('surfaces the exact unresolved source ambiguities in gameplay readiness', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    expect(report.sourceAmbiguities.total).toBe(2);
+    expect(
+      report.sourceAmbiguities.entries.map(({ recordKey, ambiguity }) => ({
+        recordKey,
+        id: ambiguity.id,
+        canonicalResolution: ambiguity.canonicalResolution,
+        interpretationIds: ambiguity.interpretations.map(({ id }) => id),
+        disposition: ambiguity.runtimeDisposition,
+      })),
+    ).toEqual([
+      {
+        recordKey: 'spell:create-undead',
+        id: 'ambiguity:create-undead-ghast-wight-composition',
+        canonicalResolution: null,
+        interpretationIds: ['homogeneous-alternative', 'mixed-within-total'],
+        disposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      },
+      {
+        recordKey: 'spell:find-familiar',
+        id: 'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+        canonicalResolution: null,
+        interpretationIds: ['presence-required', 'active-link-sufficient'],
+        disposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      },
+    ]);
+  });
+
   it('fails closed by MEMBERSHIP on unreviewed metadata-only spells (eshyra-o9bd.18.7.4 review)', () => {
     // Committed pack: membership matches exactly (no unreviewed, no stale).
     const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);

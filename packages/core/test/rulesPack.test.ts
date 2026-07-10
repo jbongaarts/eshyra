@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import {
+  materializeS1RulesAmbiguities,
+  materializeS1SummoningEffect,
+} from '../scripts/importers/dnd5e-srd-5.1/s1SummoningSpecs.js';
 import type {
   RecordProvenance,
   RulesPack,
@@ -150,6 +154,44 @@ describe('rules pack validation', () => {
     });
     expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
     expect(() => validateRulesPack(pack)).toThrow(/duplicate key/);
+  });
+
+  it('rejects duplicate ambiguity IDs and ambiguity locators outside record provenance', () => {
+    const ambiguityFeature = (key: string): RulesRecord =>
+      record(key, {
+        kind: 'feature',
+        provenance: recordProvenance({ locator: 'p. 132' }),
+        data: {
+          description: 'Fixture.',
+          source: 'class:test',
+          level: 1,
+          mechanics: {
+            effects: [materializeS1SummoningEffect('spell:create-undead')],
+            ambiguities: materializeS1RulesAmbiguities('spell:create-undead'),
+          },
+        },
+      });
+    expect(() =>
+      validateRulesPack(
+        validRulesPack({
+          records: [
+            ambiguityFeature('feature:test-one'),
+            ambiguityFeature('feature:test-two'),
+          ],
+        }),
+      ),
+    ).toThrow(/duplicates globally unique/);
+
+    const outsideProvenance = ambiguityFeature('feature:test-one');
+    const ambiguities = (
+      outsideProvenance.data as {
+        mechanics: { ambiguities: Array<Record<string, unknown>> };
+      }
+    ).mechanics.ambiguities as Array<Record<string, unknown>>;
+    ambiguities[0].source = [{ locator: 'p. 999', clauseId: 'scaling' }];
+    expect(() =>
+      validateRulesPack(validRulesPack({ records: [outsideProvenance] })),
+    ).toThrow(/must remain within the owning record provenance locator/);
   });
 
   it('rejects records missing required data payloads', () => {

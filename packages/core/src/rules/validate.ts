@@ -268,6 +268,39 @@ function assertRecordsMatchKindSchemas(pack: RulesPack): void {
   });
 }
 
+function assertAmbiguityIdentityAndProvenance(pack: RulesPack): void {
+  const owners = new Map<string, string>();
+  pack.records.forEach((item, recordIndex) => {
+    const data = item.data as { mechanics?: { ambiguities?: unknown } };
+    const ambiguities = data.mechanics?.ambiguities;
+    if (!Array.isArray(ambiguities)) return;
+    ambiguities.forEach((value, ambiguityIndex) => {
+      const ambiguity = value as {
+        id: string;
+        source: readonly { locator: string }[];
+      };
+      const existingOwner = owners.get(ambiguity.id);
+      if (existingOwner !== undefined) {
+        throw new RulesPackError(
+          `records[${recordIndex}].data.mechanics.ambiguities[${ambiguityIndex}].id duplicates globally unique ${JSON.stringify(ambiguity.id)} owned by ${existingOwner}`,
+        );
+      }
+      owners.set(ambiguity.id, item.key);
+      if (
+        item.provenance.locator !== undefined &&
+        ambiguity.source.some(
+          ({ locator }) =>
+            !locator.startsWith(item.provenance.locator as string),
+        )
+      ) {
+        throw new RulesPackError(
+          `records[${recordIndex}].data.mechanics.ambiguities[${ambiguityIndex}].source must remain within the owning record provenance locator ${JSON.stringify(item.provenance.locator)}`,
+        );
+      }
+    });
+  });
+}
+
 export function validateRulesPack(value: unknown): RulesPack {
   const o = obj(value, 'rulesPack');
   const pack: RulesPack = {
@@ -278,6 +311,7 @@ export function validateRulesPack(value: unknown): RulesPack {
   assertUniqueRecordKeys(pack.records);
   assertProvenanceMatchesPackSource(pack);
   assertRecordsMatchKindSchemas(pack);
+  assertAmbiguityIdentityAndProvenance(pack);
 
   return pack;
 }

@@ -932,6 +932,10 @@ function outboundReferences(record: RulesRecord): OutboundRef[] {
           const nestedField = `${field}.${key}`;
           if (key === 'creatureRef' || key === 'resultRef') {
             push(entry, ['creature'], nestedField);
+          } else if (key === 'creatureRefs' && Array.isArray(entry)) {
+            entry.forEach((ref, refIndex) => {
+              push(ref, ['creature'], `${nestedField}[${refIndex}]`);
+            });
           } else if (key === 'tableRef') {
             push(entry, ['table'], nestedField);
           } else {

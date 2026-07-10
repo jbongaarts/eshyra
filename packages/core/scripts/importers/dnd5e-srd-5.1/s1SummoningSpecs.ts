@@ -1,3 +1,4 @@
+import type { RulesAmbiguity } from '../../../src/rules/types.js';
 import type { SpellExtraction } from './types.js';
 
 export const S1_SUMMONING_SPELL_KEYS = [
@@ -273,6 +274,10 @@ export interface StateTransition {
   readonly scope?: 'each-target' | 'all-matching-active-duplicates';
   readonly restrictions?: readonly ['caster-cannot-dismiss'];
   readonly reappearancePlacement?: 'creation-placement';
+  readonly availability?: {
+    readonly kind: 'source-ambiguity';
+    readonly ambiguityId: `ambiguity:${string}`;
+  };
 }
 
 export type SummoningIdentity =
@@ -319,8 +324,12 @@ export type SummoningScaling =
       readonly options: readonly {
         readonly slotLevel: number;
         readonly choices: readonly {
-          readonly creatureRef: `creature:${string}`;
+          readonly creatureRefs: readonly `creature:${string}`[];
           readonly cardinality: Cardinality;
+          readonly composition?: {
+            readonly kind: 'source-ambiguity';
+            readonly ambiguityId: `ambiguity:${string}`;
+          };
         }[];
       }[];
     };
@@ -454,6 +463,8 @@ interface SourceBound<T> {
   readonly payload: T;
 }
 
+type CuratedRulesAmbiguity = Omit<RulesAmbiguity, 'source'>;
+
 interface CuratedControl {
   readonly relationship: SourceBound<string>;
   readonly initiative?: SourceBound<SummoningControl['initiative']>;
@@ -488,6 +499,7 @@ export interface S1SummoningSpec {
   readonly sourcePage: number;
   readonly clauses: readonly SourceClause[];
   readonly effect: CuratedSummoningEffect;
+  readonly ambiguities?: readonly SourceBound<CuratedRulesAmbiguity>[];
 }
 
 const bound = <T>(
@@ -1494,7 +1506,7 @@ const createUndeadOptions: SummoningScaling = {
       slotLevel: 7,
       choices: [
         {
-          creatureRef: 'creature:ghoul',
+          creatureRefs: ['creature:ghoul'],
           cardinality: cardinality('maximum', 4),
         },
       ],
@@ -1503,16 +1515,16 @@ const createUndeadOptions: SummoningScaling = {
       slotLevel: 8,
       choices: [
         {
-          creatureRef: 'creature:ghoul',
+          creatureRefs: ['creature:ghoul'],
           cardinality: cardinality('maximum', 5),
         },
         {
-          creatureRef: 'creature:ghast',
+          creatureRefs: ['creature:ghast', 'creature:wight'],
           cardinality: cardinality('maximum', 2),
-        },
-        {
-          creatureRef: 'creature:wight',
-          cardinality: cardinality('maximum', 2),
+          composition: {
+            kind: 'source-ambiguity',
+            ambiguityId: 'ambiguity:create-undead-ghast-wight-composition',
+          },
         },
       ],
     },
@@ -1520,19 +1532,19 @@ const createUndeadOptions: SummoningScaling = {
       slotLevel: 9,
       choices: [
         {
-          creatureRef: 'creature:ghoul',
+          creatureRefs: ['creature:ghoul'],
           cardinality: cardinality('maximum', 6),
         },
         {
-          creatureRef: 'creature:ghast',
+          creatureRefs: ['creature:ghast', 'creature:wight'],
           cardinality: cardinality('maximum', 3),
+          composition: {
+            kind: 'source-ambiguity',
+            ambiguityId: 'ambiguity:create-undead-ghast-wight-composition',
+          },
         },
         {
-          creatureRef: 'creature:wight',
-          cardinality: cardinality('maximum', 3),
-        },
-        {
-          creatureRef: 'creature:mummy',
+          creatureRefs: ['creature:mummy'],
           cardinality: cardinality('maximum', 2),
         },
       ],
@@ -1639,6 +1651,34 @@ const createUndead: S1SummoningSpec = {
     scaling: [bound(['scaling'], createUndeadOptions)],
     hooks: ['F2', 'F3'],
   },
+  ambiguities: [
+    bound(['scaling'], {
+      id: 'ambiguity:create-undead-ghast-wight-composition',
+      question:
+        'When a higher-level Create Undead casting permits N ghasts or wights, may the N creatures be a mixture of ghasts and wights, or must the selected group be homogeneous?',
+      affects: [
+        'effects[summoning].scaling[slot-option-menu].options[slot=8].choices[ghast-or-wight].composition',
+        'effects[summoning].scaling[slot-option-menu].options[slot=9].choices[ghast-or-wight].composition',
+      ],
+      interpretations: [
+        {
+          id: 'homogeneous-alternative',
+          summary:
+            'Choose ghasts or wights for the group; every creature in that group has the chosen stat block.',
+        },
+        {
+          id: 'mixed-within-total',
+          summary:
+            'Choose any mixture of ghasts and wights up to the shared creature limit.',
+        },
+      ],
+      canonicalResolution: null,
+      runtimeDisposition: {
+        status: 'engine-pending',
+        owner: 'campaign-ruling',
+      },
+    }),
+  ],
 };
 
 const familiarForms: readonly FixedForm[] = [
@@ -1773,16 +1813,30 @@ const findFamiliar: S1SummoningSpec = {
         operation: { kind: 'place-in-unoccupied-space', withinFeet: 30 },
       }),
       bound(['dismissal'], {
-        id: 'permanent-dismissal',
+        id: 'permanent-dismissal-from-present-or-pocket',
         trigger: 'action-permanent-dismissal',
         when: {
-          presence: ['present', 'absent', 'pocket-dimension'],
+          presence: ['present', 'pocket-dimension'],
           link: 'active',
         },
         changes: [
           { axis: 'presence', to: 'absent' },
           { axis: 'link', to: 'none' },
         ],
+      }),
+      bound(['zero', 'dismissal'], {
+        id: 'permanent-dismissal-from-zero-hp-absence',
+        trigger: 'action-permanent-dismissal',
+        when: { presence: 'absent', link: 'active' },
+        changes: [
+          { axis: 'presence', to: 'absent' },
+          { axis: 'link', to: 'none' },
+        ],
+        availability: {
+          kind: 'source-ambiguity',
+          ambiguityId:
+            'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+        },
       }),
       bound(['exclusive-reform'], {
         id: 'reform-present-familiar',
@@ -1828,6 +1882,33 @@ const findFamiliar: S1SummoningSpec = {
     ],
     hooks: ['F2'],
   },
+  ambiguities: [
+    bound(['zero', 'dismissal'], {
+      id: 'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+      question:
+        'Can permanent dismissal terminate an active familiar relationship while the familiar is physically absent after reaching 0 hit points?',
+      affects: [
+        'effects[summoning].transitions[permanent-dismissal-from-zero-hp-absence].availability',
+      ],
+      interpretations: [
+        {
+          id: 'presence-required',
+          summary:
+            'Permanent dismissal is available only while the familiar is present or temporarily dismissed in its pocket dimension.',
+        },
+        {
+          id: 'active-link-sufficient',
+          summary:
+            'An active familiar relationship is sufficient for permanent dismissal even while the familiar is absent after reaching 0 hit points.',
+        },
+      ],
+      canonicalResolution: null,
+      runtimeDisposition: {
+        status: 'engine-pending',
+        owner: 'campaign-ruling',
+      },
+    }),
+  ],
 };
 
 const steedForms: readonly FixedForm[] = [
@@ -2418,6 +2499,7 @@ function assertSpecGrounding(spec: S1SummoningSpec): void {
       visit(entry, `${path}.${key}`);
   };
   visit(spec.effect, 'effect');
+  visit(spec.ambiguities, 'ambiguities');
 }
 
 function materialize(value: unknown): unknown {
@@ -2442,11 +2524,39 @@ export function materializeS1SummoningEffect(
   };
 }
 
-export function projectS1SummoningEffects(
+export function materializeS1RulesAmbiguities(
+  key: S1SummoningSpellKey,
+): readonly RulesAmbiguity[] {
+  const spec = S1_SUMMONING_SPECS[key];
+  assertSpecGrounding(spec);
+  const clauses = new Map(spec.clauses.map((clause) => [clause.id, clause]));
+  return (spec.ambiguities ?? []).map((binding) => ({
+    ...(materialize(binding.payload) as CuratedRulesAmbiguity),
+    source: binding.sourceClauseIds.map((clauseId) => {
+      const clause = clauses.get(clauseId);
+      if (clause === undefined) {
+        throw new Error(
+          `${key} ambiguity binds unknown source clause ${clauseId}`,
+        );
+      }
+      return {
+        locator: `p. ${spec.sourcePage}, ${clause.label}`,
+        clauseId,
+      };
+    }),
+  }));
+}
+
+export interface S1SummoningMechanicsProjection {
+  readonly effects: readonly Record<string, unknown>[];
+  readonly ambiguities?: readonly RulesAmbiguity[];
+}
+
+export function projectS1SummoningMechanics(
   spell: SpellExtraction,
-): readonly Record<string, unknown>[] {
+): S1SummoningMechanicsProjection {
   const key = spellKey(spell.name);
-  if (!Object.hasOwn(S1_SUMMONING_SPECS, key)) return [];
+  if (!Object.hasOwn(S1_SUMMONING_SPECS, key)) return { effects: [] };
   const spec = S1_SUMMONING_SPECS[key as S1SummoningSpellKey];
   assertSpecGrounding(spec);
   if (spell.sourcePage !== spec.sourcePage) {
@@ -2466,5 +2576,15 @@ export function projectS1SummoningEffects(
       );
     }
   }
-  return [materializeS1SummoningEffect(spec.spellKey)];
+  const ambiguities = materializeS1RulesAmbiguities(spec.spellKey);
+  return {
+    effects: [materializeS1SummoningEffect(spec.spellKey)],
+    ...(ambiguities.length > 0 ? { ambiguities } : {}),
+  };
+}
+
+export function projectS1SummoningEffects(
+  spell: SpellExtraction,
+): readonly Record<string, unknown>[] {
+  return projectS1SummoningMechanics(spell).effects;
 }

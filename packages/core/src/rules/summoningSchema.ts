@@ -983,6 +983,7 @@ interface ValidatedTransition {
   readonly when: Record<string, readonly string[]>;
   readonly changes: Readonly<Record<string, string>>;
   readonly operation?: string;
+  readonly ambiguityId?: string;
 }
 
 const TRIGGERS = new Set([
@@ -1023,6 +1024,7 @@ function validateTransitions(
       'scope',
       'restrictions',
       'reappearancePlacement',
+      'availability',
     ]);
     const id = str(transition, 'id', itemPath);
     if (ids.has(id)) fail(`${itemPath}.id`, 'must be unique');
@@ -1069,6 +1071,44 @@ function validateTransitions(
             `${itemPath}.operation`,
             profile,
           );
+    let ambiguityId: string | undefined;
+    if (transition.availability !== undefined) {
+      const availability = obj(
+        transition.availability,
+        `${itemPath}.availability`,
+      );
+      only(availability, `${itemPath}.availability`, ['kind', 'ambiguityId']);
+      if (availability.kind !== 'source-ambiguity')
+        fail(`${itemPath}.availability.kind`, 'must be source-ambiguity');
+      ambiguityId = str(
+        availability,
+        'ambiguityId',
+        `${itemPath}.availability`,
+      );
+      if (!ambiguityId.startsWith('ambiguity:'))
+        fail(
+          `${itemPath}.availability.ambiguityId`,
+          'must be an ambiguity:* reference',
+        );
+      if (
+        profile !== 'persistent-familiar' ||
+        trigger !== 'action-permanent-dismissal'
+      )
+        fail(
+          `${itemPath}.availability`,
+          'is licensed only for familiar permanent dismissal',
+        );
+      exactSet(
+        when.presence ?? [],
+        ['absent'],
+        `${itemPath}.availability precondition presence`,
+      );
+      exactSet(
+        when.link ?? [],
+        ['active'],
+        `${itemPath}.availability precondition link`,
+      );
+    }
     if (when.effect?.includes('ended'))
       fail(`${itemPath}.when.effect`, 'cannot originate from ended state');
     if (when.link?.includes('none'))
@@ -1233,7 +1273,14 @@ function validateTransitions(
         `${itemPath}.when.control`,
         'reassert-control requires controlled state before expiry',
       );
-    return { path: itemPath, trigger, when, changes, operation };
+    return {
+      path: itemPath,
+      trigger,
+      when,
+      changes,
+      operation,
+      ambiguityId,
+    };
   });
 }
 
@@ -1403,14 +1450,55 @@ function validateScaling(value: unknown, path: string, profile: Profile): void {
         ).entries()) {
           const choicePath = `${optionPath}.choices[${choiceIndex}]`;
           const choice = obj(choiceEntry, choicePath);
-          only(choice, choicePath, ['creatureRef', 'cardinality']);
-          creatureRef(choice, 'creatureRef', choicePath);
+          only(choice, choicePath, [
+            'creatureRefs',
+            'cardinality',
+            'composition',
+          ]);
+          const creatureRefs = stringArray(
+            choice.creatureRefs,
+            `${choicePath}.creatureRefs`,
+          );
+          if (
+            creatureRefs.length === 0 ||
+            new Set(creatureRefs).size !== creatureRefs.length
+          )
+            fail(`${choicePath}.creatureRefs`, 'must be non-empty and unique');
+          for (const ref of creatureRefs)
+            if (!ref.startsWith('creature:'))
+              fail(
+                `${choicePath}.creatureRefs`,
+                'must contain only creature:* references',
+              );
           const card = validateCardinality(
             choice.cardinality,
             `${choicePath}.cardinality`,
           );
           if (card.mode !== 'maximum')
             fail(`${choicePath}.cardinality.mode`, 'must be maximum');
+          if (creatureRefs.length > 1) {
+            const composition = obj(
+              choice.composition,
+              `${choicePath}.composition`,
+            );
+            only(composition, `${choicePath}.composition`, [
+              'kind',
+              'ambiguityId',
+            ]);
+            if (
+              composition.kind !== 'source-ambiguity' ||
+              typeof composition.ambiguityId !== 'string' ||
+              !composition.ambiguityId.startsWith('ambiguity:')
+            )
+              fail(
+                `${choicePath}.composition`,
+                'multi-reference composition must cite a source ambiguity',
+              );
+          } else if (choice.composition !== undefined)
+            fail(
+              `${choicePath}.composition`,
+              'is not licensed for a single eligible creature reference',
+            );
         }
       }
     } else fail(`${itemPath}.kind`, `has unknown scaling kind ${kind}`);
@@ -1974,12 +2062,27 @@ function validateProfileInvariants(
         'action-temporary-dismissal',
         'action-recall',
         'action-permanent-dismissal',
+        'action-permanent-dismissal',
         'cast-again',
         'cast-again',
         'cast-again',
       ],
       `${path}.transitions triggers`,
     );
+    const absentPermanentDismissal = transitions.find(
+      (transition) =>
+        transition.trigger === 'action-permanent-dismissal' &&
+        transition.when.presence?.length === 1 &&
+        transition.when.presence[0] === 'absent',
+    );
+    if (
+      absentPermanentDismissal?.ambiguityId !==
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp'
+    )
+      fail(
+        `${path}.transitions`,
+        'zero-HP-absence permanent dismissal must be gated by its source ambiguity',
+      );
     if (effect.typeTreatment === undefined)
       fail(`${path}.typeTreatment`, 'is required');
   }
