@@ -1,0 +1,2193 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:animate-dead 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "batching": {
+          "command": "same",
+          "scope": "any-or-all",
+        },
+        "channel": "mental",
+        "cost": "bonus-action",
+        "fallback": {
+          "behavior": "defend-self-only",
+          "when": "no-active-order",
+        },
+        "generalOrders": true,
+        "orderPersistence": "until-task-complete",
+        "rangeFeet": 60,
+        "timing": "on-each-caster-turn",
+      },
+      "initiative": "own-turn",
+      "relationship": "controlled-obedient",
+      "window": {
+        "amount": 24,
+        "anchor": "control-established",
+        "unit": "hour",
+      },
+    },
+    "creation": {
+      "cardinality": {
+        "count": 1,
+        "mode": "exact",
+      },
+      "distinctSourcePerActor": true,
+      "kind": "source-animation",
+      "outcomes": [
+        {
+          "resultRef": "creature:skeleton",
+          "source": "pile-of-bones",
+        },
+        {
+          "resultRef": "creature:zombie",
+          "source": "corpse",
+        },
+      ],
+      "sourceEligibility": {
+        "creatureType": "humanoid",
+        "kind": "remains",
+        "sizes": [
+          "medium",
+          "small",
+        ],
+      },
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "created-actor",
+      "provenance": "created-by-this-spell",
+    },
+    "initialState": {
+      "control": "controlled",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "target-location",
+    },
+    "profile": "control-window-undead",
+    "scaling": [
+      {
+        "additional": 2,
+        "appliesTo": [
+          "creation",
+          "control-reassertion",
+        ],
+        "baseSlotLevel": 3,
+        "kind": "per-slot-cardinality",
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "control",
+            "to": "uncontrolled",
+          },
+        ],
+        "id": "control-expiry",
+        "trigger": "control-window-expired",
+        "when": {
+          "control": "controlled",
+        },
+      },
+      {
+        "id": "pre-expiry-reassertion",
+        "operation": {
+          "actorEligibility": "created-by-this-spell",
+          "cardinality": {
+            "count": 4,
+            "mode": "maximum",
+          },
+          "deadline": "before-current-control-window-expires",
+          "kind": "reassert-control",
+          "resetsWindow": {
+            "amount": 24,
+            "anchor": "reassertion-completed",
+            "unit": "hour",
+          },
+        },
+        "trigger": "cast-to-reassert-control",
+        "when": {
+          "control": "controlled",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:animate-objects 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "batching": {
+          "command": "same",
+          "scope": "any-or-all",
+        },
+        "channel": "mental",
+        "cost": "bonus-action",
+        "fallback": {
+          "behavior": "defend-self-only",
+          "when": "no-active-order",
+        },
+        "generalOrders": true,
+        "orderPersistence": "until-task-complete",
+        "rangeFeet": 500,
+      },
+      "initiative": "own-turn",
+      "relationship": "controlled-obedient",
+    },
+    "creation": {
+      "capacity": {
+        "count": 10,
+        "mode": "maximum",
+      },
+      "eligibility": {
+        "maximumSize": "huge",
+        "nonmagical": true,
+        "notWornOrCarried": true,
+      },
+      "kind": "object-animation",
+      "sizeCosts": {
+        "huge": 8,
+        "large": 4,
+        "medium": 2,
+        "small": 1,
+        "tiny": 1,
+      },
+    },
+    "hooks": [
+      "F2",
+      "F3",
+      "F9",
+    ],
+    "identity": {
+      "kind": "existing-targets",
+    },
+    "initialState": {
+      "effect": "active",
+      "form": "manifested",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "target-location",
+    },
+    "profile": "animated-object",
+    "scaling": [
+      {
+        "additional": 2,
+        "appliesTo": [
+          "creation",
+        ],
+        "baseSlotLevel": 5,
+        "kind": "per-slot-cardinality",
+      },
+    ],
+    "statBlockOverlay": {
+      "abilityScores": {
+        "charisma": 1,
+        "constitution": 10,
+        "intelligence": 3,
+        "wisdom": 3,
+      },
+      "attack": {
+        "attackBonus": "size-table",
+        "contextualClassification": "model-adjudicated",
+        "contextualDamageTypes": [
+          "slashing",
+          "piercing",
+        ],
+        "count": 1,
+        "damage": "size-table",
+        "defaultDamageType": "bludgeoning",
+        "kind": "melee",
+        "reachFeet": 5,
+      },
+      "creatureType": "construct",
+      "movement": [
+        {
+          "walkFeet": 30,
+          "when": "has-locomoting-appendages",
+        },
+        {
+          "flyFeet": 30,
+          "hover": true,
+          "when": "lacks-locomoting-appendages",
+        },
+        {
+          "allSpeedsFeet": 0,
+          "overridesOtherMovement": true,
+          "when": "securely-attached",
+        },
+      ],
+      "senses": {
+        "blindBeyond": true,
+        "blindsightFeet": 30,
+      },
+      "tableRef": "table:animated-object-statistics",
+    },
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "form",
+            "to": "original",
+          },
+        ],
+        "id": "spell-end-reversion",
+        "trigger": "spell-ended",
+        "when": {
+          "effect": "active",
+          "form": "manifested",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "form",
+            "to": "original",
+          },
+        ],
+        "id": "zero-hp-reversion",
+        "operation": {
+          "kind": "carry-remaining-damage-to-original-form",
+        },
+        "trigger": "zero-hit-points",
+        "when": {
+          "effect": "active",
+          "form": "manifested",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:conjure-animals 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "channel": "verbal",
+        "cost": "none",
+        "fallback": {
+          "behavior": "defend-otherwise-no-actions",
+          "when": "no-new-command",
+        },
+      },
+      "initiative": "grouped-own-turns",
+      "relationship": "friendly-commanded",
+    },
+    "creation": {
+      "kind": "candidate-menu",
+      "options": [
+        {
+          "cardinality": {
+            "count": 1,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "beast",
+            ],
+            "maxChallenge": "2",
+          },
+          "id": "one-cr-2",
+        },
+        {
+          "cardinality": {
+            "count": 2,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "beast",
+            ],
+            "maxChallenge": "1",
+          },
+          "id": "two-cr-1",
+        },
+        {
+          "cardinality": {
+            "count": 4,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "beast",
+            ],
+            "maxChallenge": "1/2",
+          },
+          "id": "four-cr-half",
+        },
+        {
+          "cardinality": {
+            "count": 8,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "beast",
+            ],
+            "maxChallenge": "1/4",
+          },
+          "id": "eight-cr-quarter",
+        },
+      ],
+      "selection": "choose-one",
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "ordinary",
+    },
+    "initialState": {
+      "effect": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "within-spell-range",
+      "unoccupied": true,
+      "visible": true,
+    },
+    "profile": "ordinary-summon",
+    "scaling": [
+      {
+        "appliesTo": "creation-menu-counts",
+        "kind": "slot-multipliers",
+        "multipliers": {
+          "5": 2,
+          "7": 3,
+          "9": 4,
+        },
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "spell-end-removal",
+        "trigger": "spell-ended",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-removal",
+        "trigger": "zero-hit-points",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+    ],
+    "typeTreatment": {
+      "operation": "add",
+      "types": [
+        "fey",
+      ],
+    },
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:conjure-celestial 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "alignmentLimited": true,
+        "channel": "verbal",
+        "cost": "none",
+        "fallback": {
+          "behavior": "defend-otherwise-no-actions",
+          "when": "no-new-command",
+        },
+      },
+      "initiative": "own-turn",
+      "relationship": "friendly-commanded",
+    },
+    "creation": {
+      "cardinality": {
+        "count": 1,
+        "mode": "exact",
+      },
+      "eligibility": {
+        "creatureTypes": [
+          "celestial",
+        ],
+        "maxChallenge": "4",
+      },
+      "kind": "candidate",
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "ordinary",
+    },
+    "initialState": {
+      "effect": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "within-spell-range",
+      "unoccupied": true,
+      "visible": true,
+    },
+    "profile": "ordinary-summon",
+    "scaling": [
+      {
+        "appliesTo": "creation-candidate",
+        "kind": "challenge-cap-at-slot",
+        "maximumChallenge": "5",
+        "slotLevel": 9,
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "spell-end-removal",
+        "trigger": "spell-ended",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-removal",
+        "trigger": "zero-hit-points",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:conjure-elemental 1`] = `
+[
+  {
+    "causePrecedence": {
+      "higher": "concentration-broken",
+      "lower": "spell-ended",
+    },
+    "contextualRulings": [
+      "hostile-actions-model-adjudicated",
+    ],
+    "control": {
+      "command": {
+        "channel": "verbal",
+        "cost": "none",
+        "fallback": {
+          "behavior": "defend-otherwise-no-actions",
+          "when": "no-new-command",
+        },
+      },
+      "initiative": "own-turn",
+      "relationship": "friendly-commanded",
+    },
+    "creation": {
+      "cardinality": {
+        "count": 1,
+        "mode": "exact",
+      },
+      "eligibility": {
+        "creatureTypes": [
+          "elemental",
+        ],
+        "maxChallenge": "5",
+      },
+      "kind": "candidate",
+      "sourceEligibility": {
+        "candidateRelationship": "appropriate-to-source",
+        "kind": "area",
+        "options": [
+          "air",
+          "earth",
+          "fire",
+          "water",
+        ],
+        "shape": "cube",
+        "sizeFeet": 10,
+        "withinSpellRange": true,
+      },
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "ordinary",
+    },
+    "initialState": {
+      "attitude": "friendly",
+      "control": "controlled",
+      "effect": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "relative-to-selected-source",
+      "unoccupied": true,
+      "withinFeet": 10,
+    },
+    "profile": "exceptional-concentration-summon",
+    "scaling": [
+      {
+        "appliesTo": "creation-candidate",
+        "baseSlotLevel": 5,
+        "increase": 1,
+        "kind": "challenge-cap-per-slot",
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "exceptCauses": [
+          "concentration-broken",
+        ],
+        "id": "ordinary-spell-end-removal",
+        "trigger": "spell-ended",
+        "when": {
+          "attitude": "friendly",
+          "control": "controlled",
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-removal",
+        "trigger": "zero-hit-points",
+        "when": {
+          "attitude": [
+            "friendly",
+            "hostile",
+          ],
+          "control": [
+            "controlled",
+            "uncontrolled",
+          ],
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "control",
+            "to": "uncontrolled",
+          },
+          {
+            "axis": "attitude",
+            "to": "hostile",
+          },
+        ],
+        "id": "concentration-break-loss-of-control",
+        "restrictions": [
+          "caster-cannot-dismiss",
+        ],
+        "trigger": "concentration-broken",
+        "when": {
+          "attitude": "friendly",
+          "control": "controlled",
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "cast-anchored-removal",
+        "timer": {
+          "amount": 1,
+          "anchor": "spell-cast",
+          "unit": "hour",
+        },
+        "trigger": "absolute-time-reached",
+        "when": {
+          "attitude": "hostile",
+          "control": "uncontrolled",
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:conjure-fey 1`] = `
+[
+  {
+    "causePrecedence": {
+      "higher": "concentration-broken",
+      "lower": "spell-ended",
+    },
+    "contextualRulings": [
+      "hostile-actions-model-adjudicated",
+    ],
+    "control": {
+      "command": {
+        "alignmentLimited": true,
+        "channel": "verbal",
+        "cost": "none",
+        "fallback": {
+          "behavior": "defend-otherwise-no-actions",
+          "when": "no-new-command",
+        },
+      },
+      "initiative": "own-turn",
+      "relationship": "friendly-commanded",
+    },
+    "creation": {
+      "kind": "candidate-menu",
+      "options": [
+        {
+          "cardinality": {
+            "count": 1,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "fey",
+            ],
+            "maxChallenge": "6",
+          },
+          "id": "fey-creature",
+        },
+        {
+          "cardinality": {
+            "count": 1,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "beast",
+            ],
+            "maxChallenge": "6",
+          },
+          "id": "beast-form-fey-spirit",
+        },
+      ],
+      "selection": "choose-one",
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "ordinary",
+    },
+    "initialState": {
+      "attitude": "friendly",
+      "control": "controlled",
+      "effect": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "within-spell-range",
+      "unoccupied": true,
+      "visible": true,
+    },
+    "profile": "exceptional-concentration-summon",
+    "scaling": [
+      {
+        "appliesTo": "creation-candidate",
+        "baseSlotLevel": 6,
+        "increase": 1,
+        "kind": "challenge-cap-per-slot",
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "exceptCauses": [
+          "concentration-broken",
+        ],
+        "id": "ordinary-spell-end-removal",
+        "trigger": "spell-ended",
+        "when": {
+          "attitude": "friendly",
+          "control": "controlled",
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-removal",
+        "trigger": "zero-hit-points",
+        "when": {
+          "attitude": [
+            "friendly",
+            "hostile",
+          ],
+          "control": [
+            "controlled",
+            "uncontrolled",
+          ],
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "control",
+            "to": "uncontrolled",
+          },
+          {
+            "axis": "attitude",
+            "to": "hostile",
+          },
+        ],
+        "id": "concentration-break-loss-of-control",
+        "restrictions": [
+          "caster-cannot-dismiss",
+        ],
+        "trigger": "concentration-broken",
+        "when": {
+          "attitude": "friendly",
+          "control": "controlled",
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "cast-anchored-removal",
+        "timer": {
+          "amount": 1,
+          "anchor": "spell-cast",
+          "unit": "hour",
+        },
+        "trigger": "absolute-time-reached",
+        "when": {
+          "attitude": "hostile",
+          "control": "uncontrolled",
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+    ],
+    "typeTreatment": {
+      "operation": "replace",
+      "selection": "choose-one",
+      "types": [
+        "fey",
+      ],
+      "whenCandidateType": "beast",
+    },
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:conjure-minor-elementals 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "channel": "verbal",
+        "cost": "none",
+        "fallback": {
+          "behavior": "defend-otherwise-no-actions",
+          "when": "no-new-command",
+        },
+      },
+      "initiative": "grouped-own-turns",
+      "relationship": "friendly-commanded",
+    },
+    "creation": {
+      "kind": "candidate-menu",
+      "options": [
+        {
+          "cardinality": {
+            "count": 1,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "elemental",
+            ],
+            "maxChallenge": "2",
+          },
+          "id": "one-cr-2",
+        },
+        {
+          "cardinality": {
+            "count": 2,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "elemental",
+            ],
+            "maxChallenge": "1",
+          },
+          "id": "two-cr-1",
+        },
+        {
+          "cardinality": {
+            "count": 4,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "elemental",
+            ],
+            "maxChallenge": "1/2",
+          },
+          "id": "four-cr-half",
+        },
+        {
+          "cardinality": {
+            "count": 8,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "elemental",
+            ],
+            "maxChallenge": "1/4",
+          },
+          "id": "eight-cr-quarter",
+        },
+      ],
+      "selection": "choose-one",
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "ordinary",
+    },
+    "initialState": {
+      "effect": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "within-spell-range",
+      "unoccupied": true,
+      "visible": true,
+    },
+    "profile": "ordinary-summon",
+    "scaling": [
+      {
+        "appliesTo": "creation-menu-counts",
+        "kind": "slot-multipliers",
+        "multipliers": {
+          "6": 2,
+          "8": 3,
+        },
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "spell-end-removal",
+        "trigger": "spell-ended",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-removal",
+        "trigger": "zero-hit-points",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:conjure-woodland-beings 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "channel": "verbal",
+        "cost": "none",
+        "fallback": {
+          "behavior": "defend-otherwise-no-actions",
+          "when": "no-new-command",
+        },
+      },
+      "initiative": "grouped-own-turns",
+      "relationship": "friendly-commanded",
+    },
+    "creation": {
+      "kind": "candidate-menu",
+      "options": [
+        {
+          "cardinality": {
+            "count": 1,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "fey",
+            ],
+            "maxChallenge": "2",
+          },
+          "id": "one-cr-2",
+        },
+        {
+          "cardinality": {
+            "count": 2,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "fey",
+            ],
+            "maxChallenge": "1",
+          },
+          "id": "two-cr-1",
+        },
+        {
+          "cardinality": {
+            "count": 4,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "fey",
+            ],
+            "maxChallenge": "1/2",
+          },
+          "id": "four-cr-half",
+        },
+        {
+          "cardinality": {
+            "count": 8,
+            "mode": "exact",
+          },
+          "eligibility": {
+            "creatureTypes": [
+              "fey",
+            ],
+            "maxChallenge": "1/4",
+          },
+          "id": "eight-cr-quarter",
+        },
+      ],
+      "selection": "choose-one",
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "ordinary",
+    },
+    "initialState": {
+      "effect": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "within-spell-range",
+      "unoccupied": true,
+      "visible": true,
+    },
+    "profile": "ordinary-summon",
+    "scaling": [
+      {
+        "appliesTo": "creation-menu-counts",
+        "kind": "slot-multipliers",
+        "multipliers": {
+          "6": 2,
+          "8": 3,
+        },
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "spell-end-removal",
+        "trigger": "spell-ended",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-removal",
+        "trigger": "zero-hit-points",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:create-undead 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "batching": {
+          "command": "same",
+          "scope": "any-or-all",
+        },
+        "channel": "mental",
+        "cost": "bonus-action",
+        "fallback": {
+          "behavior": "defend-self-only",
+          "when": "no-active-order",
+        },
+        "generalOrders": true,
+        "orderPersistence": "until-task-complete",
+        "rangeFeet": 120,
+        "timing": "on-each-caster-turn",
+      },
+      "initiative": "own-turn",
+      "relationship": "controlled-obedient",
+      "window": {
+        "amount": 24,
+        "anchor": "control-established",
+        "unit": "hour",
+      },
+    },
+    "creation": {
+      "cardinality": {
+        "count": 3,
+        "mode": "maximum",
+      },
+      "castingCondition": "night-only",
+      "kind": "source-animation",
+      "outcomes": [
+        {
+          "resultRef": "creature:ghoul",
+          "source": "corpse",
+        },
+      ],
+      "sourceEligibility": {
+        "creatureType": "humanoid",
+        "kind": "remains",
+        "sizes": [
+          "medium",
+          "small",
+        ],
+      },
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "created-actor",
+      "provenance": "created-by-this-spell",
+    },
+    "initialState": {
+      "control": "controlled",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "target-location",
+    },
+    "profile": "control-window-undead",
+    "scaling": [
+      {
+        "appliesTo": [
+          "creation",
+          "control-reassertion",
+        ],
+        "kind": "slot-option-menu",
+        "options": [
+          {
+            "choices": [
+              {
+                "cardinality": {
+                  "count": 4,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:ghoul",
+              },
+            ],
+            "slotLevel": 7,
+          },
+          {
+            "choices": [
+              {
+                "cardinality": {
+                  "count": 5,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:ghoul",
+              },
+              {
+                "cardinality": {
+                  "count": 2,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:ghast",
+              },
+              {
+                "cardinality": {
+                  "count": 2,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:wight",
+              },
+            ],
+            "slotLevel": 8,
+          },
+          {
+            "choices": [
+              {
+                "cardinality": {
+                  "count": 6,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:ghoul",
+              },
+              {
+                "cardinality": {
+                  "count": 3,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:ghast",
+              },
+              {
+                "cardinality": {
+                  "count": 3,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:wight",
+              },
+              {
+                "cardinality": {
+                  "count": 2,
+                  "mode": "maximum",
+                },
+                "creatureRef": "creature:mummy",
+              },
+            ],
+            "slotLevel": 9,
+          },
+        ],
+        "selection": "choose-one",
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "control",
+            "to": "uncontrolled",
+          },
+        ],
+        "id": "control-expiry",
+        "trigger": "control-window-expired",
+        "when": {
+          "control": "controlled",
+        },
+      },
+      {
+        "id": "pre-expiry-reassertion",
+        "operation": {
+          "actorEligibility": "created-by-this-spell",
+          "cardinality": {
+            "count": 3,
+            "mode": "maximum",
+          },
+          "deadline": "before-current-control-window-expires",
+          "kind": "reassert-control",
+          "resetsWindow": {
+            "amount": 24,
+            "anchor": "reassertion-completed",
+            "unit": "hour",
+          },
+        },
+        "trigger": "cast-to-reassert-control",
+        "when": {
+          "control": "controlled",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:find-familiar 1`] = `
+[
+  {
+    "control": {
+      "initiative": "own-turn",
+      "relationship": "independent-always-obeys",
+    },
+    "creation": {
+      "cardinality": {
+        "count": 1,
+        "mode": "exact",
+      },
+      "forms": [
+        {
+          "creatureRef": "creature:bat",
+          "name": "bat",
+        },
+        {
+          "creatureRef": "creature:cat",
+          "name": "cat",
+        },
+        {
+          "creatureRef": "creature:crab",
+          "name": "crab",
+        },
+        {
+          "creatureRef": "creature:frog",
+          "name": "frog (toad)",
+        },
+        {
+          "creatureRef": "creature:hawk",
+          "name": "hawk",
+        },
+        {
+          "creatureRef": "creature:lizard",
+          "name": "lizard",
+        },
+        {
+          "creatureRef": "creature:octopus",
+          "name": "octopus",
+        },
+        {
+          "creatureRef": "creature:owl",
+          "name": "owl",
+        },
+        {
+          "creatureRef": "creature:poisonous-snake",
+          "name": "poisonous snake",
+        },
+        {
+          "creatureRef": "creature:quipper",
+          "name": "fish (quipper)",
+        },
+        {
+          "creatureRef": "creature:rat",
+          "name": "rat",
+        },
+        {
+          "creatureRef": "creature:raven",
+          "name": "raven",
+        },
+        {
+          "creatureRef": "creature:sea-horse",
+          "name": "sea horse",
+        },
+        {
+          "creatureRef": "creature:spider",
+          "name": "spider",
+        },
+        {
+          "creatureRef": "creature:weasel",
+          "name": "weasel",
+        },
+      ],
+      "kind": "fixed-form-menu",
+      "selection": "choose-one",
+    },
+    "hooks": [
+      "F2",
+    ],
+    "identity": {
+      "kind": "persistent-linked",
+      "maximumLinked": 1,
+    },
+    "initialState": {
+      "link": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "modifications": [
+      {
+        "kind": "cannot-attack",
+      },
+    ],
+    "placement": {
+      "kind": "within-spell-range",
+      "unoccupied": true,
+    },
+    "profile": "persistent-familiar",
+    "protocols": [
+      {
+        "kind": "telepathy",
+        "rangeFeet": 100,
+      },
+      {
+        "casterOwnSenses": [
+          "deaf",
+          "blind",
+        ],
+        "cost": "action",
+        "duration": "until-start-of-next-turn",
+        "kind": "familiar-sense-sharing",
+        "requiresWithinFeet": 100,
+        "senses": "familiar-including-special-senses",
+      },
+      {
+        "attackModifier": "caster",
+        "familiarCost": "reaction",
+        "kind": "familiar-touch-spell-delivery",
+        "origin": "familiar",
+        "requiresWithinFeet": 100,
+        "spellRange": "touch",
+        "timing": "when-caster-casts",
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-absence",
+        "trigger": "zero-hit-points",
+        "when": {
+          "link": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "pocket-dimension",
+          },
+        ],
+        "id": "temporary-pocket-dismissal",
+        "trigger": "action-temporary-dismissal",
+        "when": {
+          "link": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "present",
+          },
+        ],
+        "id": "pocket-recall",
+        "operation": {
+          "kind": "place-in-unoccupied-space",
+          "withinFeet": 30,
+        },
+        "trigger": "action-recall",
+        "when": {
+          "link": "active",
+          "presence": "pocket-dimension",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+          {
+            "axis": "link",
+            "to": "none",
+          },
+        ],
+        "id": "permanent-dismissal",
+        "trigger": "action-permanent-dismissal",
+        "when": {
+          "link": "active",
+          "presence": [
+            "present",
+            "absent",
+            "pocket-dimension",
+          ],
+        },
+      },
+      {
+        "id": "reform-present-familiar",
+        "operation": {
+          "kind": "select-new-form",
+        },
+        "trigger": "cast-again",
+        "when": {
+          "link": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "present",
+          },
+        ],
+        "id": "restore-and-reform-absent-familiar",
+        "operation": {
+          "kind": "select-new-form",
+        },
+        "reappearancePlacement": "creation-placement",
+        "trigger": "cast-again",
+        "when": {
+          "link": "active",
+          "presence": "absent",
+        },
+      },
+      {
+        "id": "reform-pocketed-familiar",
+        "operation": {
+          "kind": "select-new-form",
+        },
+        "trigger": "cast-again",
+        "when": {
+          "link": "active",
+          "presence": "pocket-dimension",
+        },
+      },
+    ],
+    "typeTreatment": {
+      "operation": "replace",
+      "selection": "choose-one",
+      "types": [
+        "celestial",
+        "fey",
+        "fiend",
+      ],
+    },
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:find-steed 1`] = `
+[
+  {
+    "contextualRulings": [
+      "gm-may-allow-other-steed-forms",
+    ],
+    "control": {
+      "relationship": "bonded-mount",
+    },
+    "creation": {
+      "additionalForms": "model-adjudicated",
+      "cardinality": {
+        "count": 1,
+        "mode": "exact",
+      },
+      "forms": [
+        {
+          "creatureRef": "creature:warhorse",
+          "name": "warhorse",
+        },
+        {
+          "creatureRef": "creature:pony",
+          "name": "pony",
+        },
+        {
+          "creatureRef": "creature:camel",
+          "name": "camel",
+        },
+        {
+          "creatureRef": "creature:elk",
+          "name": "elk",
+        },
+        {
+          "creatureRef": "creature:mastiff",
+          "name": "mastiff",
+        },
+      ],
+      "kind": "fixed-form-menu",
+      "selection": "choose-one",
+    },
+    "hooks": [
+      "F2",
+    ],
+    "identity": {
+      "kind": "persistent-linked",
+      "maximumLinked": 1,
+    },
+    "initialState": {
+      "link": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "modifications": [
+      {
+        "ability": "intelligence",
+        "grantsLanguages": 1,
+        "kind": "ability-floor",
+        "languageEligibility": "spoken-by-caster",
+        "minimum": 6,
+      },
+    ],
+    "placement": {
+      "kind": "within-spell-range",
+      "unoccupied": true,
+    },
+    "profile": "persistent-steed",
+    "protocols": [
+      {
+        "kind": "telepathy",
+        "rangeFeet": 5280,
+      },
+      {
+        "alsoTargets": "steed",
+        "kind": "mounted-self-spell-sharing",
+        "requiresMounted": true,
+        "spellTargets": "caster-only",
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "zero-hp-absence",
+        "trigger": "zero-hit-points",
+        "when": {
+          "link": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "action-dismissal",
+        "trigger": "action-dismissal",
+        "when": {
+          "link": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+          {
+            "axis": "link",
+            "to": "none",
+          },
+        ],
+        "id": "release-bond",
+        "trigger": "action-release",
+        "when": {
+          "link": "active",
+          "presence": [
+            "present",
+            "absent",
+          ],
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "presence",
+            "to": "present",
+          },
+        ],
+        "id": "restore-same-steed",
+        "operation": {
+          "hitPoints": "maximum",
+          "kind": "restore-same-actor",
+        },
+        "reappearancePlacement": "creation-placement",
+        "trigger": "cast-again",
+        "when": {
+          "link": "active",
+          "presence": "absent",
+        },
+      },
+    ],
+    "typeTreatment": {
+      "operation": "replace",
+      "selection": "choose-one",
+      "types": [
+        "celestial",
+        "fey",
+        "fiend",
+      ],
+    },
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:giant-insect 1`] = `
+[
+  {
+    "contextualRulings": [
+      "gm-may-map-analogous-targets",
+      "gm-resolves-actions-and-movement",
+    ],
+    "control": {
+      "command": {
+        "channel": "verbal",
+      },
+      "initiative": "caster-turn",
+      "relationship": "obeys-verbal-commands",
+    },
+    "creation": {
+      "additionalTargets": "model-adjudicated",
+      "kind": "target-transformation-menu",
+      "options": [
+        {
+          "cardinality": {
+            "count": 10,
+            "mode": "maximum",
+          },
+          "resultRef": "creature:giant-centipede",
+          "source": "centipede",
+        },
+        {
+          "cardinality": {
+            "count": 3,
+            "mode": "maximum",
+          },
+          "resultRef": "creature:giant-spider",
+          "source": "spider",
+        },
+        {
+          "cardinality": {
+            "count": 5,
+            "mode": "maximum",
+          },
+          "resultRef": "creature:giant-wasp",
+          "source": "wasp",
+        },
+        {
+          "cardinality": {
+            "count": 1,
+            "mode": "maximum",
+          },
+          "resultRef": "creature:giant-scorpion",
+          "source": "scorpion",
+        },
+      ],
+      "selection": "choose-one",
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "existing-targets",
+    },
+    "initialState": {
+      "effect": "active",
+      "form": "manifested",
+    },
+    "kind": "summoning",
+    "placement": {
+      "kind": "target-location",
+    },
+    "profile": "target-transformation",
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "form",
+            "to": "original",
+          },
+        ],
+        "id": "spell-end-reversion",
+        "scope": "each-target",
+        "trigger": "spell-ended",
+        "when": {
+          "effect": "active",
+          "form": "manifested",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "form",
+            "to": "original",
+          },
+        ],
+        "id": "zero-hp-reversion",
+        "scope": "each-target",
+        "trigger": "zero-hit-points",
+        "when": {
+          "effect": "active",
+          "form": "manifested",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "form",
+            "to": "original",
+          },
+        ],
+        "id": "action-dismissal-reversion",
+        "scope": "each-target",
+        "trigger": "action-dismissal",
+        "when": {
+          "effect": "active",
+          "form": "manifested",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:phantom-steed 1`] = `
+[
+  {
+    "contextualRulings": [
+      "caster-chooses-appearance",
+    ],
+    "creation": {
+      "cardinality": {
+        "count": 1,
+        "mode": "exact",
+      },
+      "creatureRef": "creature:riding-horse",
+      "description": "quasi-real-horselike",
+      "kind": "fixed-stat-block",
+      "size": "large",
+    },
+    "hooks": [
+      "F2",
+      "F3",
+    ],
+    "identity": {
+      "kind": "ordinary",
+    },
+    "initialState": {
+      "effect": "active",
+      "presence": "present",
+    },
+    "kind": "summoning",
+    "modifications": [
+      {
+        "feet": 100,
+        "kind": "speed-override",
+        "mode": "walk",
+      },
+    ],
+    "placement": {
+      "kind": "within-spell-range",
+      "onGround": true,
+      "unoccupied": true,
+    },
+    "profile": "phantom-steed",
+    "protocols": [
+      {
+        "equipment": [
+          "saddle",
+          "bit",
+          "bridle",
+        ],
+        "kind": "created-equipment-tether",
+        "maximumDistanceFeet": 10,
+        "outcome": "vanishes",
+      },
+      {
+        "eligible": "caster-or-chosen-creature",
+        "kind": "designated-rider",
+      },
+      {
+        "fastMilesPerHour": 13,
+        "kind": "overland-travel",
+        "normalMilesPerHour": 10,
+      },
+      {
+        "durationMinutes": 1,
+        "eligible": "rider",
+        "kind": "fade-dismount-window",
+      },
+    ],
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "fading",
+          },
+        ],
+        "id": "spell-ended-fade",
+        "timer": {
+          "amount": 1,
+          "anchor": "transition-trigger",
+          "unit": "minute",
+        },
+        "trigger": "spell-ended",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "fading",
+          },
+        ],
+        "id": "action-dismissal-fade",
+        "timer": {
+          "amount": 1,
+          "anchor": "transition-trigger",
+          "unit": "minute",
+        },
+        "trigger": "action-dismissal",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "fading",
+          },
+        ],
+        "id": "damage-taken-fade",
+        "timer": {
+          "amount": 1,
+          "anchor": "transition-trigger",
+          "unit": "minute",
+        },
+        "trigger": "damage-taken",
+        "when": {
+          "effect": "active",
+          "presence": "present",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "presence",
+            "to": "absent",
+          },
+        ],
+        "id": "fade-complete",
+        "trigger": "fade-completed",
+        "when": {
+          "effect": "fading",
+          "presence": "present",
+        },
+      },
+    ],
+  },
+]
+`;
+
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated S1 summoning payload for every reviewed spell > spell:simulacrum 1`] = `
+[
+  {
+    "control": {
+      "command": {
+        "channel": "spoken",
+      },
+      "initiative": "caster-turn",
+      "relationship": "friendly-to-caster-and-designated-obeys-spoken",
+    },
+    "creation": {
+      "cardinality": {
+        "count": 1,
+        "mode": "exact",
+      },
+      "eligibility": {
+        "creatureTypes": [
+          "beast",
+          "humanoid",
+        ],
+      },
+      "kind": "duplicate-target",
+      "rangeContinuity": "entire-casting-time",
+      "targetRange": "touch",
+    },
+    "hooks": [
+      "F3",
+      "F9",
+      "F10",
+    ],
+    "identity": {
+      "kind": "duplicate",
+    },
+    "initialState": {
+      "effect": "active",
+      "integrity": "intact",
+    },
+    "kind": "summoning",
+    "modifications": [
+      {
+        "kind": "hit-point-maximum",
+        "value": "half-of-original",
+      },
+      {
+        "kind": "no-equipment",
+      },
+      {
+        "kind": "no-advancement-or-slot-recovery",
+      },
+    ],
+    "profile": "simulacrum",
+    "protocols": [
+      {
+        "costGpPerHitPoint": 100,
+        "kind": "simulacrum-repair",
+        "requires": [
+          "alchemical-laboratory",
+          "rare-herbs-and-minerals",
+        ],
+        "result": "regain-hit-points",
+      },
+    ],
+    "statBlockBasis": {
+      "copied": "all-statistics",
+      "interaction": "normal-creature",
+      "kind": "copy-target",
+    },
+    "transitions": [
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "integrity",
+            "to": "destroyed",
+          },
+        ],
+        "id": "zero-hp-destruction",
+        "operation": {
+          "kind": "revert-to-snow-and-melt",
+        },
+        "trigger": "zero-hit-points",
+        "when": {
+          "effect": "active",
+          "integrity": "intact",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+          {
+            "axis": "integrity",
+            "to": "destroyed",
+          },
+        ],
+        "id": "recast-cleanup",
+        "operation": {
+          "kind": "destroy-active-duplicates",
+          "ownership": "created-by-caster-with-this-spell",
+        },
+        "scope": "all-matching-active-duplicates",
+        "trigger": "cast-again",
+        "when": {
+          "effect": "active",
+          "integrity": "intact",
+        },
+      },
+      {
+        "changes": [
+          {
+            "axis": "effect",
+            "to": "ended",
+          },
+        ],
+        "id": "dispel-end",
+        "trigger": "dispelled",
+        "when": {
+          "effect": "active",
+          "integrity": "intact",
+        },
+      },
+    ],
+  },
+]
+`;

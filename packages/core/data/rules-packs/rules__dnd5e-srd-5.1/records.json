@@ -103321,68 +103321,118 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "corpse-animation",
-              "sources": [
-                {
-                  "material": "pile of bones",
-                  "becomesRef": "creature:skeleton"
-                },
-                {
-                  "material": "corpse",
-                  "becomesRef": "creature:zombie"
-                }
-              ],
-              "targetEligibility": {
+            "profile": "control-window-undead",
+            "creation": {
+              "kind": "source-animation",
+              "cardinality": {
+                "mode": "exact",
+                "count": 1
+              },
+              "sourceEligibility": {
+                "kind": "remains",
                 "creatureType": "humanoid",
                 "sizes": [
                   "medium",
                   "small"
                 ]
               },
-              "baseCount": 1,
-              "distinctSourcePerCreature": true,
-              "higherSlotScaling": {
-                "perSlotAbove": 3,
-                "additionalTargets": 2
-              }
+              "outcomes": [
+                {
+                  "source": "pile-of-bones",
+                  "resultRef": "creature:skeleton"
+                },
+                {
+                  "source": "corpse",
+                  "resultRef": "creature:zombie"
+                }
+              ],
+              "distinctSourcePerActor": true
+            },
+            "placement": {
+              "kind": "target-location"
             },
             "control": {
-              "mode": "obedient",
-              "commandEconomy": {
-                "cost": "bonus-action",
-                "rangeFeet": 60
-              },
-              "defaultBehavior": "defends-otherwise-idle",
+              "relationship": "controlled-obedient",
               "initiative": "own-turn",
+              "command": {
+                "channel": "mental",
+                "cost": "bonus-action",
+                "timing": "on-each-caster-turn",
+                "rangeFeet": 60,
+                "batching": {
+                  "scope": "any-or-all",
+                  "command": "same"
+                },
+                "generalOrders": true,
+                "orderPersistence": "until-task-complete",
+                "fallback": {
+                  "when": "no-active-order",
+                  "behavior": "defend-self-only"
+                }
+              },
               "window": {
                 "amount": 24,
-                "unit": "hour"
-              },
-              "reassert": {
-                "maxCreatures": 4,
-                "higherSlotScaling": {
-                  "perSlotAbove": 3,
-                  "additionalTargets": 2
-                }
+                "unit": "hour",
+                "anchor": "control-established"
               }
             },
-            "lifecycle": [
+            "identity": {
+              "kind": "created-actor",
+              "provenance": "created-by-this-spell"
+            },
+            "initialState": {
+              "control": "controlled"
+            },
+            "transitions": [
               {
-                "event": "control-window-expires",
-                "result": "animated-creature-persists-uncontrolled",
-                "window": {
-                  "amount": 24,
-                  "unit": "hour"
+                "id": "control-expiry",
+                "trigger": "control-window-expired",
+                "when": {
+                  "control": "controlled"
                 },
-                "reassertableByRecast": {
-                  "maxCreatures": 4,
-                  "higherSlotScaling": {
-                    "perSlotAbove": 3,
-                    "additionalTargets": 2
+                "changes": [
+                  {
+                    "axis": "control",
+                    "to": "uncontrolled"
+                  }
+                ]
+              },
+              {
+                "id": "pre-expiry-reassertion",
+                "trigger": "cast-to-reassert-control",
+                "when": {
+                  "control": "controlled"
+                },
+                "operation": {
+                  "kind": "reassert-control",
+                  "actorEligibility": "created-by-this-spell",
+                  "deadline": "before-current-control-window-expires",
+                  "cardinality": {
+                    "mode": "maximum",
+                    "count": 4
+                  },
+                  "resetsWindow": {
+                    "amount": 24,
+                    "unit": "hour",
+                    "anchor": "reassertion-completed"
                   }
                 }
               }
+            ],
+            "scaling": [
+              {
+                "kind": "per-slot-cardinality",
+                "baseSlotLevel": 3,
+                "additional": 2,
+                "appliesTo": [
+                  "creation",
+                  "control-reassertion"
+                ]
+              }
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -103449,44 +103499,153 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
+            "profile": "animated-object",
+            "creation": {
               "kind": "object-animation",
-              "maxObjects": 10,
+              "capacity": {
+                "mode": "maximum",
+                "count": 10
+              },
+              "eligibility": {
+                "nonmagical": true,
+                "notWornOrCarried": true,
+                "maximumSize": "huge"
+              },
               "sizeCosts": {
+                "tiny": 1,
+                "small": 1,
                 "medium": 2,
                 "large": 4,
                 "huge": 8
-              },
-              "statTableRef": "table:animated-object-statistics",
-              "targetEligibility": {
-                "nonmagical": true,
-                "notWornOrCarried": true,
-                "maxSize": "huge"
-              },
-              "higherSlotScaling": {
-                "perSlotAbove": 5,
-                "additionalTargets": 2
               }
+            },
+            "placement": {
+              "kind": "target-location"
             },
             "control": {
-              "mode": "obedient",
-              "commandEconomy": {
+              "relationship": "controlled-obedient",
+              "initiative": "own-turn",
+              "command": {
+                "channel": "mental",
                 "cost": "bonus-action",
-                "rangeFeet": 500
-              },
-              "defaultBehavior": "defends-otherwise-idle",
-              "initiative": "own-turn"
-            },
-            "lifecycle": [
-              {
-                "event": "spell-ends",
-                "result": "animated-object-reverts"
-              },
-              {
-                "event": "zero-hit-points",
-                "result": "animated-object-reverts",
-                "damageCarriesOver": true
+                "rangeFeet": 500,
+                "batching": {
+                  "scope": "any-or-all",
+                  "command": "same"
+                },
+                "generalOrders": true,
+                "orderPersistence": "until-task-complete",
+                "fallback": {
+                  "when": "no-active-order",
+                  "behavior": "defend-self-only"
+                }
               }
+            },
+            "identity": {
+              "kind": "existing-targets"
+            },
+            "initialState": {
+              "effect": "active",
+              "form": "manifested"
+            },
+            "transitions": [
+              {
+                "id": "spell-end-reversion",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "form": "manifested"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "form",
+                    "to": "original"
+                  }
+                ]
+              },
+              {
+                "id": "zero-hp-reversion",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "form": "manifested"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "form",
+                    "to": "original"
+                  }
+                ],
+                "operation": {
+                  "kind": "carry-remaining-damage-to-original-form"
+                }
+              }
+            ],
+            "scaling": [
+              {
+                "kind": "per-slot-cardinality",
+                "baseSlotLevel": 5,
+                "additional": 2,
+                "appliesTo": [
+                  "creation"
+                ]
+              }
+            ],
+            "statBlockOverlay": {
+              "creatureType": "construct",
+              "tableRef": "table:animated-object-statistics",
+              "abilityScores": {
+                "constitution": 10,
+                "intelligence": 3,
+                "wisdom": 3,
+                "charisma": 1
+              },
+              "movement": [
+                {
+                  "when": "has-locomoting-appendages",
+                  "walkFeet": 30
+                },
+                {
+                  "when": "lacks-locomoting-appendages",
+                  "flyFeet": 30,
+                  "hover": true
+                },
+                {
+                  "when": "securely-attached",
+                  "allSpeedsFeet": 0,
+                  "overridesOtherMovement": true
+                }
+              ],
+              "senses": {
+                "blindsightFeet": 30,
+                "blindBeyond": true
+              },
+              "attack": {
+                "count": 1,
+                "kind": "melee",
+                "reachFeet": 5,
+                "attackBonus": "size-table",
+                "damage": "size-table",
+                "defaultDamageType": "bludgeoning",
+                "contextualDamageTypes": [
+                  "slashing",
+                  "piercing"
+                ],
+                "contextualClassification": "model-adjudicated"
+              }
+            },
+            "hooks": [
+              "F2",
+              "F3",
+              "F9"
             ]
           }
         ],
@@ -106423,57 +106582,147 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "option-menu",
-              "eligibleTypes": [
-                "beast"
-              ],
+            "profile": "ordinary-summon",
+            "creation": {
+              "kind": "candidate-menu",
+              "selection": "choose-one",
               "options": [
                 {
-                  "count": 1,
-                  "maxChallenge": "2"
+                  "id": "one-cr-2",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 1
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "beast"
+                    ],
+                    "maxChallenge": "2"
+                  }
                 },
                 {
-                  "count": 2,
-                  "maxChallenge": "1"
+                  "id": "two-cr-1",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 2
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "beast"
+                    ],
+                    "maxChallenge": "1"
+                  }
                 },
                 {
-                  "count": 4,
-                  "maxChallenge": "1/2"
+                  "id": "four-cr-half",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 4
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "beast"
+                    ],
+                    "maxChallenge": "1/2"
+                  }
                 },
                 {
-                  "count": 8,
-                  "maxChallenge": "1/4"
+                  "id": "eight-cr-quarter",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 8
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "beast"
+                    ],
+                    "maxChallenge": "1/4"
+                  }
                 }
-              ],
-              "higherSlotMultipliers": {
-                "5": 2,
-                "7": 3,
-                "9": 4
-              }
+              ]
             },
-            "creatureType": {
-              "treatedAs": [
+            "typeTreatment": {
+              "operation": "add",
+              "types": [
                 "fey"
               ]
             },
-            "control": {
-              "mode": "friendly-commanded",
-              "commandEconomy": {
-                "cost": "verbal-no-action"
-              },
-              "defaultBehavior": "defends-only",
-              "initiative": "group"
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true,
+              "visible": true
             },
-            "lifecycle": [
+            "control": {
+              "relationship": "friendly-commanded",
+              "initiative": "grouped-own-turns",
+              "command": {
+                "channel": "verbal",
+                "cost": "none",
+                "fallback": {
+                  "when": "no-new-command",
+                  "behavior": "defend-otherwise-no-actions"
+                }
+              }
+            },
+            "identity": {
+              "kind": "ordinary"
+            },
+            "initialState": {
+              "effect": "active",
+              "presence": "present"
+            },
+            "transitions": [
               {
-                "event": "spell-ends",
-                "result": "summoned-creature-disappears"
+                "id": "spell-end-removal",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
               },
               {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
+                "id": "zero-hp-removal",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
               }
+            ],
+            "scaling": [
+              {
+                "kind": "slot-multipliers",
+                "multipliers": {
+                  "5": 2,
+                  "7": 3,
+                  "9": 4
+                },
+                "appliesTo": "creation-menu-counts"
+              }
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -106537,35 +106786,94 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "cr-cap",
-              "maxChallenge": "4",
-              "ofTypes": [
-                "celestial"
-              ],
-              "higherSlot": {
-                "level": 9,
-                "maxChallenge": "5"
+            "profile": "ordinary-summon",
+            "creation": {
+              "kind": "candidate",
+              "cardinality": {
+                "mode": "exact",
+                "count": 1
+              },
+              "eligibility": {
+                "creatureTypes": [
+                  "celestial"
+                ],
+                "maxChallenge": "4"
               }
+            },
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true,
+              "visible": true
             },
             "control": {
-              "mode": "friendly-commanded",
-              "commandEconomy": {
-                "cost": "verbal-no-action"
-              },
-              "alignmentLimited": true,
-              "defaultBehavior": "defends-only",
-              "initiative": "own-turn"
-            },
-            "lifecycle": [
-              {
-                "event": "spell-ends",
-                "result": "summoned-creature-disappears"
-              },
-              {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
+              "relationship": "friendly-commanded",
+              "initiative": "own-turn",
+              "command": {
+                "channel": "verbal",
+                "cost": "none",
+                "alignmentLimited": true,
+                "fallback": {
+                  "when": "no-new-command",
+                  "behavior": "defend-otherwise-no-actions"
+                }
               }
+            },
+            "identity": {
+              "kind": "ordinary"
+            },
+            "initialState": {
+              "effect": "active",
+              "presence": "present"
+            },
+            "transitions": [
+              {
+                "id": "spell-end-removal",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              },
+              {
+                "id": "zero-hp-removal",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              }
+            ],
+            "scaling": [
+              {
+                "kind": "challenge-cap-at-slot",
+                "slotLevel": 9,
+                "maximumChallenge": "5",
+                "appliesTo": "creation-candidate"
+              }
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -106631,53 +106939,176 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "cr-cap",
-              "maxChallenge": "5",
-              "ofTypes": [
-                "elemental"
-              ],
-              "higherSlot": {
-                "perSlotAbove": 5,
-                "challengeIncrease": 1
+            "profile": "exceptional-concentration-summon",
+            "creation": {
+              "kind": "candidate",
+              "cardinality": {
+                "mode": "exact",
+                "count": 1
+              },
+              "eligibility": {
+                "creatureTypes": [
+                  "elemental"
+                ],
+                "maxChallenge": "5"
+              },
+              "sourceEligibility": {
+                "kind": "area",
+                "shape": "cube",
+                "sizeFeet": 10,
+                "options": [
+                  "air",
+                  "earth",
+                  "fire",
+                  "water"
+                ],
+                "withinSpellRange": true,
+                "candidateRelationship": "appropriate-to-source"
               }
             },
-            "sourceRequirement": {
-              "shape": "cube",
-              "sizeFeet": 10,
-              "materialOrTerrain": [
-                "air",
-                "earth",
-                "fire",
-                "water"
-              ]
+            "placement": {
+              "kind": "relative-to-selected-source",
+              "withinFeet": 10,
+              "unoccupied": true
             },
             "control": {
-              "mode": "friendly-commanded",
-              "commandEconomy": {
-                "cost": "verbal-no-action"
-              },
-              "defaultBehavior": "defends-only",
-              "initiative": "own-turn"
-            },
-            "lifecycle": [
-              {
-                "event": "spell-ends",
-                "result": "summoned-creature-disappears"
-              },
-              {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
-              },
-              {
-                "event": "concentration-broken",
-                "result": "uncontrolled-hostile",
-                "dismissable": false,
-                "disappearsAfter": {
-                  "amount": 1,
-                  "unit": "hour"
+              "relationship": "friendly-commanded",
+              "initiative": "own-turn",
+              "command": {
+                "channel": "verbal",
+                "cost": "none",
+                "fallback": {
+                  "when": "no-new-command",
+                  "behavior": "defend-otherwise-no-actions"
                 }
               }
+            },
+            "identity": {
+              "kind": "ordinary"
+            },
+            "initialState": {
+              "effect": "active",
+              "presence": "present",
+              "control": "controlled",
+              "attitude": "friendly"
+            },
+            "transitions": [
+              {
+                "id": "ordinary-spell-end-removal",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": "controlled",
+                  "attitude": "friendly"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ],
+                "exceptCauses": [
+                  "concentration-broken"
+                ]
+              },
+              {
+                "id": "zero-hp-removal",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": [
+                    "controlled",
+                    "uncontrolled"
+                  ],
+                  "attitude": [
+                    "friendly",
+                    "hostile"
+                  ]
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              },
+              {
+                "id": "concentration-break-loss-of-control",
+                "trigger": "concentration-broken",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": "controlled",
+                  "attitude": "friendly"
+                },
+                "changes": [
+                  {
+                    "axis": "control",
+                    "to": "uncontrolled"
+                  },
+                  {
+                    "axis": "attitude",
+                    "to": "hostile"
+                  }
+                ],
+                "restrictions": [
+                  "caster-cannot-dismiss"
+                ]
+              },
+              {
+                "id": "cast-anchored-removal",
+                "trigger": "absolute-time-reached",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": "uncontrolled",
+                  "attitude": "hostile"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ],
+                "timer": {
+                  "amount": 1,
+                  "unit": "hour",
+                  "anchor": "spell-cast"
+                }
+              }
+            ],
+            "causePrecedence": {
+              "higher": "concentration-broken",
+              "lower": "spell-ended"
+            },
+            "scaling": [
+              {
+                "kind": "challenge-cap-per-slot",
+                "baseSlotLevel": 5,
+                "increase": 1,
+                "appliesTo": "creation-candidate"
+              }
+            ],
+            "contextualRulings": [
+              "hostile-actions-model-adjudicated"
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -106743,44 +107174,191 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "cr-cap",
-              "maxChallenge": "6",
-              "ofTypes": [
+            "profile": "exceptional-concentration-summon",
+            "creation": {
+              "kind": "candidate-menu",
+              "selection": "choose-one",
+              "options": [
+                {
+                  "id": "fey-creature",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 1
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "fey"
+                    ],
+                    "maxChallenge": "6"
+                  }
+                },
+                {
+                  "id": "beast-form-fey-spirit",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 1
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "beast"
+                    ],
+                    "maxChallenge": "6"
+                  }
+                }
+              ]
+            },
+            "typeTreatment": {
+              "operation": "replace",
+              "types": [
                 "fey"
               ],
-              "higherSlot": {
-                "perSlotAbove": 6,
-                "challengeIncrease": 1
-              }
+              "selection": "choose-one",
+              "whenCandidateType": "beast"
+            },
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true,
+              "visible": true
             },
             "control": {
-              "mode": "friendly-commanded",
-              "commandEconomy": {
-                "cost": "verbal-no-action"
-              },
-              "alignmentLimited": true,
-              "defaultBehavior": "defends-only",
-              "initiative": "own-turn"
-            },
-            "lifecycle": [
-              {
-                "event": "spell-ends",
-                "result": "summoned-creature-disappears"
-              },
-              {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
-              },
-              {
-                "event": "concentration-broken",
-                "result": "uncontrolled-hostile",
-                "dismissable": false,
-                "disappearsAfter": {
-                  "amount": 1,
-                  "unit": "hour"
+              "relationship": "friendly-commanded",
+              "initiative": "own-turn",
+              "command": {
+                "channel": "verbal",
+                "cost": "none",
+                "alignmentLimited": true,
+                "fallback": {
+                  "when": "no-new-command",
+                  "behavior": "defend-otherwise-no-actions"
                 }
               }
+            },
+            "identity": {
+              "kind": "ordinary"
+            },
+            "initialState": {
+              "effect": "active",
+              "presence": "present",
+              "control": "controlled",
+              "attitude": "friendly"
+            },
+            "transitions": [
+              {
+                "id": "ordinary-spell-end-removal",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": "controlled",
+                  "attitude": "friendly"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ],
+                "exceptCauses": [
+                  "concentration-broken"
+                ]
+              },
+              {
+                "id": "zero-hp-removal",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": [
+                    "controlled",
+                    "uncontrolled"
+                  ],
+                  "attitude": [
+                    "friendly",
+                    "hostile"
+                  ]
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              },
+              {
+                "id": "concentration-break-loss-of-control",
+                "trigger": "concentration-broken",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": "controlled",
+                  "attitude": "friendly"
+                },
+                "changes": [
+                  {
+                    "axis": "control",
+                    "to": "uncontrolled"
+                  },
+                  {
+                    "axis": "attitude",
+                    "to": "hostile"
+                  }
+                ],
+                "restrictions": [
+                  "caster-cannot-dismiss"
+                ]
+              },
+              {
+                "id": "cast-anchored-removal",
+                "trigger": "absolute-time-reached",
+                "when": {
+                  "effect": "active",
+                  "presence": "present",
+                  "control": "uncontrolled",
+                  "attitude": "hostile"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ],
+                "timer": {
+                  "amount": 1,
+                  "unit": "hour",
+                  "anchor": "spell-cast"
+                }
+              }
+            ],
+            "causePrecedence": {
+              "higher": "concentration-broken",
+              "lower": "spell-ended"
+            },
+            "scaling": [
+              {
+                "kind": "challenge-cap-per-slot",
+                "baseSlotLevel": 6,
+                "increase": 1,
+                "appliesTo": "creation-candidate"
+              }
+            ],
+            "contextualRulings": [
+              "hostile-actions-model-adjudicated"
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -106845,51 +107423,140 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "option-menu",
-              "eligibleTypes": [
-                "elemental"
-              ],
+            "profile": "ordinary-summon",
+            "creation": {
+              "kind": "candidate-menu",
+              "selection": "choose-one",
               "options": [
                 {
-                  "count": 1,
-                  "maxChallenge": "2"
+                  "id": "one-cr-2",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 1
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "elemental"
+                    ],
+                    "maxChallenge": "2"
+                  }
                 },
                 {
-                  "count": 2,
-                  "maxChallenge": "1"
+                  "id": "two-cr-1",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 2
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "elemental"
+                    ],
+                    "maxChallenge": "1"
+                  }
                 },
                 {
-                  "count": 4,
-                  "maxChallenge": "1/2"
+                  "id": "four-cr-half",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 4
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "elemental"
+                    ],
+                    "maxChallenge": "1/2"
+                  }
                 },
                 {
-                  "count": 8,
-                  "maxChallenge": "1/4"
+                  "id": "eight-cr-quarter",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 8
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "elemental"
+                    ],
+                    "maxChallenge": "1/4"
+                  }
                 }
-              ],
-              "higherSlotMultipliers": {
-                "6": 2,
-                "8": 3
-              }
+              ]
+            },
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true,
+              "visible": true
             },
             "control": {
-              "mode": "friendly-commanded",
-              "commandEconomy": {
-                "cost": "verbal-no-action"
-              },
-              "defaultBehavior": "defends-only",
-              "initiative": "group"
-            },
-            "lifecycle": [
-              {
-                "event": "spell-ends",
-                "result": "summoned-creature-disappears"
-              },
-              {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
+              "relationship": "friendly-commanded",
+              "initiative": "grouped-own-turns",
+              "command": {
+                "channel": "verbal",
+                "cost": "none",
+                "fallback": {
+                  "when": "no-new-command",
+                  "behavior": "defend-otherwise-no-actions"
+                }
               }
+            },
+            "identity": {
+              "kind": "ordinary"
+            },
+            "initialState": {
+              "effect": "active",
+              "presence": "present"
+            },
+            "transitions": [
+              {
+                "id": "spell-end-removal",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              },
+              {
+                "id": "zero-hp-removal",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              }
+            ],
+            "scaling": [
+              {
+                "kind": "slot-multipliers",
+                "multipliers": {
+                  "6": 2,
+                  "8": 3
+                },
+                "appliesTo": "creation-menu-counts"
+              }
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -106955,51 +107622,140 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "option-menu",
-              "eligibleTypes": [
-                "fey"
-              ],
+            "profile": "ordinary-summon",
+            "creation": {
+              "kind": "candidate-menu",
+              "selection": "choose-one",
               "options": [
                 {
-                  "count": 1,
-                  "maxChallenge": "2"
+                  "id": "one-cr-2",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 1
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "fey"
+                    ],
+                    "maxChallenge": "2"
+                  }
                 },
                 {
-                  "count": 2,
-                  "maxChallenge": "1"
+                  "id": "two-cr-1",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 2
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "fey"
+                    ],
+                    "maxChallenge": "1"
+                  }
                 },
                 {
-                  "count": 4,
-                  "maxChallenge": "1/2"
+                  "id": "four-cr-half",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 4
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "fey"
+                    ],
+                    "maxChallenge": "1/2"
+                  }
                 },
                 {
-                  "count": 8,
-                  "maxChallenge": "1/4"
+                  "id": "eight-cr-quarter",
+                  "cardinality": {
+                    "mode": "exact",
+                    "count": 8
+                  },
+                  "eligibility": {
+                    "creatureTypes": [
+                      "fey"
+                    ],
+                    "maxChallenge": "1/4"
+                  }
                 }
-              ],
-              "higherSlotMultipliers": {
-                "6": 2,
-                "8": 3
-              }
+              ]
+            },
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true,
+              "visible": true
             },
             "control": {
-              "mode": "friendly-commanded",
-              "commandEconomy": {
-                "cost": "verbal-no-action"
-              },
-              "defaultBehavior": "defends-only",
-              "initiative": "group"
-            },
-            "lifecycle": [
-              {
-                "event": "spell-ends",
-                "result": "summoned-creature-disappears"
-              },
-              {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears"
+              "relationship": "friendly-commanded",
+              "initiative": "grouped-own-turns",
+              "command": {
+                "channel": "verbal",
+                "cost": "none",
+                "fallback": {
+                  "when": "no-new-command",
+                  "behavior": "defend-otherwise-no-actions"
+                }
               }
+            },
+            "identity": {
+              "kind": "ordinary"
+            },
+            "initialState": {
+              "effect": "active",
+              "presence": "present"
+            },
+            "transitions": [
+              {
+                "id": "spell-end-removal",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              },
+              {
+                "id": "zero-hp-removal",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
+              }
+            ],
+            "scaling": [
+              {
+                "kind": "slot-multipliers",
+                "multipliers": {
+                  "6": 2,
+                  "8": 3
+                },
+                "appliesTo": "creation-menu-counts"
+              }
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -107692,223 +108448,186 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "corpse-animation",
-              "sources": [
-                {
-                  "material": "corpse",
-                  "becomesRef": "creature:ghoul",
-                  "count": 3
-                }
-              ],
-              "targetEligibility": {
+            "profile": "control-window-undead",
+            "creation": {
+              "kind": "source-animation",
+              "cardinality": {
+                "mode": "maximum",
+                "count": 3
+              },
+              "sourceEligibility": {
+                "kind": "remains",
                 "creatureType": "humanoid",
                 "sizes": [
                   "medium",
                   "small"
                 ]
               },
-              "castingConstraint": "night-only",
-              "higherSlotOptions": [
+              "outcomes": [
                 {
-                  "level": 7,
-                  "options": [
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:ghoul",
-                      "count": 4
-                    }
-                  ]
-                },
-                {
-                  "level": 8,
-                  "options": [
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:ghoul",
-                      "count": 5
-                    },
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:ghast",
-                      "count": 2
-                    },
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:wight",
-                      "count": 2
-                    }
-                  ]
-                },
-                {
-                  "level": 9,
-                  "options": [
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:ghoul",
-                      "count": 6
-                    },
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:ghast",
-                      "count": 3
-                    },
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:wight",
-                      "count": 3
-                    },
-                    {
-                      "material": "corpse",
-                      "becomesRef": "creature:mummy",
-                      "count": 2
-                    }
-                  ]
+                  "source": "corpse",
+                  "resultRef": "creature:ghoul"
                 }
-              ]
+              ],
+              "castingCondition": "night-only"
+            },
+            "placement": {
+              "kind": "target-location"
             },
             "control": {
-              "mode": "obedient",
-              "commandEconomy": {
-                "cost": "bonus-action",
-                "rangeFeet": 120
-              },
-              "defaultBehavior": "defends-otherwise-idle",
+              "relationship": "controlled-obedient",
               "initiative": "own-turn",
+              "command": {
+                "channel": "mental",
+                "cost": "bonus-action",
+                "timing": "on-each-caster-turn",
+                "rangeFeet": 120,
+                "batching": {
+                  "scope": "any-or-all",
+                  "command": "same"
+                },
+                "generalOrders": true,
+                "orderPersistence": "until-task-complete",
+                "fallback": {
+                  "when": "no-active-order",
+                  "behavior": "defend-self-only"
+                }
+              },
               "window": {
                 "amount": 24,
-                "unit": "hour"
+                "unit": "hour",
+                "anchor": "control-established"
+              }
+            },
+            "identity": {
+              "kind": "created-actor",
+              "provenance": "created-by-this-spell"
+            },
+            "initialState": {
+              "control": "controlled"
+            },
+            "transitions": [
+              {
+                "id": "control-expiry",
+                "trigger": "control-window-expired",
+                "when": {
+                  "control": "controlled"
+                },
+                "changes": [
+                  {
+                    "axis": "control",
+                    "to": "uncontrolled"
+                  }
+                ]
               },
-              "reassert": {
-                "maxCreatures": 3,
-                "higherSlotOptions": [
+              {
+                "id": "pre-expiry-reassertion",
+                "trigger": "cast-to-reassert-control",
+                "when": {
+                  "control": "controlled"
+                },
+                "operation": {
+                  "kind": "reassert-control",
+                  "actorEligibility": "created-by-this-spell",
+                  "deadline": "before-current-control-window-expires",
+                  "cardinality": {
+                    "mode": "maximum",
+                    "count": 3
+                  },
+                  "resetsWindow": {
+                    "amount": 24,
+                    "unit": "hour",
+                    "anchor": "reassertion-completed"
+                  }
+                }
+              }
+            ],
+            "scaling": [
+              {
+                "kind": "slot-option-menu",
+                "appliesTo": [
+                  "creation",
+                  "control-reassertion"
+                ],
+                "selection": "choose-one",
+                "options": [
                   {
-                    "level": 7,
-                    "options": [
+                    "slotLevel": 7,
+                    "choices": [
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:ghoul",
-                        "count": 4
+                        "creatureRef": "creature:ghoul",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 4
+                        }
                       }
                     ]
                   },
                   {
-                    "level": 8,
-                    "options": [
+                    "slotLevel": 8,
+                    "choices": [
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:ghoul",
-                        "count": 5
+                        "creatureRef": "creature:ghoul",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 5
+                        }
                       },
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:ghast",
-                        "count": 2
+                        "creatureRef": "creature:ghast",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 2
+                        }
                       },
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:wight",
-                        "count": 2
+                        "creatureRef": "creature:wight",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 2
+                        }
                       }
                     ]
                   },
                   {
-                    "level": 9,
-                    "options": [
+                    "slotLevel": 9,
+                    "choices": [
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:ghoul",
-                        "count": 6
+                        "creatureRef": "creature:ghoul",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 6
+                        }
                       },
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:ghast",
-                        "count": 3
+                        "creatureRef": "creature:ghast",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 3
+                        }
                       },
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:wight",
-                        "count": 3
+                        "creatureRef": "creature:wight",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 3
+                        }
                       },
                       {
-                        "material": "corpse",
-                        "becomesRef": "creature:mummy",
-                        "count": 2
+                        "creatureRef": "creature:mummy",
+                        "cardinality": {
+                          "mode": "maximum",
+                          "count": 2
+                        }
                       }
                     ]
                   }
                 ]
               }
-            },
-            "lifecycle": [
-              {
-                "event": "control-window-expires",
-                "result": "animated-creature-persists-uncontrolled",
-                "window": {
-                  "amount": 24,
-                  "unit": "hour"
-                },
-                "reassertableByRecast": {
-                  "maxCreatures": 3,
-                  "higherSlotOptions": [
-                    {
-                      "level": 7,
-                      "options": [
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:ghoul",
-                          "count": 4
-                        }
-                      ]
-                    },
-                    {
-                      "level": 8,
-                      "options": [
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:ghoul",
-                          "count": 5
-                        },
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:ghast",
-                          "count": 2
-                        },
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:wight",
-                          "count": 2
-                        }
-                      ]
-                    },
-                    {
-                      "level": 9,
-                      "options": [
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:ghoul",
-                          "count": 6
-                        },
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:ghast",
-                          "count": 3
-                        },
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:wight",
-                          "count": 3
-                        },
-                        {
-                          "material": "corpse",
-                          "becomesRef": "creature:mummy",
-                          "count": 2
-                        }
-                      ]
-                    }
-                  ]
-                }
-              }
+            ],
+            "hooks": [
+              "F2",
+              "F3"
             ]
           }
         ],
@@ -110796,8 +111515,14 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "form-list",
+            "profile": "persistent-familiar",
+            "creation": {
+              "kind": "fixed-form-menu",
+              "selection": "choose-one",
+              "cardinality": {
+                "mode": "exact",
+                "count": 1
+              },
               "forms": [
                 {
                   "name": "bat",
@@ -110861,70 +111586,175 @@
                 }
               ]
             },
-            "creatureType": {
-              "treatedAs": [
+            "typeTreatment": {
+              "operation": "replace",
+              "types": [
                 "celestial",
                 "fey",
                 "fiend"
               ],
-              "chooseOne": true
+              "selection": "choose-one"
+            },
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true
             },
             "control": {
-              "mode": "independent-obedient",
-              "initiative": "own-turn",
-              "exclusiveInstance": true
+              "relationship": "independent-always-obeys",
+              "initiative": "own-turn"
             },
-            "lifecycle": [
+            "identity": {
+              "kind": "persistent-linked",
+              "maximumLinked": 1
+            },
+            "initialState": {
+              "presence": "present",
+              "link": "active"
+            },
+            "transitions": [
               {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears",
-                "resultingState": "absent-recoverable"
+                "id": "zero-hp-absence",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "presence": "present",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
               },
               {
-                "event": "recast",
-                "result": "existing-familiar-adopts-new-form",
-                "priorState": "active"
+                "id": "temporary-pocket-dismissal",
+                "trigger": "action-temporary-dismissal",
+                "when": {
+                  "presence": "present",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "pocket-dimension"
+                  }
+                ]
               },
               {
-                "event": "recast",
-                "result": "familiar-reappears",
-                "priorState": "absent-recoverable"
-              }
-            ],
-            "dismissal": {
-              "cost": "action",
-              "temporary": {
-                "to": "pocket-dimension",
-                "recall": {
-                  "cost": "action",
-                  "rangeFeet": 30
+                "id": "pocket-recall",
+                "trigger": "action-recall",
+                "when": {
+                  "presence": "pocket-dimension",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "present"
+                  }
+                ],
+                "operation": {
+                  "kind": "place-in-unoccupied-space",
+                  "withinFeet": 30
                 }
               },
-              "permanent": {
-                "cost": "action",
-                "result": "dismissed-forever"
-              }
-            },
-            "modifications": [
               {
-                "attribute": "cannot-attack"
+                "id": "permanent-dismissal",
+                "trigger": "action-permanent-dismissal",
+                "when": {
+                  "presence": [
+                    "present",
+                    "absent",
+                    "pocket-dimension"
+                  ],
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  },
+                  {
+                    "axis": "link",
+                    "to": "none"
+                  }
+                ]
+              },
+              {
+                "id": "reform-present-familiar",
+                "trigger": "cast-again",
+                "when": {
+                  "presence": "present",
+                  "link": "active"
+                },
+                "operation": {
+                  "kind": "select-new-form"
+                }
+              },
+              {
+                "id": "restore-and-reform-absent-familiar",
+                "trigger": "cast-again",
+                "when": {
+                  "presence": "absent",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "present"
+                  }
+                ],
+                "operation": {
+                  "kind": "select-new-form"
+                },
+                "reappearancePlacement": "creation-placement"
+              },
+              {
+                "id": "reform-pocketed-familiar",
+                "trigger": "cast-again",
+                "when": {
+                  "presence": "pocket-dimension",
+                  "link": "active"
+                },
+                "operation": {
+                  "kind": "select-new-form"
+                }
               }
             ],
-            "telepathy": {
-              "rangeFeet": 100
-            },
-            "senseSharing": {
-              "cost": "action",
-              "casterConditionWhileSharing": [
-                "deaf",
-                "blind"
-              ]
-            },
-            "spellDelivery": {
-              "spellRange": "touch",
-              "cost": "reaction",
-              "familiarWithinFeet": 100
-            }
+            "modifications": [
+              {
+                "kind": "cannot-attack"
+              }
+            ],
+            "protocols": [
+              {
+                "kind": "telepathy",
+                "rangeFeet": 100
+              },
+              {
+                "kind": "familiar-sense-sharing",
+                "cost": "action",
+                "requiresWithinFeet": 100,
+                "duration": "until-start-of-next-turn",
+                "senses": "familiar-including-special-senses",
+                "casterOwnSenses": [
+                  "deaf",
+                  "blind"
+                ]
+              },
+              {
+                "kind": "familiar-touch-spell-delivery",
+                "spellRange": "touch",
+                "origin": "familiar",
+                "requiresWithinFeet": 100,
+                "familiarCost": "reaction",
+                "attackModifier": "caster",
+                "timing": "when-caster-casts"
+              }
+            ],
+            "hooks": [
+              "F2"
+            ]
           }
         ]
       },
@@ -110981,8 +111811,14 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "form-list",
+            "profile": "persistent-steed",
+            "creation": {
+              "kind": "fixed-form-menu",
+              "selection": "choose-one",
+              "cardinality": {
+                "mode": "exact",
+                "count": 1
+              },
               "forms": [
                 {
                   "name": "warhorse",
@@ -111004,69 +111840,130 @@
                   "name": "mastiff",
                   "creatureRef": "creature:mastiff"
                 }
-              ]
+              ],
+              "additionalForms": "model-adjudicated"
             },
-            "creatureType": {
-              "treatedAs": [
+            "typeTreatment": {
+              "operation": "replace",
+              "types": [
                 "celestial",
                 "fey",
                 "fiend"
               ],
-              "chooseOne": true
+              "selection": "choose-one"
+            },
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true
             },
             "control": {
-              "exclusiveInstance": true
+              "relationship": "bonded-mount"
             },
-            "lifecycle": [
+            "identity": {
+              "kind": "persistent-linked",
+              "maximumLinked": 1
+            },
+            "initialState": {
+              "presence": "present",
+              "link": "active"
+            },
+            "transitions": [
               {
-                "event": "zero-hit-points",
-                "result": "summoned-creature-disappears",
-                "resultingState": "absent-recoverable"
+                "id": "zero-hp-absence",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "presence": "present",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
               },
               {
-                "event": "action-dismissal",
-                "result": "summoned-creature-disappears",
-                "resultingState": "absent-recoverable"
+                "id": "action-dismissal",
+                "trigger": "action-dismissal",
+                "when": {
+                  "presence": "present",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
               },
               {
-                "event": "action-release",
-                "result": "bond-ends-creature-disappears",
-                "resultingState": "terminated"
+                "id": "release-bond",
+                "trigger": "action-release",
+                "when": {
+                  "presence": [
+                    "present",
+                    "absent"
+                  ],
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  },
+                  {
+                    "axis": "link",
+                    "to": "none"
+                  }
+                ]
               },
               {
-                "event": "recast",
-                "result": "same-steed-returns-restored",
-                "priorState": "absent-recoverable"
+                "id": "restore-same-steed",
+                "trigger": "cast-again",
+                "when": {
+                  "presence": "absent",
+                  "link": "active"
+                },
+                "changes": [
+                  {
+                    "axis": "presence",
+                    "to": "present"
+                  }
+                ],
+                "operation": {
+                  "kind": "restore-same-actor",
+                  "hitPoints": "maximum"
+                },
+                "reappearancePlacement": "creation-placement"
               }
             ],
-            "dismissal": {
-              "cost": "action",
-              "temporary": {
-                "to": "dismissed",
-                "recall": {
-                  "cost": "recast"
-                }
-              },
-              "permanent": {
-                "cost": "action",
-                "result": "bond-released"
-              }
-            },
             "modifications": [
               {
-                "attribute": "intelligence-floor",
-                "value": 6,
-                "grantsLanguage": 1
+                "kind": "ability-floor",
+                "ability": "intelligence",
+                "minimum": 6,
+                "grantsLanguages": 1,
+                "languageEligibility": "spoken-by-caster"
               }
             ],
-            "telepathy": {
-              "rangeFeet": 5280
-            },
-            "spellSharing": {
-              "when": "caster-targets-only-self",
-              "requiresMounted": true,
-              "alsoAffects": "steed"
-            }
+            "protocols": [
+              {
+                "kind": "telepathy",
+                "rangeFeet": 5280
+              },
+              {
+                "kind": "mounted-self-spell-sharing",
+                "requiresMounted": true,
+                "spellTargets": "caster-only",
+                "alsoTargets": "steed"
+              }
+            ],
+            "contextualRulings": [
+              "gm-may-allow-other-steed-forms"
+            ],
+            "hooks": [
+              "F2"
+            ]
           }
         ]
       }
@@ -112683,49 +113580,130 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "target-transformation",
-              "targets": [
+            "profile": "target-transformation",
+            "creation": {
+              "kind": "target-transformation-menu",
+              "selection": "choose-one",
+              "options": [
                 {
-                  "count": 10,
-                  "from": "centipede",
-                  "toRef": "creature:giant-centipede"
+                  "source": "centipede",
+                  "resultRef": "creature:giant-centipede",
+                  "cardinality": {
+                    "mode": "maximum",
+                    "count": 10
+                  }
                 },
                 {
-                  "count": 3,
-                  "from": "spider",
-                  "toRef": "creature:giant-spider"
+                  "source": "spider",
+                  "resultRef": "creature:giant-spider",
+                  "cardinality": {
+                    "mode": "maximum",
+                    "count": 3
+                  }
                 },
                 {
-                  "count": 5,
-                  "from": "wasp",
-                  "toRef": "creature:giant-wasp"
+                  "source": "wasp",
+                  "resultRef": "creature:giant-wasp",
+                  "cardinality": {
+                    "mode": "maximum",
+                    "count": 5
+                  }
                 },
                 {
-                  "count": 1,
-                  "from": "scorpion",
-                  "toRef": "creature:giant-scorpion"
+                  "source": "scorpion",
+                  "resultRef": "creature:giant-scorpion",
+                  "cardinality": {
+                    "mode": "maximum",
+                    "count": 1
+                  }
                 }
-              ]
+              ],
+              "additionalTargets": "model-adjudicated"
+            },
+            "placement": {
+              "kind": "target-location"
             },
             "control": {
-              "mode": "obedient",
-              "initiative": "acts-on-casters-turn"
+              "relationship": "obeys-verbal-commands",
+              "initiative": "caster-turn",
+              "command": {
+                "channel": "verbal"
+              }
             },
-            "lifecycle": [
+            "identity": {
+              "kind": "existing-targets"
+            },
+            "initialState": {
+              "effect": "active",
+              "form": "manifested"
+            },
+            "transitions": [
               {
-                "event": "spell-ends",
-                "result": "transformed-target-reverts"
+                "id": "spell-end-reversion",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "form": "manifested"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "form",
+                    "to": "original"
+                  }
+                ],
+                "scope": "each-target"
               },
               {
-                "event": "zero-hit-points",
-                "result": "transformed-target-reverts"
+                "id": "zero-hp-reversion",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "form": "manifested"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "form",
+                    "to": "original"
+                  }
+                ],
+                "scope": "each-target"
+              },
+              {
+                "id": "action-dismissal-reversion",
+                "trigger": "action-dismissal",
+                "when": {
+                  "effect": "active",
+                  "form": "manifested"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "form",
+                    "to": "original"
+                  }
+                ],
+                "scope": "each-target"
               }
             ],
-            "dismissal": {
-              "cost": "action",
-              "scope": "per-target"
-            }
+            "contextualRulings": [
+              "gm-may-map-analogous-targets",
+              "gm-resolves-actions-and-movement"
+            ],
+            "hooks": [
+              "F2",
+              "F3"
+            ]
           }
         ]
       }
@@ -118141,55 +119119,146 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "form-list",
-              "forms": [
-                {
-                  "name": "riding horse",
-                  "creatureRef": "creature:riding-horse",
-                  "speedOverrides": {
-                    "walk": 100
-                  }
-                }
-              ]
+            "profile": "phantom-steed",
+            "creation": {
+              "kind": "fixed-stat-block",
+              "cardinality": {
+                "mode": "exact",
+                "count": 1
+              },
+              "creatureRef": "creature:riding-horse",
+              "description": "quasi-real-horselike",
+              "size": "large"
             },
-            "lifecycle": [
+            "placement": {
+              "kind": "within-spell-range",
+              "unoccupied": true,
+              "onGround": true
+            },
+            "identity": {
+              "kind": "ordinary"
+            },
+            "initialState": {
+              "effect": "active",
+              "presence": "present"
+            },
+            "transitions": [
               {
-                "event": "spell-ends",
-                "result": "effect-fades",
-                "transition": {
+                "id": "spell-ended-fade",
+                "trigger": "spell-ended",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "fading"
+                  }
+                ],
+                "timer": {
                   "amount": 1,
-                  "unit": "minute"
+                  "unit": "minute",
+                  "anchor": "transition-trigger"
                 }
               },
               {
-                "event": "action-dismissal",
-                "result": "effect-fades",
-                "transition": {
+                "id": "action-dismissal-fade",
+                "trigger": "action-dismissal",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "fading"
+                  }
+                ],
+                "timer": {
                   "amount": 1,
-                  "unit": "minute"
+                  "unit": "minute",
+                  "anchor": "transition-trigger"
                 }
               },
               {
-                "event": "damage-taken",
-                "result": "effect-fades",
-                "transition": {
+                "id": "damage-taken-fade",
+                "trigger": "damage-taken",
+                "when": {
+                  "effect": "active",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "fading"
+                  }
+                ],
+                "timer": {
                   "amount": 1,
-                  "unit": "minute"
+                  "unit": "minute",
+                  "anchor": "transition-trigger"
                 }
+              },
+              {
+                "id": "fade-complete",
+                "trigger": "fade-completed",
+                "when": {
+                  "effect": "fading",
+                  "presence": "present"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "presence",
+                    "to": "absent"
+                  }
+                ]
               }
             ],
             "modifications": [
               {
-                "attribute": "speed",
+                "kind": "speed-override",
                 "mode": "walk",
-                "value": 100
+                "feet": 100
               }
             ],
-            "travel": {
-              "normalMilesPerHour": 10,
-              "fastMilesPerHour": 13
-            }
+            "protocols": [
+              {
+                "kind": "created-equipment-tether",
+                "equipment": [
+                  "saddle",
+                  "bit",
+                  "bridle"
+                ],
+                "maximumDistanceFeet": 10,
+                "outcome": "vanishes"
+              },
+              {
+                "kind": "designated-rider",
+                "eligible": "caster-or-chosen-creature"
+              },
+              {
+                "kind": "overland-travel",
+                "normalMilesPerHour": 10,
+                "fastMilesPerHour": 13
+              },
+              {
+                "kind": "fade-dismount-window",
+                "durationMinutes": 1,
+                "eligible": "rider"
+              }
+            ],
+            "contextualRulings": [
+              "caster-chooses-appearance"
+            ],
+            "hooks": [
+              "F2",
+              "F3"
+            ]
           }
         ]
       },
@@ -121420,43 +122489,129 @@
         "effects": [
           {
             "kind": "summoning",
-            "appears": {
-              "kind": "duplicate",
-              "of": "beast-or-humanoid"
+            "profile": "simulacrum",
+            "creation": {
+              "kind": "duplicate-target",
+              "cardinality": {
+                "mode": "exact",
+                "count": 1
+              },
+              "eligibility": {
+                "creatureTypes": [
+                  "beast",
+                  "humanoid"
+                ]
+              },
+              "targetRange": "touch",
+              "rangeContinuity": "entire-casting-time"
             },
             "control": {
-              "mode": "obedient",
-              "defaultBehavior": "follows-caster-wishes",
-              "initiative": "acts-on-casters-turn",
-              "exclusiveInstance": true
+              "relationship": "friendly-to-caster-and-designated-obeys-spoken",
+              "initiative": "caster-turn",
+              "command": {
+                "channel": "spoken"
+              }
             },
-            "lifecycle": [
+            "identity": {
+              "kind": "duplicate"
+            },
+            "initialState": {
+              "effect": "active",
+              "integrity": "intact"
+            },
+            "transitions": [
               {
-                "event": "zero-hit-points",
-                "result": "duplicate-destroyed",
-                "resultingState": "terminated"
+                "id": "zero-hp-destruction",
+                "trigger": "zero-hit-points",
+                "when": {
+                  "effect": "active",
+                  "integrity": "intact"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "integrity",
+                    "to": "destroyed"
+                  }
+                ],
+                "operation": {
+                  "kind": "revert-to-snow-and-melt"
+                }
               },
               {
-                "event": "recast",
-                "result": "prior-duplicates-instantly-destroyed",
-                "priorState": "active"
+                "id": "recast-cleanup",
+                "trigger": "cast-again",
+                "when": {
+                  "effect": "active",
+                  "integrity": "intact"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  },
+                  {
+                    "axis": "integrity",
+                    "to": "destroyed"
+                  }
+                ],
+                "operation": {
+                  "kind": "destroy-active-duplicates",
+                  "ownership": "created-by-caster-with-this-spell"
+                },
+                "scope": "all-matching-active-duplicates"
+              },
+              {
+                "id": "dispel-end",
+                "trigger": "dispelled",
+                "when": {
+                  "effect": "active",
+                  "integrity": "intact"
+                },
+                "changes": [
+                  {
+                    "axis": "effect",
+                    "to": "ended"
+                  }
+                ]
               }
             ],
             "modifications": [
               {
-                "attribute": "hit-point-maximum",
+                "kind": "hit-point-maximum",
                 "value": "half-of-original"
               },
               {
-                "attribute": "no-equipment"
+                "kind": "no-equipment"
               },
               {
-                "attribute": "no-advancement-or-slot-recovery"
+                "kind": "no-advancement-or-slot-recovery"
               }
             ],
-            "repair": {
-              "costGpPerHitPoint": 100
-            }
+            "statBlockBasis": {
+              "kind": "copy-target",
+              "copied": "all-statistics",
+              "interaction": "normal-creature"
+            },
+            "protocols": [
+              {
+                "kind": "simulacrum-repair",
+                "requires": [
+                  "alchemical-laboratory",
+                  "rare-herbs-and-minerals"
+                ],
+                "costGpPerHitPoint": 100,
+                "result": "regain-hit-points"
+              }
+            ],
+            "hooks": [
+              "F3",
+              "F9",
+              "F10"
+            ]
           }
         ]
       },

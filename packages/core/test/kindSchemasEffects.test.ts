@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+  materializeS1SummoningEffect,
+  S1_SUMMONING_SPELL_KEYS,
+  type S1SummoningSpellKey,
+} from '../scripts/importers/dnd5e-srd-5.1/s1SummoningSpecs.js';
 import { validateRecordKindSchema } from '../src/rules/kindSchemas.js';
 import type { RulesRecord } from '../src/rules/types.js';
 
@@ -9,7 +14,10 @@ import type { RulesRecord } from '../src/rules/types.js';
  * whitelist alone.
  */
 
-function featureWithEffect(effect: Record<string, unknown>): RulesRecord {
+function featureWithEffect(
+  effect: Record<string, unknown>,
+  concentration = false,
+): RulesRecord {
   return {
     systemId: 'dnd5e-srd',
     kind: 'feature',
@@ -19,576 +27,326 @@ function featureWithEffect(effect: Record<string, unknown>): RulesRecord {
       source: 'class:test',
       level: 1,
       description: 'Test feature.',
-      mechanics: { effects: [effect] },
+      mechanics: {
+        effects: [effect],
+        ...(concentration
+          ? {
+              duration: {
+                kind: 'timed',
+                amount: 1,
+                unit: 'hour',
+                upTo: true,
+                concentration: true,
+              },
+            }
+          : {}),
+      },
     },
   } as RulesRecord;
 }
 
-const validate = (effect: Record<string, unknown>): void =>
-  validateRecordKindSchema(featureWithEffect(effect), 'records[0]');
+const validate = (
+  effect: Record<string, unknown>,
+  concentration = false,
+): void =>
+  validateRecordKindSchema(
+    featureWithEffect(effect, concentration),
+    'records[0]',
+  );
+
+function setAt(
+  root: Record<string, unknown>,
+  path: readonly (string | number)[],
+  value: unknown,
+): void {
+  let cursor: unknown = root;
+  for (const segment of path.slice(0, -1)) {
+    if (typeof cursor !== 'object' || cursor === null) {
+      throw new Error(`Invalid mutation path: ${path.join('.')}`);
+    }
+    cursor = (cursor as Record<PropertyKey, unknown>)[segment];
+  }
+  if (typeof cursor !== 'object' || cursor === null) {
+    throw new Error(`Invalid mutation path: ${path.join('.')}`);
+  }
+  (cursor as Record<PropertyKey, unknown>)[path.at(-1) as string | number] =
+    value;
+}
 
 describe('mechanics effect payload contracts', () => {
-  it('accepts representative summoning payloads', () => {
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'option-menu',
-          eligibleTypes: ['beast'],
-          options: [
-            { count: 1, maxChallenge: '2' },
-            { count: 2, maxChallenge: '1' },
-          ],
-          higherSlotMultipliers: { 5: 2 },
-        },
-        creatureType: { treatedAs: ['fey'] },
-        control: {
-          mode: 'friendly-commanded',
-          commandEconomy: { cost: 'verbal-no-action' },
-          defaultBehavior: 'defends-only',
-          initiative: 'group',
-        },
-        lifecycle: [
-          { event: 'spell-ends', result: 'summoned-creature-disappears' },
-        ],
-      }),
-    ).not.toThrow();
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'target-transformation',
-          targets: [
-            { count: 1, from: 'scorpion', toRef: 'creature:giant-scorpion' },
-          ],
-        },
-        control: {
-          mode: 'obedient',
-          commandEconomy: { cost: 'on-your-turn' },
-          defaultBehavior: 'defends-otherwise-idle',
-          initiative: 'own-turn',
-        },
-        lifecycle: [
-          { event: 'zero-hit-points', result: 'transformed-target-reverts' },
-        ],
-      }),
-    ).not.toThrow();
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'object-animation',
-          maxObjects: 10,
-          sizeCosts: { medium: 2, large: 4, huge: 8 },
-          statTableRef: 'table:animated-object-statistics',
-        },
-        control: {
-          mode: 'obedient',
-          defaultBehavior: 'defends-only',
-          initiative: 'own-turn',
-        },
-        lifecycle: [
-          {
-            event: 'zero-hit-points',
-            result: 'animated-object-reverts',
-            damageCarriesOver: true,
-          },
-        ],
-      }),
-    ).not.toThrow();
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'corpse-animation',
-          sources: [
-            { material: 'corpse', becomesRef: 'creature:ghoul', count: 3 },
-          ],
-          higherSlotOptions: [
-            {
-              level: 8,
-              options: [
-                { material: 'corpse', becomesRef: 'creature:ghast', count: 2 },
-              ],
-            },
-          ],
-        },
-        control: {
-          mode: 'obedient',
-          commandEconomy: { cost: 'bonus-action', rangeFeet: 120 },
-          defaultBehavior: 'defends-otherwise-idle',
-          initiative: 'own-turn',
-          window: { amount: 24, unit: 'hour' },
-        },
-        lifecycle: [
-          {
-            event: 'control-window-expires',
-            result: 'animated-creature-persists-uncontrolled',
-            window: { amount: 24, unit: 'hour' },
-            reassertableByRecast: { maxCreatures: 4 },
-          },
-        ],
-      }),
-    ).not.toThrow();
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
-        control: {
-          // No defaultBehavior: the source states independence and initiative
-          // but no no-command default behavior.
-          mode: 'independent-obedient',
-          initiative: 'own-turn',
-          exclusiveInstance: true,
-        },
-        lifecycle: [
-          {
-            event: 'zero-hit-points',
-            result: 'summoned-creature-disappears',
-            resultingState: 'absent-recoverable',
-          },
-          {
-            event: 'recast',
-            result: 'existing-familiar-adopts-new-form',
-            priorState: 'active',
-          },
-          {
-            event: 'recast',
-            result: 'familiar-reappears',
-            priorState: 'absent-recoverable',
-          },
-        ],
-        dismissal: {
-          cost: 'action',
-          temporary: {
-            to: 'pocket-dimension',
-            recall: { cost: 'action', rangeFeet: 30 },
-          },
-          permanent: { cost: 'action', result: 'dismissed-forever' },
-        },
-        spellDelivery: {
-          spellRange: 'touch',
-          cost: 'reaction',
-          familiarWithinFeet: 100,
-        },
-      }),
-    ).not.toThrow();
-    // Phantom Steed: a rideable mount with no control block at all.
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'form-list',
-          forms: [
-            {
-              name: 'riding horse',
-              creatureRef: 'creature:riding-horse',
-              speedOverrides: { walk: 100 },
-            },
-          ],
-        },
-        lifecycle: [
-          {
-            event: 'spell-ends',
-            result: 'effect-fades',
-            transition: { amount: 1, unit: 'minute' },
-          },
-        ],
-        travel: { normalMilesPerHour: 10, fastMilesPerHour: 13 },
-      }),
-    ).not.toThrow();
-    // Animate Dead: corpse-animation creation eligibility gates.
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'corpse-animation',
-          sources: [
-            { material: 'pile of bones', becomesRef: 'creature:skeleton' },
-            { material: 'corpse', becomesRef: 'creature:zombie' },
-          ],
-          targetEligibility: {
-            creatureType: 'humanoid',
-            sizes: ['medium', 'small'],
-          },
-          baseCount: 1,
-          distinctSourcePerCreature: true,
-          higherSlotScaling: { perSlotAbove: 3, additionalTargets: 2 },
-        },
-        control: {
-          mode: 'obedient',
-          commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
-          defaultBehavior: 'defends-otherwise-idle',
-          initiative: 'own-turn',
-          window: { amount: 24, unit: 'hour' },
-        },
-        lifecycle: [
-          {
-            event: 'control-window-expires',
-            result: 'animated-creature-persists-uncontrolled',
-            window: { amount: 24, unit: 'hour' },
-            reassertableByRecast: { maxCreatures: 4 },
-          },
-        ],
-      }),
-    ).not.toThrow();
+  it('accepts all curated S1 summoning profiles', () => {
+    expect([...S1_SUMMONING_SPELL_KEYS]).toHaveLength(14);
+    for (const key of S1_SUMMONING_SPELL_KEYS) {
+      expect(
+        () =>
+          validate(
+            materializeS1SummoningEffect(key),
+            key === 'spell:conjure-elemental' || key === 'spell:conjure-fey',
+          ),
+        key,
+      ).not.toThrow();
+    }
   });
 
-  it('rejects malformed summoning payloads', () => {
+  it('rejects impossible S1 state, creation, control, and protocol combinations', () => {
+    const mutate = (
+      key: S1SummoningSpellKey,
+      change: (effect: Record<string, unknown>) => void,
+    ): Record<string, unknown> => {
+      const effect = structuredClone(materializeS1SummoningEffect(key));
+      change(effect);
+      return effect;
+    };
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
-        control: {
-          mode: 'obedient',
-          defaultBehavior: 'defends-only',
-          initiative: 'own-turn',
-        },
-        lifecycle: [{ event: 'banana', result: 'also-banana' }],
-      }),
-    ).toThrow(/unsupported lifecycle pair/);
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'option-menu',
-          options: [{ count: 1, maxChallenge: 'two' }],
-        },
-        control: {
-          mode: 'friendly-commanded',
-          defaultBehavior: 'defends-only',
-          initiative: 'group',
-        },
-        lifecycle: [
-          { event: 'spell-ends', result: 'summoned-creature-disappears' },
-        ],
-      }),
-    ).toThrow(/challenge token/);
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'target-transformation',
-          targets: [
-            { count: 1, from: 'scorpion', toRef: 'creature:giant-scorpion' },
-          ],
-        },
-        control: {
-          mode: 'obedient',
-          commandEconomy: { cost: 'on-your-turn' },
-          defaultBehavior: 'defends-otherwise-idle',
-          initiative: 'own-turn',
-        },
-        lifecycle: [
-          { event: 'spell-ends', result: 'summoned-creature-disappears' },
-        ],
-      }),
-    ).toThrow(/not valid for target-transformation/);
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
-        control: {
-          mode: 'obedient',
-          defaultBehavior: 'defends-otherwise-idle',
-          initiative: 'own-turn',
-        },
-        lifecycle: [
-          {
-            event: 'recast',
-            result: 'prior-duplicates-instantly-destroyed',
-            priorState: 'active',
-          },
-        ],
-      }),
-    ).toThrow(/exclusiveInstance/);
-    expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'cr-cap',
-          maxChallenge: '4',
-          ofTypes: ['celestial'],
-          higherSlot: {
-            level: 9,
-            maxChallenge: '5',
-            perSlotAbove: 6,
-            challengeIncrease: 1,
-          },
-        },
-        control: {
-          mode: 'friendly-commanded',
-          defaultBehavior: 'defends-only',
-          initiative: 'own-turn',
-        },
-        lifecycle: [
-          { event: 'spell-ends', result: 'summoned-creature-disappears' },
-        ],
-      }),
+      validate(
+        mutate('spell:conjure-animals', (effect) => {
+          setAt(effect, ['unreviewed'], true);
+        }),
+      ),
     ).toThrow(/unexpected payload key/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'object-animation',
-          maxObjects: 10,
-          sizeCosts: { tiny: 1 },
-          statTableRef: 'table:animated-object-statistics',
-        },
-        control: {
-          mode: 'obedient',
-          defaultBehavior: 'defends-only',
-          initiative: 'own-turn',
-        },
-        lifecycle: [{ event: 'spell-ends', result: 'animated-object-reverts' }],
-      }),
-    ).toThrow(/unsupported size/);
+      validate(
+        mutate('spell:conjure-animals', (effect) => {
+          setAt(effect, ['initialState', 'link'], 'active');
+        }),
+      ),
+    ).toThrow(/unexpected payload key "link"/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'duplicate', of: 'beast-or-humanoid', stray: true },
-        control: {
-          mode: 'obedient',
-          defaultBehavior: 'defends-only',
-          initiative: 'own-turn',
-        },
-        lifecycle: [
-          { event: 'zero-hit-points', result: 'duplicate-destroyed' },
-        ],
-      }),
-    ).toThrow(/unexpected payload key/);
+      validate(
+        mutate('spell:find-steed', (effect) => {
+          setAt(effect, ['initialState', 'presence'], 'pocket-dimension');
+        }),
+      ),
+    ).toThrow(/unsupported state value pocket-dimension/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
-        control: {
-          mode: 'independent-obedient',
-          defaultBehavior: 'defends-otherwise-idle',
-          initiative: 'own-turn',
-          exclusiveInstance: true,
-        },
-        lifecycle: [
-          {
-            event: 'recast',
-            result: 'existing-familiar-adopts-new-form',
-            priorState: 'active',
-          },
-        ],
-        senseSharing: {
-          cost: 'action',
-          casterConditionWhileSharing: ['distracted'],
-        },
-      }),
-    ).toThrow(/deaf or blind/);
+      validate(
+        mutate('spell:animate-dead', (effect) => {
+          setAt(effect, ['transitions', 1, 'when', 'control'], 'uncontrolled');
+        }),
+      ),
+    ).toThrow(/reassert-control requires controlled state before expiry/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'cr-cap',
-          maxChallenge: '5',
-          ofTypes: ['elemental'],
-        },
-        control: {
-          mode: 'friendly-commanded',
-          commandEconomy: { cost: 'verbal-no-action' },
-          defaultBehavior: 'defends-only',
-          initiative: 'own-turn',
-        },
-        lifecycle: [
-          {
-            event: 'concentration-broken',
-            result: 'uncontrolled-hostile',
-            dismissable: false,
-            disappearsAfter: { amount: 1, unit: 'hour' },
-          },
-        ],
-      }),
-    ).toThrow(/concentration duration/);
-    // A recast transition must carry the priorState its result implies.
+      validate(
+        mutate('spell:animate-dead', (effect) => {
+          setAt(
+            effect,
+            ['transitions', 1, 'operation', 'deadline'],
+            'after-expiry',
+          );
+        }),
+      ),
+    ).toThrow(/invalid reassert-control eligibility or deadline/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
-        control: { mode: 'obedient', exclusiveInstance: true },
-        lifecycle: [
-          {
-            event: 'recast',
-            result: 'prior-duplicates-instantly-destroyed',
-            priorState: 'absent-recoverable',
-          },
-        ],
-      }),
-    ).toThrow(/priorState must be active/);
-    // Two recast entries may not share a priorState.
+      validate(
+        mutate('spell:conjure-elemental', (effect) => {
+          setAt(
+            effect,
+            ['transitions', 3, 'timer', 'anchor'],
+            'transition-trigger',
+          );
+        }),
+      ),
+    ).toThrow(/must be anchored to spell-cast/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
-        control: { mode: 'independent-obedient', exclusiveInstance: true },
-        lifecycle: [
-          {
-            event: 'recast',
-            result: 'existing-familiar-adopts-new-form',
-            priorState: 'active',
-          },
-          {
-            event: 'recast',
-            result: 'prior-duplicates-instantly-destroyed',
-            priorState: 'active',
-          },
-        ],
-      }),
-    ).toThrow(/distinct priorState/);
-    // An empty control object must be omitted, not emitted empty.
+      validate(
+        mutate('spell:conjure-fey', (effect) => {
+          setAt(effect, ['transitions', 0, 'exceptCauses'], undefined);
+        }),
+      ),
+    ).toThrow(/must exclude concentration-broken/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'duplicate', of: 'beast-or-humanoid' },
-        control: {},
-        lifecycle: [
-          { event: 'zero-hit-points', result: 'duplicate-destroyed' },
-        ],
-      }),
-    ).toThrow(/at least one control field/);
-    // Corpse target eligibility must use SRD creature sizes.
+      validate(
+        mutate('spell:conjure-elemental', (effect) => {
+          setAt(effect, ['causePrecedence'], {
+            higher: 'spell-ended',
+            lower: 'concentration-broken',
+          });
+        }),
+      ),
+    ).toThrow(/give concentration-broken precedence/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'corpse-animation',
-          sources: [{ material: 'corpse', becomesRef: 'creature:zombie' }],
-          targetEligibility: {
-            creatureType: 'humanoid',
-            sizes: ['enormous'],
-          },
-        },
-        control: {
-          mode: 'obedient',
-          commandEconomy: { cost: 'bonus-action', rangeFeet: 60 },
-          window: { amount: 24, unit: 'hour' },
-        },
-        lifecycle: [
-          {
-            event: 'control-window-expires',
-            result: 'animated-creature-persists-uncontrolled',
-            window: { amount: 24, unit: 'hour' },
-            reassertableByRecast: { maxCreatures: 4 },
-          },
-        ],
-      }),
-    ).toThrow(/SRD creature size/);
-    // Dismissal recall pairing: a pocket-dimension familiar cannot be recalled
-    // by recasting.
+      validate(
+        mutate('spell:giant-insect', (effect) => {
+          setAt(
+            effect,
+            ['creation', 'options', 0, 'cardinality', 'mode'],
+            'exact',
+          );
+        }),
+      ),
+    ).toThrow(/target alternatives require maximum counts/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'form-list', forms: [{ name: 'bat' }] },
-        control: { mode: 'independent-obedient', exclusiveInstance: true },
-        lifecycle: [
-          {
-            event: 'recast',
-            result: 'existing-familiar-adopts-new-form',
-            priorState: 'active',
-          },
-        ],
-        dismissal: {
-          cost: 'action',
-          temporary: {
-            to: 'pocket-dimension',
-            recall: { cost: 'recast' },
-          },
-        },
-      }),
-    ).toThrow(/recall.cost must be one of action/);
-    // Dismissal recall pairing: a dismissed steed cannot carry an action range.
+      validate(
+        mutate('spell:conjure-animals', (effect) => {
+          setAt(
+            effect,
+            ['creation', 'options', 0, 'cardinality', 'mode'],
+            'maximum',
+          );
+        }),
+      ),
+    ).toThrow(/candidate menus require exact counts/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'form-list', forms: [{ name: 'warhorse' }] },
-        control: { exclusiveInstance: true },
-        lifecycle: [
-          {
-            event: 'recast',
-            result: 'same-steed-returns-restored',
-            priorState: 'absent-recoverable',
-          },
-        ],
-        dismissal: {
-          cost: 'action',
-          temporary: {
-            to: 'dismissed',
-            recall: { cost: 'action', rangeFeet: 30 },
-          },
-        },
-      }),
-    ).toThrow(/recall.cost must be one of recast/);
-    // resultingState is a closed enum on actor-removal transitions.
+      validate(
+        mutate('spell:conjure-fey', (effect) => {
+          setAt(effect, ['typeTreatment', 'whenCandidateType'], 'dragon');
+        }),
+      ),
+    ).toThrow(/must name an eligible candidate type/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'form-list', forms: [{ name: 'warhorse' }] },
-        control: { exclusiveInstance: true },
-        lifecycle: [
-          {
-            event: 'action-release',
-            result: 'bond-ends-creature-disappears',
-            resultingState: 'gone',
-          },
-          {
-            event: 'recast',
-            result: 'same-steed-returns-restored',
-            priorState: 'absent-recoverable',
-          },
-        ],
-      }),
-    ).toThrow(/resultingState must be one of/);
-    // resultingState is not valid on a fade transition.
+      validate(
+        mutate('spell:giant-insect', (effect) => {
+          setAt(effect, ['control', 'command', 'cost'], 'none');
+        }),
+      ),
+    ).toThrow(/command keys must be exactly/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: { kind: 'form-list', forms: [{ name: 'riding horse' }] },
-        lifecycle: [
-          {
-            event: 'spell-ends',
-            result: 'effect-fades',
-            transition: { amount: 1, unit: 'minute' },
-            resultingState: 'terminated',
-          },
-        ],
-      }),
-    ).toThrow(/unexpected payload key/);
-    // A dismissal scope must be a known enum.
+      validate(
+        mutate('spell:simulacrum', (effect) => {
+          setAt(effect, ['control', 'command', 'fallback'], {
+            when: 'no-new-command',
+            behavior: 'defend-self-only',
+          });
+        }),
+      ),
+    ).toThrow(/command keys must be exactly/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'target-transformation',
-          targets: [
-            { count: 1, from: 'scorpion', toRef: 'creature:giant-scorpion' },
-          ],
-        },
-        control: { mode: 'obedient', initiative: 'acts-on-casters-turn' },
-        lifecycle: [
-          { event: 'zero-hit-points', result: 'transformed-target-reverts' },
-        ],
-        dismissal: { cost: 'action', scope: 'half-the-swarm' },
-      }),
-    ).toThrow(/scope must be one of/);
-    // An empty eligibleTypes list is rejected.
+      validate(
+        mutate('spell:find-familiar', (effect) => {
+          setAt(effect, ['transitions', 4, 'when', 'link'], 'none');
+        }),
+      ),
+    ).toThrow(/terminated link|active persistent link/);
+
     expect(() =>
-      validate({
-        kind: 'summoning',
-        appears: {
-          kind: 'option-menu',
-          eligibleTypes: [],
-          options: [{ count: 1, maxChallenge: '2' }],
-        },
-        control: { mode: 'friendly-commanded', initiative: 'group' },
-        lifecycle: [
-          { event: 'spell-ends', result: 'summoned-creature-disappears' },
-        ],
-      }),
-    ).toThrow(/eligibleTypes must be non-empty/);
+      validate(
+        mutate('spell:find-familiar', (effect) => {
+          setAt(effect, ['transitions', 2, 'when'], {
+            presence: 'pocket-dimension',
+            link: 'none',
+          });
+        }),
+      ),
+    ).toThrow(/terminated link|unreachable precondition/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-celestial', (effect) => {
+          setAt(effect, ['identity'], {
+            kind: 'persistent-linked',
+            maximumLinked: 1,
+          });
+        }),
+      ),
+    ).toThrow(/must be ordinary/);
+
+    expect(() =>
+      validate(
+        mutate('spell:animate-objects', (effect) => {
+          setAt(
+            effect,
+            ['statBlockOverlay', 'tableRef'],
+            'creature:animated-object',
+          );
+        }),
+      ),
+    ).toThrow(/table:\* reference/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-minor-elementals', (effect) => {
+          setAt(effect, ['protocols'], [{ kind: 'telepathy', rangeFeet: 100 }]);
+        }),
+      ),
+    ).toThrow(/is not licensed by profile ordinary-summon/);
+
+    expect(() =>
+      validate(
+        mutate('spell:phantom-steed', (effect) => {
+          setAt(effect, ['transitions', 0, 'when', 'effect'], 'ended');
+        }),
+      ),
+    ).toThrow(/ended state|unreachable precondition/);
+
+    expect(() =>
+      validate(
+        mutate('spell:simulacrum', (effect) => {
+          setAt(effect, ['hooks'], ['F10']);
+        }),
+      ),
+    ).toThrow(/must be exactly \[F3, F9, F10\]/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-elemental', (effect) => {
+          setAt(effect, ['creation', 'sourceEligibility'], undefined);
+        }),
+        true,
+      ),
+    ).toThrow(/sourceEligibility is required/);
+
+    expect(() =>
+      validate(
+        mutate('spell:conjure-fey', (effect) => {
+          setAt(effect, ['transitions', 2, 'restrictions'], undefined);
+        }),
+        true,
+      ),
+    ).toThrow(/must prohibit caster dismissal/);
+
+    expect(() =>
+      validate(
+        mutate('spell:find-familiar', (effect) => {
+          setAt(effect, ['control', 'command'], { channel: 'mental' });
+        }),
+      ),
+    ).toThrow(/command is not licensed/);
+
+    expect(() =>
+      validate(
+        mutate('spell:simulacrum', (effect) => {
+          setAt(effect, ['statBlockBasis'], undefined);
+        }),
+      ),
+    ).toThrow(/statBlockBasis is required/);
+
+    expect(() =>
+      validate(
+        mutate('spell:create-undead', (effect) => {
+          setAt(effect, ['scaling', 0, 'selection'], 'choose-all');
+        }),
+      ),
+    ).toThrow(/selection must be choose-one/);
+
+    expect(() =>
+      validate(
+        mutate('spell:find-steed', (effect) => {
+          setAt(effect, ['transitions', 3, 'reappearancePlacement'], undefined);
+        }),
+      ),
+    ).toThrow(/must reuse creation-placement/);
+
+    expect(() =>
+      validate(
+        mutate('spell:phantom-steed', (effect) => {
+          setAt(effect, ['modifications'], undefined);
+        }),
+      ),
+    ).toThrow(/modifications kinds must be exactly/);
   });
 
   it('accepts the emitted damageReduction shapes', () => {

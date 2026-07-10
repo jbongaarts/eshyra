@@ -303,27 +303,31 @@ only the single-fixed-creature case — needs a designed extension (option
 menus, control economy, statblock modification). This is the largest
 remaining design decision.
 
-Implemented 2026-07-08: new `summoning` effect kind with source-gated
-per-spell projections, schema validation, committed-pack assertions, and
-generated pack regeneration. The 14 keys below graduated out of
+Implemented 2026-07-08 and contract-reconciled 2026-07-09: the `summoning`
+effect uses orthogonal creation, type-treatment, control, state-transition,
+identity, protocol, scaling, and engine-hook axes. The source-bound
+`S1_SUMMONING_SPECS` registry is the single executable compiler input.
+Profile-aware schema validation, transition reachability, clause-removal
+mutation tests, exact committed payloads, and nested-reference integrity guard
+the generated pack. The 14 keys below graduated out of
 `ACCEPTED_METADATA_ONLY_SPELLS`.
 
 | key | beyond-baseline deterministic clauses |
 |---|---|
 | `spell:animate-dead` | skeleton/zombie by corpse type (statblocks in pack); bonus-action command ≤60 ft; 24 h control window; recast reasserts ≤4; scaling +2/slot |
-| `spell:animate-objects` | ≤10 objects, size costs (M=2, L=4, H=8); object statblock **already structured via `tableRefs: [table:animated-object-statistics]`**; bonus-action command ≤500 ft; damage carryover on revert; scaling +2/slot |
+| `spell:animate-objects` | max-10 weighted capacity (Tiny/Small=1, M=2, L=4, H=8); complete construct overlay (fixed abilities, conditional movement, blindsight, attack procedure, size table); mental bonus-action same-command batching ≤500 ft with persistent orders; damage carryover on revert; scaling +2/slot |
 | `spell:conjure-animals` | option menu 1×CR2 / 2×CR1 / 4×CR½ / 8×CR¼; fey type; group initiative; verbal commands (no action); ×2/×3/×4 at slots 5/7/9 |
 | `spell:conjure-celestial` | CR ≤4 (CR ≤5 at 9th); commands limited by alignment |
-| `spell:conjure-elemental` | CR ≤5 by terrain type; **loss-of-control on broken concentration** (hostile, undismissable, disappears after 1 h); +1 CR/slot |
-| `spell:conjure-fey` | CR ≤6; alignment-limited commands; loss-of-control on broken concentration; +1 CR/slot |
+| `spell:conjure-elemental` | CR ≤5 appropriate to selected 10-ft source cube; unoccupied placement within 10 ft; **loss-of-control on broken concentration** (hostile, undismissable, removal anchored to original cast +1 h); +1 CR/slot |
+| `spell:conjure-fey` | exclusive fey-creature or beast-form fey-spirit CR ≤6 choice; conditional beast→fey type replacement; alignment-limited commands; cast-anchored loss-of-control lifecycle; +1 CR/slot |
 | `spell:conjure-minor-elementals` | option menu as conjure-animals; ×2/×3 at slots 6/8 |
 | `spell:conjure-woodland-beings` | option menu; ×2/×3 at slots 6/8 |
-| `spell:create-undead` | 3 ghouls; night-only casting constraint; bonus-action command ≤120 ft; 24 h control; scaling variants (ghast/wight/mummy counts) |
-| `spell:find-familiar` | form list with statblock refs; celestial/fey/fiend type; can't attack; 0 HP → disappears; telepathy ≤100 ft; sense-sharing action (caster deaf/blind); pocket-dimension dismissal; touch-spell delivery via familiar reaction; one-at-a-time |
-| `spell:find-steed` | form list; Int floor 6 + language; shared spell targeting while mounted; telepathy ≤1 mi; one-at-a-time |
-| `spell:giant-insect` | ≤10 centipedes / 3 spiders / 5 wasps / 1 scorpion → giant statblock refs; commands on caster's turn; per-target dismissal |
-| `spell:phantom-steed` | riding-horse statblock with speed 100 ft override; travel 10 mph / 13 mph fast; 1-min fade on end; ends on any damage |
-| `spell:simulacrum` | duplicate at **half HP maximum**, no equipment; no learning/slot regen; repair 100 gp/HP; melts at 0 HP; recast destroys prior |
+| `spell:create-undead` | max 3 M/S humanoid corpses→ghouls; night-only; mental bonus-action same-command batching ≤120 ft with persistent orders; pre-expiry 24 h reassertion; exclusive maximum higher-slot menus shared by creation/reassertion |
+| `spell:find-familiar` | fixed form refs; beast type replaced by one celestial/fey/fiend; persistent link independent of present/absent/pocket presence; complete sense-sharing and touch-delivery timing/range/origin/attack-modifier protocols; permanent dismissal terminates link |
+| `spell:find-steed` | persistent linked identity across ordinary absence; release terminates bond; same-actor recast restoration only with active link; Int floor 6 + caster-spoken language, mounted spell sharing, telepathy ≤1 mi |
+| `spell:giant-insect` | choose one maximum alternative (10 centipedes / 3 spiders / 5 wasps / 1 scorpion)→giant refs; verbal command channel separate from caster-turn initiative; per-target dismissal reverts form |
+| `spell:phantom-steed` | Large ground-placed riding-horse statblock with speed 100; saddle/bit/bridle vanish beyond 10 ft; designated rider; 10/13 mph travel; damage/action/duration end starts 1-min fade |
+| `spell:simulacrum` | beast/humanoid must remain at touch for full 12 h; duplicate at **half HP maximum**, no equipment/advancement/slot recovery; laboratory + rare-material repair prerequisites at 100 gp/HP; 0 HP snow/melt; dispel end; recast cleans up active duplicates |
 
 ### 2.2 Stochastic-clause family — 5 — disposition: implemented (slice S2)
 
@@ -474,7 +478,8 @@ document.** An earlier revision claimed 26 permanent accepts (with
 internally inconsistent section counts of 3+2+23); the 2026-07-06 integrity
 pass reclassified 13 spells and 1 creature ref out of the acceptance bucket
 under the strict taxonomy and corrected the arithmetic. Note in particular:
-`spell:animate-objects` was **S1** before the 2026-07-08 rollout — its
-object-statistics table being structured (`tableRefs`) covered only the stat
-lookup, not the summoning/control/command-economy semantics. It now carries a
-typed `summoning` effect for those semantics.
+`spell:animate-objects` was **S1** before the rollout: its `tableRefs` link
+only made the printed size table available for lookup. It did not represent the
+fixed construct abilities, conditional movement, senses, attack procedure, or
+summoning/control semantics. Those are now carried by the typed `summoning`
+effect while the table remains the owner of size-varying AC/HP/attack values.
