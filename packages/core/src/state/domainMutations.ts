@@ -24,54 +24,6 @@ export interface DomainMutationContext {
   characterId?: string;
 }
 
-export interface AdjustHpResult {
-  previousHp: number;
-  newHp: number;
-  hpMax: number;
-  clamped: boolean;
-}
-
-export function adjustHp(
-  db: Db,
-  amount: number,
-  ctx: DomainMutationContext,
-): AdjustHpResult {
-  if (!Number.isInteger(amount)) {
-    throw new MutateStateError('adjust_hp amount must be an integer');
-  }
-
-  return withTransaction(db, (txnDb) => {
-    const charId = resolveCharacterId(txnDb, ctx.characterId);
-    const row = txnDb
-      .prepare('SELECT hp_current, hp_max FROM character WHERE id = ?')
-      .get(charId) as { hp_current: number; hp_max: number } | undefined;
-
-    if (row === undefined) {
-      throw new MutateStateError('no character row exists');
-    }
-
-    const raw = row.hp_current + amount;
-    const clamped = raw !== Math.max(0, Math.min(raw, row.hp_max));
-    const newHp = Math.max(0, Math.min(raw, row.hp_max));
-
-    mutateState(txnDb, {
-      target: 'character',
-      id: charId,
-      field: 'hp_current',
-      op: 'set',
-      value: newHp,
-      ...ctx,
-    });
-
-    return {
-      previousHp: row.hp_current,
-      newHp,
-      hpMax: row.hp_max,
-      clamped,
-    };
-  });
-}
-
 export interface AddConditionInput {
   id: string;
   [key: string]: unknown;

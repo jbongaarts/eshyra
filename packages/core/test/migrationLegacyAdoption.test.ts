@@ -179,8 +179,10 @@ describe('migrateDatabase (end to end)', () => {
     const db = openDatabase(':memory:');
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('empty');
-    expect(result.migrations.applied).toEqual([1, 2, 3, 4]);
-    expect(readMigrationLedger(db).map((r) => r.version)).toEqual([1, 2, 3, 4]);
+    expect(result.migrations.applied).toEqual([1, 2, 3, 4, 5]);
+    expect(readMigrationLedger(db).map((r) => r.version)).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
     db.close();
   });
 
@@ -190,7 +192,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.action).toBe('adopted');
     expect(result.legacy.adoptedFromVersion).toBe(15);
     // 0001 is adopted (already applied); the post-baseline migrations apply.
-    expect(result.migrations.applied).toEqual([2, 3, 4]);
+    expect(result.migrations.applied).toEqual([2, 3, 4, 5]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     db.close();
   });

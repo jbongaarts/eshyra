@@ -10,6 +10,9 @@ import type { ExecutedToolCall } from './turnLoop.js';
 
 const STATE_TOOLS = new Set([
   'adjust_hp',
+  'record_death_save',
+  'stabilize_character',
+  'grant_temporary_hp',
   'add_condition',
   'remove_condition',
   'update_combatant',

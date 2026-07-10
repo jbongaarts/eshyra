@@ -1,6 +1,7 @@
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
 import { tryGetActiveCharacterId } from './activeCharacter.js';
+import type { LifeState } from './hpLifecycle.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import { validateConditionsJson } from './liveStateSchema.js';
 
@@ -17,6 +18,10 @@ export interface PartyMember {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  hpTemp: number;
+  lifeState: LifeState;
+  deathSaveSuccesses: number;
+  deathSaveFailures: number;
   conditions: readonly CharacterConditionEntry[];
   role: string;
   isActive: boolean;
@@ -32,6 +37,10 @@ interface PartyRow {
   level: number;
   hp_current: number;
   hp_max: number;
+  hp_temp: number;
+  life_state: LifeState;
+  death_save_successes: number;
+  death_save_failures: number;
   conditions_json: string;
   role: string;
 }
@@ -47,6 +56,7 @@ export function listParty(db: Db): PartyMember[] {
   const rows = db
     .prepare(
       `SELECT id, name, ancestry, class_name, level, hp_current, hp_max,
+              hp_temp, life_state, death_save_successes, death_save_failures,
               conditions_json, role
        FROM character
        ORDER BY CASE WHEN role = 'pc' THEN 0 ELSE 1 END, id`,
@@ -61,6 +71,10 @@ export function listParty(db: Db): PartyMember[] {
     level: row.level,
     hpCurrent: row.hp_current,
     hpMax: row.hp_max,
+    hpTemp: row.hp_temp,
+    lifeState: row.life_state,
+    deathSaveSuccesses: row.death_save_successes,
+    deathSaveFailures: row.death_save_failures,
     conditions: validateConditionsJson(
       conditionsColumn.decode(row.conditions_json),
       `character[${row.id}].conditions_json`,

@@ -1,6 +1,7 @@
 import type { Db } from '@eshyra/core';
 import {
   CharacterResolutionError,
+  formatHpStatus,
   listParty,
   resolveCharacterRef,
   setActiveCharacterId,
@@ -32,7 +33,7 @@ export function showParty(io: CliIO, db: Db): void {
         ? `, conditions: ${m.conditions.map((c) => c.id).join(', ')}`
         : '';
     io.write(
-      `  - ${who} (${descriptor}) L${m.level}, HP ${m.hpCurrent}/${m.hpMax}${conditions}${tag}`,
+      `  - ${who} (${descriptor}) L${m.level}, ${formatHpStatus(m)}${conditions}${tag}`,
     );
   }
 }

@@ -84,7 +84,8 @@ export interface StateProvenanceRecord {
  */
 type FieldDescriptor =
   | { kind: 'text'; nullable: boolean }
-  | { kind: 'integer'; min: number }
+  | { kind: 'text-enum'; values: readonly string[] }
+  | { kind: 'integer'; min: number; max?: number }
   | { kind: 'json'; root: 'array' | 'object' }
   | {
       kind: 'shaped-json';
@@ -100,6 +101,13 @@ const CHARACTER_FIELDS: Record<string, FieldDescriptor> = {
   current_xp: { kind: 'integer', min: 0 },
   hp_current: { kind: 'integer', min: 0 },
   hp_max: { kind: 'integer', min: 0 },
+  hp_temp: { kind: 'integer', min: 0 },
+  life_state: {
+    kind: 'text-enum',
+    values: ['alive', 'dying', 'stable', 'dead'],
+  },
+  death_save_successes: { kind: 'integer', min: 0, max: 3 },
+  death_save_failures: { kind: 'integer', min: 0, max: 3 },
   ability_scores_json: {
     kind: 'shaped-json',
     root: 'object',
@@ -442,9 +450,12 @@ function validatedFieldValue(
       return descriptor.nullable
         ? nullableStringValue(target, field, value)
         : requiredStringValue(target, field, value);
+    case 'text-enum':
+      return enumStringValue(target, field, value, descriptor.values);
     case 'integer':
       return nonNegativeIntegerValue(target, field, value, {
         min: descriptor.min,
+        max: descriptor.max,
       });
     case 'json':
       return jsonColumnValue(target, field, value, {
@@ -480,19 +491,38 @@ function nullableStringValue(
   return requiredStringValue(target, field, value);
 }
 
+function enumStringValue(
+  target: string,
+  field: string,
+  value: MutateStateValue,
+  values: readonly string[],
+): string {
+  if (typeof value !== 'string' || !values.includes(value)) {
+    throw new MutateStateError(
+      `${target}.${field} must be one of: ${values.join(', ')}`,
+    );
+  }
+  return value;
+}
+
 function nonNegativeIntegerValue(
   target: string,
   field: string,
   value: MutateStateValue,
-  options: { min: number },
+  options: { min: number; max?: number },
 ): number {
   if (
     typeof value !== 'number' ||
     !Number.isInteger(value) ||
-    value < options.min
+    value < options.min ||
+    (options.max !== undefined && value > options.max)
   ) {
+    const bounds =
+      options.max === undefined
+        ? `>= ${options.min}`
+        : `between ${options.min} and ${options.max}`;
     throw new MutateStateError(
-      `${target}.${field} must be an integer >= ${options.min}`,
+      `${target}.${field} must be an integer ${bounds}`,
     );
   }
   return value;

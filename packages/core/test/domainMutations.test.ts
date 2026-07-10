@@ -49,11 +49,12 @@ describe('adjustHp', () => {
 
     const result = adjustHp(db, 5, CTX);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       previousHp: 10,
       newHp: 15,
       hpMax: 20,
       clamped: false,
+      lifeState: 'alive',
     });
     db.close();
   });
@@ -77,11 +78,12 @@ describe('adjustHp', () => {
 
     const result = adjustHp(db, 10, CTX);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       previousHp: 18,
       newHp: 20,
       hpMax: 20,
       clamped: true,
+      lifeState: 'alive',
     });
     db.close();
   });
@@ -105,11 +107,13 @@ describe('adjustHp', () => {
 
     const result = adjustHp(db, -10, CTX);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       previousHp: 3,
       newHp: 0,
       hpMax: 20,
       clamped: true,
+      overflow: 7,
+      lifeState: 'dying',
     });
     db.close();
   });
