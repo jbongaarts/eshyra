@@ -497,7 +497,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS to the eshyra-o9bd.18.7.9 §1 exhaustive per-ref classification (2 accepted + 38 pending findings = 40)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C1 rollout (2 accepted + 16 pending findings = 18)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
     // future change to the registry (an addition, removal, or silent
     // reclassification) is caught here and forces an update to the
@@ -512,14 +512,14 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // policy can never hide reviewed-but-pending deterministic work behind
     // blanket acceptance.
     const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
-    expect(entries).toHaveLength(40);
+    expect(entries).toHaveLength(18);
 
     const accepted = entries.filter(
       ([, d]) => d.status === 'accepted-prose-only',
     );
     const findings = entries.filter(([, d]) => d.status === 'finding');
     expect(accepted).toHaveLength(2);
-    expect(findings).toHaveLength(38);
+    expect(findings).toHaveLength(16);
     expect(accepted.map(([ref]) => ref).sort()).toEqual([
       'creature:vampire#traits:Vampire Weaknesses',
       'creature:vampire-spawn#traits:Vampire Weaknesses',
@@ -543,7 +543,6 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         (findingsBySlice[disposition.slice] ?? 0) + 1;
     }
     expect(findingsBySlice).toEqual({
-      C1: 22,
       C4: 2,
       C5: 2,
       C6: 4,
@@ -590,6 +589,28 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:shrieker#traits:False Appearance',
         'creature:treant#traits:False Appearance',
         'creature:violet-fungus#traits:False Appearance',
+        'creature:adult-bronze-dragon#actions:Change Shape',
+        'creature:adult-gold-dragon#actions:Change Shape',
+        'creature:adult-silver-dragon#actions:Change Shape',
+        'creature:ancient-brass-dragon#actions:Change Shape',
+        'creature:ancient-bronze-dragon#actions:Change Shape',
+        'creature:ancient-copper-dragon#actions:Change Shape',
+        'creature:ancient-gold-dragon#actions:Change Shape',
+        'creature:ancient-silver-dragon#actions:Change Shape',
+        'creature:couatl#actions:Change Shape',
+        'creature:deva#actions:Change Shape',
+        'creature:night-hag#actions:Change Shape',
+        'creature:oni#actions:Change Shape',
+        'creature:doppelganger#traits:Shapechanger',
+        'creature:imp#traits:Shapechanger',
+        'creature:quasit#traits:Shapechanger',
+        'creature:mimic#traits:Shapechanger',
+        'creature:succubus-incubus#traits:Shapechanger',
+        'creature:werebear#traits:Shapechanger',
+        'creature:wereboar#traits:Shapechanger',
+        'creature:wererat#traits:Shapechanger',
+        'creature:weretiger#traits:Shapechanger',
+        'creature:werewolf#traits:Shapechanger',
       ]),
     );
     // Refs newly classified into slices C4-C9 remain tracked as pending
@@ -683,13 +704,12 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'reviewed-per-ref',
     );
-    // The per-ref breakdown is exact: 2 permanent accepts, 38 pending
+    // The per-ref breakdown is exact: 2 permanent accepts, 16 pending
     // findings across the remaining slices.
     expect(report.creatureEntries.reviewedDispositions).toEqual({
       acceptedProseOnly: 2,
-      pendingFindings: 38,
+      pendingFindings: 16,
       findingsBySlice: {
-        C1: 22,
         C4: 2,
         C5: 2,
         C6: 4,

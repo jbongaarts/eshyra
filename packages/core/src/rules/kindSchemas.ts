@@ -41,6 +41,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'banishment',
   'cannotWearOrCarry',
   'carryingCapacitySize',
+  'changeShape',
   'climbAnywhere',
   'communication',
   'communicationBarriers',
@@ -1884,6 +1885,264 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       path,
       new Set(['action', 'bonus-action', 'reaction']),
     );
+  },
+  changeShape: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      [
+        'kind',
+        'cost',
+        'conditions',
+        'forms',
+        'statistics',
+        'equipment',
+        'reversion',
+        'excludedCapabilities',
+        'retainedCapabilities',
+        'speedConditions',
+        'riders',
+      ],
+      path,
+    );
+    reqEnum(effect, 'cost', path, new Set(['action']));
+    optNonEmptyStrArray(effect, 'conditions', path);
+
+    const forms = objArray(effect, 'forms', path);
+    if (forms === undefined || forms.length === 0) {
+      throw new RulesPackError(`${path}.forms must be a non-empty array`);
+    }
+    forms.forEach((form, index) => {
+      const formPath = `${path}.forms[${index}]`;
+      const kind = reqStr(form, 'kind', formPath);
+      switch (kind) {
+        case 'category': {
+          requireOnlyKeys(form, ['kind', 'types', 'maxChallenge'], formPath);
+          const types = reqStrArray(form, 'types', formPath);
+          if (
+            types.length === 0 ||
+            types.some((type) => !['humanoid', 'beast'].includes(type))
+          ) {
+            throw new RulesPackError(
+              `${formPath}.types must be a non-empty array of humanoid or beast`,
+            );
+          }
+          reqEnum(form, 'maxChallenge', formPath, new Set(['own']));
+          break;
+        }
+        case 'descriptor': {
+          requireOnlyKeys(
+            form,
+            ['kind', 'sizes', 'type', 'qualifiers'],
+            formPath,
+          );
+          const sizes = reqStrArray(form, 'sizes', formPath);
+          if (
+            sizes.length === 0 ||
+            sizes.some((size) => !['small', 'medium', 'large'].includes(size))
+          ) {
+            throw new RulesPackError(
+              `${formPath}.sizes must be a non-empty array of small, medium, or large`,
+            );
+          }
+          reqStr(form, 'type', formPath);
+          optNonEmptyStrArray(form, 'qualifiers', formPath);
+          break;
+        }
+        case 'fixed': {
+          requireOnlyKeys(form, ['kind', 'name', 'speedOverrides'], formPath);
+          reqStr(form, 'name', formPath);
+          if (form.speedOverrides !== undefined) {
+            const speeds = reqObj(form, 'speedOverrides', formPath);
+            const modes = new Set(['walk', 'fly', 'climb', 'swim', 'burrow']);
+            for (const [mode, speed] of Object.entries(speeds)) {
+              if (!modes.has(mode)) {
+                throw new RulesPackError(
+                  `${formPath}.speedOverrides has unsupported mode ${JSON.stringify(mode)}`,
+                );
+              }
+              if (
+                typeof speed !== 'number' ||
+                !Number.isInteger(speed) ||
+                speed < 1
+              ) {
+                throw new RulesPackError(
+                  `${formPath}.speedOverrides.${mode} must be a positive integer`,
+                );
+              }
+            }
+          }
+          break;
+        }
+        case 'object':
+          requireOnlyKeys(form, ['kind'], formPath);
+          break;
+        case 'statline-variant':
+          requireOnlyKeys(form, ['kind', 'variant'], formPath);
+          reqStr(form, 'variant', formPath);
+          break;
+        default:
+          throw new RulesPackError(
+            `${formPath}.kind has unsupported changeShape form ${JSON.stringify(kind)}`,
+          );
+      }
+    });
+
+    const statistics = reqObj(effect, 'statistics', path);
+    const model = reqStr(statistics, 'model', `${path}.statistics`);
+    if (model === 'retain-listed') {
+      requireOnlyKeys(
+        statistics,
+        ['model', 'retains', 'replaces', 'gainsMissingCapabilities'],
+        `${path}.statistics`,
+      );
+      if (
+        reqStrArray(statistics, 'retains', `${path}.statistics`).length === 0
+      ) {
+        throw new RulesPackError(
+          `${path}.statistics.retains must be non-empty`,
+        );
+      }
+      optNonEmptyStrArray(statistics, 'replaces', `${path}.statistics`);
+      optBool(statistics, 'gainsMissingCapabilities', `${path}.statistics`);
+    } else if (model === 'same-except') {
+      requireOnlyKeys(statistics, ['model', 'except'], `${path}.statistics`);
+      if (statistics.except !== undefined) {
+        const except = reqStrArray(statistics, 'except', `${path}.statistics`);
+        if (except.some((value) => !['size', 'ac', 'speed'].includes(value))) {
+          throw new RulesPackError(
+            `${path}.statistics.except must contain only size, ac, or speed`,
+          );
+        }
+      }
+    } else {
+      throw new RulesPackError(
+        `${path}.statistics.model must be retain-listed or same-except`,
+      );
+    }
+
+    const equipment = reqObj(effect, 'equipment', path);
+    const disposition = reqStr(equipment, 'disposition', `${path}.equipment`);
+    if (
+      disposition === 'absorbed-or-borne' ||
+      disposition === 'not-transformed'
+    ) {
+      requireOnlyKeys(equipment, ['disposition'], `${path}.equipment`);
+    } else if (disposition === 'specific') {
+      requireOnlyKeys(equipment, ['disposition', 'items'], `${path}.equipment`);
+      const items = objArray(equipment, 'items', `${path}.equipment`);
+      if (items === undefined || items.length === 0) {
+        throw new RulesPackError(`${path}.equipment.items must not be empty`);
+      }
+      items.forEach((item, index) => {
+        const itemPath = `${path}.equipment.items[${index}]`;
+        requireOnlyKeys(item, ['name', 'behavior', 'revertsOnDeath'], itemPath);
+        reqStr(item, 'name', itemPath);
+        reqEnum(item, 'behavior', itemPath, new Set(['transforms-with-form']));
+        if (item.revertsOnDeath !== true) {
+          throw new RulesPackError(`${itemPath}.revertsOnDeath must be true`);
+        }
+      });
+    } else {
+      throw new RulesPackError(
+        `${path}.equipment.disposition has unsupported value ${JSON.stringify(disposition)}`,
+      );
+    }
+
+    const reversion = reqObj(effect, 'reversion', path);
+    requireOnlyKeys(reversion, ['on'], `${path}.reversion`);
+    const on = reqStrArray(reversion, 'on', `${path}.reversion`);
+    if (on.length === 0 || on.some((value) => value !== 'death')) {
+      throw new RulesPackError(
+        `${path}.reversion.on must be a non-empty array containing only death`,
+      );
+    }
+
+    const excluded = effect.excludedCapabilities;
+    if (excluded !== undefined) {
+      const values = reqStrArray(effect, 'excludedCapabilities', path);
+      const allowed = new Set([
+        'class-features',
+        'legendary-actions',
+        'lair-actions',
+      ]);
+      if (values.length === 0 || values.some((value) => !allowed.has(value))) {
+        throw new RulesPackError(
+          `${path}.excludedCapabilities must be a non-empty array of supported capabilities`,
+        );
+      }
+    }
+    const retained = objArray(effect, 'retainedCapabilities', path);
+    if (retained !== undefined) {
+      if (retained.length === 0) {
+        throw new RulesPackError(
+          `${path}.retainedCapabilities must not be empty`,
+        );
+      }
+      retained.forEach((capability, index) => {
+        const capabilityPath = `${path}.retainedCapabilities[${index}]`;
+        requireOnlyKeys(capability, ['name', 'whenFormHas'], capabilityPath);
+        reqEnum(capability, 'name', capabilityPath, new Set(['bite']));
+        const whenFormHas = reqObj(capability, 'whenFormHas', capabilityPath);
+        requireOnlyKeys(
+          whenFormHas,
+          ['anatomy'],
+          `${capabilityPath}.whenFormHas`,
+        );
+        reqEnum(
+          whenFormHas,
+          'anatomy',
+          `${capabilityPath}.whenFormHas`,
+          new Set(['jaws']),
+        );
+      });
+    }
+    const speedConditions = objArray(effect, 'speedConditions', path);
+    if (speedConditions !== undefined) {
+      if (speedConditions.length === 0) {
+        throw new RulesPackError(`${path}.speedConditions must not be empty`);
+      }
+      speedConditions.forEach((condition, index) => {
+        const conditionPath = `${path}.speedConditions[${index}]`;
+        requireOnlyKeys(
+          condition,
+          ['mode', 'lostUnlessFormHas'],
+          conditionPath,
+        );
+        reqEnum(condition, 'mode', conditionPath, new Set(['fly']));
+        const lostUnlessFormHas = reqObj(
+          condition,
+          'lostUnlessFormHas',
+          conditionPath,
+        );
+        requireOnlyKeys(
+          lostUnlessFormHas,
+          ['anatomy'],
+          `${conditionPath}.lostUnlessFormHas`,
+        );
+        reqEnum(
+          lostUnlessFormHas,
+          'anatomy',
+          `${conditionPath}.lostUnlessFormHas`,
+          new Set(['wings']),
+        );
+      });
+    }
+    const riders = effect.riders;
+    if (riders !== undefined) {
+      const values = reqStrArray(effect, 'riders', path);
+      if (
+        values.length === 0 ||
+        values.some((rider) =>
+          /\b(action|bonus action|reaction|bite|retain(?:ed|s)?|lose(?:s)?|lost|speed|unless|if)\b/i.test(
+            rider,
+          ),
+        )
+      ) {
+        throw new RulesPackError(
+          `${path}.riders must be non-empty narrative residue without deterministic clauses`,
+        );
+      }
+    }
   },
   cannotWearOrCarry: markerOnly,
   // Slippers of spider climbing's surface-climbing grant is excluded on a

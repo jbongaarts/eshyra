@@ -1125,7 +1125,6 @@ function creatureEntryAcceptedProse(
 
 const CREATURE_ENTRY_SLICE_REASONS: Readonly<Record<string, string>> =
   Object.freeze({
-    C1: 'Shape-change family: deterministic polymorph (form constraint, retained/replaced stats, equipment disposition, reversion-on-death) with no existing contract; needs a new changeShape design (eshyra-o9bd.18.7.9 §1.1).',
     C2: 'False Appearance family: uniform motionless/indistinguishable auto-rule; needs a small falseAppearance contract (eshyra-o9bd.18.7.9 §1.2).',
     C3: 'Telepathy/communication/innate-knowledge family: no telepathy/communication/locationKnowledge/pathMemory/sleep-exception kind exists yet; needs small new contracts (eshyra-o9bd.18.7.9 §1.3–§1.4).',
     C4: 'Reckless family: self-elected symmetric advantage trade-off with no existing kind; needs a small recklessAttack contract (eshyra-o9bd.18.7.9 §1.6.2).',
@@ -1146,8 +1145,8 @@ function creatureEntrySliceFinding(
  * Per-ref reviewed disposition for every creature-entry ref currently
  * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 66
  * currently residual). Only the two vampire "Vampire Weaknesses" header refs
- * are genuinely permanent prose acceptance (§1.5); the other 64 are reviewed
- * deterministic findings bucketed into slices C1–C9 (§1.1–§1.4, §1.6.2–
+ * are genuinely permanent prose acceptance (§1.5); the other 16 are reviewed
+ * deterministic findings bucketed into slices C4–C9 (§1.6.2–
  * §1.6.7). This registry — not the bucket-level
  * `creature-entry#mechanical-prose` / `creature-entry#narrative-prose`
  * dispositions — is what the fail-closed MEMBERSHIP check consults per ref,
@@ -1166,39 +1165,6 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
   ),
   'creature:vampire-spawn#traits:Vampire Weaknesses':
     creatureEntryAcceptedProse('Same as vampire (eshyra-o9bd.18.7.9 §1.5).'),
-
-  // C1 — shape-change family (22, §1.1).
-  'creature:adult-bronze-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:adult-gold-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:adult-silver-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:ancient-brass-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:ancient-bronze-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:ancient-copper-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:ancient-gold-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:ancient-silver-dragon#actions:Change Shape':
-    creatureEntrySliceFinding('C1'),
-  'creature:couatl#actions:Change Shape': creatureEntrySliceFinding('C1'),
-  'creature:deva#actions:Change Shape': creatureEntrySliceFinding('C1'),
-  'creature:night-hag#actions:Change Shape': creatureEntrySliceFinding('C1'),
-  'creature:oni#actions:Change Shape': creatureEntrySliceFinding('C1'),
-  'creature:doppelganger#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:imp#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:quasit#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:mimic#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:succubus-incubus#traits:Shapechanger':
-    creatureEntrySliceFinding('C1'),
-  'creature:werebear#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:wereboar#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:wererat#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:weretiger#traits:Shapechanger': creatureEntrySliceFinding('C1'),
-  'creature:werewolf#traits:Shapechanger': creatureEntrySliceFinding('C1'),
 
   // C4 — Reckless family (2, §1.6.2).
   'creature:berserker#traits:Reckless': creatureEntrySliceFinding('C4'),
@@ -1301,15 +1267,15 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   // lists, breathing/jump grammars, and triggered-effect markers. Each
   // remaining unmodeled entry is individually reviewed in
   // `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`: 2 refs are genuinely permanent
-  // prose acceptance (the Vampire Weaknesses header, §1.5); the other 64 are
+  // prose acceptance (the Vampire Weaknesses header, §1.5); the other 16 are
   // reviewed deterministic findings pending an implementation slice
-  // (C1–C9). This bucket-level entry status is `reviewed-per-ref` — NOT
+  // (C4–C9). This bucket-level entry status is `reviewed-per-ref` — NOT
   // `accepted-prose-only` — precisely so it cannot itself grant blanket
-  // acceptance and hide those 64 pending findings.
+  // acceptance and hide those 16 pending findings.
   'creature-entry#mechanical-prose': {
     status: 'reviewed-per-ref',
     reason:
-      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slices C1–C9 (eshyra-o9bd.18.7.9 §1.1–§1.4, §1.6.2–§1.6.7). This bucket-level entry does not itself accept or close any record.',
+      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slices C4–C9 (eshyra-o9bd.18.7.9 §1.6.2–§1.6.7). This bucket-level entry does not itself accept or close any record.',
   },
   'spell#metadata-only': {
     status: 'accepted-prose-only',
@@ -1319,7 +1285,7 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   'creature-entry#narrative-prose': {
     status: 'reviewed-per-ref',
     reason:
-      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slices C1–C9 (eshyra-o9bd.18.7.9 §1.1–§1.4, §1.6.2–§1.6.7). This bucket-level entry does not itself accept or close any record.',
+      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slices C4–C9 (eshyra-o9bd.18.7.9 §1.6.2–§1.6.7). This bucket-level entry does not itself accept or close any record.',
   },
   'hazard#prose-only': {
     status: 'finding',
@@ -1440,7 +1406,7 @@ export type GameplayReadinessReport = {
      * Per-ref reviewed disposition breakdown (eshyra-o9bd.18.7.9 §1): the
      * genuinely-accepted count must never be conflated with the
      * reviewed-but-pending finding count, and every finding is attributed to
-     * its implementation slice (C1–C9).
+     * its implementation slice (C4–C9).
      */
     readonly reviewedDispositions: {
       readonly acceptedProseOnly: number;
@@ -1822,7 +1788,7 @@ export function buildGameplayReadinessReport(
   // disposition still fails, but MEMBERSHIP is now checked per ref against
   // `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` rather than a blanket
   // accepted-prose-only bucket status — so a reviewed-but-pending finding
-  // (C1–C9) can never be silently blessed by the bucket disposition.
+  // (C4–C9) can never be silently blessed by the bucket disposition.
   const entryBuckets: ReadonlyArray<
     readonly [GameplayReadinessBucket, readonly { readonly ref: string }[]]
   > = [
@@ -1978,7 +1944,7 @@ export function formatGameplayReadinessReport(
     '',
     'Creature-entry reviewed dispositions (eshyra-o9bd.18.7.9)',
     `- accepted-prose-only (permanent): ${report.creatureEntries.reviewedDispositions.acceptedProseOnly}`,
-    `- pending findings (C1-C9, reviewed but not yet implemented): ${report.creatureEntries.reviewedDispositions.pendingFindings}`,
+    `- pending findings (C4-C9, reviewed but not yet implemented): ${report.creatureEntries.reviewedDispositions.pendingFindings}`,
     ...Object.entries(
       report.creatureEntries.reviewedDispositions.findingsBySlice,
     )

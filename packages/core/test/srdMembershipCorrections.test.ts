@@ -54,6 +54,180 @@ function spellAmbiguities(key: string): unknown[] | undefined {
 }
 
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('C1 changeShape projects every reviewed entry and pins the five contract grammars', () => {
+    const c1Entries: ReadonlyArray<readonly [string, string, string]> = [
+      ['creature:adult-bronze-dragon', 'actions', 'Change Shape'],
+      ['creature:adult-gold-dragon', 'actions', 'Change Shape'],
+      ['creature:adult-silver-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-brass-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-bronze-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-copper-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-gold-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-silver-dragon', 'actions', 'Change Shape'],
+      ['creature:couatl', 'actions', 'Change Shape'],
+      ['creature:deva', 'actions', 'Change Shape'],
+      ['creature:night-hag', 'actions', 'Change Shape'],
+      ['creature:oni', 'actions', 'Change Shape'],
+      ['creature:doppelganger', 'traits', 'Shapechanger'],
+      ['creature:imp', 'traits', 'Shapechanger'],
+      ['creature:quasit', 'traits', 'Shapechanger'],
+      ['creature:mimic', 'traits', 'Shapechanger'],
+      ['creature:succubus-incubus', 'traits', 'Shapechanger'],
+      ['creature:werebear', 'traits', 'Shapechanger'],
+      ['creature:wereboar', 'traits', 'Shapechanger'],
+      ['creature:wererat', 'traits', 'Shapechanger'],
+      ['creature:weretiger', 'traits', 'Shapechanger'],
+      ['creature:werewolf', 'traits', 'Shapechanger'],
+    ];
+    for (const [key, section, name] of c1Entries) {
+      expect(
+        creatureEntry(key, section, name).mechanics?.effects,
+        `${key}#${section}:${name}`,
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ kind: 'changeShape' }),
+        ]),
+      );
+    }
+
+    expect(
+      creatureEntry('creature:adult-bronze-dragon', 'actions', 'Change Shape')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          {
+            kind: 'category',
+            types: ['humanoid', 'beast'],
+            maxChallenge: 'own',
+          },
+        ],
+        statistics: {
+          model: 'retain-listed',
+          retains: [
+            'alignment',
+            'hit points',
+            'Hit Dice',
+            'ability to speak',
+            'proficiencies',
+            'Legendary Resistance and lair actions',
+            'Intelligence, Wisdom, and Charisma scores',
+            'this action',
+          ],
+        },
+        equipment: { disposition: 'absorbed-or-borne' },
+        reversion: { on: ['death'] },
+        excludedCapabilities: ['class-features', 'legendary-actions'],
+      },
+    ]);
+    expect(
+      creatureEntry('creature:couatl', 'actions', 'Change Shape').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          {
+            kind: 'category',
+            types: ['humanoid', 'beast'],
+            maxChallenge: 'own',
+          },
+        ],
+        statistics: {
+          model: 'retain-listed',
+          retains: ['game statistics', 'ability to speak'],
+          replaces: [
+            'AC',
+            'movement modes',
+            'Strength',
+            'Dexterity',
+            'other actions',
+          ],
+          gainsMissingCapabilities: true,
+        },
+        equipment: { disposition: 'absorbed-or-borne' },
+        reversion: { on: ['death'] },
+        excludedCapabilities: [
+          'class-features',
+          'legendary-actions',
+          'lair-actions',
+        ],
+        retainedCapabilities: [
+          { name: 'bite', whenFormHas: { anatomy: 'jaws' } },
+        ],
+      },
+    ]);
+    expect(
+      creatureEntry('creature:oni', 'actions', 'Change Shape').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          { kind: 'descriptor', sizes: ['small', 'medium'], type: 'humanoid' },
+          { kind: 'descriptor', sizes: ['large'], type: 'giant' },
+        ],
+        statistics: { model: 'same-except', except: ['size'] },
+        equipment: {
+          disposition: 'specific',
+          items: [
+            {
+              name: 'glaive',
+              behavior: 'transforms-with-form',
+              revertsOnDeath: true,
+            },
+          ],
+        },
+        reversion: { on: ['death'] },
+      },
+    ]);
+    expect(
+      creatureEntry('creature:imp', 'traits', 'Shapechanger').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          { kind: 'fixed', name: 'rat', speedOverrides: { walk: 20 } },
+          {
+            kind: 'fixed',
+            name: 'raven',
+            speedOverrides: { walk: 20, fly: 60 },
+          },
+          {
+            kind: 'fixed',
+            name: 'spider',
+            speedOverrides: { walk: 20, climb: 20 },
+          },
+        ],
+        statistics: { model: 'same-except', except: ['speed'] },
+        equipment: { disposition: 'not-transformed' },
+        reversion: { on: ['death'] },
+      },
+    ]);
+    expect(
+      creatureEntry('creature:werebear', 'traits', 'Shapechanger').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          { kind: 'statline-variant', variant: 'bear-humanoid hybrid' },
+          { kind: 'statline-variant', variant: 'bear' },
+        ],
+        statistics: { model: 'same-except', except: ['size', 'ac'] },
+        equipment: { disposition: 'not-transformed' },
+        reversion: { on: ['death'] },
+      },
+    ]);
+  });
+
   it('Hydra Multiattack is a per-head formula, Medusa an either/or option set, Violet Fungus a dice count', () => {
     expect(
       creatureEntry('creature:hydra', 'actions', 'Multiattack').mechanics
