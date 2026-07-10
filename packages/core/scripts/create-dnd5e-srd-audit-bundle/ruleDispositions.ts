@@ -2570,14 +2570,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'size/cost/disadv ruling',
   },
   'rule:stabilizing-a-creature': {
-    status: 'implemented',
+    status: 'partial',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolStabilizeCharacter.ts',
     ],
-    evidence: ['packages/core/test/hpLifecycle.test.ts'],
-    dependencyNote:
-      'the 1d4 h → 1 HP wake-up is a slow-time clock: scheduling stays model-prompted (per the third-revision slow-time principle) and the regain lands through adjust_hp, which owns the stable → alive transition',
+    missing:
+      'durable 1d4 h → 1 HP stable-recovery deadline (seeded roll recorded at stabilize time + owned clock-resolution hook) → eshyra-2n1t.8.1; the stable flag, counter reset, and the stable → alive transition through adjust_hp are code-owned, but recovery scheduling is still model-prompted and can silently drift',
   },
   'rule:strength-attack-rolls-and-damage': {
     status: 'model-adjudicated-supported',
@@ -2776,15 +2775,16 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * execution-boundary classification artifact (final revision, §3:
  * 0/97/47/21/10); updated by reviewed implementation diffs since —
  * eshyra-2n1t.8 (F6 death/dying/temp-HP machine) moved death-saving-throws,
- * falling-unconscious, instant-death, stabilizing-a-creature and
- * temporary-hit-points from unimplemented and healing from partial to
- * implemented.
+ * falling-unconscious, instant-death and temporary-hit-points from
+ * unimplemented and healing from partial to implemented, and
+ * stabilizing-a-creature from unimplemented to partial (durable 1d4 h
+ * recovery deadline outstanding → eshyra-2n1t.8.1).
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 6,
+    implemented: 5,
     'model-adjudicated-supported': 97,
-    partial: 46,
+    partial: 47,
     unimplemented: 16,
     'design-blocked': 10,
   });

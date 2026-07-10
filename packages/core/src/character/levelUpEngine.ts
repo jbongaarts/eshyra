@@ -300,6 +300,19 @@ export function applyLevelUp(
 
   return withTransaction(db, (txnDb) => {
     const characterId = resolveCharacterId(txnDb, input.characterId);
+    // F6 lifecycle gate (eshyra-2n1t.8): the projection raises hp_current
+    // without going through the adjustHp death machine, so a non-alive
+    // character could end up dying/dead at positive HP. Level-ups are a
+    // living character's action; fail closed before any write.
+    const lifeRow = txnDb
+      .prepare('SELECT life_state FROM character WHERE id = ?')
+      .get(characterId) as { life_state: string } | undefined;
+    if (lifeRow !== undefined && lifeRow.life_state !== 'alive') {
+      throw new LevelUpEngineError(
+        `cannot apply a level-up to a ${lifeRow.life_state} character: ` +
+          'stabilize and heal them first',
+      );
+    }
     const sheet = input.store.load(characterId);
     if (sheet === undefined) {
       throw new LevelUpEngineError(

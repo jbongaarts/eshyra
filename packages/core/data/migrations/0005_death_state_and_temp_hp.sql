@@ -8,8 +8,18 @@
 -- `death_save_successes`/`death_save_failures` are the counters the
 -- death-saving-throw procedure and damage-at-0 escalation mutate; `hp_temp`
 -- is the temporary-hit-point buffer consumed before `hp_current` and expired
--- by the long rest (F7 calls the reset hook). Existing rows are alive with no
--- buffer, which the column defaults express.
+-- by the long rest (F7 calls the reset hook).
+--
+-- Backfill policy: existing rows default to alive with no buffer, EXCEPT a
+-- character persisted at 0 HP on an initialized sheet (hp_max > 0), which
+-- pre-0005 play could legitimately produce via adjust_hp clamping. Leaving
+-- such a row 'alive' would strand it outside the state machine (death saves
+-- apply only to a dying character). Their true pre-migration narrative state
+-- (dying vs stable) is unknowable, so they are reconciled to 'stable' — the
+-- conservative mechanically-valid non-alive state: unconscious at 0 HP, no
+-- death-save pressure, woken by any healing, knocked back to dying by damage.
+-- Uninitialized 0/0 bootstrap sheets stay 'alive' (same exception the runtime
+-- death machine applies).
 --
 -- Conventions (ADR 0015): plain ALTER TABLE, never IF NOT EXISTS.
 
@@ -27,3 +37,7 @@ ALTER TABLE character
 ALTER TABLE character
   ADD COLUMN death_save_failures INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_failures BETWEEN 0 AND 3);
+
+UPDATE character
+  SET life_state = 'stable'
+  WHERE hp_max > 0 AND hp_current = 0;

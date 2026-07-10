@@ -460,3 +460,85 @@ describe('applyLevelUp — HP floor and fail-closed guards', () => {
     expect(() => computeLevelUpChangeSet(sheet)).toThrow(LevelUpEngineError);
   });
 });
+
+describe('applyLevelUp — F6 life-state gate (eshyra-2n1t.8)', () => {
+  // The live projection raises hp_current outside the adjustHp death machine,
+  // so applying a level-up to a dying/stable/dead character would strand them
+  // at positive HP in a non-alive state (e.g. dying at 7 HP, still accruing
+  // death saves). The engine fails closed before any write instead.
+  function seedLifeState(
+    db: ReturnType<typeof bareDb>,
+    lifeState: string,
+    failures = 0,
+  ): void {
+    for (const [field, value] of [
+      ['life_state', lifeState],
+      ['death_save_failures', failures],
+    ] as const) {
+      mutateState(db, {
+        target: 'character',
+        field,
+        op: 'set',
+        value,
+        provenance: 'test:init',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        at: AT,
+      });
+    }
+  }
+
+  it.each([
+    'dying',
+    'stable',
+    'dead',
+  ] as const)('refuses to apply a level-up to a %s character, leaving all state untouched', (lifeState) => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({ maxHitPoints: 12, modifiers: { constitution: 2 } }),
+    );
+    seedLiveHp(db, 12, 0);
+    seedLifeState(db, lifeState, 2);
+
+    expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
+      LevelUpEngineError,
+    );
+
+    // Nothing advanced: sheet, live row, and ledger are all untouched.
+    expect(store.load('pc-1')?.level).toBe(1);
+    const row = db
+      .prepare(
+        `SELECT level, hp_current, life_state, death_save_failures
+           FROM character WHERE id = 'pc-1'`,
+      )
+      .get() as Record<string, unknown>;
+    expect(row).toEqual({
+      level: 1,
+      hp_current: 0,
+      life_state: lifeState,
+      death_save_failures: 2,
+    });
+    expect(listProgressionEvents(db)).toHaveLength(0);
+    db.close();
+  });
+
+  it('still applies normally to an alive character at low HP', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({ maxHitPoints: 12, modifiers: { constitution: 2 } }),
+    );
+    seedLiveHp(db, 12, 1);
+
+    const result = applyLevelUp(db, { store, ...APPLY });
+
+    expect(result.changeSet.level).toEqual({ from: 1, to: 2 });
+    const row = db
+      .prepare("SELECT hp_current, life_state FROM character WHERE id = 'pc-1'")
+      .get() as Record<string, unknown>;
+    expect(row).toEqual({ hp_current: 9, life_state: 'alive' });
+    db.close();
+  });
+});

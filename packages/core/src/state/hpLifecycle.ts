@@ -10,9 +10,10 @@
 // - Dropping to 0 HP otherwise makes the character `dying` and resets the
 //   death-save counters (falling-unconscious).
 // - Damage taken at 0 HP escalates: one death-save failure, two on a critical
-//   hit; a stable character knocked back to dying; three failures is death;
-//   damage fully absorbed by temporary HP does not reach the character and
-//   causes no failure (death-saving-throws, damage-at-0 escalation).
+//   hit; a stable character knocked back to dying; three failures is death.
+//   The failure applies even when temporary HP absorb every point — temp HP
+//   reduce the HP loss, not the damage event itself (death-saving-throws,
+//   damage-at-0 escalation).
 // - A dead character's HP is gated: healing is refused (`healing` dead-gate;
 //   revival magic is a distinct future act, not an adjust_hp call).
 // - Any healing from 0 HP returns the character to `alive` and resets the
@@ -27,10 +28,12 @@
 //   The long rest expires the buffer via {@link expireTemporaryHp} (F7 reset
 //   hook).
 //
-// Scheduling slow-time steps (a stable character regaining 1 HP after 1d4
-// hours) stays model-prompted per the execution-boundary classification's
-// slow-time principle — the resulting transition still lands through
-// {@link adjustHp}.
+// A stable character's automatic recovery (regain 1 HP after 1d4 hours if
+// still at 0) has no durable deadline yet: scheduling is model-prompted and
+// only the resulting transition lands through {@link adjustHp}. That gap
+// keeps stabilizing-a-creature PARTIAL in the coverage registry and is owned
+// by eshyra-2n1t.8.1 (needs a seeded roll recorded at stabilize time plus a
+// deterministic in-game-clock resolution hook).
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
@@ -244,10 +247,12 @@ function applyDamage(
     }
     successes = 0;
     failures = 0;
-  } else if (row.hp_current === 0 && penetrating > 0) {
-    // Damage at 0 HP: every point is overflow, so the instant-death threshold
-    // applies first; otherwise escalate the failure count (double on a crit)
-    // and knock a stable character back to dying.
+  } else if (row.hp_current === 0) {
+    // Damage at 0 HP: the damage *event* costs a death-save failure (double
+    // on a crit) and knocks a stable character back to dying even when the
+    // temp-HP buffer absorbs every point — temp HP reduce the HP loss, not
+    // the hit. Only the penetrating remainder (= overflow here) feeds the
+    // instant-death threshold, which applies first.
     if (overflow >= row.hp_max) {
       lifeState = 'dead';
       instantDeath = true;

@@ -1,7 +1,9 @@
 // F6 death/dying/temp-HP state machine on the HP write path (eshyra-2n1t.8).
 // Evidence for the ENGINE_PROCEDURE_COVERAGE rows: death-saving-throws,
-// falling-unconscious, instant-death, stabilizing-a-creature,
-// temporary-hit-points, and healing's dead-gate.
+// falling-unconscious, instant-death, temporary-hit-points, and healing's
+// dead-gate; stabilizing-a-creature's code-owned part is covered here too,
+// but that row stays partial until the durable 1d4 h recovery deadline
+// lands (eshyra-2n1t.8.1).
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -225,7 +227,9 @@ describe('adjustHp — temporary hit points', () => {
     db.close();
   });
 
-  it('damage fully absorbed by temp HP leaves HP and death state untouched', () => {
+  it('damage at 0 HP fully absorbed by temp HP still costs a death-save failure', () => {
+    // Temp HP reduce the HP loss, not the damage event: any hit taken at
+    // 0 HP is a failed death save even when the buffer soaks every point.
     const db = freshDb({
       max: 20,
       current: 0,
@@ -240,9 +244,39 @@ describe('adjustHp — temporary hit points', () => {
       tempHpAbsorbed: 4,
       newTempHp: 2,
       newHp: 0,
+      overflow: 0,
       lifeState: 'dying',
-      deathSaveFailuresAdded: 0,
+      deathSaveFailuresAdded: 1,
+      deathSaveFailures: 2,
+    });
+    db.close();
+  });
+
+  it('fully absorbed damage knocks a stable character back to dying', () => {
+    const db = freshDb({ max: 20, current: 0, temp: 5, lifeState: 'stable' });
+
+    const result = adjustHp(db, -3, CTX);
+
+    expect(result).toMatchObject({
+      tempHpAbsorbed: 3,
+      newTempHp: 2,
+      previousLifeState: 'stable',
+      lifeState: 'dying',
       deathSaveFailures: 1,
+    });
+    db.close();
+  });
+
+  it('fully absorbed damage while above 0 HP has no death-state effect', () => {
+    const db = freshDb({ max: 20, current: 10, temp: 6 });
+
+    const result = adjustHp(db, -4, CTX);
+
+    expect(result).toMatchObject({
+      tempHpAbsorbed: 4,
+      newHp: 10,
+      lifeState: 'alive',
+      deathSaveFailuresAdded: 0,
     });
     db.close();
   });
