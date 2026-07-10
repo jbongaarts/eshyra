@@ -663,9 +663,12 @@ a.brand-mark:hover {
 
 /* Inline tooltip-style footnote. No JavaScript: the note text stays in the
    accessibility tree at all times (so `aria-describedby` reads it for screen
-   readers) and is revealed visually on hover or keyboard focus. The enclosing
-   .terminal-panel is `overflow: hidden`, which clips a stray bubble rather than
-   ever letting it scroll the page horizontally. */
+   readers) and is revealed visually on hover or keyboard focus. The marker sits
+   in the right-hand part of its paragraph, so the revealed bubble is anchored to
+   the marker's right edge and opens inward (leftward) with a width capped to the
+   article column. That keeps the whole bubble inside the .terminal-panel, which
+   is `overflow: hidden`, so it never gets clipped and never scrolls the page
+   horizontally. */
 .tip {
   position: relative;
   display: inline;
@@ -710,10 +713,11 @@ a.brand-mark:hover {
 .tip:hover .tip-bubble,
 .tip:focus-within .tip-bubble {
   top: 1.7em;
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 6;
   width: max-content;
-  max-width: min(19rem, 78vw);
+  max-width: min(19rem, calc(100vw - 3rem));
   height: auto;
   margin: 0;
   padding: 0.6rem 0.8rem;
