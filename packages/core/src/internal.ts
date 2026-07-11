@@ -1172,6 +1172,25 @@ export {
   recordProgressionEvent,
   writeCampaignProgressionPolicy,
 } from './state/progression.js';
+// Single-class Spellcasting and Pact Magic slot pools (F4).
+export type {
+  RestoreSpellSlotsInput,
+  RestoreSpellSlotsResult,
+  SpellSlotCounter,
+  SpellSlotMutationContext,
+  SpellSlotPoolKind,
+  SpellSlotRestEvent,
+  SpendSpellSlotInput,
+  SpendSpellSlotResult,
+} from './state/spellSlots.js';
+export {
+  readSpellSlots,
+  restoreSpellSlots,
+  restoreSpellSlotsAfterLongRest,
+  SpellSlotError,
+  spendSpellSlot,
+  syncSpellSlots,
+} from './state/spellSlots.js';
 // Usage/recharge counters and reset events (F5, eshyra-2n1t.7).
 export type {
   DeclaredUsageEconomy,
