@@ -1676,17 +1676,26 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'targeting/obstruction ruling; no grid; rule text retrievable',
   },
   'rule:abilities': {
-    status: 'partial',
-    missing:
-      'GM-time generation rulings (method choice, array assignment) stay adjudicated; missing: 4d6-drop-lowest keep/drop grammar → F1 — the four-roll workaround leaves the drop selection model-computed, the same defect that makes advantage-and-disadvantage IMPL',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/dice.ts',
+      'packages/core/src/orchestrator/toolRoll.ts',
+    ],
+    evidence: [
+      'packages/core/test/diceGrammar.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
+    ],
   },
   'rule:ability-checks': {
-    status: 'partial',
-    missing:
-      'vs-DC resolution in the roll surface (Hybrid Contract: math is tool-owned) → F9',
+    status: 'implemented',
     runtimeOwner: [
-      'packages/core/src/orchestrator/toolRoll.ts',
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveCheck.ts',
       'packages/core/src/orchestrator/playerVisibleRollLedger.ts',
+    ],
+    evidence: [
+      'packages/core/test/resolution.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
     ],
   },
   'rule:ability-scores-and-modifiers': {
@@ -1710,9 +1719,16 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'activation-vs-Use-an-Object distinction is a per-turn ruling',
   },
   'rule:advantage-and-disadvantage': {
-    status: 'unimplemented',
-    missing:
-      'F1: 2d20 keep-high/low + cancellation/no-stacking belong in the roll tool; highest-frequency mechanic; two-roll workaround leaves selection unenforced',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/dice.ts',
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveCheck.ts',
+    ],
+    evidence: [
+      'packages/core/test/diceGrammar.test.ts',
+      'packages/core/test/resolution.test.ts',
+    ],
   },
   'rule:ammunition': {
     status: 'model-adjudicated-supported',
@@ -1751,9 +1767,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'one-attack grant adjudicated; the action spend itself is checkable via the F2 turn budget (spend_turn_resource); attack counting stays adjudicated (Extra Attack/Multiattack feature-dependent)',
   },
   'rule:attack-rolls': {
-    status: 'partial',
-    missing: 'modifier composition + vs-AC resolution → F9',
-    runtimeOwner: ['packages/core/src/orchestrator/toolRoll.ts'],
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveCheck.ts',
+    ],
+    evidence: [
+      'packages/core/test/resolution.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
+    ],
   },
   'rule:attunement': {
     status: 'implemented',
@@ -1955,9 +1977,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'one-shot consumption = `remove_item` mutation; supported today',
   },
   'rule:contests': {
-    status: 'partial',
-    missing:
-      'opposed seeded rolls code-owned; missing: opposed-comparison resolution (tie = status quo) → F9',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveContest.ts',
+    ],
+    evidence: [
+      'packages/core/test/resolution.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
+    ],
   },
   'rule:controlling-a-mount': {
     status: 'model-adjudicated-supported',
@@ -1972,9 +2000,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'controlled/independent ruling; initiative sync narratable',
   },
   'rule:cover': {
-    status: 'partial',
-    missing:
-      'degree-of-cover selection is the classic ruling; missing: ±2/±5 AC and Dex-save modifier composition into vs-AC/DC resolution → F9',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'resolve_check'],
+    contextRequirement:
+      'degree-of-cover selection is the classic ruling; the ±2/±5 AC and Dex-save bonuses ride resolve_check declared modifiers (composition owned by rule:modifiers-to-the-roll)',
   },
   'rule:crafting': {
     status: 'partial',
@@ -1982,9 +2011,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'pacing/eligibility are rulings; missing: DM-accessible canonical currency read/write for costs and progress (currency.ts exists; no gameplay tool) → F10',
   },
   'rule:critical-hits': {
-    status: 'partial',
-    missing:
-      'nat-20 detection visible in `rolls[]`; missing: crit dice-doubling transform on the damage-roll surface → F9 — today the model rewrites the dice expression (deterministic transformation)',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveDamage.ts',
+    ],
+    evidence: [
+      'packages/core/test/resolution.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
+    ],
   },
   'rule:cube': {
     status: 'model-adjudicated-supported',
@@ -2001,15 +2036,24 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'geometry ruling',
   },
   'rule:damage-resistance-and-vulnerability': {
-    status: 'partial',
-    missing:
-      'resistances structured; missing: halve/double-after-modifiers transform as a tool operation → F9; which resistances apply stays a ruling',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveDamage.ts',
+    ],
+    evidence: ['packages/core/test/resolution.test.ts'],
   },
   'rule:damage-rolls': {
-    status: 'partial',
-    missing:
-      'add-ability-mod / never-negative composition and roll-once-multi-target application → F9',
-    runtimeOwner: ['packages/core/src/orchestrator/dice.ts'],
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/dice.ts',
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveDamage.ts',
+    ],
+    evidence: [
+      'packages/core/test/resolution.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
+    ],
   },
   'rule:darkvision': {
     status: 'model-adjudicated-supported',
@@ -2105,9 +2149,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     designOwner: 'eshyra-2n1t.1',
   },
   'rule:falling': {
-    status: 'partial',
-    missing:
-      'fall-distance determination and landing narration stay rulings; missing: distance → ⌊d/10⌋d6 (cap 20d6) dice-expression derivation → F9; prone via condition entry',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:falling-unconscious': {
     status: 'implemented',
@@ -2132,9 +2179,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'fall-when-prone/speed-0 ruling',
   },
   'rule:food': {
-    status: 'partial',
-    missing:
-      'deprivation-day state durably representable as character condition entries (semantically apt temporary character state, read back from the context snapshot); clock stays model-adjudicated (low-frequency, no dedicated state machine needed); missing: the 3+Con-mod (minimum 1) day-threshold derivation is deterministic arithmetic feeding a gameplay threshold, not narration — the Hybrid Contract routes it to F9 regardless of frequency → F9',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:food-and-water': {
     status: 'model-adjudicated-supported',
@@ -2157,9 +2207,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/inspiration.test.ts'],
   },
   'rule:grapple-rules-for-monsters': {
-    status: 'partial',
-    missing:
-      'missing: default escape DC derivation (10 + Str(Athletics) mod) as derived math → F9',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:grappling': {
     status: 'model-adjudicated-supported',
@@ -2168,9 +2221,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'contest rolls + grappled condition + half-speed drag ruling',
   },
   'rule:group-checks': {
-    status: 'partial',
-    missing:
-      'individual checks roll-owned; missing: half-succeed aggregation arithmetic → F9',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/resolution.ts',
+    ],
+    evidence: [
+      'packages/core/test/calc.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
+    ],
   },
   'rule:half-dragon-template': {
     status: 'model-adjudicated-supported',
@@ -2199,9 +2258,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'Stealth check per hiding ruling',
   },
   'rule:hiding': {
-    status: 'partial',
-    missing:
-      'Stealth contest and hiding eligibility are rulings; missing: passive-Perception derived score → F9 (shared with passive-checks)',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'resolve_contest', 'calc'],
+    contextRequirement:
+      'Stealth contest and hiding eligibility are rulings; the contest resolves via resolve_contest and passive scores via calc passive_score (owned by rule:passive-checks)',
   },
   'rule:hit-points': {
     status: 'model-adjudicated-supported',
@@ -2245,9 +2305,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'GM-set object stats; auto-fail/immunity rulings',
   },
   'rule:jumping': {
-    status: 'partial',
-    missing:
-      'missing: long/high-jump distance formulas as derived math → F9; movement narration stays a ruling',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:knocking-a-creature-out': {
     status: 'model-adjudicated-supported',
@@ -2288,9 +2351,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'form-assumption exclusion gate; ruling over structured data',
   },
   'rule:lifting-and-carrying': {
-    status: 'partial',
-    missing:
-      'missing: capacity arithmetic (Str×15, push/drag ×2, size doubling) as derived math over structured Str + inventory → F9',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:limited-usage': {
     status: 'implemented',
@@ -2344,14 +2410,17 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:melee-attacks': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
+    primitives: ['lookup_rules', 'resolve_check', 'resolve_damage'],
     contextRequirement:
-      'reach semantics are rulings; unarmed 1+Str composition rides the F9 modifier surface (note)',
+      'reach semantics are rulings; unarmed 1 + Str composition rides resolve_damage declared modifiers',
   },
   'rule:modifiers-to-the-roll': {
-    status: 'partial',
-    missing:
-      'PC mod/PB values code-owned; missing: modifier-composition surface on rolls (contract: math is tool-owned) → F9',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolutionShared.ts',
+    ],
+    evidence: ['packages/core/test/resolution.test.ts'],
   },
   'rule:mounted-combat': {
     status: 'model-adjudicated-supported',
@@ -2366,7 +2435,8 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:mounts-and-vehicles': {
     status: 'partial',
     missing:
-      'mount stats structured as equipment records; missing: purchase currency surface → F10 and pull-capacity arithmetic → F9',
+      'mount stats structured as equipment records; pull-capacity arithmetic landed with F9 (calc carry_capacity vehiclePullLb, ×5 base capacity); missing: purchase currency surface → F10',
+    runtimeOwner: ['packages/core/src/orchestrator/calc.ts'],
   },
   'rule:movement-and-position': {
     status: 'model-adjudicated-supported',
@@ -2428,9 +2498,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'both-of-pair requirement ruling; inventory visible',
   },
   'rule:passive-checks': {
-    status: 'partial',
-    missing:
-      'missing: 10+mods (±5 adv/dis) derived-score computation → F9; which modifiers apply stays a ruling',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:poisons': {
     status: 'model-adjudicated-supported',
@@ -2443,13 +2516,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     missing: 'missing: canonical currency surface for earnings → F10',
   },
   'rule:proficiency-bonus': {
-    status: 'partial',
-    missing:
-      'PB multiplier composition (x2/x1/2/x0, apply-once) on the F9 declared-modifier surface',
+    status: 'implemented',
     runtimeOwner: [
+      'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/character/derivedValues.ts',
       'packages/core/src/character/levelUpEngine.ts',
     ],
+    evidence: ['packages/core/test/resolution.test.ts'],
   },
   'rule:range': {
     status: 'model-adjudicated-supported',
@@ -2505,16 +2578,20 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:rolling-1-or-20': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
+    primitives: ['lookup_rules', 'resolve_check', 'roll'],
     contextRequirement:
-      "natural die visible in `rolls[]`; auto-hit/miss applied per roll; candidate roll-tool annotation, not required — but F9's vs-AC/DC resolution MUST honor nat-1/20 overrides when it lands (spec note recorded in F9)",
+      'natural die visible in rolls[]/natural; the F9 spec note landed — resolve_check vs-AC honors nat-20 auto-hit (critical) and nat-1 auto-miss on attacks only, never on checks/saves',
   },
   'rule:saving-throws': {
-    status: 'partial',
-    missing: 'vs-DC resolution → F9',
+    status: 'implemented',
     runtimeOwner: [
-      'packages/core/src/orchestrator/toolRoll.ts',
+      'packages/core/src/orchestrator/resolution.ts',
+      'packages/core/src/orchestrator/toolResolveCheck.ts',
       'packages/core/src/character/derivedValues.ts',
+    ],
+    evidence: [
+      'packages/core/test/resolution.test.ts',
+      'packages/core/test/resolutionTools.test.ts',
     ],
   },
   'rule:search': {
@@ -2568,9 +2645,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:speed': {
-    status: 'partial',
-    missing:
-      'travel-pace table structured; movement rates/costs stay MODEL (narrative-magnitude arithmetic, F2 deliberately excludes the movement budget); exhaustion as condition entry; missing: the forced-march save DC (10 + 1 per hour past 8) is a deterministic derived-number formula feeding a saving-throw DC, not narration — Hybrid Contract clause, not a frequency-exempt one → F9',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:speed-difficult-terrain': {
     status: 'model-adjudicated-supported',
@@ -2629,12 +2709,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     runtimeOwner: ['packages/core/src/state/hpLifecycle.ts'],
   },
   'rule:surprise': {
-    status: 'partial',
-    missing:
-      'encounter-start Stealth-vs-passive determination is a ruling (passive score → F9); the turn-1 no-move/action/reaction restriction landed with the F2 turn budget (set_surprised + spend denial)',
+    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSetSurprised.ts',
+      'packages/core/src/orchestrator/calc.ts',
+    ],
+    evidence: [
+      'packages/core/test/actionEconomy.test.ts',
+      'packages/core/test/calc.test.ts',
     ],
   },
   'rule:swim': {
@@ -2709,9 +2792,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'auto-success bundle applied as per-event rulings; radii structured',
   },
   'rule:two-weapon-fighting': {
-    status: 'partial',
-    missing:
-      'light-property/weapon eligibility stays a ruling; missing: omit-positive-ability-mod damage composition → F9; the bonus-attack spend landed with the F2 turn budget (an ordinary bonus-action spend_turn_resource)',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'resolve_damage', 'spend_turn_resource'],
+    contextRequirement:
+      'light-property/weapon eligibility stays a ruling; omit-positive-ability-mod is an input choice on resolve_damage declared modifiers (composition owned by rule:damage-rolls); the bonus-attack spend landed with the F2 turn budget',
   },
   'rule:unarmored-defense': {
     status: 'design-blocked',
@@ -2740,18 +2824,24 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       "narrative-magnitude arithmetic (boundary rule 1): the movement budget is deliberately not code-owned, so the cross-mode subtraction operates on narrated quantities only; F9's calc primitive is an available aid once it lands, not a gap",
   },
   'rule:using-inspiration': {
-    status: 'partial',
-    missing:
-      'spend/gift semantics against the durable inspiration boolean landed with F5 (use_inspiration); missing: applying the granted advantage through the dice grammar → F1',
+    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/inspiration.ts',
       'packages/core/src/orchestrator/toolUseInspiration.ts',
+      'packages/core/src/orchestrator/resolution.ts',
+    ],
+    evidence: [
+      'packages/core/test/inspiration.test.ts',
+      'packages/core/test/resolution.test.ts',
     ],
   },
   'rule:variant-encumbrance': {
-    status: 'partial',
-    missing:
-      'missing: 5×Str / 10×Str threshold arithmetic → F9; variant adoption is a table ruling',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/calc.ts',
+      'packages/core/src/orchestrator/toolCalc.ts',
+    ],
+    evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:variant-skills-with-different-abilities': {
     status: 'model-adjudicated-supported',
@@ -2797,9 +2887,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:working-together': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
+    primitives: ['lookup_rules', 'resolve_check'],
     contextRequirement:
-      'leader-rolls-with-advantage ruling (advantage dice via F1)',
+      'leader-rolls-with-advantage ruling (advantage via the resolve_check advantage flag)',
   },
   'rule:your-turn': {
     status: 'implemented',
@@ -2834,14 +2924,29 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * action-economy turn budget) moved your-turn, bonus-action, bonus-actions,
  * reactions and other-activity-on-your-turn from unimplemented to
  * implemented (surprise and two-weapon-fighting keep partial for their F9
- * clauses; their F2 clauses landed).
+ * clauses; their F2 clauses landed); eshyra-2n1t.3 + eshyra-2n1t.11
+ * (F1 dice grammar + F9 resolution/derived-math — dice.ts keep/drop,
+ * resolution.ts, calc.ts, resolve_check/resolve_contest/resolve_damage/
+ * calc tools) moved advantage-and-disadvantage from unimplemented and 21
+ * F9-clause rows (abilities, ability-checks, attack-rolls, saving-throws,
+ * contests, modifiers-to-the-roll, damage-rolls,
+ * damage-resistance-and-vulnerability, critical-hits, proficiency-bonus,
+ * passive-checks, group-checks, grapple-rules-for-monsters, falling,
+ * jumping, lifting-and-carrying, variant-encumbrance, food, speed,
+ * surprise, using-inspiration) from partial to implemented, and cover,
+ * hiding and two-weapon-fighting from partial to
+ * model-adjudicated-supported (their arithmetic is owned once by the
+ * generic F9 rows; the remainder is rulings over the new primitives).
+ * casting-a-spell-at-a-higher-level stays partial (upcast scaling needs
+ * structured spell `scaling` data, landing with the F4 interplay) and
+ * mounts-and-vehicles stays partial for its F10 currency clause.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 14,
-    'model-adjudicated-supported': 97,
-    partial: 48,
-    unimplemented: 6,
+    implemented: 36,
+    'model-adjudicated-supported': 100,
+    partial: 24,
+    unimplemented: 5,
     'design-blocked': 10,
   });
 

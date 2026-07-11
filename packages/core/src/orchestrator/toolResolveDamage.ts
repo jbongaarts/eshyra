@@ -107,12 +107,12 @@ export const resolveDamageTool: Tool = {
       critical: {
         type: 'boolean',
         description:
-          'True on a critical hit: the engine rolls each packet\'s dice twice (doubled count), modifiers added once.',
+          "True on a critical hit: the engine rolls each packet's dice twice (doubled count), modifiers added once.",
       },
       targets: {
         type: 'array',
         description:
-          'Targets this one roll applies to (roll once, apply to all). Declare each target\'s applicable resistances/vulnerabilities/immunities.',
+          "Targets this one roll applies to (roll once, apply to all). Declare each target's applicable resistances/vulnerabilities/immunities.",
         minItems: 1,
         maxItems: 20,
         items: {

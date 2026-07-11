@@ -88,12 +88,12 @@ describe('modifier composition and provenance', () => {
     expect(() => validateModifiers([{ label: '', value: 1 }], 't')).toThrow(
       ResolutionError,
     );
-    expect(() =>
-      validateModifiers([{ label: 'x', value: 1.5 }], 't'),
-    ).toThrow(ResolutionError);
-    expect(() =>
-      validateModifiers([{ label: 'x', value: 101 }], 't'),
-    ).toThrow(ResolutionError);
+    expect(() => validateModifiers([{ label: 'x', value: 1.5 }], 't')).toThrow(
+      ResolutionError,
+    );
+    expect(() => validateModifiers([{ label: 'x', value: 101 }], 't')).toThrow(
+      ResolutionError,
+    );
     expect(() =>
       validateModifiers(
         Array.from({ length: 21 }, (_, i) => ({ label: `m${i}`, value: 1 })),
@@ -106,12 +106,15 @@ describe('modifier composition and provenance', () => {
   });
 
   it('rejects malformed proficiency fail-closed', () => {
-    expect(() => validateProficiency({ bonus: -1, multiplier: 'normal' }, 't'))
-      .toThrow(ResolutionError);
-    expect(() => validateProficiency({ bonus: 2, multiplier: 'triple' }, 't'))
-      .toThrow(ResolutionError);
-    expect(() => validateProficiency({ bonus: 2.5, multiplier: 'half' }, 't'))
-      .toThrow(ResolutionError);
+    expect(() =>
+      validateProficiency({ bonus: -1, multiplier: 'normal' }, 't'),
+    ).toThrow(ResolutionError);
+    expect(() =>
+      validateProficiency({ bonus: 2, multiplier: 'triple' }, 't'),
+    ).toThrow(ResolutionError);
+    expect(() =>
+      validateProficiency({ bonus: 2.5, multiplier: 'half' }, 't'),
+    ).toThrow(ResolutionError);
   });
 });
 
@@ -289,9 +292,7 @@ describe('damage composition', () => {
     expect(crit.packets[0].declaredDice).toBe('1d8+2');
     expect(crit.packets[0].rolls).toHaveLength(2);
     // Flat +2 notation modifier and the +3 declared modifier apply once.
-    expect(crit.packets[0].subtotal).toBe(
-      crit.packets[0].natural + 2 + 3,
-    );
+    expect(crit.packets[0].subtotal).toBe(crit.packets[0].natural + 2 + 3);
   });
 
   it('clamps each packet at 0 (never negative), independently', () => {

@@ -31,10 +31,7 @@ const SIDE_SCHEMA: JsonSchema = {
   additionalProperties: false,
 };
 
-function parseSide(
-  raw: unknown,
-  where: string,
-): ContestSideInput {
+function parseSide(raw: unknown, where: string): ContestSideInput {
   const record = asRecord(raw);
   if (
     record === undefined ||

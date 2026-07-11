@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CALC_FORMULA_NAMES, CalcError, evaluateCalc } from '../src/internal.js';
+import {
+  CALC_FORMULA_NAMES,
+  CalcError,
+  evaluateCalc,
+} from '../src/internal.js';
 
 /**
  * F9 non-roll formula registry (eshyra-2n1t.11). Each formula is verified
@@ -41,16 +45,16 @@ describe('calc registry (fail closed)', () => {
 
 describe('passive_score (SRD passive-checks)', () => {
   it('computes 10 + modifiers with ±5 for advantage/disadvantage', () => {
-    expect(
-      evaluateCalc('passive_score', { modifier: 4 }).outputs.score,
-    ).toBe(14);
+    expect(evaluateCalc('passive_score', { modifier: 4 }).outputs.score).toBe(
+      14,
+    );
     expect(
       evaluateCalc('passive_score', { modifier: 4, advantage: true }).outputs
         .score,
     ).toBe(19);
     expect(
-      evaluateCalc('passive_score', { modifier: 4, disadvantage: true })
-        .outputs.score,
+      evaluateCalc('passive_score', { modifier: 4, disadvantage: true }).outputs
+        .score,
     ).toBe(9);
     // Both cancel to neither, as everywhere else.
     expect(
@@ -63,9 +67,9 @@ describe('passive_score (SRD passive-checks)', () => {
   });
 
   it("matches the SRD's own example (Wis 15, proficient, level 1 → 14)", () => {
-    expect(
-      evaluateCalc('passive_score', { modifier: 4 }).outputs.score,
-    ).toBe(14);
+    expect(evaluateCalc('passive_score', { modifier: 4 }).outputs.score).toBe(
+      14,
+    );
   });
 });
 
@@ -140,8 +144,7 @@ describe('fall_damage_dice (SRD falling)', () => {
       evaluateCalc('fall_damage_dice', { distanceFeet: 45 }).outputs,
     ).toEqual({ diceCount: 4, dice: '4d6', damageType: 'bludgeoning' });
     expect(
-      evaluateCalc('fall_damage_dice', { distanceFeet: 500 }).outputs
-        .diceCount,
+      evaluateCalc('fall_damage_dice', { distanceFeet: 500 }).outputs.diceCount,
     ).toBe(20);
     expect(
       evaluateCalc('fall_damage_dice', { distanceFeet: 5 }).outputs.dice,

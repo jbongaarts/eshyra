@@ -50,8 +50,7 @@ export const rollTool: Tool = {
     properties: {
       dice: {
         type: 'string',
-        description:
-          'Dice notation, e.g. "1d20+5", "4d6dl1", or "2d20kh1".',
+        description: 'Dice notation, e.g. "1d20+5", "4d6dl1", or "2d20kh1".',
         minLength: 1,
       },
       reason: {

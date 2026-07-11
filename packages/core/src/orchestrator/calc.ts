@@ -125,8 +125,7 @@ export const CALC_FORMULAS: Readonly<Record<string, CalcFormula>> =
         const modifier = requireInt(args, 'modifier', -100, 100);
         const advantage = optionalBool(args, 'advantage');
         const disadvantage = optionalBool(args, 'disadvantage');
-        const adjustment =
-          advantage === disadvantage ? 0 : advantage ? 5 : -5;
+        const adjustment = advantage === disadvantage ? 0 : advantage ? 5 : -5;
         const score = 10 + modifier + adjustment;
         return {
           formula: 'passive_score',
@@ -195,12 +194,8 @@ export const CALC_FORMULAS: Readonly<Record<string, CalcFormula>> =
         const runningStart = optionalBool(args, 'runningStart');
         const longBase = strengthScore;
         const highBase = Math.max(0, 3 + strengthModifier);
-        const longJumpFeet = runningStart
-          ? longBase
-          : Math.floor(longBase / 2);
-        const highJumpFeet = runningStart
-          ? highBase
-          : Math.floor(highBase / 2);
+        const longJumpFeet = runningStart ? longBase : Math.floor(longBase / 2);
+        const highJumpFeet = runningStart ? highBase : Math.floor(highBase / 2);
         return {
           formula: 'jump_distance',
           inputs: { strengthScore, strengthModifier, runningStart },
@@ -236,12 +231,7 @@ export const CALC_FORMULAS: Readonly<Record<string, CalcFormula>> =
         "Default monster grapple escape DC: 10 + the monster's Strength (Athletics) modifier. args: { athleticsModifier }",
       evaluate(args) {
         rejectUnknownArgs(args, ['athleticsModifier']);
-        const athleticsModifier = requireInt(
-          args,
-          'athleticsModifier',
-          -5,
-          20,
-        );
+        const athleticsModifier = requireInt(args, 'athleticsModifier', -5, 20);
         const dc = 10 + athleticsModifier;
         return {
           formula: 'grapple_escape_dc',

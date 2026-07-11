@@ -262,7 +262,9 @@ describe('roll tool F1 surface', () => {
     expect(data.natural).toBe(
       (data.kept as number[]).reduce((sum, r) => sum + r, 0),
     );
-    expect(data.total).toBe((data.natural as number) + (data.modifier as number));
+    expect(data.total).toBe(
+      (data.natural as number) + (data.modifier as number),
+    );
   });
 
   it('rejects identity keeps through the tool seam', () => {
@@ -293,12 +295,16 @@ describe('audit spine: ledger, trace, and replay', () => {
 
   it('renders player-visible resolution entries in the roll ledger', () => {
     const calls = [
-      executedCall('roll', {
-        dice: '4d6dl1',
-        reason: 'ability score',
-        visibility: 'player_visible',
-        category: 'other',
-      }, 1),
+      executedCall(
+        'roll',
+        {
+          dice: '4d6dl1',
+          reason: 'ability score',
+          visibility: 'player_visible',
+          category: 'other',
+        },
+        1,
+      ),
       executedCall('resolve_check', checkArgs, 2),
       executedCall(
         'resolve_contest',
@@ -342,11 +348,7 @@ describe('audit spine: ledger, trace, and replay', () => {
 
   it('keeps dm_only resolutions out of the ledger', () => {
     const calls = [
-      executedCall(
-        'resolve_check',
-        { ...checkArgs, visibility: 'dm_only' },
-        2,
-      ),
+      executedCall('resolve_check', { ...checkArgs, visibility: 'dm_only' }, 2),
       executedCall(
         'resolve_check',
         { kind: 'ability_check', reason: 'no visibility declared' },

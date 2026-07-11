@@ -125,9 +125,7 @@ function readRollEntry(
   const kept = isIntArray(data.kept) ? data.kept : data.rolls;
   const shownDice = dropped.length > 0 ? kept : data.rolls;
   const modifierPart =
-    modifier === 0
-      ? ''
-      : ` ${modifier > 0 ? '+' : '-'} ${Math.abs(modifier)}`;
+    modifier === 0 ? '' : ` ${modifier > 0 ? '+' : '-'} ${Math.abs(modifier)}`;
   const droppedPart =
     dropped.length > 0 ? `, dropped ${dropped.join(', ')}` : '';
   const detail = `${data.dice} = ${data.total} (${shownDice.join(' + ')}${modifierPart}${droppedPart})`;

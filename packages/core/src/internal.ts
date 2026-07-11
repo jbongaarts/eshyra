@@ -630,6 +630,13 @@ export {
   buildAdventureContextSlice,
   renderAdventureContextSlice,
 } from './orchestrator/adventureContext.js';
+export type { CalcResult, CalcValue } from './orchestrator/calc.js';
+// F9 deterministic non-roll formula registry.
+export {
+  CALC_FORMULA_NAMES,
+  CalcError,
+  evaluateCalc,
+} from './orchestrator/calc.js';
 export type {
   AdventureModuleResolver,
   AssembledContext,
@@ -647,13 +654,6 @@ export {
   readStateSnapshot,
   renderContextMessage,
 } from './orchestrator/contextAssembler.js';
-export type { CalcResult, CalcValue } from './orchestrator/calc.js';
-// F9 deterministic non-roll formula registry.
-export {
-  CALC_FORMULA_NAMES,
-  CalcError,
-  evaluateCalc,
-} from './orchestrator/calc.js';
 export type {
   DiceNotation,
   DiceRoll,
@@ -667,6 +667,12 @@ export {
   rollDice,
   rollParsedDice,
 } from './orchestrator/dice.js';
+// DM-protocol prompt building and fenced tool-call parsing.
+export {
+  buildSystemPrompt,
+  parseToolCalls,
+  renderToolResults,
+} from './orchestrator/protocol.js';
 export type {
   AdvantageState,
   ContestResolution,
@@ -698,12 +704,6 @@ export {
   resolveD20,
   resolveDamage,
 } from './orchestrator/resolution.js';
-// DM-protocol prompt building and fenced tool-call parsing.
-export {
-  buildSystemPrompt,
-  parseToolCalls,
-  renderToolResults,
-} from './orchestrator/protocol.js';
 export type { Rng } from './orchestrator/rng.js';
 // Deterministic RNG used by tools/dice.
 export { createSeededRng } from './orchestrator/rng.js';

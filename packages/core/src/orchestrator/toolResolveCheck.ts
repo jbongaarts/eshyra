@@ -89,7 +89,10 @@ export const resolveCheckTool: Tool = {
       a.actor !== undefined &&
       (typeof a.actor !== 'string' || a.actor.length === 0)
     ) {
-      return err('invalid_args', 'resolve_check actor must be a non-empty string');
+      return err(
+        'invalid_args',
+        'resolve_check actor must be a non-empty string',
+      );
     }
     const kind = a.kind as D20Kind;
     try {

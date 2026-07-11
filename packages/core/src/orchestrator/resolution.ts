@@ -510,7 +510,9 @@ export function resolveDamage(input: DamageInput, rng: Rng): DamageResolution {
       parsed = parseDice(packet.dice);
     } catch (e) {
       if (e instanceof DiceError) {
-        throw new ResolutionError(`damage packet '${packet.dice}': ${e.message}`);
+        throw new ResolutionError(
+          `damage packet '${packet.dice}': ${e.message}`,
+        );
       }
       throw e;
     }

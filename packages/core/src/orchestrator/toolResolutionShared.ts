@@ -1,8 +1,5 @@
 import type { JsonSchema } from '../model/toolSchema.js';
-import type {
-  DeclaredModifier,
-  ProficiencyApplied,
-} from './resolution.js';
+import type { DeclaredModifier, ProficiencyApplied } from './resolution.js';
 import {
   PROFICIENCY_MULTIPLIERS,
   ResolutionError,
@@ -30,7 +27,8 @@ export const MODIFIERS_SCHEMA: JsonSchema = {
     properties: {
       label: {
         type: 'string',
-        description: 'What this modifier is, e.g. "DEX modifier", "half cover".',
+        description:
+          'What this modifier is, e.g. "DEX modifier", "half cover".',
         minLength: 1,
         maxLength: 80,
       },
@@ -109,10 +107,7 @@ export function parseCheckSide(
   record: Record<string, unknown>,
   where: string,
 ): ParsedCheckSide {
-  if (
-    record.advantage !== undefined &&
-    typeof record.advantage !== 'boolean'
-  ) {
+  if (record.advantage !== undefined && typeof record.advantage !== 'boolean') {
     throw new ResolutionError(`${where}: advantage must be a boolean`);
   }
   if (
