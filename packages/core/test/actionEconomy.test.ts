@@ -1070,6 +1070,33 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
     ).toThrow(/no state-dependent extra-reaction mechanic/);
   });
 
+  it('the every_turn refresh does not erase the evidence the surprise guard needs', () => {
+    const { db } = setupLairCombat();
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    spendReaction(db, MARILITH, 'parry');
+
+    // Another turn begins and Reactive refreshes the marilith's counter…
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    const marilith = readCombatTurnState(db, CAMPAIGN)?.budgets.find(
+      (b) => b.participant.ref === MARILITH,
+    );
+    expect(marilith?.reactionsUsed).toBe(0);
+
+    // …but the retained reaction activity still proves it reacted before
+    // its first turn, so retroactive surprise stays refused.
+    expect(() =>
+      setSurprised(db, {
+        campaignId: CAMPAIGN,
+        participants: [participant(MARILITH)],
+        ...CTX,
+      }),
+    ).toThrow(/already acted this combat/);
+  });
+
   it('update_combatant carries the grant as a validated tool arg', () => {
     const { db } = setupLairCombat();
     const registry = createDefaultToolRegistry();

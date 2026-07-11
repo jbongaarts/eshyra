@@ -1083,6 +1083,11 @@ export function setSurprised(
         (row.action_used === 1 ||
           row.bonus_action_used === 1 ||
           row.reactions_used > 0 ||
+          // The every_turn refresh (perTurn extraReactions) zeroes
+          // reactions_used at each turn start, but the retained activity
+          // still evidences a pre-first-turn reaction — a surprised
+          // creature could not have taken it.
+          row.reaction_activity !== null ||
           row.free_interaction_used === 1 ||
           row.movement_note !== null)
       ) {
