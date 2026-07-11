@@ -1,7 +1,8 @@
 # eshyra-o9bd.18.7.9 — Exhaustive classification of reviewed memberships
 
-Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399. C5 rollout: bead
-`eshyra-o9bd.18.7.9.11`.
+Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399. C5/C6/C7 rollouts:
+beads `eshyra-o9bd.18.7.9.11`, `eshyra-o9bd.18.7.9.12`, and
+`eshyra-o9bd.18.7.9.13`.
 (`eshyra-o9bd-18-7-9-membership-corrections`).
 
 This is the authoritative, record-by-record semantic disposition source for
@@ -13,10 +14,11 @@ branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
 implemented in the follow-up rollout, and the 10 C3 refs were implemented in a
 second follow-up rollout, and the 22 C1 shape-change refs were implemented in
-a later rollout. The C5 Split rollout described below has now graduated its
-two refs, leaving 16 residual refs represented in the per-ref registry. Of
-those 16 residual refs, 2 are permanent `accepted-prose-only` entries and 14
-are pending `finding` entries routed to C4 and C6-C9. Spell
+a later rollout. The C5 Split, C6 damage-absorption, and C7 Berserk rollouts
+described below have graduated their eight refs, leaving 10 residual refs
+represented in the per-ref registry. Of those 10 residual refs, 2 are
+permanent `accepted-prose-only` entries and 8 are pending `finding` entries
+routed to C4 and C8-C9. Spell
 metadata-only membership remains represented separately by
 `ACCEPTED_METADATA_ONLY_SPELLS`; the 14 S1 summoning/control spells and the 17
 S2 small deterministic-clause spells have graduated out. Every record's full
@@ -37,7 +39,7 @@ Disposition vocabulary:
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
-## 1. Creature-entry refs (72 reviewed total; 14 pending findings; 16 residual registry entries)
+## 1. Creature-entry refs (72 reviewed total; 8 pending findings; 10 residual registry entries)
 
 ### 1.1 Shape-change family — 22 refs — disposition: implemented (slice C1)
 
@@ -196,7 +198,7 @@ The bundle's readiness registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` in
 `create-dnd5e-srd-audit-bundle/cli.ts`, superseding the former
 `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`) additionally now records a per-ref
 disposition — `accepted-prose-only` for the 2 genuine accepts (§1.5) or
-`finding` (with `bead`/`slice`) for the other 16 residual refs classified in
+`finding` (with `bead`/`slice`) for the other 8 residual refs classified in
 this document — so the bucket-level `creature-entry#mechanical-prose` /
 `creature-entry#narrative-prose` policy entries can never again blanket-bless
 the C1–C9 pending work as accepted prose.
@@ -226,27 +228,33 @@ only the complete source strings and fails closed on clause drift.
 - `creature:black-pudding#reactions:Split`
 - `creature:ochre-jelly#reactions:Split`
 
-#### 1.6.4 Damage-absorption family — 4 refs — disposition: model (new slice C6)
+#### 1.6.4 Damage-absorption family — 4 refs — disposition: implemented (slice C6)
 
 Deterministic immune-and-heal pattern: subjected to a named damage type, the
 creature takes no damage and instead regains hit points equal to the damage
-that would have been dealt. Uniform grammar across all four. Proposed
-contract: `damageAbsorption { type }`.
+that would have been dealt. Uniform grammar across all four. The closed
+`damageAbsorption { type, damageTaken: 'none', healing: 'damage-dealt' }`
+contract now projects all four refs; they are removed from the reviewed
+disposition registry.
 
 - `creature:clay-golem#traits:Acid Absorption`
 - `creature:flesh-golem#traits:Lightning Absorption`
 - `creature:iron-golem#traits:Fire Absorption`
 - `creature:shambling-mound#traits:Lightning Absorption`
 
-#### 1.6.5 Berserk family — 2 refs — disposition: design (new slice C7)
+#### 1.6.5 Berserk family — 2 refs — disposition: implemented (slice C7)
 
-Stateful d6-roll threshold trigger (at ≤N HP, roll d6, on a 6 the golem
-enters a persistent "berserk" behavior state attacking the nearest creature
-or object, until destroyed or fully healed). The flesh golem variant adds a
-creator-calming sub-clause (DC 15 Charisma (Persuasion) check, action-cost,
-range- and hearing-gated). This is a genuine state machine, not a small
-payload extension — same design tier as C1 (shape-change) and S1
-(summoning).
+The closed `berserk` state-machine contract projects the low-HP start-of-turn
+d6 entry (only a 6 enters), persistent each-turn nearest-visible-creature
+attack behavior with the smaller-object fallback, and the destroyed/full-heal
+exits. Flesh Golem additionally projects its creator-only, 60-foot,
+hearing-gated action-cost DC 15 Charisma (Persuasion) calming exit and its
+qualified low-HP damage re-entry eligibility clause. Because the source does
+not specify how that later "might" resolves, the clause is explicitly
+`model-adjudicated` and does not assert a `calm`→`berserk` transition. The
+contract's validator enforces the complete ordered state machine and matching
+entry/re-entry thresholds, so neither source variant can degrade to a bare
+trigger marker.
 
 - `creature:clay-golem#traits:Berserk` (threshold 60 HP, no calming clause)
 - `creature:flesh-golem#traits:Berserk` (threshold 40 HP, plus calming clause)
@@ -285,9 +293,9 @@ Not in the same family as each other, but djinni/efreeti share one contract
 24 = 6 implemented (§1.6.1, removed from the array) + 2 folded into existing
 families (§1.3/§1.4, aboleth and ettin) + 16 newly classified into slices
 C4–C9 (2 Reckless + 2 Split + 4 Absorption + 2 Berserk + 2 Rampage + 4
-single-record residuals: Shriek, Djinni, Efreeti, Shield). C5 is now
-implemented, so the current residual registry is 16 entries: 2 accepted
-prose-only refs plus 14 pending findings (C4 2 + C6 4 + C7 2 + C8 2 + C9 4).
+single-record residuals: Shriek, Djinni, Efreeti, Shield). C5, C6, and C7
+are now implemented, so the current residual registry is 10 entries: 2
+accepted prose-only refs plus 8 pending findings (C4 2 + C8 2 + C9 4).
 
 ## 2. Metadata-only spells (53)
 
@@ -444,8 +452,8 @@ None of the remaining slices below is started unless stated.
 | **S4** membership bookkeeping | after each slice: exact removals/updates in the relevant registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` for creature-entry findings, `ACCEPTED_*` for accepted spell metadata/prose buckets), count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
 | **C4** reckless family | `recklessAttack` two-sided advantage-toggle contract; 2 refs (§1.6.2) | yes, small | **Opus** design, Codex rollout |
 | **C5** split family | `splitOnDamage` reproduction-on-damage contract; 2 refs (§1.6.3) | yes, small | **Implemented** (bead `eshyra-o9bd.18.7.9.11`) |
-| **C6** damage-absorption family | `damageAbsorption` contract; 4 refs (§1.6.4) | yes, trivial shape | **Codex** (uniform grammar) |
-| **C7** berserk family | stateful d6-threshold behavior + Persuasion-DC calming sub-clause; 2 refs (§1.6.5) | yes — genuine state machine | **Opus** |
+| **C6** damage-absorption family | `damageAbsorption` contract; 4 refs (§1.6.4) | yes, trivial shape | **Implemented** (bead `eshyra-o9bd.18.7.9.12`) |
+| **C7** berserk family | `berserk` state-machine contract with d6 entry, continuation/exits, and Flesh Golem calming; 2 refs (§1.6.5) | yes — genuine state machine | **Implemented** (bead `eshyra-o9bd.18.7.9.13`) |
 | **C8** rampage family | triggered bonus action (`bonusAction` trigger field, or new `triggeredBonusAction`); 2 refs (§1.6.6) | yes, small (schema-reviewed extension or new small contract) | **Opus** design, Codex rollout |
 | **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Opus** payload sketch, Codex rollout |
 
@@ -466,11 +474,11 @@ every membership key appears in exactly one disposition section):
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
-  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C5 rollout:
-  16 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented - 22 C1
-  implemented - 2 C5 implemented) = accept\* 2 + C4 2 + C6 4 + C7 2 + C8 2
-  + C9 4 (2+2+4+2+2+4 = 16). The 14 pending findings are C4 2 + C6 4 +
-  C7 2 + C8 2 + C9 4.
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C5/C6/C7
+  rollouts: 10 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented
+  - 22 C1 implemented - 2 C5 implemented - 4 C6 implemented - 2 C7
+  implemented) = accept\* 2 + C4 2 + C8 2 + C9 4 (2+2+2+4 = 10). The 8
+  pending findings are C4 2 + C8 2 + C9 4.
 - spells originally classified here: 53 = S1 14 (§2.1) + S2 17 (§2.2 5 +
   §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after

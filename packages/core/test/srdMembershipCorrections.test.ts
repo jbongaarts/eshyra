@@ -54,6 +54,105 @@ function spellAmbiguities(key: string): unknown[] | undefined {
 }
 
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('C7 Berserk projects exactly the two reviewed state machines', () => {
+    const transitions = (hitPointsAtMost: number) => [
+      {
+        id: 'low-hit-points-entry',
+        from: 'calm',
+        to: 'berserk',
+        trigger: 'start-of-turn-at-or-below-hit-points',
+        hitPointsAtMost,
+        roll: { die: 'd6', entersOn: 6 },
+      },
+      {
+        id: 'berserk-turn-behavior',
+        from: 'berserk',
+        to: 'berserk',
+        trigger: 'each-turn',
+        behavior: {
+          action: 'attack',
+          target: 'nearest-visible-creature',
+          fallback: {
+            when: 'no-creature-near-enough-to-move-to-and-attack',
+            target: 'object',
+            preference: 'smaller-than-self',
+          },
+        },
+      },
+      {
+        id: 'destroyed-exit',
+        from: 'berserk',
+        to: 'destroyed',
+        trigger: 'destroyed',
+      },
+      {
+        id: 'fully-healed-exit',
+        from: 'berserk',
+        to: 'calm',
+        trigger: 'all-hit-points-regained',
+      },
+    ];
+    const clay = {
+      kind: 'berserk',
+      initialState: 'calm',
+      transitions: transitions(60),
+    };
+    const flesh = {
+      kind: 'berserk',
+      initialState: 'calm',
+      transitions: [
+        ...transitions(40),
+        {
+          id: 'creator-calming-exit',
+          from: 'berserk',
+          to: 'calm',
+          trigger: 'creator-calming-check',
+          actor: 'creator',
+          rangeFeet: 60,
+          requiresHearing: true,
+          cost: 'action',
+          check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
+          outcome: 'on-success',
+        },
+      ],
+      reentryEligibility: {
+        after: 'creator-calming-exit',
+        trigger: 'damage-while-at-or-below-hit-points',
+        hitPointsAtMost: 40,
+        disposition: 'model-adjudicated',
+        sourceOutcome: 'might-go-berserk-again',
+      },
+    };
+    expect(
+      creatureEntry('creature:clay-golem', 'traits', 'Berserk').mechanics
+        ?.effects,
+    ).toEqual([clay]);
+    expect(
+      creatureEntry('creature:flesh-golem', 'traits', 'Berserk').mechanics
+        ?.effects,
+    ).toEqual([flesh]);
+
+    const berserkRefs = getBundledDnd5eSrdPack().records.flatMap((record) => {
+      if (record.kind !== 'creature') return [];
+      const data = record.data as Record<string, unknown>;
+      const traits = Array.isArray(data.traits) ? (data.traits as Entry[]) : [];
+      return traits.flatMap((entry) =>
+        entry.mechanics?.effects?.some(
+          (effect) =>
+            typeof effect === 'object' &&
+            effect !== null &&
+            (effect as { kind?: unknown }).kind === 'berserk',
+        )
+          ? [`${record.key}#traits:${entry.name}`]
+          : [],
+      );
+    });
+    expect(berserkRefs.sort()).toEqual([
+      'creature:clay-golem#traits:Berserk',
+      'creature:flesh-golem#traits:Berserk',
+    ]);
+  });
+
   it('C6 damage absorption projects all four reviewed traits exactly', () => {
     const expected = new Map([
       ['creature:clay-golem', ['Acid Absorption', 'acid']],

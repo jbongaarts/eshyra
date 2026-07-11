@@ -97,6 +97,141 @@ function setAt(
 }
 
 describe('mechanics effect payload contracts', () => {
+  const berserk = (threshold: number, includeCalming = false) => ({
+    kind: 'berserk',
+    initialState: 'calm',
+    transitions: [
+      {
+        id: 'low-hit-points-entry',
+        from: 'calm',
+        to: 'berserk',
+        trigger: 'start-of-turn-at-or-below-hit-points',
+        hitPointsAtMost: threshold,
+        roll: { die: 'd6', entersOn: 6 },
+      },
+      {
+        id: 'berserk-turn-behavior',
+        from: 'berserk',
+        to: 'berserk',
+        trigger: 'each-turn',
+        behavior: {
+          action: 'attack',
+          target: 'nearest-visible-creature',
+          fallback: {
+            when: 'no-creature-near-enough-to-move-to-and-attack',
+            target: 'object',
+            preference: 'smaller-than-self',
+          },
+        },
+      },
+      {
+        id: 'destroyed-exit',
+        from: 'berserk',
+        to: 'destroyed',
+        trigger: 'destroyed',
+      },
+      {
+        id: 'fully-healed-exit',
+        from: 'berserk',
+        to: 'calm',
+        trigger: 'all-hit-points-regained',
+      },
+      ...(includeCalming
+        ? [
+            {
+              id: 'creator-calming-exit',
+              from: 'berserk',
+              to: 'calm',
+              trigger: 'creator-calming-check',
+              actor: 'creator',
+              rangeFeet: 60,
+              requiresHearing: true,
+              cost: 'action',
+              check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
+              outcome: 'on-success',
+            },
+          ]
+        : []),
+    ],
+    ...(includeCalming
+      ? {
+          reentryEligibility: {
+            after: 'creator-calming-exit',
+            trigger: 'damage-while-at-or-below-hit-points',
+            hitPointsAtMost: threshold,
+            disposition: 'model-adjudicated',
+            sourceOutcome: 'might-go-berserk-again',
+          },
+        }
+      : {}),
+  });
+
+  it('accepts both closed C7 Berserk state-machine payloads', () => {
+    expect(() => validate(berserk(60))).not.toThrow();
+    expect(() => validate(berserk(40, true))).not.toThrow();
+  });
+
+  it.each([
+    [
+      'a non-d6 entry roll',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['transitions', 0, 'roll', 'die'], 'd8'),
+    ],
+    [
+      'an entry result other than 6',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['transitions', 0, 'roll', 'entersOn'], 5),
+    ],
+    [
+      'a non-persistent continuation',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['transitions', 1, 'to'], 'calm'),
+    ],
+    [
+      'an unpreferred fallback object',
+      (effect: Record<string, unknown>) =>
+        setAt(
+          effect,
+          ['transitions', 1, 'behavior', 'fallback', 'preference'],
+          'any',
+        ),
+    ],
+    [
+      'a non-terminal destroyed exit',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['transitions', 2, 'to'], 'calm'),
+    ],
+    [
+      'a missing hearing gate on creator calming',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['transitions', 4, 'requiresHearing'], false),
+    ],
+    [
+      'a wrong Persuasion DC',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['transitions', 4, 'check', 'dc'], 16),
+    ],
+    [
+      'a re-entry threshold that differs from entry',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['reentryEligibility', 'hitPointsAtMost'], 60),
+    ],
+    [
+      'an executable re-entry target state',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['reentryEligibility', 'to'], 'berserk'),
+    ],
+    [
+      'an unspecified re-entry owner',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['reentryEligibility', 'disposition'], 'engine-pending'),
+    ],
+  ])('rejects Berserk with %s', (_label, mutate) => {
+    const effect = structuredClone(berserk(40, true));
+    mutate(effect);
+    expect(() => validate(effect)).toThrow();
+  });
+
   it('accepts the closed C6 damageAbsorption payload', () => {
     expect(() =>
       validate({
