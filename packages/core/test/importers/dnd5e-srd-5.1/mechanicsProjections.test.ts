@@ -44,6 +44,42 @@ describe('deriveCreatureEntryMechanics recharge parsing (eshyra-54di)', () => {
   });
 });
 
+describe('deriveCreatureEntryMechanics damage absorption (eshyra-o9bd.18.7.9 C6)', () => {
+  it.each([
+    ['Acid Absorption', 'acid', 'golem'],
+    ['Lightning Absorption', 'lightning', 'golem'],
+    ['Fire Absorption', 'fire', 'golem'],
+    ['Lightning Absorption', 'lightning', 'shambling mound'],
+  ])('projects the reviewed %s grammar for a %s', (name, type, noun) => {
+    const connective = noun === 'shambling mound' ? '' : ' instead';
+    const mechanics = deriveCreatureEntryMechanics(
+      name,
+      `Whenever the ${noun} is subjected to ${type} damage, it takes no damage and${connective} regains a number of hit points equal to the ${type} damage dealt.`,
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'damageAbsorption',
+        type,
+        damageTaken: 'none',
+        healing: 'damage-dealt',
+      },
+    ]);
+  });
+
+  it('fails closed on source drift', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Acid Absorption',
+      'Whenever the golem is subjected to acid damage, it takes half damage and regains hit points.',
+    );
+    expect(mechanics.effects).toEqual([
+      {
+        kind: 'triggeredEffect',
+        trigger: 'Whenever the golem is subjected to acid damage',
+      },
+    ]);
+  });
+});
+
 function spell(
   partial: Partial<SpellExtraction> & Pick<SpellExtraction, 'description'>,
 ): SpellExtraction {

@@ -97,6 +97,34 @@ function setAt(
 }
 
 describe('mechanics effect payload contracts', () => {
+  it('accepts the closed C6 damageAbsorption payload', () => {
+    expect(() =>
+      validate({
+        kind: 'damageAbsorption',
+        type: 'acid',
+        damageTaken: 'none',
+        healing: 'damage-dealt',
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['non-damage type', { type: 'radiant-ish' }],
+    ['damage is not negated', { damageTaken: 'half' }],
+    ['healing is not damage dealt', { healing: 'fixed' }],
+    ['unexpected extra property', { extra: true }],
+  ])('rejects damageAbsorption with %s', (_label, change) => {
+    expect(() =>
+      validate({
+        kind: 'damageAbsorption',
+        type: 'acid',
+        damageTaken: 'none',
+        healing: 'damage-dealt',
+        ...change,
+      }),
+    ).toThrow();
+  });
+
   it('accepts the exact C5 splitOnDamage payload', () => {
     expect(() =>
       validate({

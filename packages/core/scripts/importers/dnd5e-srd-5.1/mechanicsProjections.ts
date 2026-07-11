@@ -2506,6 +2506,49 @@ function parseSplitOnDamage(name: string, text: string): Mechanics | undefined {
 }
 
 /**
+ * C6 damage-absorption grammar (eshyra-o9bd.18.7.9 §1.6.4). The four
+ * reviewed traits share one closed result contract; Shambling Mound omits
+ * the source's "instead" connective, so that wording difference is explicit
+ * rather than accepted by a broad regex. Any other text fails closed.
+ */
+function parseDamageAbsorption(
+  name: string,
+  text: string,
+): Mechanics | undefined {
+  const sourceGrammars = new Map([
+    ['Acid Absorption', 'acid'],
+    ['Lightning Absorption', 'lightning'],
+    ['Fire Absorption', 'fire'],
+  ]);
+  const type = sourceGrammars.get(name);
+  if (
+    type !== undefined &&
+    text ===
+      `Whenever the golem is subjected to ${type} damage, it takes no damage and instead regains a number of hit points equal to the ${type} damage dealt.`
+  ) {
+    return {
+      kind: 'damageAbsorption',
+      type,
+      damageTaken: 'none',
+      healing: 'damage-dealt',
+    };
+  }
+  if (
+    name === 'Lightning Absorption' &&
+    text ===
+      'Whenever the shambling mound is subjected to lightning damage, it takes no damage and regains a number of hit points equal to the lightning damage dealt.'
+  ) {
+    return {
+      kind: 'damageAbsorption',
+      type: 'lightning',
+      damageTaken: 'none',
+      healing: 'damage-dealt',
+    };
+  }
+  return undefined;
+}
+
+/**
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
@@ -2519,6 +2562,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   if (splitOnDamage !== undefined) {
     effects.push(splitOnDamage);
   }
+  const damageAbsorption = parseDamageAbsorption(name, text);
+  if (damageAbsorption !== undefined) {
+    effects.push(damageAbsorption);
+  }
   // Some entries (Surprise Attack, Freeze, the three Rejuvenation variants)
   // attach their trigger directly to the substantive typed effect below
   // instead of emitting the generic bare `triggeredEffect` marker at the end
@@ -2527,6 +2574,9 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   // suppresses the generic marker for those specific matches only.
   let suppressGenericTrigger = false;
   if (splitOnDamage !== undefined) {
+    suppressGenericTrigger = true;
+  }
+  if (damageAbsorption !== undefined) {
     suppressGenericTrigger = true;
   }
   // Computed once and reused both by the specific-effect trigger attachment

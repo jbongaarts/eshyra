@@ -24385,8 +24385,10 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "Whenever the golem is subjected to acid damage"
+                "kind": "damageAbsorption",
+                "type": "acid",
+                "damageTaken": "none",
+                "healing": "damage-dealt"
               }
             ]
           }
@@ -30869,8 +30871,10 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "Whenever the golem is subjected to lightning damage"
+                "kind": "damageAbsorption",
+                "type": "lightning",
+                "damageTaken": "none",
+                "healing": "damage-dealt"
               }
             ]
           }
@@ -41902,8 +41906,10 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "Whenever the golem is subjected to fire damage"
+                "kind": "damageAbsorption",
+                "type": "fire",
+                "damageTaken": "none",
+                "healing": "damage-dealt"
               }
             ]
           }
@@ -54461,8 +54467,10 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "Whenever the shambling mound is subjected to lightning damage"
+                "kind": "damageAbsorption",
+                "type": "lightning",
+                "damageTaken": "none",
+                "healing": "damage-dealt"
               }
             ]
           }

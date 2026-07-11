@@ -54,6 +54,25 @@ function spellAmbiguities(key: string): unknown[] | undefined {
 }
 
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('C6 damage absorption projects all four reviewed traits exactly', () => {
+    const expected = new Map([
+      ['creature:clay-golem', ['Acid Absorption', 'acid']],
+      ['creature:flesh-golem', ['Lightning Absorption', 'lightning']],
+      ['creature:iron-golem', ['Fire Absorption', 'fire']],
+      ['creature:shambling-mound', ['Lightning Absorption', 'lightning']],
+    ]);
+    for (const [key, [name, type]] of expected) {
+      expect(creatureEntry(key, 'traits', name).mechanics?.effects).toEqual([
+        {
+          kind: 'damageAbsorption',
+          type,
+          damageTaken: 'none',
+          healing: 'damage-dealt',
+        },
+      ]);
+    }
+  });
+
   it('C5 Split projects exactly the two reviewed reactions', () => {
     const split = {
       kind: 'splitOnDamage',
