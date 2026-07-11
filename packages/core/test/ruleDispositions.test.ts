@@ -86,12 +86,15 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // stabilizing-a-creature to partial; F2, eshyra-2n1t.4 moved the five
     // action-economy rows to implemented; F5, eshyra-2n1t.7 moved
     // limited-usage, legendary-actions, attunement, and gaining-inspiration
-    // to implemented and using-inspiration to partial); keep them in
+    // to implemented and using-inspiration to partial; F1+F9,
+    // eshyra-2n1t.3 + eshyra-2n1t.11 moved the 16 fully-tool-owned
+    // dice-grammar / resolution / derived-math rows to implemented and 9
+    // clause-only rows to model-adjudicated-supported); keep them in
     // lockstep with EXPECTED_COVERAGE_CENSUS.
-    expect(report.engineProcedure.implemented).toBe(14);
-    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(97);
-    expect(report.engineProcedure.partial).toHaveLength(48);
-    expect(report.engineProcedure.unimplemented).toHaveLength(6);
+    expect(report.engineProcedure.implemented).toBe(30);
+    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(106);
+    expect(report.engineProcedure.partial).toHaveLength(24);
+    expect(report.engineProcedure.unimplemented).toHaveLength(5);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
     // 8 rows carry an externally owned clause (armor-guidance,
     // casting-a-spell-saving-throws, charges, special-weapons,
@@ -106,9 +109,9 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     const report = buildRuleDispositionReport();
     expect(
       report.engineProcedure.partial.find(
-        (row) => row.key === 'rule:ability-checks',
+        (row) => row.key === 'rule:casting-a-spell-at-a-higher-level',
       )?.missing,
-    ).toMatch(/vs-DC resolution/);
+    ).toMatch(/upcast scaling transform/);
     expect(
       report.engineProcedure.designBlocked.find(
         (row) => row.key === 'rule:multiclassing',
@@ -159,6 +162,59 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     expect(ENGINE_PROCEDURE_COVERAGE['rule:consumables']?.primitives).toEqual(
       expect.arrayContaining(['remove_item']),
     );
+  });
+
+  it('pins the full tool chain on the F1/F9-reclassified rows, not just the formula', () => {
+    // resolve_damage is read-only: falling's damage lands only through the
+    // HP mutation tools, and the reclassified rows must pin every tool
+    // their contextRequirement names so a tool removal fails validation.
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:falling']?.primitives).toEqual(
+      expect.arrayContaining([
+        'calc',
+        'resolve_damage',
+        'adjust_hp',
+        'update_combatant',
+        'add_condition',
+      ]),
+    );
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:variant-encumbrance']?.primitives,
+    ).toEqual(expect.arrayContaining(['calc', 'resolve_check']));
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:speed']?.primitives).toEqual(
+      expect.arrayContaining(['calc', 'resolve_check']),
+    );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:hiding']?.primitives).toEqual(
+      expect.arrayContaining(['calc', 'resolve_contest']),
+    );
+    // Every tool a contextRequirement names literally must be pinned.
+    const violations: string[] = [];
+    for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
+      if (
+        coverage.status !== 'model-adjudicated-supported' ||
+        coverage.contextRequirement === undefined
+      ) {
+        continue;
+      }
+      const primitives = new Set(coverage.primitives ?? []);
+      for (const tool of [
+        'resolve_check',
+        'resolve_contest',
+        'resolve_damage',
+        'calc',
+        'adjust_hp',
+        'update_combatant',
+        'add_condition',
+        'spend_turn_resource',
+      ]) {
+        if (
+          coverage.contextRequirement.includes(tool) &&
+          !primitives.has(tool)
+        ) {
+          violations.push(`${key}: names '${tool}' but omits it`);
+        }
+      }
+    }
+    expect(violations).toEqual([]);
   });
 
   it('checks every runtimeOwner/evidence path against the repo tree', () => {

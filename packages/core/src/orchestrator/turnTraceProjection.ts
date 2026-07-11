@@ -117,6 +117,14 @@ export function deriveTraceFields(
   return {
     rulesResolution: {
       rolls: okData('roll'),
+      // F1/F9 deterministic resolutions (eshyra-2n1t.3 / eshyra-2n1t.11):
+      // each entry carries the original dice, kept/dropped selection,
+      // natural result, declared modifiers, and outcome, so a trace replay
+      // never needs to reconstruct math from narration.
+      checks: okData('resolve_check'),
+      contests: okData('resolve_contest'),
+      damage: okData('resolve_damage'),
+      calcs: okData('calc'),
       rulesLookups: okData('lookup_rules'),
     },
     acceptedStateDelta,

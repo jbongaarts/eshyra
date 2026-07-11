@@ -25,6 +25,7 @@ import { adjustHpTool } from './toolAdjustHp.js';
 import { attuneItemTool } from './toolAttuneItem.js';
 import { awardInspirationTool } from './toolAwardInspiration.js';
 import { beginTurnTool } from './toolBeginTurn.js';
+import { calcTool } from './toolCalc.js';
 import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { endAttunementTool } from './toolEndAttunement.js';
 import { giveItemTool } from './toolGiveItem.js';
@@ -39,6 +40,9 @@ import { ToolRegistry } from './toolRegistry.js';
 import { removeConditionTool } from './toolRemoveCondition.js';
 import { removeItemTool } from './toolRemoveItem.js';
 import { resetUsageTool } from './toolResetUsage.js';
+import { resolveCheckTool } from './toolResolveCheck.js';
+import { resolveContestTool } from './toolResolveContest.js';
+import { resolveDamageTool } from './toolResolveDamage.js';
 import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
@@ -55,6 +59,10 @@ import { worldQueryTool } from './toolWorldQuery.js';
 
 export const DEFAULT_TOOLS: readonly Tool[] = [
   rollTool,
+  resolveCheckTool,
+  resolveContestTool,
+  resolveDamageTool,
+  calcTool,
   markSceneTool,
   lookupRulesTool,
   startEncounterTool,

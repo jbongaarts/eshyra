@@ -636,6 +636,13 @@ export {
   buildAdventureContextSlice,
   renderAdventureContextSlice,
 } from './orchestrator/adventureContext.js';
+export type { CalcResult, CalcValue } from './orchestrator/calc.js';
+// F9 deterministic non-roll formula registry.
+export {
+  CALC_FORMULA_NAMES,
+  CalcError,
+  evaluateCalc,
+} from './orchestrator/calc.js';
 export type {
   AdventureModuleResolver,
   AssembledContext,
@@ -653,15 +660,57 @@ export {
   readStateSnapshot,
   renderContextMessage,
 } from './orchestrator/contextAssembler.js';
-export type { DiceNotation, DiceRoll } from './orchestrator/dice.js';
-// Dice notation parser + roller.
-export { DiceError, parseDice, rollDice } from './orchestrator/dice.js';
+export type {
+  DiceNotation,
+  DiceRoll,
+  KeepDropClause,
+  KeepDropMode,
+} from './orchestrator/dice.js';
+// Dice notation parser + roller (F1 grammar: keep/drop, natural results).
+export {
+  DiceError,
+  parseDice,
+  rollDice,
+  rollParsedDice,
+} from './orchestrator/dice.js';
 // DM-protocol prompt building and fenced tool-call parsing.
 export {
   buildSystemPrompt,
   parseToolCalls,
   renderToolResults,
 } from './orchestrator/protocol.js';
+export type {
+  AdvantageState,
+  ContestResolution,
+  ContestSideInput,
+  D20Kind,
+  D20Outcome,
+  D20Resolution,
+  D20ResolutionInput,
+  DamageInput,
+  DamagePacketInput,
+  DamagePacketResult,
+  DamageResolution,
+  DamageTargetInput,
+  DamageTargetResult,
+  DamageType,
+  DamageTypeSubtotal,
+  DeclaredModifier,
+  ProficiencyApplied,
+  ProficiencyInput,
+  ProficiencyMultiplier,
+} from './orchestrator/resolution.js';
+// F9 deterministic d20/damage resolution primitives.
+export {
+  D20_KINDS,
+  DAMAGE_TYPES,
+  effectiveAdvantageState,
+  PROFICIENCY_MULTIPLIERS,
+  ResolutionError,
+  resolveContest,
+  resolveD20,
+  resolveDamage,
+} from './orchestrator/resolution.js';
 export type { Rng } from './orchestrator/rng.js';
 // Deterministic RNG used by tools/dice.
 export { createSeededRng } from './orchestrator/rng.js';
