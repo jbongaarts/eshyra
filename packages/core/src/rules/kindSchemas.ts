@@ -1890,7 +1890,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     );
   },
   berserk: (effect, path) => {
-    requireOnlyKeys(effect, ['kind', 'initialState', 'transitions'], path);
+    requireOnlyKeys(
+      effect,
+      ['kind', 'initialState', 'transitions', 'reentryEligibility'],
+      path,
+    );
     reqEnum(effect, 'initialState', path, new Set(['calm']));
     const transitions = objArray(effect, 'transitions', path);
     if (transitions === undefined || transitions.length < 4) {
@@ -1909,7 +1913,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     ];
     const hasCalming = ids.includes('creator-calming-exit');
     const expectedIds = hasCalming
-      ? [...expectedBaseIds, 'creator-calming-exit', 'damage-reentry']
+      ? [...expectedBaseIds, 'creator-calming-exit']
       : expectedBaseIds;
     if (
       ids.length !== expectedIds.length ||
@@ -2029,7 +2033,14 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       'all-hit-points-regained',
     );
 
-    if (!hasCalming) return;
+    if (!hasCalming) {
+      if (effect.reentryEligibility !== undefined) {
+        throw new RulesPackError(
+          `${path}.reentryEligibility requires creator-calming-exit`,
+        );
+      }
+      return;
+    }
     const calming = transitions[4];
     const calmingPath = `${path}.transitions[4]`;
     requireOnlyKeys(
@@ -2073,15 +2084,14 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqEnum(check, 'skill', `${calmingPath}.check`, new Set(['persuasion']));
     reqEnum(calming, 'outcome', calmingPath, new Set(['on-success']));
 
-    const reentry = transitions[5];
-    const reentryPath = `${path}.transitions[5]`;
+    const reentry = reqObj(effect, 'reentryEligibility', path);
+    const reentryPath = `${path}.reentryEligibility`;
     requireOnlyKeys(
       reentry,
-      ['id', 'from', 'to', 'trigger', 'hitPointsAtMost', 'outcome'],
+      ['after', 'trigger', 'hitPointsAtMost', 'disposition', 'sourceOutcome'],
       reentryPath,
     );
-    reqEnum(reentry, 'from', reentryPath, new Set(['calm']));
-    reqEnum(reentry, 'to', reentryPath, new Set(['berserk']));
+    reqEnum(reentry, 'after', reentryPath, new Set(['creator-calming-exit']));
     reqEnum(
       reentry,
       'trigger',
@@ -2093,7 +2103,18 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
         `${reentryPath}.hitPointsAtMost must equal the entry threshold`,
       );
     }
-    reqEnum(reentry, 'outcome', reentryPath, new Set(['may-go-berserk-again']));
+    reqEnum(
+      reentry,
+      'disposition',
+      reentryPath,
+      new Set(['model-adjudicated']),
+    );
+    reqEnum(
+      reentry,
+      'sourceOutcome',
+      reentryPath,
+      new Set(['might-go-berserk-again']),
+    );
   },
   changeShape: (effect, path) => {
     requireOnlyKeys(

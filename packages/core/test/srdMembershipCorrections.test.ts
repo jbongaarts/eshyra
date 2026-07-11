@@ -114,15 +114,14 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
           check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
           outcome: 'on-success',
         },
-        {
-          id: 'damage-reentry',
-          from: 'calm',
-          to: 'berserk',
-          trigger: 'damage-while-at-or-below-hit-points',
-          hitPointsAtMost: 40,
-          outcome: 'may-go-berserk-again',
-        },
       ],
+      reentryEligibility: {
+        after: 'creator-calming-exit',
+        trigger: 'damage-while-at-or-below-hit-points',
+        hitPointsAtMost: 40,
+        disposition: 'model-adjudicated',
+        sourceOutcome: 'might-go-berserk-again',
+      },
     };
     expect(
       creatureEntry('creature:clay-golem', 'traits', 'Berserk').mechanics

@@ -2557,8 +2557,8 @@ function parseDamageAbsorption(
  *
  * The grammar is deliberately source-string closed. In particular, the
  * source's final “might go berserk again” does not state another die result,
- * so its structured transition preserves that qualified outcome instead of
- * inventing a second d6 rule.
+ * so its model-adjudicated re-entry eligibility preserves that qualified
+ * outcome without inventing a second d6 rule or asserting a state transition.
  */
 function parseBerserk(name: string, text: string): Mechanics | undefined {
   if (name !== 'Berserk') return undefined;
@@ -2617,30 +2617,35 @@ function parseBerserk(name: string, text: string): Mechanics | undefined {
     },
   ];
   if (spec.hasCalming) {
-    transitions.push(
-      {
-        id: 'creator-calming-exit',
-        from: 'berserk',
-        to: 'calm',
-        trigger: 'creator-calming-check',
-        actor: 'creator',
-        rangeFeet: 60,
-        requiresHearing: true,
-        cost: 'action',
-        check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
-        outcome: 'on-success',
-      },
-      {
-        id: 'damage-reentry',
-        from: 'calm',
-        to: 'berserk',
-        trigger: 'damage-while-at-or-below-hit-points',
-        hitPointsAtMost: spec.hitPointsAtMost,
-        outcome: 'may-go-berserk-again',
-      },
-    );
+    transitions.push({
+      id: 'creator-calming-exit',
+      from: 'berserk',
+      to: 'calm',
+      trigger: 'creator-calming-check',
+      actor: 'creator',
+      rangeFeet: 60,
+      requiresHearing: true,
+      cost: 'action',
+      check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
+      outcome: 'on-success',
+    });
   }
-  return { kind: 'berserk', initialState: 'calm', transitions };
+  return {
+    kind: 'berserk',
+    initialState: 'calm',
+    transitions,
+    ...(spec.hasCalming
+      ? {
+          reentryEligibility: {
+            after: 'creator-calming-exit',
+            trigger: 'damage-while-at-or-below-hit-points',
+            hitPointsAtMost: spec.hitPointsAtMost,
+            disposition: 'model-adjudicated',
+            sourceOutcome: 'might-go-berserk-again',
+          },
+        }
+      : {}),
+  };
 }
 
 /**

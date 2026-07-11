@@ -249,9 +249,12 @@ d6 entry (only a 6 enters), persistent each-turn nearest-visible-creature
 attack behavior with the smaller-object fallback, and the destroyed/full-heal
 exits. Flesh Golem additionally projects its creator-only, 60-foot,
 hearing-gated action-cost DC 15 Charisma (Persuasion) calming exit and its
-qualified low-HP damage re-entry clause. The contract's transition validator
-enforces the complete ordered state machine, including matching entry/re-entry
-thresholds, so neither source variant can degrade to a bare trigger marker.
+qualified low-HP damage re-entry eligibility clause. Because the source does
+not specify how that later "might" resolves, the clause is explicitly
+`model-adjudicated` and does not assert a `calm`→`berserk` transition. The
+contract's validator enforces the complete ordered state machine and matching
+entry/re-entry thresholds, so neither source variant can degrade to a bare
+trigger marker.
 
 - `creature:clay-golem#traits:Berserk` (threshold 60 HP, no calming clause)
 - `creature:flesh-golem#traits:Berserk` (threshold 40 HP, plus calming clause)

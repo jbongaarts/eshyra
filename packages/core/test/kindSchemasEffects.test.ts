@@ -150,17 +150,20 @@ describe('mechanics effect payload contracts', () => {
               check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
               outcome: 'on-success',
             },
-            {
-              id: 'damage-reentry',
-              from: 'calm',
-              to: 'berserk',
-              trigger: 'damage-while-at-or-below-hit-points',
-              hitPointsAtMost: threshold,
-              outcome: 'may-go-berserk-again',
-            },
           ]
         : []),
     ],
+    ...(includeCalming
+      ? {
+          reentryEligibility: {
+            after: 'creator-calming-exit',
+            trigger: 'damage-while-at-or-below-hit-points',
+            hitPointsAtMost: threshold,
+            disposition: 'model-adjudicated',
+            sourceOutcome: 'might-go-berserk-again',
+          },
+        }
+      : {}),
   });
 
   it('accepts both closed C7 Berserk state-machine payloads', () => {
@@ -211,7 +214,17 @@ describe('mechanics effect payload contracts', () => {
     [
       'a re-entry threshold that differs from entry',
       (effect: Record<string, unknown>) =>
-        setAt(effect, ['transitions', 5, 'hitPointsAtMost'], 60),
+        setAt(effect, ['reentryEligibility', 'hitPointsAtMost'], 60),
+    ],
+    [
+      'an executable re-entry target state',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['reentryEligibility', 'to'], 'berserk'),
+    ],
+    [
+      'an unspecified re-entry owner',
+      (effect: Record<string, unknown>) =>
+        setAt(effect, ['reentryEligibility', 'disposition'], 'engine-pending'),
     ],
   ])('rejects Berserk with %s', (_label, mutate) => {
     const effect = structuredClone(berserk(40, true));

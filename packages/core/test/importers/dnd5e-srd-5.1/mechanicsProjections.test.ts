@@ -134,7 +134,7 @@ describe('deriveCreatureEntryMechanics Berserk state machine (eshyra-o9bd.18.7.9
     ]);
   });
 
-  it('projects Flesh Golem’s source-bounded calming and re-entry transitions', () => {
+  it('projects Flesh Golem’s calming transition and model-adjudicated re-entry eligibility', () => {
     expect(deriveCreatureEntryMechanics('Berserk', fleshText).effects).toEqual([
       {
         kind: 'berserk',
@@ -153,15 +153,14 @@ describe('deriveCreatureEntryMechanics Berserk state machine (eshyra-o9bd.18.7.9
             check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
             outcome: 'on-success',
           },
-          {
-            id: 'damage-reentry',
-            from: 'calm',
-            to: 'berserk',
-            trigger: 'damage-while-at-or-below-hit-points',
-            hitPointsAtMost: 40,
-            outcome: 'may-go-berserk-again',
-          },
         ],
+        reentryEligibility: {
+          after: 'creator-calming-exit',
+          trigger: 'damage-while-at-or-below-hit-points',
+          hitPointsAtMost: 40,
+          disposition: 'model-adjudicated',
+          sourceOutcome: 'might-go-berserk-again',
+        },
       },
     ]);
   });
