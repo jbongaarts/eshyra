@@ -1131,7 +1131,6 @@ const CREATURE_ENTRY_SLICE_REASONS: Readonly<Record<string, string>> =
     C5: 'Split family: deterministic reproduction-on-damage; needs a small splitOnDamage contract (eshyra-o9bd.18.7.9 §1.6.3).',
     C6: 'Damage-absorption family: deterministic immune-and-heal pattern; needs a small damageAbsorption contract (eshyra-o9bd.18.7.9 §1.6.4).',
     C7: 'Berserk family: stateful d6-threshold behavior (plus a calming sub-clause on the flesh golem); a genuine state machine, not a small payload (eshyra-o9bd.18.7.9 §1.6.5).',
-    C8: 'Rampage family: triggered bonus action on reducing a creature to 0 HP; needs a trigger field on bonusAction or a new triggeredBonusAction contract (eshyra-o9bd.18.7.9 §1.6.6).',
     C9: 'Single-record residuals (Shriek, Elemental Demise ×2, Shield): three small shared contracts — soundAlarm, onDeathBodyDisposal, reactionAcBonus (eshyra-o9bd.18.7.9 §1.6.7).',
   });
 
@@ -1144,10 +1143,10 @@ function creatureEntrySliceFinding(
 /**
  * Per-ref reviewed disposition for every creature-entry ref currently
  * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 10
- * currently residual: 2 permanent accepted-prose refs and 8 pending C4–C9
+ * currently residual: 2 permanent accepted-prose refs and 6 pending C4/C9
  * findings). Only the two vampire "Vampire Weaknesses" header refs
- * are genuinely permanent prose acceptance (§1.5); the other 8 are reviewed
- * deterministic findings bucketed into slices C4–C9 (§1.6.2–
+ * are genuinely permanent prose acceptance (§1.5); the other 6 are reviewed
+ * deterministic findings bucketed into slices C4/C9 (§1.6.2–
  * §1.6.7). This registry — not the bucket-level
  * `creature-entry#mechanical-prose` / `creature-entry#narrative-prose`
  * dispositions — is what the fail-closed MEMBERSHIP check consults per ref,
@@ -1170,10 +1169,6 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
   // C4 — Reckless family (2, §1.6.2).
   'creature:berserker#traits:Reckless': creatureEntrySliceFinding('C4'),
   'creature:minotaur#traits:Reckless': creatureEntrySliceFinding('C4'),
-
-  // C8 — Rampage family (2, §1.6.6).
-  'creature:giant-hyena#traits:Rampage': creatureEntrySliceFinding('C8'),
-  'creature:gnoll#traits:Rampage': creatureEntrySliceFinding('C8'),
 
   // C9 — single-record residuals (4, §1.6.7).
   'creature:shrieker#reactions:Shriek': creatureEntrySliceFinding('C9'),

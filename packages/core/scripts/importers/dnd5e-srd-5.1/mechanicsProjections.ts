@@ -2649,6 +2649,30 @@ function parseBerserk(name: string, text: string): Mechanics | undefined {
 }
 
 /**
+ * Rampage's complete SRD sentence grants a single, trigger-gated bonus action
+ * with two linked results. It is not a `bonusAction.options` menu: movement
+ * and the bite are both part of the one granted action, and must remain tied
+ * to the reducing-a-creature trigger (eshyra-o9bd.18.7.9 C8).
+ */
+function parseRampage(name: string, text: string): Mechanics | undefined {
+  if (name !== 'Rampage') return undefined;
+  const match =
+    /^When the (hyena|gnoll) reduces a creature to 0 hit points with a melee attack on its turn, the \1 can take a bonus action to move up to half its speed and make a bite attack\.$/.exec(
+      text,
+    );
+  if (match === null) return undefined;
+  return {
+    kind: 'triggeredBonusAction',
+    trigger: {
+      event: 'reduce-creature-to-0-hit-points',
+      attackType: 'melee',
+      timing: 'on-its-turn',
+    },
+    action: { movement: 'up-to-half-speed', attack: 'bite' },
+  };
+}
+
+/**
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
@@ -2670,6 +2694,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   if (berserk !== undefined) {
     effects.push(berserk);
   }
+  const rampage = parseRampage(name, text);
+  if (rampage !== undefined) {
+    effects.push(rampage);
+  }
   // Some entries (Surprise Attack, Freeze, the three Rejuvenation variants)
   // attach their trigger directly to the substantive typed effect below
   // instead of emitting the generic bare `triggeredEffect` marker at the end
@@ -2684,6 +2712,9 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     suppressGenericTrigger = true;
   }
   if (berserk !== undefined) {
+    suppressGenericTrigger = true;
+  }
+  if (rampage !== undefined) {
     suppressGenericTrigger = true;
   }
   // Computed once and reused both by the specific-effect trigger attachment

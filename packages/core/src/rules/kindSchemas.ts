@@ -113,6 +113,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'autoSucceedSave',
   'benefitEndsWhen',
   'bonusAction',
+  'triggeredBonusAction',
   'breathes',
   'brutalCritical',
   'cannotAttackOrTarget',
@@ -3601,6 +3602,37 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optStr(effect, 'frequency', path);
     optStr(effect, 'prerequisite', path);
     optEligibility(effect, path);
+  },
+  // A trigger-gated, single bonus action. This is deliberately distinct from
+  // `bonusAction.options`, whose array is a menu of independently available
+  // choices: both the trigger and the composite result belong to this one
+  // effect, never to corresponding array positions.
+  triggeredBonusAction: (effect, path) => {
+    requireOnlyKeys(effect, ['kind', 'trigger', 'action'], path);
+    const trigger = reqObj(effect, 'trigger', path);
+    requireOnlyKeys(
+      trigger,
+      ['event', 'attackType', 'timing'],
+      `${path}.trigger`,
+    );
+    reqEnum(
+      trigger,
+      'event',
+      `${path}.trigger`,
+      new Set(['reduce-creature-to-0-hit-points']),
+    );
+    reqEnum(trigger, 'attackType', `${path}.trigger`, new Set(['melee']));
+    reqEnum(trigger, 'timing', `${path}.trigger`, new Set(['on-its-turn']));
+
+    const action = reqObj(effect, 'action', path);
+    requireOnlyKeys(action, ['movement', 'attack'], `${path}.action`);
+    reqEnum(
+      action,
+      'movement',
+      `${path}.action`,
+      new Set(['up-to-half-speed']),
+    );
+    reqStr(action, 'attack', `${path}.action`);
   },
   checkMinimum: (effect, path) => {
     reqAbility(effect, 'ability', path);

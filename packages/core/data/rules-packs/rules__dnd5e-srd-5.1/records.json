@@ -34118,8 +34118,16 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "When the hyena reduces a creature to 0 hit points with a melee attack on its turn"
+                "kind": "triggeredBonusAction",
+                "trigger": {
+                  "event": "reduce-creature-to-0-hit-points",
+                  "attackType": "melee",
+                  "timing": "on-its-turn"
+                },
+                "action": {
+                  "movement": "up-to-half-speed",
+                  "attack": "bite"
+                }
               }
             ]
           }
@@ -36700,8 +36708,16 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "When the gnoll reduces a creature to 0 hit points with a melee attack on its turn"
+                "kind": "triggeredBonusAction",
+                "trigger": {
+                  "event": "reduce-creature-to-0-hit-points",
+                  "attackType": "melee",
+                  "timing": "on-its-turn"
+                },
+                "action": {
+                  "movement": "up-to-half-speed",
+                  "attack": "bite"
+                }
               }
             ]
           }

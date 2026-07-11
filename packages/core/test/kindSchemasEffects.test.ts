@@ -260,6 +260,47 @@ describe('mechanics effect payload contracts', () => {
     ).toThrow();
   });
 
+  it('accepts the exact C8 triggeredBonusAction payload', () => {
+    expect(() =>
+      validate({
+        kind: 'triggeredBonusAction',
+        trigger: {
+          event: 'reduce-creature-to-0-hit-points',
+          attackType: 'melee',
+          timing: 'on-its-turn',
+        },
+        action: { movement: 'up-to-half-speed', attack: 'bite' },
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['an unsupported trigger event', { trigger: { event: 'take-damage' } }],
+    ['a non-melee trigger attack', { trigger: { attackType: 'ranged' } }],
+    ['an invalid trigger timing', { trigger: { timing: 'at-start-of-turn' } }],
+    ['a non-half-speed movement', { action: { movement: 'up-to-speed' } }],
+    ['an unlinked extra result', { action: { extraAction: 'claw' } }],
+    ['an unlinked extra effect property', { extra: true }],
+  ])('rejects triggeredBonusAction with %s', (_label, change) => {
+    const effect: Record<string, unknown> = {
+      kind: 'triggeredBonusAction',
+      trigger: {
+        event: 'reduce-creature-to-0-hit-points',
+        attackType: 'melee',
+        timing: 'on-its-turn',
+      },
+      action: { movement: 'up-to-half-speed', attack: 'bite' },
+    };
+    for (const [key, value] of Object.entries(change)) {
+      if (key === 'trigger' || key === 'action') {
+        Object.assign(effect[key] as Record<string, unknown>, value);
+      } else {
+        effect[key] = value;
+      }
+    }
+    expect(() => validate(effect)).toThrow();
+  });
+
   it('accepts the exact C5 splitOnDamage payload', () => {
     expect(() =>
       validate({
@@ -1134,6 +1175,15 @@ describe('mechanics effect payload contracts', () => {
       },
       { kind: 'triggeredEffect', trigger: 'If it dies' },
       {
+        kind: 'triggeredBonusAction',
+        trigger: {
+          event: 'reduce-creature-to-0-hit-points',
+          attackType: 'melee',
+          timing: 'on-its-turn',
+        },
+        action: { movement: 'up-to-half-speed', attack: 'bite' },
+      },
+      {
         kind: 'triggeredEffect',
         trigger: 'a creature enters its space while unaware of it',
         result: 'that creature is surprised',
@@ -1417,6 +1467,28 @@ describe('mechanics effect payload contracts', () => {
     expect(() => validate({ kind: 'triggeredEffect', result: 'r' })).toThrow(
       /trigger/,
     );
+    expect(() =>
+      validate({
+        kind: 'triggeredBonusAction',
+        trigger: {
+          event: 'reduce-creature-to-0-hit-points',
+          attackType: 'ranged',
+          timing: 'on-its-turn',
+        },
+        action: { movement: 'up-to-half-speed', attack: 'bite' },
+      }),
+    ).toThrow(/attackType/);
+    expect(() =>
+      validate({
+        kind: 'triggeredBonusAction',
+        trigger: {
+          event: 'reduce-creature-to-0-hit-points',
+          attackType: 'melee',
+          timing: 'on-its-turn',
+        },
+        action: { movement: 'up-to-half-speed' },
+      }),
+    ).toThrow(/action\.attack/);
     expect(() =>
       validate({ kind: 'jumpDistanceMultiplier', multiplier: 1 }),
     ).toThrow(/multiplier/);
