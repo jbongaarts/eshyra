@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest';
 import type { AdventureModule } from '../src/internal.js';
 import {
   assembleContext,
+  beginTurn,
+  ensureCharacterRow,
   getActiveCharacterId,
   giveItem,
   readSpentUsageCounters,
@@ -212,9 +214,10 @@ describe('spendUsage — record-derived combatant economies', () => {
     ).toThrow(/legendary action.*spend_turn_resource/s);
   });
 
-  it('rejects a declared economy where the record owns one', () => {
+  it('rejects any declared economy for a combatant (record-owned, fail closed)', () => {
     const { db } = setup();
 
+    // Even where the record has the ability...
     expect(() =>
       spendUsage(db, {
         campaignId: CAMPAIGN,
@@ -223,7 +226,33 @@ describe('spendUsage — record-derived combatant economies', () => {
         declared: { maxUses: 5, reset: 'dawn' },
         ...CTX,
       }),
-    ).toThrow(/owned by its rules record/);
+    ).toThrow(/derive from its rules record/);
+
+    // ...and where it does not: a typo cannot mint an invented economy.
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: combatant(DRAGON),
+        ability: 'Fire Breth',
+        declared: { maxUses: 5, reset: 'dawn' },
+        ...CTX,
+      }),
+    ).toThrow(/derive from its rules record/);
+  });
+
+  it('fails closed on an ability the record does not match', () => {
+    const { db } = setup();
+
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: combatant(DRAGON),
+        ability: 'Fire Breth',
+        ...CTX,
+      }),
+    ).toThrow(
+      /matches no trait, action, reaction, or innate spell.*lookup_rules/s,
+    );
   });
 
   it('refuses spends by a dead combatant', () => {
@@ -349,8 +378,8 @@ describe('spendUsage — declared economies (characters and items)', () => {
       ...CTX,
     });
     expect(dawn.reset).toHaveLength(0);
-    expect(dawn.needsRolledRestore.map((c) => c.counterKey)).toEqual([
-      'item:wand-1',
+    expect(dawn.needsRolledRestore.map((c) => c.owner)).toEqual([
+      { kind: 'item', ref: 'wand-1' },
     ]);
 
     const restored = restoreUsage(db, {
@@ -361,6 +390,62 @@ describe('spendUsage — declared economies (characters and items)', () => {
       ...CTX,
     });
     expect(restored.counter.usesUsed).toBe(0);
+  });
+
+  it('keeps charge state with the item when it changes hands', () => {
+    const { db, pcId } = setup();
+    ensureCharacterRow(db, 'pc-2', CTX.provenance, CTX.sessionId, CTX.at);
+    giveItem(
+      db,
+      { id: 'wand-1', name: 'Wand of Fireballs' },
+      { characterId: pcId, ...CTX },
+    );
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'wand-1',
+      uses: 2,
+      declared: { maxUses: 7, reset: 'dawn', rechargeFormula: '1d6+1' },
+      ...CTX,
+    });
+
+    // The wand changes hands: its counter (2/7 spent) follows the item.
+    giveItem(
+      db,
+      { id: 'wand-1', name: 'Wand of Fireballs' },
+      { characterId: 'pc-2', ...CTX },
+    );
+
+    // The new holder cannot re-declare a fresh economy...
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: { kind: 'character', ref: 'pc-2' },
+        itemId: 'wand-1',
+        declared: { maxUses: 7, reset: 'dawn' },
+        ...CTX,
+      }),
+    ).toThrow(/already has a recorded charge economy/);
+
+    // ...their spends continue the item's existing counter...
+    const spent = spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: { kind: 'character', ref: 'pc-2' },
+      itemId: 'wand-1',
+      ...CTX,
+    });
+    expect(spent.counter.usesUsed).toBe(3);
+    expect(spent.counter.owner).toEqual({ kind: 'item', ref: 'wand-1' });
+
+    // ...and the former holder no longer reaches it at all.
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'wand-1',
+        ...CTX,
+      }),
+    ).toThrow(/holds no inventory item/);
   });
 
   it('refuses item charges against a combatant owner and items the character does not hold', () => {
@@ -388,35 +473,91 @@ describe('spendUsage — declared economies (characters and items)', () => {
 });
 
 describe('restoreUsage — recharge rolls', () => {
-  it('recharges only when the natural roll meets the record threshold', () => {
-    const { db } = setup();
+  function spendFireBreath(db: ReturnType<typeof setup>['db']) {
     spendUsage(db, {
       campaignId: CAMPAIGN,
       owner: combatant(DRAGON),
       ability: 'Fire Breath',
       ...CTX,
     });
-
-    const miss = restoreUsage(db, {
+  }
+  const rollRecharge = (db: ReturnType<typeof setup>['db'], roll: number) =>
+    restoreUsage(db, {
       campaignId: CAMPAIGN,
       owner: combatant(DRAGON),
       ability: 'Fire Breath',
-      roll: 4,
+      roll,
       ...CTX,
     });
+
+  it('judges the roll against the record threshold, once at the start of each own turn', () => {
+    const { db } = setup();
+    spendFireBreath(db);
+
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(DRAGON),
+      ...CTX,
+    });
+    const miss = rollRecharge(db, 4);
     expect(miss.recharged).toBe(false);
     expect(miss.rechargeThreshold).toBe('5-6 on d6');
     expect(miss.counter.usesRemaining).toBe(0);
 
-    const hit = restoreUsage(db, {
+    // A miss consumes the turn's single attempt: no reroll this turn.
+    expect(() => rollRecharge(db, 5)).toThrow(/already been rolled this turn/);
+
+    // The next own turn opens a new attempt window.
+    beginTurn(db, {
       campaignId: CAMPAIGN,
-      owner: combatant(DRAGON),
-      ability: 'Fire Breath',
-      roll: 5,
+      participant: combatant(GIANT),
       ...CTX,
     });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(DRAGON),
+      round: 2,
+      ...CTX,
+    });
+    const hit = rollRecharge(db, 5);
     expect(hit.recharged).toBe(true);
     expect(hit.counter.usesRemaining).toBe(1);
+  });
+
+  it('refuses a recharge roll off-turn or before any turn is open', () => {
+    const { db } = setup();
+    spendFireBreath(db);
+
+    // Combat is active but no structured turn has been opened, and later
+    // it is someone else's turn: both are off-turn attempts.
+    expect(() => rollRecharge(db, 6)).toThrow(/it is not .*turn/);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(GIANT),
+      ...CTX,
+    });
+    expect(() => rollRecharge(db, 6)).toThrow(/it is not .*turn/);
+  });
+
+  it('refuses a recharge roll outside structured combat (a rest restores it)', () => {
+    const db = freshDbWithSession();
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      ability: 'Breath of the North Wind',
+      declared: { maxUses: 1, reset: 'recharge_roll', rechargeMinimum: 5 },
+      ...CTX,
+    });
+
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        ability: 'Breath of the North Wind',
+        roll: 6,
+        ...CTX,
+      }),
+    ).toThrow(/own turn in structured combat.*recharges on a rest/s);
   });
 
   it('rejects a roll against a non-recharge counter, out-of-range rolls, and roll+amount together', () => {

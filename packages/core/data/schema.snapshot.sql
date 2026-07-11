@@ -295,7 +295,7 @@ CREATE TABLE combat_turn_budget (
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL, legendary_action_allowance INTEGER NOT NULL DEFAULT 0
     CHECK (legendary_action_allowance >= 0), legendary_actions_used INTEGER NOT NULL DEFAULT 0
-    CHECK (legendary_actions_used >= 0), legendary_action_activity TEXT,
+    CHECK (legendary_actions_used >= 0), legendary_action_activity TEXT, legendary_last_spend_token TEXT,
   PRIMARY KEY (
     campaign_id, combat_instance_id, participant_kind, participant_ref
   )
@@ -338,7 +338,8 @@ CREATE TABLE encounter_combatant (
 
 CREATE TABLE entity_usage_counter (
   campaign_id TEXT NOT NULL,
-  owner_kind TEXT NOT NULL CHECK (owner_kind IN ('character', 'combatant')),
+  owner_kind TEXT NOT NULL
+    CHECK (owner_kind IN ('character', 'combatant', 'item')),
   owner_ref TEXT NOT NULL,
   counter_key TEXT NOT NULL,
   display_name TEXT NOT NULL,
@@ -356,6 +357,7 @@ CREATE TABLE entity_usage_counter (
   recharge_minimum INTEGER
     CHECK (recharge_minimum IS NULL OR recharge_minimum >= 1),
   recharge_formula TEXT,
+  last_recharge_attempt TEXT,
   source TEXT NOT NULL CHECK (source IN ('record', 'declared')),
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,

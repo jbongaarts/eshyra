@@ -22,14 +22,26 @@
 //   a rolled `restoreUsage` instead of being zeroed (charges; the pack-side
 //   charge data clause is eshyra-o9bd.18.7.7.1, so until it lands the DM
 //   declares an item's economy on first spend after `lookup_rules`).
+//   Charge state is owned by the ITEM (owner_kind 'item', ref = inventory
+//   id), not by whoever happens to hold it: a half-spent wand handed to
+//   another character keeps its counter, and possession is a separate
+//   check at spend/restore time.
+// - The recharge die is rolled once at the start of each of the owner's
+//   own turns — not rerolled on demand. The counter keeps a durable
+//   attempt token for the (instance, round, turns-taken) window of the
+//   last roll, so a second attempt in the same turn window is refused and
+//   an off-turn or out-of-combat roll is refused outright (out of combat,
+//   the ability comes back on a rest).
 //
 // Economy provenance is fail-closed the same way F2 treats spell timing:
 // a combatant's economy is derived structurally from its creature record
 // (usage.perDay, mechanics.recharge, usage.rechargeAfterRest, innate
-// spellcasting per-day groups) and a declared economy is rejected where the
-// record already owns one. Character abilities and item charges have no
-// structured pack source yet, so their first spend requires an explicit
-// declared economy (maxUses + reset) — the validated-runtime-grant pattern
+// spellcasting per-day groups) and NOTHING else — a declared economy for a
+// combatant is rejected, and an ability that matches no record entry is a
+// lookup error or a pack-structure gap to report, never an invitation to
+// invent numbers. Character abilities and item charges have no structured
+// pack source yet, so their first spend requires an explicit declared
+// economy (maxUses + reset) — the validated-runtime-grant pattern
 // setReactionAllowance established — which is then durable.
 //
 // Reset events (shared vocabulary with F6/F7 per the classification): the
@@ -50,17 +62,22 @@ import { resolveCharacterId } from './activeCharacter.js';
 import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
 
-export type UsageOwnerKind = 'character' | 'combatant';
+/** Who a counter row belongs to: an acting entity, or — for charge
+ *  economies — the item itself, so charge state follows the item across
+ *  possession changes. */
+export type UsageOwnerKind = 'character' | 'combatant' | 'item';
 
 export interface UsageOwner {
   readonly kind: UsageOwnerKind;
   readonly ref: string;
 }
 
-/** Owner selector as tools pass it: a combatant needs its exact id, while a
- *  character ref is optional and defaults to the acting character. */
+/** Owner selector as tools pass it: the acting character or combatant (a
+ *  combatant needs its exact id; a character ref is optional and defaults
+ *  to the acting character). Item counters are never addressed directly —
+ *  they are reached via `itemId` through the holding character. */
 export interface UsageOwnerInput {
-  readonly kind: UsageOwnerKind;
+  readonly kind: 'character' | 'combatant';
   readonly ref?: string;
 }
 
@@ -200,12 +217,13 @@ interface CounterRow {
   readonly recharge_roll: string | null;
   readonly recharge_minimum: number | null;
   readonly recharge_formula: string | null;
+  readonly last_recharge_attempt: string | null;
   readonly source: 'record' | 'declared';
 }
 
 const COUNTER_COLUMNS = `owner_kind, owner_ref, counter_key, display_name,
        uses_max, uses_used, reset_kind, recharge_roll, recharge_minimum,
-       recharge_formula, source`;
+       recharge_formula, last_recharge_attempt, source`;
 
 function rowToCounter(row: CounterRow, ownerLabel: string): UsageCounter {
   return {
@@ -612,10 +630,73 @@ function depletedHintFor(counter: UsageCounter): string {
   }
 }
 
-/** Resolve the counter a spend/restore targets: item spends key on the
- *  inventory row; ability spends derive the canonical key from the creature
- *  record when one owns the economy. Returns the key plus, for a first
- *  spend, everything needed to create the row. */
+/** Build the create-payload shared by every declared economy. */
+function declaredCreate(
+  displayName: string,
+  declared: DeclaredUsageEconomy,
+): CounterCreate {
+  return {
+    displayName,
+    usesMax: declared.maxUses,
+    resetKind: declared.reset,
+    ...(declared.reset === 'recharge_roll'
+      ? { rechargeRoll: 'd6', rechargeMinimum: declared.rechargeMinimum }
+      : {}),
+    ...(declared.rechargeFormula === undefined
+      ? {}
+      : { rechargeFormula: declared.rechargeFormula }),
+    source: 'declared' as const,
+  };
+}
+
+interface CounterCreate {
+  displayName: string;
+  usesMax: number;
+  resetKind: UsageResetKind;
+  rechargeRoll?: string;
+  rechargeMinimum?: number;
+  rechargeFormula?: string;
+  source: 'record' | 'declared';
+}
+
+interface CounterTarget {
+  /** The row's owner: the acting entity, or the item for charge counters. */
+  counterOwner: UsageOwner;
+  /** Label for rendering the counter (item name for item counters). */
+  counterLabel: string;
+  counterKey: string;
+  create?: CounterCreate;
+}
+
+/** Verify possession and name an item's charge counter: the counter is
+ *  owned by the item itself (charge state follows the wand when it changes
+ *  hands); the resolved character must currently hold it. */
+function resolveItemCounter(
+  db: Db,
+  resolved: ResolvedOwner,
+  itemId: string,
+): { owner: UsageOwner; itemName: string } {
+  if (resolved.owner.kind !== 'character') {
+    throw new UsageCounterError(
+      'item charges are spent by the character holding the item; pass character, not combatantId',
+    );
+  }
+  const item = db
+    .prepare('SELECT name FROM inventory WHERE id = ? AND character_id = ?')
+    .get(itemId, resolved.owner.ref) as { name: string } | undefined;
+  if (item === undefined) {
+    throw new UsageCounterError(
+      `${resolved.ownerLabel} holds no inventory item '${itemId}'`,
+    );
+  }
+  return { owner: { kind: 'item', ref: itemId }, itemName: item.name };
+}
+
+/** Resolve the counter a spend targets: item spends key on the item itself
+ *  (with possession checked through the acting character); ability spends
+ *  derive the canonical key from the creature record when one owns the
+ *  economy. Returns the row identity plus, for a first spend, everything
+ *  needed to create it. */
 function resolveCounterTarget(
   db: Db,
   campaignId: string,
@@ -625,65 +706,30 @@ function resolveCounterTarget(
     itemId?: string;
     declared?: DeclaredUsageEconomy;
   },
-): {
-  counterKey: string;
-  create?: {
-    displayName: string;
-    usesMax: number;
-    resetKind: UsageResetKind;
-    rechargeRoll?: string;
-    rechargeMinimum?: number;
-    rechargeFormula?: string;
-    source: 'record' | 'declared';
-  };
-} {
+): CounterTarget {
   if (input.itemId !== undefined) {
-    if (resolved.owner.kind !== 'character') {
-      throw new UsageCounterError(
-        'item charges belong to the character holding the item; pass character, not combatantId',
-      );
-    }
-    const item = db
-      .prepare('SELECT name FROM inventory WHERE id = ? AND character_id = ?')
-      .get(input.itemId, resolved.owner.ref) as { name: string } | undefined;
-    if (item === undefined) {
-      throw new UsageCounterError(
-        `${resolved.ownerLabel} holds no inventory item '${input.itemId}'`,
-      );
-    }
-    const counterKey = `item:${input.itemId}`;
-    const existing = readCounterRow(db, campaignId, resolved.owner, counterKey);
+    const { owner, itemName } = resolveItemCounter(db, resolved, input.itemId);
+    const counterKey = 'charges';
+    const existing = readCounterRow(db, campaignId, owner, counterKey);
     if (existing !== undefined) {
       if (input.declared !== undefined) {
         throw new UsageCounterError(
-          `${item.name} already has a recorded charge economy (${existing.uses_max} max, ${existing.reset_kind}); omit maxUses/reset`,
+          `${itemName} already has a recorded charge economy (${existing.uses_max} max, ${existing.reset_kind}); omit maxUses/reset`,
         );
       }
-      return { counterKey };
+      return { counterOwner: owner, counterLabel: itemName, counterKey };
     }
     if (input.declared === undefined) {
       throw new UsageCounterError(
-        `${item.name} has no recorded charge economy yet: look up the item via lookup_rules, then pass maxUses and reset (and rechargeFormula for partial dawn recharges like '1d6+1') on this first spend`,
+        `${itemName} has no recorded charge economy yet: look up the item via lookup_rules, then pass maxUses and reset (and rechargeFormula for partial dawn recharges like '1d6+1') on this first spend`,
       );
     }
     validateDeclaredEconomy(input.declared);
     return {
+      counterOwner: owner,
+      counterLabel: itemName,
       counterKey,
-      create: {
-        displayName: `${item.name} charges`,
-        usesMax: input.declared.maxUses,
-        resetKind: input.declared.reset,
-        ...(input.declared.reset === 'recharge_roll'
-          ? {
-              rechargeRoll: 'd6',
-              rechargeMinimum: input.declared.rechargeMinimum,
-            }
-          : {}),
-        ...(input.declared.rechargeFormula === undefined
-          ? {}
-          : { rechargeFormula: input.declared.rechargeFormula }),
-        source: 'declared',
-      },
+      create: declaredCreate(`${itemName} charges`, input.declared),
     };
   }
 
@@ -691,62 +737,79 @@ function resolveCounterTarget(
     throw new UsageCounterError('pass ability (the statblock name) or itemId');
   }
 
-  if (resolved.rulesRef !== undefined) {
-    const record = lookupCampaignRecord(db, 'creature', resolved.rulesRef);
-    if (record !== undefined) {
-      const derived = deriveUsageEconomy(record.data, input.ability);
-      switch (derived.kind) {
-        case 'economy': {
-          if (input.declared !== undefined) {
-            throw new UsageCounterError(
-              `${resolved.ownerLabel}'s '${derived.displayName}' economy is owned by its rules record; omit maxUses/reset`,
-            );
-          }
-          const existing = readCounterRow(
-            db,
-            campaignId,
-            resolved.owner,
-            derived.counterKey,
-          );
-          if (existing !== undefined) {
-            return { counterKey: derived.counterKey };
-          }
+  if (resolved.owner.kind === 'combatant') {
+    // A combatant's economy comes from its rules record and nowhere else:
+    // declared economies fail closed so a typo or a model-invented number
+    // can never mint a counter for a creature the pack already describes.
+    if (input.declared !== undefined) {
+      throw new UsageCounterError(
+        `${resolved.ownerLabel}'s economies derive from its rules record; declared economies (maxUses/reset) apply only to character abilities and item charges`,
+      );
+    }
+    const record =
+      resolved.rulesRef === undefined
+        ? undefined
+        : lookupCampaignRecord(db, 'creature', resolved.rulesRef);
+    if (record === undefined) {
+      throw new UsageCounterError(
+        `${resolved.ownerLabel}'s rules record '${resolved.rulesRef ?? '(none)'}' does not resolve in the campaign rules stack, so no usage economy can be derived (failing closed rather than inventing one)`,
+      );
+    }
+    const derived = deriveUsageEconomy(record.data, input.ability);
+    switch (derived.kind) {
+      case 'economy': {
+        const existing = readCounterRow(
+          db,
+          campaignId,
+          resolved.owner,
+          derived.counterKey,
+        );
+        if (existing !== undefined) {
           return {
+            counterOwner: resolved.owner,
+            counterLabel: resolved.ownerLabel,
             counterKey: derived.counterKey,
-            create: {
-              displayName: derived.displayName,
-              usesMax: derived.usesMax,
-              resetKind: derived.resetKind,
-              ...(derived.rechargeRoll === undefined
-                ? {}
-                : { rechargeRoll: derived.rechargeRoll }),
-              ...(derived.rechargeMinimum === undefined
-                ? {}
-                : { rechargeMinimum: derived.rechargeMinimum }),
-              source: 'record',
-            },
           };
         }
-        case 'at-will':
-          throw new UsageCounterError(
-            `${resolved.ownerLabel} casts '${derived.name}' at will per its record; there is no usage counter to spend`,
-          );
-        case 'legendary':
-          throw new UsageCounterError(
-            `'${derived.name}' is a legendary action: spend it via spend_turn_resource (resource legendary_action), not spend_usage`,
-          );
-        case 'unlimited':
-          throw new UsageCounterError(
-            `${resolved.ownerLabel}'s '${derived.name}' carries no usage limit in its rules record; nothing to spend`,
-          );
-        case 'none':
-          break;
+        return {
+          counterOwner: resolved.owner,
+          counterLabel: resolved.ownerLabel,
+          counterKey: derived.counterKey,
+          create: {
+            displayName: derived.displayName,
+            usesMax: derived.usesMax,
+            resetKind: derived.resetKind,
+            ...(derived.rechargeRoll === undefined
+              ? {}
+              : { rechargeRoll: derived.rechargeRoll }),
+            ...(derived.rechargeMinimum === undefined
+              ? {}
+              : { rechargeMinimum: derived.rechargeMinimum }),
+            source: 'record',
+          },
+        };
       }
+      case 'at-will':
+        throw new UsageCounterError(
+          `${resolved.ownerLabel} casts '${derived.name}' at will per its record; there is no usage counter to spend`,
+        );
+      case 'legendary':
+        throw new UsageCounterError(
+          `'${derived.name}' is a legendary action: spend it via spend_turn_resource (resource legendary_action), not spend_usage`,
+        );
+      case 'unlimited':
+        throw new UsageCounterError(
+          `${resolved.ownerLabel}'s '${derived.name}' carries no usage limit in its rules record; nothing to spend`,
+        );
+      case 'none':
+        throw new UsageCounterError(
+          `'${input.ability}' matches no trait, action, reaction, or innate spell in ${resolved.ownerLabel}'s rules record (${resolved.rulesRef}); check the exact statblock name via lookup_rules. If the record genuinely lacks structured usage data for this ability, that is a pack-structure gap to report — not a declared economy`,
+        );
     }
   }
 
-  // No record-owned economy (character ability, or a combatant whose record
-  // does not structure this ability): the declared-economy path.
+  // Character ability: no structured pack source yet, so the economy is
+  // declared once (validated) and durable thereafter.
   const counterKey = `ability:${normalizeAbilityName(input.ability)}`;
   const existing = readCounterRow(db, campaignId, resolved.owner, counterKey);
   if (existing !== undefined) {
@@ -755,7 +818,11 @@ function resolveCounterTarget(
         `'${existing.display_name}' already has a recorded economy (${existing.uses_max} max, ${existing.reset_kind}); omit maxUses/reset`,
       );
     }
-    return { counterKey };
+    return {
+      counterOwner: resolved.owner,
+      counterLabel: resolved.ownerLabel,
+      counterKey,
+    };
   }
   if (input.declared === undefined) {
     throw new UsageCounterError(
@@ -764,22 +831,10 @@ function resolveCounterTarget(
   }
   validateDeclaredEconomy(input.declared);
   return {
+    counterOwner: resolved.owner,
+    counterLabel: resolved.ownerLabel,
     counterKey,
-    create: {
-      displayName: input.ability,
-      usesMax: input.declared.maxUses,
-      resetKind: input.declared.reset,
-      ...(input.declared.reset === 'recharge_roll'
-        ? {
-            rechargeRoll: 'd6',
-            rechargeMinimum: input.declared.rechargeMinimum,
-          }
-        : {}),
-      ...(input.declared.rechargeFormula === undefined
-        ? {}
-        : { rechargeFormula: input.declared.rechargeFormula }),
-      source: 'declared',
-    },
+    create: declaredCreate(input.ability, input.declared),
   };
 }
 
@@ -788,7 +843,7 @@ function insertCounter(
   campaignId: string,
   owner: UsageOwner,
   counterKey: string,
-  create: NonNullable<ReturnType<typeof resolveCounterTarget>['create']>,
+  create: CounterCreate,
   ctx: UsageMutationContext,
 ): void {
   db.prepare(
@@ -832,7 +887,7 @@ export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
       insertCounter(
         txnDb,
         input.campaignId,
-        resolved.owner,
+        target.counterOwner,
         target.counterKey,
         target.create,
         input,
@@ -841,7 +896,7 @@ export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
     const row = readCounterRow(
       txnDb,
       input.campaignId,
-      resolved.owner,
+      target.counterOwner,
       target.counterKey,
     );
     if (row === undefined) {
@@ -849,7 +904,7 @@ export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
     }
     const remaining = row.uses_max - row.uses_used;
     if (uses > remaining) {
-      const counter = rowToCounter(row, resolved.ownerLabel);
+      const counter = rowToCounter(row, target.counterLabel);
       throw new UsageCounterError(
         remaining === 0
           ? `${resolved.ownerLabel} has no uses of '${row.display_name}' left (${row.uses_used}/${row.uses_max} spent). ${depletedHintFor(counter)}`
@@ -870,20 +925,20 @@ export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
         input.sessionId,
         input.at,
         input.campaignId,
-        resolved.owner.kind,
-        resolved.owner.ref,
+        target.counterOwner.kind,
+        target.counterOwner.ref,
         target.counterKey,
       );
     const after = readCounterRow(
       txnDb,
       input.campaignId,
-      resolved.owner,
+      target.counterOwner,
       target.counterKey,
     );
     if (after === undefined) {
       throw new UsageCounterError('usage counter disappeared during spend');
     }
-    const counter = rowToCounter(after, resolved.ownerLabel);
+    const counter = rowToCounter(after, target.counterLabel);
     return {
       counter,
       ...(counter.usesRemaining === 0
@@ -899,20 +954,16 @@ function findCounter(
   campaignId: string,
   resolved: ResolvedOwner,
   ref: { ability?: string; itemId?: string },
-): CounterRow {
+): { row: CounterRow; counterOwner: UsageOwner; counterLabel: string } {
   if (ref.itemId !== undefined) {
-    const row = readCounterRow(
-      db,
-      campaignId,
-      resolved.owner,
-      `item:${ref.itemId}`,
-    );
+    const { owner, itemName } = resolveItemCounter(db, resolved, ref.itemId);
+    const row = readCounterRow(db, campaignId, owner, 'charges');
     if (row === undefined) {
       throw new UsageCounterError(
         `no charge counter exists for item '${ref.itemId}' (a counter appears on its first spend_usage)`,
       );
     }
-    return row;
+    return { row, counterOwner: owner, counterLabel: itemName };
   }
   if (ref.ability === undefined || ref.ability.trim().length === 0) {
     throw new UsageCounterError('pass ability (the statblock name) or itemId');
@@ -932,7 +983,11 @@ function findCounter(
           .includes(slug)),
   );
   if (matches.length === 1) {
-    return matches[0];
+    return {
+      row: matches[0],
+      counterOwner: resolved.owner,
+      counterLabel: resolved.ownerLabel,
+    };
   }
   const known = rows.map((row) => row.display_name).join(', ');
   throw new UsageCounterError(
@@ -940,6 +995,58 @@ function findCounter(
       ? `no usage counter matches '${ref.ability}' for ${resolved.ownerLabel}. Recorded counters: ${known || '(none)'}`
       : `'${ref.ability}' matches more than one counter for ${resolved.ownerLabel}: be more specific. Recorded counters: ${known}`,
   );
+}
+
+/**
+ * The recharge die is rolled once at the start of each of the owner's own
+ * turns (limited-usage), so a roll is legal only while a structured combat
+ * turn is open for that owner. Returns the durable token identifying the
+ * current turn window: (instance, round, owner's turns_taken).
+ */
+function currentOwnTurnToken(
+  db: Db,
+  campaignId: string,
+  owner: UsageOwner,
+  ownerLabel: string,
+): string {
+  const instance = db
+    .prepare(
+      `SELECT combat_instance_id, round_number,
+              active_participant_kind, active_participant_ref
+       FROM combat_instance
+       WHERE campaign_id = ? AND status = 'active'`,
+    )
+    .get(campaignId) as
+    | {
+        combat_instance_id: string;
+        round_number: number;
+        active_participant_kind: string | null;
+        active_participant_ref: string | null;
+      }
+    | undefined;
+  if (instance === undefined) {
+    throw new UsageCounterError(
+      `a recharge die is rolled at the start of ${ownerLabel}'s own turn in structured combat (begin_turn); outside combat the ability recharges on a rest (reset_usage)`,
+    );
+  }
+  if (
+    instance.active_participant_kind !== owner.kind ||
+    instance.active_participant_ref !== owner.ref
+  ) {
+    throw new UsageCounterError(
+      `it is not ${ownerLabel}'s turn: the recharge die is rolled once at the start of its own turn (begin_turn first)`,
+    );
+  }
+  const budget = db
+    .prepare(
+      `SELECT turns_taken FROM combat_turn_budget
+       WHERE campaign_id = ? AND combat_instance_id = ?
+         AND participant_kind = ? AND participant_ref = ?`,
+    )
+    .get(campaignId, instance.combat_instance_id, owner.kind, owner.ref) as
+    | { turns_taken: number }
+    | undefined;
+  return `${instance.combat_instance_id}:r${instance.round_number}:t${budget?.turns_taken ?? 0}`;
 }
 
 export function restoreUsage(
@@ -953,10 +1060,15 @@ export function restoreUsage(
   }
   return withTransaction(db, (txnDb) => {
     const resolved = resolveOwner(txnDb, input.campaignId, input.owner);
-    const row = findCounter(txnDb, input.campaignId, resolved, {
-      ...(input.ability === undefined ? {} : { ability: input.ability }),
-      ...(input.itemId === undefined ? {} : { itemId: input.itemId }),
-    });
+    const { row, counterOwner, counterLabel } = findCounter(
+      txnDb,
+      input.campaignId,
+      resolved,
+      {
+        ...(input.ability === undefined ? {} : { ability: input.ability }),
+        ...(input.itemId === undefined ? {} : { itemId: input.itemId }),
+      },
+    );
 
     if (input.roll !== undefined) {
       if (row.reset_kind !== 'recharge_roll') {
@@ -977,34 +1089,50 @@ export function restoreUsage(
           `roll must be a natural ${row.recharge_roll ?? 'd6'} result (1-${faces}), rolled via the roll tool`,
         );
       }
-      const threshold = row.recharge_minimum ?? faces;
-      const recharged = input.roll >= threshold;
-      if (recharged) {
-        txnDb
-          .prepare(
-            `UPDATE entity_usage_counter
-             SET uses_used = 0, provenance = ?, session_id = ?, updated_at = ?
-             WHERE campaign_id = ? AND owner_kind = ? AND owner_ref = ?
-               AND counter_key = ?`,
-          )
-          .run(
-            input.provenance,
-            input.sessionId,
-            input.at,
-            input.campaignId,
-            resolved.owner.kind,
-            resolved.owner.ref,
-            row.counter_key,
-          );
-      }
-      const after = readCounterRow(
+      // Once per own turn: the attempt is legal only during the acting
+      // owner's structured turn, and only once per turn window (hit or
+      // miss both consume the attempt).
+      const token = currentOwnTurnToken(
         txnDb,
         input.campaignId,
         resolved.owner,
+        resolved.ownerLabel,
+      );
+      if (row.last_recharge_attempt === token) {
+        throw new UsageCounterError(
+          `the recharge die for '${row.display_name}' has already been rolled this turn; it is rolled once at the start of each of ${resolved.ownerLabel}'s turns`,
+        );
+      }
+      const threshold = row.recharge_minimum ?? faces;
+      const recharged = input.roll >= threshold;
+      txnDb
+        .prepare(
+          `UPDATE entity_usage_counter
+           SET uses_used = CASE WHEN ? THEN 0 ELSE uses_used END,
+               last_recharge_attempt = ?,
+               provenance = ?, session_id = ?, updated_at = ?
+           WHERE campaign_id = ? AND owner_kind = ? AND owner_ref = ?
+             AND counter_key = ?`,
+        )
+        .run(
+          recharged ? 1 : 0,
+          token,
+          input.provenance,
+          input.sessionId,
+          input.at,
+          input.campaignId,
+          counterOwner.kind,
+          counterOwner.ref,
+          row.counter_key,
+        );
+      const after = readCounterRow(
+        txnDb,
+        input.campaignId,
+        counterOwner,
         row.counter_key,
       ) as CounterRow;
       return {
-        counter: rowToCounter(after, resolved.ownerLabel),
+        counter: rowToCounter(after, counterLabel),
         recharged,
         rechargeThreshold: `${threshold}-${faces} on ${row.recharge_roll ?? 'd6'}`,
       };
@@ -1028,17 +1156,17 @@ export function restoreUsage(
         input.sessionId,
         input.at,
         input.campaignId,
-        resolved.owner.kind,
-        resolved.owner.ref,
+        counterOwner.kind,
+        counterOwner.ref,
         row.counter_key,
       );
     const after = readCounterRow(
       txnDb,
       input.campaignId,
-      resolved.owner,
+      counterOwner,
       row.counter_key,
     ) as CounterRow;
-    return { counter: rowToCounter(after, resolved.ownerLabel) };
+    return { counter: rowToCounter(after, counterLabel) };
   });
 }
 
@@ -1063,10 +1191,24 @@ function ownerLabelMaps(db: Db, campaignId: string) {
       }[]
     ).map((row) => [row.combatant_id, row.display_label]),
   );
-  return (row: CounterRow): string =>
-    row.owner_kind === 'character'
-      ? (characterNames.get(row.owner_ref) ?? row.owner_ref)
-      : (combatantLabels.get(row.owner_ref) ?? row.owner_ref);
+  const itemNames = new Map(
+    (
+      db.prepare('SELECT id, name FROM inventory').all() as {
+        id: string;
+        name: string;
+      }[]
+    ).map((row) => [row.id, row.name]),
+  );
+  return (row: CounterRow): string => {
+    switch (row.owner_kind) {
+      case 'character':
+        return characterNames.get(row.owner_ref) ?? row.owner_ref;
+      case 'combatant':
+        return combatantLabels.get(row.owner_ref) ?? row.owner_ref;
+      case 'item':
+        return itemNames.get(row.owner_ref) ?? row.owner_ref;
+    }
+  };
 }
 
 export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
@@ -1079,12 +1221,23 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
     const ownerParams: string[] = [];
     if (input.owner !== undefined) {
       const resolved = resolveOwner(txnDb, input.campaignId, input.owner);
-      ownerClause = ' AND owner_kind = ? AND owner_ref = ?';
-      ownerParams.push(resolved.owner.kind, resolved.owner.ref);
+      if (resolved.owner.kind === 'character') {
+        // A character's rest also refreshes the items they carry.
+        ownerClause = ` AND ((owner_kind = 'character' AND owner_ref = ?)
+             OR (owner_kind = 'item' AND owner_ref IN
+                 (SELECT id FROM inventory WHERE character_id = ?)))`;
+        ownerParams.push(resolved.owner.ref, resolved.owner.ref);
+      } else {
+        ownerClause = ' AND owner_kind = ? AND owner_ref = ?';
+        ownerParams.push(resolved.owner.kind, resolved.owner.ref);
+      }
     } else if (input.event !== 'dawn') {
       // The party rests; a combatant's off-screen rest is recorded by
-      // scoping the event to it. Dawn comes for everyone.
-      ownerClause = " AND owner_kind = 'character'";
+      // scoping the event to it. Dawn comes for everyone. Item counters
+      // rest with whichever character currently holds the item.
+      ownerClause = ` AND (owner_kind = 'character'
+           OR (owner_kind = 'item' AND owner_ref IN
+               (SELECT id FROM inventory WHERE character_id IS NOT NULL)))`;
     }
 
     const placeholders = kinds.map(() => '?').join(', ');

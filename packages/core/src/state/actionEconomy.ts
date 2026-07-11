@@ -238,6 +238,7 @@ interface BudgetRow {
   readonly legendary_action_allowance: number;
   readonly legendary_actions_used: number;
   readonly legendary_action_activity: string | null;
+  readonly legendary_last_spend_token: string | null;
 }
 
 const BUDGET_COLUMNS = `participant_kind, participant_ref, surprised,
@@ -247,7 +248,7 @@ const BUDGET_COLUMNS = `participant_kind, participant_ref, surprised,
        free_interaction_used, free_interaction_activity, movement_note,
        bonus_action_spell_cast, other_spell_cast,
        legendary_action_allowance, legendary_actions_used,
-       legendary_action_activity`;
+       legendary_action_activity, legendary_last_spend_token`;
 
 function rowToBudget(row: BudgetRow, displayLabel: string): TurnBudget {
   return {
@@ -608,7 +609,12 @@ function readBudgetRow(
 
 /** Insert the participant's budget row if it does not exist yet, seeding the
  *  reaction allowance/refresh and the legendary-action allowance from the
- *  participant's typed mechanics. */
+ *  participant's typed mechanics. A pre-existing row whose legendary
+ *  allowance is 0 while the record grants one is lazily reconciled: rows
+ *  created before migration 0007 (or before the record carried the block)
+ *  would otherwise stay at the column default forever, since the insert is
+ *  DO NOTHING. The allowance is only ever record-derived, so raising a 0 is
+ *  safe and never clobbers runtime state. */
 function ensureBudgetRow(
   db: Db,
   campaignId: string,
@@ -639,6 +645,25 @@ function ensureBudgetRow(
     ctx.sessionId,
     ctx.at,
   );
+  if (legendary.allowance > 0) {
+    db.prepare(
+      `UPDATE combat_turn_budget
+       SET legendary_action_allowance = ?,
+           provenance = ?, session_id = ?, updated_at = ?
+       WHERE campaign_id = ? AND combat_instance_id = ?
+         AND participant_kind = ? AND participant_ref = ?
+         AND legendary_action_allowance = 0`,
+    ).run(
+      legendary.allowance,
+      ctx.provenance,
+      ctx.sessionId,
+      ctx.at,
+      campaignId,
+      instanceId,
+      participant.kind,
+      participant.ref,
+    );
+  }
 }
 
 export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
@@ -996,6 +1021,39 @@ export function spendTurnResource(
             `${displayLabel} has no legendary actions in its rules record`,
           );
         }
+        if (
+          turn.active_participant_kind === null ||
+          turn.active_participant_ref === null
+        ) {
+          throw new ActionEconomyError(
+            "legendary actions are used at the end of another creature's turn, and no structured turn is open (begin_turn first)",
+          );
+        }
+        // Only one legendary action option can be used at a time, at the
+        // end of one creature's turn: the spend is stamped with the current
+        // turn window (round + active participant + its turn count) and a
+        // second option inside the same window is refused.
+        const activeBudget = readBudgetRow(
+          txnDb,
+          input.campaignId,
+          instance.combatInstanceId,
+          {
+            kind: turn.active_participant_kind,
+            ref: turn.active_participant_ref,
+          },
+        );
+        const windowToken =
+          `${turn.round_number}:${turn.active_participant_kind}:` +
+          `${turn.active_participant_ref}:t${activeBudget?.turns_taken ?? 0}`;
+        if (row.legendary_last_spend_token === windowToken) {
+          throw new ActionEconomyError(
+            `${displayLabel} has already used a legendary action option at the end of this turn` +
+              (row.legendary_action_activity === null
+                ? ''
+                : ` (${row.legendary_action_activity})`) +
+              "; only one option can be used at a time — the next opportunity is the end of another creature's turn",
+          );
+        }
         if (input.legendaryActionName === undefined) {
           const names = legendaryProfile.options
             .map((option) => option.name)
@@ -1034,6 +1092,7 @@ export function spendTurnResource(
         updates.legendary_actions_used =
           row.legendary_actions_used + option.cost;
         updates.legendary_action_activity = input.activity;
+        updates.legendary_last_spend_token = windowToken;
         break;
       }
       case 'free_interaction': {

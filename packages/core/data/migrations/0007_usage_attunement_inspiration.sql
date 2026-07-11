@@ -12,6 +12,13 @@
 -- `source` records whether the economy came from the creature's rules record
 -- ('record') or a validated DM declaration ('declared', for character
 -- abilities and item charges the pack does not structure yet).
+-- Item charges are owned by the ITEM (`owner_kind` 'item', ref = inventory
+-- id), never by the holder: charge state follows the wand when it changes
+-- hands, and possession is checked separately at spend/restore time.
+-- `last_recharge_attempt` is the once-per-turn token for recharge rolls:
+-- the die may be rolled at most once at the start of each of the owner's
+-- own turns, so the token records the (instance, round, turns_taken) window
+-- of the last attempt and a repeat inside the same window is refused.
 --
 -- `attunement` is the magic-item attunement slot machine: at most three rows
 -- per character, no two rows sharing an `item_key` (no duplicate copies), and
@@ -25,18 +32,28 @@
 -- `legendary_action_allowance` is seeded from the creature record when the
 -- budget row is created (0 = not a legendary creature), spends on other
 -- creatures' turns accumulate in `legendary_actions_used`, and the counter
--- resets when the creature's own turn begins.
+-- resets when the creature's own turn begins. Only one legendary option may
+-- be used at the end of any single other creature's turn, so
+-- `legendary_last_spend_token` records the turn window (round + active
+-- participant + its turns_taken) of the last spend and a second option in
+-- the same window is refused.
 --
--- Backfill policy: nothing to reconcile. No pre-0007 state tracked usage,
+-- Backfill policy: no data backfill. No pre-0007 state tracked usage,
 -- attunement, or inspiration; counters and attunements appear lazily on
--- first use, and existing characters start uninspired.
+-- first use, and existing characters start uninspired. Budget rows that
+-- exist in a mid-combat pre-0007 database get `legendary_action_allowance`
+-- 0 from the column default; the runtime lazily reconciles a 0 allowance
+-- against the creature record on the next budget touch (ensureBudgetRow in
+-- state/actionEconomy.ts), so an already-running legendary combat gains its
+-- allowance without a data migration.
 --
 -- Conventions (ADR 0015): plain ALTER TABLE / CREATE TABLE, never IF NOT
 -- EXISTS.
 
 CREATE TABLE entity_usage_counter (
   campaign_id TEXT NOT NULL,
-  owner_kind TEXT NOT NULL CHECK (owner_kind IN ('character', 'combatant')),
+  owner_kind TEXT NOT NULL
+    CHECK (owner_kind IN ('character', 'combatant', 'item')),
   owner_ref TEXT NOT NULL,
   counter_key TEXT NOT NULL,
   display_name TEXT NOT NULL,
@@ -54,6 +71,7 @@ CREATE TABLE entity_usage_counter (
   recharge_minimum INTEGER
     CHECK (recharge_minimum IS NULL OR recharge_minimum >= 1),
   recharge_formula TEXT,
+  last_recharge_attempt TEXT,
   source TEXT NOT NULL CHECK (source IN ('record', 'declared')),
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
@@ -93,3 +111,6 @@ ALTER TABLE combat_turn_budget
 
 ALTER TABLE combat_turn_budget
   ADD COLUMN legendary_action_activity TEXT;
+
+ALTER TABLE combat_turn_budget
+  ADD COLUMN legendary_last_spend_token TEXT;

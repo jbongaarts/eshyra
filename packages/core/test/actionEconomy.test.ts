@@ -1261,7 +1261,7 @@ describe('legendary actions (F5, eshyra-2n1t.7)', () => {
     });
   }
 
-  it("seeds the allowance from the record and spends on another creature's turn, costing per option", () => {
+  it("seeds the allowance from the record and spends one option per other creature's turn, costing per option", () => {
     const { db } = setupDragonCombat();
     beginTurn(db, {
       campaignId: CAMPAIGN,
@@ -1276,13 +1276,48 @@ describe('legendary actions (F5, eshyra-2n1t.7)', () => {
       'tail swipe at the goblin',
     );
 
-    // "Wing Attack (Costs 2 Actions)" matches without the cost suffix and
-    // drains the remaining two actions.
+    // "Wing Attack (Costs 2 Actions)" matches without the cost suffix and,
+    // at the end of the NEXT turn (the PC's), drains the remaining two.
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
     const wing = spendLegendary(db, 'Wing Attack');
     expect(wing.budget.legendaryActionsUsed).toBe(3);
 
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      round: 2,
+      ...CTX,
+    });
     expect(() => spendLegendary(db, 'Detect')).toThrow(
       /0 of 3 legendary actions left.*'Detect' costs 1/s,
+    );
+  });
+
+  it('allows only one legendary option per turn window', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    spendLegendary(db, 'Tail Attack');
+
+    // Budget remains (1/3 used), but the window is spent: only one option
+    // can be used at the end of any single creature's turn.
+    expect(() => spendLegendary(db, 'Detect')).toThrow(
+      /already used a legendary action option at the end of this turn/,
+    );
+
+    // The next creature's turn opens a new window.
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    expect(spendLegendary(db, 'Detect').budget.legendaryActionsUsed).toBe(2);
+  });
+
+  it('refuses a legendary spend before any structured turn is open', () => {
+    const { db } = setupDragonCombat();
+
+    expect(() => spendLegendary(db, 'Detect')).toThrow(
+      /no structured turn is open/,
     );
   });
 
@@ -1294,11 +1329,45 @@ describe('legendary actions (F5, eshyra-2n1t.7)', () => {
       ...CTX,
     });
     spendLegendary(db, 'Tail Attack');
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
     spendLegendary(db, 'Detect');
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      round: 2,
+      ...CTX,
+    });
 
     expect(() => spendLegendary(db, 'Wing Attack')).toThrow(
       /1 of 3 legendary actions left.*costs 2/s,
     );
+  });
+
+  it('lazily reconciles a zero allowance on a pre-0007 budget row', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    spendLegendary(db, 'Tail Attack');
+
+    // Simulate a budget row created before migration 0007 added the
+    // legendary columns: an active mid-combat row holding the column
+    // defaults (allowance 0, nothing spent) — exactly what a migrated
+    // database contains, since 0007 performs no data backfill.
+    db.prepare(
+      `UPDATE combat_turn_budget
+       SET legendary_action_allowance = 0, legendary_actions_used = 0,
+           legendary_action_activity = NULL, legendary_last_spend_token = NULL
+       WHERE participant_ref = ?`,
+    ).run(DRAGON);
+
+    // The next budget touch re-derives the allowance from the record.
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    const spend = spendLegendary(db, 'Detect');
+    expect(spend.budget.legendaryActionAllowance).toBe(3);
+    expect(spend.budget.legendaryActionsUsed).toBe(1);
   });
 
   it("regains spent legendary actions at the start of the creature's own turn", () => {
