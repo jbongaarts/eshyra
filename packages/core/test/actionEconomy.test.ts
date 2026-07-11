@@ -2,16 +2,23 @@
 // ENGINE_PROCEDURE_COVERAGE rows: your-turn, bonus-actions, bonus-action,
 // reactions, and other-activity-on-your-turn, plus the code-owned clauses of
 // surprise (turn-1 restriction) and two-weapon-fighting (bonus-attack spend
-// as an ordinary bonus-action spend).
+// as an ordinary bonus-action spend). The F5 legendary-action per-round
+// economy (eshyra-2n1t.7) lives on the same budget row; its evidence is the
+// "legendary actions" describe block below.
 
 import { describe, expect, it } from 'vitest';
-import type { AdventureModule, ToolContext } from '../src/internal.js';
+import type {
+  AdventureModule,
+  ToolContext,
+  TurnBudget,
+} from '../src/internal.js';
 import {
   ActionEconomyError,
   assembleContext,
   beginTurn,
   createDefaultToolRegistry,
   createSeededRng,
+  formatTurnBudget,
   getActiveCharacterId,
   mutateState,
   readCombatTurnState,
@@ -1185,5 +1192,245 @@ describe('setSurprised — timing guards', () => {
         ...CTX,
       }),
     ).toThrow(/already acted this combat/);
+  });
+});
+
+describe('legendary actions (F5, eshyra-2n1t.7)', () => {
+  const DRAGON = 'ci-enc-dragon-1-adult-red-dragon-1';
+
+  function dragonModule(): AdventureModule {
+    const module = makeTestAdventureModule();
+    return {
+      ...module,
+      encounters: [
+        {
+          id: 'enc-dragon',
+          name: 'The Dragon',
+          description: 'An adult red dragon descends.',
+          creatures: [
+            { rulesRef: 'creature:adult-red-dragon', count: 1, role: 'boss' },
+            { rulesRef: 'creature:goblin', count: 1, role: 'minion' },
+          ],
+          locationId: 'loc-cellar',
+          reward: 'The hoard.',
+        },
+      ],
+      scenes: module.scenes.map((scene) =>
+        scene.id === 'scene-cellar'
+          ? { ...scene, encounterIds: ['enc-dragon'] }
+          : scene,
+      ),
+    };
+  }
+
+  const GOBLIN = 'ci-enc-dragon-1-goblin-2';
+
+  function setupDragonCombat() {
+    const db = freshDbWithSession();
+    const module = dragonModule();
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN,
+      runId: 'run-dragon',
+      moduleId: module.id,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      updatedAt: NOW,
+    });
+    startEncounter(db, {
+      campaignId: CAMPAIGN,
+      encounterId: 'enc-dragon',
+      resolveAdventureModule: (moduleId) =>
+        moduleId === module.id ? module : undefined,
+      ...CTX,
+    });
+    return { db };
+  }
+
+  function spendLegendary(
+    db: ReturnType<typeof setupDragonCombat>['db'],
+    legendaryActionName: string,
+    activity = legendaryActionName,
+  ) {
+    return spendTurnResource(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(DRAGON),
+      resource: 'legendary_action',
+      activity,
+      legendaryActionName,
+      ...CTX,
+    });
+  }
+
+  it("seeds the allowance from the record and spends on another creature's turn, costing per option", () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+
+    const tail = spendLegendary(db, 'Tail Attack', 'tail swipe at the goblin');
+    expect(tail.budget.legendaryActionAllowance).toBe(3);
+    expect(tail.budget.legendaryActionsUsed).toBe(1);
+    expect(tail.budget.legendaryActionActivity).toBe(
+      'tail swipe at the goblin',
+    );
+
+    // "Wing Attack (Costs 2 Actions)" matches without the cost suffix and
+    // drains the remaining two actions.
+    const wing = spendLegendary(db, 'Wing Attack');
+    expect(wing.budget.legendaryActionsUsed).toBe(3);
+
+    expect(() => spendLegendary(db, 'Detect')).toThrow(
+      /0 of 3 legendary actions left.*'Detect' costs 1/s,
+    );
+  });
+
+  it('refuses an over-cost option, naming the remaining budget', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    spendLegendary(db, 'Tail Attack');
+    spendLegendary(db, 'Detect');
+
+    expect(() => spendLegendary(db, 'Wing Attack')).toThrow(
+      /1 of 3 legendary actions left.*costs 2/s,
+    );
+  });
+
+  it("regains spent legendary actions at the start of the creature's own turn", () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    spendLegendary(db, 'Wing Attack');
+
+    const ownTurn = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(DRAGON),
+      ...CTX,
+    });
+    expect(ownTurn.budget.legendaryActionsUsed).toBe(0);
+    expect(ownTurn.budget.legendaryActionAllowance).toBe(3);
+  });
+
+  it("rejects a spend on the creature's own turn", () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(DRAGON),
+      ...CTX,
+    });
+
+    expect(() => spendLegendary(db, 'Detect')).toThrow(
+      /only at the end of ANOTHER creature's turn/,
+    );
+  });
+
+  it('fails closed on a missing or unknown option name, listing the options', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+
+    expect(() =>
+      spendTurnResource(db, {
+        campaignId: CAMPAIGN,
+        participant: participant(DRAGON),
+        resource: 'legendary_action',
+        activity: 'tail swipe',
+        ...CTX,
+      }),
+    ).toThrow(/pass legendaryActionName.*Detect, Tail Attack, Wing Attack/s);
+    expect(() => spendLegendary(db, 'Breath Sweep')).toThrow(
+      /not a legendary option.*Detect, Tail Attack, Wing Attack/s,
+    );
+  });
+
+  it('rejects legendary spends by creatures without legendary actions', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(DRAGON),
+      ...CTX,
+    });
+
+    expect(() =>
+      spendTurnResource(db, {
+        campaignId: CAMPAIGN,
+        participant: participant(GOBLIN),
+        resource: 'legendary_action',
+        activity: 'scurry',
+        legendaryActionName: 'Scurry',
+        ...CTX,
+      }),
+    ).toThrow(/no legendary actions in its rules record/);
+  });
+
+  it('denies legendary actions while surprised (until the first turn ends)', () => {
+    const { db } = setupDragonCombat();
+    setSurprised(db, {
+      campaignId: CAMPAIGN,
+      participants: [participant(DRAGON)],
+      ...CTX,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+
+    expect(() => spendLegendary(db, 'Detect')).toThrow(/surprised/);
+
+    // The dragon's first turn beginning and ending lifts the restriction.
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(DRAGON),
+      ...CTX,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    expect(spendLegendary(db, 'Detect').budget.legendaryActionsUsed).toBe(1);
+  });
+
+  it('renders the legendary tracker in the turn budget and context snapshot', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    spendLegendary(db, 'Tail Attack');
+
+    const state = readCombatTurnState(db, CAMPAIGN);
+    const dragonBudget = state?.budgets.find(
+      (budget) => budget.participant.ref === DRAGON,
+    );
+    expect(dragonBudget).toBeDefined();
+    expect(formatTurnBudget(dragonBudget as TurnBudget)).toContain(
+      'legendary actions 1/3 used (last: Tail Attack)',
+    );
+
+    const rendered = renderContextMessage(
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        playerInput: 'I brace myself.',
+      }),
+    );
+    expect(rendered).toMatch(
+      /Legendary actions .*: Adult Red Dragon 1\/3 used/,
+    );
   });
 });

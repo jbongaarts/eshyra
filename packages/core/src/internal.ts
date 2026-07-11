@@ -956,6 +956,24 @@ export {
   getEffectiveAdvancementMode,
   resolveCampaignAdvancementPolicy,
 } from './state/advancementPolicy.js';
+// Attunement slot machine (F5, eshyra-2n1t.7).
+export type {
+  AttuneItemInput,
+  AttuneItemResult,
+  AttunementEndReason,
+  AttunementEntry,
+  EndAttunementInput,
+  EndAttunementResult,
+} from './state/attunement.js';
+export {
+  ATTUNEMENT_END_REASONS,
+  ATTUNEMENT_SLOT_LIMIT,
+  AttunementError,
+  attuneItem,
+  endAllAttunementsOnDeath,
+  endAttunement,
+  listAttunements,
+} from './state/attunement.js';
 export type {
   AddConditionInput,
   AddConditionResult,
@@ -1027,6 +1045,18 @@ export {
   recordDeathSave,
   stabilizeCharacter,
 } from './state/hpLifecycle.js';
+// Inspiration boolean resource (F5, eshyra-2n1t.7).
+export type {
+  AwardInspirationInput,
+  InspirationResult,
+  SpendInspirationInput,
+  SpendInspirationResult,
+} from './state/inspiration.js';
+export {
+  awardInspiration,
+  InspirationError,
+  spendInspiration,
+} from './state/inspiration.js';
 // Read-only level-up eligibility detection.
 export type { LevelUpEligibility } from './state/levelUpEligibility.js';
 export {
@@ -1087,6 +1117,30 @@ export {
   recordProgressionEvent,
   writeCampaignProgressionPolicy,
 } from './state/progression.js';
+// Usage/recharge counters and reset events (F5, eshyra-2n1t.7).
+export type {
+  DeclaredUsageEconomy,
+  ResetUsageInput,
+  ResetUsageResult,
+  RestoreUsageInput,
+  RestoreUsageResult,
+  SpendUsageInput,
+  SpendUsageResult,
+  UsageCounter,
+  UsageOwnerInput,
+  UsageOwnerKind,
+  UsageResetEvent,
+  UsageResetKind,
+} from './state/usageCounters.js';
+export {
+  deriveUsageEconomy,
+  formatUsageCounter,
+  readSpentUsageCounters,
+  resetUsage,
+  restoreUsage,
+  spendUsage,
+  UsageCounterError,
+} from './state/usageCounters.js';
 export type {
   CampaignOverlayLoreQuery,
   CampaignOverlayLoreRecord,

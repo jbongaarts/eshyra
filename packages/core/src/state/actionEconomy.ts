@@ -33,6 +33,15 @@
 // - Two-weapon fighting's extra attack is an ordinary bonus-action spend;
 //   its damage composition is F9's, its weapon eligibility a ruling
 //   (two-weapon-fighting).
+// - Legendary actions (F5, eshyra-2n1t.7) are a per-round counter on the
+//   same budget row: the allowance comes from the creature record (the
+//   SRD's "can take 3 legendary actions"), each option's cost from its
+//   typed `legendaryActionCost` (default 1), spends are legal only on
+//   OTHER creatures' turns ("only at the end of another creature's turn"
+//   stays a timing ruling; the engine enforces not-own-turn and the
+//   budget), a surprised legendary creature regains access only after its
+//   first turn (the shared surprised gate), and spent actions are regained
+//   when the creature's own turn begins (legendary-actions).
 //
 // Deliberately NOT a legality engine (classification §4, family F2):
 // movement is a narrative note, not a numeric budget; attack counting
@@ -51,16 +60,8 @@
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
-import {
-  DEFAULT_DND5E_SRD_BINDING,
-  readCampaignRulesBinding,
-} from '../rules/binding.js';
-import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
-import { lookupRulesRecord } from '../rules/lookup.js';
-import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
-import { resolveRulesStack } from '../rules/stack.js';
-import type { RulesRecord, RulesRecordKind } from '../rules/types.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import {
   getActiveCombatInstance,
   listCombatantsForInstance,
@@ -88,7 +89,8 @@ export type TurnResource =
   | 'bonus_action'
   | 'reaction'
   | 'free_interaction'
-  | 'movement';
+  | 'movement'
+  | 'legendary_action';
 
 export type OtherSpellCast = 'none' | 'action-cantrip' | 'other';
 
@@ -115,6 +117,10 @@ export interface TurnBudget {
   readonly movementNote: string | undefined;
   readonly bonusActionSpellCast: boolean;
   readonly otherSpellCast: OtherSpellCast;
+  /** Legendary actions per round (0 = not a legendary creature). */
+  readonly legendaryActionAllowance: number;
+  readonly legendaryActionsUsed: number;
+  readonly legendaryActionActivity: string | undefined;
 }
 
 export interface CombatTurnState {
@@ -159,6 +165,10 @@ export interface SpendTurnResourceInput extends TurnMutationContext {
    *  rules stack and derives cantrip status/casting time from the record;
    *  an unresolvable ref fails closed. */
   readonly spellRef?: string;
+  /** Required for a legendary_action spend: the legendary option's name as
+   *  the statblock prints it (e.g. "Wing Attack"). The engine derives the
+   *  action cost from the record; an unmatched name fails closed. */
+  readonly legendaryActionName?: string;
 }
 
 export interface SpendTurnResourceResult {
@@ -225,6 +235,9 @@ interface BudgetRow {
   readonly movement_note: string | null;
   readonly bonus_action_spell_cast: number;
   readonly other_spell_cast: OtherSpellCast;
+  readonly legendary_action_allowance: number;
+  readonly legendary_actions_used: number;
+  readonly legendary_action_activity: string | null;
 }
 
 const BUDGET_COLUMNS = `participant_kind, participant_ref, surprised,
@@ -232,7 +245,9 @@ const BUDGET_COLUMNS = `participant_kind, participant_ref, surprised,
        bonus_action_activity, reactions_used, reaction_allowance,
        reaction_refresh, reaction_activity,
        free_interaction_used, free_interaction_activity, movement_note,
-       bonus_action_spell_cast, other_spell_cast`;
+       bonus_action_spell_cast, other_spell_cast,
+       legendary_action_allowance, legendary_actions_used,
+       legendary_action_activity`;
 
 function rowToBudget(row: BudgetRow, displayLabel: string): TurnBudget {
   return {
@@ -253,25 +268,10 @@ function rowToBudget(row: BudgetRow, displayLabel: string): TurnBudget {
     movementNote: row.movement_note ?? undefined,
     bonusActionSpellCast: row.bonus_action_spell_cast === 1,
     otherSpellCast: row.other_spell_cast,
+    legendaryActionAllowance: row.legendary_action_allowance,
+    legendaryActionsUsed: row.legendary_actions_used,
+    legendaryActionActivity: row.legendary_action_activity ?? undefined,
   };
-}
-
-/**
- * Look up a record in the campaign's resolved rules stack (same binding
- * resolution `start_encounter` uses for creature statlines).
- */
-function lookupCampaignRecord(
-  db: Db,
-  kind: RulesRecordKind,
-  ref: string,
-): RulesRecord | undefined {
-  const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
-  const base =
-    [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK].find(
-      (candidate) => candidate.meta.packId === binding.base.packId,
-    ) ?? getBundledDnd5eSrdPack();
-  const result = lookupRulesRecord(resolveRulesStack({ base }), { kind, ref });
-  return result.ok ? result.record : undefined;
 }
 
 /** A resolved spell's facts the timing invariant needs, pack-derived. */
@@ -392,6 +392,90 @@ function reactionProfileFor(
     }
   }
   return { allowance, refresh, hasFormulaGrant, restrictedTo };
+}
+
+/** A legendary creature's per-round action economy, derived from its
+ *  record's `legendaryActions` block (F5). Allowance 0 = not legendary. */
+interface LegendaryProfile {
+  readonly allowance: number;
+  readonly options: readonly { name: string; cost: number }[];
+}
+
+const NO_LEGENDARY_PROFILE: LegendaryProfile = { allowance: 0, options: [] };
+
+/** The SRD states the allowance in the block's boilerplate ("The dragon can
+ *  take 3 legendary actions..."); every SRD legendary creature says 3, so 3
+ *  is also the fallback when the sentence is absent. */
+const LEGENDARY_COUNT_RE = /take (\d+|one|two|three|four|five) legendary/i;
+const COUNT_WORDS: Readonly<Record<string, number>> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+};
+
+/** Normalize a legendary option name for matching: the "(Costs 2 Actions)"
+ *  suffix is cost metadata, not identity. */
+function normalizeLegendaryName(name: string): string {
+  return name
+    .replace(/\([^)]*\)/g, ' ')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function legendaryProfileFor(
+  db: Db,
+  rulesRef: string | undefined,
+): LegendaryProfile {
+  if (rulesRef === undefined) {
+    return NO_LEGENDARY_PROFILE;
+  }
+  const record = lookupCampaignRecord(db, 'creature', rulesRef);
+  const data = record?.data;
+  if (typeof data !== 'object' || data === null) {
+    return NO_LEGENDARY_PROFILE;
+  }
+  const block = (data as Record<string, unknown>).legendaryActions;
+  if (typeof block !== 'object' || block === null) {
+    return NO_LEGENDARY_PROFILE;
+  }
+  const blockRecord = block as Record<string, unknown>;
+  const description =
+    typeof blockRecord.description === 'string' ? blockRecord.description : '';
+  const countMatch = LEGENDARY_COUNT_RE.exec(description);
+  const allowance =
+    countMatch === null
+      ? 3
+      : (COUNT_WORDS[countMatch[1].toLowerCase()] ?? Number(countMatch[1]));
+  const options: { name: string; cost: number }[] = [];
+  if (Array.isArray(blockRecord.entries)) {
+    for (const entryValue of blockRecord.entries) {
+      if (typeof entryValue !== 'object' || entryValue === null) {
+        continue;
+      }
+      const entry = entryValue as Record<string, unknown>;
+      if (typeof entry.name !== 'string') {
+        continue;
+      }
+      const mechanics =
+        typeof entry.mechanics === 'object' && entry.mechanics !== null
+          ? (entry.mechanics as Record<string, unknown>)
+          : undefined;
+      const usage =
+        typeof mechanics?.usage === 'object' && mechanics.usage !== null
+          ? (mechanics.usage as Record<string, unknown>)
+          : undefined;
+      const cost =
+        typeof usage?.legendaryActionCost === 'number' &&
+        usage.legendaryActionCost >= 1
+          ? usage.legendaryActionCost
+          : 1;
+      options.push({ name: entry.name, cost });
+    }
+  }
+  return { allowance, options };
 }
 
 /**
@@ -523,22 +607,24 @@ function readBudgetRow(
 }
 
 /** Insert the participant's budget row if it does not exist yet, seeding the
- *  reaction allowance/refresh from the participant's typed mechanics. */
+ *  reaction allowance/refresh and the legendary-action allowance from the
+ *  participant's typed mechanics. */
 function ensureBudgetRow(
   db: Db,
   campaignId: string,
   instanceId: string,
   participant: TurnParticipant,
   profile: ReactionProfile,
+  legendary: LegendaryProfile,
   ctx: TurnMutationContext,
 ): void {
   db.prepare(
     `INSERT INTO combat_turn_budget(
        campaign_id, combat_instance_id, participant_kind, participant_ref,
-       reaction_allowance, reaction_refresh,
+       reaction_allowance, reaction_refresh, legendary_action_allowance,
        provenance, session_id, updated_at
      )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(campaign_id, combat_instance_id, participant_kind,
                  participant_ref) DO NOTHING`,
   ).run(
@@ -548,6 +634,7 @@ function ensureBudgetRow(
     participant.ref,
     profile.allowance,
     profile.refresh,
+    legendary.allowance,
     ctx.provenance,
     ctx.sessionId,
     ctx.at,
@@ -610,14 +697,16 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
     }
 
     // Reset the new participant's per-turn budget in place. The reaction
-    // count resets at the start of its own turn; surprised, turns_taken,
-    // and the reaction allowance/refresh survive the reset.
+    // count resets at the start of its own turn, and a legendary creature
+    // regains its spent legendary actions (legendary-actions); surprised,
+    // turns_taken, and the reaction/legendary allowances survive the reset.
     ensureBudgetRow(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
       participant,
       reactionProfileFor(txnDb, rulesRef),
+      legendaryProfileFor(txnDb, rulesRef),
       input,
     );
     txnDb
@@ -629,6 +718,7 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
              free_interaction_used = 0, free_interaction_activity = NULL,
              movement_note = NULL, bonus_action_spell_cast = 0,
              other_spell_cast = 'none',
+             legendary_actions_used = 0, legendary_action_activity = NULL,
              provenance = ?, session_id = ?, updated_at = ?
          WHERE campaign_id = ? AND combat_instance_id = ?
            AND participant_kind = ? AND participant_ref = ?`,
@@ -715,10 +805,19 @@ export function spendTurnResource(
   const isSpendableForSpell =
     input.resource === 'action' ||
     input.resource === 'bonus_action' ||
-    input.resource === 'reaction';
+    input.resource === 'reaction' ||
+    input.resource === 'legendary_action';
   if (input.spellRef !== undefined && !isSpendableForSpell) {
     throw new ActionEconomyError(
-      'a spell cast spends an action, bonus action, or reaction — not movement or the free interaction',
+      'a spell cast spends an action, bonus action, reaction, or legendary action — not movement or the free interaction',
+    );
+  }
+  if (
+    input.legendaryActionName !== undefined &&
+    input.resource !== 'legendary_action'
+  ) {
+    throw new ActionEconomyError(
+      'legendaryActionName applies only to a legendary_action spend',
     );
   }
   if (
@@ -754,19 +853,30 @@ export function spendTurnResource(
     const isOwnTurn =
       turn.active_participant_kind === participant.kind &&
       turn.active_participant_ref === participant.ref;
-    if (input.resource !== 'reaction' && !isOwnTurn) {
+    if (
+      input.resource !== 'reaction' &&
+      input.resource !== 'legendary_action' &&
+      !isOwnTurn
+    ) {
       throw new ActionEconomyError(
-        `it is not ${displayLabel}'s turn; only a reaction can be spent off-turn (call begin_turn when their turn starts)`,
+        `it is not ${displayLabel}'s turn; only a reaction or legendary action can be spent off-turn (call begin_turn when their turn starts)`,
+      );
+    }
+    if (input.resource === 'legendary_action' && isOwnTurn) {
+      throw new ActionEconomyError(
+        `legendary actions can be used only at the end of ANOTHER creature's turn, and it is ${displayLabel}'s own turn`,
       );
     }
 
     const profile = reactionProfileFor(txnDb, rulesRef);
+    const legendaryProfile = legendaryProfileFor(txnDb, rulesRef);
     ensureBudgetRow(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
       participant,
       profile,
+      legendaryProfile,
       input,
     );
     const row = readBudgetRow(
@@ -880,6 +990,52 @@ export function spendTurnResource(
         updates.reaction_activity = input.activity;
         break;
       }
+      case 'legendary_action': {
+        if (row.legendary_action_allowance === 0) {
+          throw new ActionEconomyError(
+            `${displayLabel} has no legendary actions in its rules record`,
+          );
+        }
+        if (input.legendaryActionName === undefined) {
+          const names = legendaryProfile.options
+            .map((option) => option.name)
+            .join(', ');
+          throw new ActionEconomyError(
+            `pass legendaryActionName (the legendary option used) so its cost comes from the record. Options: ${names || '(none listed)'}`,
+          );
+        }
+        const wanted = normalizeLegendaryName(input.legendaryActionName);
+        const option = legendaryProfile.options.find(
+          (candidate) => normalizeLegendaryName(candidate.name) === wanted,
+        );
+        if (option === undefined) {
+          const names = legendaryProfile.options
+            .map((candidate) => candidate.name)
+            .join(', ');
+          throw new ActionEconomyError(
+            `'${input.legendaryActionName}' is not a legendary option in ${displayLabel}'s record. Options: ${names || '(none listed)'}`,
+          );
+        }
+        const remaining =
+          row.legendary_action_allowance - row.legendary_actions_used;
+        if (option.cost > remaining) {
+          throw new ActionEconomyError(
+            `${displayLabel} has ${remaining} of ${row.legendary_action_allowance} legendary actions left this round` +
+              (row.legendary_action_activity === null
+                ? ''
+                : ` (last: ${row.legendary_action_activity})`) +
+              `; '${option.name}' costs ${option.cost}. Spent actions return at the start of its turn`,
+          );
+        }
+        // A legendary-action spell cast happens between turns, so it does
+        // not participate in the owner's on-turn bonus-action-spell timing
+        // invariant; the spell was still resolved above, so a bogus ref
+        // fails closed.
+        updates.legendary_actions_used =
+          row.legendary_actions_used + option.cost;
+        updates.legendary_action_activity = input.activity;
+        break;
+      }
       case 'free_interaction': {
         if (row.free_interaction_used === 1) {
           throw new ActionEconomyError(
@@ -987,6 +1143,7 @@ export function setReactionAllowance(
       instance.combatInstanceId,
       participant,
       profile,
+      legendaryProfileFor(txnDb, rulesRef),
       input,
     );
     txnDb
@@ -1057,6 +1214,7 @@ export function setSurprised(
         instance.combatInstanceId,
         participant,
         reactionProfileFor(txnDb, rulesRef),
+        legendaryProfileFor(txnDb, rulesRef),
         input,
       );
       const row = readBudgetRow(
@@ -1089,7 +1247,11 @@ export function setSurprised(
           // creature could not have taken it.
           row.reaction_activity !== null ||
           row.free_interaction_used === 1 ||
-          row.movement_note !== null)
+          row.movement_note !== null ||
+          // Same evidence logic for legendary actions: beginTurn zeroes the
+          // count, but a retained activity proves a pre-first-turn spend.
+          row.legendary_actions_used > 0 ||
+          row.legendary_action_activity !== null)
       ) {
         throw new ActionEconomyError(
           `${displayLabel} has already acted this combat (a surprised creature could not have); surprise must be recorded before any spend`,
@@ -1210,6 +1372,14 @@ export function formatTurnBudget(budget: TurnBudget): string {
   }
   if (budget.bonusActionSpellCast) {
     parts.push('bonus-action spell cast (other spells: action cantrips only)');
+  }
+  if (budget.legendaryActionAllowance > 0) {
+    parts.push(
+      `legendary actions ${budget.legendaryActionsUsed}/${budget.legendaryActionAllowance} used` +
+        (budget.legendaryActionActivity === undefined
+          ? ''
+          : ` (last: ${budget.legendaryActionActivity})`),
+    );
   }
   return parts.join(', ');
 }

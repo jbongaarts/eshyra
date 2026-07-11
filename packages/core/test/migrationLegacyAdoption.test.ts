@@ -182,9 +182,9 @@ describe('migrateDatabase (end to end)', () => {
     const db = openDatabase(':memory:');
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('empty');
-    expect(result.migrations.applied).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(result.migrations.applied).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(readMigrationLedger(db).map((r) => r.version)).toEqual([
-      1, 2, 3, 4, 5, 6,
+      1, 2, 3, 4, 5, 6, 7,
     ]);
     db.close();
   });
@@ -195,7 +195,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.action).toBe('adopted');
     expect(result.legacy.adoptedFromVersion).toBe(15);
     // 0001 is adopted (already applied); the post-baseline migrations apply.
-    expect(result.migrations.applied).toEqual([2, 3, 4, 5, 6]);
+    expect(result.migrations.applied).toEqual([2, 3, 4, 5, 6, 7]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     db.close();
   });
@@ -248,7 +248,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
 
     const result = migrateDatabase(db, { now: NOW });
 
-    expect(result.migrations.applied).toEqual([5, 6]);
+    expect(result.migrations.applied).toEqual([5, 6, 7]);
     const row = db
       .prepare(
         `SELECT life_state, death_save_successes, death_save_failures

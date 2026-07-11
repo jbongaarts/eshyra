@@ -38,6 +38,7 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import { endAllAttunementsOnDeath } from './attunement.js';
 import type { DomainMutationContext } from './domainMutations.js';
 import { MutateStateError, mutateStateBatch } from './mutateState.js';
 
@@ -148,6 +149,12 @@ function writeHpFields(
     }));
   if (mutations.length > 0) {
     mutateStateBatch(db, mutations);
+  }
+  // Death ends attunement (SRD ending condition, F5): every life_state
+  // transition into 'dead' — instant death, third failure, damage-at-0
+  // escalation — releases the character's attunement slots.
+  if (after.life_state === 'dead' && before.life_state !== 'dead') {
+    endAllAttunementsOnDeath(db, charId);
   }
 }
 

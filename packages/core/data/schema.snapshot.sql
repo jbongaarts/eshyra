@@ -30,6 +30,19 @@ CREATE TABLE arc_summary (
   PRIMARY KEY (campaign_id, arc_id)
 );
 
+CREATE TABLE attunement (
+  campaign_id TEXT NOT NULL,
+  character_id TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  item_key TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  attuned_at TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, character_id, item_id)
+);
+
 CREATE TABLE campaign_actor (
   campaign_id TEXT NOT NULL,
   actor_id TEXT NOT NULL,
@@ -192,7 +205,8 @@ CREATE TABLE character (
 , current_xp INTEGER NOT NULL DEFAULT 0 CHECK (current_xp >= 0), hp_temp INTEGER NOT NULL DEFAULT 0 CHECK (hp_temp >= 0), life_state TEXT NOT NULL DEFAULT 'alive'
     CHECK (life_state IN ('alive', 'dying', 'stable', 'dead')), death_save_successes INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_successes BETWEEN 0 AND 3), death_save_failures INTEGER NOT NULL DEFAULT 0
-    CHECK (death_save_failures BETWEEN 0 AND 3));
+    CHECK (death_save_failures BETWEEN 0 AND 3), inspiration INTEGER NOT NULL DEFAULT 0
+    CHECK (inspiration IN (0, 1)));
 
 CREATE TABLE character_sheet (
   character_id TEXT PRIMARY KEY,
@@ -279,7 +293,9 @@ CREATE TABLE combat_turn_budget (
     CHECK (other_spell_cast IN ('none', 'action-cantrip', 'other')),
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL, legendary_action_allowance INTEGER NOT NULL DEFAULT 0
+    CHECK (legendary_action_allowance >= 0), legendary_actions_used INTEGER NOT NULL DEFAULT 0
+    CHECK (legendary_actions_used >= 0), legendary_action_activity TEXT,
   PRIMARY KEY (
     campaign_id, combat_instance_id, participant_kind, participant_ref
   )
@@ -318,6 +334,33 @@ CREATE TABLE encounter_combatant (
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   PRIMARY KEY (campaign_id, combatant_id)
+);
+
+CREATE TABLE entity_usage_counter (
+  campaign_id TEXT NOT NULL,
+  owner_kind TEXT NOT NULL CHECK (owner_kind IN ('character', 'combatant')),
+  owner_ref TEXT NOT NULL,
+  counter_key TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  uses_max INTEGER NOT NULL CHECK (uses_max >= 1),
+  uses_used INTEGER NOT NULL DEFAULT 0
+    CHECK (uses_used >= 0 AND uses_used <= uses_max),
+  reset_kind TEXT NOT NULL CHECK (reset_kind IN (
+    'recharge_roll',
+    'short_rest',
+    'short_or_long_rest',
+    'long_rest',
+    'dawn'
+  )),
+  recharge_roll TEXT,
+  recharge_minimum INTEGER
+    CHECK (recharge_minimum IS NULL OR recharge_minimum >= 1),
+  recharge_formula TEXT,
+  source TEXT NOT NULL CHECK (source IN ('record', 'declared')),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, owner_kind, owner_ref, counter_key)
 );
 
 CREATE TABLE inventory (
@@ -492,6 +535,8 @@ CREATE TABLE turn_trace (
   PRIMARY KEY (campaign_id, session_id, turn_id)
 );
 
+CREATE INDEX attunement_item ON attunement(campaign_id, item_id);
+
 CREATE INDEX campaign_actor_location
   ON campaign_actor(campaign_id, current_location_id);
 
@@ -531,6 +576,9 @@ CREATE INDEX encounter_combatant_instance
 
 CREATE INDEX encounter_combatant_status
   ON encounter_combatant(campaign_id, status);
+
+CREATE INDEX entity_usage_counter_owner
+  ON entity_usage_counter(campaign_id, owner_kind, owner_ref);
 
 CREATE INDEX idx_character_wallet_event_character
   ON character_wallet_event (character_id, occurred_at, id);

@@ -24,6 +24,11 @@ import {
   resolveActingCharacterId,
 } from '../state/activeCharacter.js';
 import {
+  ATTUNEMENT_SLOT_LIMIT,
+  type AttunementEntry,
+  listAttunements,
+} from '../state/attunement.js';
+import {
   type CampaignActor,
   type EncounterCombatant,
   listCampaignActors,
@@ -42,6 +47,11 @@ import {
 } from '../state/liveStateSchema.js';
 import type { PartyMember } from '../state/party.js';
 import { listParty } from '../state/party.js';
+import {
+  formatUsageCounter,
+  readSpentUsageCounters,
+  type UsageCounter,
+} from '../state/usageCounters.js';
 import type { AdventureContextSlice } from './adventureContext.js';
 import {
   buildAdventureContextSlice,
@@ -135,6 +145,8 @@ export interface CharacterSnapshot {
   abilityScores: AbilityScores;
   conditions: readonly CharacterConditionEntry[];
   role: string;
+  /** Inspiration boolean resource (F5): have it or not, never stockpiled. */
+  inspiration: boolean;
 }
 
 export interface InventoryItem {
@@ -153,10 +165,15 @@ export interface ClockSnapshot {
 export interface StateSnapshot {
   character: CharacterSnapshot;
   inventory: InventoryItem[];
+  /** The acting character's attuned magic items (F5), at most three. */
+  attunements: readonly AttunementEntry[];
   combatants: EncounterCombatant[];
   /** Structured turn/budget state of the active combat instance (F2);
    *  undefined when no combat is active. */
   combatTurnState: CombatTurnState | undefined;
+  /** Every usage counter with spent uses (F5): expended X/Day abilities,
+   *  recharge abilities waiting on their roll, item charges down, etc. */
+  spentUsageCounters: readonly UsageCounter[];
   campaignActors: CampaignActor[];
   plotFlags: Record<string, unknown>;
   clock: ClockSnapshot;
@@ -217,6 +234,7 @@ interface CharacterRow {
   ability_scores_json: string;
   conditions_json: string;
   role: string;
+  inspiration: number;
 }
 
 interface InventoryRow {
@@ -247,7 +265,7 @@ export function readStateSnapshot(
     .prepare(
       `SELECT id, name, ancestry, class_name, level, hp_current, hp_max,
               hp_temp, life_state, death_save_successes, death_save_failures,
-              ability_scores_json, conditions_json, role
+              ability_scores_json, conditions_json, role, inspiration
        FROM character WHERE id = ?`,
     )
     .get(charId) as CharacterRow | undefined;
@@ -306,6 +324,7 @@ export function readStateSnapshot(
         'character.conditions_json',
       ),
       role: character.role,
+      inspiration: character.inspiration === 1,
     },
     inventory: inventoryRows.map((row) => {
       const rawProperties = inventoryPropertiesColumn.decode(
@@ -322,11 +341,15 @@ export function readStateSnapshot(
         ),
       };
     }),
+    attunements:
+      campaignId === undefined ? [] : listAttunements(db, campaignId, charId),
     combatants: campaignId === undefined ? [] : listCombatants(db, campaignId),
     combatTurnState:
       campaignId === undefined
         ? undefined
         : readCombatTurnState(db, campaignId),
+    spentUsageCounters:
+      campaignId === undefined ? [] : readSpentUsageCounters(db, campaignId),
     campaignActors:
       campaignId === undefined ? [] : listCampaignActors(db, campaignId),
     plotFlags,
@@ -538,6 +561,18 @@ function renderState(state: StateSnapshot): string {
   if (c.conditions.length > 0) {
     lines.push(`Conditions: ${JSON.stringify(c.conditions)}`);
   }
+  if (c.inspiration) {
+    lines.push(
+      'Inspiration: available (spend or gift via use_inspiration; a spend grants advantage on one attack roll, saving throw, or ability check)',
+    );
+  }
+  if (state.attunements.length > 0) {
+    lines.push(
+      `Attuned items (${state.attunements.length}/${ATTUNEMENT_SLOT_LIMIT}): ${state.attunements
+        .map((entry) => `${entry.displayName} (${entry.itemId})`)
+        .join(', ')}`,
+    );
+  }
   if (state.inventory.length > 0) {
     lines.push(
       `Inventory: ${state.inventory
@@ -614,6 +649,28 @@ function renderState(state: StateSnapshot): string {
           .map((budget) => budget.displayLabel)
           .join(', ')}`,
       );
+    }
+    const legendary = turnState.budgets.filter(
+      (budget) => budget.legendaryActionAllowance > 0,
+    );
+    if (legendary.length > 0) {
+      lines.push(
+        `Legendary actions (spend on other creatures' turns; regained at own turn start): ${legendary
+          .map(
+            (budget) =>
+              `${budget.displayLabel} ${budget.legendaryActionsUsed}/${budget.legendaryActionAllowance} used` +
+              (budget.legendaryActionActivity === undefined
+                ? ''
+                : ` (last: ${budget.legendaryActionActivity})`),
+          )
+          .join('; ')}`,
+      );
+    }
+  }
+  if (state.spentUsageCounters.length > 0) {
+    lines.push('Limited-use abilities/charges spent:');
+    for (const counter of state.spentUsageCounters) {
+      lines.push(`- ${counter.ownerLabel}: ${formatUsageCounter(counter)}`);
     }
   }
   if (state.campaignActors.length > 0) {
