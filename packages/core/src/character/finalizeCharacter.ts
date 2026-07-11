@@ -26,6 +26,7 @@
  */
 
 import { ABILITY_SCORE_NAMES } from './abilities.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   type CharacterCreationEngine,
   type CharacterDraft,
@@ -164,6 +165,10 @@ export function finalizeCharacterDraft(
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
   engine: CharacterCreationEngine = getDnd5eCharacterCreationEngine(),
 ): FinalizeCharacterResult {
+  assertSupportedCharacterBuild(draft, {
+    operation: 'character-creation finalization',
+    resolver,
+  });
   const base = engine.toFinalizableDraft(draft);
   const missing: RequiredChoice[] = base.ok ? [] : [...base.missing];
   const errors: string[] = base.ok

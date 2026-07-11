@@ -15,6 +15,7 @@ import {
 import { resolveCharacterId } from '../state/activeCharacter.js';
 import type { LevelUpEligibility } from '../state/levelUpEligibility.js';
 import { getLevelUpEligibility } from '../state/levelUpEligibility.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import type { CharacterSheetStore } from './characterSheetStore.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
 import {
@@ -88,6 +89,7 @@ export function runGuidedLevelUp(
   db: Db,
   input: GuidedLevelUpInput,
 ): GuidedLevelUpResult {
+  assertSupportedCharacterBuild(input, { operation: 'guided level-up' });
   const characterId = resolveCharacterId(db, input.characterId);
   const eligibility = getLevelUpEligibility(db, characterId);
   if (!eligibility.eligible) {

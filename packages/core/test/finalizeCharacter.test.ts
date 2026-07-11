@@ -3,6 +3,7 @@ import {
   type CharacterDraft,
   finalizeCharacterDraft,
   getDnd5eCharacterCreationEngine,
+  UnsupportedCharacterBuildError,
 } from '../src/internal.js';
 
 /**
@@ -131,6 +132,16 @@ describe('finalizeCharacterDraft', () => {
     // Languages: Human's fixed Common plus the one chosen language.
     expect(c.languages).toContain('Common');
     expect(c.languages.length).toBe(2);
+  });
+
+  it('refuses multiclass-shaped draft state before finalization can flatten it', () => {
+    const draft = {
+      ...completeDraft(),
+      classes: ['Fighter', 'Wizard'],
+    };
+    expect(() => finalizeCharacterDraft(draft as CharacterDraft, META)).toThrow(
+      UnsupportedCharacterBuildError,
+    );
   });
 
   it('preserves background fixed skills/equipment and class fixed proficiencies', () => {

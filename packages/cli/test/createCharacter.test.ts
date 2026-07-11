@@ -143,6 +143,22 @@ describe('runCreateCharacter', () => {
     expect(store.load('cont')?.identity.name).toBe('Mira');
   });
 
+  it('renders the stable unsupported-build message when a resumed draft is multiclass-shaped', async () => {
+    const engine = getDnd5eCharacterCreationEngine();
+    const invalid = {
+      ...engine.createDraft({ id: 'cont', mode: 'concept-first' }),
+      classes: ['Fighter', 'Wizard'],
+    } as CharacterDraft;
+    const { deps, lines } = makeDeps([], memoryStore([invalid]));
+
+    const code = await runCreateCharacter(deps, ['--resume', 'cont']);
+
+    expect(code).toBe(1);
+    expect(lines).toContain(
+      'character-creation draft resume was refused: Eshyra currently supports one class only.',
+    );
+  });
+
   it('starts a fresh draft under an explicit id', async () => {
     const store = memoryStore();
     const { deps } = makeDeps(['Aldric', 'quit'], store);

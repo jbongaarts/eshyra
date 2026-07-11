@@ -3,6 +3,7 @@ import {
   type CharacterDraft,
   createCharacterCreationEngine,
   getDnd5eCharacterCreationEngine,
+  UnsupportedCharacterBuildError,
 } from '../src/internal.js';
 
 const engine = getDnd5eCharacterCreationEngine();
@@ -44,6 +45,23 @@ describe('character creation draft engine', () => {
     expect(draft.rulesPackId).toBe('rules:dnd5e-srd-5.1');
     expect(draft.diagnostics).toEqual([]);
     expect(draft.derived.proficiencyBonus).toBe(2);
+  });
+
+  it.each([
+    ['classes', ['Fighter', 'Wizard']],
+    ['classLevels', { 'class:fighter': 1, 'class:wizard': 1 }],
+    ['targetClass', 'Wizard'],
+  ])('rejects %s nested in creation input selections before it is spread', (field, value) => {
+    expect(() =>
+      engine.createDraft({
+        id: 'draft-1',
+        mode: 'concept-first',
+        selections: {
+          className: 'Fighter',
+          [field]: value,
+        },
+      } as Parameters<typeof engine.createDraft>[0]),
+    ).toThrow(UnsupportedCharacterBuildError);
   });
 
   it('preserves prior answers when name changes', () => {

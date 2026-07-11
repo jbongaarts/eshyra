@@ -7,6 +7,7 @@ import {
   listProgressionEvents,
   mutateState,
   runGuidedLevelUp,
+  UnsupportedCharacterBuildError,
 } from '../src/internal.js';
 import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
 
@@ -99,6 +100,36 @@ function setLiveCharacter(
 }
 
 describe('runGuidedLevelUp', () => {
+  it('refuses an advancement target before the guided flow can preview or mutate state', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    const sheet = buildSheet();
+    store.save('pc-1', sheet);
+    setLiveCharacter(db, 1, 12, 9);
+    awardXp(db, L2, 'test threshold', FLOW);
+    const before = db
+      .prepare('SELECT level, hp_max, hp_current FROM character WHERE id = ?')
+      .get('pc-1');
+
+    expect(() =>
+      runGuidedLevelUp(db, {
+        store,
+        ...FLOW,
+        targetClass: 'Wizard',
+      } as Parameters<typeof runGuidedLevelUp>[1]),
+    ).toThrow(UnsupportedCharacterBuildError);
+    expect(store.load('pc-1')).toEqual(sheet);
+    expect(
+      db
+        .prepare('SELECT level, hp_max, hp_current FROM character WHERE id = ?')
+        .get('pc-1'),
+    ).toEqual(before);
+    expect(
+      listProgressionEvents(db).filter((event) => event.kind === 'level-up'),
+    ).toEqual([]);
+    db.close();
+  });
+
   it('reports not eligible without previewing or committing', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);

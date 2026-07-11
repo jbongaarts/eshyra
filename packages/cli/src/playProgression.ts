@@ -8,6 +8,7 @@ import {
   type LevelUpRequiredChoice,
   listProgressionEvents,
   runGuidedLevelUp,
+  UnsupportedCharacterBuildError,
 } from '@eshyra/core';
 import type { CliIO, PlayDeps } from './playTypes.js';
 
@@ -57,7 +58,16 @@ export async function runLevelUpCommand(
     at: deps.now(),
   };
 
-  const initial = runGuidedLevelUp(db, base);
+  let initial: ReturnType<typeof runGuidedLevelUp>;
+  try {
+    initial = runGuidedLevelUp(db, base);
+  } catch (error) {
+    if (error instanceof UnsupportedCharacterBuildError) {
+      deps.io.write(error.message);
+      return;
+    }
+    throw error;
+  }
   if (initial.outcome === 'not-eligible') {
     deps.io.write(
       `Not eligible to level up: current level ${initial.eligibility.currentLevel}, target level ${initial.eligibility.targetLevel}.`,
