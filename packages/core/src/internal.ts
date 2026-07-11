@@ -688,6 +688,7 @@ export type {
   DamageTargetInput,
   DamageTargetResult,
   DamageType,
+  DamageTypeSubtotal,
   DeclaredModifier,
   ProficiencyApplied,
   ProficiencyInput,

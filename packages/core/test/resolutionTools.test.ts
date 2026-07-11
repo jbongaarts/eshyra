@@ -182,18 +182,21 @@ describe('resolve_damage tool', () => {
     visibility: 'player_visible',
   };
 
-  it('doubles dice on crit and halves for the resistant target', () => {
+  it('doubles dice on crit and halves the per-type aggregate for the resistant target', () => {
     const data = dataOf(invoke('resolve_damage', critArgs));
     const packets = data.packets as Record<string, unknown>[];
     expect(packets[0].dice).toBe('2d6');
     expect(packets[1].dice).toBe('4d6');
+    const byType = data.byType as { type: string; subtotal: number }[];
+    const contributions = packets.map((p) => p.contribution as number);
+    // Both packets are piercing: one aggregate, halved once (not per packet).
+    const aggregate = contributions.reduce((sum, v) => sum + v, 0);
+    expect(byType).toEqual([
+      { type: 'piercing', subtotal: Math.max(0, aggregate) },
+    ]);
+    expect(data.total).toBe(Math.max(0, aggregate));
     const targets = data.targets as Record<string, unknown>[];
-    const raw = data.total as number;
-    const packetSubtotals = packets.map((p) => p.subtotal as number);
-    expect(targets[0].total).toBe(
-      packetSubtotals.reduce((sum, v) => sum + Math.floor(v / 2), 0),
-    );
-    expect(raw).toBe(packetSubtotals.reduce((sum, v) => sum + v, 0));
+    expect(targets[0].total).toBe(Math.floor(Math.max(0, aggregate) / 2));
   });
 
   it('replays byte-identically under the same seed', () => {
@@ -398,6 +401,37 @@ describe('audit spine: ledger, trace, and replay', () => {
     expect(calcs).toHaveLength(1);
     expect(calcs[0].formula).toBe('grapple_escape_dc');
     expect((calcs[0].outputs as Record<string, unknown>).dc).toBe(14);
+  });
+
+  it('preserves the tied-advantage selection indices through the trace and ledger', () => {
+    // Find a seed where the two advantage d20s tie: values alone cannot
+    // identify the kept die, so the trace must carry the indices.
+    let seed = 0;
+    let result = invoke(
+      'resolve_check',
+      { ...checkArgs, visibility: 'player_visible' },
+      seed,
+    );
+    const rollsOf = (r: ReturnType<typeof invoke>): number[] =>
+      r.ok ? ((r.data as Record<string, unknown>).rolls as number[]) : [];
+    while (!result.ok || rollsOf(result)[0] !== rollsOf(result)[1]) {
+      seed += 1;
+      result = invoke('resolve_check', checkArgs, seed);
+    }
+    const calls = [
+      { tool: 'resolve_check', args: checkArgs, result } as ExecutedToolCall,
+    ];
+    const fields = deriveTraceFields(calls, []);
+    const checks = (fields.rulesResolution as Record<string, unknown>)
+      .checks as Record<string, unknown>[];
+    expect(checks[0].keptIndices).toEqual([0]);
+    expect(checks[0].droppedIndices).toEqual([1]);
+    expect(checks[0]).toEqual(dataOf(invoke('resolve_check', checkArgs, seed)));
+    // The ledger marks the dropped die by position, so tied dice stay
+    // unambiguous to the player too.
+    const narration = appendPlayerVisibleRollLedger('A tied flurry.', calls);
+    const tiedDie = rollsOf(result)[0];
+    expect(narration).toContain(`[${tiedDie} | ${tiedDie} dropped]`);
   });
 
   it('flags failed resolutions as rejected candidates, not accepted state', () => {

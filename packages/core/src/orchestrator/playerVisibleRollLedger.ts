@@ -77,11 +77,18 @@ function formatModifierBreakdown(
   return parts.join(' ');
 }
 
-/** e.g. `2d20kh1 [17 | 5] nat 17 + 4 (DEX modifier) = 21 vs AC 15 → hit (adv)`. */
+/** e.g. `2d20kh1 [17 | 5 dropped] nat 17 + 4 (DEX modifier) = 21 vs AC 15 → hit (adv)`. */
 function formatD20Detail(resolution: D20Resolution): string {
+  // Mark dropped dice by index so the selection is unambiguous even when
+  // both d20s tie.
+  const droppedIndexSet = new Set(resolution.droppedIndices ?? []);
   const diceShown =
     resolution.rolls.length > 1
-      ? `${resolution.dice} [${resolution.rolls.join(' | ')}]`
+      ? `${resolution.dice} [${resolution.rolls
+          .map((die, index) =>
+            droppedIndexSet.has(index) ? `${die} dropped` : `${die}`,
+          )
+          .join(' | ')}]`
       : resolution.dice;
   const breakdown = formatModifierBreakdown(
     resolution.modifiers,
@@ -228,13 +235,18 @@ function readResolveDamageEntry(
         ? ''
         : ` ${modifierSum > 0 ? '+' : '-'} ${Math.abs(modifierSum)}`;
     const labelPart = packet.label === undefined ? '' : `${packet.label} `;
-    return `${labelPart}${packet.dice} [${packet.rolls.join(' + ')}]${modifierPart} = ${packet.subtotal} ${packet.type}`;
+    return `${labelPart}${packet.dice} [${packet.rolls.join(' + ')}]${modifierPart} = ${packet.contribution} ${packet.type}`;
   });
+  // Rules math happens on the per-type aggregates; show them so a negative
+  // packet visibly offsets same-type damage before the min-0 clamp.
+  const typeTexts = (damage.byType ?? []).map(
+    (entry) => `${entry.subtotal} ${entry.type}`,
+  );
   const targetTexts = (damage.targets ?? []).map(
     (target) => `${target.label} takes ${target.total}`,
   );
   const critPart = damage.critical ? ' (critical: dice doubled)' : '';
-  const detail = `${packetTexts.join('; ')}${critPart} → total ${damage.total}${targetTexts.length > 0 ? `; ${targetTexts.join('; ')}` : ''}`;
+  const detail = `${packetTexts.join('; ')}${critPart} → ${typeTexts.join(' + ')} = total ${damage.total}${targetTexts.length > 0 ? `; ${targetTexts.join('; ')}` : ''}`;
   return {
     label: CATEGORY_LABELS.damage,
     reason: damage.reason,

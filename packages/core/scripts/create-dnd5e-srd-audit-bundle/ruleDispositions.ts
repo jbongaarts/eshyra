@@ -2149,12 +2149,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     designOwner: 'eshyra-2n1t.1',
   },
   'rule:falling': {
-    status: 'implemented',
-    runtimeOwner: [
-      'packages/core/src/orchestrator/calc.ts',
-      'packages/core/src/orchestrator/toolCalc.ts',
-    ],
-    evidence: ['packages/core/test/calc.test.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'resolve_damage', 'add_condition', 'lookup_rules'],
+    contextRequirement:
+      'fall-distance determination and landing narration stay rulings; the dice derivation is code-owned via calc fall_damage_dice (⌊d/10⌋d6 cap 20d6), the roll via resolve_damage, and landing prone via a condition entry',
   },
   'rule:falling-unconscious': {
     status: 'implemented',
@@ -2179,12 +2177,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'fall-when-prone/speed-0 ruling',
   },
   'rule:food': {
-    status: 'implemented',
-    runtimeOwner: [
-      'packages/core/src/orchestrator/calc.ts',
-      'packages/core/src/orchestrator/toolCalc.ts',
-    ],
-    evidence: ['packages/core/test/calc.test.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'add_condition', 'update_clock', 'lookup_rules'],
+    contextRequirement:
+      'deprivation-day state stays durable character condition entries and the low-frequency clock stays model-adjudicated (as classified); the 3+Con-mod (min 1) day-threshold derivation is code-owned via calc days_without_food_limit',
   },
   'rule:food-and-water': {
     status: 'model-adjudicated-supported',
@@ -2305,12 +2301,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'GM-set object stats; auto-fail/immunity rulings',
   },
   'rule:jumping': {
-    status: 'implemented',
-    runtimeOwner: [
-      'packages/core/src/orchestrator/calc.ts',
-      'packages/core/src/orchestrator/toolCalc.ts',
-    ],
-    evidence: ['packages/core/test/calc.test.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'resolve_check', 'lookup_rules'],
+    contextRequirement:
+      'movement-cost accounting and the optional obstacle/landing checks stay rulings; the long/high-jump distance formulas are code-owned via calc jump_distance',
   },
   'rule:knocking-a-creature-out': {
     status: 'model-adjudicated-supported',
@@ -2351,12 +2345,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'form-assumption exclusion gate; ruling over structured data',
   },
   'rule:lifting-and-carrying': {
-    status: 'implemented',
-    runtimeOwner: [
-      'packages/core/src/orchestrator/calc.ts',
-      'packages/core/src/orchestrator/toolCalc.ts',
-    ],
-    evidence: ['packages/core/test/calc.test.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'add_condition', 'lookup_rules'],
+    contextRequirement:
+      'tracking what is carried and applying the over-capacity speed-5 penalty stay adjudicated over inventory + condition entries; the capacity arithmetic (Str×15, push/drag ×2, size doubling) is code-owned via calc carry_capacity',
   },
   'rule:limited-usage': {
     status: 'implemented',
@@ -2645,12 +2637,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:speed': {
-    status: 'implemented',
-    runtimeOwner: [
-      'packages/core/src/orchestrator/calc.ts',
-      'packages/core/src/orchestrator/toolCalc.ts',
-    ],
-    evidence: ['packages/core/test/calc.test.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'resolve_check', 'add_condition', 'lookup_rules'],
+    contextRequirement:
+      'travel pace, gallop, and movement rates/costs stay rulings (narrative-magnitude arithmetic; F2 deliberately excludes the movement budget); exhaustion as condition entry; the forced-march DC derivation is code-owned via calc forced_march_dc and the save via resolve_check',
   },
   'rule:speed-difficult-terrain': {
     status: 'model-adjudicated-supported',
@@ -2836,12 +2826,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:variant-encumbrance': {
-    status: 'implemented',
-    runtimeOwner: [
-      'packages/core/src/orchestrator/calc.ts',
-      'packages/core/src/orchestrator/toolCalc.ts',
-    ],
-    evidence: ['packages/core/test/calc.test.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'add_condition', 'lookup_rules'],
+    contextRequirement:
+      'variant adoption is a table ruling; classifying the current load and applying the speed penalties / Str-Dex-Con disadvantage (declared per roll on resolve_check) stay adjudicated; the 5×/10×/15×Str threshold arithmetic is code-owned via calc encumbrance_thresholds',
   },
   'rule:variant-skills-with-different-abilities': {
     status: 'model-adjudicated-supported',
@@ -2927,24 +2915,29 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * clauses; their F2 clauses landed); eshyra-2n1t.3 + eshyra-2n1t.11
  * (F1 dice grammar + F9 resolution/derived-math — dice.ts keep/drop,
  * resolution.ts, calc.ts, resolve_check/resolve_contest/resolve_damage/
- * calc tools) moved advantage-and-disadvantage from unimplemented and 21
- * F9-clause rows (abilities, ability-checks, attack-rolls, saving-throws,
- * contests, modifiers-to-the-roll, damage-rolls,
+ * calc tools) moved advantage-and-disadvantage from unimplemented and 15
+ * F9-clause rows whose deterministic procedure is now fully tool-owned
+ * (abilities, ability-checks, attack-rolls, saving-throws, contests,
+ * modifiers-to-the-roll, damage-rolls,
  * damage-resistance-and-vulnerability, critical-hits, proficiency-bonus,
- * passive-checks, group-checks, grapple-rules-for-monsters, falling,
- * jumping, lifting-and-carrying, variant-encumbrance, food, speed,
- * surprise, using-inspiration) from partial to implemented, and cover,
- * hiding and two-weapon-fighting from partial to
- * model-adjudicated-supported (their arithmetic is owned once by the
- * generic F9 rows; the remainder is rulings over the new primitives).
- * casting-a-spell-at-a-higher-level stays partial (upcast scaling needs
- * structured spell `scaling` data, landing with the F4 interplay) and
- * mounts-and-vehicles stays partial for its F10 currency clause.
+ * passive-checks, group-checks, grapple-rules-for-monsters, surprise,
+ * using-inspiration) from partial to implemented, and 9 rows from partial
+ * to model-adjudicated-supported: cover, hiding and two-weapon-fighting
+ * (their arithmetic is owned once by the generic F9 rows) plus falling,
+ * food, speed, variant-encumbrance, jumping and lifting-and-carrying,
+ * whose calc formulas own only the rule's arithmetic clause while the
+ * state/timing/application portions (prone on landing, deprivation
+ * clocks, travel pace, load classification and penalty application,
+ * movement costs) remain — as originally classified — model-adjudicated
+ * over the primitives. casting-a-spell-at-a-higher-level stays partial
+ * (upcast scaling needs structured spell `scaling` data, landing with the
+ * F4 interplay) and mounts-and-vehicles stays partial for its F10
+ * currency clause.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 36,
-    'model-adjudicated-supported': 100,
+    implemented: 30,
+    'model-adjudicated-supported': 106,
     partial: 24,
     unimplemented: 5,
     'design-blocked': 10,

@@ -202,6 +202,14 @@ export interface D20Resolution {
   readonly dice: string;
   /** Every d20 generated (both dice under advantage/disadvantage). */
   readonly rolls: readonly number[];
+  /** Kept dice values from the canonical roll (one die for every d20 test). */
+  readonly kept: readonly number[];
+  /** Indices into `rolls` of the kept dice — disambiguates tied dice. */
+  readonly keptIndices: readonly number[];
+  /** Dropped dice values, in roll order. */
+  readonly dropped: readonly number[];
+  /** Indices into `rolls` of the dropped dice. */
+  readonly droppedIndices: readonly number[];
   /** The kept die — the natural result, never mutated by modifiers. */
   readonly natural: number;
   readonly modifiers: readonly DeclaredModifier[];
@@ -285,6 +293,10 @@ export function resolveD20(input: D20ResolutionInput, rng: Rng): D20Resolution {
     advantageState,
     dice,
     rolls: roll.rolls,
+    kept: roll.kept,
+    keptIndices: roll.keptIndices,
+    dropped: roll.dropped,
+    droppedIndices: roll.droppedIndices,
     natural: roll.natural,
     modifiers,
     ...(input.proficiency === undefined
@@ -397,7 +409,20 @@ export interface DamagePacketResult {
   /** Flat modifier embedded in the dice notation (the +K of "1d8+2"). */
   readonly notationModifier: number;
   readonly modifiers: readonly DeclaredModifier[];
-  /** max(0, natural + notationModifier + Σ modifiers) — never negative. */
+  /**
+   * natural + notationModifier + Σ modifiers — this packet's raw (possibly
+   * negative) contribution to its damage type. Packets are audit detail
+   * only: all rules math happens on the per-type aggregates, so how the
+   * caller partitions one damage instance into packets can never change the
+   * result.
+   */
+  readonly contribution: number;
+}
+
+/** One damage type's aggregate within the instance. */
+export interface DamageTypeSubtotal {
+  readonly type: DamageType;
+  /** max(0, Σ packet contributions of this type) — never negative (SRD). */
   readonly subtotal: number;
 }
 
@@ -406,15 +431,23 @@ export interface DamageTargetResult {
   readonly resistances: readonly DamageType[];
   readonly vulnerabilities: readonly DamageType[];
   readonly immunities: readonly DamageType[];
-  /** Per-packet post-immunity/resistance/vulnerability amounts, in order. */
-  readonly packetDamage: readonly number[];
+  /**
+   * Per-type post-immunity/resistance/vulnerability amounts, in first-
+   * declared-type order (matching `DamageResolution.byType`).
+   */
+  readonly typeDamage: readonly DamageTypeSubtotal[];
   readonly total: number;
 }
 
 export interface DamageResolution {
   readonly critical: boolean;
   readonly packets: readonly DamagePacketResult[];
-  /** Σ packet subtotals — the damage before per-target adjustments. */
+  /**
+   * Per-type aggregates (min-0 applied per type), in first-declared order.
+   * Resistance/vulnerability/immunity operate on these, never on packets.
+   */
+  readonly byType: readonly DamageTypeSubtotal[];
+  /** Σ per-type subtotals — the damage before per-target adjustments. */
   readonly total: number;
   readonly targets?: readonly DamageTargetResult[];
 }
@@ -538,12 +571,11 @@ export function resolveDamage(input: DamageInput, rng: Rng): DamageResolution {
       rng,
     );
     const modifiers = packet.modifiers ?? [];
-    // Never negative (SRD damage-rolls), clamped per packet so one penalized
-    // packet cannot eat another packet's damage.
-    const subtotal = Math.max(
-      0,
-      roll.natural + roll.modifier + sumModifiers(modifiers),
-    );
+    // Raw signed contribution. No per-packet clamping or rounding: packet
+    // boundaries are declaration/audit structure, not rules structure, so
+    // repartitioning the same damage into different packets must never
+    // change the math (min-0 and resistance work on per-type aggregates).
+    const contribution = roll.natural + roll.modifier + sumModifiers(modifiers);
     return {
       ...(packet.label === undefined ? {} : { label: packet.label }),
       type: packet.type,
@@ -553,11 +585,30 @@ export function resolveDamage(input: DamageInput, rng: Rng): DamageResolution {
       natural: roll.natural,
       notationModifier: roll.modifier,
       modifiers,
-      subtotal,
+      contribution,
     };
   });
 
-  const total = packets.reduce((sum, p) => sum + p.subtotal, 0);
+  // Aggregate the damage instance per type, then apply never-negative (SRD
+  // damage-rolls) at the type level: a penalty on one packet offsets other
+  // same-type damage in the same instance, but never bleeds across types.
+  const typeOrder: DamageType[] = [];
+  const typeSums = new Map<DamageType, number>();
+  for (const packet of packets) {
+    if (!typeSums.has(packet.type)) {
+      typeOrder.push(packet.type);
+    }
+    typeSums.set(
+      packet.type,
+      (typeSums.get(packet.type) ?? 0) + packet.contribution,
+    );
+  }
+  const byType: DamageTypeSubtotal[] = typeOrder.map((type) => ({
+    type,
+    subtotal: Math.max(0, typeSums.get(type) ?? 0),
+  }));
+
+  const total = byType.reduce((sum, entry) => sum + entry.subtotal, 0);
 
   const targetResults = targets.map((target, index): DamageTargetResult => {
     // Enforce once-only declarations here too, so direct engine callers get
@@ -580,34 +631,36 @@ export function resolveDamage(input: DamageInput, rng: Rng): DamageResolution {
         `targets[${index}].immunities`,
       ),
     );
-    const packetDamage = packets.map((packet) => {
-      if (immunities.has(packet.type)) {
-        return 0;
+    const typeDamage = byType.map((entry): DamageTypeSubtotal => {
+      if (immunities.has(entry.type)) {
+        return { type: entry.type, subtotal: 0 };
       }
-      let amount = packet.subtotal;
+      let amount = entry.subtotal;
       // SRD: resistance and then vulnerability, after all other modifiers;
-      // halving rounds down.
-      if (resistances.has(packet.type)) {
+      // halving rounds down. Applied once per type per instance — the
+      // per-type aggregation makes packet partitioning irrelevant here.
+      if (resistances.has(entry.type)) {
         amount = Math.floor(amount / 2);
       }
-      if (vulnerabilities.has(packet.type)) {
+      if (vulnerabilities.has(entry.type)) {
         amount *= 2;
       }
-      return amount;
+      return { type: entry.type, subtotal: amount };
     });
     return {
       label: target.label,
       resistances: [...resistances],
       vulnerabilities: [...vulnerabilities],
       immunities: [...immunities],
-      packetDamage,
-      total: packetDamage.reduce((sum, v) => sum + v, 0),
+      typeDamage,
+      total: typeDamage.reduce((sum, entry) => sum + entry.subtotal, 0),
     };
   });
 
   return {
     critical,
     packets,
+    byType,
     total,
     ...(targets.length === 0 ? {} : { targets: targetResults }),
   };

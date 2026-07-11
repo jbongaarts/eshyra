@@ -87,12 +87,12 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // action-economy rows to implemented; F5, eshyra-2n1t.7 moved
     // limited-usage, legendary-actions, attunement, and gaining-inspiration
     // to implemented and using-inspiration to partial; F1+F9,
-    // eshyra-2n1t.3 + eshyra-2n1t.11 moved the 22 dice-grammar /
-    // resolution / derived-math rows to implemented and cover, hiding, and
-    // two-weapon-fighting to model-adjudicated-supported); keep them in
+    // eshyra-2n1t.3 + eshyra-2n1t.11 moved the 16 fully-tool-owned
+    // dice-grammar / resolution / derived-math rows to implemented and 9
+    // clause-only rows to model-adjudicated-supported); keep them in
     // lockstep with EXPECTED_COVERAGE_CENSUS.
-    expect(report.engineProcedure.implemented).toBe(36);
-    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(100);
+    expect(report.engineProcedure.implemented).toBe(30);
+    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(106);
     expect(report.engineProcedure.partial).toHaveLength(24);
     expect(report.engineProcedure.unimplemented).toHaveLength(5);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);

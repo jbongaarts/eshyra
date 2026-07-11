@@ -84,6 +84,11 @@ modifiers, optional `proficiency { bonus, multiplier: none|half|normal|double }`
   straight roll (SRD `advantage-and-disadvantage`: no stacking, both →
   neither). The result records the declared flags and the effective
   `advantageState` after cancellation.
+- **The canonical selection survives into the resolution.** `D20Resolution`
+  carries `kept`/`dropped` and their indices straight from the `DiceRoll`,
+  so a tied advantage pair (`[17, 17]`) still identifies exactly which die
+  was kept — required for exact audit replay; the ledger marks the dropped
+  die by position.
 - **Proficiency applies once, multiplied first.** `applied =
   floor(bonus × {0, ½, 1, 2})` (SRD `proficiency-bonus`: apply once; halving
   rounds down). A second proficiency entry is impossible by construction —
@@ -114,13 +119,23 @@ Input: packets `[{ dice, type, label?, modifiers? }]`, `critical?`, optional
   packet's dice *count* before rolling (SRD `critical-hits`: roll all damage
   dice twice); modifiers are added once. The model never rewrites a dice
   expression.
-- Each packet subtotal is clamped at ≥ 0 (SRD `damage-rolls`: never
-  negative).
+- **Packets are declaration/audit structure, not rules structure.** One
+  `resolve_damage` call is one damage instance. Each packet keeps its raw
+  signed `contribution` (dice natural + notation modifier + declared
+  modifiers) for the audit trail, but all rules math happens on the
+  **per-type aggregates** (`byType`): contributions of the same damage type
+  sum first, then never-negative clamps the aggregate (SRD `damage-rolls` —
+  so a penalty on the weapon packet offsets same-type sneak/smite dice in
+  the same instance, and a negative aggregate of one type never eats another
+  type's damage), and resistance rounding applies once per type. How the
+  caller partitions the instance into packets can therefore never change
+  any total (metamorphic tests pin this).
 - **Roll once, apply to every target** (SRD `damage-rolls`). Per target and
-  per packet: immunity → 0; else resistance → `floor(v/2)`; then
+  per type aggregate: immunity → 0; else resistance → `floor(v/2)`; then
   vulnerability → `×2` (SRD `damage-resistance-and-vulnerability`: after all
   other modifiers, resistance before vulnerability, each at most once —
-  "at most once" is structural: target lists are deduplicated sets).
+  "at most once" is structural: per-type aggregation plus deduplicated
+  target sets).
 - Which resistances apply stays a ruling; the model declares them per
   target, the engine owns the arithmetic.
 
@@ -156,8 +171,10 @@ registered half-typed; they land with their data source (child beads).
    dropped = rolls` exactly (multiset), and indices reconstruct the
    selection.
 3. Same seed + same arguments ⇒ byte-identical tool results; the turn trace
-   (`rulesResolution`) carries original dice, selection, natural, declared
-   modifiers, and outcome, so a trace replay never needs model output.
+   (`rulesResolution`) carries original dice, the kept/dropped selection
+   **with indices** (unambiguous even when advantage dice tie), natural,
+   declared modifiers, and outcome, so a trace replay never needs model
+   output.
 4. Advantage/disadvantage never stack and always cancel pairwise; the
    effective state is engine-computed and recorded.
 5. Nat-1/20 overrides apply to attacks only, and only at the vs-AC
@@ -165,8 +182,10 @@ registered half-typed; they land with their data source (child beads).
 6. Proficiency contributes at most once per resolution; `half` rounds down;
    `none` contributes 0 even when doubled (SRD: 0 × n = 0).
 7. Damage: modifiers before resistance; resistance (floor half) before
-   vulnerability (double); immunity wins; per-packet subtotal ≥ 0; identical
-   rolled dice across all targets of one resolution.
+   vulnerability (double); immunity wins; never-negative and all
+   resistance/vulnerability math on per-type aggregates (so packet
+   partitioning is mechanically irrelevant — proven metamorphically);
+   identical rolled dice across all targets of one resolution.
 8. Read-only: none of these tools writes canon; applying damage/HP remains
    an explicit `adjust_hp`/`update_combatant` call that cites the resolution
    from the same turn.

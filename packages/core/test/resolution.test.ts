@@ -42,6 +42,37 @@ describe('advantage/disadvantage cancellation', () => {
     expect(res.advantageState).toBe('advantage');
   });
 
+  it('preserves the canonical kept/dropped selection, including tied dice', () => {
+    const adv = resolveD20(
+      { kind: 'ability_check', advantage: true },
+      createSeededRng(11),
+    );
+    expect([...adv.kept, ...adv.dropped].sort()).toEqual([...adv.rolls].sort());
+    expect(adv.keptIndices).toHaveLength(1);
+    expect(adv.rolls[adv.keptIndices[0]]).toBe(adv.natural);
+
+    // Tied advantage dice: values alone cannot identify the selection, so
+    // the indices must — dice.ts keeps the earlier-rolled die on a tie.
+    let seed = 0;
+    let tied = resolveD20(
+      { kind: 'attack', advantage: true },
+      createSeededRng(seed),
+    );
+    while (tied.rolls[0] !== tied.rolls[1]) {
+      seed += 1;
+      tied = resolveD20(
+        { kind: 'attack', advantage: true },
+        createSeededRng(seed),
+      );
+    }
+    expect(tied.keptIndices).toEqual([0]);
+    expect(tied.droppedIndices).toEqual([1]);
+    expect(tied.kept).toEqual([tied.rolls[0]]);
+    expect(
+      resolveD20({ kind: 'attack', advantage: true }, createSeededRng(seed)),
+    ).toEqual(tied);
+  });
+
   it('rolls a single straight d20 when both flags are declared', () => {
     const res = resolveD20(
       { kind: 'saving_throw', advantage: true, disadvantage: true },
@@ -292,10 +323,10 @@ describe('damage composition', () => {
     expect(crit.packets[0].declaredDice).toBe('1d8+2');
     expect(crit.packets[0].rolls).toHaveLength(2);
     // Flat +2 notation modifier and the +3 declared modifier apply once.
-    expect(crit.packets[0].subtotal).toBe(crit.packets[0].natural + 2 + 3);
+    expect(crit.packets[0].contribution).toBe(crit.packets[0].natural + 2 + 3);
   });
 
-  it('clamps each packet at 0 (never negative), independently', () => {
+  it('applies never-negative per damage type, never bleeding across types', () => {
     // 1d4 - 10 is negative for every die face, so the clamp always engages.
     const res = resolveDamage(
       {
@@ -310,9 +341,39 @@ describe('damage composition', () => {
       },
       createSeededRng(0),
     );
-    expect(res.packets[0].subtotal).toBe(0);
-    // The penalized packet never eats the other packet's damage.
-    expect(res.total).toBe(res.packets[1].subtotal);
+    // The packet keeps its raw (negative) contribution for the audit trail;
+    // the min-0 clamp lives on the per-type aggregate.
+    expect(res.packets[0].contribution).toBeLessThan(0);
+    expect(res.byType).toEqual([
+      { type: 'bludgeoning', subtotal: 0 },
+      { type: 'fire', subtotal: res.packets[1].contribution },
+    ]);
+    // The negative bludgeoning aggregate never eats the fire damage.
+    expect(res.total).toBe(res.packets[1].contribution);
+  });
+
+  it('lets a penalty offset other same-type damage in the same instance', () => {
+    // Weapon packet at 1d4 - 10 (negative) plus same-type sneak dice at
+    // 1d4 + 12: one damage instance, one type, so the totals aggregate
+    // before the never-negative clamp — the penalty is not swallowed by a
+    // per-packet floor.
+    const res = resolveDamage(
+      {
+        packets: [
+          {
+            dice: '1d4',
+            type: 'piercing',
+            label: 'weapon',
+            modifiers: [{ label: 'penalty', value: -10 }],
+          },
+          { dice: '1d4+12', type: 'piercing', label: 'sneak attack' },
+        ],
+      },
+      createSeededRng(0),
+    );
+    const expected = res.packets[0].natural - 10 + res.packets[1].natural + 12;
+    expect(res.byType).toEqual([{ type: 'piercing', subtotal: expected }]);
+    expect(res.total).toBe(expected);
   });
 
   it('applies immunity, then resistance (floor half), then vulnerability, after modifiers', () => {
@@ -339,7 +400,7 @@ describe('damage composition', () => {
       },
       createSeededRng(15),
     );
-    const subtotal = res.packets[0].subtotal;
+    const subtotal = res.byType[0].subtotal;
     const byLabel = new Map(res.targets?.map((t) => [t.label, t.total]));
     expect(byLabel.get('immune')).toBe(0);
     expect(byLabel.get('resistant')).toBe(Math.floor(subtotal / 2));
@@ -363,11 +424,11 @@ describe('damage composition', () => {
     expect(res.packets[0].rolls).toHaveLength(8);
     const plain = res.targets?.[0].total ?? 0;
     const resisted = res.targets?.[1].total ?? 0;
-    expect(plain).toBe(res.packets[0].subtotal);
+    expect(plain).toBe(res.byType[0].subtotal);
     expect(resisted).toBe(Math.floor(plain / 2));
   });
 
-  it('only halves/doubles packets of the matching type', () => {
+  it('only halves/doubles aggregates of the matching type', () => {
     const res = resolveDamage(
       {
         packets: [
@@ -378,10 +439,10 @@ describe('damage composition', () => {
       },
       createSeededRng(8),
     );
-    const [piercing, poison] = res.packets;
-    expect(res.targets?.[0].packetDamage).toEqual([
-      piercing.subtotal,
-      Math.floor(poison.subtotal / 2),
+    const [piercing, poison] = res.byType;
+    expect(res.targets?.[0].typeDamage).toEqual([
+      { type: 'piercing', subtotal: piercing.subtotal },
+      { type: 'poison', subtotal: Math.floor(poison.subtotal / 2) },
     ]);
   });
 
@@ -446,5 +507,86 @@ describe('damage composition', () => {
     const first = resolveDamage(input, createSeededRng(123));
     const second = resolveDamage(input, createSeededRng(123));
     expect(second).toEqual(first);
+  });
+});
+describe('damage partitioning is mechanically irrelevant (metamorphic)', () => {
+  it('splitting one damage roll into packets never changes any total', () => {
+    // Same dice count/faces in the same RNG draw order, so both calls see
+    // identical dice: [1d6, 1d6+3] fire ≡ [2d6+3] fire.
+    const targets = [
+      { label: 'plain' },
+      { label: 'resistant', resistances: ['fire' as const] },
+      { label: 'vulnerable', vulnerabilities: ['fire' as const] },
+    ];
+    for (let seed = 0; seed < 25; seed += 1) {
+      const split = resolveDamage(
+        {
+          packets: [
+            { dice: '1d6', type: 'fire' },
+            { dice: '1d6+3', type: 'fire' },
+          ],
+          targets,
+        },
+        createSeededRng(seed),
+      );
+      const combined = resolveDamage(
+        { packets: [{ dice: '2d6+3', type: 'fire' }], targets },
+        createSeededRng(seed),
+      );
+      expect(split.packets.flatMap((packet) => packet.rolls)).toEqual(
+        combined.packets.flatMap((packet) => packet.rolls),
+      );
+      expect(split.byType).toEqual(combined.byType);
+      expect(split.total).toBe(combined.total);
+      expect(split.targets).toEqual(combined.targets);
+    }
+  });
+
+  it('moving a declared modifier between same-type packets changes nothing', () => {
+    const modifiers = [{ label: 'STR', value: 3 }];
+    const onWeapon = resolveDamage(
+      {
+        packets: [
+          { dice: '1d6', type: 'piercing', modifiers },
+          { dice: '2d6', type: 'piercing' },
+        ],
+      },
+      createSeededRng(77),
+    );
+    const onSneak = resolveDamage(
+      {
+        packets: [
+          { dice: '1d6', type: 'piercing' },
+          { dice: '2d6', type: 'piercing', modifiers },
+        ],
+      },
+      createSeededRng(77),
+    );
+    expect(onWeapon.byType).toEqual(onSneak.byType);
+    expect(onWeapon.total).toBe(onSneak.total);
+  });
+
+  it('resistance rounding applies once per type, not once per packet', () => {
+    // Find a seed where both 1d2 packets roll 1: the aggregate is 2 fire, so
+    // a resistant target takes floor(2/2) = 1 — per-packet rounding would
+    // have produced floor(1/2) + floor(1/2) = 0.
+    for (let seed = 0; seed < 1000; seed += 1) {
+      const res = resolveDamage(
+        {
+          packets: [
+            { dice: '1d2', type: 'fire' },
+            { dice: '1d2', type: 'fire' },
+          ],
+          targets: [{ label: 'resistant', resistances: ['fire'] }],
+        },
+        createSeededRng(seed),
+      );
+      if (res.packets[0].natural === 1 && res.packets[1].natural === 1) {
+        expect(res.byType).toEqual([{ type: 'fire', subtotal: 2 }]);
+        expect(res.targets?.[0].total).toBe(1);
+        return;
+      }
+    }
+    throw new Error('no [1, 1] seed found');
   });
 });

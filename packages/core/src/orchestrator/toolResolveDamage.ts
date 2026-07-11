@@ -56,11 +56,14 @@ export const resolveDamageTool: Tool = {
     'Roll and compose damage with code-owned math. Declare one packet per ' +
     'damage source ({ dice: "NdM+K", type, label?, modifiers? }); on a ' +
     'critical hit pass critical:true and the ENGINE doubles the dice — never ' +
-    'rewrite the dice expression yourself. Damage is rolled once and applied ' +
-    'to every declared target; per target the engine zeroes immune types, ' +
-    'halves resisted types (round down) and then doubles vulnerable types, ' +
-    'after all modifiers; totals never go below 0. WHICH resistances apply ' +
-    'stays your ruling. This tool does not change HP — follow up with ' +
+    'rewrite the dice expression yourself. One call = one damage instance: ' +
+    'same-type packets aggregate before any math, so how you split packets ' +
+    'never changes totals. Damage is rolled once and applied to every ' +
+    'declared target; per target and per type the engine zeroes immune ' +
+    'types, halves resisted types (round down) and then doubles vulnerable ' +
+    'types, after all modifiers; each type total never goes below 0. WHICH ' +
+    'resistances apply stays your ruling. This tool does not change HP — ' +
+    'follow up with ' +
     'adjust_hp (party) or update_combatant (monsters). args: { reason, ' +
     'packets, critical?, targets?, visibility? }.',
   inputSchema: {
