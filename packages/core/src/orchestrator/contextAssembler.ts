@@ -593,7 +593,7 @@ function renderState(state: StateSnapshot): string {
       );
       const reactionsSpent = turnState.budgets.filter(
         (budget) =>
-          budget.reactionUsed &&
+          budget.reactionsUsed > 0 &&
           !(
             budget.participant.kind === turnState.activeParticipant?.kind &&
             budget.participant.ref === turnState.activeParticipant?.ref

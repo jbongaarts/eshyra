@@ -2447,6 +2447,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
+      'packages/core/src/orchestrator/toolUpdateCombatant.ts',
     ],
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },

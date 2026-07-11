@@ -24,15 +24,18 @@ export const spendTurnResourceTool: Tool = {
   mutates: true,
   description:
     "Spend a participant's action-economy budget in the active combat " +
-    'instance: their action, bonus action, reaction (once per round, usable ' +
-    'off-turn), free object interaction, or movement (a narrative note, not ' +
-    'a numeric budget). The engine refuses double-spends, off-turn spends of ' +
-    'on-turn resources, and any spend by a surprised participant. When the ' +
-    'spend casts a spell, pass spell:{cantrip} so the bonus-action-spell ' +
-    'rule is enforced (a bonus-action spell restricts every other spell that ' +
-    'turn to an action cantrip). args: { resource: "action"|"bonus_action"|' +
-    '"reaction"|"free_interaction"|"movement", activity: string, ' +
-    'combatantId?: string, character?: string, spell?: { cantrip: boolean } }.',
+    'instance: their action, bonus action, reaction (per-round allowance, ' +
+    'usable off-turn), free object interaction, or movement (a narrative ' +
+    'note, not a numeric budget). The engine refuses over-budget spends, ' +
+    'off-turn spends of on-turn resources, and any spend by a surprised ' +
+    'participant. When the spend casts a spell, pass spellRef (the spell ' +
+    'record key, e.g. "spell:healing-word"); the engine resolves it and ' +
+    'enforces the bonus-action-spell rule (a bonus-action spell restricts ' +
+    'every other spell that turn to a cantrip with a 1-action casting ' +
+    'time). A cast without a spellRef is refused. args: { resource: ' +
+    '"action"|"bonus_action"|"reaction"|"free_interaction"|"movement", ' +
+    'activity: string, combatantId?: string, character?: string, ' +
+    'spellRef?: string }.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -49,16 +52,13 @@ export const spendTurnResourceTool: Tool = {
         minLength: 1,
       },
       ...PARTICIPANT_SCHEMA_PROPERTIES,
-      spell: {
-        type: 'object',
+      spellRef: {
+        type: 'string',
         description:
-          'Present iff this spend casts a spell. cantrip: whether the spell ' +
-          'is a cantrip (casting time is implied by the resource spent).',
-        properties: {
-          cantrip: { type: 'boolean' },
-        },
-        required: ['cantrip'],
-        additionalProperties: false,
+          'Present iff this spend casts a spell: the spell record key from ' +
+          'the rules pack, e.g. "spell:fire-bolt". The engine derives ' +
+          'cantrip status and casting time from the record.',
+        minLength: 1,
       },
     },
     required: ['resource', 'activity'],
@@ -82,16 +82,14 @@ export const spendTurnResourceTool: Tool = {
         `spend_turn_resource resource must be one of: ${TURN_RESOURCES.join(', ')}`,
       );
     }
-    let spell: { cantrip: boolean } | undefined;
-    if (a.spell !== undefined) {
-      const s = asRecord(a.spell);
-      if (s === undefined || typeof s.cantrip !== 'boolean') {
-        return err(
-          'invalid_args',
-          'spend_turn_resource spell must be { cantrip: boolean }',
-        );
-      }
-      spell = { cantrip: s.cantrip };
+    if (
+      a.spellRef !== undefined &&
+      (typeof a.spellRef !== 'string' || a.spellRef.length === 0)
+    ) {
+      return err(
+        'invalid_args',
+        'spend_turn_resource spellRef must be a non-empty spell record key like "spell:fire-bolt"',
+      );
     }
     const participant = parseTurnParticipant(a, ctx, 'spend_turn_resource');
     if ('ok' in participant) {
@@ -104,7 +102,7 @@ export const spendTurnResourceTool: Tool = {
           participant,
           resource: a.resource as TurnResource,
           activity: a.activity,
-          ...(spell === undefined ? {} : { spell }),
+          ...(typeof a.spellRef === 'string' ? { spellRef: a.spellRef } : {}),
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

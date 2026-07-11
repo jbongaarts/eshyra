@@ -1,4 +1,9 @@
 import {
+  ActionEconomyError,
+  type SetReactionAllowanceResult,
+  setReactionAllowance,
+} from '../state/actionEconomy.js';
+import {
   type CombatantStatus,
   EncounterCombatantError,
   updateCombatant,
@@ -23,7 +28,7 @@ export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string }.',
+    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string, reactionAllowance?: integer }. reactionAllowance records the current total reactions per round for a creature whose rules record carries a state-dependent extraReactions mechanic (e.g. hydra Reactive Heads: 1 + heads beyond one); it is refused for other creatures.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -67,6 +72,14 @@ export const updateCombatantTool: Tool = {
         type: 'string',
         description: 'Optional updated tactical placement or zone.',
         minLength: 1,
+      },
+      reactionAllowance: {
+        type: 'integer',
+        description:
+          'Current total reactions per round, for creatures whose rules ' +
+          'record grants state-dependent extra reactions (validated against ' +
+          'the record).',
+        minimum: 1,
       },
     },
     required: ['combatantId'],
@@ -113,35 +126,69 @@ export const updateCombatantTool: Tool = {
     if (a.placement !== undefined && typeof a.placement !== 'string') {
       return err('invalid_args', 'update_combatant placement must be a string');
     }
+    if (
+      a.reactionAllowance !== undefined &&
+      typeof a.reactionAllowance !== 'number'
+    ) {
+      return err(
+        'invalid_args',
+        'update_combatant reactionAllowance must be an integer',
+      );
+    }
+    const hasCombatantUpdate =
+      a.hpDelta !== undefined ||
+      a.addCondition !== undefined ||
+      a.removeCondition !== undefined ||
+      a.status !== undefined ||
+      a.locationId !== undefined ||
+      a.placement !== undefined;
     try {
-      return ok(
-        updateCombatant(ctx.db, {
+      let reactionAllowance: SetReactionAllowanceResult | undefined;
+      if (typeof a.reactionAllowance === 'number') {
+        reactionAllowance = setReactionAllowance(ctx.db, {
           campaignId: ctx.campaignId,
           combatantId: a.combatantId,
-          ...(typeof a.hpDelta === 'number' ? { hpDelta: a.hpDelta } : {}),
-          ...(isRecord(a.addCondition)
-            ? { addCondition: a.addCondition as CharacterConditionEntry }
-            : {}),
-          ...(typeof a.removeCondition === 'string'
-            ? { removeCondition: a.removeCondition }
-            : {}),
-          ...(typeof a.status === 'string'
-            ? { status: a.status as CombatantStatus }
-            : {}),
-          ...(typeof a.locationId === 'string'
-            ? { locationId: a.locationId }
-            : {}),
-          ...(typeof a.placement === 'string'
-            ? { placement: a.placement }
-            : {}),
+          allowance: a.reactionAllowance,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
-        }),
+        });
+        if (!hasCombatantUpdate) {
+          return ok({ reactionAllowance });
+        }
+      }
+      const update = updateCombatant(ctx.db, {
+        campaignId: ctx.campaignId,
+        combatantId: a.combatantId,
+        ...(typeof a.hpDelta === 'number' ? { hpDelta: a.hpDelta } : {}),
+        ...(isRecord(a.addCondition)
+          ? { addCondition: a.addCondition as CharacterConditionEntry }
+          : {}),
+        ...(typeof a.removeCondition === 'string'
+          ? { removeCondition: a.removeCondition }
+          : {}),
+        ...(typeof a.status === 'string'
+          ? { status: a.status as CombatantStatus }
+          : {}),
+        ...(typeof a.locationId === 'string'
+          ? { locationId: a.locationId }
+          : {}),
+        ...(typeof a.placement === 'string' ? { placement: a.placement } : {}),
+        provenance: `model:${ctx.turnId}`,
+        sessionId: ctx.sessionId,
+        at: ctx.at,
+      });
+      return ok(
+        reactionAllowance === undefined
+          ? update
+          : { ...update, reactionAllowance },
       );
     } catch (e) {
       if (e instanceof EncounterCombatantError) {
         return err('invalid_target', e.message);
+      }
+      if (e instanceof ActionEconomyError) {
+        return err('turn_budget_error', e.message);
       }
       throw e;
     }

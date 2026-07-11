@@ -13,12 +13,19 @@
 -- Budget semantics (SRD 5.1: your-turn, bonus-actions, reactions,
 -- other-activity-on-your-turn, bonus-action, surprise, two-weapon-fighting):
 -- one action, one bonus action, and one free object interaction per turn;
--- one reaction per round regained at the start of the participant's own
--- turn; `movement_note` is deliberately narrative, not a numeric budget.
+-- `movement_note` is deliberately narrative, not a numeric budget.
+-- Reactions are an allowance, not a boolean: `reactions_used` counts spends
+-- against `reaction_allowance` (default 1), and `reaction_refresh` says when
+-- the count resets — 'own_turn' is the SRD default (regained at the start of
+-- the participant's own turn); 'every_turn' models typed extraReactions
+-- perTurn mechanics (e.g. the marilith's Reactive). Formula-based
+-- extraReactions (e.g. the hydra's Reactive Heads, one per head beyond one)
+-- raise `reaction_allowance` through a validated runtime grant.
 -- `bonus_action_spell_cast` / `other_spell_cast` carry the
 -- bonus-action-spell timing invariant (the only other spell on such a turn
--- is a cantrip with a casting time of 1 action). `surprised` denies all
--- spends until the participant's first turn ends.
+-- is a cantrip with a casting time of 1 action), derived from resolved spell
+-- records. `surprised` denies all spends until the participant's first turn
+-- ends.
 --
 -- Backfill policy: nothing to reconcile. Pre-0006 combat instances never had
 -- structured turns, so they keep round_number 0 / no active participant —
@@ -55,7 +62,11 @@ CREATE TABLE combat_turn_budget (
   bonus_action_used INTEGER NOT NULL DEFAULT 0
     CHECK (bonus_action_used IN (0, 1)),
   bonus_action_activity TEXT,
-  reaction_used INTEGER NOT NULL DEFAULT 0 CHECK (reaction_used IN (0, 1)),
+  reactions_used INTEGER NOT NULL DEFAULT 0 CHECK (reactions_used >= 0),
+  reaction_allowance INTEGER NOT NULL DEFAULT 1
+    CHECK (reaction_allowance >= 1),
+  reaction_refresh TEXT NOT NULL DEFAULT 'own_turn'
+    CHECK (reaction_refresh IN ('own_turn', 'every_turn')),
   reaction_activity TEXT,
   free_interaction_used INTEGER NOT NULL DEFAULT 0
     CHECK (free_interaction_used IN (0, 1)),

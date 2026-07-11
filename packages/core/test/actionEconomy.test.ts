@@ -16,6 +16,7 @@ import {
   mutateState,
   readCombatTurnState,
   renderContextMessage,
+  setReactionAllowance,
   setSurprised,
   spendTurnResource,
   startAdventureRun,
@@ -109,7 +110,7 @@ describe('beginTurn', () => {
       displayLabel: 'Goblin 1',
       actionUsed: false,
       bonusActionUsed: false,
-      reactionUsed: false,
+      reactionsUsed: 0,
       freeInteractionUsed: false,
       turnsTaken: 0,
     });
@@ -359,7 +360,7 @@ describe('spendTurnResource — per-turn slots', () => {
       activity: 'opportunity attack vs the PC',
       ...CTX,
     });
-    expect(reaction.budget.reactionUsed).toBe(true);
+    expect(reaction.budget.reactionsUsed).toBe(1);
   });
 
   it('requires an activity description and an active combat instance', () => {
@@ -419,7 +420,7 @@ describe('spendTurnResource — reaction per round across turn boundaries', () =
     const g2State = readCombatTurnState(db, CAMPAIGN)?.budgets.find(
       (b) => b.participant.ref === GOBLIN_2,
     );
-    expect(g2State?.reactionUsed).toBe(true);
+    expect(g2State?.reactionsUsed).toBe(1);
 
     // …but goblin 2's own turn start does.
     const ownTurn = beginTurn(db, {
@@ -427,7 +428,7 @@ describe('spendTurnResource — reaction per round across turn boundaries', () =
       participant: participant(GOBLIN_2),
       ...CTX,
     });
-    expect(ownTurn.budget.reactionUsed).toBe(false);
+    expect(ownTurn.budget.reactionsUsed).toBe(0);
   });
 });
 
@@ -444,7 +445,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
       participant: PC,
       resource: 'bonus_action',
       activity: 'cast Healing Word',
-      spell: { cantrip: false },
+      spellRef: 'spell:healing-word',
       ...CTX,
     });
 
@@ -454,7 +455,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
         participant: PC,
         resource: 'action',
         activity: 'cast Cure Wounds',
-        spell: { cantrip: false },
+        spellRef: 'spell:cure-wounds',
         ...CTX,
       }),
     ).toThrow(/only other spell allowed is a cantrip/);
@@ -464,7 +465,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
       participant: PC,
       resource: 'action',
       activity: 'cast Fire Bolt',
-      spell: { cantrip: true },
+      spellRef: 'spell:fire-bolt',
       ...CTX,
     });
     expect(cantrip.budget.otherSpellCast).toBe('action-cantrip');
@@ -478,7 +479,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
       participant: PC,
       resource: 'action',
       activity: 'cast Burning Hands',
-      spell: { cantrip: false },
+      spellRef: 'spell:burning-hands',
       ...CTX,
     });
     expect(() =>
@@ -487,7 +488,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
         participant: PC,
         resource: 'bonus_action',
         activity: 'cast Healing Word',
-        spell: { cantrip: false },
+        spellRef: 'spell:healing-word',
         ...CTX,
       }),
     ).toThrow(/no bonus-action spell is allowed/);
@@ -499,7 +500,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
       participant: PC,
       resource: 'action',
       activity: 'cast Fire Bolt',
-      spell: { cantrip: true },
+      spellRef: 'spell:fire-bolt',
       ...CTX,
     });
     const bonus = spendTurnResource(db2, {
@@ -507,7 +508,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
       participant: PC,
       resource: 'bonus_action',
       activity: 'cast Healing Word',
-      spell: { cantrip: false },
+      spellRef: 'spell:healing-word',
       ...CTX,
     });
     expect(bonus.budget.bonusActionSpellCast).toBe(true);
@@ -521,7 +522,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
       participant: PC,
       resource: 'bonus_action',
       activity: 'cast Healing Word',
-      spell: { cantrip: false },
+      spellRef: 'spell:healing-word',
       ...CTX,
     });
     expect(() =>
@@ -530,7 +531,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
         participant: PC,
         resource: 'reaction',
         activity: 'cast Shield',
-        spell: { cantrip: false },
+        spellRef: 'spell:shield',
         ...CTX,
       }),
     ).toThrow(/only other spell allowed is a cantrip/);
@@ -547,10 +548,10 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
       participant: PC,
       resource: 'reaction',
       activity: 'cast Shield',
-      spell: { cantrip: false },
+      spellRef: 'spell:shield',
       ...CTX,
     });
-    expect(offTurn.budget.reactionUsed).toBe(true);
+    expect(offTurn.budget.reactionsUsed).toBe(1);
   });
 
   it('rejects a spell cast on movement or the free interaction', () => {
@@ -562,7 +563,7 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
         participant: PC,
         resource: 'free_interaction',
         activity: 'cast something',
-        spell: { cantrip: true },
+        spellRef: 'spell:fire-bolt',
         ...CTX,
       }),
     ).toThrow(/not movement or the free interaction/);
@@ -627,7 +628,7 @@ describe('surprise', () => {
       ...CTX,
     });
     expect(reaction.budget.surprised).toBe(false);
-    expect(reaction.budget.reactionUsed).toBe(true);
+    expect(reaction.budget.reactionsUsed).toBe(1);
   });
 
   it('applies only before the first turn: a participant who has acted cannot become surprised', () => {
@@ -820,13 +821,13 @@ describe('turn-budget tools', () => {
         resource: 'action',
         activity: 'cast',
         combatantId: GOBLIN_1,
-        spell: {},
+        spellRef: '',
       },
       ctx,
     );
     expect(badSpell.ok).toBe(false);
     if (!badSpell.ok) {
-      expect(badSpell.message).toMatch(/cantrip/);
+      expect(badSpell.message).toMatch(/spellRef/);
     }
   });
 
@@ -843,5 +844,319 @@ describe('turn-budget tools', () => {
         surprised: [{ kind: 'character', ref: pcId }],
       });
     }
+  });
+});
+
+describe('spendTurnResource — spell casts are pack-derived, never model-declared', () => {
+  it('fails closed when an activity reads like a spell cast without a spellRef', () => {
+    const { db } = setupCombat();
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+
+    // The reviewer-cited bypass: recording a bonus-action spell cast without
+    // spell metadata must not silently skip the timing invariant.
+    expect(() =>
+      spendTurnResource(db, {
+        campaignId: CAMPAIGN,
+        participant: PC,
+        resource: 'bonus_action',
+        activity: 'cast Healing Word',
+        ...CTX,
+      }),
+    ).toThrow(/reads like a spell cast: pass spellRef/);
+    expect(() =>
+      spendTurnResource(db, {
+        campaignId: CAMPAIGN,
+        participant: PC,
+        resource: 'action',
+        activity: 'uses its Spellcasting to hurl fire',
+        ...CTX,
+      }),
+    ).toThrow(/reads like a spell cast: pass spellRef/);
+  });
+
+  it('fails closed on a spellRef that does not resolve in the rules stack', () => {
+    const { db } = setupCombat();
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+
+    expect(() =>
+      spendTurnResource(db, {
+        campaignId: CAMPAIGN,
+        participant: PC,
+        resource: 'action',
+        activity: 'cast Nonexistent Zap',
+        spellRef: 'spell:nonexistent-zap',
+        ...CTX,
+      }),
+    ).toThrow(/does not resolve to a spell record/);
+  });
+
+  it('derives the action-cantrip exception from the record, not a declared flag', () => {
+    const { db } = setupCombat();
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    spendTurnResource(db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      resource: 'bonus_action',
+      activity: 'cast Healing Word',
+      spellRef: 'spell:healing-word',
+      ...CTX,
+    });
+
+    // Cure Wounds is level 1 in the pack: rejected no matter what the model
+    // believes about it.
+    expect(() =>
+      spendTurnResource(db, {
+        campaignId: CAMPAIGN,
+        participant: PC,
+        resource: 'action',
+        activity: 'cast Cure Wounds',
+        spellRef: 'spell:cure-wounds',
+        ...CTX,
+      }),
+    ).toThrow(/only other spell allowed is a cantrip/);
+    // Fire Bolt is a 1-action cantrip in the pack: allowed.
+    const cantrip = spendTurnResource(db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      resource: 'action',
+      activity: 'cast Fire Bolt',
+      spellRef: 'spell:fire-bolt',
+      ...CTX,
+    });
+    expect(cantrip.budget.otherSpellCast).toBe('action-cantrip');
+  });
+});
+
+describe('extraReactions mechanics (hydra, marilith)', () => {
+  const HYDRA = 'ci-enc-lair-1-hydra-1';
+  const MARILITH = 'ci-enc-lair-1-marilith-2';
+
+  function setupLairCombat() {
+    const db = freshDbWithSession();
+    const base = makeTestAdventureModule();
+    const module: AdventureModule = {
+      ...base,
+      encounters: [
+        {
+          id: 'enc-lair',
+          name: 'Lair Guardians',
+          description: 'A hydra and a marilith guard the sanctum.',
+          creatures: [
+            { rulesRef: 'creature:hydra', count: 1, role: 'guardian' },
+            { rulesRef: 'creature:marilith', count: 1, role: 'guardian' },
+          ],
+          locationId: 'loc-cellar',
+          reward: 'The sanctum vault.',
+        },
+      ],
+      scenes: base.scenes.map((scene) =>
+        scene.id === 'scene-cellar'
+          ? { ...scene, encounterIds: ['enc-lair'] }
+          : scene,
+      ),
+    };
+    startAdventureRun(db, {
+      campaignId: CAMPAIGN,
+      runId: 'run-lair',
+      moduleId: module.id,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      updatedAt: NOW,
+    });
+    startEncounter(db, {
+      campaignId: CAMPAIGN,
+      encounterId: 'enc-lair',
+      resolveAdventureModule: (moduleId) =>
+        moduleId === module.id ? module : undefined,
+      ...CTX,
+    });
+    return { db };
+  }
+
+  function spendReaction(
+    db: ReturnType<typeof setupLairCombat>['db'],
+    ref: string,
+    activity: string,
+  ) {
+    return spendTurnResource(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(ref),
+      resource: 'reaction',
+      activity,
+      ...CTX,
+    });
+  }
+
+  it('marilith Reactive (perTurn): the reaction returns at the start of every turn, not only its own', () => {
+    const { db } = setupLairCombat();
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+
+    const first = spendReaction(db, MARILITH, 'parry');
+    expect(first.budget.reactionRefresh).toBe('every_turn');
+    // Still one per turn: a second reaction on the same turn is refused.
+    expect(() => spendReaction(db, MARILITH, 'parry again')).toThrow(
+      /return when the next turn begins/,
+    );
+
+    // Another participant's turn begins — NOT the marilith's — and its
+    // reaction is back (Reactive: one reaction on every turn).
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    expect(spendReaction(db, MARILITH, 'parry').budget.reactionsUsed).toBe(1);
+  });
+
+  it('hydra Reactive Heads (formula): the validated allowance grant unlocks extra reactions', () => {
+    const { db } = setupLairCombat();
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+
+    expect(
+      spendReaction(db, HYDRA, 'opportunity attack').budget.reactionsUsed,
+    ).toBe(1);
+    // Until the DM records the head count, the default allowance holds —
+    // and the rejection points at the grant mechanism.
+    expect(() => spendReaction(db, HYDRA, 'opportunity attack')).toThrow(
+      /state-dependent extra-reaction mechanic.*reactionAllowance/,
+    );
+
+    // Five heads: 1 + 4 extra reactions.
+    const grant = setReactionAllowance(db, {
+      campaignId: CAMPAIGN,
+      combatantId: HYDRA,
+      allowance: 5,
+      ...CTX,
+    });
+    expect(grant.reactionAllowance).toBe(5);
+    expect(grant.restrictedTo).toBe('opportunity-attacks');
+
+    // Extra spends succeed and surface the mechanic's restriction clause.
+    const second = spendReaction(db, HYDRA, 'opportunity attack (second head)');
+    expect(second.budget.reactionsUsed).toBe(2);
+    expect(second.extraReactionRestriction).toBe('opportunity-attacks');
+
+    for (const n of [3, 4, 5]) {
+      expect(
+        spendReaction(db, HYDRA, `opportunity attack (head ${n})`).budget
+          .reactionsUsed,
+      ).toBe(n);
+    }
+    expect(() => spendReaction(db, HYDRA, 'one bite too many')).toThrow(
+      /all 5 of their reactions \(5\/5\)/,
+    );
+  });
+
+  it('the allowance grant is refused for creatures without a formula-based mechanic', () => {
+    const { db } = setupCombat();
+    expect(() =>
+      setReactionAllowance(db, {
+        campaignId: CAMPAIGN,
+        combatantId: GOBLIN_1,
+        allowance: 2,
+        ...CTX,
+      }),
+    ).toThrow(/no state-dependent extra-reaction mechanic/);
+    // The marilith's perTurn mechanic is typed but not state-dependent:
+    // also refused.
+    const { db: lairDb } = setupLairCombat();
+    expect(() =>
+      setReactionAllowance(lairDb, {
+        campaignId: CAMPAIGN,
+        combatantId: MARILITH,
+        allowance: 4,
+        ...CTX,
+      }),
+    ).toThrow(/no state-dependent extra-reaction mechanic/);
+  });
+
+  it('update_combatant carries the grant as a validated tool arg', () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(7),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'turn-1',
+      at: NOW,
+    };
+
+    const granted = registry.invoke(
+      'update_combatant',
+      { combatantId: HYDRA, reactionAllowance: 3 },
+      ctx,
+    );
+    expect(granted.ok).toBe(true);
+    if (granted.ok) {
+      expect(granted.data).toMatchObject({
+        reactionAllowance: {
+          reactionAllowance: 3,
+          restrictedTo: 'opportunity-attacks',
+        },
+      });
+    }
+
+    const refused = registry.invoke(
+      'update_combatant',
+      { combatantId: MARILITH, reactionAllowance: 3 },
+      ctx,
+    );
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) {
+      expect(refused.code).toBe('turn_budget_error');
+    }
+  });
+});
+
+describe('setSurprised — timing guards', () => {
+  it('rejects the participant whose first turn is already underway', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN_1),
+      ...CTX,
+    });
+    spendTurnResource(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN_1),
+      resource: 'action',
+      activity: 'Attack (scimitar)',
+      ...CTX,
+    });
+
+    // The reviewer-cited sequence: retroactive surprise after acting on the
+    // currently active first turn must be refused.
+    expect(() =>
+      setSurprised(db, {
+        campaignId: CAMPAIGN,
+        participants: [participant(GOBLIN_1)],
+        ...CTX,
+      }),
+    ).toThrow(/first turn is already underway/);
+  });
+
+  it('rejects a participant who already spent a reaction before their first turn', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN_1),
+      ...CTX,
+    });
+    spendTurnResource(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN_2),
+      resource: 'reaction',
+      activity: 'opportunity attack',
+      ...CTX,
+    });
+
+    expect(() =>
+      setSurprised(db, {
+        campaignId: CAMPAIGN,
+        participants: [participant(GOBLIN_2)],
+        ...CTX,
+      }),
+    ).toThrow(/already acted this combat/);
   });
 });

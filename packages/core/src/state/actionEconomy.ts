@@ -8,12 +8,24 @@
 //   (your-turn, bonus-actions, other-activity-on-your-turn). A second object
 //   interaction requires the action (Use an Object), which the model records
 //   as an ordinary action spend.
-// - One reaction per round, regained at the start of the participant's own
-//   turn — the one budget that crosses turn boundaries (reactions).
+// - The reaction is an allowance, not a boolean: normally 1 per round,
+//   regained at the start of the participant's own turn — the one budget
+//   that crosses turn boundaries (reactions). Typed `extraReactions` pack
+//   mechanics raise it: a `perTurn` grant (marilith Reactive) refreshes the
+//   count at the start of EVERY turn; a `formula` grant (hydra Reactive
+//   Heads, one per head beyond one) depends on live state the engine does
+//   not track, so the DM records the current total through the validated
+//   {@link setReactionAllowance} grant — accepted only for creatures whose
+//   record structurally carries such a mechanic. A `restrictedTo` clause
+//   (hydra: opportunity attacks only) is surfaced on extra spends; whether
+//   a given activity satisfies it stays a ruling.
 // - Casting a spell as a bonus action restricts every other spell cast that
 //   turn to a cantrip with a casting time of 1 action, in either order
-//   (bonus-action). The caller declares cantrip-ness (`spell.cantrip`); the
-//   casting time is implied by which resource the cast spends.
+//   (bonus-action). The caller passes the spell's pack ref (`spellRef`);
+//   the engine resolves it against the campaign rules stack and derives
+//   cantrip status and casting time from the record — never from a
+//   model-declared flag. A spend whose activity reads like a spell cast
+//   without a spellRef fails closed.
 // - A surprised participant can take no move, action, or bonus action on its
 //   first turn and no reaction until that turn ends (surprise). Surprise
 //   determination (Stealth vs passive Perception) stays a DM ruling; this
@@ -39,6 +51,15 @@
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
+import {
+  DEFAULT_DND5E_SRD_BINDING,
+  readCampaignRulesBinding,
+} from '../rules/binding.js';
+import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
+import { lookupRulesRecord } from '../rules/lookup.js';
+import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
+import { resolveRulesStack } from '../rules/stack.js';
+import type { RulesRecord, RulesRecordKind } from '../rules/types.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import {
   getActiveCombatInstance,
@@ -71,6 +92,11 @@ export type TurnResource =
 
 export type OtherSpellCast = 'none' | 'action-cantrip' | 'other';
 
+/** When a participant's spent reactions reset: at the start of their own
+ *  turn (the SRD default) or at the start of every turn (perTurn
+ *  extraReactions mechanics, e.g. the marilith's Reactive). */
+export type ReactionRefresh = 'own_turn' | 'every_turn';
+
 export interface TurnBudget {
   readonly participant: TurnParticipant;
   readonly displayLabel: string;
@@ -80,7 +106,9 @@ export interface TurnBudget {
   readonly actionActivity: string | undefined;
   readonly bonusActionUsed: boolean;
   readonly bonusActionActivity: string | undefined;
-  readonly reactionUsed: boolean;
+  readonly reactionsUsed: number;
+  readonly reactionAllowance: number;
+  readonly reactionRefresh: ReactionRefresh;
   readonly reactionActivity: string | undefined;
   readonly freeInteractionUsed: boolean;
   readonly freeInteractionActivity: string | undefined;
@@ -126,9 +154,11 @@ export interface SpendTurnResourceInput extends TurnMutationContext {
   /** What the spend was, e.g. "Attack (shortsword)" or "moved 20 ft to the
    *  altar". Movement spends append to the turn's movement note. */
   readonly activity: string;
-  /** Present iff this spend casts a spell; carries the one fact the timing
-   *  invariant needs. Casting time is implied by the resource spent. */
-  readonly spell?: { readonly cantrip: boolean };
+  /** Present iff this spend casts a spell: the spell's pack ref (e.g.
+   *  "spell:healing-word"). The engine resolves it against the campaign
+   *  rules stack and derives cantrip status/casting time from the record;
+   *  an unresolvable ref fails closed. */
+  readonly spellRef?: string;
 }
 
 export interface SpendTurnResourceResult {
@@ -137,6 +167,27 @@ export interface SpendTurnResourceResult {
   readonly resource: TurnResource;
   readonly activity: string;
   readonly budget: TurnBudget;
+  /** Set when this spend consumed an extra reaction whose granting mechanic
+   *  carries a restriction (e.g. hydra Reactive Heads:
+   *  "opportunity-attacks"). Whether the activity satisfies it is a DM
+   *  ruling; the engine surfaces the clause. */
+  readonly extraReactionRestriction?: string;
+}
+
+export interface SetReactionAllowanceInput extends TurnMutationContext {
+  readonly campaignId: string;
+  readonly combatantId: string;
+  /** The combatant's current total reactions per round (its normal one plus
+   *  the extras its mechanic grants right now, e.g. hydra heads). */
+  readonly allowance: number;
+}
+
+export interface SetReactionAllowanceResult {
+  readonly combatInstanceId: string;
+  readonly participant: TurnParticipant;
+  readonly reactionAllowance: number;
+  /** The granting mechanic's restriction clause, when it carries one. */
+  readonly restrictedTo?: string;
 }
 
 export interface SetSurprisedInput extends TurnMutationContext {
@@ -165,7 +216,9 @@ interface BudgetRow {
   readonly action_activity: string | null;
   readonly bonus_action_used: number;
   readonly bonus_action_activity: string | null;
-  readonly reaction_used: number;
+  readonly reactions_used: number;
+  readonly reaction_allowance: number;
+  readonly reaction_refresh: ReactionRefresh;
   readonly reaction_activity: string | null;
   readonly free_interaction_used: number;
   readonly free_interaction_activity: string | null;
@@ -176,7 +229,8 @@ interface BudgetRow {
 
 const BUDGET_COLUMNS = `participant_kind, participant_ref, surprised,
        turns_taken, action_used, action_activity, bonus_action_used,
-       bonus_action_activity, reaction_used, reaction_activity,
+       bonus_action_activity, reactions_used, reaction_allowance,
+       reaction_refresh, reaction_activity,
        free_interaction_used, free_interaction_activity, movement_note,
        bonus_action_spell_cast, other_spell_cast`;
 
@@ -190,7 +244,9 @@ function rowToBudget(row: BudgetRow, displayLabel: string): TurnBudget {
     actionActivity: row.action_activity ?? undefined,
     bonusActionUsed: row.bonus_action_used === 1,
     bonusActionActivity: row.bonus_action_activity ?? undefined,
-    reactionUsed: row.reaction_used === 1,
+    reactionsUsed: row.reactions_used,
+    reactionAllowance: row.reaction_allowance,
+    reactionRefresh: row.reaction_refresh,
     reactionActivity: row.reaction_activity ?? undefined,
     freeInteractionUsed: row.free_interaction_used === 1,
     freeInteractionActivity: row.free_interaction_activity ?? undefined,
@@ -198,6 +254,144 @@ function rowToBudget(row: BudgetRow, displayLabel: string): TurnBudget {
     bonusActionSpellCast: row.bonus_action_spell_cast === 1,
     otherSpellCast: row.other_spell_cast,
   };
+}
+
+/**
+ * Look up a record in the campaign's resolved rules stack (same binding
+ * resolution `start_encounter` uses for creature statlines).
+ */
+function lookupCampaignRecord(
+  db: Db,
+  kind: RulesRecordKind,
+  ref: string,
+): RulesRecord | undefined {
+  const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
+  const base =
+    [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK].find(
+      (candidate) => candidate.meta.packId === binding.base.packId,
+    ) ?? getBundledDnd5eSrdPack();
+  const result = lookupRulesRecord(resolveRulesStack({ base }), { kind, ref });
+  return result.ok ? result.record : undefined;
+}
+
+/** A resolved spell's facts the timing invariant needs, pack-derived. */
+interface ResolvedSpell {
+  readonly ref: string;
+  readonly cantrip: boolean;
+  /** True for a cantrip with a casting time of exactly 1 action — the only
+   *  other spell permitted on a bonus-action-spell turn. */
+  readonly actionCantrip: boolean;
+}
+
+function resolveSpell(db: Db, spellRef: string): ResolvedSpell {
+  const record = lookupCampaignRecord(db, 'spell', spellRef);
+  const data = record?.data;
+  if (typeof data !== 'object' || data === null) {
+    throw new ActionEconomyError(
+      `spellRef '${spellRef}' does not resolve to a spell record in the campaign rules stack; find the exact key via lookup_rules`,
+    );
+  }
+  const level = (data as Record<string, unknown>).level;
+  const castingTime = (data as Record<string, unknown>).castingTime;
+  if (typeof level !== 'number') {
+    throw new ActionEconomyError(
+      `spell record '${spellRef}' carries no level; cannot derive cantrip status`,
+    );
+  }
+  const cantrip = level === 0;
+  return {
+    ref: spellRef,
+    cantrip,
+    actionCantrip: cantrip && castingTime === '1 action',
+  };
+}
+
+/** Fail closed when an activity reads like a spell cast but no spellRef was
+ *  passed: the timing invariant would otherwise be silently bypassable. */
+const SPELL_CAST_ACTIVITY = /\bcast(?:s|ing)?\b|\bspell/i;
+
+/** How a participant's reactions behave, derived from typed extraReactions
+ *  mechanics on its creature record (combatants only; characters and
+ *  recordless combatants get the SRD default). */
+interface ReactionProfile {
+  readonly allowance: number;
+  readonly refresh: ReactionRefresh;
+  /** The record carries a formula-based (state-dependent) grant, so the
+   *  validated runtime allowance grant is available. */
+  readonly hasFormulaGrant: boolean;
+  readonly restrictedTo: string | undefined;
+}
+
+const DEFAULT_REACTION_PROFILE: ReactionProfile = {
+  allowance: 1,
+  refresh: 'own_turn',
+  hasFormulaGrant: false,
+  restrictedTo: undefined,
+};
+
+/** Collect every typed `extraReactions` effect anywhere in a record's data
+ *  (traits/actions nest mechanics differently across kinds). */
+function collectExtraReactionEffects(
+  value: unknown,
+  found: Record<string, unknown>[],
+): void {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectExtraReactionEffects(item, found);
+    }
+    return;
+  }
+  if (typeof value !== 'object' || value === null) {
+    return;
+  }
+  const record = value as Record<string, unknown>;
+  if (record.kind === 'extraReactions') {
+    found.push(record);
+    return;
+  }
+  for (const nested of Object.values(record)) {
+    collectExtraReactionEffects(nested, found);
+  }
+}
+
+function reactionProfileFor(
+  db: Db,
+  rulesRef: string | undefined,
+): ReactionProfile {
+  if (rulesRef === undefined) {
+    return DEFAULT_REACTION_PROFILE;
+  }
+  const record = lookupCampaignRecord(db, 'creature', rulesRef);
+  if (record === undefined) {
+    return DEFAULT_REACTION_PROFILE;
+  }
+  const effects: Record<string, unknown>[] = [];
+  collectExtraReactionEffects(record.data, effects);
+  if (effects.length === 0) {
+    return DEFAULT_REACTION_PROFILE;
+  }
+  let allowance = 1;
+  let refresh: ReactionRefresh = 'own_turn';
+  let hasFormulaGrant = false;
+  let restrictedTo: string | undefined;
+  for (const effect of effects) {
+    if (typeof effect.perTurn === 'number' && effect.perTurn >= 1) {
+      // "Can take a reaction on every turn": the count refreshes at the
+      // start of every turn instead of only the participant's own.
+      allowance = Math.max(allowance, effect.perTurn);
+      refresh = 'every_turn';
+    }
+    if (typeof effect.formula === 'string') {
+      // State-dependent grant (e.g. one per hydra head beyond one): the
+      // engine cannot count heads, so the DM records the current total via
+      // the validated setReactionAllowance grant.
+      hasFormulaGrant = true;
+    }
+    if (typeof effect.restrictedTo === 'string') {
+      restrictedTo = effect.restrictedTo;
+    }
+  }
+  return { allowance, refresh, hasFormulaGrant, restrictedTo };
 }
 
 /**
@@ -211,19 +405,28 @@ function resolveParticipant(
   campaignId: string,
   combatInstanceId: string,
   input: TurnParticipantInput,
-): { participant: TurnParticipant; displayLabel: string } {
+): {
+  participant: TurnParticipant;
+  displayLabel: string;
+  rulesRef: string | undefined;
+} {
   if (input.kind === 'combatant') {
     if (input.ref === undefined || input.ref.length === 0) {
       throw new ActionEconomyError('a combatant participant needs its ref');
     }
     const combatant = db
       .prepare(
-        `SELECT combat_instance_id, display_label, status
+        `SELECT combat_instance_id, display_label, status, rules_ref
          FROM encounter_combatant
          WHERE campaign_id = ? AND combatant_id = ?`,
       )
       .get(campaignId, input.ref) as
-      | { combat_instance_id: string; display_label: string; status: string }
+      | {
+          combat_instance_id: string;
+          display_label: string;
+          status: string;
+          rules_ref: string;
+        }
       | undefined;
     if (
       combatant === undefined ||
@@ -250,6 +453,7 @@ function resolveParticipant(
     return {
       participant: { kind: 'combatant', ref: input.ref },
       displayLabel: combatant.display_label,
+      rulesRef: combatant.rules_ref,
     };
   }
 
@@ -268,6 +472,7 @@ function resolveParticipant(
   return {
     participant: { kind: 'character', ref: charId },
     displayLabel: character.name ?? charId,
+    rulesRef: undefined,
   };
 }
 
@@ -317,20 +522,23 @@ function readBudgetRow(
     | undefined;
 }
 
-/** Insert the participant's budget row if it does not exist yet. */
+/** Insert the participant's budget row if it does not exist yet, seeding the
+ *  reaction allowance/refresh from the participant's typed mechanics. */
 function ensureBudgetRow(
   db: Db,
   campaignId: string,
   instanceId: string,
   participant: TurnParticipant,
+  profile: ReactionProfile,
   ctx: TurnMutationContext,
 ): void {
   db.prepare(
     `INSERT INTO combat_turn_budget(
        campaign_id, combat_instance_id, participant_kind, participant_ref,
+       reaction_allowance, reaction_refresh,
        provenance, session_id, updated_at
      )
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(campaign_id, combat_instance_id, participant_kind,
                  participant_ref) DO NOTHING`,
   ).run(
@@ -338,6 +546,8 @@ function ensureBudgetRow(
     instanceId,
     participant.kind,
     participant.ref,
+    profile.allowance,
+    profile.refresh,
     ctx.provenance,
     ctx.sessionId,
     ctx.at,
@@ -347,7 +557,7 @@ function ensureBudgetRow(
 export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
   return withTransaction(db, (txnDb) => {
     const instance = requireActiveInstance(txnDb, input.campaignId);
-    const { participant, displayLabel } = resolveParticipant(
+    const { participant, displayLabel, rulesRef } = resolveParticipant(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
@@ -400,13 +610,14 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
     }
 
     // Reset the new participant's per-turn budget in place. The reaction
-    // returns at the start of its own turn; surprised and turns_taken are
-    // the two fields that survive the reset.
+    // count resets at the start of its own turn; surprised, turns_taken,
+    // and the reaction allowance/refresh survive the reset.
     ensureBudgetRow(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
       participant,
+      reactionProfileFor(txnDb, rulesRef),
       input,
     );
     txnDb
@@ -414,7 +625,7 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
         `UPDATE combat_turn_budget
          SET action_used = 0, action_activity = NULL,
              bonus_action_used = 0, bonus_action_activity = NULL,
-             reaction_used = 0, reaction_activity = NULL,
+             reactions_used = 0, reaction_activity = NULL,
              free_interaction_used = 0, free_interaction_activity = NULL,
              movement_note = NULL, bonus_action_spell_cast = 0,
              other_spell_cast = 'none',
@@ -430,6 +641,24 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
         instance.combatInstanceId,
         participant.kind,
         participant.ref,
+      );
+
+    // perTurn extraReactions mechanics (marilith Reactive) regain their
+    // reaction at the start of EVERY turn, not only their own.
+    txnDb
+      .prepare(
+        `UPDATE combat_turn_budget
+         SET reactions_used = 0,
+             provenance = ?, session_id = ?, updated_at = ?
+         WHERE campaign_id = ? AND combat_instance_id = ?
+           AND reaction_refresh = 'every_turn' AND reactions_used > 0`,
+      )
+      .run(
+        input.provenance,
+        input.sessionId,
+        input.at,
+        input.campaignId,
+        instance.combatInstanceId,
       );
 
     txnDb
@@ -483,23 +712,39 @@ export function spendTurnResource(
   if (input.activity.trim().length === 0) {
     throw new ActionEconomyError('activity must be a non-empty description');
   }
-  if (
-    input.spell !== undefined &&
-    (input.resource === 'movement' || input.resource === 'free_interaction')
-  ) {
+  const isSpendableForSpell =
+    input.resource === 'action' ||
+    input.resource === 'bonus_action' ||
+    input.resource === 'reaction';
+  if (input.spellRef !== undefined && !isSpendableForSpell) {
     throw new ActionEconomyError(
       'a spell cast spends an action, bonus action, or reaction — not movement or the free interaction',
+    );
+  }
+  if (
+    input.spellRef === undefined &&
+    isSpendableForSpell &&
+    SPELL_CAST_ACTIVITY.test(input.activity)
+  ) {
+    // Fail closed instead of letting a prose-described cast bypass the
+    // bonus-action-spell timing invariant.
+    throw new ActionEconomyError(
+      `the activity '${input.activity}' reads like a spell cast: pass spellRef (the spell's pack key, e.g. "spell:healing-word") so spell timing is enforced, or reword the activity if no spell is being cast`,
     );
   }
 
   return withTransaction(db, (txnDb) => {
     const instance = requireActiveInstance(txnDb, input.campaignId);
-    const { participant, displayLabel } = resolveParticipant(
+    const { participant, displayLabel, rulesRef } = resolveParticipant(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
       input.participant,
     );
+    const spell =
+      input.spellRef === undefined
+        ? undefined
+        : resolveSpell(txnDb, input.spellRef);
     const turn = readInstanceTurnFields(
       txnDb,
       input.campaignId,
@@ -515,11 +760,13 @@ export function spendTurnResource(
       );
     }
 
+    const profile = reactionProfileFor(txnDb, rulesRef);
     ensureBudgetRow(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
       participant,
+      profile,
       input,
     );
     const row = readBudgetRow(
@@ -540,6 +787,7 @@ export function spendTurnResource(
     }
 
     const updates: Record<string, string | number> = {};
+    let extraReactionRestriction: string | undefined;
     switch (input.resource) {
       case 'action': {
         if (row.action_used === 1) {
@@ -548,15 +796,15 @@ export function spendTurnResource(
               (row.action_activity === null ? '' : ` (${row.action_activity})`),
           );
         }
-        if (input.spell !== undefined) {
-          if (row.bonus_action_spell_cast === 1 && !input.spell.cantrip) {
+        if (spell !== undefined) {
+          if (row.bonus_action_spell_cast === 1 && !spell.actionCantrip) {
             throw new ActionEconomyError(
-              `${displayLabel} cast a spell as a bonus action this turn: the only other spell allowed is a cantrip with a casting time of 1 action`,
+              `${displayLabel} cast a spell as a bonus action this turn: the only other spell allowed is a cantrip with a casting time of 1 action ('${spell.ref}' is not)`,
             );
           }
           updates.other_spell_cast = escalateOtherSpellCast(
             row.other_spell_cast,
-            input.spell.cantrip ? 'action-cantrip' : 'other',
+            spell.actionCantrip ? 'action-cantrip' : 'other',
           );
         }
         updates.action_used = 1;
@@ -572,7 +820,7 @@ export function spendTurnResource(
                 : ` (${row.bonus_action_activity})`),
           );
         }
-        if (input.spell !== undefined) {
+        if (spell !== undefined) {
           if (row.other_spell_cast === 'other') {
             throw new ActionEconomyError(
               `${displayLabel} already cast a spell other than an action cantrip this turn, so no bonus-action spell is allowed`,
@@ -585,22 +833,36 @@ export function spendTurnResource(
         break;
       }
       case 'reaction': {
-        if (row.reaction_used === 1) {
+        if (row.reactions_used >= row.reaction_allowance) {
+          const spent =
+            row.reaction_allowance === 1
+              ? 'their reaction'
+              : `all ${row.reaction_allowance} of their reactions (${row.reactions_used}/${row.reaction_allowance})`;
+          const returns =
+            row.reaction_refresh === 'every_turn'
+              ? '; they return when the next turn begins'
+              : row.reaction_allowance === 1
+                ? '; it returns at the start of their next turn'
+                : '; they return at the start of their next turn';
+          const grantHint = profile.hasFormulaGrant
+            ? ' This creature has a state-dependent extra-reaction mechanic: if its current state grants more, record the total via update_combatant reactionAllowance.'
+            : '';
           throw new ActionEconomyError(
-            `${displayLabel} has already used their reaction this round` +
+            `${displayLabel} has already used ${spent} this round` +
               (row.reaction_activity === null
                 ? ''
-                : ` (${row.reaction_activity})`) +
-              '; it returns at the start of their next turn',
+                : ` (last: ${row.reaction_activity})`) +
+              returns +
+              grantHint,
           );
         }
-        if (input.spell !== undefined && isOwnTurn) {
+        if (spell !== undefined && isOwnTurn) {
           // A reaction spell on the caster's own turn is never a cantrip
           // with a casting time of 1 action, so it participates in the
           // bonus-action-spell restriction both ways.
           if (row.bonus_action_spell_cast === 1) {
             throw new ActionEconomyError(
-              `${displayLabel} cast a spell as a bonus action this turn: the only other spell allowed is a cantrip with a casting time of 1 action`,
+              `${displayLabel} cast a spell as a bonus action this turn: the only other spell allowed is a cantrip with a casting time of 1 action ('${spell.ref}' cast as a reaction is not)`,
             );
           }
           updates.other_spell_cast = escalateOtherSpellCast(
@@ -608,7 +870,13 @@ export function spendTurnResource(
             'other',
           );
         }
-        updates.reaction_used = 1;
+        if (row.reactions_used >= 1 && profile.restrictedTo !== undefined) {
+          // Extra reactions may be mechanic-restricted (hydra Reactive
+          // Heads: opportunity attacks only). Whether the activity
+          // satisfies the clause stays a ruling; the engine surfaces it.
+          extraReactionRestriction = profile.restrictedTo;
+        }
+        updates.reactions_used = row.reactions_used + 1;
         updates.reaction_activity = input.activity;
         break;
       }
@@ -673,6 +941,80 @@ export function spendTurnResource(
       resource: input.resource,
       activity: input.activity,
       budget: rowToBudget(after, displayLabel),
+      ...(extraReactionRestriction === undefined
+        ? {}
+        : { extraReactionRestriction }),
+    };
+  });
+}
+
+/**
+ * Record a combatant's current total reaction allowance — the validated
+ * runtime grant for formula-based `extraReactions` mechanics whose value
+ * depends on live state the engine does not track (hydra Reactive Heads:
+ * one extra reaction per head beyond one). Rejected unless the combatant's
+ * creature record structurally carries such a mechanic, so the model cannot
+ * invent extra reactions for ordinary creatures.
+ */
+export function setReactionAllowance(
+  db: Db,
+  input: SetReactionAllowanceInput,
+): SetReactionAllowanceResult {
+  if (!Number.isInteger(input.allowance) || input.allowance < 1) {
+    throw new ActionEconomyError(
+      "reaction allowance must be a positive integer (the creature's current total reactions per round)",
+    );
+  }
+
+  return withTransaction(db, (txnDb) => {
+    const instance = requireActiveInstance(txnDb, input.campaignId);
+    const { participant, displayLabel, rulesRef } = resolveParticipant(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      { kind: 'combatant', ref: input.combatantId },
+    );
+    const profile = reactionProfileFor(txnDb, rulesRef);
+    if (!profile.hasFormulaGrant) {
+      throw new ActionEconomyError(
+        `${displayLabel} has no state-dependent extra-reaction mechanic in its rules record; its reaction allowance is fixed`,
+      );
+    }
+
+    ensureBudgetRow(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      participant,
+      profile,
+      input,
+    );
+    txnDb
+      .prepare(
+        `UPDATE combat_turn_budget
+         SET reaction_allowance = ?,
+             provenance = ?, session_id = ?, updated_at = ?
+         WHERE campaign_id = ? AND combat_instance_id = ?
+           AND participant_kind = ? AND participant_ref = ?`,
+      )
+      .run(
+        input.allowance,
+        input.provenance,
+        input.sessionId,
+        input.at,
+        input.campaignId,
+        instance.combatInstanceId,
+        participant.kind,
+        participant.ref,
+      );
+
+    return {
+      combatInstanceId: instance.combatInstanceId,
+      participant,
+      reactionAllowance: input.allowance,
+      ...(profile.restrictedTo === undefined
+        ? {}
+        : { restrictedTo: profile.restrictedTo }),
     };
   });
 }
@@ -695,10 +1037,15 @@ export function setSurprised(
 
   return withTransaction(db, (txnDb) => {
     const instance = requireActiveInstance(txnDb, input.campaignId);
+    const turn = readInstanceTurnFields(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+    );
     const surprised: TurnParticipant[] = [];
 
     for (const participantInput of input.participants) {
-      const { participant, displayLabel } = resolveParticipant(
+      const { participant, displayLabel, rulesRef } = resolveParticipant(
         txnDb,
         input.campaignId,
         instance.combatInstanceId,
@@ -709,6 +1056,7 @@ export function setSurprised(
         input.campaignId,
         instance.combatInstanceId,
         participant,
+        reactionProfileFor(txnDb, rulesRef),
         input,
       );
       const row = readBudgetRow(
@@ -720,6 +1068,26 @@ export function setSurprised(
       if (row !== undefined && row.turns_taken > 0) {
         throw new ActionEconomyError(
           `${displayLabel} has already taken a turn this combat; surprise applies only to the first turn`,
+        );
+      }
+      if (
+        turn.active_participant_kind === participant.kind &&
+        turn.active_participant_ref === participant.ref
+      ) {
+        throw new ActionEconomyError(
+          `${displayLabel}'s first turn is already underway; surprise must be recorded before it begins`,
+        );
+      }
+      if (
+        row !== undefined &&
+        (row.action_used === 1 ||
+          row.bonus_action_used === 1 ||
+          row.reactions_used > 0 ||
+          row.free_interaction_used === 1 ||
+          row.movement_note !== null)
+      ) {
+        throw new ActionEconomyError(
+          `${displayLabel} has already acted this combat (a surprised creature could not have); surprise must be recorded before any spend`,
         );
       }
       txnDb
@@ -815,10 +1183,17 @@ export function formatTurnBudget(budget: TurnBudget): string {
     used
       ? `${label} used${activity ? ` (${activity})` : ''}`
       : `${label} available`;
+  const reaction =
+    budget.reactionAllowance === 1
+      ? slot(budget.reactionsUsed >= 1, 'reaction', budget.reactionActivity)
+      : `reactions ${budget.reactionsUsed}/${budget.reactionAllowance} used` +
+        (budget.reactionActivity === undefined
+          ? ''
+          : ` (last: ${budget.reactionActivity})`);
   const parts = [
     slot(budget.actionUsed, 'action', budget.actionActivity),
     slot(budget.bonusActionUsed, 'bonus action', budget.bonusActionActivity),
-    slot(budget.reactionUsed, 'reaction', budget.reactionActivity),
+    reaction,
     slot(
       budget.freeInteractionUsed,
       'free interaction',

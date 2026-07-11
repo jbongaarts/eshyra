@@ -263,7 +263,11 @@ CREATE TABLE combat_turn_budget (
   bonus_action_used INTEGER NOT NULL DEFAULT 0
     CHECK (bonus_action_used IN (0, 1)),
   bonus_action_activity TEXT,
-  reaction_used INTEGER NOT NULL DEFAULT 0 CHECK (reaction_used IN (0, 1)),
+  reactions_used INTEGER NOT NULL DEFAULT 0 CHECK (reactions_used >= 0),
+  reaction_allowance INTEGER NOT NULL DEFAULT 1
+    CHECK (reaction_allowance >= 1),
+  reaction_refresh TEXT NOT NULL DEFAULT 'own_turn'
+    CHECK (reaction_refresh IN ('own_turn', 'every_turn')),
   reaction_activity TEXT,
   free_interaction_used INTEGER NOT NULL DEFAULT 0
     CHECK (free_interaction_used IN (0, 1)),
