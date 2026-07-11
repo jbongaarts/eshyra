@@ -908,6 +908,34 @@ export type {
 // Rules engine internals (pack validation, license policy, stack resolution,
 // record lookup, record-shape types).
 export { validateRulesPack } from './rules/validate.js';
+export type {
+  BeginTurnInput,
+  BeginTurnResult,
+  CombatTurnState,
+  OtherSpellCast,
+  ReactionRefresh,
+  SetReactionAllowanceInput,
+  SetReactionAllowanceResult,
+  SetSurprisedInput,
+  SetSurprisedResult,
+  SpendTurnResourceInput,
+  SpendTurnResourceResult,
+  TurnBudget,
+  TurnParticipant,
+  TurnParticipantInput,
+  TurnParticipantKind,
+  TurnResource,
+} from './state/actionEconomy.js';
+// Action-economy turn budget (F2, eshyra-2n1t.4).
+export {
+  ActionEconomyError,
+  beginTurn,
+  formatTurnBudget,
+  readCombatTurnState,
+  setReactionAllowance,
+  setSurprised,
+  spendTurnResource,
+} from './state/actionEconomy.js';
 // Active character resolution.
 export {
   CharacterResolutionError,

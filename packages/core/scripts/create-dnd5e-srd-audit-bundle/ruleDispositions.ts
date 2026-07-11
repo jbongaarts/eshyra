@@ -1748,7 +1748,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement:
-      'one-attack grant adjudicated; F2 budget makes the action itself checkable; attack counting stays adjudicated (Extra Attack/Multiattack feature-dependent)',
+      'one-attack grant adjudicated; the action spend itself is checkable via the F2 turn budget (spend_turn_resource); attack counting stays adjudicated (Extra Attack/Multiattack feature-dependent)',
   },
   'rule:attack-rolls': {
     status: 'partial',
@@ -1791,13 +1791,20 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'per-creature radii structured; detection ruling',
   },
   'rule:bonus-action': {
-    status: 'unimplemented',
-    missing:
-      'F2: bonus-action-spell → action-cantrip-only timing is a deterministic per-turn invariant models reliably violate',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/actionEconomy.ts',
+      'packages/core/src/orchestrator/toolSpendTurnResource.ts',
+    ],
+    evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:bonus-actions': {
-    status: 'unimplemented',
-    missing: 'F2: one bonus action per turn — turn-budget state',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/actionEconomy.ts',
+      'packages/core/src/orchestrator/toolSpendTurnResource.ts',
+    ],
+    evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:breaking-up-your-move': {
     status: 'model-adjudicated-supported',
@@ -2384,14 +2391,17 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:opportunity-attacks': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
+    primitives: ['lookup_rules', 'roll', 'spend_turn_resource'],
     contextRequirement:
-      'trigger/exclusion ruling; reaction budget dependency → F2',
+      'trigger/exclusion ruling; the reaction spend is code-owned (F2 turn budget)',
   },
   'rule:other-activity-on-your-turn': {
-    status: 'unimplemented',
-    missing:
-      'F2: one free object interaction — same turn-budget record as actions/bonus/reaction (marginal cost ~0 once F2 exists)',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/actionEconomy.ts',
+      'packages/core/src/orchestrator/toolSpendTurnResource.ts',
+    ],
+    evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:paired-items': {
     status: 'model-adjudicated-supported',
@@ -2433,15 +2443,25 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'within-5-ft disadv ruling',
   },
   'rule:reactions': {
-    status: 'unimplemented',
-    missing:
-      'F2: one reaction per round crosses turn boundaries — budget state, not a ruling',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/actionEconomy.ts',
+      'packages/core/src/orchestrator/toolSpendTurnResource.ts',
+      'packages/core/src/orchestrator/toolUpdateCombatant.ts',
+    ],
+    evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:ready': {
     status: 'model-adjudicated-supported',
-    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
+    primitives: [
+      'add_condition',
+      'lookup_rules',
+      'remove_condition',
+      'roll',
+      'spend_turn_resource',
+    ],
     contextRequirement:
-      'held trigger + readied-spell concentration representable as condition; reaction spend → F2',
+      'held trigger + readied-spell concentration representable as condition; the reaction spend is code-owned (F2 turn budget)',
   },
   'rule:recuperating': {
     status: 'model-adjudicated-supported',
@@ -2592,7 +2612,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:surprise': {
     status: 'partial',
     missing:
-      'encounter-start Stealth-vs-passive determination is a ruling (passive score → F9); missing: turn-1 no-move/action/reaction restriction enforcement → F2',
+      'encounter-start Stealth-vs-passive determination is a ruling (passive score → F9); the turn-1 no-move/action/reaction restriction landed with the F2 turn budget (set_surprised + spend denial)',
+    runtimeOwner: [
+      'packages/core/src/state/actionEconomy.ts',
+      'packages/core/src/orchestrator/toolSetSurprised.ts',
+    ],
   },
   'rule:swim': {
     status: 'model-adjudicated-supported',
@@ -2668,7 +2692,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:two-weapon-fighting': {
     status: 'partial',
     missing:
-      'light-property/weapon eligibility stays a ruling; missing: omit-positive-ability-mod damage composition → F9; bonus-attack spend → F2',
+      'light-property/weapon eligibility stays a ruling; missing: omit-positive-ability-mod damage composition → F9; the bonus-attack spend landed with the F2 turn budget (an ordinary bonus-action spend_turn_resource)',
   },
   'rule:unarmored-defense': {
     status: 'design-blocked',
@@ -2686,8 +2710,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:use-an-object': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'action definition; interaction budget → F2',
+    primitives: ['lookup_rules', 'roll', 'spend_turn_resource'],
+    contextRequirement:
+      'action definition; the free-interaction/action budget is code-owned (F2 turn budget)',
   },
   'rule:using-different-speeds': {
     status: 'model-adjudicated-supported',
@@ -2754,9 +2779,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'leader-rolls-with-advantage ruling (advantage dice via F1)',
   },
   'rule:your-turn': {
-    status: 'unimplemented',
-    missing:
-      'F2: the core turn budget (move + one action, forgo allowed) — the record every other F2 row hangs off',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/actionEconomy.ts',
+      'packages/core/src/orchestrator/toolBeginTurn.ts',
+      'packages/core/src/orchestrator/toolSpendTurnResource.ts',
+    ],
+    evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
 });
 
@@ -2778,14 +2807,18 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * falling-unconscious, instant-death and temporary-hit-points from
  * unimplemented and healing from partial to implemented, and
  * stabilizing-a-creature from unimplemented to partial (durable 1d4 h
- * recovery deadline outstanding → eshyra-2n1t.8.1).
+ * recovery deadline outstanding → eshyra-2n1t.8.1); eshyra-2n1t.4 (F2
+ * action-economy turn budget) moved your-turn, bonus-action, bonus-actions,
+ * reactions and other-activity-on-your-turn from unimplemented to
+ * implemented (surprise and two-weapon-fighting keep partial for their F9
+ * clauses; their F2 clauses landed).
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 5,
+    implemented: 10,
     'model-adjudicated-supported': 97,
     partial: 47,
-    unimplemented: 16,
+    unimplemented: 11,
     'design-blocked': 10,
   });
 
