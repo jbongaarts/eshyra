@@ -26,12 +26,16 @@
 //   id), not by whoever happens to hold it: a half-spent wand handed to
 //   another character keeps its counter, and possession is a separate
 //   check at spend/restore time.
-// - The recharge die is rolled once at the start of each of the owner's
-//   own turns — not rerolled on demand. The counter keeps a durable
-//   attempt token for the (instance, round, turns-taken) window of the
-//   last roll, so a second attempt in the same turn window is refused and
-//   an off-turn or out-of-combat roll is refused outright (out of combat,
-//   the ability comes back on a rest).
+// - The recharge die is rolled once at the START of each of the owner's
+//   own turns — not rerolled on demand, and not after the ability was used
+//   that turn. The counter keeps two durable window tokens for the
+//   (instance, round, turns-taken) turn identity: `last_recharge_attempt`
+//   refuses a second roll in the same window, and `last_spend_turn`
+//   (stamped when a recharge ability is spent during the owner's own open
+//   turn) refuses a roll in a window the ability was already used in —
+//   so use → recharge → use inside one turn is impossible. Off-turn and
+//   out-of-combat rolls are refused outright (out of combat, the ability
+//   comes back on a rest).
 //
 // Economy provenance is fail-closed the same way F2 treats spell timing:
 // a combatant's economy is derived structurally from its creature record
@@ -218,12 +222,13 @@ interface CounterRow {
   readonly recharge_minimum: number | null;
   readonly recharge_formula: string | null;
   readonly last_recharge_attempt: string | null;
+  readonly last_spend_turn: string | null;
   readonly source: 'record' | 'declared';
 }
 
 const COUNTER_COLUMNS = `owner_kind, owner_ref, counter_key, display_name,
        uses_max, uses_used, reset_kind, recharge_roll, recharge_minimum,
-       recharge_formula, last_recharge_attempt, source`;
+       recharge_formula, last_recharge_attempt, last_spend_turn, source`;
 
 function rowToCounter(row: CounterRow, ownerLabel: string): UsageCounter {
   return {
@@ -911,16 +916,25 @@ export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
           : `${resolved.ownerLabel} has only ${remaining} use(s) of '${row.display_name}' left (${row.uses_used}/${row.uses_max} spent); cannot spend ${uses}`,
       );
     }
+    // A recharge ability spent during the owner's own open turn stamps the
+    // turn-window token: the recharge die is rolled at the START of a turn,
+    // before use, so a roll later in this same window will be refused.
+    const spendWindow =
+      row.reset_kind === 'recharge_roll'
+        ? tryCurrentOwnTurnToken(txnDb, input.campaignId, resolved.owner).token
+        : undefined;
     txnDb
       .prepare(
         `UPDATE entity_usage_counter
          SET uses_used = uses_used + ?,
+             last_spend_turn = COALESCE(?, last_spend_turn),
              provenance = ?, session_id = ?, updated_at = ?
          WHERE campaign_id = ? AND owner_kind = ? AND owner_ref = ?
            AND counter_key = ?`,
       )
       .run(
         uses,
+        spendWindow ?? null,
         input.provenance,
         input.sessionId,
         input.at,
@@ -998,17 +1012,16 @@ function findCounter(
 }
 
 /**
- * The recharge die is rolled once at the start of each of the owner's own
- * turns (limited-usage), so a roll is legal only while a structured combat
- * turn is open for that owner. Returns the durable token identifying the
- * current turn window: (instance, round, owner's turns_taken).
+ * The current own-turn window token for an acting owner — the durable
+ * identity (instance, round, owner's turns_taken) both recharge-timing
+ * gates compare against. `undefined` when no active combat instance has
+ * this owner as its active participant (no window is open for them).
  */
-function currentOwnTurnToken(
+function tryCurrentOwnTurnToken(
   db: Db,
   campaignId: string,
   owner: UsageOwner,
-  ownerLabel: string,
-): string {
+): { token: string | undefined; inCombat: boolean } {
   const instance = db
     .prepare(
       `SELECT combat_instance_id, round_number,
@@ -1025,17 +1038,13 @@ function currentOwnTurnToken(
       }
     | undefined;
   if (instance === undefined) {
-    throw new UsageCounterError(
-      `a recharge die is rolled at the start of ${ownerLabel}'s own turn in structured combat (begin_turn); outside combat the ability recharges on a rest (reset_usage)`,
-    );
+    return { token: undefined, inCombat: false };
   }
   if (
     instance.active_participant_kind !== owner.kind ||
     instance.active_participant_ref !== owner.ref
   ) {
-    throw new UsageCounterError(
-      `it is not ${ownerLabel}'s turn: the recharge die is rolled once at the start of its own turn (begin_turn first)`,
-    );
+    return { token: undefined, inCombat: true };
   }
   const budget = db
     .prepare(
@@ -1046,7 +1055,35 @@ function currentOwnTurnToken(
     .get(campaignId, instance.combat_instance_id, owner.kind, owner.ref) as
     | { turns_taken: number }
     | undefined;
-  return `${instance.combat_instance_id}:r${instance.round_number}:t${budget?.turns_taken ?? 0}`;
+  return {
+    token: `${instance.combat_instance_id}:r${instance.round_number}:t${budget?.turns_taken ?? 0}`,
+    inCombat: true,
+  };
+}
+
+/**
+ * The recharge die is rolled once at the start of each of the owner's own
+ * turns (limited-usage), so a roll is legal only while a structured combat
+ * turn is open for that owner. Returns the current turn-window token.
+ */
+function currentOwnTurnToken(
+  db: Db,
+  campaignId: string,
+  owner: UsageOwner,
+  ownerLabel: string,
+): string {
+  const { token, inCombat } = tryCurrentOwnTurnToken(db, campaignId, owner);
+  if (token !== undefined) {
+    return token;
+  }
+  if (!inCombat) {
+    throw new UsageCounterError(
+      `a recharge die is rolled at the start of ${ownerLabel}'s own turn in structured combat (begin_turn); outside combat the ability recharges on a rest (reset_usage)`,
+    );
+  }
+  throw new UsageCounterError(
+    `it is not ${ownerLabel}'s turn: the recharge die is rolled once at the start of its own turn (begin_turn first)`,
+  );
 }
 
 export function restoreUsage(
@@ -1101,6 +1138,11 @@ export function restoreUsage(
       if (row.last_recharge_attempt === token) {
         throw new UsageCounterError(
           `the recharge die for '${row.display_name}' has already been rolled this turn; it is rolled once at the start of each of ${resolved.ownerLabel}'s turns`,
+        );
+      }
+      if (row.last_spend_turn === token) {
+        throw new UsageCounterError(
+          `'${row.display_name}' was used during this turn; the recharge die is rolled at the START of the turn, before the ability is used — the next chance is the start of ${resolved.ownerLabel}'s next turn (or a rest)`,
         );
       }
       const threshold = row.recharge_minimum ?? faces;

@@ -19,6 +19,11 @@
 -- the die may be rolled at most once at the start of each of the owner's
 -- own turns, so the token records the (instance, round, turns_taken) window
 -- of the last attempt and a repeat inside the same window is refused.
+-- `last_spend_turn` closes the other side of that timing rule: spending a
+-- recharge ability during the owner's own open turn stamps the same window
+-- token, and a recharge roll in a window the ability was spent in is
+-- refused — the roll happens at the START of the turn, before use, so
+-- use-then-recharge-then-use in one turn is impossible.
 --
 -- `attunement` is the magic-item attunement slot machine: at most three rows
 -- per character, no two rows sharing an `item_key` (no duplicate copies), and
@@ -72,6 +77,7 @@ CREATE TABLE entity_usage_counter (
     CHECK (recharge_minimum IS NULL OR recharge_minimum >= 1),
   recharge_formula TEXT,
   last_recharge_attempt TEXT,
+  last_spend_turn TEXT,
   source TEXT NOT NULL CHECK (source IN ('record', 'declared')),
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,

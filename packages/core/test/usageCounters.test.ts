@@ -524,6 +524,37 @@ describe('restoreUsage — recharge rolls', () => {
     expect(hit.counter.usesRemaining).toBe(1);
   });
 
+  it('refuses use-then-recharge inside the same turn: the roll precedes use', () => {
+    const { db } = setup();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(DRAGON),
+      ...CTX,
+    });
+    spendFireBreath(db);
+
+    // Adversarial sequence: begin_turn -> spend -> roll -> spend would
+    // otherwise allow two breaths in one turn. The spend stamped this
+    // window, so the roll is refused even though it is the first attempt.
+    expect(() => rollRecharge(db, 5)).toThrow(
+      /used during this turn.*START of the turn/s,
+    );
+
+    // The start of the next own turn rolls normally.
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(GIANT),
+      ...CTX,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(DRAGON),
+      round: 2,
+      ...CTX,
+    });
+    expect(rollRecharge(db, 5).recharged).toBe(true);
+  });
+
   it('refuses a recharge roll off-turn or before any turn is open', () => {
     const { db } = setup();
     spendFireBreath(db);

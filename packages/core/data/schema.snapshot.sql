@@ -358,6 +358,7 @@ CREATE TABLE entity_usage_counter (
     CHECK (recharge_minimum IS NULL OR recharge_minimum >= 1),
   recharge_formula TEXT,
   last_recharge_attempt TEXT,
+  last_spend_turn TEXT,
   source TEXT NOT NULL CHECK (source IN ('record', 'declared')),
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
