@@ -67,6 +67,9 @@ export function deriveTraceFields(
 
   const STATE_TOOLS = new Set([
     'adjust_hp',
+    'record_death_save',
+    'stabilize_character',
+    'grant_temporary_hp',
     'start_encounter',
     'update_combatant',
     'close_combat_instance',

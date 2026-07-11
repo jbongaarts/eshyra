@@ -2007,9 +2007,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'extra-movement grant; narrative movement',
   },
   'rule:death-saving-throws': {
-    status: 'unimplemented',
-    missing:
-      'F6: success/failure counters, nat-1 double / nat-20 revive, damage-at-0 escalation — the canonical silent-violation state machine; only the roll category exists',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/hpLifecycle.ts',
+      'packages/core/src/orchestrator/toolRecordDeathSave.ts',
+    ],
+    evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
   'rule:detecting-and-disabling-a-trap': {
     status: 'model-adjudicated-supported',
@@ -2092,9 +2095,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'fall-distance determination and landing narration stay rulings; missing: distance → ⌊d/10⌋d6 (cap 20d6) dice-expression derivation → F9; prone via condition entry',
   },
   'rule:falling-unconscious': {
-    status: 'unimplemented',
-    missing:
-      'F6: 0 HP → unconscious should be an adjust_hp-time invariant, not a remembered step',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/hpLifecycle.ts',
+      'packages/core/src/orchestrator/toolAdjustHp.ts',
+    ],
+    evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
   'rule:feats': {
     status: 'design-blocked',
@@ -2154,12 +2160,14 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'GM-time content-creation procedure; tables structured',
   },
   'rule:healing': {
-    status: 'partial',
-    missing:
-      'dead-creature regain gate (needs F6 durable dead state on the HP write path)',
+    status: 'implemented',
     runtimeOwner: [
-      'packages/core/src/state/domainMutations.ts',
+      'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolAdjustHp.ts',
+    ],
+    evidence: [
+      'packages/core/test/hpLifecycle.test.ts',
+      'packages/core/test/domainMutations.test.ts',
     ],
   },
   'rule:help': {
@@ -2206,9 +2214,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'statblock convention; per-creature entries structured; the X/day usage economies are owned once by limited-usage → F5 (single-owner factoring)',
   },
   'rule:instant-death': {
-    status: 'unimplemented',
-    missing:
-      'F6: needs the damage overflow that `adjust_hp` currently clamps away — the tool surface hides the trigger; deterministic threshold, not a ruling',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/hpLifecycle.ts',
+      'packages/core/src/orchestrator/toolAdjustHp.ts',
+    ],
+    evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
   'rule:interacting-with-objects': {
     status: 'model-adjudicated-supported',
@@ -2559,9 +2570,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'size/cost/disadv ruling',
   },
   'rule:stabilizing-a-creature': {
-    status: 'unimplemented',
+    status: 'partial',
+    runtimeOwner: [
+      'packages/core/src/state/hpLifecycle.ts',
+      'packages/core/src/orchestrator/toolStabilizeCharacter.ts',
+    ],
     missing:
-      'F6: stable flag + 1d4 h → 1 HP timer inside the death state machine',
+      'durable 1d4 h → 1 HP stable-recovery deadline (seeded roll recorded at stabilize time + owned clock-resolution hook) → eshyra-2n1t.8.1; the stable flag, counter reset, and the stable → alive transition through adjust_hp are code-owned, but recovery scheduling is still model-prompted and can silently drift',
   },
   'rule:strength-attack-rolls-and-damage': {
     status: 'model-adjudicated-supported',
@@ -2571,7 +2586,8 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:suffocating': {
     status: 'partial',
     missing:
-      'breath duration formula (1+Con min, min 30 s) and the Con-mod round countdown are deterministic cross-turn counters that can silently drift; missing: countdown state + the 0-HP dying transition → F6',
+      'breath duration formula (1+Con min, min 30 s) and the Con-mod round countdown are deterministic cross-turn counters that can silently drift; missing: countdown state — the 0-HP dying transition itself now lands through the adjust_hp death machine (F6)',
+    runtimeOwner: ['packages/core/src/state/hpLifecycle.ts'],
   },
   'rule:surprise': {
     status: 'partial',
@@ -2601,9 +2617,14 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:temporary-hit-points': {
-    status: 'unimplemented',
-    missing:
-      'F6: separate durable buffer, no-stacking choice, consumed-before-HP, not-healing, long-rest expiry — `adjust_hp` cannot represent any of it',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/hpLifecycle.ts',
+      'packages/core/src/orchestrator/toolGrantTempHp.ts',
+    ],
+    evidence: ['packages/core/test/hpLifecycle.test.ts'],
+    dependencyNote:
+      'long-rest expiry is exposed as the expireTemporaryHp reset hook; the rest engine (F7, eshyra-2n1t.9) wires it into the long-rest procedure',
   },
   'rule:the-order-of-combat': {
     status: 'model-adjudicated-supported',
@@ -2750,15 +2771,21 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
   });
 
 /**
- * Pinned execution-boundary coverage census (2026-07-06 execution-boundary
- * classification artifact, final revision, §3).
+ * Pinned execution-boundary coverage census. Seeded from the 2026-07-06
+ * execution-boundary classification artifact (final revision, §3:
+ * 0/97/47/21/10); updated by reviewed implementation diffs since —
+ * eshyra-2n1t.8 (F6 death/dying/temp-HP machine) moved death-saving-throws,
+ * falling-unconscious, instant-death and temporary-hit-points from
+ * unimplemented and healing from partial to implemented, and
+ * stabilizing-a-creature from unimplemented to partial (durable 1d4 h
+ * recovery deadline outstanding → eshyra-2n1t.8.1).
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 0,
+    implemented: 5,
     'model-adjudicated-supported': 97,
     partial: 47,
-    unimplemented: 21,
+    unimplemented: 16,
     'design-blocked': 10,
   });
 

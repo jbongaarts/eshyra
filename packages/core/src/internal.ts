@@ -931,7 +931,6 @@ export {
 export type {
   AddConditionInput,
   AddConditionResult,
-  AdjustHpResult,
   AwardXpResult,
   DomainMutationContext,
   GiveItemInput,
@@ -943,7 +942,6 @@ export type {
 // Domain-level state mutations (higher-level wrappers over mutateState).
 export {
   addCondition,
-  adjustHp,
   awardXp,
   giveItem,
   grantMilestone,
@@ -982,6 +980,25 @@ export {
   updateCombatant,
   upsertCampaignActor,
 } from './state/encounterCombatants.js';
+export type {
+  AdjustHpOptions,
+  AdjustHpResult,
+  DeathSaveOutcome,
+  DeathSaveResult,
+  ExpireTemporaryHpResult,
+  GrantTemporaryHpOptions,
+  GrantTemporaryHpResult,
+  LifeState,
+  StabilizeResult,
+} from './state/hpLifecycle.js';
+// HP write path + death/dying/temp-HP state machine (F6, eshyra-2n1t.8).
+export {
+  adjustHp,
+  expireTemporaryHp,
+  grantTemporaryHp,
+  recordDeathSave,
+  stabilizeCharacter,
+} from './state/hpLifecycle.js';
 // Read-only level-up eligibility detection.
 export type { LevelUpEligibility } from './state/levelUpEligibility.js';
 export {

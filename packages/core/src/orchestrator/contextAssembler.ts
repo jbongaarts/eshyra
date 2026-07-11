@@ -24,6 +24,7 @@ import {
   listCampaignActors,
   listCombatants,
 } from '../state/encounterCombatants.js';
+import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
 import type {
   AbilityScores,
   CharacterConditionEntry,
@@ -122,6 +123,10 @@ export interface CharacterSnapshot {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  hpTemp: number;
+  lifeState: LifeState;
+  deathSaveSuccesses: number;
+  deathSaveFailures: number;
   abilityScores: AbilityScores;
   conditions: readonly CharacterConditionEntry[];
   role: string;
@@ -197,6 +202,10 @@ interface CharacterRow {
   level: number;
   hp_current: number;
   hp_max: number;
+  hp_temp: number;
+  life_state: LifeState;
+  death_save_successes: number;
+  death_save_failures: number;
   ability_scores_json: string;
   conditions_json: string;
   role: string;
@@ -229,6 +238,7 @@ export function readStateSnapshot(
   const character = db
     .prepare(
       `SELECT id, name, ancestry, class_name, level, hp_current, hp_max,
+              hp_temp, life_state, death_save_successes, death_save_failures,
               ability_scores_json, conditions_json, role
        FROM character WHERE id = ?`,
     )
@@ -275,6 +285,10 @@ export function readStateSnapshot(
       level: character.level,
       hpCurrent: character.hp_current,
       hpMax: character.hp_max,
+      hpTemp: character.hp_temp,
+      lifeState: character.life_state,
+      deathSaveSuccesses: character.death_save_successes,
+      deathSaveFailures: character.death_save_failures,
       abilityScores: validateAbilityScoresJson(
         rawAbilityScores,
         'character.ability_scores_json',
@@ -497,7 +511,7 @@ function renderParty(party: PartyMember[], actingId: string): string {
         m.conditions.length > 0
           ? `, conditions: ${m.conditions.map((c) => c.id).join(', ')}`
           : '';
-      return `- ${identity} — L${m.level}, HP ${m.hpCurrent}/${m.hpMax}${conditions}${tagText}`;
+      return `- ${identity} — L${m.level}, ${formatHpStatus(m)}${conditions}${tagText}`;
     })
     .join('\n');
 }
@@ -507,7 +521,7 @@ function renderState(state: StateSnapshot): string {
   const lines = [
     `Character: ${c.name ?? '(unnamed)'} — ${c.ancestry ?? '?'} ${
       c.className ?? '?'
-    }, level ${c.level}, HP ${c.hpCurrent}/${c.hpMax}`,
+    }, level ${c.level}, ${formatHpStatus(c)}`,
   ];
   if (c.conditions.length > 0) {
     lines.push(`Conditions: ${JSON.stringify(c.conditions)}`);

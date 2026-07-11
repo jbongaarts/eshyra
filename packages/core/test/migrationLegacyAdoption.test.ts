@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Db } from '../src/persistence/db.js';
 import { openDatabase } from '../src/persistence/db.js';
@@ -179,8 +182,10 @@ describe('migrateDatabase (end to end)', () => {
     const db = openDatabase(':memory:');
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('empty');
-    expect(result.migrations.applied).toEqual([1, 2, 3, 4]);
-    expect(readMigrationLedger(db).map((r) => r.version)).toEqual([1, 2, 3, 4]);
+    expect(result.migrations.applied).toEqual([1, 2, 3, 4, 5]);
+    expect(readMigrationLedger(db).map((r) => r.version)).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
     db.close();
   });
 
@@ -190,7 +195,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.action).toBe('adopted');
     expect(result.legacy.adoptedFromVersion).toBe(15);
     // 0001 is adopted (already applied); the post-baseline migrations apply.
-    expect(result.migrations.applied).toEqual([2, 3, 4]);
+    expect(result.migrations.applied).toEqual([2, 3, 4, 5]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     db.close();
   });
@@ -211,5 +216,72 @@ describe('migrateDatabase (end to end)', () => {
     );
     expect(hasLedger(db)).toBe(false);
     db.close();
+  });
+});
+
+describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
+  /** A database migrated only through 0004 — genuinely pre-death-machine. */
+  function pre0005Db(): { db: Db; dir: string } {
+    const dir = mkdtempSync(join(tmpdir(), 'eshyra-pre0005-'));
+    for (const migration of discoverMigrations()) {
+      if (migration.version >= 5) continue;
+      writeFileSync(
+        join(
+          dir,
+          `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+        ),
+        migration.sql,
+      );
+    }
+    const db = openDatabase(':memory:');
+    migrateDatabase(db, { now: NOW, dir });
+    return { db, dir };
+  }
+
+  it('reconciles a pre-0005 character persisted at 0 HP to stable', () => {
+    const { db, dir } = pre0005Db();
+    // Pre-0005 play could clamp-and-persist a character at 0 HP; the row has
+    // no life_state yet.
+    db.prepare(
+      "UPDATE character SET hp_max = 20, hp_current = 0 WHERE id = 'pc-1'",
+    ).run();
+
+    const result = migrateDatabase(db, { now: NOW });
+
+    expect(result.migrations.applied).toEqual([5]);
+    const row = db
+      .prepare(
+        `SELECT life_state, death_save_successes, death_save_failures
+         FROM character WHERE id = 'pc-1'`,
+      )
+      .get() as Record<string, unknown>;
+    expect(row).toEqual({
+      life_state: 'stable',
+      death_save_successes: 0,
+      death_save_failures: 0,
+    });
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('leaves positive-HP characters and uninitialized 0/0 sheets alive', () => {
+    const { db, dir } = pre0005Db();
+    // pc-1 stays the untouched 0/0 bootstrap sheet; pc-2 is a healthy PC.
+    db.prepare(
+      `INSERT INTO character(id, hp_current, hp_max, role, provenance, session_id, updated_at)
+       VALUES ('pc-2', 12, 20, 'pc', 'test:migration', 'session-1', ?)`,
+    ).run(NOW());
+
+    migrateDatabase(db, { now: NOW });
+
+    const states = db
+      .prepare('SELECT id, life_state FROM character ORDER BY id')
+      .all() as { id: string; life_state: string }[];
+    expect(states).toEqual([
+      { id: 'pc-1', life_state: 'alive' },
+      { id: 'pc-2', life_state: 'alive' },
+    ]);
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
   });
 });

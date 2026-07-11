@@ -503,6 +503,9 @@ export type { CombatInstance } from './state/encounterCombatants.js';
 // Active-combat lookup (used by the resume conflict-resolution UX to warn
 // before catching a character up mid-combat — ADR 0012, eshyra-lupf.14.4).
 export { getActiveCombatInstance } from './state/encounterCombatants.js';
+export type { LifeState } from './state/hpLifecycle.js';
+// Compact HP/death-state roster fragment shared by the prompt and CLI (F6).
+export { formatHpStatus } from './state/hpLifecycle.js';
 export type { LevelUpEligibility } from './state/levelUpEligibility.js';
 export { getLevelUpEligibility } from './state/levelUpEligibility.js';
 export { listParty } from './state/party.js';

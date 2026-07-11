@@ -257,6 +257,9 @@ export function summarizeSceneFromLog(
  */
 const CHARACTER_TOOL_FIELDS: Readonly<Record<string, string>> = {
   adjust_hp: 'hp_current',
+  record_death_save: 'life_state',
+  stabilize_character: 'life_state',
+  grant_temporary_hp: 'hp_temp',
   add_condition: 'conditions_json',
   remove_condition: 'conditions_json',
   give_item: 'inventory',

@@ -189,7 +189,10 @@ CREATE TABLE character (
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL
-, current_xp INTEGER NOT NULL DEFAULT 0 CHECK (current_xp >= 0));
+, current_xp INTEGER NOT NULL DEFAULT 0 CHECK (current_xp >= 0), hp_temp INTEGER NOT NULL DEFAULT 0 CHECK (hp_temp >= 0), life_state TEXT NOT NULL DEFAULT 'alive'
+    CHECK (life_state IN ('alive', 'dying', 'stable', 'dead')), death_save_successes INTEGER NOT NULL DEFAULT 0
+    CHECK (death_save_successes BETWEEN 0 AND 3), death_save_failures INTEGER NOT NULL DEFAULT 0
+    CHECK (death_save_failures BETWEEN 0 AND 3));
 
 CREATE TABLE character_sheet (
   character_id TEXT PRIMARY KEY,
