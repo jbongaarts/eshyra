@@ -192,6 +192,35 @@ describe('character chronicle store', () => {
     });
   });
 
+  it('keeps listRecords in insertion order when records share an updated_at timestamp', () => {
+    // Regression test for eshyra-9zjx: record_id is TEXT ('chronicle-1',
+    // 'chronicle-10', 'chronicle-2', ...), so tiebreaking on it instead of
+    // insertion order sorted lexicographically and put 'chronicle-10' before
+    // 'chronicle-2' once a character had 10+ records appended within the
+    // same updated_at millisecond (common when a test loop or a single turn
+    // calls appendRecord repeatedly against a fixed/fast clock).
+    const chronicle = createCharacterChronicleStore(db, () => clock);
+    const appended = [];
+    for (let n = 1; n <= 10; n++) {
+      appended.push(
+        chronicle.appendRecord({
+          globalCharacterId: 'char-mira',
+          category: 'campaign-participation',
+          text: `Portable memory ${n}.`,
+          source: source({ sessionId: `session-${n}` }),
+          portability: 'portable',
+          visibility: 'player-visible',
+          truthStatus: 'remembered',
+          relatedRefs: [],
+        }),
+      );
+    }
+
+    expect(
+      chronicle.listRecords('char-mira').map((entry) => entry.text),
+    ).toEqual(appended.map((entry) => entry.text));
+  });
+
   it('appends record batches atomically', () => {
     const chronicle = createCharacterChronicleStore(db, () => clock);
 
