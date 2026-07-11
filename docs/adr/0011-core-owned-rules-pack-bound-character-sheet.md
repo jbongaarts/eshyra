@@ -148,6 +148,8 @@ preserve the CLI file layout.
 
 - The concrete `CharacterSheet` field-by-field schema and store implementation
   (the follow-up implementation bead).
-- Multiclassing, in-place rules-pack migration, and cross-pack conversion.
+- Multiclassing (explicitly deferred behind the fail-closed single-class
+  boundary in [ADR 0018](0018-single-class-engine-boundary.md)), in-place
+  rules-pack migration, and cross-pack conversion.
 - Normalized per-field SQL projections (deferred; can be added behind the store
   API later).
