@@ -343,6 +343,12 @@ export function createCharacterChronicleStore(
   function listRecords(
     globalCharacterId: string,
   ): readonly CharacterChronicleRecord[] {
+    // Tiebreak on rowid (insertion order), not record_id: record_id is TEXT
+    // ('chronicle-1', 'chronicle-10', 'chronicle-2', ...) so it sorts
+    // lexicographically rather than numerically once a character has 10+
+    // records, and appends within the same test or turn commonly share an
+    // updated_at millisecond. See scene.ts's getLastDmOutput for the same
+    // pattern.
     const rows = db
       .prepare(
         `SELECT global_character_id, record_id, category, text, source_json,
@@ -350,7 +356,7 @@ export function createCharacterChronicleStore(
                 created_at, updated_at
            FROM character_chronicle_record
           WHERE global_character_id = ?
-          ORDER BY updated_at, record_id`,
+          ORDER BY updated_at, rowid`,
       )
       .all(globalCharacterId.trim()) as ChronicleRow[];
     return rows.map(rowToRecord);
@@ -360,6 +366,9 @@ export function createCharacterChronicleStore(
     globalCharacterId: string,
     recordId?: string,
   ): readonly CharacterChronicleEventRecord[] {
+    // Tiebreak on rowid (insertion order) for the same reason as
+    // listRecords: event_id is TEXT ('chronicle-event-10' sorts before
+    // 'chronicle-event-2') and occurred_at can tie within a millisecond.
     const rows =
       recordId === undefined
         ? (db
@@ -368,7 +377,7 @@ export function createCharacterChronicleStore(
                       changes_json, occurred_at
                  FROM character_chronicle_event
                 WHERE global_character_id = ?
-                ORDER BY occurred_at, event_id`,
+                ORDER BY occurred_at, rowid`,
             )
             .all(globalCharacterId.trim()) as ChronicleEventRow[])
         : (db
@@ -377,7 +386,7 @@ export function createCharacterChronicleStore(
                       changes_json, occurred_at
                  FROM character_chronicle_event
                 WHERE global_character_id = ? AND record_id = ?
-                ORDER BY occurred_at, event_id`,
+                ORDER BY occurred_at, rowid`,
             )
             .all(
               globalCharacterId.trim(),
