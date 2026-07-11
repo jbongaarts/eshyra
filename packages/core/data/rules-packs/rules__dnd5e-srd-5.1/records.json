@@ -21922,8 +21922,16 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "When a pudding that is Medium or larger is subjected to lightning or slashing damage"
+                "kind": "splitOnDamage",
+                "damageTypes": [
+                  "lightning",
+                  "slashing"
+                ],
+                "minimumSize": "medium",
+                "minimumHitPoints": 10,
+                "resultingCreatureCount": 2,
+                "hitPointsFraction": "half-rounded-down",
+                "sizeCategoriesDown": 1
               }
             ]
           }
@@ -47824,8 +47832,16 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "When a jelly that is Medium or larger is subjected to lightning or slashing damage"
+                "kind": "splitOnDamage",
+                "damageTypes": [
+                  "lightning",
+                  "slashing"
+                ],
+                "minimumSize": "medium",
+                "minimumHitPoints": 10,
+                "resultingCreatureCount": 2,
+                "hitPointsFraction": "half-rounded-down",
+                "sizeCategoriesDown": 1
               }
             ]
           }

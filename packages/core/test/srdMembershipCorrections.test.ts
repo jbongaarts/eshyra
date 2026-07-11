@@ -54,6 +54,26 @@ function spellAmbiguities(key: string): unknown[] | undefined {
 }
 
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('C5 Split projects exactly the two reviewed reactions', () => {
+    const split = {
+      kind: 'splitOnDamage',
+      damageTypes: ['lightning', 'slashing'],
+      minimumSize: 'medium',
+      minimumHitPoints: 10,
+      resultingCreatureCount: 2,
+      hitPointsFraction: 'half-rounded-down',
+      sizeCategoriesDown: 1,
+    };
+    expect(
+      creatureEntry('creature:black-pudding', 'reactions', 'Split').mechanics
+        ?.effects,
+    ).toEqual([split]);
+    expect(
+      creatureEntry('creature:ochre-jelly', 'reactions', 'Split').mechanics
+        ?.effects,
+    ).toEqual([split]);
+  });
+
   it('C1 changeShape projects every reviewed entry and pins the five contract grammars', () => {
     const c1Entries: ReadonlyArray<readonly [string, string, string]> = [
       ['creature:adult-bronze-dragon', 'actions', 'Change Shape'],

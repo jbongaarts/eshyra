@@ -497,7 +497,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C1 rollout (2 accepted + 16 pending findings = 18)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C5 rollout (2 accepted + 14 pending findings = 16)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
     // future change to the registry (an addition, removal, or silent
     // reclassification) is caught here and forces an update to the
@@ -512,14 +512,14 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // policy can never hide reviewed-but-pending deterministic work behind
     // blanket acceptance.
     const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
-    expect(entries).toHaveLength(18);
+    expect(entries).toHaveLength(16);
 
     const accepted = entries.filter(
       ([, d]) => d.status === 'accepted-prose-only',
     );
     const findings = entries.filter(([, d]) => d.status === 'finding');
     expect(accepted).toHaveLength(2);
-    expect(findings).toHaveLength(16);
+    expect(findings).toHaveLength(14);
     expect(accepted.map(([ref]) => ref).sort()).toEqual([
       'creature:vampire#traits:Vampire Weaknesses',
       'creature:vampire-spawn#traits:Vampire Weaknesses',
@@ -544,7 +544,6 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     }
     expect(findingsBySlice).toEqual({
       C4: 2,
-      C5: 2,
       C6: 4,
       C7: 2,
       C8: 2,
@@ -613,14 +612,12 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:werewolf#traits:Shapechanger',
       ]),
     );
-    // Refs newly classified into slices C4-C9 remain tracked as pending
+    // Refs newly classified into slices C4 and C6-C9 remain tracked as pending
     // findings (not blanket accepted), each with an explicit rationale.
     expect(allRefs).toEqual(
       expect.arrayContaining([
         'creature:berserker#traits:Reckless',
         'creature:minotaur#traits:Reckless',
-        'creature:black-pudding#reactions:Split',
-        'creature:ochre-jelly#reactions:Split',
         'creature:clay-golem#traits:Acid Absorption',
         'creature:flesh-golem#traits:Lightning Absorption',
         'creature:iron-golem#traits:Fire Absorption',
@@ -704,14 +701,13 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'reviewed-per-ref',
     );
-    // The per-ref breakdown is exact: 2 permanent accepts, 16 pending
+    // The per-ref breakdown is exact: 2 permanent accepts, 14 pending
     // findings across the remaining slices.
     expect(report.creatureEntries.reviewedDispositions).toEqual({
       acceptedProseOnly: 2,
-      pendingFindings: 16,
+      pendingFindings: 14,
       findingsBySlice: {
         C4: 2,
-        C5: 2,
         C6: 4,
         C7: 2,
         C8: 2,

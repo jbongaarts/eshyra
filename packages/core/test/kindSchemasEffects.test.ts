@@ -97,6 +97,48 @@ function setAt(
 }
 
 describe('mechanics effect payload contracts', () => {
+  it('accepts the exact C5 splitOnDamage payload', () => {
+    expect(() =>
+      validate({
+        kind: 'splitOnDamage',
+        damageTypes: ['lightning', 'slashing'],
+        minimumSize: 'medium',
+        minimumHitPoints: 10,
+        resultingCreatureCount: 2,
+        hitPointsFraction: 'half-rounded-down',
+        sizeCategoriesDown: 1,
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['empty damage types', { damageTypes: [] }],
+    ['unsupported damage type', { damageTypes: ['radiant-ish'] }],
+    ['duplicate damage type', { damageTypes: ['lightning', 'lightning'] }],
+    ['absent required field', { minimumHitPoints: undefined }],
+    ['invalid minimum size', { minimumSize: 'colossal' }],
+    ['invalid minimum hit points', { minimumHitPoints: 1.5 }],
+    ['invalid result count', { resultingCreatureCount: 0 }],
+    ['unsupported HP fraction', { hitPointsFraction: 'half' }],
+    ['invalid size reduction', { sizeCategoriesDown: 0 }],
+    ['unexpected extra property', { extra: true }],
+  ])('rejects splitOnDamage with %s', (_label, change) => {
+    const effect: Record<string, unknown> = {
+      kind: 'splitOnDamage',
+      damageTypes: ['lightning', 'slashing'],
+      minimumSize: 'medium',
+      minimumHitPoints: 10,
+      resultingCreatureCount: 2,
+      hitPointsFraction: 'half-rounded-down',
+      sizeCategoriesDown: 1,
+    };
+    for (const [key, value] of Object.entries(change)) {
+      if (value === undefined) delete effect[key];
+      else effect[key] = value;
+    }
+    expect(() => validate(effect)).toThrow();
+  });
+
   it('accepts all curated S1 summoning profiles', () => {
     expect([...S1_SUMMONING_SPELL_KEYS]).toHaveLength(14);
     for (const key of S1_SUMMONING_SPELL_KEYS) {
