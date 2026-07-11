@@ -288,6 +288,7 @@ export function applyLevelUp(
   db: Db,
   input: ApplyLevelUpInput,
 ): ApplyLevelUpResult {
+  assertSupportedCharacterBuild(input, { operation: 'level-up apply' });
   const resolver = input.resolver ?? getBundledDnd5eCharacterResolver();
   const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
   // Validate the ledger-required audit fields up front, before any write, so a
@@ -368,6 +369,7 @@ export function previewLevelUpChangeSet(
   sheet: CharacterSheet,
   input: PreviewLevelUpInput = {},
 ): PreviewLevelUpResult {
+  assertSupportedCharacterBuild(input, { operation: 'level-up preview' });
   const resolver = input.resolver ?? getBundledDnd5eCharacterResolver();
   assertSupportedCharacterBuild(sheet, {
     operation: 'level-up preview',

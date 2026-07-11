@@ -90,6 +90,20 @@ export function assertSupportedCharacterBuild(
     return;
   }
 
+  assertCharacterBuildRecord(record, options);
+  // Guided creation's explicitly supported transport container. Inspect it
+  // before the draft engine spreads its recognized fields into canonical state;
+  // do not recursively walk arbitrary metadata containers.
+  const selections = asRecord(record.selections);
+  if (selections !== undefined) {
+    assertCharacterBuildRecord(selections, options);
+  }
+}
+
+function assertCharacterBuildRecord(
+  record: Record<string, unknown>,
+  options: CharacterBuildValidationOptions,
+): void {
   if (
     MULTICLASS_SHAPED_FIELDS.some((field) => Object.hasOwn(record, field)) ||
     Array.isArray(record.class)

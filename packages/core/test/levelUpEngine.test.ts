@@ -425,6 +425,40 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
 });
 
 describe('applyLevelUp — HP floor and fail-closed guards', () => {
+  it('refuses an advancement target in preview and apply before any state change', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    const sheet = buildSheet({
+      maxHitPoints: 12,
+      modifiers: { constitution: 2 },
+    });
+    store.save('pc-1', sheet);
+    seedLiveHp(db, 12, 9);
+    const before = db
+      .prepare('SELECT level, hp_max, hp_current FROM character WHERE id = ?')
+      .get('pc-1');
+    const input = { targetClass: 'Wizard' } as Parameters<
+      typeof previewLevelUpChangeSet
+    >[1];
+
+    expect(() => previewLevelUpChangeSet(sheet, input)).toThrow(
+      UnsupportedCharacterBuildError,
+    );
+    expect(() =>
+      applyLevelUp(db, { store, ...APPLY, targetClass: 'Wizard' } as Parameters<
+        typeof applyLevelUp
+      >[1]),
+    ).toThrow(UnsupportedCharacterBuildError);
+    expect(store.load('pc-1')).toEqual(sheet);
+    expect(
+      db
+        .prepare('SELECT level, hp_max, hp_current FROM character WHERE id = ?')
+        .get('pc-1'),
+    ).toEqual(before);
+    expect(listProgressionEvents(db)).toEqual([]);
+    db.close();
+  });
+
   it('rejects multiclass-shaped preview and apply inputs before deriving or committing a change set', () => {
     const db = bareDb();
     const invalid = {

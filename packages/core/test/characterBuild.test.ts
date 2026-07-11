@@ -61,6 +61,14 @@ describe('single-class character-build boundary', () => {
   });
 
   it.each([
+    ['classes', ['Fighter', 'Wizard']],
+    ['classLevels', { 'class:fighter': 1, 'class:wizard': 1 }],
+    ['targetClass', 'Wizard'],
+  ])('rejects %s nested in guided draft selections', (field, value) => {
+    expectUnsupported({ selections: { [field]: value } });
+  });
+
+  it.each([
     0, -1, 1.5,
   ])('rejects a non-positive or non-integer level (%s)', (level) => {
     expectUnsupported(sheet({ level }));

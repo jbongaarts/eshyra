@@ -65,6 +65,25 @@ describe('file character draft store', () => {
     expect(() => store.load('hero-1')).toThrow(UnsupportedCharacterBuildError);
   });
 
+  it.each([
+    ['classes', ['Fighter', 'Wizard']],
+    ['classLevels', { 'class:fighter': 1, 'class:wizard': 1 }],
+    ['targetClass', 'Wizard'],
+  ])('rejects %s nested in hand-edited draft selections', (field, value) => {
+    const dir = tempDir();
+    const store = createFileCharacterDraftStore(dir);
+    const draft = engine.createDraft({ id: 'hero-1', mode: 'concept-first' });
+    writeFileSync(
+      join(dir, 'hero-1.json'),
+      JSON.stringify({
+        ...draft,
+        selections: { ...draft.selections, [field]: value },
+      }),
+    );
+
+    expect(() => store.load('hero-1')).toThrow(UnsupportedCharacterBuildError);
+  });
+
   it('lists stored draft ids in sorted order', () => {
     const store = createFileCharacterDraftStore(tempDir());
     store.save(engine.createDraft({ id: 'beta', mode: 'concept-first' }));
