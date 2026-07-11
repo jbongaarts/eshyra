@@ -497,7 +497,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C6 rollout (2 accepted + 10 pending findings = 12)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C7 rollout (2 accepted + 8 pending findings = 10)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
     // future change to the registry (an addition, removal, or silent
     // reclassification) is caught here and forces an update to the
@@ -512,14 +512,14 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // policy can never hide reviewed-but-pending deterministic work behind
     // blanket acceptance.
     const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
-    expect(entries).toHaveLength(12);
+    expect(entries).toHaveLength(10);
 
     const accepted = entries.filter(
       ([, d]) => d.status === 'accepted-prose-only',
     );
     const findings = entries.filter(([, d]) => d.status === 'finding');
     expect(accepted).toHaveLength(2);
-    expect(findings).toHaveLength(10);
+    expect(findings).toHaveLength(8);
     expect(accepted.map(([ref]) => ref).sort()).toEqual([
       'creature:vampire#traits:Vampire Weaknesses',
       'creature:vampire-spawn#traits:Vampire Weaknesses',
@@ -544,7 +544,6 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     }
     expect(findingsBySlice).toEqual({
       C4: 2,
-      C7: 2,
       C8: 2,
       C9: 4,
     });
@@ -609,16 +608,16 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:wererat#traits:Shapechanger',
         'creature:weretiger#traits:Shapechanger',
         'creature:werewolf#traits:Shapechanger',
+        'creature:clay-golem#traits:Berserk',
+        'creature:flesh-golem#traits:Berserk',
       ]),
     );
-    // Refs newly classified into slices C4 and C7-C9 remain tracked as pending
+    // Refs newly classified into slices C4 and C8-C9 remain tracked as pending
     // findings (not blanket accepted), each with an explicit rationale.
     expect(allRefs).toEqual(
       expect.arrayContaining([
         'creature:berserker#traits:Reckless',
         'creature:minotaur#traits:Reckless',
-        'creature:clay-golem#traits:Berserk',
-        'creature:flesh-golem#traits:Berserk',
         'creature:giant-hyena#traits:Rampage',
         'creature:gnoll#traits:Rampage',
         'creature:shrieker#reactions:Shriek',
@@ -696,14 +695,13 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'reviewed-per-ref',
     );
-    // The per-ref breakdown is exact: 2 permanent accepts, 10 pending
+    // The per-ref breakdown is exact: 2 permanent accepts, 8 pending
     // findings across the remaining slices.
     expect(report.creatureEntries.reviewedDispositions).toEqual({
       acceptedProseOnly: 2,
-      pendingFindings: 10,
+      pendingFindings: 8,
       findingsBySlice: {
         C4: 2,
-        C7: 2,
         C8: 2,
         C9: 4,
       },

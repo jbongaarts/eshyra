@@ -2549,6 +2549,101 @@ function parseDamageAbsorption(
 }
 
 /**
+ * C7 Berserk grammar (eshyra-o9bd.18.7.9 §1.6.5). These two complete source
+ * clauses describe a state machine, rather than an isolated trigger: entering
+ * berserk depends on a low-HP d6 roll, the berserk state owns each-turn target
+ * selection, and it has explicit exits. Flesh Golem adds the source's
+ * creator-only calming transition and its qualified damage re-entry clause.
+ *
+ * The grammar is deliberately source-string closed. In particular, the
+ * source's final “might go berserk again” does not state another die result,
+ * so its structured transition preserves that qualified outcome instead of
+ * inventing a second d6 rule.
+ */
+function parseBerserk(name: string, text: string): Mechanics | undefined {
+  if (name !== 'Berserk') return undefined;
+  const normalized = text.replaceAll('\u2019', "'");
+  const specs = new Map<
+    string,
+    { readonly hitPointsAtMost: number; readonly hasCalming: boolean }
+  >([
+    [
+      'Whenever the golem starts its turn with 60 hit points or fewer, roll a d6. On a 6, the golem goes berserk. On each of its turns while berserk, the golem attacks the nearest creature it can see. If no creature is near enough to move to and attack, the golem attacks an object, with preference for an object smaller than itself. Once the golem goes berserk, it continues to do so until it is destroyed or regains all its hit points.',
+      { hitPointsAtMost: 60, hasCalming: false },
+    ],
+    [
+      "Whenever the golem starts its turn with 40 hit points or fewer, roll a d6. On a 6, the golem goes berserk. On each of its turns while berserk, the golem attacks the nearest creature it can see. If no creature is near enough to move to and attack, the golem attacks an object, with preference for an object smaller than itself. Once the golem goes berserk, it continues to do so until it is destroyed or regains all its hit points. The golem's creator, if within 60 feet of the berserk golem, can try to calm it by speaking firmly and persuasively. The golem must be able to hear its creator, who must take an action to make a DC 15 Charisma (Persuasion) check. If the check succeeds, the golem ceases being berserk. If it takes damage while still at 40 hit points or fewer, the golem might go berserk again.",
+      { hitPointsAtMost: 40, hasCalming: true },
+    ],
+  ]);
+  const spec = specs.get(normalized);
+  if (spec === undefined) return undefined;
+
+  const transitions: Mechanics[] = [
+    {
+      id: 'low-hit-points-entry',
+      from: 'calm',
+      to: 'berserk',
+      trigger: 'start-of-turn-at-or-below-hit-points',
+      hitPointsAtMost: spec.hitPointsAtMost,
+      roll: { die: 'd6', entersOn: 6 },
+    },
+    {
+      id: 'berserk-turn-behavior',
+      from: 'berserk',
+      to: 'berserk',
+      trigger: 'each-turn',
+      behavior: {
+        action: 'attack',
+        target: 'nearest-visible-creature',
+        fallback: {
+          when: 'no-creature-near-enough-to-move-to-and-attack',
+          target: 'object',
+          preference: 'smaller-than-self',
+        },
+      },
+    },
+    {
+      id: 'destroyed-exit',
+      from: 'berserk',
+      to: 'destroyed',
+      trigger: 'destroyed',
+    },
+    {
+      id: 'fully-healed-exit',
+      from: 'berserk',
+      to: 'calm',
+      trigger: 'all-hit-points-regained',
+    },
+  ];
+  if (spec.hasCalming) {
+    transitions.push(
+      {
+        id: 'creator-calming-exit',
+        from: 'berserk',
+        to: 'calm',
+        trigger: 'creator-calming-check',
+        actor: 'creator',
+        rangeFeet: 60,
+        requiresHearing: true,
+        cost: 'action',
+        check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
+        outcome: 'on-success',
+      },
+      {
+        id: 'damage-reentry',
+        from: 'calm',
+        to: 'berserk',
+        trigger: 'damage-while-at-or-below-hit-points',
+        hitPointsAtMost: spec.hitPointsAtMost,
+        outcome: 'may-go-berserk-again',
+      },
+    );
+  }
+  return { kind: 'berserk', initialState: 'calm', transitions };
+}
+
+/**
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
@@ -2566,6 +2661,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   if (damageAbsorption !== undefined) {
     effects.push(damageAbsorption);
   }
+  const berserk = parseBerserk(name, text);
+  if (berserk !== undefined) {
+    effects.push(berserk);
+  }
   // Some entries (Surprise Attack, Freeze, the three Rejuvenation variants)
   // attach their trigger directly to the substantive typed effect below
   // instead of emitting the generic bare `triggeredEffect` marker at the end
@@ -2577,6 +2676,9 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     suppressGenericTrigger = true;
   }
   if (damageAbsorption !== undefined) {
+    suppressGenericTrigger = true;
+  }
+  if (berserk !== undefined) {
     suppressGenericTrigger = true;
   }
   // Computed once and reused both by the specific-effect trigger attachment

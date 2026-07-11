@@ -80,6 +80,115 @@ describe('deriveCreatureEntryMechanics damage absorption (eshyra-o9bd.18.7.9 C6)
   });
 });
 
+describe('deriveCreatureEntryMechanics Berserk state machine (eshyra-o9bd.18.7.9 C7)', () => {
+  const clayText =
+    'Whenever the golem starts its turn with 60 hit points or fewer, roll a d6. On a 6, the golem goes berserk. On each of its turns while berserk, the golem attacks the nearest creature it can see. If no creature is near enough to move to and attack, the golem attacks an object, with preference for an object smaller than itself. Once the golem goes berserk, it continues to do so until it is destroyed or regains all its hit points.';
+  const fleshText =
+    'Whenever the golem starts its turn with 40 hit points or fewer, roll a d6. On a 6, the golem goes berserk. On each of its turns while berserk, the golem attacks the nearest creature it can see. If no creature is near enough to move to and attack, the golem attacks an object, with preference for an object smaller than itself. Once the golem goes berserk, it continues to do so until it is destroyed or regains all its hit points. The golem’s creator, if within 60 feet of the berserk golem, can try to calm it by speaking firmly and persuasively. The golem must be able to hear its creator, who must take an action to make a DC 15 Charisma (Persuasion) check. If the check succeeds, the golem ceases being berserk. If it takes damage while still at 40 hit points or fewer, the golem might go berserk again.';
+
+  const baseTransitions = (hitPointsAtMost: number) => [
+    {
+      id: 'low-hit-points-entry',
+      from: 'calm',
+      to: 'berserk',
+      trigger: 'start-of-turn-at-or-below-hit-points',
+      hitPointsAtMost,
+      roll: { die: 'd6', entersOn: 6 },
+    },
+    {
+      id: 'berserk-turn-behavior',
+      from: 'berserk',
+      to: 'berserk',
+      trigger: 'each-turn',
+      behavior: {
+        action: 'attack',
+        target: 'nearest-visible-creature',
+        fallback: {
+          when: 'no-creature-near-enough-to-move-to-and-attack',
+          target: 'object',
+          preference: 'smaller-than-self',
+        },
+      },
+    },
+    {
+      id: 'destroyed-exit',
+      from: 'berserk',
+      to: 'destroyed',
+      trigger: 'destroyed',
+    },
+    {
+      id: 'fully-healed-exit',
+      from: 'berserk',
+      to: 'calm',
+      trigger: 'all-hit-points-regained',
+    },
+  ];
+
+  it('projects Clay Golem entry, continuation, and terminal exits exactly', () => {
+    expect(deriveCreatureEntryMechanics('Berserk', clayText).effects).toEqual([
+      {
+        kind: 'berserk',
+        initialState: 'calm',
+        transitions: baseTransitions(60),
+      },
+    ]);
+  });
+
+  it('projects Flesh Golem’s source-bounded calming and re-entry transitions', () => {
+    expect(deriveCreatureEntryMechanics('Berserk', fleshText).effects).toEqual([
+      {
+        kind: 'berserk',
+        initialState: 'calm',
+        transitions: [
+          ...baseTransitions(40),
+          {
+            id: 'creator-calming-exit',
+            from: 'berserk',
+            to: 'calm',
+            trigger: 'creator-calming-check',
+            actor: 'creator',
+            rangeFeet: 60,
+            requiresHearing: true,
+            cost: 'action',
+            check: { dc: 15, ability: 'charisma', skill: 'persuasion' },
+            outcome: 'on-success',
+          },
+          {
+            id: 'damage-reentry',
+            from: 'calm',
+            to: 'berserk',
+            trigger: 'damage-while-at-or-below-hit-points',
+            hitPointsAtMost: 40,
+            outcome: 'may-go-berserk-again',
+          },
+        ],
+      },
+    ]);
+  });
+
+  it.each([
+    ['entry threshold', clayText.replace('60 hit points', '61 hit points')],
+    ['entry die', clayText.replace('roll a d6', 'roll a d8')],
+    [
+      'continuation fallback',
+      clayText.replace('object smaller than itself', 'large object'),
+    ],
+    ['calming DC', fleshText.replace('DC 15', 'DC 16')],
+    [
+      'calming actor gate',
+      fleshText.replace('golem’s creator', 'nearby creature'),
+    ],
+    [
+      'qualified re-entry clause',
+      fleshText.replace('might go berserk again', 'goes berserk again'),
+    ],
+  ])('fails closed on %s source drift', (_label, text) => {
+    expect(deriveCreatureEntryMechanics('Berserk', text).effects).toEqual([
+      expect.objectContaining({ kind: 'triggeredEffect' }),
+    ]);
+  });
+});
+
 function spell(
   partial: Partial<SpellExtraction> & Pick<SpellExtraction, 'description'>,
 ): SpellExtraction {

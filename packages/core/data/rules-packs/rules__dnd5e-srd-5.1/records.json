@@ -24399,8 +24399,48 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "Whenever the golem starts its turn with 60 hit points or fewer"
+                "kind": "berserk",
+                "initialState": "calm",
+                "transitions": [
+                  {
+                    "id": "low-hit-points-entry",
+                    "from": "calm",
+                    "to": "berserk",
+                    "trigger": "start-of-turn-at-or-below-hit-points",
+                    "hitPointsAtMost": 60,
+                    "roll": {
+                      "die": "d6",
+                      "entersOn": 6
+                    }
+                  },
+                  {
+                    "id": "berserk-turn-behavior",
+                    "from": "berserk",
+                    "to": "berserk",
+                    "trigger": "each-turn",
+                    "behavior": {
+                      "action": "attack",
+                      "target": "nearest-visible-creature",
+                      "fallback": {
+                        "when": "no-creature-near-enough-to-move-to-and-attack",
+                        "target": "object",
+                        "preference": "smaller-than-self"
+                      }
+                    }
+                  },
+                  {
+                    "id": "destroyed-exit",
+                    "from": "berserk",
+                    "to": "destroyed",
+                    "trigger": "destroyed"
+                  },
+                  {
+                    "id": "fully-healed-exit",
+                    "from": "berserk",
+                    "to": "calm",
+                    "trigger": "all-hit-points-regained"
+                  }
+                ]
               }
             ]
           }
@@ -30830,8 +30870,72 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "Whenever the golem starts its turn with 40 hit points or fewer"
+                "kind": "berserk",
+                "initialState": "calm",
+                "transitions": [
+                  {
+                    "id": "low-hit-points-entry",
+                    "from": "calm",
+                    "to": "berserk",
+                    "trigger": "start-of-turn-at-or-below-hit-points",
+                    "hitPointsAtMost": 40,
+                    "roll": {
+                      "die": "d6",
+                      "entersOn": 6
+                    }
+                  },
+                  {
+                    "id": "berserk-turn-behavior",
+                    "from": "berserk",
+                    "to": "berserk",
+                    "trigger": "each-turn",
+                    "behavior": {
+                      "action": "attack",
+                      "target": "nearest-visible-creature",
+                      "fallback": {
+                        "when": "no-creature-near-enough-to-move-to-and-attack",
+                        "target": "object",
+                        "preference": "smaller-than-self"
+                      }
+                    }
+                  },
+                  {
+                    "id": "destroyed-exit",
+                    "from": "berserk",
+                    "to": "destroyed",
+                    "trigger": "destroyed"
+                  },
+                  {
+                    "id": "fully-healed-exit",
+                    "from": "berserk",
+                    "to": "calm",
+                    "trigger": "all-hit-points-regained"
+                  },
+                  {
+                    "id": "creator-calming-exit",
+                    "from": "berserk",
+                    "to": "calm",
+                    "trigger": "creator-calming-check",
+                    "actor": "creator",
+                    "rangeFeet": 60,
+                    "requiresHearing": true,
+                    "cost": "action",
+                    "check": {
+                      "dc": 15,
+                      "ability": "charisma",
+                      "skill": "persuasion"
+                    },
+                    "outcome": "on-success"
+                  },
+                  {
+                    "id": "damage-reentry",
+                    "from": "calm",
+                    "to": "berserk",
+                    "trigger": "damage-while-at-or-below-hit-points",
+                    "hitPointsAtMost": 40,
+                    "outcome": "may-go-berserk-again"
+                  }
+                ]
               }
             ]
           }

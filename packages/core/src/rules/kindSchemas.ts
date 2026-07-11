@@ -39,6 +39,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'attackRollModifier',
   'attackableAppendage',
   'banishment',
+  'berserk',
   'cannotWearOrCarry',
   'carryingCapacitySize',
   'changeShape',
@@ -1887,6 +1888,212 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       path,
       new Set(['action', 'bonus-action', 'reaction']),
     );
+  },
+  berserk: (effect, path) => {
+    requireOnlyKeys(effect, ['kind', 'initialState', 'transitions'], path);
+    reqEnum(effect, 'initialState', path, new Set(['calm']));
+    const transitions = objArray(effect, 'transitions', path);
+    if (transitions === undefined || transitions.length < 4) {
+      throw new RulesPackError(
+        `${path}.transitions must contain the Berserk state machine`,
+      );
+    }
+    const ids = transitions.map((transition, index) =>
+      reqStr(transition, 'id', `${path}.transitions[${index}]`),
+    );
+    const expectedBaseIds = [
+      'low-hit-points-entry',
+      'berserk-turn-behavior',
+      'destroyed-exit',
+      'fully-healed-exit',
+    ];
+    const hasCalming = ids.includes('creator-calming-exit');
+    const expectedIds = hasCalming
+      ? [...expectedBaseIds, 'creator-calming-exit', 'damage-reentry']
+      : expectedBaseIds;
+    if (
+      ids.length !== expectedIds.length ||
+      ids.some((id, index) => id !== expectedIds[index])
+    ) {
+      throw new RulesPackError(
+        `${path}.transitions must be the complete ordered Berserk state machine`,
+      );
+    }
+
+    const entry = transitions[0];
+    const entryPath = `${path}.transitions[0]`;
+    requireOnlyKeys(
+      entry,
+      ['id', 'from', 'to', 'trigger', 'hitPointsAtMost', 'roll'],
+      entryPath,
+    );
+    reqEnum(entry, 'from', entryPath, new Set(['calm']));
+    reqEnum(entry, 'to', entryPath, new Set(['berserk']));
+    reqEnum(
+      entry,
+      'trigger',
+      entryPath,
+      new Set(['start-of-turn-at-or-below-hit-points']),
+    );
+    const threshold = reqInt(entry, 'hitPointsAtMost', entryPath, 1);
+    const roll = reqObj(entry, 'roll', entryPath);
+    requireOnlyKeys(roll, ['die', 'entersOn'], `${entryPath}.roll`);
+    reqEnum(roll, 'die', `${entryPath}.roll`, new Set(['d6']));
+    if (reqInt(roll, 'entersOn', `${entryPath}.roll`, 1) !== 6) {
+      throw new RulesPackError(`${entryPath}.roll.entersOn must be 6`);
+    }
+
+    const continuation = transitions[1];
+    const continuationPath = `${path}.transitions[1]`;
+    requireOnlyKeys(
+      continuation,
+      ['id', 'from', 'to', 'trigger', 'behavior'],
+      continuationPath,
+    );
+    reqEnum(continuation, 'from', continuationPath, new Set(['berserk']));
+    reqEnum(continuation, 'to', continuationPath, new Set(['berserk']));
+    reqEnum(continuation, 'trigger', continuationPath, new Set(['each-turn']));
+    const behavior = reqObj(continuation, 'behavior', continuationPath);
+    requireOnlyKeys(
+      behavior,
+      ['action', 'target', 'fallback'],
+      `${continuationPath}.behavior`,
+    );
+    reqEnum(
+      behavior,
+      'action',
+      `${continuationPath}.behavior`,
+      new Set(['attack']),
+    );
+    reqEnum(
+      behavior,
+      'target',
+      `${continuationPath}.behavior`,
+      new Set(['nearest-visible-creature']),
+    );
+    const fallback = reqObj(
+      behavior,
+      'fallback',
+      `${continuationPath}.behavior`,
+    );
+    requireOnlyKeys(
+      fallback,
+      ['when', 'target', 'preference'],
+      `${continuationPath}.behavior.fallback`,
+    );
+    reqEnum(
+      fallback,
+      'when',
+      `${continuationPath}.behavior.fallback`,
+      new Set(['no-creature-near-enough-to-move-to-and-attack']),
+    );
+    reqEnum(
+      fallback,
+      'target',
+      `${continuationPath}.behavior.fallback`,
+      new Set(['object']),
+    );
+    reqEnum(
+      fallback,
+      'preference',
+      `${continuationPath}.behavior.fallback`,
+      new Set(['smaller-than-self']),
+    );
+
+    const validateExit = (
+      transition: Obj,
+      index: number,
+      id: string,
+      to: string,
+      trigger: string,
+    ): void => {
+      const transitionPath = `${path}.transitions[${index}]`;
+      requireOnlyKeys(
+        transition,
+        ['id', 'from', 'to', 'trigger'],
+        transitionPath,
+      );
+      if (reqStr(transition, 'id', transitionPath) !== id) {
+        throw new RulesPackError(`${transitionPath}.id must be ${id}`);
+      }
+      reqEnum(transition, 'from', transitionPath, new Set(['berserk']));
+      reqEnum(transition, 'to', transitionPath, new Set([to]));
+      reqEnum(transition, 'trigger', transitionPath, new Set([trigger]));
+    };
+    validateExit(transitions[2], 2, 'destroyed-exit', 'destroyed', 'destroyed');
+    validateExit(
+      transitions[3],
+      3,
+      'fully-healed-exit',
+      'calm',
+      'all-hit-points-regained',
+    );
+
+    if (!hasCalming) return;
+    const calming = transitions[4];
+    const calmingPath = `${path}.transitions[4]`;
+    requireOnlyKeys(
+      calming,
+      [
+        'id',
+        'from',
+        'to',
+        'trigger',
+        'actor',
+        'rangeFeet',
+        'requiresHearing',
+        'cost',
+        'check',
+        'outcome',
+      ],
+      calmingPath,
+    );
+    reqEnum(calming, 'from', calmingPath, new Set(['berserk']));
+    reqEnum(calming, 'to', calmingPath, new Set(['calm']));
+    reqEnum(
+      calming,
+      'trigger',
+      calmingPath,
+      new Set(['creator-calming-check']),
+    );
+    reqEnum(calming, 'actor', calmingPath, new Set(['creator']));
+    if (reqInt(calming, 'rangeFeet', calmingPath, 1) !== 60) {
+      throw new RulesPackError(`${calmingPath}.rangeFeet must be 60`);
+    }
+    if (calming.requiresHearing !== true) {
+      throw new RulesPackError(`${calmingPath}.requiresHearing must be true`);
+    }
+    reqEnum(calming, 'cost', calmingPath, new Set(['action']));
+    const check = reqObj(calming, 'check', calmingPath);
+    requireOnlyKeys(check, ['dc', 'ability', 'skill'], `${calmingPath}.check`);
+    if (reqInt(check, 'dc', `${calmingPath}.check`, 1) !== 15) {
+      throw new RulesPackError(`${calmingPath}.check.dc must be 15`);
+    }
+    reqEnum(check, 'ability', `${calmingPath}.check`, new Set(['charisma']));
+    reqEnum(check, 'skill', `${calmingPath}.check`, new Set(['persuasion']));
+    reqEnum(calming, 'outcome', calmingPath, new Set(['on-success']));
+
+    const reentry = transitions[5];
+    const reentryPath = `${path}.transitions[5]`;
+    requireOnlyKeys(
+      reentry,
+      ['id', 'from', 'to', 'trigger', 'hitPointsAtMost', 'outcome'],
+      reentryPath,
+    );
+    reqEnum(reentry, 'from', reentryPath, new Set(['calm']));
+    reqEnum(reentry, 'to', reentryPath, new Set(['berserk']));
+    reqEnum(
+      reentry,
+      'trigger',
+      reentryPath,
+      new Set(['damage-while-at-or-below-hit-points']),
+    );
+    if (reqInt(reentry, 'hitPointsAtMost', reentryPath, 1) !== threshold) {
+      throw new RulesPackError(
+        `${reentryPath}.hitPointsAtMost must equal the entry threshold`,
+      );
+    }
+    reqEnum(reentry, 'outcome', reentryPath, new Set(['may-go-berserk-again']));
   },
   changeShape: (effect, path) => {
     requireOnlyKeys(
