@@ -11,10 +11,11 @@ the reviewed creature-entry refs now represented by
 branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
 implemented in the follow-up rollout, and the 10 C3 refs were implemented in a
-second follow-up rollout, while 40 residual refs remain represented in the
-per-ref registry. Of those 40 residual refs, 2 are permanent
-`accepted-prose-only` entries and 38 are pending `finding` entries routed to
-C1/C4-C9. Spell metadata-only membership remains represented separately by
+second follow-up rollout, and the 22 C1 shape-change refs were implemented in
+a later rollout, while 18 residual refs remain represented in the per-ref
+registry. Of those 18 residual refs, 2 are permanent `accepted-prose-only`
+entries and 16 are pending `finding` entries routed to C4-C9. Spell
+metadata-only membership remains represented separately by
 `ACCEPTED_METADATA_ONLY_SPELLS`; the 14 S1 summoning/control spells and the 17
 S2 small deterministic-clause spells have graduated out. Every record's full
 pack text was read against SRD 5.1 source. **Do not repeat this audit.**
@@ -34,18 +35,16 @@ Disposition vocabulary:
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
-## 1. Creature-entry refs (48 original + 24 residual = 72 reviewed; 66 pending)
+## 1. Creature-entry refs (72 reviewed total; 16 pending findings)
 
-### 1.1 Shape-change family — 22 refs — disposition: design (slice C1)
+### 1.1 Shape-change family — 22 refs — disposition: implemented (slice C1)
 
 Deterministic clauses shared by all: action-cost polymorph; allowed-form
 constraint; retained vs replaced statistics; equipment disposition;
-reversion-on-death. No existing contract covers this; `transformed` (a
-condition-state marker) and `illusoryDisguise` are adjacent but not
-sufficient. New contract proposed: `changeShape` with fields
-`{ forms, retains?, replaces?, equipment: 'absorbed-or-borne' |
-'not-transformed' | 'specific', reversion: 'on-death', speedOverrides?,
-sizeOverrides?, notes? }`.
+reversion-on-death. These are implemented by the schema-validated
+`changeShape` contract. Lycanthrope statline forms select existing AC/speed
+variants by exact condition and expose concrete sizes where the form changes
+size; they do not duplicate numeric statline values.
 
 | ref | variant-specific semantics |
 |---|---|
@@ -195,7 +194,7 @@ The bundle's readiness registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` in
 `create-dnd5e-srd-audit-bundle/cli.ts`, superseding the former
 `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`) additionally now records a per-ref
 disposition — `accepted-prose-only` for the 2 genuine accepts (§1.5) or
-`finding` (with `bead`/`slice`) for the other 64 residual refs classified in
+`finding` (with `bead`/`slice`) for the other 16 residual refs classified in
 this document — so the bucket-level `creature-entry#mechanical-prose` /
 `creature-entry#narrative-prose` policy entries can never again blanket-bless
 the C1–C9 pending work as accepted prose.
@@ -431,7 +430,7 @@ None of the remaining slices below is started unless stated.
 
 | slice | content | new contract? | agent |
 |---|---|---|---|
-| **C1** shape-change | design `changeShape` payload; project 22 refs (§1.1 table has all per-record semantics); remove/update their `finding` entries in the reviewed-disposition registry; schema + negative tests; pack regen + committed-pack assertions | yes — compound state transition | **Opus** (design + representative records), Codex rollout of remaining dragons (8 identical grammars) |
+| **C1** shape-change | `changeShape` payload projected for 22 refs (§1.1); findings removed from the reviewed-disposition registry; schema, negative, committed-pack, and regeneration coverage added | yes — compound state transition | **Implemented** |
 | **C2** false appearance | `falseAppearance` contract; 16 uniform refs | yes, trivial shape | **Implemented** |
 | **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 10 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Implemented** |
 | **S1** summoning | `summoning` payload extension (option menus, control economy, lifecycle transitions, statblock modification); 14 spells | yes — implemented | **Implemented** |
@@ -445,10 +444,10 @@ None of the remaining slices below is started unless stated.
 | **C8** rampage family | triggered bonus action (`bonusAction` trigger field, or new `triggeredBonusAction`); 2 refs (§1.6.6) | yes, small (schema-reviewed extension or new small contract) | **Opus** design, Codex rollout |
 | **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Opus** payload sketch, Codex rollout |
 
-Ordering: C2 and S2 were low-risk warm-ups; S1 is implemented; C1 remains a
-substantive design/rollout. S3 last (interacts with modeled teleport/planar kinds). C4–C9
-(§1.6, residual reconciliation pass) are additive and can land in any order
-relative to C1/S3–S4; none blocks another.
+Ordering: C1/C2/C3 and S1/S2 are implemented. S3 remains last because it
+interacts with modeled teleport/planar kinds. C4–C9 (§1.6, residual
+reconciliation pass) are additive and can land in any order relative to S3;
+none blocks another.
 
 Reconciliation (mechanically verified 2026-07-06 against
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
@@ -462,10 +461,10 @@ every membership key appears in exactly one disposition section):
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
-  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after C2+C3 rollout: 40
-  (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented) = C1 22 +
-  accept\* 2 + C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4
-  (22+2+2+2+4+2+2+4 = 40)
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after C1+C2+C3 rollout:
+  18 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented - 22 C1
+  implemented) = accept\* 2 + C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4
+  (2+2+2+4+2+2+4 = 18)
 - spells originally classified here: 53 = S1 14 (§2.1) + S2 17 (§2.2 5 +
   §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after

@@ -1668,4 +1668,164 @@ describe('magic-item passive-modifier effect payload contracts', () => {
       }),
     ).not.toThrow();
   });
+
+  it('validates the closed C1 changeShape contract', () => {
+    const effect = {
+      kind: 'changeShape',
+      cost: 'action',
+      forms: [
+        { kind: 'category', types: ['humanoid', 'beast'], maxChallenge: 'own' },
+        {
+          kind: 'fixed',
+          name: 'raven',
+          speedOverrides: { walk: 20, fly: 60 },
+        },
+      ],
+      statistics: {
+        model: 'retain-listed',
+        retains: ['hit points'],
+        replaces: ['AC'],
+        gainsMissingCapabilities: true,
+      },
+      equipment: { disposition: 'absorbed-or-borne' },
+      reversion: { on: ['death'] },
+      excludedCapabilities: ['class-features'],
+      retainedCapabilities: [{ name: 'bite', whenFormHas: { attack: 'bite' } }],
+      speedConditions: [
+        { mode: 'fly', lostUnlessFormHas: { anatomy: 'wings' } },
+      ],
+      riders: ['The new form must be familiar.'],
+    };
+    expect(() => validate(effect)).not.toThrow();
+    expect(() => validate({ ...effect, cost: 'bonus-action' })).toThrow(/cost/);
+    expect(() => validate({ ...effect, unreviewed: true })).toThrow(
+      /unsupported key/,
+    );
+    expect(() =>
+      validate({
+        ...effect,
+        forms: [{ kind: 'fixed', name: 'rat', speedOverrides: { fly: 0 } }],
+      }),
+    ).toThrow(/speedOverrides\.fly/);
+    expect(() =>
+      validate({
+        ...effect,
+        statistics: { model: 'same-except', replaces: ['AC'] },
+      }),
+    ).toThrow(/unsupported key/);
+    expect(() =>
+      validate({
+        ...effect,
+        equipment: { disposition: 'specific', items: [] },
+      }),
+    ).toThrow(/items must not be empty/);
+    expect(() =>
+      validate({
+        ...effect,
+        riders: ['Can use a bite attack when the form has jaws.'],
+      }),
+    ).toThrow(/riders/);
+
+    const statlineEffect = {
+      ...effect,
+      forms: [{ kind: 'statline-variant', variant: 'bear', size: 'large' }],
+    };
+    expect(() => validate(statlineEffect)).not.toThrow();
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            statlineRefs: [
+              { kind: 'speed-variant', condition: 'in bear form' },
+            ],
+          },
+        ],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            size: 'large',
+            statlineRefs: [
+              { kind: 'speed-variant', condition: 'in bear form' },
+            ],
+          },
+        ],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [{ kind: 'statline-variant', variant: 'bear' }],
+      }),
+    ).toThrow(/size or non-empty statlineRefs/);
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [
+          { kind: 'statline-variant', variant: 'bear', statlineRefs: [] },
+        ],
+      }),
+    ).toThrow(/non-empty/);
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            statlineRefs: [{ kind: 'ac-variant', condition: 'x' }],
+          },
+        ],
+      }),
+    ).toThrow(/unsupported statline reference kind/);
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            statlineRefs: [{ kind: 'speed-variant', condition: '' }],
+          },
+        ],
+      }),
+    ).toThrow(/condition/);
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [{ kind: 'statline-variant', variant: 'bear', size: 'tiny' }],
+      }),
+    ).toThrow(/size/);
+    expect(() =>
+      validate({
+        ...statlineEffect,
+        forms: [
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            statlineRefs: [
+              { kind: 'speed-variant', condition: 'x' },
+              { kind: 'speed-variant', condition: 'x' },
+            ],
+          },
+        ],
+      }),
+    ).toThrow(/duplicates/);
+    expect(() =>
+      validate({
+        ...effect,
+        retainedCapabilities: [
+          { name: 'bite', whenFormHas: { anatomy: 'jaws' } },
+        ],
+      }),
+    ).toThrow(/unsupported key|attack/);
+  });
 });

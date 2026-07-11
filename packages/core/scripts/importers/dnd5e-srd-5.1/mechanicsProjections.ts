@@ -2112,11 +2112,384 @@ function parseModifierEffects(text: string): readonly Mechanics[] {
 }
 
 /**
+ * C1 shape-change grammar (eshyra-o9bd.18.7.9). The 22 reviewed entries use
+ * a small, closed set of complete source grammars. Each branch requires every
+ * reviewed clause before emitting the projection, so source drift returns the
+ * entry to the fail-closed prose-membership gate rather than preserving stale
+ * mechanics.
+ */
+function parseChangeShape(name: string, text: string): Mechanics | undefined {
+  const normalized = text.replaceAll('\u2019', "'");
+  const effect = (
+    forms: readonly Mechanics[],
+    statistics: Mechanics,
+    equipment: Mechanics,
+    extras: Mechanics = {},
+  ): Mechanics => ({
+    kind: 'changeShape',
+    cost: 'action',
+    forms,
+    statistics,
+    equipment,
+    reversion: { on: ['death'] },
+    ...extras,
+  });
+
+  if (
+    name === 'Change Shape' &&
+    normalized ===
+      "The dragon magically polymorphs into a humanoid or beast that has a challenge rating no higher than its own, or back into its true form. It reverts to its true form if it dies. Any equipment it is wearing or carrying is absorbed or borne by the new form (the dragon's choice). In a new form, the dragon retains its alignment, hit points, Hit Dice, ability to speak, proficiencies, Legendary Resistance, lair actions, and Intelligence, Wisdom, and Charisma scores, as well as this action. Its statistics and capabilities are otherwise replaced by those of the new form, except any class features or legendary actions of that form."
+  ) {
+    return effect(
+      [{ kind: 'category', types: ['humanoid', 'beast'], maxChallenge: 'own' }],
+      {
+        model: 'retain-listed',
+        retains: [
+          'alignment',
+          'hit points',
+          'Hit Dice',
+          'ability to speak',
+          'proficiencies',
+          'Legendary Resistance and lair actions',
+          'Intelligence, Wisdom, and Charisma scores',
+          'this action',
+        ],
+      },
+      { disposition: 'absorbed-or-borne' },
+      { excludedCapabilities: ['class-features', 'legendary-actions'] },
+    );
+  }
+
+  const celestial =
+    /^The (couatl|deva) magically polymorphs into a humanoid or beast that has a challenge rating equal to or less than its own, or back into its true form\. It reverts to its true form if it dies\. Any equipment it is wearing or carrying is absorbed or borne by the new form \(the \1's choice\)\. In a new form, the \1 retains its game statistics and ability to speak, but its AC, movement modes, Strength, Dexterity, and (other actions|special senses) are replaced by those of the new form, and it gains any statistics and capabilities \(except class features, legendary actions, and lair actions\) that the new form has but that it lacks\.( If the new form has a bite attack, the couatl can use its bite in that form\.)?$/.exec(
+      normalized,
+    );
+  if (
+    name === 'Change Shape' &&
+    celestial !== null &&
+    ((celestial[1] === 'couatl' &&
+      celestial[2] === 'other actions' &&
+      celestial[3] !== undefined) ||
+      (celestial[1] === 'deva' &&
+        celestial[2] === 'special senses' &&
+        celestial[3] === undefined))
+  ) {
+    return effect(
+      [{ kind: 'category', types: ['humanoid', 'beast'], maxChallenge: 'own' }],
+      {
+        model: 'retain-listed',
+        retains: ['game statistics', 'ability to speak'],
+        replaces: [
+          'AC',
+          'movement modes',
+          'Strength',
+          'Dexterity',
+          celestial[2],
+        ],
+        gainsMissingCapabilities: true,
+      },
+      { disposition: 'absorbed-or-borne' },
+      {
+        excludedCapabilities: [
+          'class-features',
+          'legendary-actions',
+          'lair-actions',
+        ],
+        ...(celestial[1] === 'couatl'
+          ? {
+              retainedCapabilities: [
+                { name: 'bite', whenFormHas: { attack: 'bite' } },
+              ],
+            }
+          : {}),
+      },
+    );
+  }
+
+  if (
+    name === 'Change Shape' &&
+    normalized ===
+      "The hag magically polymorphs into a Small or Medium female humanoid, or back into her true form. Her statistics are the same in each form. Any equipment she is wearing or carrying isn't transformed. She reverts to her true form if she dies."
+  ) {
+    return effect(
+      [
+        {
+          kind: 'descriptor',
+          sizes: ['small', 'medium'],
+          type: 'humanoid',
+          qualifiers: ['female'],
+        },
+      ],
+      { model: 'same-except', except: [] },
+      { disposition: 'not-transformed' },
+    );
+  }
+
+  if (
+    name === 'Change Shape' &&
+    normalized ===
+      'The oni magically polymorphs into a Small or Medium humanoid, into a Large giant, or back into its true form. Other than its size, its statistics are the same in each form. The only equipment that is transformed is its glaive, which shrinks so that it can be wielded in humanoid form. If the oni dies, it reverts to its true form, and its glaive reverts to its normal size.'
+  ) {
+    return effect(
+      [
+        { kind: 'descriptor', sizes: ['small', 'medium'], type: 'humanoid' },
+        { kind: 'descriptor', sizes: ['large'], type: 'giant' },
+      ],
+      { model: 'same-except', except: ['size'] },
+      {
+        disposition: 'specific',
+        items: [
+          {
+            name: 'glaive',
+            behavior: 'transforms-with-form',
+            revertsOnDeath: true,
+          },
+        ],
+      },
+    );
+  }
+
+  if (
+    name === 'Shapechanger' &&
+    normalized ===
+      "The doppelganger can use its action to polymorph into a Small or Medium humanoid it has seen, or back into its true form. Its statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies."
+  ) {
+    return effect(
+      [
+        {
+          kind: 'descriptor',
+          sizes: ['small', 'medium'],
+          type: 'humanoid',
+          qualifiers: ['it has seen'],
+        },
+      ],
+      { model: 'same-except', except: ['size'] },
+      { disposition: 'not-transformed' },
+    );
+  }
+
+  if (
+    name === 'Shapechanger' &&
+    normalized ===
+      "The imp can use its action to polymorph into a beast form that resembles a rat (speed 20 ft.), a raven (20 ft., fly 60 ft.), or a spider (20 ft., climb 20 ft.), or back into its true form. Its statistics are the same in each form, except for the speed changes noted. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies."
+  ) {
+    return effect(
+      [
+        { kind: 'fixed', name: 'rat', speedOverrides: { walk: 20 } },
+        {
+          kind: 'fixed',
+          name: 'raven',
+          speedOverrides: { walk: 20, fly: 60 },
+        },
+        {
+          kind: 'fixed',
+          name: 'spider',
+          speedOverrides: { walk: 20, climb: 20 },
+        },
+      ],
+      { model: 'same-except', except: ['speed'] },
+      { disposition: 'not-transformed' },
+    );
+  }
+
+  if (
+    name === 'Shapechanger' &&
+    normalized ===
+      "The quasit can use its action to polymorph into a beast form that resembles a bat (speed 10 ft. fly 40 ft.), a centipede (40 ft., climb 40 ft.), or a toad (40 ft., swim 40 ft.), or back into its true form. Its statistics are the same in each form, except for the speed changes noted. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies."
+  ) {
+    return effect(
+      [
+        { kind: 'fixed', name: 'bat', speedOverrides: { walk: 10, fly: 40 } },
+        {
+          kind: 'fixed',
+          name: 'centipede',
+          speedOverrides: { walk: 40, climb: 40 },
+        },
+        { kind: 'fixed', name: 'toad', speedOverrides: { walk: 40, swim: 40 } },
+      ],
+      { model: 'same-except', except: ['speed'] },
+      { disposition: 'not-transformed' },
+    );
+  }
+
+  if (
+    name === 'Shapechanger' &&
+    normalized ===
+      "The mimic can use its action to polymorph into an object or back into its true, amorphous form. Its statistics are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies."
+  ) {
+    return effect(
+      [{ kind: 'object' }],
+      { model: 'same-except', except: [] },
+      { disposition: 'not-transformed' },
+    );
+  }
+
+  if (
+    name === 'Shapechanger' &&
+    normalized ===
+      "The fiend can use its action to polymorph into a Small or Medium humanoid, or back into its true form. Without wings, the fiend loses its flying speed. Other than its size and speed, its statistics are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies."
+  ) {
+    return effect(
+      [{ kind: 'descriptor', sizes: ['small', 'medium'], type: 'humanoid' }],
+      { model: 'same-except', except: ['size', 'speed'] },
+      { disposition: 'not-transformed' },
+      {
+        speedConditions: [
+          { mode: 'fly', lostUnlessFormHas: { anatomy: 'wings' } },
+        ],
+      },
+    );
+  }
+
+  const lycanthropeSpecs: ReadonlyArray<{
+    sourceText: string;
+    forms: readonly Mechanics[];
+    exceptions: readonly string[];
+  }> = [
+    {
+      sourceText:
+        "The werebear can use its action to polymorph into a Large bear-humanoid hybrid or into a Large bear, or back into its true form, which is humanoid. Its statistics, other than its size and AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'bear-humanoid hybrid',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'bear',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
+      ],
+      exceptions: ['size', 'ac'],
+    },
+    {
+      sourceText:
+        "The wereboar can use its action to polymorph into a boar-humanoid hybrid or into a boar, or back into its true form, which is humanoid. Its statistics, other than its AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'boar-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'boar',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in boar form' },
+          ],
+        },
+      ],
+      exceptions: ['ac'],
+    },
+    {
+      sourceText:
+        "The wererat can use its action to polymorph into a rat-humanoid hybrid or into a giant rat, or back into its true form, which is humanoid. Its statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'rat-humanoid hybrid',
+          size: 'medium',
+        },
+        { kind: 'statline-variant', variant: 'giant rat', size: 'small' },
+      ],
+      exceptions: ['size'],
+    },
+    {
+      sourceText:
+        "The weretiger can use its action to polymorph into a tiger-humanoid hybrid or into a tiger, or back into its true form, which is humanoid. Its statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'tiger-humanoid hybrid',
+          size: 'medium',
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'tiger',
+          size: 'large',
+          statlineRefs: [{ kind: 'speed-variant', condition: 'in tiger form' }],
+        },
+      ],
+      exceptions: ['size'],
+    },
+    {
+      sourceText:
+        "The werewolf can use its action to polymorph into a wolf-humanoid hybrid or into a wolf, or back into its true form, which is humanoid. Its statistics, other than its AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'wolf-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'wolf',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in wolf form' },
+          ],
+        },
+      ],
+      exceptions: ['ac'],
+    },
+  ];
+  const lycanthrope =
+    name === 'Shapechanger'
+      ? lycanthropeSpecs.find((spec) => spec.sourceText === normalized)
+      : undefined;
+  if (lycanthrope !== undefined) {
+    return effect(
+      lycanthrope.forms,
+      { model: 'same-except', except: lycanthrope.exceptions },
+      { disposition: 'not-transformed' },
+    );
+  }
+
+  return undefined;
+}
+
+/**
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
 function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   const effects: Mechanics[] = [...parseModifierEffects(text)];
+  const changeShape = parseChangeShape(name, text);
+  if (changeShape !== undefined) {
+    effects.push(changeShape);
+  }
   // Some entries (Surprise Attack, Freeze, the three Rejuvenation variants)
   // attach their trigger directly to the substantive typed effect below
   // instead of emitting the generic bare `triggeredEffect` marker at the end

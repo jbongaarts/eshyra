@@ -54,6 +54,202 @@ function spellAmbiguities(key: string): unknown[] | undefined {
 }
 
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('C1 changeShape projects every reviewed entry and pins the five contract grammars', () => {
+    const c1Entries: ReadonlyArray<readonly [string, string, string]> = [
+      ['creature:adult-bronze-dragon', 'actions', 'Change Shape'],
+      ['creature:adult-gold-dragon', 'actions', 'Change Shape'],
+      ['creature:adult-silver-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-brass-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-bronze-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-copper-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-gold-dragon', 'actions', 'Change Shape'],
+      ['creature:ancient-silver-dragon', 'actions', 'Change Shape'],
+      ['creature:couatl', 'actions', 'Change Shape'],
+      ['creature:deva', 'actions', 'Change Shape'],
+      ['creature:night-hag', 'actions', 'Change Shape'],
+      ['creature:oni', 'actions', 'Change Shape'],
+      ['creature:doppelganger', 'traits', 'Shapechanger'],
+      ['creature:imp', 'traits', 'Shapechanger'],
+      ['creature:quasit', 'traits', 'Shapechanger'],
+      ['creature:mimic', 'traits', 'Shapechanger'],
+      ['creature:succubus-incubus', 'traits', 'Shapechanger'],
+      ['creature:werebear', 'traits', 'Shapechanger'],
+      ['creature:wereboar', 'traits', 'Shapechanger'],
+      ['creature:wererat', 'traits', 'Shapechanger'],
+      ['creature:weretiger', 'traits', 'Shapechanger'],
+      ['creature:werewolf', 'traits', 'Shapechanger'],
+    ];
+    for (const [key, section, name] of c1Entries) {
+      expect(
+        creatureEntry(key, section, name).mechanics?.effects,
+        `${key}#${section}:${name}`,
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ kind: 'changeShape' }),
+        ]),
+      );
+    }
+
+    expect(
+      creatureEntry('creature:adult-bronze-dragon', 'actions', 'Change Shape')
+        .mechanics?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          {
+            kind: 'category',
+            types: ['humanoid', 'beast'],
+            maxChallenge: 'own',
+          },
+        ],
+        statistics: {
+          model: 'retain-listed',
+          retains: [
+            'alignment',
+            'hit points',
+            'Hit Dice',
+            'ability to speak',
+            'proficiencies',
+            'Legendary Resistance and lair actions',
+            'Intelligence, Wisdom, and Charisma scores',
+            'this action',
+          ],
+        },
+        equipment: { disposition: 'absorbed-or-borne' },
+        reversion: { on: ['death'] },
+        excludedCapabilities: ['class-features', 'legendary-actions'],
+      },
+    ]);
+    expect(
+      creatureEntry('creature:couatl', 'actions', 'Change Shape').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          {
+            kind: 'category',
+            types: ['humanoid', 'beast'],
+            maxChallenge: 'own',
+          },
+        ],
+        statistics: {
+          model: 'retain-listed',
+          retains: ['game statistics', 'ability to speak'],
+          replaces: [
+            'AC',
+            'movement modes',
+            'Strength',
+            'Dexterity',
+            'other actions',
+          ],
+          gainsMissingCapabilities: true,
+        },
+        equipment: { disposition: 'absorbed-or-borne' },
+        reversion: { on: ['death'] },
+        excludedCapabilities: [
+          'class-features',
+          'legendary-actions',
+          'lair-actions',
+        ],
+        retainedCapabilities: [
+          { name: 'bite', whenFormHas: { attack: 'bite' } },
+        ],
+      },
+    ]);
+    expect(
+      creatureEntry('creature:oni', 'actions', 'Change Shape').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          { kind: 'descriptor', sizes: ['small', 'medium'], type: 'humanoid' },
+          { kind: 'descriptor', sizes: ['large'], type: 'giant' },
+        ],
+        statistics: { model: 'same-except', except: ['size'] },
+        equipment: {
+          disposition: 'specific',
+          items: [
+            {
+              name: 'glaive',
+              behavior: 'transforms-with-form',
+              revertsOnDeath: true,
+            },
+          ],
+        },
+        reversion: { on: ['death'] },
+      },
+    ]);
+    expect(
+      creatureEntry('creature:imp', 'traits', 'Shapechanger').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          { kind: 'fixed', name: 'rat', speedOverrides: { walk: 20 } },
+          {
+            kind: 'fixed',
+            name: 'raven',
+            speedOverrides: { walk: 20, fly: 60 },
+          },
+          {
+            kind: 'fixed',
+            name: 'spider',
+            speedOverrides: { walk: 20, climb: 20 },
+          },
+        ],
+        statistics: { model: 'same-except', except: ['speed'] },
+        equipment: { disposition: 'not-transformed' },
+        reversion: { on: ['death'] },
+      },
+    ]);
+    expect(
+      creatureEntry('creature:werebear', 'traits', 'Shapechanger').mechanics
+        ?.effects,
+    ).toEqual([
+      {
+        kind: 'changeShape',
+        cost: 'action',
+        forms: [
+          {
+            kind: 'statline-variant',
+            variant: 'bear-humanoid hybrid',
+            size: 'large',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in bear and hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+            ],
+          },
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            size: 'large',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in bear and hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+            ],
+          },
+        ],
+        statistics: { model: 'same-except', except: ['size', 'ac'] },
+        equipment: { disposition: 'not-transformed' },
+        reversion: { on: ['death'] },
+      },
+    ]);
+  });
+
   it('Hydra Multiattack is a per-head formula, Medusa an either/or option set, Violet Fungus a dice count', () => {
     expect(
       creatureEntry('creature:hydra', 'actions', 'Multiattack').mechanics
@@ -936,6 +1132,138 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     expect(spellAmbiguities('spell:find-familiar')).toMatchSnapshot(
       'spell:find-familiar ambiguities',
     );
+  });
+
+  it('pins all five lycanthrope forms and resolves every statline selector exactly once', () => {
+    const expected: Record<string, unknown[]> = {
+      werebear: [
+        {
+          kind: 'statline-variant',
+          variant: 'bear-humanoid hybrid',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'bear',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
+      ],
+      wereboar: [
+        {
+          kind: 'statline-variant',
+          variant: 'boar-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'boar',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in boar form' },
+          ],
+        },
+      ],
+      wererat: [
+        {
+          kind: 'statline-variant',
+          variant: 'rat-humanoid hybrid',
+          size: 'medium',
+        },
+        { kind: 'statline-variant', variant: 'giant rat', size: 'small' },
+      ],
+      weretiger: [
+        {
+          kind: 'statline-variant',
+          variant: 'tiger-humanoid hybrid',
+          size: 'medium',
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'tiger',
+          size: 'large',
+          statlineRefs: [{ kind: 'speed-variant', condition: 'in tiger form' }],
+        },
+      ],
+      werewolf: [
+        {
+          kind: 'statline-variant',
+          variant: 'wolf-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'wolf',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in wolf form' },
+          ],
+        },
+      ],
+    };
+    for (const [species, forms] of Object.entries(expected)) {
+      const effect = creatureEntry(
+        `creature:${species}`,
+        'traits',
+        'Shapechanger',
+      ).mechanics?.effects?.find(
+        (candidate) => (candidate as { kind?: string }).kind === 'changeShape',
+      ) as { forms: Array<Record<string, unknown>> };
+      expect(effect.forms).toEqual(forms);
+      const data = getBundledDnd5eSrdPack().records.find(
+        (record) => record.key === `creature:${species}`,
+      )?.data as Record<string, unknown>;
+      const armorVariants = ((data.armorClass as Record<string, unknown>)
+        .variants ?? []) as Array<Record<string, unknown>>;
+      const speedVariants = (data.speedVariants ?? []) as Array<
+        Record<string, unknown>
+      >;
+      for (const form of effect.forms) {
+        if (form.size !== undefined) {
+          expect(['small', 'medium', 'large']).toContain(form.size);
+        }
+        for (const ref of (form.statlineRefs ?? []) as Array<
+          Record<string, string>
+        >) {
+          const candidates =
+            ref.kind === 'armor-class-variant' ? armorVariants : speedVariants;
+          expect(
+            candidates.filter(
+              (candidate) => candidate.condition === ref.condition,
+            ),
+          ).toHaveLength(1);
+        }
+      }
+    }
   });
 
   it('S2 communication, travel, and recast limits carry typed clauses', () => {
