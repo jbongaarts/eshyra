@@ -663,7 +663,9 @@ The finished v1 should satisfy:
 
 - Full PHB content beyond SRD.
 - Pathfinder implementation.
-- Multiclassing.
+- Multiclassing. ADR 0018 makes this an explicit fail-closed boundary: creation
+  accepts exactly one class and must reject, rather than flatten or preserve,
+  multiclass-shaped input.
 - Higher-level character creation.
 - Level-up flow.
 - Homebrew editing UI.

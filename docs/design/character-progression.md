@@ -125,6 +125,13 @@ rows in `eshyra-lupf.3`).
   `spellcasting` block. Specific spell/cantrip selections and preparation
   changes are required choices, not automatic effects (see below).
 
+This flow is single-class by contract under
+[ADR 0018](../adr/0018-single-class-engine-boundary.md): `sheet.level` is both
+total character level and the level of the sole `sheet.class`, and every
+level-up advances that class. Multiclass-shaped state or an attempt to choose a
+different target class must fail before preview or apply; it is never flattened
+into this flow.
+
 ## Required choices and the fail-closed boundary
 
 Some level-ups require a player decision. These are surfaced as explicit
@@ -160,5 +167,7 @@ the flow with a clear message rather than producing a wrong sheet.
 
 - The canonical character-sheet storage shape and the live-table relationship
   (`eshyra-lupf.13`).
-- Multiclassing, in-place rules-pack migration, and cross-pack conversion.
+- Multiclassing, explicitly deferred behind ADR 0018's fail-closed
+  single-class boundary; in-place rules-pack migration; and cross-pack
+  conversion.
 - Non-SRD or homebrew advancement rules.

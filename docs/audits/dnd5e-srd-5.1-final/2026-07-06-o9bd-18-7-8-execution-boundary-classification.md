@@ -565,10 +565,13 @@ exact and artifact-backed; nothing else in the 175 belongs to a family.
   Need: wallet read in the turn-context snapshot + a canonical
   currency-mutation tool (earn/spend/convert over `currency.ts`, logged like
   other canon writes); trade/downtime pacing stays a DM ruling.
-- **D1 — multiclass decision** (design bead; owner: eshyra-o9bd.18.7.8 parent
-  pending a dedicated decision bead under an engine epic). Members: the 8
-  multiclass rows + experience-points' multiclass clause. Decide: in/out of
-  product scope for v1; if in, an engine epic.
+- **D1 — multiclass decision** (resolved by `eshyra-2n1t.1` and
+  [ADR 0018](../../adr/0018-single-class-engine-boundary.md)). Multiclassing is
+  explicitly deferred from the v1 executable domain behind a fail-closed
+  single-class character-build validator. The 8 multiclass rows plus the
+  experience-points multiclass clause remain visibly unsupported/deferred;
+  pack reference coverage is not runtime support. F4, F7, and F8 may rely on
+  total level equaling sole-class level only after that validator succeeds.
 - **D2 — creation-variant policy** (design decision, small). Members: feats,
   customizing-a-background. Decide whether the creation/advancement flow
   offers variant feats and background customization; if yes, F8-style Codex
