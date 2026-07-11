@@ -81,6 +81,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'walkOnLiquids',
   'climbWithoutCheck',
   'damageTransfer',
+  'damageAbsorption',
   'earthGlide',
   'enterHostileSpace',
   'hoveringWeapon',
@@ -2585,6 +2586,12 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqEnum(effect, 'rounding', path, new Set(['down', 'up']));
     optStr(effect, 'from', path);
     optInt(effect, 'rangeFeet', path, 1);
+  },
+  damageAbsorption: (effect, path) => {
+    requireOnlyKeys(effect, ['kind', 'type', 'damageTaken', 'healing'], path);
+    reqEnum(effect, 'type', path, SRD_5_1_DAMAGE_TYPES);
+    reqEnum(effect, 'damageTaken', path, new Set(['none']));
+    reqEnum(effect, 'healing', path, new Set(['damage-dealt']));
   },
   earthGlide: markerOnly,
   enterHostileSpace: markerOnly,
