@@ -1,6 +1,7 @@
 # eshyra-o9bd.18.7.9 — Exhaustive classification of reviewed memberships
 
-Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399
+Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399. C5 rollout: bead
+`eshyra-o9bd.18.7.9.11`.
 (`eshyra-o9bd-18-7-9-membership-corrections`).
 
 This is the authoritative, record-by-record semantic disposition source for
@@ -12,9 +13,10 @@ branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
 implemented in the follow-up rollout, and the 10 C3 refs were implemented in a
 second follow-up rollout, and the 22 C1 shape-change refs were implemented in
-a later rollout, while 18 residual refs remain represented in the per-ref
-registry. Of those 18 residual refs, 2 are permanent `accepted-prose-only`
-entries and 16 are pending `finding` entries routed to C4-C9. Spell
+a later rollout. The C5 Split rollout described below has now graduated its
+two refs, leaving 16 residual refs represented in the per-ref registry. Of
+those 16 residual refs, 2 are permanent `accepted-prose-only` entries and 14
+are pending `finding` entries routed to C4 and C6-C9. Spell
 metadata-only membership remains represented separately by
 `ACCEPTED_METADATA_ONLY_SPELLS`; the 14 S1 summoning/control spells and the 17
 S2 small deterministic-clause spells have graduated out. Every record's full
@@ -35,7 +37,7 @@ Disposition vocabulary:
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
-## 1. Creature-entry refs (72 reviewed total; 16 pending findings)
+## 1. Creature-entry refs (72 reviewed total; 14 pending findings; 16 residual registry entries)
 
 ### 1.1 Shape-change family — 22 refs — disposition: implemented (slice C1)
 
@@ -211,14 +213,15 @@ tradeoff: 'advantage-to-attacks-against-self', until: 'start-of-next-turn' }`).
 - `creature:berserker#traits:Reckless`
 - `creature:minotaur#traits:Reckless`
 
-#### 1.6.3 Split family — 2 refs — disposition: model (new slice C5)
+#### 1.6.3 Split family — 2 refs — disposition: implemented (slice C5)
 
 Deterministic reproduction-on-damage: subjected to lightning/slashing damage
 while Medium-or-larger and at ≥10 HP, the creature splits into two
 half-HP (rounded down), one-size-smaller copies. Uniform grammar across both
-refs. Proposed contract: `splitOnDamage { damageTypes, minimumSize,
-minimumHitPoints, hitPointsFraction: 'half-rounded-down',
-sizeCategoriesDown: 1 }`.
+refs. The schema-validated `splitOnDamage` contract now models the complete
+source grammar, including explicit `resultingCreatureCount: 2`; both refs
+are graduated from the reviewed-disposition registry. The importer matches
+only the complete source strings and fails closed on clause drift.
 
 - `creature:black-pudding#reactions:Split`
 - `creature:ochre-jelly#reactions:Split`
@@ -282,7 +285,9 @@ Not in the same family as each other, but djinni/efreeti share one contract
 24 = 6 implemented (§1.6.1, removed from the array) + 2 folded into existing
 families (§1.3/§1.4, aboleth and ettin) + 16 newly classified into slices
 C4–C9 (2 Reckless + 2 Split + 4 Absorption + 2 Berserk + 2 Rampage + 4
-single-record residuals: Shriek, Djinni, Efreeti, Shield).
+single-record residuals: Shriek, Djinni, Efreeti, Shield). C5 is now
+implemented, so the current residual registry is 16 entries: 2 accepted
+prose-only refs plus 14 pending findings (C4 2 + C6 4 + C7 2 + C8 2 + C9 4).
 
 ## 2. Metadata-only spells (53)
 
@@ -438,13 +443,13 @@ None of the remaining slices below is started unless stated.
 | **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
 | **S4** membership bookkeeping | after each slice: exact removals/updates in the relevant registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` for creature-entry findings, `ACCEPTED_*` for accepted spell metadata/prose buckets), count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
 | **C4** reckless family | `recklessAttack` two-sided advantage-toggle contract; 2 refs (§1.6.2) | yes, small | **Opus** design, Codex rollout |
-| **C5** split family | `splitOnDamage` reproduction-on-damage contract; 2 refs (§1.6.3) | yes, small | **Codex** (uniform grammar) |
+| **C5** split family | `splitOnDamage` reproduction-on-damage contract; 2 refs (§1.6.3) | yes, small | **Implemented** (bead `eshyra-o9bd.18.7.9.11`) |
 | **C6** damage-absorption family | `damageAbsorption` contract; 4 refs (§1.6.4) | yes, trivial shape | **Codex** (uniform grammar) |
 | **C7** berserk family | stateful d6-threshold behavior + Persuasion-DC calming sub-clause; 2 refs (§1.6.5) | yes — genuine state machine | **Opus** |
 | **C8** rampage family | triggered bonus action (`bonusAction` trigger field, or new `triggeredBonusAction`); 2 refs (§1.6.6) | yes, small (schema-reviewed extension or new small contract) | **Opus** design, Codex rollout |
 | **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Opus** payload sketch, Codex rollout |
 
-Ordering: C1/C2/C3 and S1/S2 are implemented. S3 remains last because it
+Ordering: C1/C2/C3/C5 and S1/S2 are implemented. S3 remains last because it
 interacts with modeled teleport/planar kinds. C4–C9 (§1.6, residual
 reconciliation pass) are additive and can land in any order relative to S3;
 none blocks another.
@@ -461,10 +466,11 @@ every membership key appears in exactly one disposition section):
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
-  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after C1+C2+C3 rollout:
-  18 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented - 22 C1
-  implemented) = accept\* 2 + C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4
-  (2+2+2+4+2+2+4 = 18)
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C5 rollout:
+  16 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented - 22 C1
+  implemented - 2 C5 implemented) = accept\* 2 + C4 2 + C6 4 + C7 2 + C8 2
+  + C9 4 (2+2+4+2+2+4 = 16). The 14 pending findings are C4 2 + C6 4 +
+  C7 2 + C8 2 + C9 4.
 - spells originally classified here: 53 = S1 14 (§2.1) + S2 17 (§2.2 5 +
   §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after

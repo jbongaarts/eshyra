@@ -2481,6 +2481,31 @@ function parseChangeShape(name: string, text: string): Mechanics | undefined {
 }
 
 /**
+ * C5 Split grammar (eshyra-o9bd.18.7.9 §1.6.3). Both reviewed reactions
+ * carry the same complete deterministic contract; only the source noun and
+ * plural differ. Keep the match anchored so any source drift fails closed
+ * instead of preserving stale split constants.
+ */
+function parseSplitOnDamage(name: string, text: string): Mechanics | undefined {
+  if (name !== 'Split') return undefined;
+  const normalized = text.replaceAll('\u2019', "'");
+  const sourceGrammars = [
+    "When a pudding that is Medium or larger is subjected to lightning or slashing damage, it splits into two new puddings if it has at least 10 hit points. Each new pudding has hit points equal to half the original pudding's, rounded down. New puddings are one size smaller than the original pudding.",
+    "When a jelly that is Medium or larger is subjected to lightning or slashing damage, it splits into two new jellies if it has at least 10 hit points. Each new jelly has hit points equal to half the original jelly's, rounded down. New jellies are one size smaller than the original jelly.",
+  ];
+  if (!sourceGrammars.includes(normalized)) return undefined;
+  return {
+    kind: 'splitOnDamage',
+    damageTypes: ['lightning', 'slashing'],
+    minimumSize: 'medium',
+    minimumHitPoints: 10,
+    resultingCreatureCount: 2,
+    hitPointsFraction: 'half-rounded-down',
+    sizeCategoriesDown: 1,
+  };
+}
+
+/**
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
@@ -2490,6 +2515,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   if (changeShape !== undefined) {
     effects.push(changeShape);
   }
+  const splitOnDamage = parseSplitOnDamage(name, text);
+  if (splitOnDamage !== undefined) {
+    effects.push(splitOnDamage);
+  }
   // Some entries (Surprise Attack, Freeze, the three Rejuvenation variants)
   // attach their trigger directly to the substantive typed effect below
   // instead of emitting the generic bare `triggeredEffect` marker at the end
@@ -2497,6 +2526,9 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   // governs (eshyra-o9bd.18.7.9 §2 trigger/result linkage). This flag
   // suppresses the generic marker for those specific matches only.
   let suppressGenericTrigger = false;
+  if (splitOnDamage !== undefined) {
+    suppressGenericTrigger = true;
+  }
   // Computed once and reused both by the specific-effect trigger attachment
   // below and by the generic trailing fallback marker at the end of this
   // function, so both sites agree on the exact same verbatim trigger text.

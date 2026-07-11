@@ -242,6 +242,70 @@ describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)',
   });
 });
 
+describe('deriveCreatureEntryMechanics C5 Split grammar', () => {
+  const splitText = (noun: 'pudding' | 'jelly'): string =>
+    `When a ${noun} that is Medium or larger is subjected to lightning or slashing damage, it splits into two new ${noun === 'pudding' ? 'puddings' : 'jellies'} if it has at least 10 hit points. Each new ${noun} has hit points equal to half the original ${noun}'s, rounded down. New ${noun === 'pudding' ? 'puddings' : 'jellies'} are one size smaller than the original ${noun}.`;
+
+  const expected = {
+    kind: 'splitOnDamage',
+    damageTypes: ['lightning', 'slashing'],
+    minimumSize: 'medium',
+    minimumHitPoints: 10,
+    resultingCreatureCount: 2,
+    hitPointsFraction: 'half-rounded-down',
+    sizeCategoriesDown: 1,
+  };
+
+  it('projects the exact Black Pudding source grammar without a bare trigger marker', () => {
+    expect(
+      deriveCreatureEntryMechanics('Split', splitText('pudding')).effects,
+    ).toEqual([expected]);
+  });
+
+  it('projects the exact Ochre Jelly source grammar with the same semantics', () => {
+    expect(
+      deriveCreatureEntryMechanics('Split', splitText('jelly')).effects,
+    ).toEqual([expected]);
+  });
+
+  it.each([
+    ['changed damage type', 'lightning or slashing', 'lightning or fire'],
+    ['missing size eligibility', ' that is Medium or larger', ''],
+    [
+      'changed HP threshold',
+      'at least 10 hit points',
+      'at least 11 hit points',
+    ],
+    [
+      'missing two-result clause',
+      'it splits into two new puddings',
+      'it splits into new puddings',
+    ],
+    [
+      'changed half-HP clause',
+      "hit points equal to half the original pudding's, rounded down",
+      "hit points equal to the original pudding's",
+    ],
+    [
+      'missing size reduction',
+      ' New puddings are one size smaller than the original pudding.',
+      '',
+    ],
+  ])('%s fails closed', (_label, target, replacement) => {
+    const source = splitText('pudding');
+    const changed = source.replace(target, replacement);
+    expect(changed).not.toBe(source);
+    expect(deriveCreatureEntryMechanics('Split', changed).effects).not.toEqual([
+      expected,
+    ]);
+    expect(
+      deriveCreatureEntryMechanics('Split', changed).effects?.some(
+        (effect) => effect.kind === 'splitOnDamage',
+      ),
+    ).not.toBe(true);
+  });
+});
+
 describe('condition relation classification (eshyra-qqyj)', () => {
   it('spell:shield — "An invisible barrier" describes the barrier, not an applied condition', () => {
     const mechanics = deriveSpellMechanics(

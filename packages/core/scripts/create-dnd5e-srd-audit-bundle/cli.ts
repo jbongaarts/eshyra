@@ -1143,10 +1143,10 @@ function creatureEntrySliceFinding(
 
 /**
  * Per-ref reviewed disposition for every creature-entry ref currently
- * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 18
- * currently residual: 2 permanent accepted-prose refs and 16 pending C4–C9
+ * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 16
+ * currently residual: 2 permanent accepted-prose refs and 14 pending C4–C9
  * findings). Only the two vampire "Vampire Weaknesses" header refs
- * are genuinely permanent prose acceptance (§1.5); the other 16 are reviewed
+ * are genuinely permanent prose acceptance (§1.5); the other 14 are reviewed
  * deterministic findings bucketed into slices C4–C9 (§1.6.2–
  * §1.6.7). This registry — not the bucket-level
  * `creature-entry#mechanical-prose` / `creature-entry#narrative-prose`
@@ -1170,10 +1170,6 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
   // C4 — Reckless family (2, §1.6.2).
   'creature:berserker#traits:Reckless': creatureEntrySliceFinding('C4'),
   'creature:minotaur#traits:Reckless': creatureEntrySliceFinding('C4'),
-
-  // C5 — Split family (2, §1.6.3).
-  'creature:black-pudding#reactions:Split': creatureEntrySliceFinding('C5'),
-  'creature:ochre-jelly#reactions:Split': creatureEntrySliceFinding('C5'),
 
   // C6 — damage-absorption family (4, §1.6.4).
   'creature:clay-golem#traits:Acid Absorption': creatureEntrySliceFinding('C6'),
@@ -1272,7 +1268,7 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   // reviewed deterministic findings pending an implementation slice
   // (C4–C9). This bucket-level entry status is `reviewed-per-ref` — NOT
   // `accepted-prose-only` — precisely so it cannot itself grant blanket
-  // acceptance and hide those 16 pending findings.
+  // acceptance and hide those 14 pending findings.
   'creature-entry#mechanical-prose': {
     status: 'reviewed-per-ref',
     reason:

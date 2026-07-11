@@ -69,6 +69,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'recastLockout',
   'senseSharing',
   'slowFall',
+  'splitOnDamage',
   'stabilize',
   'stagedTableShift',
   'sleepException',
@@ -2435,6 +2436,45 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   slowFall: (effect, path) => {
     reqInt(effect, 'descentFeetPerRound', path, 1);
     optBool(effect, 'noFallingDamageOnLanding', path);
+  },
+  splitOnDamage: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      [
+        'kind',
+        'damageTypes',
+        'minimumSize',
+        'minimumHitPoints',
+        'resultingCreatureCount',
+        'hitPointsFraction',
+        'sizeCategoriesDown',
+      ],
+      path,
+    );
+    const damageTypes = reqStrArray(effect, 'damageTypes', path);
+    if (damageTypes.length === 0) {
+      throw new RulesPackError(`${path}.damageTypes must not be empty`);
+    }
+    if (damageTypes.some((type) => !SRD_5_1_DAMAGE_TYPES.has(type))) {
+      throw new RulesPackError(
+        `${path}.damageTypes must contain only canonical damage types`,
+      );
+    }
+    if (new Set(damageTypes).size !== damageTypes.length) {
+      throw new RulesPackError(
+        `${path}.damageTypes must not contain duplicates`,
+      );
+    }
+    reqEnum(
+      effect,
+      'minimumSize',
+      path,
+      new Set(['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan']),
+    );
+    reqInt(effect, 'minimumHitPoints', path, 1);
+    reqInt(effect, 'resultingCreatureCount', path, 1);
+    reqEnum(effect, 'hitPointsFraction', path, new Set(['half-rounded-down']));
+    reqInt(effect, 'sizeCategoriesDown', path, 1);
   },
   stabilize: (effect, path) => {
     optStr(effect, 'target', path);
