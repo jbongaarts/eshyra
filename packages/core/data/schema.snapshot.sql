@@ -241,8 +241,44 @@ CREATE TABLE combat_instance (
   session_id TEXT NOT NULL,
   opened_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
-  closed_at TEXT,
+  closed_at TEXT, round_number INTEGER NOT NULL DEFAULT 0
+    CHECK (round_number >= 0), active_participant_kind TEXT
+    CHECK (
+      active_participant_kind IS NULL
+      OR active_participant_kind IN ('character', 'combatant')
+    ), active_participant_ref TEXT,
   PRIMARY KEY (campaign_id, combat_instance_id)
+);
+
+CREATE TABLE combat_turn_budget (
+  campaign_id TEXT NOT NULL,
+  combat_instance_id TEXT NOT NULL,
+  participant_kind TEXT NOT NULL
+    CHECK (participant_kind IN ('character', 'combatant')),
+  participant_ref TEXT NOT NULL,
+  surprised INTEGER NOT NULL DEFAULT 0 CHECK (surprised IN (0, 1)),
+  turns_taken INTEGER NOT NULL DEFAULT 0 CHECK (turns_taken >= 0),
+  action_used INTEGER NOT NULL DEFAULT 0 CHECK (action_used IN (0, 1)),
+  action_activity TEXT,
+  bonus_action_used INTEGER NOT NULL DEFAULT 0
+    CHECK (bonus_action_used IN (0, 1)),
+  bonus_action_activity TEXT,
+  reaction_used INTEGER NOT NULL DEFAULT 0 CHECK (reaction_used IN (0, 1)),
+  reaction_activity TEXT,
+  free_interaction_used INTEGER NOT NULL DEFAULT 0
+    CHECK (free_interaction_used IN (0, 1)),
+  free_interaction_activity TEXT,
+  movement_note TEXT,
+  bonus_action_spell_cast INTEGER NOT NULL DEFAULT 0
+    CHECK (bonus_action_spell_cast IN (0, 1)),
+  other_spell_cast TEXT NOT NULL DEFAULT 'none'
+    CHECK (other_spell_cast IN ('none', 'action-cantrip', 'other')),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (
+    campaign_id, combat_instance_id, participant_kind, participant_ref
+  )
 );
 
 CREATE TABLE encounter_combatant (
@@ -479,6 +515,9 @@ CREATE UNIQUE INDEX combat_instance_one_active_per_campaign
 
 CREATE INDEX combat_instance_source
   ON combat_instance(campaign_id, source_encounter_id);
+
+CREATE INDEX combat_turn_budget_instance
+  ON combat_turn_budget(campaign_id, combat_instance_id);
 
 CREATE INDEX encounter_combatant_identity
   ON encounter_combatant(campaign_id, identity_kind, identity_ref);

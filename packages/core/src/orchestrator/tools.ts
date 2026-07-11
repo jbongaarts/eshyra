@@ -22,6 +22,7 @@ export { ToolRegistry } from './toolRegistry.js';
 
 import { addConditionTool } from './toolAddCondition.js';
 import { adjustHpTool } from './toolAdjustHp.js';
+import { beginTurnTool } from './toolBeginTurn.js';
 import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
@@ -36,7 +37,9 @@ import { removeConditionTool } from './toolRemoveCondition.js';
 import { removeItemTool } from './toolRemoveItem.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
+import { setSurprisedTool } from './toolSetSurprised.js';
 import { setWorldFactTool } from './toolSetWorldFact.js';
+import { spendTurnResourceTool } from './toolSpendTurnResource.js';
 import { stabilizeCharacterTool } from './toolStabilizeCharacter.js';
 import { startEncounterTool } from './toolStartEncounter.js';
 import { updateClockTool } from './toolUpdateClock.js';
@@ -50,6 +53,9 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   startEncounterTool,
   updateCombatantTool,
   closeCombatInstanceTool,
+  beginTurnTool,
+  spendTurnResourceTool,
+  setSurprisedTool,
   adjustHpTool,
   recordDeathSaveTool,
   stabilizeCharacterTool,

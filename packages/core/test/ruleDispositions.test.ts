@@ -83,12 +83,13 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     expect(report.duplicates).toBe(12);
     // Coverage counts move as engine families land (F6, eshyra-2n1t.8 moved
     // four unimplemented rows and healing to implemented, and
-    // stabilizing-a-creature to partial); keep them in lockstep with
+    // stabilizing-a-creature to partial; F2, eshyra-2n1t.4 moved the five
+    // action-economy rows to implemented); keep them in lockstep with
     // EXPECTED_COVERAGE_CENSUS.
-    expect(report.engineProcedure.implemented).toBe(5);
+    expect(report.engineProcedure.implemented).toBe(10);
     expect(report.engineProcedure.modelAdjudicatedSupported).toBe(97);
     expect(report.engineProcedure.partial).toHaveLength(47);
-    expect(report.engineProcedure.unimplemented).toHaveLength(16);
+    expect(report.engineProcedure.unimplemented).toHaveLength(11);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
     // 8 rows carry an externally owned clause (armor-guidance,
     // casting-a-spell-saving-throws, charges, special-weapons,

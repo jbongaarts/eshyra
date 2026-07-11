@@ -15,6 +15,11 @@ import { selectAlwaysOnMemory } from '../memory/summary.js';
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
 import {
+  type CombatTurnState,
+  formatTurnBudget,
+  readCombatTurnState,
+} from '../state/actionEconomy.js';
+import {
   CharacterResolutionError,
   resolveActingCharacterId,
 } from '../state/activeCharacter.js';
@@ -149,6 +154,9 @@ export interface StateSnapshot {
   character: CharacterSnapshot;
   inventory: InventoryItem[];
   combatants: EncounterCombatant[];
+  /** Structured turn/budget state of the active combat instance (F2);
+   *  undefined when no combat is active. */
+  combatTurnState: CombatTurnState | undefined;
   campaignActors: CampaignActor[];
   plotFlags: Record<string, unknown>;
   clock: ClockSnapshot;
@@ -315,6 +323,10 @@ export function readStateSnapshot(
       };
     }),
     combatants: campaignId === undefined ? [] : listCombatants(db, campaignId),
+    combatTurnState:
+      campaignId === undefined
+        ? undefined
+        : readCombatTurnState(db, campaignId),
     campaignActors:
       campaignId === undefined ? [] : listCampaignActors(db, campaignId),
     plotFlags,
@@ -555,6 +567,52 @@ function renderState(state: StateSnapshot): string {
           : `, identity: ${combatant.identityRef}`;
       lines.push(
         `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}], ${combatant.side}, HP ${combatant.hpCurrent}/${combatant.hpMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
+      );
+    }
+  }
+  const turnState = state.combatTurnState;
+  if (turnState !== undefined && state.combatants.length > 0) {
+    if (turnState.roundNumber === 0) {
+      lines.push(
+        'Combat turn: no structured turn opened yet (call begin_turn when the first turn starts).',
+      );
+    } else {
+      const active =
+        turnState.activeParticipant === undefined
+          ? undefined
+          : turnState.budgets.find(
+              (budget) =>
+                budget.participant.kind === turnState.activeParticipant?.kind &&
+                budget.participant.ref === turnState.activeParticipant?.ref,
+            );
+      lines.push(
+        `Combat turn: round ${turnState.roundNumber}` +
+          (active === undefined
+            ? ''
+            : `, active: ${active.displayLabel} (${active.participant.kind} ${active.participant.ref}) — ${formatTurnBudget(active)}`),
+      );
+      const reactionsSpent = turnState.budgets.filter(
+        (budget) =>
+          budget.reactionUsed &&
+          !(
+            budget.participant.kind === turnState.activeParticipant?.kind &&
+            budget.participant.ref === turnState.activeParticipant?.ref
+          ),
+      );
+      if (reactionsSpent.length > 0) {
+        lines.push(
+          `Reactions spent this round: ${reactionsSpent
+            .map((budget) => budget.displayLabel)
+            .join(', ')}`,
+        );
+      }
+    }
+    const surprised = turnState.budgets.filter((budget) => budget.surprised);
+    if (surprised.length > 0) {
+      lines.push(
+        `Surprised (no move/action, no reaction until their first turn ends): ${surprised
+          .map((budget) => budget.displayLabel)
+          .join(', ')}`,
       );
     }
   }
