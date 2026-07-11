@@ -100,6 +100,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       audibleFeet: 300,
       trigger: 'bright-light-or-creature-within-range',
       continuesAfterDisturbanceLeavesDice: '1d4',
+      continuationUnit: 'shrieker-turns',
     };
     const bodyDisposal = {
       kind: 'onDeathBodyDisposal',

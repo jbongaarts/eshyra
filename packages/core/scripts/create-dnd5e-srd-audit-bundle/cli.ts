@@ -1141,7 +1141,7 @@ function creatureEntrySliceFinding(
 
 /**
  * Per-ref reviewed disposition for every creature-entry ref currently
- * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 10
+ * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 4
  * currently residual: 2 permanent accepted-prose refs and 2 pending C4
  * findings). Only the two vampire "Vampire Weaknesses" header refs
  * are genuinely permanent prose acceptance (§1.5); the other 2 are reviewed

@@ -10,8 +10,8 @@ contracts that preserve their deterministic behavior.
 ## Exact refs
 
 - `creature:shrieker#reactions:Shriek` — `soundAlarm`: 30-foot disturbance
-  range, 300-foot audibility, and 1d4-turn continuation after the disturbance
-  leaves.
+range, 300-foot audibility, and a 1d4 continuation measured on the
+shrieker's own turns after the disturbance leaves.
 - `creature:djinni#traits:Elemental Demise`
 - `creature:efreeti#traits:Elemental Demise` — shared
   `onDeathBodyDisposal`: disintegration with worn/carried equipment left
@@ -38,6 +38,11 @@ than creating a broader inference. The contracts suppress the disconnected
 generic `triggeredEffect` marker because the trigger, result, and boundary are
 represented together by the typed effect.
 
+The `soundAlarm` contract records `continuationUnit: 'shrieker-turns'` with
+its `1d4` continuation roll. A deterministic consumer therefore advances the
+continuation only on the shrieker's turns, never on a generic round or another
+creature's turn.
+
 Regeneration changed exactly four existing creature records above. No records
 were added or removed; the source PDF and source manifest are unchanged.
 
@@ -52,10 +57,10 @@ were added or removed; the source PDF and source manifest are unchanged.
 ## Freeze manifest updated
 
 `freeze-manifest.json` records the regenerated `records.json` SHA-256:
-`4a598424f8da6d47a67fa6dc8b4d77fbbbdab8730a4e46dd4bd6a9d9ae6db7fc`.
+`26d51e461eca29c4c7ff199fb50f6f735a8ce9b8fac4336df1dd54602c2c073e`.
 
 ## Audit bundle path
 
-Verified bundle: `/tmp/eshyra-o9bd-18-7-9-15-audit-bundle`
+Verified bundle: `/tmp/eshyra-o9bd-18-7-9-15-c9-review-audit-bundle`
 (`.zip` sibling generated successfully). The bundle's full test run passed:
-3,826 tests passed and 19 documented tests skipped.
+3,827 tests passed and 19 documented tests skipped.

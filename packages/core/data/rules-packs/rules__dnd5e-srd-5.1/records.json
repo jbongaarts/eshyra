@@ -54932,7 +54932,8 @@
                 "rangeFeet": 30,
                 "audibleFeet": 300,
                 "trigger": "bright-light-or-creature-within-range",
-                "continuesAfterDisturbanceLeavesDice": "1d4"
+                "continuesAfterDisturbanceLeavesDice": "1d4",
+                "continuationUnit": "shrieker-turns"
               }
             ]
           }

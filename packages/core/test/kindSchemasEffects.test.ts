@@ -310,6 +310,7 @@ describe('mechanics effect payload contracts', () => {
         audibleFeet: 300,
         trigger: 'bright-light-or-creature-within-range',
         continuesAfterDisturbanceLeavesDice: '1d4',
+        continuationUnit: 'shrieker-turns',
       }),
     ).not.toThrow();
     expect(() =>
@@ -341,6 +342,18 @@ describe('mechanics effect payload contracts', () => {
         audibleFeet: 30,
         trigger: 'bright-light-or-creature-within-range',
         continuesAfterDisturbanceLeavesDice: '1d4',
+        continuationUnit: 'shrieker-turns',
+      },
+    ],
+    [
+      'a sound alarm with the wrong continuation clock',
+      {
+        kind: 'soundAlarm',
+        rangeFeet: 30,
+        audibleFeet: 300,
+        trigger: 'bright-light-or-creature-within-range',
+        continuesAfterDisturbanceLeavesDice: '1d4',
+        continuationUnit: 'rounds',
       },
     ],
     [

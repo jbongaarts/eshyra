@@ -3646,6 +3646,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
         'audibleFeet',
         'trigger',
         'continuesAfterDisturbanceLeavesDice',
+        'continuationUnit',
       ],
       path,
     );
@@ -3671,6 +3672,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
         `${path}.continuesAfterDisturbanceLeavesDice must be 1d4`,
       );
     }
+    reqEnum(effect, 'continuationUnit', path, new Set(['shrieker-turns']));
   },
   onDeathBodyDisposal: (effect, path) => {
     requireOnlyKeys(effect, ['kind', 'manner', 'equipment'], path);

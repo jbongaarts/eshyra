@@ -2693,6 +2693,7 @@ function parseC9ResidualEffect(
       audibleFeet: 300,
       trigger: 'bright-light-or-creature-within-range',
       continuesAfterDisturbanceLeavesDice: '1d4',
+      continuationUnit: 'shrieker-turns',
     };
   }
   if (
