@@ -72,6 +72,46 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       creatureEntry('creature:ochre-jelly', 'reactions', 'Split').mechanics
         ?.effects,
     ).toEqual([split]);
+
+    const splitRefs = getBundledDnd5eSrdPack().records.flatMap((record) => {
+      if (record.kind !== 'creature') return [];
+      const data = record.data as Record<string, unknown>;
+      const sections: Array<
+        ['traits' | 'actions' | 'reactions' | 'legendaryActions', unknown[]]
+      > = (['traits', 'actions', 'reactions'] as const).map((section) => [
+        section,
+        Array.isArray(data[section]) ? data[section] : [],
+      ]);
+      const legendaryActions = data.legendaryActions as
+        | Record<string, unknown>
+        | undefined;
+      if (legendaryActions !== undefined) {
+        sections.push([
+          'legendaryActions',
+          Array.isArray(legendaryActions.entries)
+            ? legendaryActions.entries
+            : [],
+        ]);
+      }
+      return sections.flatMap(([section, entries]) =>
+        entries.flatMap((candidate) => {
+          const entry = candidate as Entry;
+          const effects = entry.mechanics?.effects ?? [];
+          return effects.some(
+            (effect) =>
+              typeof effect === 'object' &&
+              effect !== null &&
+              (effect as { kind?: unknown }).kind === 'splitOnDamage',
+          )
+            ? [`${record.key}#${section}:${entry.name}`]
+            : [];
+        }),
+      );
+    });
+    expect(splitRefs.sort()).toEqual([
+      'creature:black-pudding#reactions:Split',
+      'creature:ochre-jelly#reactions:Split',
+    ]);
   });
 
   it('C1 changeShape projects every reviewed entry and pins the five contract grammars', () => {

@@ -269,23 +269,32 @@ describe('deriveCreatureEntryMechanics C5 Split grammar', () => {
   });
 
   it.each([
-    ['changed damage type', 'lightning or fire'],
-    ['missing size eligibility', ''],
-    ['changed HP threshold', 'at least 11 hit points'],
-    ['missing two-result clause', 'it splits into new puddings'],
+    ['changed damage type', 'lightning or slashing', 'lightning or fire'],
+    ['missing size eligibility', ' that is Medium or larger', ''],
+    [
+      'changed HP threshold',
+      'at least 10 hit points',
+      'at least 11 hit points',
+    ],
+    [
+      'missing two-result clause',
+      'it splits into two new puddings',
+      'it splits into new puddings',
+    ],
     [
       'changed half-HP clause',
-      'each new pudding has the original pudding hit points',
+      "hit points equal to half the original pudding's, rounded down",
+      "hit points equal to the original pudding's",
     ],
-    ['missing size reduction', ''],
-  ])('%s fails closed', (_label, replacement) => {
+    [
+      'missing size reduction',
+      ' New puddings are one size smaller than the original pudding.',
+      '',
+    ],
+  ])('%s fails closed', (_label, target, replacement) => {
     const source = splitText('pudding');
-    const changed =
-      replacement === ''
-        ? source.replace(/\. (?:Each new|New puddings)/, '.')
-        : source
-            .replace('lightning or slashing', replacement)
-            .replace('it splits into two new puddings', replacement);
+    const changed = source.replace(target, replacement);
+    expect(changed).not.toBe(source);
     expect(deriveCreatureEntryMechanics('Split', changed).effects).not.toEqual([
       expected,
     ]);
