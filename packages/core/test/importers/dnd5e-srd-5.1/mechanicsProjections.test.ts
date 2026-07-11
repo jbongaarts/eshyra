@@ -188,6 +188,41 @@ describe('deriveCreatureEntryMechanics Berserk state machine (eshyra-o9bd.18.7.9
   });
 });
 
+describe('deriveCreatureEntryMechanics Rampage (eshyra-o9bd.18.7.9 C8)', () => {
+  const rampage = (actor: 'hyena' | 'gnoll') =>
+    `When the ${actor} reduces a creature to 0 hit points with a melee attack on its turn, the ${actor} can take a bonus action to move up to half its speed and make a bite attack.`;
+
+  it.each([
+    'hyena',
+    'gnoll',
+  ] as const)('projects %s Rampage as one trigger-linked bonus action', (actor) => {
+    expect(
+      deriveCreatureEntryMechanics('Rampage', rampage(actor)).effects,
+    ).toEqual([
+      {
+        kind: 'triggeredBonusAction',
+        trigger: {
+          event: 'reduce-creature-to-0-hit-points',
+          attackType: 'melee',
+          timing: 'on-its-turn',
+        },
+        action: { movement: 'up-to-half-speed', attack: 'bite' },
+      },
+    ]);
+  });
+
+  it.each([
+    rampage('hyena').replace('melee attack', 'ranged attack'),
+    rampage('gnoll').replace('make a bite attack', 'make a claw attack'),
+    rampage('hyena').replace('half its speed', 'its speed'),
+    rampage('gnoll').replace('the gnoll can', 'the hyena can'),
+  ])('fails closed when the reviewed grammar drifts', (text) => {
+    expect(deriveCreatureEntryMechanics('Rampage', text).effects).toEqual([
+      expect.objectContaining({ kind: 'triggeredEffect' }),
+    ]);
+  });
+});
+
 function spell(
   partial: Partial<SpellExtraction> & Pick<SpellExtraction, 'description'>,
 ): SpellExtraction {

@@ -54,6 +54,45 @@ function spellAmbiguities(key: string): unknown[] | undefined {
 }
 
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('C8 Rampage projects exactly the two reviewed trigger-linked bonus actions', () => {
+    const rampage = {
+      kind: 'triggeredBonusAction',
+      trigger: {
+        event: 'reduce-creature-to-0-hit-points',
+        attackType: 'melee',
+        timing: 'on-its-turn',
+      },
+      action: { movement: 'up-to-half-speed', attack: 'bite' },
+    };
+    expect(
+      creatureEntry('creature:giant-hyena', 'traits', 'Rampage').mechanics
+        ?.effects,
+    ).toEqual([rampage]);
+    expect(
+      creatureEntry('creature:gnoll', 'traits', 'Rampage').mechanics?.effects,
+    ).toEqual([rampage]);
+
+    const rampageRefs = getBundledDnd5eSrdPack().records.flatMap((record) => {
+      if (record.kind !== 'creature') return [];
+      const traits = (record.data as Record<string, unknown>).traits;
+      if (!Array.isArray(traits)) return [];
+      return (traits as Entry[]).flatMap((entry) =>
+        entry.mechanics?.effects?.some(
+          (effect) =>
+            typeof effect === 'object' &&
+            effect !== null &&
+            (effect as { kind?: unknown }).kind === 'triggeredBonusAction',
+        )
+          ? [`${record.key}#traits:${entry.name}`]
+          : [],
+      );
+    });
+    expect(rampageRefs.sort()).toEqual([
+      'creature:giant-hyena#traits:Rampage',
+      'creature:gnoll#traits:Rampage',
+    ]);
+  });
+
   it('C7 Berserk projects exactly the two reviewed state machines', () => {
     const transitions = (hitPointsAtMost: number) => [
       {
