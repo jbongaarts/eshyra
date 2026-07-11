@@ -80,6 +80,71 @@ describe('deriveCreatureEntryMechanics damage absorption (eshyra-o9bd.18.7.9 C6)
   });
 });
 
+describe('deriveCreatureEntryMechanics C9 residual contracts (eshyra-o9bd.18.7.9)', () => {
+  const shriek =
+    'When bright light or a creature is within 30 feet of the shrieker, it emits a shriek audible within 300 feet of it. The shrieker continues to shriek until the disturbance moves out of range and for 1d4 of the shrieker’s turns afterward.';
+  const shield =
+    'When a creature makes an attack against the wearer of the guardian’s amulet, the guardian grants a +2 bonus to the wearer’s AC if the guardian is within 5 feet of the wearer.';
+
+  it('projects the complete Shrieker sound alarm contract', () => {
+    expect(deriveCreatureEntryMechanics('Shriek', shriek).effects).toEqual([
+      {
+        kind: 'soundAlarm',
+        rangeFeet: 30,
+        audibleFeet: 300,
+        trigger: 'bright-light-or-creature-within-range',
+        continuesAfterDisturbanceLeavesDice: '1d4',
+      },
+    ]);
+  });
+
+  it.each([
+    'If the djinni dies, its body disintegrates into a warm breeze, leaving behind only equipment the djinni was wearing or carrying.',
+    'If the efreeti dies, its body disintegrates in a flash of fire and puff of smoke, leaving behind only equipment the efreeti was wearing or carrying.',
+  ])('projects the complete Elemental Demise contract', (text) => {
+    expect(
+      deriveCreatureEntryMechanics('Elemental Demise', text).effects,
+    ).toEqual([
+      {
+        kind: 'onDeathBodyDisposal',
+        manner: 'disintegrates',
+        equipment: 'left-behind',
+      },
+    ]);
+  });
+
+  it('projects Shield as a reaction for the wearer against the triggering attack', () => {
+    expect(deriveCreatureEntryMechanics('Shield', shield).effects).toEqual([
+      {
+        kind: 'reactionAcBonus',
+        cost: 'reaction',
+        trigger: 'attack-against-amulet-wearer',
+        amount: 2,
+        rangeFeet: 5,
+        subject: 'amulet-wearer',
+        duration: 'against-triggering-attack',
+      },
+    ]);
+  });
+
+  it.each([
+    ['Shriek', shriek.replace('300 feet', '301 feet')],
+    [
+      'Elemental Demise',
+      'If the djinni dies, its body vanishes, leaving behind only equipment the djinni was wearing or carrying.',
+    ],
+    ['Shield', shield.replace('+2 bonus', '+3 bonus')],
+  ])('%s source drift fails closed', (name, text) => {
+    expect(
+      deriveCreatureEntryMechanics(name, text).effects?.some((effect) =>
+        ['soundAlarm', 'onDeathBodyDisposal', 'reactionAcBonus'].includes(
+          effect.kind as string,
+        ),
+      ),
+    ).not.toBe(true);
+  });
+});
+
 describe('deriveCreatureEntryMechanics Berserk state machine (eshyra-o9bd.18.7.9 C7)', () => {
   const clayText =
     'Whenever the golem starts its turn with 60 hit points or fewer, roll a d6. On a 6, the golem goes berserk. On each of its turns while berserk, the golem attacks the nearest creature it can see. If no creature is near enough to move to and attack, the golem attacks an object, with preference for an object smaller than itself. Once the golem goes berserk, it continues to do so until it is destroyed or regains all its hit points.';

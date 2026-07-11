@@ -27059,8 +27059,9 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "If the djinni dies"
+                "kind": "onDeathBodyDisposal",
+                "manner": "disintegrates",
+                "equipment": "left-behind"
               }
             ]
           }
@@ -29202,8 +29203,9 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "If the efreeti dies"
+                "kind": "onDeathBodyDisposal",
+                "manner": "disintegrates",
+                "equipment": "left-behind"
               }
             ]
           }
@@ -54832,8 +54834,13 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "When a creature makes an attack against the wearer of the guardian’s amulet"
+                "kind": "reactionAcBonus",
+                "cost": "reaction",
+                "trigger": "attack-against-amulet-wearer",
+                "amount": 2,
+                "rangeFeet": 5,
+                "subject": "amulet-wearer",
+                "duration": "against-triggering-attack"
               }
             ]
           }
@@ -54921,8 +54928,11 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "When bright light or a creature is within 30 feet of the shrieker"
+                "kind": "soundAlarm",
+                "rangeFeet": 30,
+                "audibleFeet": 300,
+                "trigger": "bright-light-or-creature-within-range",
+                "continuesAfterDisturbanceLeavesDice": "1d4"
               }
             ]
           }
