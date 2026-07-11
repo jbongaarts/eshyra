@@ -479,7 +479,7 @@ every membership key appears in exactly one disposition section):
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
   `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C5/C6/C7/C8
-  rollouts: 10 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented
+  rollouts: 8 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented
   - 22 C1 implemented - 2 C5 implemented - 4 C6 implemented - 2 C7
   implemented - 2 C8 implemented) = accept\* 2 + C4 2 + C9 4 (2+2+4 = 8).
   The 6 pending findings are C4 2 + C9 4.

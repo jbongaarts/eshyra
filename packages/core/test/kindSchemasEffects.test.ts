@@ -279,6 +279,7 @@ describe('mechanics effect payload contracts', () => {
     ['a non-melee trigger attack', { trigger: { attackType: 'ranged' } }],
     ['an invalid trigger timing', { trigger: { timing: 'at-start-of-turn' } }],
     ['a non-half-speed movement', { action: { movement: 'up-to-speed' } }],
+    ['an attack other than bite', { action: { attack: 'claw' } }],
     ['an unlinked extra result', { action: { extraAction: 'claw' } }],
     ['an unlinked extra effect property', { extra: true }],
   ])('rejects triggeredBonusAction with %s', (_label, change) => {

@@ -3632,7 +3632,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       `${path}.action`,
       new Set(['up-to-half-speed']),
     );
-    reqStr(action, 'attack', `${path}.action`);
+    reqEnum(action, 'attack', `${path}.action`, new Set(['bite']));
   },
   checkMinimum: (effect, path) => {
     reqAbility(effect, 'ability', path);
