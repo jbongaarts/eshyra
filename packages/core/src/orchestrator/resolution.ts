@@ -394,8 +394,10 @@ export interface DamagePacketResult {
   readonly declaredDice: string;
   readonly rolls: readonly number[];
   readonly natural: number;
+  /** Flat modifier embedded in the dice notation (the +K of "1d8+2"). */
+  readonly notationModifier: number;
   readonly modifiers: readonly DeclaredModifier[];
-  /** max(0, natural + Σ modifiers) — damage is never negative. */
+  /** max(0, natural + notationModifier + Σ modifiers) — never negative. */
   readonly subtotal: number;
 }
 
@@ -536,7 +538,10 @@ export function resolveDamage(input: DamageInput, rng: Rng): DamageResolution {
     const modifiers = packet.modifiers ?? [];
     // Never negative (SRD damage-rolls), clamped per packet so one penalized
     // packet cannot eat another packet's damage.
-    const subtotal = Math.max(0, roll.natural + sumModifiers(modifiers));
+    const subtotal = Math.max(
+      0,
+      roll.natural + roll.modifier + sumModifiers(modifiers),
+    );
     return {
       ...(packet.label === undefined ? {} : { label: packet.label }),
       type: packet.type,
@@ -544,6 +549,7 @@ export function resolveDamage(input: DamageInput, rng: Rng): DamageResolution {
       declaredDice: packet.dice,
       rolls: roll.rolls,
       natural: roll.natural,
+      notationModifier: roll.modifier,
       modifiers,
       subtotal,
     };
@@ -551,10 +557,27 @@ export function resolveDamage(input: DamageInput, rng: Rng): DamageResolution {
 
   const total = packets.reduce((sum, p) => sum + p.subtotal, 0);
 
-  const targetResults = targets.map((target): DamageTargetResult => {
-    const resistances = new Set(target.resistances ?? []);
-    const vulnerabilities = new Set(target.vulnerabilities ?? []);
-    const immunities = new Set(target.immunities ?? []);
+  const targetResults = targets.map((target, index): DamageTargetResult => {
+    // Enforce once-only declarations here too, so direct engine callers get
+    // the same fail-closed behavior as the tool seam.
+    const resistances = new Set(
+      validateDamageTypeList(
+        target.resistances ?? [],
+        `targets[${index}].resistances`,
+      ),
+    );
+    const vulnerabilities = new Set(
+      validateDamageTypeList(
+        target.vulnerabilities ?? [],
+        `targets[${index}].vulnerabilities`,
+      ),
+    );
+    const immunities = new Set(
+      validateDamageTypeList(
+        target.immunities ?? [],
+        `targets[${index}].immunities`,
+      ),
+    );
     const packetDamage = packets.map((packet) => {
       if (immunities.has(packet.type)) {
         return 0;
