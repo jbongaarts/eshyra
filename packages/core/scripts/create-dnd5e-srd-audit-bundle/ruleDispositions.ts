@@ -1756,9 +1756,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     runtimeOwner: ['packages/core/src/orchestrator/toolRoll.ts'],
   },
   'rule:attunement': {
-    status: 'unimplemented',
-    missing:
-      'F5: durable cross-session state machine (max 3, no duplicates, distance/24 h/death/voluntary endings); nothing counts slots today',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/attunement.ts',
+      'packages/core/src/orchestrator/toolAttuneItem.ts',
+      'packages/core/src/orchestrator/toolEndAttunement.ts',
+    ],
+    evidence: ['packages/core/test/attunement.test.ts'],
   },
   'rule:backgrounds-equipment': {
     status: 'partial',
@@ -1857,7 +1861,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:charges': {
     status: 'partial',
     missing:
-      'identify-reveal clause MODEL; pack-side charge data clause → eshyra-o9bd.18.7.7.1; live expenditure/recharge state clause → F5',
+      'identify-reveal clause MODEL; pack-side charge data clause → eshyra-o9bd.18.7.7.1 (until it lands, the DM declares an item economy on first spend from lookup_rules); live expenditure/recharge state landed with F5 (spend_usage/restore_usage/reset_usage)',
+    runtimeOwner: [
+      'packages/core/src/state/usageCounters.ts',
+      'packages/core/src/orchestrator/toolSpendUsage.ts',
+    ],
     externalClauses: [
       {
         clause: 'pack-side charge data',
@@ -1933,7 +1941,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:conflict': {
     status: 'partial',
     missing:
-      'contest procedure model-adjudicated over seeded dice; missing: charmed 1d12 h duration, repeat-on-damage trigger, and 1/dawn reset ownership → F5',
+      "contest procedure model-adjudicated over seeded dice; the 1/dawn control-attempt limit is hostable as a declared F5 usage counter (maxUses 1, reset dawn); missing: durable charmed 1d12 h duration and repeat-on-damage save trigger → F3's active-effect lifecycle",
   },
   'rule:constitution-hit-points': {
     status: 'partial',
@@ -2141,9 +2149,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       "as `food` (condition-entry state, clock model-adjudicated); no formula of its own — this row is the exhaustion-not-removable-until-fed gate, a rest-time ruling (F7 hook noted); the deprivation-day arithmetic itself is `food`'s clause, not duplicated here",
   },
   'rule:gaining-inspiration': {
-    status: 'unimplemented',
-    missing:
-      'F5: inspiration is a durable boolean resource with a no-stockpile cap; overlay_facts is a world-template overlay store, not a mechanics resource, and conditions are semantically wrong for a resource — needs a character-state owner',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/inspiration.ts',
+      'packages/core/src/orchestrator/toolAwardInspiration.ts',
+    ],
+    evidence: ['packages/core/test/inspiration.test.ts'],
   },
   'rule:grapple-rules-for-monsters': {
     status: 'partial',
@@ -2216,9 +2227,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:innate-spellcasting': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'update_clock'],
+    primitives: ['lookup_rules', 'roll', 'spend_usage', 'update_clock'],
     contextRequirement:
-      'statblock convention; per-creature entries structured; the X/day usage economies are owned once by limited-usage → F5 (single-owner factoring)',
+      'statblock convention; per-creature entries structured; the X/day usage economies are code-owned once by the F5 usage counters (spend_usage derives per-day innate groups from the record — single-owner factoring)',
   },
   'rule:instant-death': {
     status: 'implemented',
@@ -2263,9 +2274,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       "initiative-20 scheduling ruling; once-per-round is structural when the lair is entered as an initiative-20 combatant in the code-owned turn order; F5's per-round reset vocabulary can host the no-repeat clause if drift is observed",
   },
   'rule:legendary-actions': {
-    status: 'unimplemented',
-    missing:
-      "F5: per-round counter economy (spend on others' turns, regain at start) — encounter-scoped reset state machine",
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/actionEconomy.ts',
+      'packages/core/src/orchestrator/toolSpendTurnResource.ts',
+    ],
+    evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:legendary-creatures': {
     status: 'model-adjudicated-supported',
@@ -2279,9 +2293,14 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'missing: capacity arithmetic (Str×15, push/drag ×2, size doubling) as derived math over structured Str + inventory → F9',
   },
   'rule:limited-usage': {
-    status: 'unimplemented',
-    missing:
-      'F5: X/Day + Recharge X–Y + rest resets — durable per-entry usage state and reset procedure; per-entry economies structured, runtime owner missing',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/usageCounters.ts',
+      'packages/core/src/orchestrator/toolSpendUsage.ts',
+      'packages/core/src/orchestrator/toolRestoreUsage.ts',
+      'packages/core/src/orchestrator/toolResetUsage.ts',
+    ],
+    evidence: ['packages/core/test/usageCounters.test.ts'],
   },
   'rule:line': {
     status: 'model-adjudicated-supported',
@@ -2721,9 +2740,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       "narrative-magnitude arithmetic (boundary rule 1): the movement budget is deliberately not code-owned, so the cross-mode subtraction operates on narrated quantities only; F9's calc primitive is an available aid once it lands, not a gap",
   },
   'rule:using-inspiration': {
-    status: 'unimplemented',
+    status: 'partial',
     missing:
-      'F5: spend/gift semantics against the durable inspiration boolean; spend grants advantage (F1)',
+      'spend/gift semantics against the durable inspiration boolean landed with F5 (use_inspiration); missing: applying the granted advantage through the dice grammar → F1',
+    runtimeOwner: [
+      'packages/core/src/state/inspiration.ts',
+      'packages/core/src/orchestrator/toolUseInspiration.ts',
+    ],
   },
   'rule:variant-encumbrance': {
     status: 'partial',
@@ -2815,10 +2838,10 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 10,
+    implemented: 14,
     'model-adjudicated-supported': 97,
-    partial: 47,
-    unimplemented: 11,
+    partial: 48,
+    unimplemented: 6,
     'design-blocked': 10,
   });
 

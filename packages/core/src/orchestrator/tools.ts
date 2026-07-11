@@ -22,8 +22,11 @@ export { ToolRegistry } from './toolRegistry.js';
 
 import { addConditionTool } from './toolAddCondition.js';
 import { adjustHpTool } from './toolAdjustHp.js';
+import { attuneItemTool } from './toolAttuneItem.js';
+import { awardInspirationTool } from './toolAwardInspiration.js';
 import { beginTurnTool } from './toolBeginTurn.js';
 import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
+import { endAttunementTool } from './toolEndAttunement.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
 import { lookupRulesTool } from './toolLookupRules.js';
@@ -35,15 +38,19 @@ import type { Tool } from './toolRegistry.js';
 import { ToolRegistry } from './toolRegistry.js';
 import { removeConditionTool } from './toolRemoveCondition.js';
 import { removeItemTool } from './toolRemoveItem.js';
+import { resetUsageTool } from './toolResetUsage.js';
+import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
 import { setSurprisedTool } from './toolSetSurprised.js';
 import { setWorldFactTool } from './toolSetWorldFact.js';
 import { spendTurnResourceTool } from './toolSpendTurnResource.js';
+import { spendUsageTool } from './toolSpendUsage.js';
 import { stabilizeCharacterTool } from './toolStabilizeCharacter.js';
 import { startEncounterTool } from './toolStartEncounter.js';
 import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
+import { useInspirationTool } from './toolUseInspiration.js';
 import { worldQueryTool } from './toolWorldQuery.js';
 
 export const DEFAULT_TOOLS: readonly Tool[] = [
@@ -62,6 +69,13 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   grantTempHpTool,
   addConditionTool,
   removeConditionTool,
+  spendUsageTool,
+  restoreUsageTool,
+  resetUsageTool,
+  attuneItemTool,
+  endAttunementTool,
+  awardInspirationTool,
+  useInspirationTool,
   giveItemTool,
   removeItemTool,
   updateClockTool,
