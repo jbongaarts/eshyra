@@ -11,6 +11,7 @@
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  assertSupportedCharacterBuild,
   type CharacterChronicleStore,
   type CharacterRegistryStore,
   type CharacterSheet,
@@ -76,6 +77,9 @@ export function migrateLegacyCharacterLibrary(
     if (!looksLikeCharacterSheet(parsed)) {
       continue;
     }
+    assertSupportedCharacterBuild(parsed, {
+      operation: 'legacy character import',
+    });
     // Seed the migrated character as revision 1 of its registry timeline
     // (ADR 0012, eshyra-lupf.14.3) rather than a bare head write, so the
     // custody lifecycle has a history to build on.

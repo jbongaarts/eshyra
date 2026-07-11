@@ -34,6 +34,7 @@ import {
   pointBuyCost,
   STANDARD_ARRAY,
 } from './abilities.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import type {
   AbilityScoreMethod,
   AbilityScoreName,
@@ -325,6 +326,10 @@ export function createCharacterCreationEngine(
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
 ): CharacterCreationEngine {
   function recompute(draft: CharacterDraft): CharacterDraft {
+    assertSupportedCharacterBuild(draft, {
+      operation: 'character-creation draft validation',
+      resolver,
+    });
     const diagnostics: CharacterCreationDiagnostic[] = [];
     const stale: string[] = [];
     const { selections } = draft;
@@ -407,6 +412,10 @@ export function createCharacterCreationEngine(
   function mechanicalChoices(
     draft: CharacterDraft,
   ): readonly MechanicalChoiceState[] {
+    assertSupportedCharacterBuild(draft, {
+      operation: 'character-creation draft validation',
+      resolver,
+    });
     const classRecord = resolveClass(draft.selections.className);
     if (classRecord === undefined) {
       return [];
@@ -640,6 +649,10 @@ export function createCharacterCreationEngine(
   function missingRequiredChoices(
     draft: CharacterDraft,
   ): readonly RequiredChoice[] {
+    assertSupportedCharacterBuild(draft, {
+      operation: 'character-creation draft validation',
+      resolver,
+    });
     const missing: string[] = [];
     const { selections, identity } = draft;
 
@@ -689,6 +702,10 @@ export function createCharacterCreationEngine(
   }
 
   function toFinalizableDraft(draft: CharacterDraft): FinalizableDraftResult {
+    assertSupportedCharacterBuild(draft, {
+      operation: 'character-creation finalization',
+      resolver,
+    });
     const missing = missingRequiredChoices(draft);
     const errors = draft.diagnostics.filter(
       (diagnostic) => diagnostic.severity === 'error',
@@ -729,6 +746,10 @@ export function createCharacterCreationEngine(
 
   return {
     createDraft(input: CreateDraftInput): CharacterDraft {
+      assertSupportedCharacterBuild(input, {
+        operation: 'character-creation draft creation',
+        resolver,
+      });
       return recompute({
         id: input.id,
         rulesPackId: input.rulesPackId ?? DEFAULT_DND5E_SRD_BINDING.base.packId,

@@ -31,6 +31,7 @@
 
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   CHARACTER_CHRONICLE_EVENT_INDEX_SCHEMA,
   CHARACTER_CHRONICLE_EVENT_SCHEMA,
@@ -200,6 +201,9 @@ export function ensureCharacterRegistrySchema(db: Db): void {
 
 function rowToRevision(row: CharacterRevisionRow): CharacterRevision {
   const sheet = sheetColumn.decode(row.sheet_json);
+  assertSupportedCharacterBuild(sheet, {
+    operation: 'character-registry revision load',
+  });
   if (
     sheet.schemaVersion !== row.schema_version ||
     sheet.system !== row.system ||
@@ -248,6 +252,9 @@ export function createCharacterRegistryStore(
   }
 
   function writeHead(id: string, sheet: CharacterSheet, at: string): void {
+    assertSupportedCharacterBuild(sheet, {
+      operation: 'character-registry persistence',
+    });
     // True upsert (preserve created_at; never delete-then-insert) so the
     // revision history keyed to the registry id is not disturbed by a re-save.
     db.prepare(
@@ -296,6 +303,9 @@ export function createCharacterRegistryStore(
         return undefined;
       }
       const sheet = sheetColumn.decode(row.sheet_json);
+      assertSupportedCharacterBuild(sheet, {
+        operation: 'character-registry load',
+      });
       if (
         sheet.schemaVersion !== row.schema_version ||
         sheet.system !== row.system ||
@@ -324,6 +334,9 @@ export function createCharacterRegistryStore(
       source: CharacterRevisionSource,
       parent?: CharacterRevision['parent'],
     ): CharacterRevision {
+      assertSupportedCharacterBuild(sheet, {
+        operation: 'character-registry revision persistence',
+      });
       const id = requireId(globalCharacterId);
       const at = now();
       // Append + head update must be atomic so the head row always mirrors the

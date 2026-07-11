@@ -11,11 +11,13 @@
 
 import { randomBytes } from 'node:crypto';
 import {
+  type CharacterDraft,
   type CharacterRegistryStore,
   createSeededRng,
   finalizeCharacterDraft,
   getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
+  UnsupportedCharacterBuildError,
 } from '@eshyra/core';
 import {
   type CharacterDraftStore,
@@ -120,7 +122,16 @@ export async function runCreateCharacter(
   const { mode, draftId, resumeId } = parsed.args;
 
   if (resumeId !== undefined) {
-    const resume = deps.store.load(resumeId);
+    let resume: CharacterDraft | undefined;
+    try {
+      resume = deps.store.load(resumeId);
+    } catch (error) {
+      if (error instanceof UnsupportedCharacterBuildError) {
+        deps.io.write(error.message);
+        return 1;
+      }
+      throw error;
+    }
     if (resume === undefined) {
       deps.io.write(`No saved draft found for id "${resumeId}".`);
       const ids = deps.store.list();
@@ -129,11 +140,20 @@ export async function runCreateCharacter(
       }
       return 1;
     }
-    const result = await runCharacterWizard(deps, {
-      mode: resume.creationMode,
-      draftId: resume.id,
-      resume,
-    });
+    let result: CharacterWizardResult;
+    try {
+      result = await runCharacterWizard(deps, {
+        mode: resume.creationMode,
+        draftId: resume.id,
+        resume,
+      });
+    } catch (error) {
+      if (error instanceof UnsupportedCharacterBuildError) {
+        deps.io.write(error.message);
+        return 1;
+      }
+      throw error;
+    }
     finalizeIfComplete(deps, result, options);
     return 0;
   }
@@ -165,12 +185,21 @@ function finalizeIfComplete(
     return;
   }
   const createdAt = (options.now ?? (() => new Date().toISOString()))();
-  const finalized = finalizeCharacterDraft(
-    result.draft,
-    { createdAt, source: `create-character:${result.draft.creationMode}` },
-    deps.resolver,
-    deps.engine,
-  );
+  let finalized: ReturnType<typeof finalizeCharacterDraft>;
+  try {
+    finalized = finalizeCharacterDraft(
+      result.draft,
+      { createdAt, source: `create-character:${result.draft.creationMode}` },
+      deps.resolver,
+      deps.engine,
+    );
+  } catch (error) {
+    if (error instanceof UnsupportedCharacterBuildError) {
+      deps.io.write(error.message);
+      return;
+    }
+    throw error;
+  }
   if (!finalized.ok) {
     deps.io.write('Could not finalize the character:');
     for (const choice of finalized.missing) {

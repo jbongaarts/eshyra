@@ -22,6 +22,7 @@ import {
   pointBuyCost,
   STANDARD_ARRAY,
 } from './abilities.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
 import type {
   CreatedPathfinderCharacter,
@@ -142,6 +143,9 @@ export function validateCharacterDraft(
   draft: CharacterCreationDraft,
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
 ): CharacterCreationResult {
+  assertSupportedCharacterBuild(draft, {
+    operation: 'character-creation validation',
+  });
   const errors: string[] = [];
   const characterClass = validateClass(draft, resolver, errors);
   validateIdentity(draft, resolver, errors);
@@ -239,6 +243,9 @@ export function importFinalizedCharacter(
   db: Db,
   input: ImportFinalizedCharacterInput,
 ): CompleteCharacterCreationResult {
+  assertSupportedCharacterBuild(input.character, {
+    operation: 'finalized-character import',
+  });
   const system = resolveCampaignSystem(db);
 
   if (system !== 'dnd5e-srd') {

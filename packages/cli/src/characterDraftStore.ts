@@ -21,7 +21,10 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import type { CharacterDraft } from '@eshyra/core';
+import {
+  assertSupportedCharacterBuild,
+  type CharacterDraft,
+} from '@eshyra/core';
 
 /** Read/write access to resumable character-creation drafts. */
 export interface CharacterDraftStore {
@@ -54,6 +57,9 @@ export function createFileCharacterDraftStore(
 ): CharacterDraftStore {
   return {
     save(draft: CharacterDraft): void {
+      assertSupportedCharacterBuild(draft, {
+        operation: 'character-creation draft persistence',
+      });
       mkdirSync(dir, { recursive: true });
       const path = join(dir, `${draftFileStem(draft.id)}.json`);
       const tmp = `${path}.${randomBytes(6).toString('hex')}.tmp`;
@@ -72,7 +78,11 @@ export function createFileCharacterDraftStore(
         }
         throw error;
       }
-      return JSON.parse(raw) as CharacterDraft;
+      const draft = JSON.parse(raw);
+      assertSupportedCharacterBuild(draft, {
+        operation: 'character-creation draft load',
+      });
+      return draft as CharacterDraft;
     },
 
     list(): readonly string[] {

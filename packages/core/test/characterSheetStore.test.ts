@@ -15,6 +15,7 @@ import {
   DND5E_SRD_SYSTEM_ID,
   initSchema,
   openDatabase,
+  UnsupportedCharacterBuildError,
 } from '../src/internal.js';
 
 function makeSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
@@ -148,6 +149,37 @@ describe('character sheet store', () => {
       'UPDATE character_sheet SET rules_pack_id = ? WHERE character_id = ?',
     ).run('rules:other-pack', 'pc-1');
     expect(() => store.load('pc-1')).toThrow(CharacterSheetStoreError);
+  });
+
+  it('rejects known multiclass fields from a hand-edited document before they can be discarded', () => {
+    const store = createSqliteCharacterSheetStore(db, () => 'now');
+    const sheet = makeSheet();
+    store.save('pc-1', sheet);
+    const handEdited = {
+      ...sheet,
+      classes: [sheet.class, { key: 'class:wizard', name: 'Wizard' }],
+    };
+    db.prepare(
+      'UPDATE character_sheet SET sheet_json = ? WHERE character_id = ?',
+    ).run(JSON.stringify(handEdited), 'pc-1');
+
+    let thrown: unknown;
+    try {
+      store.load('pc-1');
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(UnsupportedCharacterBuildError);
+    expect(thrown).toMatchObject({
+      code: 'MULTICLASS_UNSUPPORTED',
+      operation: 'character-sheet load',
+      message:
+        'character-sheet load was refused: Eshyra currently supports one class only.',
+    });
+    const stored = db
+      .prepare('SELECT sheet_json FROM character_sheet WHERE character_id = ?')
+      .get('pc-1') as { sheet_json: string };
+    expect(JSON.parse(stored.sheet_json).classes).toEqual(handEdited.classes);
   });
 
   describe('assertSheetMatchesPack', () => {

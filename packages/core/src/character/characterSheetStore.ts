@@ -18,6 +18,7 @@
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
 import type { CampaignRulesBinding } from '../rules/binding.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
 
 export class CharacterSheetStoreError extends Error {
@@ -70,6 +71,9 @@ export function createSqliteCharacterSheetStore(
 ): CharacterSheetStore {
   return {
     save(characterId: string, sheet: CharacterSheet): void {
+      assertSupportedCharacterBuild(sheet, {
+        operation: 'character-sheet persistence',
+      });
       const id = characterId.trim();
       if (id.length === 0) {
         throw new CharacterSheetStoreError('character id must be non-empty');
@@ -109,6 +113,9 @@ export function createSqliteCharacterSheetStore(
         return undefined;
       }
       const sheet = sheetColumn.decode(row.sheet_json);
+      assertSupportedCharacterBuild(sheet, {
+        operation: 'character-sheet load',
+      });
       // The mirrored binding columns must agree with the document; a mismatch
       // means the row was written or tampered with out of band.
       if (

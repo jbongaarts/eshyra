@@ -30,6 +30,7 @@ import {
   ABILITY_SCORE_NAMES,
   type AbilityScoreMethod,
   type AbilityScoreName,
+  assertSupportedCharacterBuild,
   type CharacterCreationDiagnostic,
   type CharacterCreationEngine,
   type CharacterDraft,
@@ -82,6 +83,11 @@ export async function runCharacterWizard(
   deps: CharacterWizardDeps,
   options: CharacterWizardOptions,
 ): Promise<CharacterWizardResult> {
+  if (options.resume !== undefined) {
+    assertSupportedCharacterBuild(options.resume, {
+      operation: 'character-creation draft resume',
+    });
+  }
   const wizard = new Wizard(deps, options);
   return wizard.run();
 }

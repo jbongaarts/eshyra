@@ -14,6 +14,7 @@ import {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,
 } from '../rules/binding.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   assertSheetMatchesPack,
   createSqliteCharacterSheetStore,
@@ -55,6 +56,9 @@ export function attachCharacterSheetToCampaign(
   db: Db,
   input: AttachCharacterSheetInput,
 ): CompleteCharacterCreationResult {
+  assertSupportedCharacterBuild(input.sheet, {
+    operation: 'character-sheet attach',
+  });
   const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
   assertSheetMatchesPack(input.sheet, binding);
 

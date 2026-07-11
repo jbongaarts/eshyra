@@ -6,6 +6,7 @@ import {
   createCharacterRegistryStore,
   ensureCharacterRegistrySchema,
   openDatabase,
+  UnsupportedCharacterBuildError,
 } from '@eshyra/core';
 import { DND5E_SRD_PACK_ID, DND5E_SRD_SYSTEM_ID } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -94,6 +95,22 @@ describe('migrateLegacyCharacterLibrary', () => {
 
     expect(migrateLegacyCharacterLibrary(dir, registry)).toBe(1);
     expect(registry.list()).toEqual(['mira']);
+  });
+
+  it('fails closed instead of silently importing a multiclass-shaped legacy sheet', () => {
+    const dir = tempDir();
+    const invalid = JSON.parse(legacySheet('Mira')) as Record<string, unknown>;
+    invalid.classes = [
+      { key: 'class:fighter', name: 'Fighter' },
+      { key: 'class:wizard', name: 'Wizard' },
+    ];
+    writeFileSync(join(dir, 'mira.json'), JSON.stringify(invalid));
+    const registry = memoryRegistry();
+
+    expect(() => migrateLegacyCharacterLibrary(dir, registry)).toThrow(
+      UnsupportedCharacterBuildError,
+    );
+    expect(registry.list()).toEqual([]);
   });
 
   it('returns 0 when the legacy directory is absent', () => {

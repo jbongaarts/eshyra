@@ -11,6 +11,7 @@ import {
   initSchema,
   openDatabase,
   PATHFINDER2E_REMASTER_RULES_PACK,
+  UnsupportedCharacterBuildError,
   validateCharacterDraft,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
@@ -233,6 +234,29 @@ describe('character creation', () => {
     db.close();
   });
 
+  it('refuses a multiclass-shaped creation draft before persisting state', () => {
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    const draft = {
+      ...validDraft,
+      targetClass: 'Wizard',
+    };
+
+    expect(() =>
+      completeCharacterCreation(db, {
+        draft: draft as typeof validDraft,
+        sessionId: 'session-0',
+        at: '2026-05-20T22:46:00.000Z',
+      }),
+    ).toThrow(UnsupportedCharacterBuildError);
+    expect(
+      db
+        .prepare(`SELECT name, class_name FROM character WHERE id = 'pc-1'`)
+        .get(),
+    ).toEqual({ name: null, class_name: null });
+    db.close();
+  });
+
   it('dispatches to the D&D validator when the campaign binding is D&D SRD', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
@@ -414,6 +438,49 @@ describe('character creation', () => {
       provenance: 'character_creation:import_finalized',
     });
 
+    db.close();
+  });
+
+  it('refuses a multiclass-shaped finalized import before projecting live state', () => {
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    const character = {
+      schemaVersion: 1,
+      system: 'dnd5e-srd',
+      rulesPackId: 'dnd5e-srd-5.1',
+      recipeId: 'dnd5e-srd-level-1',
+      creationMode: 'concept-first',
+      level: 1,
+      identity: { name: 'Tamsin' },
+      class: { key: 'class:rogue', name: 'Rogue' },
+      ancestry: { key: 'ancestry:halfling', name: 'Halfling' },
+      abilityScores: {},
+      proficiencyBonus: 2,
+      maxHitPoints: 10,
+      savingThrows: {},
+      skillProficiencies: [],
+      toolProficiencies: [],
+      armorProficiencies: [],
+      weaponProficiencies: [],
+      equipment: [],
+      languages: [],
+      spells: [],
+      metadata: { createdAt: '2026-06-26T00:00:00.000Z' },
+      classLevels: { 'class:rogue': 1, 'class:wizard': 1 },
+    };
+
+    expect(() =>
+      importFinalizedCharacter(db, {
+        character: character as CharacterSheet,
+        sessionId: 'session-0',
+        at: '2026-06-26T01:00:00.000Z',
+      }),
+    ).toThrow(UnsupportedCharacterBuildError);
+    expect(
+      db
+        .prepare(`SELECT name, class_name FROM character WHERE id = 'pc-1'`)
+        .get(),
+    ).toEqual({ name: null, class_name: null });
     db.close();
   });
 

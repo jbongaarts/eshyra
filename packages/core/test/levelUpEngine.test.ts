@@ -16,6 +16,8 @@ import {
   LevelUpRequiredChoicesError,
   listProgressionEvents,
   mutateState,
+  previewLevelUpChangeSet,
+  UnsupportedCharacterBuildError,
 } from '../src/internal.js';
 import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
 
@@ -423,6 +425,33 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
 });
 
 describe('applyLevelUp — HP floor and fail-closed guards', () => {
+  it('rejects multiclass-shaped preview and apply inputs before deriving or committing a change set', () => {
+    const db = bareDb();
+    const invalid = {
+      ...buildSheet(),
+      totalLevel: 8,
+    } as CharacterSheet;
+    expect(() => previewLevelUpChangeSet(invalid)).toThrow(
+      UnsupportedCharacterBuildError,
+    );
+
+    let saves = 0;
+    const store = {
+      load: () => invalid,
+      save: () => {
+        saves += 1;
+      },
+      list: () => [],
+    };
+    expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
+      UnsupportedCharacterBuildError,
+    );
+    expect(saves).toBe(0);
+    expect(listProgressionEvents(db)).toEqual([]);
+    expect(getProgressionState(db).level).toBe(1);
+    db.close();
+  });
+
   it('floors the HP increment at 1 for a very low Constitution', () => {
     // CON 3 → modifier -4; Wizard d6 average 4 → 4 + (-4) = 0, floored to 1.
     const sheet = buildSheet({

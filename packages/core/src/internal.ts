@@ -129,6 +129,12 @@ export {
   type AttachCharacterSheetInput,
   attachCharacterSheetToCampaign,
 } from './character/attachCharacter.js';
+export type { CharacterBuildValidationOptions } from './character/characterBuild.js';
+export {
+  assertSupportedCharacterBuild,
+  MULTICLASS_UNSUPPORTED,
+  UnsupportedCharacterBuildError,
+} from './character/characterBuild.js';
 export type {
   CharacterChronicleCategory,
   CharacterChronicleEventKind,

@@ -39,6 +39,7 @@ import {
   type ProgressionEventRecord,
   recordProgressionEvent,
 } from '../state/progression.js';
+import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   assertSheetMatchesPack,
   type CharacterSheetStore,
@@ -319,6 +320,10 @@ export function applyLevelUp(
         `no character sheet stored for '${characterId}'`,
       );
     }
+    assertSupportedCharacterBuild(sheet, {
+      operation: 'level-up apply',
+      resolver,
+    });
     // Fail closed before any computation if the sheet is not this pack's.
     assertSheetMatchesPack(sheet, binding);
 
@@ -364,6 +369,10 @@ export function previewLevelUpChangeSet(
   input: PreviewLevelUpInput = {},
 ): PreviewLevelUpResult {
   const resolver = input.resolver ?? getBundledDnd5eCharacterResolver();
+  assertSupportedCharacterBuild(sheet, {
+    operation: 'level-up preview',
+    resolver,
+  });
   const binding = input.binding ?? DEFAULT_DND5E_SRD_BINDING;
   assertSheetMatchesPack(sheet, binding);
   const requiredChoices = detectLevelUpRequiredChoices(
@@ -405,6 +414,10 @@ export function computeLevelUpChangeSet(
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
   binding: CampaignRulesBinding = DEFAULT_DND5E_SRD_BINDING,
 ): LevelUpChangeSet {
+  assertSupportedCharacterBuild(sheet, {
+    operation: 'level-up change-set computation',
+    resolver,
+  });
   assertSheetMatchesPack(sheet, binding);
 
   const fromLevel = sheet.level;
@@ -484,6 +497,10 @@ export function detectLevelUpRequiredChoices(
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
   binding: CampaignRulesBinding = DEFAULT_DND5E_SRD_BINDING,
 ): readonly LevelUpRequiredChoice[] {
+  assertSupportedCharacterBuild(sheet, {
+    operation: 'level-up choice detection',
+    resolver,
+  });
   assertSheetMatchesPack(sheet, binding);
 
   const classKey = sheet.class.key;
