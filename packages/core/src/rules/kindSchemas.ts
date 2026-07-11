@@ -1976,10 +1976,56 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
         case 'object':
           requireOnlyKeys(form, ['kind'], formPath);
           break;
-        case 'statline-variant':
-          requireOnlyKeys(form, ['kind', 'variant'], formPath);
+        case 'statline-variant': {
+          requireOnlyKeys(
+            form,
+            ['kind', 'variant', 'size', 'statlineRefs'],
+            formPath,
+          );
           reqStr(form, 'variant', formPath);
+          optEnum(
+            form,
+            'size',
+            formPath,
+            new Set(['small', 'medium', 'large']),
+          );
+          const statlineRefs = objArray(form, 'statlineRefs', formPath);
+          if (statlineRefs !== undefined) {
+            if (statlineRefs.length === 0) {
+              throw new RulesPackError(
+                `${formPath}.statlineRefs must be a non-empty array`,
+              );
+            }
+            const seen = new Set<string>();
+            statlineRefs.forEach((ref, refIndex) => {
+              const refPath = `${formPath}.statlineRefs[${refIndex}]`;
+              requireOnlyKeys(ref, ['kind', 'condition'], refPath);
+              const refKind = reqStr(ref, 'kind', refPath);
+              if (
+                refKind !== 'armor-class-variant' &&
+                refKind !== 'speed-variant'
+              ) {
+                throw new RulesPackError(
+                  `${refPath}.kind has unsupported statline reference kind ${JSON.stringify(refKind)}`,
+                );
+              }
+              const condition = reqStr(ref, 'condition', refPath);
+              const identity = `${refKind}\u0000${condition}`;
+              if (seen.has(identity)) {
+                throw new RulesPackError(
+                  `${refPath} duplicates an earlier statline reference`,
+                );
+              }
+              seen.add(identity);
+            });
+          }
+          if (form.size === undefined && statlineRefs === undefined) {
+            throw new RulesPackError(
+              `${formPath} must specify size or non-empty statlineRefs`,
+            );
+          }
           break;
+        }
         default:
           throw new RulesPackError(
             `${formPath}.kind has unsupported changeShape form ${JSON.stringify(kind)}`,
@@ -2085,14 +2131,14 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
         const whenFormHas = reqObj(capability, 'whenFormHas', capabilityPath);
         requireOnlyKeys(
           whenFormHas,
-          ['anatomy'],
+          ['attack'],
           `${capabilityPath}.whenFormHas`,
         );
         reqEnum(
           whenFormHas,
-          'anatomy',
+          'attack',
           `${capabilityPath}.whenFormHas`,
-          new Set(['jaws']),
+          new Set(['bite']),
         );
       });
     }

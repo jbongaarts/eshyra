@@ -2198,7 +2198,7 @@ function parseChangeShape(name: string, text: string): Mechanics | undefined {
         ...(celestial[1] === 'couatl'
           ? {
               retainedCapabilities: [
-                { name: 'bite', whenFormHas: { anatomy: 'jaws' } },
+                { name: 'bite', whenFormHas: { attack: 'bite' } },
               ],
             }
           : {}),
@@ -2341,32 +2341,138 @@ function parseChangeShape(name: string, text: string): Mechanics | undefined {
     );
   }
 
-  const lycanthrope =
-    /^The (werebear|wereboar|wererat|weretiger|werewolf) can use its action to polymorph into (?:a (?:Large )?)?([a-z-]+(?: [a-z-]+)?) or into (?:a (?:Large )?)?([a-z-]+(?: [a-z-]+)?), or back into its true form, which is humanoid\. Its statistics, other than its (size and AC|AC|size), are the same in each form\. Any equipment it is wearing or carrying isn't transformed\. It reverts to its true form if it dies\.$/.exec(
-      normalized,
-    );
-  if (name === 'Shapechanger' && lycanthrope !== null) {
-    const expectedExceptions: Record<string, readonly string[]> = {
-      werebear: ['size', 'ac'],
-      wereboar: ['ac'],
-      wererat: ['size'],
-      weretiger: ['size'],
-      werewolf: ['ac'],
-    };
-    const exceptions = lycanthrope[4]
-      .split(' and ')
-      .map((value) => value.toLowerCase());
-    if (
-      expectedExceptions[lycanthrope[1]]?.join(',') !== exceptions.join(',')
-    ) {
-      return undefined;
-    }
-    return effect(
-      [
-        { kind: 'statline-variant', variant: lycanthrope[2] },
-        { kind: 'statline-variant', variant: lycanthrope[3] },
+  const lycanthropeSpecs: ReadonlyArray<{
+    sourceText: string;
+    forms: readonly Mechanics[];
+    exceptions: readonly string[];
+  }> = [
+    {
+      sourceText:
+        "The werebear can use its action to polymorph into a Large bear-humanoid hybrid or into a Large bear, or back into its true form, which is humanoid. Its statistics, other than its size and AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'bear-humanoid hybrid',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'bear',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
       ],
-      { model: 'same-except', except: exceptions },
+      exceptions: ['size', 'ac'],
+    },
+    {
+      sourceText:
+        "The wereboar can use its action to polymorph into a boar-humanoid hybrid or into a boar, or back into its true form, which is humanoid. Its statistics, other than its AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'boar-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'boar',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in boar form' },
+          ],
+        },
+      ],
+      exceptions: ['ac'],
+    },
+    {
+      sourceText:
+        "The wererat can use its action to polymorph into a rat-humanoid hybrid or into a giant rat, or back into its true form, which is humanoid. Its statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'rat-humanoid hybrid',
+          size: 'medium',
+        },
+        { kind: 'statline-variant', variant: 'giant rat', size: 'small' },
+      ],
+      exceptions: ['size'],
+    },
+    {
+      sourceText:
+        "The weretiger can use its action to polymorph into a tiger-humanoid hybrid or into a tiger, or back into its true form, which is humanoid. Its statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'tiger-humanoid hybrid',
+          size: 'medium',
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'tiger',
+          size: 'large',
+          statlineRefs: [{ kind: 'speed-variant', condition: 'in tiger form' }],
+        },
+      ],
+      exceptions: ['size'],
+    },
+    {
+      sourceText:
+        "The werewolf can use its action to polymorph into a wolf-humanoid hybrid or into a wolf, or back into its true form, which is humanoid. Its statistics, other than its AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+      forms: [
+        {
+          kind: 'statline-variant',
+          variant: 'wolf-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'wolf',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in wolf form' },
+          ],
+        },
+      ],
+      exceptions: ['ac'],
+    },
+  ];
+  const lycanthrope =
+    name === 'Shapechanger'
+      ? lycanthropeSpecs.find((spec) => spec.sourceText === normalized)
+      : undefined;
+  if (lycanthrope !== undefined) {
+    return effect(
+      lycanthrope.forms,
+      { model: 'same-except', except: lycanthrope.exceptions },
       { disposition: 'not-transformed' },
     );
   }

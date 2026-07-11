@@ -6,7 +6,9 @@ Implement slice C1 of `eshyra-o9bd.18.7.9`: project the reviewed deterministic
 shape-change mechanics for 22 SRD creature entries. The frozen records gain a
 typed, schema-validated `changeShape` effect rather than leaving action cost,
 form constraints, retained/replaced statistics, equipment handling, and
-death reversion in prose only.
+death reversion in prose only. Review repair tightened the five lycanthrope
+grammars to exact fail-closed source matches, added explicit statline selectors
+and concrete sizes, and changed Couatl Bite retention to an attack predicate.
 
 ## Expected file changes
 
@@ -35,10 +37,10 @@ per-ref readiness membership gate.
 
 ```text
 npm test -- --run packages/core/test/importers/dnd5e-srd-5.1/mechanicsProjections.test.ts packages/core/test/kindSchemasEffects.test.ts
-# 106 passed
+# focused projection/schema tests passed
 
 npm test -- --run packages/core/test/srdMembershipCorrections.test.ts packages/core/test/dnd5eSrdAuditBundle.test.ts
-# 47 passed
+# focused committed-pack/audit tests passed
 
 npm run verify:dnd5e-srd-pack
 # committed pack matches importer output exactly
@@ -51,19 +53,27 @@ npm run typecheck
 # passed
 
 npm test
-# 3669 passed, 19 documented skips
+# 3670 passed, 19 documented skips
 ```
 
 `npm run audit-bundle:dnd5e-srd` completed with clean pack/source/audit
-findings and produced the archive below. Its nested full-test command reported
-13 unrelated 5–10-second timeout failures under concurrent audit-bundle load;
-the immediately preceding isolated `npm test` run passed in full. No global
-Vitest timeout or parallelism setting was changed.
+findings and produced the archive below. Its nested full-test command also
+completed successfully. No global Vitest timeout or parallelism setting was
+changed.
 
 ## Freeze manifest updated?
 
 Yes. `records.json` is pinned to
-`9f6dd38a2fb2a3aec13f7c1b87ee34f66c82b9019371ac426074c309e2dea37b`.
+`87101422301c516813a8df376f3ff228a33a741fe1e4b2a61dcd3f16bfe6e44d`.
+
+## Review repair verification
+
+The committed-pack regression walks all five lycanthrope effects and resolves
+each `armor-class-variant` or `speed-variant` selector by exact condition
+equality, requiring exactly one sibling match. Size-changing forms carry
+explicit `small`, `medium`, or `large` values. The regenerated diff remains
+exactly the same 22 existing C1 creature records, with no additions or
+removals.
 
 ## Audit bundle path
 

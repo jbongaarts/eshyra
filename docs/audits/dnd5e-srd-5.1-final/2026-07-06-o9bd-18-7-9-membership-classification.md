@@ -35,18 +35,16 @@ Disposition vocabulary:
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
-## 1. Creature-entry refs (48 original + 24 residual = 72 reviewed; 66 pending)
+## 1. Creature-entry refs (72 reviewed total; 16 pending findings)
 
 ### 1.1 Shape-change family — 22 refs — disposition: implemented (slice C1)
 
 Deterministic clauses shared by all: action-cost polymorph; allowed-form
 constraint; retained vs replaced statistics; equipment disposition;
-reversion-on-death. No existing contract covers this; `transformed` (a
-condition-state marker) and `illusoryDisguise` are adjacent but not
-sufficient. New contract proposed: `changeShape` with fields
-`{ forms, retains?, replaces?, equipment: 'absorbed-or-borne' |
-'not-transformed' | 'specific', reversion: 'on-death', speedOverrides?,
-sizeOverrides?, notes? }`.
+reversion-on-death. These are implemented by the schema-validated
+`changeShape` contract. Lycanthrope statline forms select existing AC/speed
+variants by exact condition and expose concrete sizes where the form changes
+size; they do not duplicate numeric statline values.
 
 | ref | variant-specific semantics |
 |---|---|
@@ -196,7 +194,7 @@ The bundle's readiness registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` in
 `create-dnd5e-srd-audit-bundle/cli.ts`, superseding the former
 `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`) additionally now records a per-ref
 disposition — `accepted-prose-only` for the 2 genuine accepts (§1.5) or
-`finding` (with `bead`/`slice`) for the other 64 residual refs classified in
+`finding` (with `bead`/`slice`) for the other 16 residual refs classified in
 this document — so the bucket-level `creature-entry#mechanical-prose` /
 `creature-entry#narrative-prose` policy entries can never again blanket-bless
 the C1–C9 pending work as accepted prose.

@@ -156,7 +156,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
           'lair-actions',
         ],
         retainedCapabilities: [
-          { name: 'bite', whenFormHas: { anatomy: 'jaws' } },
+          { name: 'bite', whenFormHas: { attack: 'bite' } },
         ],
       },
     ]);
@@ -218,8 +218,30 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
         kind: 'changeShape',
         cost: 'action',
         forms: [
-          { kind: 'statline-variant', variant: 'bear-humanoid hybrid' },
-          { kind: 'statline-variant', variant: 'bear' },
+          {
+            kind: 'statline-variant',
+            variant: 'bear-humanoid hybrid',
+            size: 'large',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in bear and hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+            ],
+          },
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            size: 'large',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in bear and hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+            ],
+          },
         ],
         statistics: { model: 'same-except', except: ['size', 'ac'] },
         equipment: { disposition: 'not-transformed' },
@@ -1110,6 +1132,138 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     expect(spellAmbiguities('spell:find-familiar')).toMatchSnapshot(
       'spell:find-familiar ambiguities',
     );
+  });
+
+  it('pins all five lycanthrope forms and resolves every statline selector exactly once', () => {
+    const expected: Record<string, unknown[]> = {
+      werebear: [
+        {
+          kind: 'statline-variant',
+          variant: 'bear-humanoid hybrid',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'bear',
+          size: 'large',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in bear and hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+          ],
+        },
+      ],
+      wereboar: [
+        {
+          kind: 'statline-variant',
+          variant: 'boar-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'boar',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in boar or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in boar form' },
+          ],
+        },
+      ],
+      wererat: [
+        {
+          kind: 'statline-variant',
+          variant: 'rat-humanoid hybrid',
+          size: 'medium',
+        },
+        { kind: 'statline-variant', variant: 'giant rat', size: 'small' },
+      ],
+      weretiger: [
+        {
+          kind: 'statline-variant',
+          variant: 'tiger-humanoid hybrid',
+          size: 'medium',
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'tiger',
+          size: 'large',
+          statlineRefs: [{ kind: 'speed-variant', condition: 'in tiger form' }],
+        },
+      ],
+      werewolf: [
+        {
+          kind: 'statline-variant',
+          variant: 'wolf-humanoid hybrid',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+          ],
+        },
+        {
+          kind: 'statline-variant',
+          variant: 'wolf',
+          statlineRefs: [
+            {
+              kind: 'armor-class-variant',
+              condition: 'in wolf or hybrid form',
+            },
+            { kind: 'speed-variant', condition: 'in wolf form' },
+          ],
+        },
+      ],
+    };
+    for (const [species, forms] of Object.entries(expected)) {
+      const effect = creatureEntry(
+        `creature:${species}`,
+        'traits',
+        'Shapechanger',
+      ).mechanics?.effects?.find(
+        (candidate) => (candidate as { kind?: string }).kind === 'changeShape',
+      ) as { forms: Array<Record<string, unknown>> };
+      expect(effect.forms).toEqual(forms);
+      const data = getBundledDnd5eSrdPack().records.find(
+        (record) => record.key === `creature:${species}`,
+      )?.data as Record<string, unknown>;
+      const armorVariants = ((data.armorClass as Record<string, unknown>)
+        .variants ?? []) as Array<Record<string, unknown>>;
+      const speedVariants = (data.speedVariants ?? []) as Array<
+        Record<string, unknown>
+      >;
+      for (const form of effect.forms) {
+        if (form.size !== undefined) {
+          expect(['small', 'medium', 'large']).toContain(form.size);
+        }
+        for (const ref of (form.statlineRefs ?? []) as Array<
+          Record<string, string>
+        >) {
+          const candidates =
+            ref.kind === 'armor-class-variant' ? armorVariants : speedVariants;
+          expect(
+            candidates.filter(
+              (candidate) => candidate.condition === ref.condition,
+            ),
+          ).toHaveLength(1);
+        }
+      }
+    }
   });
 
   it('S2 communication, travel, and recast limits carry typed clauses', () => {

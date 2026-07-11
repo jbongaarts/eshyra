@@ -25655,7 +25655,7 @@
                   {
                     "name": "bite",
                     "whenFormHas": {
-                      "anatomy": "jaws"
+                      "attack": "bite"
                     }
                   }
                 ]
@@ -61619,11 +61619,33 @@
                 "forms": [
                   {
                     "kind": "statline-variant",
-                    "variant": "bear-humanoid hybrid"
+                    "variant": "bear-humanoid hybrid",
+                    "size": "large",
+                    "statlineRefs": [
+                      {
+                        "kind": "armor-class-variant",
+                        "condition": "in bear and hybrid form"
+                      },
+                      {
+                        "kind": "speed-variant",
+                        "condition": "in bear or hybrid form"
+                      }
+                    ]
                   },
                   {
                     "kind": "statline-variant",
-                    "variant": "bear"
+                    "variant": "bear",
+                    "size": "large",
+                    "statlineRefs": [
+                      {
+                        "kind": "armor-class-variant",
+                        "condition": "in bear and hybrid form"
+                      },
+                      {
+                        "kind": "speed-variant",
+                        "condition": "in bear or hybrid form"
+                      }
+                    ]
                   }
                 ],
                 "statistics": {
@@ -61856,11 +61878,27 @@
                 "forms": [
                   {
                     "kind": "statline-variant",
-                    "variant": "boar-humanoid hybrid"
+                    "variant": "boar-humanoid hybrid",
+                    "statlineRefs": [
+                      {
+                        "kind": "armor-class-variant",
+                        "condition": "in boar or hybrid form"
+                      }
+                    ]
                   },
                   {
                     "kind": "statline-variant",
-                    "variant": "boar"
+                    "variant": "boar",
+                    "statlineRefs": [
+                      {
+                        "kind": "armor-class-variant",
+                        "condition": "in boar or hybrid form"
+                      },
+                      {
+                        "kind": "speed-variant",
+                        "condition": "in boar form"
+                      }
+                    ]
                   }
                 ],
                 "statistics": {
@@ -62077,11 +62115,13 @@
                 "forms": [
                   {
                     "kind": "statline-variant",
-                    "variant": "rat-humanoid hybrid"
+                    "variant": "rat-humanoid hybrid",
+                    "size": "medium"
                   },
                   {
                     "kind": "statline-variant",
-                    "variant": "giant rat"
+                    "variant": "giant rat",
+                    "size": "small"
                   }
                 ],
                 "statistics": {
@@ -62282,11 +62322,19 @@
                 "forms": [
                   {
                     "kind": "statline-variant",
-                    "variant": "tiger-humanoid hybrid"
+                    "variant": "tiger-humanoid hybrid",
+                    "size": "medium"
                   },
                   {
                     "kind": "statline-variant",
-                    "variant": "tiger"
+                    "variant": "tiger",
+                    "size": "large",
+                    "statlineRefs": [
+                      {
+                        "kind": "speed-variant",
+                        "condition": "in tiger form"
+                      }
+                    ]
                   }
                 ],
                 "statistics": {
@@ -62574,11 +62622,27 @@
                 "forms": [
                   {
                     "kind": "statline-variant",
-                    "variant": "wolf-humanoid hybrid"
+                    "variant": "wolf-humanoid hybrid",
+                    "statlineRefs": [
+                      {
+                        "kind": "armor-class-variant",
+                        "condition": "in wolf or hybrid form"
+                      }
+                    ]
                   },
                   {
                     "kind": "statline-variant",
-                    "variant": "wolf"
+                    "variant": "wolf",
+                    "statlineRefs": [
+                      {
+                        "kind": "armor-class-variant",
+                        "condition": "in wolf or hybrid form"
+                      },
+                      {
+                        "kind": "speed-variant",
+                        "condition": "in wolf form"
+                      }
+                    ]
                   }
                 ],
                 "statistics": {

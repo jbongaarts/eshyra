@@ -600,7 +600,7 @@ describe('creature entry effect projections (eshyra-o9bd.18.7.3)', () => {
           'lair-actions',
         ],
         retainedCapabilities: [
-          { name: 'bite', whenFormHas: { anatomy: 'jaws' } },
+          { name: 'bite', whenFormHas: { attack: 'bite' } },
         ],
       },
     ]);
@@ -668,14 +668,154 @@ describe('creature entry effect projections (eshyra-o9bd.18.7.3)', () => {
         kind: 'changeShape',
         cost: 'action',
         forms: [
-          { kind: 'statline-variant', variant: 'bear-humanoid hybrid' },
-          { kind: 'statline-variant', variant: 'bear' },
+          {
+            kind: 'statline-variant',
+            variant: 'bear-humanoid hybrid',
+            size: 'large',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in bear and hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+            ],
+          },
+          {
+            kind: 'statline-variant',
+            variant: 'bear',
+            size: 'large',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in bear and hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in bear or hybrid form' },
+            ],
+          },
         ],
         statistics: { model: 'same-except', except: ['size', 'ac'] },
         equipment: { disposition: 'not-transformed' },
         reversion: { on: ['death'] },
       },
     ]);
+    const lycanthropes = [
+      [
+        "The wereboar can use its action to polymorph into a boar-humanoid hybrid or into a boar, or back into its true form, which is humanoid. Its statistics, other than its AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+        [
+          {
+            kind: 'statline-variant',
+            variant: 'boar-humanoid hybrid',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in boar or hybrid form',
+              },
+            ],
+          },
+          {
+            kind: 'statline-variant',
+            variant: 'boar',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in boar or hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in boar form' },
+            ],
+          },
+        ],
+        ['ac'],
+      ],
+      [
+        "The wererat can use its action to polymorph into a rat-humanoid hybrid or into a giant rat, or back into its true form, which is humanoid. Its statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+        [
+          {
+            kind: 'statline-variant',
+            variant: 'rat-humanoid hybrid',
+            size: 'medium',
+          },
+          { kind: 'statline-variant', variant: 'giant rat', size: 'small' },
+        ],
+        ['size'],
+      ],
+      [
+        "The weretiger can use its action to polymorph into a tiger-humanoid hybrid or into a tiger, or back into its true form, which is humanoid. Its statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+        [
+          {
+            kind: 'statline-variant',
+            variant: 'tiger-humanoid hybrid',
+            size: 'medium',
+          },
+          {
+            kind: 'statline-variant',
+            variant: 'tiger',
+            size: 'large',
+            statlineRefs: [
+              { kind: 'speed-variant', condition: 'in tiger form' },
+            ],
+          },
+        ],
+        ['size'],
+      ],
+      [
+        "The werewolf can use its action to polymorph into a wolf-humanoid hybrid or into a wolf, or back into its true form, which is humanoid. Its statistics, other than its AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.",
+        [
+          {
+            kind: 'statline-variant',
+            variant: 'wolf-humanoid hybrid',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in wolf or hybrid form',
+              },
+            ],
+          },
+          {
+            kind: 'statline-variant',
+            variant: 'wolf',
+            statlineRefs: [
+              {
+                kind: 'armor-class-variant',
+                condition: 'in wolf or hybrid form',
+              },
+              { kind: 'speed-variant', condition: 'in wolf form' },
+            ],
+          },
+        ],
+        ['ac'],
+      ],
+    ] as const;
+    for (const [text, forms, except] of lycanthropes) {
+      expect(
+        deriveCreatureEntryMechanics('Shapechanger', text).effects,
+      ).toEqual([
+        expect.objectContaining({
+          kind: 'changeShape',
+          forms,
+          statistics: { model: 'same-except', except },
+        }),
+      ]);
+    }
+    const werebear =
+      "The werebear can use its action to polymorph into a Large bear-humanoid hybrid or into a Large bear, or back into its true form, which is humanoid. Its statistics, other than its size and AC, are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies.";
+    expect(
+      deriveCreatureEntryMechanics(
+        'Shapechanger',
+        werebear.replace('Large bear,', 'bear,'),
+      ).effects,
+    ).toBeUndefined();
+    expect(
+      deriveCreatureEntryMechanics(
+        'Shapechanger',
+        werebear.replace('bear-humanoid hybrid', 'boar-humanoid hybrid'),
+      ).effects,
+    ).toBeUndefined();
+    expect(
+      deriveCreatureEntryMechanics(
+        'Shapechanger',
+        werebear.replace('size and AC', 'size'),
+      ).effects,
+    ).toBeUndefined();
     expect(
       deriveCreatureEntryMechanics(
         'Change Shape',

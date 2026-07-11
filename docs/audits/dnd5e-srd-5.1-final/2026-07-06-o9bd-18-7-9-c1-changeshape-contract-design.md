@@ -68,14 +68,29 @@ type Form =
   | { kind: 'fixed', name: string,
       speedOverrides?: Record<string, number> }   // imp rat {walk:20}, raven {walk:20, fly:60}…
   | { kind: 'object' }                            // mimic
-  | { kind: 'statline-variant', variant: string } // lycanthropes: names the structured statline speed/AC variant
+  | { kind: 'statline-variant', variant: string,
+      size?: 'small'|'medium'|'large', statlineRefs?: StatlineRef[] }
 
 type RetainedCapability =
-  | { name: 'bite', whenFormHas: { anatomy: 'jaws' } } // couatl conditional Bite retention
+  | { name: 'bite', whenFormHas: { attack: 'bite' } } // couatl conditional Bite retention
 
 type SpeedCondition =
   | { mode: 'fly', lostUnlessFormHas: { anatomy: 'wings' } } // succubus/incubus
 ```
+
+`StatlineRef` is a closed selector into the sibling creature statline:
+
+```ts
+type StatlineRef =
+  | { kind: 'armor-class-variant'; condition: string }
+  | { kind: 'speed-variant'; condition: string };
+```
+
+Each `statline-variant` must provide a concrete `size`, a non-empty
+`statlineRefs` array, or both. Ref conditions are copied verbatim from the
+structured `armorClass.variants` and `speedVariants` fields. Committed-pack
+validation resolves every ref by exact condition equality and requires exactly
+one match.
 
 ## 3. Validation rules (kindSchemas)
 
@@ -87,8 +102,9 @@ type SpeedCondition =
 - `equipment.disposition = 'specific'` requires non-empty `items`.
 - `speedOverrides` values positive integers; keys from the structured
   speed-mode vocabulary (walk/fly/climb/swim/burrow).
-- `statline-variant` is a named alternate form whose statline deltas are read
-  from the creature record when present; it never duplicates AC/speed values.
+- `statline-variant` supports only `variant`, optional `size`, and optional
+  `statlineRefs`; its statline deltas are read from the creature record when
+  present; it never duplicates AC/speed values.
   Wererat changes only size, so it has no such sibling delta to assert.
 - `excludedCapabilities`, `retainedCapabilities`, `speedConditions`, and
   `riders` are non-empty when present. `riders` must not carry
@@ -100,6 +116,8 @@ type SpeedCondition =
 - Projection only: the importer derives `changeShape` from the entry
   grammar fail-closed (unrecognized retain/except clause → no effect →
   entry lands in the membership gate and fails the build until reviewed).
+- Lycanthrope matching is fail-closed against five exact normalized source
+  strings; it does not extract arbitrary form names or qualifiers.
 - Interacts with `rule:legendary-creatures` (assumed forms never gain
   legendary/lair/regional — an engine-procedure rule, coverage tracked in
   18.7.8.3) and `rule:truesight` (perceives original form). The contract

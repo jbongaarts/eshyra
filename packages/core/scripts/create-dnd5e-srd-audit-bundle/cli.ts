@@ -1143,8 +1143,9 @@ function creatureEntrySliceFinding(
 
 /**
  * Per-ref reviewed disposition for every creature-entry ref currently
- * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 66
- * currently residual). Only the two vampire "Vampire Weaknesses" header refs
+ * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 18
+ * currently residual: 2 permanent accepted-prose refs and 16 pending C4–C9
+ * findings). Only the two vampire "Vampire Weaknesses" header refs
  * are genuinely permanent prose acceptance (§1.5); the other 16 are reviewed
  * deterministic findings bucketed into slices C4–C9 (§1.6.2–
  * §1.6.7). This registry — not the bucket-level
