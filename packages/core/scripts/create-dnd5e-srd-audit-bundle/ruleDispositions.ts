@@ -1762,9 +1762,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:attack': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
+    primitives: ['lookup_rules', 'resolve_check', 'spend_turn_resource'],
     contextRequirement:
-      'one-attack grant adjudicated; the action spend itself is checkable via the F2 turn budget (spend_turn_resource); attack counting stays adjudicated (Extra Attack/Multiattack feature-dependent)',
+      'one-attack grant adjudicated; the action spend itself is checkable via the F2 turn budget (spend_turn_resource); attack counting stays adjudicated (Extra Attack/Multiattack feature-dependent); the attack roll itself resolves via resolve_check',
   },
   'rule:attack-rolls': {
     status: 'implemented',
@@ -2150,9 +2150,16 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:falling': {
     status: 'model-adjudicated-supported',
-    primitives: ['calc', 'resolve_damage', 'add_condition', 'lookup_rules'],
+    primitives: [
+      'calc',
+      'resolve_damage',
+      'adjust_hp',
+      'update_combatant',
+      'add_condition',
+      'lookup_rules',
+    ],
     contextRequirement:
-      'fall-distance determination and landing narration stay rulings; the dice derivation is code-owned via calc fall_damage_dice (⌊d/10⌋d6 cap 20d6), the roll via resolve_damage, and landing prone via a condition entry',
+      'fall-distance determination and landing narration stay rulings; the dice derivation is code-owned via calc fall_damage_dice (⌊d/10⌋d6 cap 20d6) and the roll via resolve_damage, whose result is applied through adjust_hp (party) / update_combatant (monsters); landing prone via a condition entry',
   },
   'rule:falling-unconscious': {
     status: 'implemented',
@@ -2809,9 +2816,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:using-different-speeds': {
     status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
+    primitives: ['lookup_rules', 'roll', 'calc'],
     contextRequirement:
-      "narrative-magnitude arithmetic (boundary rule 1): the movement budget is deliberately not code-owned, so the cross-mode subtraction operates on narrated quantities only; F9's calc primitive is an available aid once it lands, not a gap",
+      "narrative-magnitude arithmetic (boundary rule 1): the movement budget is deliberately not code-owned, so the cross-mode subtraction operates on narrated quantities only; F9's calc primitive (landed) is an available aid, not a gap",
   },
   'rule:using-inspiration': {
     status: 'implemented',
@@ -2827,7 +2834,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:variant-encumbrance': {
     status: 'model-adjudicated-supported',
-    primitives: ['calc', 'add_condition', 'lookup_rules'],
+    primitives: ['calc', 'resolve_check', 'add_condition', 'lookup_rules'],
     contextRequirement:
       'variant adoption is a table ruling; classifying the current load and applying the speed penalties / Str-Dex-Con disadvantage (declared per roll on resolve_check) stay adjudicated; the 5×/10×/15×Str threshold arithmetic is code-owned via calc encumbrance_thresholds',
   },

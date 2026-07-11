@@ -164,6 +164,59 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     );
   });
 
+  it('pins the full tool chain on the F1/F9-reclassified rows, not just the formula', () => {
+    // resolve_damage is read-only: falling's damage lands only through the
+    // HP mutation tools, and the reclassified rows must pin every tool
+    // their contextRequirement names so a tool removal fails validation.
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:falling']?.primitives).toEqual(
+      expect.arrayContaining([
+        'calc',
+        'resolve_damage',
+        'adjust_hp',
+        'update_combatant',
+        'add_condition',
+      ]),
+    );
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:variant-encumbrance']?.primitives,
+    ).toEqual(expect.arrayContaining(['calc', 'resolve_check']));
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:speed']?.primitives).toEqual(
+      expect.arrayContaining(['calc', 'resolve_check']),
+    );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:hiding']?.primitives).toEqual(
+      expect.arrayContaining(['calc', 'resolve_contest']),
+    );
+    // Every tool a contextRequirement names literally must be pinned.
+    const violations: string[] = [];
+    for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
+      if (
+        coverage.status !== 'model-adjudicated-supported' ||
+        coverage.contextRequirement === undefined
+      ) {
+        continue;
+      }
+      const primitives = new Set(coverage.primitives ?? []);
+      for (const tool of [
+        'resolve_check',
+        'resolve_contest',
+        'resolve_damage',
+        'calc',
+        'adjust_hp',
+        'update_combatant',
+        'add_condition',
+        'spend_turn_resource',
+      ]) {
+        if (
+          coverage.contextRequirement.includes(tool) &&
+          !primitives.has(tool)
+        ) {
+          violations.push(`${key}: names '${tool}' but omits it`);
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
   it('checks every runtimeOwner/evidence path against the repo tree', () => {
     const missing: string[] = [];
     for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
