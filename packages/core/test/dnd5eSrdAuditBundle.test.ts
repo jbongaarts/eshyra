@@ -497,7 +497,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C8 rollout (2 accepted + 6 pending findings = 8)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C9 rollout (2 accepted + 2 pending findings = 4)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
     // future change to the registry (an addition, removal, or silent
     // reclassification) is caught here and forces an update to the
@@ -512,14 +512,14 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // policy can never hide reviewed-but-pending deterministic work behind
     // blanket acceptance.
     const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
-    expect(entries).toHaveLength(8);
+    expect(entries).toHaveLength(4);
 
     const accepted = entries.filter(
       ([, d]) => d.status === 'accepted-prose-only',
     );
     const findings = entries.filter(([, d]) => d.status === 'finding');
     expect(accepted).toHaveLength(2);
-    expect(findings).toHaveLength(6);
+    expect(findings).toHaveLength(2);
     expect(accepted.map(([ref]) => ref).sort()).toEqual([
       'creature:vampire#traits:Vampire Weaknesses',
       'creature:vampire-spawn#traits:Vampire Weaknesses',
@@ -544,7 +544,6 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     }
     expect(findingsBySlice).toEqual({
       C4: 2,
-      C9: 4,
     });
 
     // The six refs implemented in the §1.6.1 reconciliation pass (existing
@@ -611,18 +610,18 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:flesh-golem#traits:Berserk',
         'creature:giant-hyena#traits:Rampage',
         'creature:gnoll#traits:Rampage',
+        'creature:shrieker#reactions:Shriek',
+        'creature:djinni#traits:Elemental Demise',
+        'creature:efreeti#traits:Elemental Demise',
+        'creature:shield-guardian#reactions:Shield',
       ]),
     );
-    // Refs newly classified into slices C4 and C9 remain tracked as pending
+    // Refs newly classified into slice C4 remain tracked as pending
     // findings (not blanket accepted), each with an explicit rationale.
     expect(allRefs).toEqual(
       expect.arrayContaining([
         'creature:berserker#traits:Reckless',
         'creature:minotaur#traits:Reckless',
-        'creature:shrieker#reactions:Shriek',
-        'creature:djinni#traits:Elemental Demise',
-        'creature:efreeti#traits:Elemental Demise',
-        'creature:shield-guardian#reactions:Shield',
       ]),
     );
   });
@@ -694,14 +693,13 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'reviewed-per-ref',
     );
-    // The per-ref breakdown is exact: 2 permanent accepts, 6 pending
+    // The per-ref breakdown is exact: 2 permanent accepts, 2 pending
     // findings across the remaining slices.
     expect(report.creatureEntries.reviewedDispositions).toEqual({
       acceptedProseOnly: 2,
-      pendingFindings: 6,
+      pendingFindings: 2,
       findingsBySlice: {
         C4: 2,
-        C9: 4,
       },
     });
   });

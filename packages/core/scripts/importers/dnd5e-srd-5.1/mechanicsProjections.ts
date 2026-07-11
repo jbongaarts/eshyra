@@ -2673,6 +2673,61 @@ function parseRampage(name: string, text: string): Mechanics | undefined {
 }
 
 /**
+ * C9 residual creature mechanics (eshyra-o9bd.18.7.9 §1.6.7). These are
+ * intentionally exact source gates: the four reviewed entries have three
+ * unrelated semantics, so broad phrase matching would create unsupported
+ * projections elsewhere in the creature corpus.
+ */
+function parseC9ResidualEffect(
+  name: string,
+  text: string,
+): Mechanics | undefined {
+  if (
+    name === 'Shriek' &&
+    text ===
+      'When bright light or a creature is within 30 feet of the shrieker, it emits a shriek audible within 300 feet of it. The shrieker continues to shriek until the disturbance moves out of range and for 1d4 of the shrieker’s turns afterward.'
+  ) {
+    return {
+      kind: 'soundAlarm',
+      rangeFeet: 30,
+      audibleFeet: 300,
+      trigger: 'bright-light-or-creature-within-range',
+      continuesAfterDisturbanceLeavesDice: '1d4',
+      continuationUnit: 'shrieker-turns',
+    };
+  }
+  if (
+    name === 'Elemental Demise' &&
+    (text ===
+      'If the djinni dies, its body disintegrates into a warm breeze, leaving behind only equipment the djinni was wearing or carrying.' ||
+      text ===
+        'If the efreeti dies, its body disintegrates in a flash of fire and puff of smoke, leaving behind only equipment the efreeti was wearing or carrying.')
+  ) {
+    return {
+      kind: 'onDeathBodyDisposal',
+      manner: 'disintegrates',
+      equipment: 'left-behind',
+    };
+  }
+  if (
+    name === 'Shield' &&
+    text ===
+      'When a creature makes an attack against the wearer of the guardian’s amulet, the guardian grants a +2 bonus to the wearer’s AC if the guardian is within 5 feet of the wearer.'
+  ) {
+    return {
+      kind: 'reactionAcBonus',
+      cost: 'reaction',
+      trigger: 'attack-against-amulet-wearer',
+      amount: 2,
+      rangeFeet: 5,
+      subject: 'amulet-wearer',
+      duration: 'against-triggering-attack',
+    };
+  }
+  return undefined;
+}
+
+/**
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
@@ -2698,6 +2753,10 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   if (rampage !== undefined) {
     effects.push(rampage);
   }
+  const c9ResidualEffect = parseC9ResidualEffect(name, text);
+  if (c9ResidualEffect !== undefined) {
+    effects.push(c9ResidualEffect);
+  }
   // Some entries (Surprise Attack, Freeze, the three Rejuvenation variants)
   // attach their trigger directly to the substantive typed effect below
   // instead of emitting the generic bare `triggeredEffect` marker at the end
@@ -2715,6 +2774,9 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     suppressGenericTrigger = true;
   }
   if (rampage !== undefined) {
+    suppressGenericTrigger = true;
+  }
+  if (c9ResidualEffect !== undefined) {
     suppressGenericTrigger = true;
   }
   // Computed once and reused both by the specific-effect trigger attachment

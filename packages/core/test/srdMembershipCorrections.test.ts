@@ -93,6 +93,75 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
     ]);
   });
 
+  it('C9 projects exactly the four reviewed residual creature entries', () => {
+    const soundAlarm = {
+      kind: 'soundAlarm',
+      rangeFeet: 30,
+      audibleFeet: 300,
+      trigger: 'bright-light-or-creature-within-range',
+      continuesAfterDisturbanceLeavesDice: '1d4',
+      continuationUnit: 'shrieker-turns',
+    };
+    const bodyDisposal = {
+      kind: 'onDeathBodyDisposal',
+      manner: 'disintegrates',
+      equipment: 'left-behind',
+    };
+    const reactionAcBonus = {
+      kind: 'reactionAcBonus',
+      cost: 'reaction',
+      trigger: 'attack-against-amulet-wearer',
+      amount: 2,
+      rangeFeet: 5,
+      subject: 'amulet-wearer',
+      duration: 'against-triggering-attack',
+    };
+    expect(
+      creatureEntry('creature:shrieker', 'reactions', 'Shriek').mechanics
+        ?.effects,
+    ).toEqual([soundAlarm]);
+    expect(
+      creatureEntry('creature:djinni', 'traits', 'Elemental Demise').mechanics
+        ?.effects,
+    ).toEqual([bodyDisposal]);
+    expect(
+      creatureEntry('creature:efreeti', 'traits', 'Elemental Demise').mechanics
+        ?.effects,
+    ).toEqual([bodyDisposal]);
+    expect(
+      creatureEntry('creature:shield-guardian', 'reactions', 'Shield').mechanics
+        ?.effects,
+    ).toEqual([reactionAcBonus]);
+
+    const c9Refs = getBundledDnd5eSrdPack().records.flatMap((record) => {
+      if (record.kind !== 'creature') return [];
+      const data = record.data as Record<string, unknown>;
+      return (['traits', 'actions', 'reactions'] as const).flatMap((section) =>
+        (Array.isArray(data[section])
+          ? (data[section] as Entry[])
+          : []
+        ).flatMap((entry) =>
+          entry.mechanics?.effects?.some(
+            (effect) =>
+              typeof effect === 'object' &&
+              effect !== null &&
+              ['soundAlarm', 'onDeathBodyDisposal', 'reactionAcBonus'].includes(
+                (effect as { kind?: unknown }).kind as string,
+              ),
+          )
+            ? [`${record.key}#${section}:${entry.name}`]
+            : [],
+        ),
+      );
+    });
+    expect(c9Refs.sort()).toEqual([
+      'creature:djinni#traits:Elemental Demise',
+      'creature:efreeti#traits:Elemental Demise',
+      'creature:shield-guardian#reactions:Shield',
+      'creature:shrieker#reactions:Shriek',
+    ]);
+  });
+
   it('C7 Berserk projects exactly the two reviewed state machines', () => {
     const transitions = (hitPointsAtMost: number) => [
       {

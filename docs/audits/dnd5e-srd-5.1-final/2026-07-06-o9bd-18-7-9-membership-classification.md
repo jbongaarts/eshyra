@@ -1,8 +1,9 @@
 # eshyra-o9bd.18.7.9 — Exhaustive classification of reviewed memberships
 
-Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399. C5/C6/C7/C8 rollouts:
+Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399. C5/C6/C7/C8/C9 rollouts:
 beads `eshyra-o9bd.18.7.9.11`, `eshyra-o9bd.18.7.9.12`,
-`eshyra-o9bd.18.7.9.13`, and `eshyra-o9bd.18.7.9.14`.
+`eshyra-o9bd.18.7.9.13`, `eshyra-o9bd.18.7.9.14`, and
+`eshyra-o9bd.18.7.9.15`.
 (`eshyra-o9bd-18-7-9-membership-corrections`).
 
 This is the authoritative, record-by-record semantic disposition source for
@@ -14,12 +15,12 @@ branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
 implemented in the follow-up rollout, and the 10 C3 refs were implemented in a
 second follow-up rollout, and the 22 C1 shape-change refs were implemented in
-a later rollout. The C5 Split, C6 damage-absorption, C7 Berserk, and C8
-Rampage rollouts
-described below have graduated their ten refs, leaving 8 residual refs
-represented in the per-ref registry. Of those 8 residual refs, 2 are
-permanent `accepted-prose-only` entries and 6 are pending `finding` entries
-routed to C4 and C9. Spell
+a later rollout. The C5 Split, C6 damage-absorption, C7 Berserk, C8 Rampage,
+and C9 residual-creature rollouts described below have graduated their 14 refs,
+leaving 4 residual refs represented in the per-ref registry. Of those 4
+residual refs, 2 are
+permanent `accepted-prose-only` entries and 2 are pending `finding` entries
+routed to C4. Spell
 metadata-only membership remains represented separately by
 `ACCEPTED_METADATA_ONLY_SPELLS`; the 14 S1 summoning/control spells and the 17
 S2 small deterministic-clause spells have graduated out. Every record's full
@@ -40,7 +41,7 @@ Disposition vocabulary:
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
-## 1. Creature-entry refs (72 reviewed total; 6 pending findings; 8 residual registry entries)
+## 1. Creature-entry refs (72 reviewed total; 2 pending findings; 4 residual registry entries)
 
 ### 1.1 Shape-change family — 22 refs — disposition: implemented (slice C1)
 
@@ -199,10 +200,10 @@ The bundle's readiness registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` in
 `create-dnd5e-srd-audit-bundle/cli.ts`, superseding the former
 `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`) additionally now records a per-ref
 disposition — `accepted-prose-only` for the 2 genuine accepts (§1.5) or
-`finding` (with `bead`/`slice`) for the other 8 residual refs classified in
+`finding` (with `bead`/`slice`) for the other 2 residual refs classified in
 this document — so the bucket-level `creature-entry#mechanical-prose` /
 `creature-entry#narrative-prose` policy entries can never again blanket-bless
-the C1–C9 pending work as accepted prose.
+the remaining C4 pending work as accepted prose.
 
 #### 1.6.2 Reckless family — 2 refs — disposition: design (new slice C4)
 
@@ -276,7 +277,7 @@ adjacency.
 - `creature:giant-hyena#traits:Rampage`
 - `creature:gnoll#traits:Rampage`
 
-#### 1.6.7 Single-record residuals — 4 refs — disposition: model (new slice C9)
+#### 1.6.7 Single-record residuals — 4 refs — disposition: implemented (slice C9)
 
 Four refs whose semantics don't share a family with each other; each needs
 its own small contract, but none is large enough to warrant its own design
@@ -284,7 +285,7 @@ slice.
 
 | ref | semantics | proposed contract |
 |---|---|---|
-| `creature:shrieker#reactions:Shriek` | emits an audible-300-ft shriek when bright light or a creature comes within 30 ft; continues until the disturbance leaves and for 1d4 more of the shrieker's turns | `soundAlarm { rangeFeet: 30, audibleFeet: 300, trigger: 'bright-light-or-creature-within-range', continuesAfterDisturbanceLeavesDice: '1d4' }` |
+| `creature:shrieker#reactions:Shriek` | emits an audible-300-ft shriek when bright light or a creature comes within 30 ft; continues until the disturbance leaves and for 1d4 more of the shrieker's turns | `soundAlarm { rangeFeet: 30, audibleFeet: 300, trigger: 'bright-light-or-creature-within-range', continuesAfterDisturbanceLeavesDice: '1d4', continuationUnit: 'shrieker-turns' }` |
 | `creature:djinni#traits:Elemental Demise` | on death, body disintegrates (warm breeze), leaving only worn/carried equipment behind | `onDeathBodyDisposal { manner: 'disintegrates', equipment: 'left-behind' }` |
 | `creature:efreeti#traits:Elemental Demise` | on death, body disintegrates (fire flash + smoke), leaving only worn/carried equipment behind | same contract as djinni |
 | `creature:shield-guardian#reactions:Shield` | reaction: when a creature attacks the wearer of the guardian's amulet, the guardian (if within 5 ft of the wearer) grants the wearer a +2 AC bonus against that attack | no existing kind combines a reaction trigger, a proximity condition, and an AC bonus to *another* creature; `acFormula`/`savingThrowBonus`/`attackOrDamageBonus` all cover different shapes. Needs a small `reactionAcBonus { amount, rangeFeet, subject: 'amulet-wearer' }` contract |
@@ -297,9 +298,9 @@ Not in the same family as each other, but djinni/efreeti share one contract
 24 = 6 implemented (§1.6.1, removed from the array) + 2 folded into existing
 families (§1.3/§1.4, aboleth and ettin) + 16 newly classified into slices
 C4–C9 (2 Reckless + 2 Split + 4 Absorption + 2 Berserk + 2 Rampage + 4
-single-record residuals: Shriek, Djinni, Efreeti, Shield). C5, C6, C7, and C8
-are now implemented, so the current residual registry is 8 entries: 2
-accepted prose-only refs plus 6 pending findings (C4 2 + C9 4).
+single-record residuals: Shriek, Djinni, Efreeti, Shield). C5, C6, C7, C8,
+and C9 are now implemented, so the current residual registry is 4 entries: 2
+accepted prose-only refs plus 2 pending findings (C4 2).
 
 ## 2. Metadata-only spells (53)
 
@@ -459,12 +460,11 @@ None of the remaining slices below is started unless stated.
 | **C6** damage-absorption family | `damageAbsorption` contract; 4 refs (§1.6.4) | yes, trivial shape | **Implemented** (bead `eshyra-o9bd.18.7.9.12`) |
 | **C7** berserk family | `berserk` state-machine contract with d6 entry, continuation/exits, and Flesh Golem calming; 2 refs (§1.6.5) | yes — genuine state machine | **Implemented** (bead `eshyra-o9bd.18.7.9.13`) |
 | **C8** rampage family | `triggeredBonusAction` with linked reduction trigger and move-and-bite result; 2 refs (§1.6.6) | yes, small closed contract | **Implemented** (bead `eshyra-o9bd.18.7.9.14`) |
-| **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Opus** payload sketch, Codex rollout |
+| **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Implemented** (bead `eshyra-o9bd.18.7.9.15`) |
 
-Ordering: C1/C2/C3/C5 and S1/S2 are implemented. S3 remains last because it
-interacts with modeled teleport/planar kinds. C4–C9 (§1.6, residual
-reconciliation pass) are additive and can land in any order relative to S3;
-none blocks another.
+Ordering: C1/C2/C3/C5/C6/C7/C8/C9 and S1/S2 are implemented. S3 remains last
+because it interacts with modeled teleport/planar kinds. Only C4 (§1.6,
+residual reconciliation pass) remains to land; it does not block S3.
 
 Reconciliation (mechanically verified 2026-07-06 against
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
@@ -478,11 +478,11 @@ every membership key appears in exactly one disposition section):
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
-  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C5/C6/C7/C8
-  rollouts: 8 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C5/C6/C7/C8/C9
+  rollouts: 4 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented
   - 22 C1 implemented - 2 C5 implemented - 4 C6 implemented - 2 C7
-  implemented - 2 C8 implemented) = accept\* 2 + C4 2 + C9 4 (2+2+4 = 8).
-  The 6 pending findings are C4 2 + C9 4.
+  implemented - 2 C8 implemented - 4 C9 implemented) = accept\* 2 + C4 2
+  (2+2 = 4). The 2 pending findings are C4 2.
 - spells originally classified here: 53 = S1 14 (§2.1) + S2 17 (§2.2 5 +
   §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after

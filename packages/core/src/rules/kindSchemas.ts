@@ -63,12 +63,15 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'messengerTravel',
   'naturalWeaponDamage',
   'onsetTime',
+  'onDeathBodyDisposal',
   'pathMemory',
   'percentChance',
   'permanenceAfterRepetition',
   'questionLimit',
   'recastLockout',
+  'reactionAcBonus',
   'senseSharing',
+  'soundAlarm',
   'slowFall',
   'splitOnDamage',
   'stabilize',
@@ -3633,6 +3636,65 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       new Set(['up-to-half-speed']),
     );
     reqEnum(action, 'attack', `${path}.action`, new Set(['bite']));
+  },
+  soundAlarm: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      [
+        'kind',
+        'rangeFeet',
+        'audibleFeet',
+        'trigger',
+        'continuesAfterDisturbanceLeavesDice',
+        'continuationUnit',
+      ],
+      path,
+    );
+    if (reqInt(effect, 'rangeFeet', path, 1) !== 30) {
+      throw new RulesPackError(`${path}.rangeFeet must be 30`);
+    }
+    if (reqInt(effect, 'audibleFeet', path, 1) !== 300) {
+      throw new RulesPackError(`${path}.audibleFeet must be 300`);
+    }
+    reqEnum(
+      effect,
+      'trigger',
+      path,
+      new Set(['bright-light-or-creature-within-range']),
+    );
+    const duration = reqStr(
+      effect,
+      'continuesAfterDisturbanceLeavesDice',
+      path,
+    );
+    if (duration !== '1d4') {
+      throw new RulesPackError(
+        `${path}.continuesAfterDisturbanceLeavesDice must be 1d4`,
+      );
+    }
+    reqEnum(effect, 'continuationUnit', path, new Set(['shrieker-turns']));
+  },
+  onDeathBodyDisposal: (effect, path) => {
+    requireOnlyKeys(effect, ['kind', 'manner', 'equipment'], path);
+    reqEnum(effect, 'manner', path, new Set(['disintegrates']));
+    reqEnum(effect, 'equipment', path, new Set(['left-behind']));
+  },
+  reactionAcBonus: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      ['kind', 'cost', 'trigger', 'amount', 'rangeFeet', 'subject', 'duration'],
+      path,
+    );
+    reqEnum(effect, 'cost', path, new Set(['reaction']));
+    reqEnum(effect, 'trigger', path, new Set(['attack-against-amulet-wearer']));
+    if (reqInt(effect, 'amount', path, 1) !== 2) {
+      throw new RulesPackError(`${path}.amount must be 2`);
+    }
+    if (reqInt(effect, 'rangeFeet', path, 1) !== 5) {
+      throw new RulesPackError(`${path}.rangeFeet must be 5`);
+    }
+    reqEnum(effect, 'subject', path, new Set(['amulet-wearer']));
+    reqEnum(effect, 'duration', path, new Set(['against-triggering-attack']));
   },
   checkMinimum: (effect, path) => {
     reqAbility(effect, 'ability', path);

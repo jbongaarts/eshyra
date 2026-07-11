@@ -302,6 +302,84 @@ describe('mechanics effect payload contracts', () => {
     expect(() => validate(effect)).toThrow();
   });
 
+  it('accepts the exact C9 residual creature payloads', () => {
+    expect(() =>
+      validate({
+        kind: 'soundAlarm',
+        rangeFeet: 30,
+        audibleFeet: 300,
+        trigger: 'bright-light-or-creature-within-range',
+        continuesAfterDisturbanceLeavesDice: '1d4',
+        continuationUnit: 'shrieker-turns',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'onDeathBodyDisposal',
+        manner: 'disintegrates',
+        equipment: 'left-behind',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'reactionAcBonus',
+        cost: 'reaction',
+        trigger: 'attack-against-amulet-wearer',
+        amount: 2,
+        rangeFeet: 5,
+        subject: 'amulet-wearer',
+        duration: 'against-triggering-attack',
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    [
+      'a sound alarm with the wrong audible range',
+      {
+        kind: 'soundAlarm',
+        rangeFeet: 30,
+        audibleFeet: 30,
+        trigger: 'bright-light-or-creature-within-range',
+        continuesAfterDisturbanceLeavesDice: '1d4',
+        continuationUnit: 'shrieker-turns',
+      },
+    ],
+    [
+      'a sound alarm with the wrong continuation clock',
+      {
+        kind: 'soundAlarm',
+        rangeFeet: 30,
+        audibleFeet: 300,
+        trigger: 'bright-light-or-creature-within-range',
+        continuesAfterDisturbanceLeavesDice: '1d4',
+        continuationUnit: 'rounds',
+      },
+    ],
+    [
+      'a body disposal with an unsupported equipment result',
+      {
+        kind: 'onDeathBodyDisposal',
+        manner: 'disintegrates',
+        equipment: 'destroyed',
+      },
+    ],
+    [
+      'a reaction AC bonus without the triggering-attack boundary',
+      {
+        kind: 'reactionAcBonus',
+        cost: 'reaction',
+        trigger: 'attack-against-amulet-wearer',
+        amount: 2,
+        rangeFeet: 5,
+        subject: 'amulet-wearer',
+        duration: 'until-start-of-next-turn',
+      },
+    ],
+  ])('rejects %s', (_label, effect) => {
+    expect(() => validate(effect)).toThrow();
+  });
+
   it('accepts the exact C5 splitOnDamage payload', () => {
     expect(() =>
       validate({
