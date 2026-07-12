@@ -1964,6 +1964,153 @@ function projectReviewedS3aSpellEffects(
   }
 }
 
+function projectReviewedS3bSpellEffects(
+  spell: SpellExtraction,
+): readonly Mechanics[] {
+  const requireClauses = (
+    clauses: readonly { readonly label: string; readonly pattern: RegExp }[],
+  ): void => {
+    const missing = clauses.find(
+      ({ pattern }) => !pattern.test(spell.description),
+    );
+    if (missing !== undefined) {
+      throw new Error(
+        `S3b spell projection for ${spell.name} is missing reviewed source clause: ${missing.label}`,
+      );
+    }
+  };
+  const requireField = (label: string, present: boolean): void => {
+    if (!present) {
+      throw new Error(
+        `S3b spell projection for ${spell.name} is missing reviewed source clause: ${label}`,
+      );
+    }
+  };
+
+  switch (spell.name.toLowerCase().replaceAll('’', "'")) {
+    case 'private sanctum':
+      requireClauses([
+        {
+          label: '5-to-100-foot cube dimensions',
+          pattern:
+            /\bThe area is a cube that can be as small as 5 feet to as large as 100 feet on each side\./,
+        },
+        {
+          label: 'any-or-all security-property selection',
+          pattern: /\bchoosing any or all of the following properties:/,
+        },
+        {
+          label: 'sound boundary',
+          pattern:
+            /\bSound can’t pass through the barrier at the edge of the warded area\./,
+        },
+        {
+          label: 'vision including darkvision boundary',
+          pattern: /\bpreventing vision \(including darkvision\) through it\./,
+        },
+        {
+          label: 'divination-sensor boundary',
+          pattern:
+            /\bSensors created by divination spells can’t appear inside the protected area or pass through the barrier at its perimeter\./,
+        },
+        {
+          label: 'divination-targeting boundary',
+          pattern:
+            /\bCreatures in the area can’t be targeted by divination spells\./,
+        },
+        {
+          label: 'teleportation boundary',
+          pattern: /\bNothing can teleport into or out of the warded area\./,
+        },
+        {
+          label: 'planar-travel boundary',
+          pattern: /\bPlanar travel is blocked within the warded area\./,
+        },
+        {
+          label: 'daily repetition for one year permanence',
+          pattern:
+            /\bCasting this spell on the same spot every day for a year makes this effect permanent\./,
+        },
+      ]);
+      return [
+        {
+          kind: 'wardedArea',
+          dimensions: {
+            shape: 'cube',
+            minimumSideFeet: 5,
+            maximumSideFeet: 100,
+          },
+          blocks: [
+            'sound',
+            'vision',
+            'divination-sensors',
+            'divination-targeting',
+            'teleportation',
+            'planar-travel',
+          ],
+          chooseProperties: true,
+        },
+        {
+          kind: 'permanenceAfterRepetition',
+          period: 'day',
+          count: 365,
+          result: 'permanent',
+        },
+      ];
+    case 'tiny hut':
+      requireField(
+        'exact Self (10-foot-radius hemisphere) range',
+        spell.range === 'Self (10-foot-radius hemisphere)',
+      );
+      requireClauses([
+        {
+          label: 'caster departure ends spell',
+          pattern: /\bThe spell ends if you leave its area\./,
+        },
+        {
+          label: 'nine Medium-or-smaller occupant limit',
+          pattern:
+            /\bNine creatures of Medium size or smaller can fit inside the dome with you\./,
+        },
+        {
+          label: 'larger-creature or excessive-count casting failure',
+          pattern:
+            /\bThe spell fails if its area includes a larger creature or more than nine creatures\./,
+        },
+        {
+          label: 'casting-time creatures and objects pass freely',
+          pattern:
+            /\bCreatures and objects within the dome when you cast this spell can move through it freely\./,
+        },
+        {
+          label: 'other creatures and objects barred',
+          pattern:
+            /\bAll other creatures and objects are barred from passing through it\./,
+        },
+        {
+          label: 'spells and magical effects cannot cross or be cast through',
+          pattern:
+            /\bSpells and other magical effects can’t extend through the dome or be cast through it\./,
+        },
+      ]);
+      return [
+        {
+          kind: 'wardedArea',
+          blocks: ['creatures', 'objects', 'spell-effects'],
+          occupantLimit: { count: 9, maxSize: 'medium' },
+          castingTimeOccupantsExempt: true,
+        },
+        {
+          kind: 'triggeredEffect',
+          trigger: 'caster-leaves-warded-area',
+          result: 'spell-ends',
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
 /**
  * Structured upcast scaling (eshyra-o9bd.18.7.4). The verbatim At Higher
  * Levels text always rides along as `sourceText`; the typed fields are added
@@ -2035,6 +2182,7 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     ...s1Summoning.effects,
     ...projectReviewedS2SpellEffects(spell),
     ...projectReviewedS3aSpellEffects(spell),
+    ...projectReviewedS3bSpellEffects(spell),
   ];
   // "takes force damage equal to 1d8 + your spellcasting ability modifier"
   // (Spiritual Weapon) — a dealt-damage form parseDamage's "<dice> <type>

@@ -83,6 +83,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'understandLanguages',
   'unlock',
   'walkOnLiquids',
+  'wardedArea',
   'climbWithoutCheck',
   'damageTransfer',
   'damageAbsorption',
@@ -2636,6 +2637,131 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqEnum(effect, 'period', path, new Set(['day']));
     reqInt(effect, 'count', path, 1);
     reqEnum(effect, 'result', path, new Set(['until-dispelled', 'permanent']));
+  },
+  wardedArea: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      [
+        'kind',
+        'blocks',
+        'chooseProperties',
+        'dimensions',
+        'occupantLimit',
+        'castingTimeOccupantsExempt',
+      ],
+      path,
+    );
+    const blocks = effect.blocks;
+    if (!Array.isArray(blocks) || blocks.length === 0) {
+      throw new RulesPackError(`${path}.blocks must be a non-empty array`);
+    }
+    const allowedBlocks = new Set([
+      'sound',
+      'vision',
+      'divination-sensors',
+      'divination-targeting',
+      'teleportation',
+      'planar-travel',
+      'spell-effects',
+      'objects',
+      'creatures',
+    ]);
+    const seenBlocks = new Set<string>();
+    for (const [index, block] of blocks.entries()) {
+      if (typeof block !== 'string' || !allowedBlocks.has(block)) {
+        throw new RulesPackError(
+          `${path}.blocks[${index}] must be a supported ward boundary`,
+        );
+      }
+      if (seenBlocks.has(block)) {
+        throw new RulesPackError(`${path}.blocks must not contain duplicates`);
+      }
+      seenBlocks.add(block);
+    }
+    if (
+      effect.chooseProperties !== undefined &&
+      effect.chooseProperties !== true
+    ) {
+      throw new RulesPackError(`${path}.chooseProperties must be true`);
+    }
+    if (
+      effect.castingTimeOccupantsExempt !== undefined &&
+      effect.castingTimeOccupantsExempt !== true
+    ) {
+      throw new RulesPackError(
+        `${path}.castingTimeOccupantsExempt must be true`,
+      );
+    }
+    const dimensions = effect.dimensions;
+    if (dimensions !== undefined) {
+      const dimensionsPath = `${path}.dimensions`;
+      const dimensionsObj = reqObj(effect, 'dimensions', path);
+      requireOnlyKeys(
+        dimensionsObj,
+        ['shape', 'minimumSideFeet', 'maximumSideFeet'],
+        dimensionsPath,
+      );
+      reqEnum(dimensionsObj, 'shape', dimensionsPath, new Set(['cube']));
+      const minimum = reqInt(
+        dimensionsObj,
+        'minimumSideFeet',
+        dimensionsPath,
+        1,
+      );
+      const maximum = reqInt(
+        dimensionsObj,
+        'maximumSideFeet',
+        dimensionsPath,
+        1,
+      );
+      if (minimum > maximum) {
+        throw new RulesPackError(
+          `${dimensionsPath}.minimumSideFeet must not exceed maximumSideFeet`,
+        );
+      }
+      if (effect.chooseProperties !== true) {
+        throw new RulesPackError(
+          `${path}.dimensions requires chooseProperties to be true`,
+        );
+      }
+    }
+    if (
+      effect.chooseProperties === true &&
+      effect.occupantLimit !== undefined
+    ) {
+      throw new RulesPackError(
+        `${path}.chooseProperties cannot coexist with occupantLimit`,
+      );
+    }
+    if (
+      effect.chooseProperties === true &&
+      effect.castingTimeOccupantsExempt !== undefined
+    ) {
+      throw new RulesPackError(
+        `${path}.chooseProperties cannot coexist with castingTimeOccupantsExempt`,
+      );
+    }
+    const occupantLimit = effect.occupantLimit;
+    if (occupantLimit !== undefined) {
+      const occupantPath = `${path}.occupantLimit`;
+      const occupantObj = reqObj(effect, 'occupantLimit', path);
+      requireOnlyKeys(occupantObj, ['count', 'maxSize'], occupantPath);
+      reqInt(occupantObj, 'count', occupantPath, 1);
+      reqEnum(
+        occupantObj,
+        'maxSize',
+        occupantPath,
+        new Set(['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan']),
+      );
+    }
+    if (
+      (occupantLimit === undefined) !==
+      (effect.castingTimeOccupantsExempt === undefined)
+    ) {
+      throw new RulesPackError(
+        `${path}.occupantLimit and castingTimeOccupantsExempt must occur together`,
+      );
+    }
   },
   questionLimit: (effect, path) => {
     reqInt(effect, 'maxQuestions', path, 1);

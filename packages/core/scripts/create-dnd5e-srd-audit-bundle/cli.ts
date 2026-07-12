@@ -1191,10 +1191,8 @@ export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
   'spell:move-earth',
   'spell:passwall',
   'spell:planar-ally',
-  'spell:private-sanctum',
   'spell:purify-food-and-drink',
   'spell:stone-shape',
-  'spell:tiny-hut',
 ]);
 
 /**

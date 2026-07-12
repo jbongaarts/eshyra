@@ -1704,6 +1704,144 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     ).toEqual(['spell:contingency']);
   });
 
+  it('S3b ward-boundary spells carry complete ordered effect contracts', () => {
+    expect(spellEffects('spell:private-sanctum')).toEqual([
+      {
+        kind: 'wardedArea',
+        dimensions: {
+          shape: 'cube',
+          minimumSideFeet: 5,
+          maximumSideFeet: 100,
+        },
+        blocks: [
+          'sound',
+          'vision',
+          'divination-sensors',
+          'divination-targeting',
+          'teleportation',
+          'planar-travel',
+        ],
+        chooseProperties: true,
+      },
+      {
+        kind: 'permanenceAfterRepetition',
+        period: 'day',
+        count: 365,
+        result: 'permanent',
+      },
+    ]);
+    expect(spellEffects('spell:tiny-hut')).toEqual([
+      {
+        kind: 'wardedArea',
+        blocks: ['creatures', 'objects', 'spell-effects'],
+        occupantLimit: { count: 9, maxSize: 'medium' },
+        castingTimeOccupantsExempt: true,
+      },
+      {
+        kind: 'triggeredEffect',
+        trigger: 'caster-leaves-warded-area',
+        result: 'spell-ends',
+      },
+    ]);
+
+    const wardedAreaRefs = getBundledDnd5eSrdPack().records.flatMap(
+      (record) => {
+        const effects =
+          (
+            (record.data as Record<string, unknown>).mechanics as
+              | { effects?: unknown[] }
+              | undefined
+          )?.effects ?? [];
+        return effects.some(
+          (effect) =>
+            typeof effect === 'object' &&
+            effect !== null &&
+            (effect as { kind?: unknown }).kind === 'wardedArea',
+        )
+          ? [record.key]
+          : [];
+      },
+    );
+    expect(wardedAreaRefs).toEqual(['spell:private-sanctum', 'spell:tiny-hut']);
+    const privateEffects = spellEffects('spell:private-sanctum') as Array<
+      Record<string, unknown>
+    >;
+    const tinyEffects = spellEffects('spell:tiny-hut') as Array<
+      Record<string, unknown>
+    >;
+    expect(
+      privateEffects.filter((effect) => effect.kind === 'wardedArea'),
+    ).toHaveLength(1);
+    expect(
+      tinyEffects.filter((effect) => effect.kind === 'wardedArea'),
+    ).toHaveLength(1);
+    expect(
+      (
+        privateEffects.find((effect) => effect.kind === 'wardedArea') as Record<
+          string,
+          unknown
+        >
+      ).chooseProperties,
+    ).toBe(true);
+    expect(
+      privateEffects.some(
+        (effect) => effect.kind === 'permanenceAfterRepetition',
+      ),
+    ).toBe(true);
+    expect(
+      tinyEffects.some(
+        (effect) =>
+          effect.kind === 'triggeredEffect' &&
+          effect.trigger === 'caster-leaves-warded-area',
+      ),
+    ).toBe(true);
+
+    const privateRecord = getBundledDnd5eSrdPack().records.find(
+      (record) => record.key === 'spell:private-sanctum',
+    );
+    const tinyRecord = getBundledDnd5eSrdPack().records.find(
+      (record) => record.key === 'spell:tiny-hut',
+    );
+    expect(
+      (
+        (privateRecord?.data as Record<string, unknown>).mechanics as {
+          area?: unknown;
+        }
+      ).area,
+    ).toBeUndefined();
+    expect(
+      (
+        (tinyRecord?.data as Record<string, unknown>).mechanics as {
+          area?: unknown;
+        }
+      ).area,
+    ).toEqual({
+      shape: 'hemisphere',
+      size: 10,
+      unit: 'foot',
+      origin: 'self',
+    });
+    for (const key of ['spell:gate', 'spell:demiplane', 'spell:passwall']) {
+      const record = getBundledDnd5eSrdPack().records.find(
+        (candidate) => candidate.key === key,
+      );
+      const effects =
+        (
+          (record?.data as Record<string, unknown>).mechanics as
+            | { effects?: unknown[] }
+            | undefined
+        )?.effects ?? [];
+      expect(
+        effects.some(
+          (effect) =>
+            typeof effect === 'object' &&
+            effect !== null &&
+            (effect as { kind?: unknown }).kind === 'wardedArea',
+        ),
+      ).toBe(false);
+    }
+  });
+
   it('S2 control weather carries onset and table-shift procedure mechanics', () => {
     expect(spellEffects('spell:control-weather')).toEqual([
       { kind: 'onsetTime', roll: '1d4', multiplierMinutes: 10 },
