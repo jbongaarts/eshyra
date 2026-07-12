@@ -43,6 +43,8 @@ import {
   type ResolvedLanguageGrant,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import type { StartingWealthResult } from './srdStartingWealth.js';
+import { validateStartingWealthResult } from './srdStartingWealth.js';
 
 /** D&D 5e coin denominations carried by a character, not inventory rows. */
 export interface CharacterWallet {
@@ -188,17 +190,97 @@ export function finalizeCharacterDraft(
     return { ok: false, missing, errors };
   }
 
-  assertProficiencyInvariant(
-    draft,
-    engine,
-    classRecordForDraft(draft, resolver),
-    backgroundRecordForDraft(draft, resolver),
-  );
+  const acquisition = validateFinalStartingAcquisition(draft, resolver);
+  if (!acquisition.ok)
+    return { ok: false, missing, errors: [acquisition.error] };
+  try {
+    assertProficiencyInvariant(
+      draft,
+      engine,
+      classRecordForDraft(draft, resolver),
+      backgroundRecordForDraft(draft, resolver),
+    );
+  } catch (error) {
+    return {
+      ok: false,
+      missing,
+      errors: [
+        error instanceof Error ? error.message : 'invalid proficiency choices',
+      ],
+    };
+  }
 
   return {
     ok: true,
-    character: buildFinalizedCharacter(draft, metadata, resolver, engine),
+    character: buildFinalizedCharacter(
+      draft,
+      metadata,
+      resolver,
+      engine,
+      acquisition.value,
+    ),
   };
+}
+
+type FinalStartingAcquisition =
+  | { readonly mode: 'packages'; readonly walletGp: number }
+  | {
+      readonly mode: 'starting-wealth';
+      readonly walletGp: number;
+      readonly result: StartingWealthResult;
+    };
+
+function validateFinalStartingAcquisition(
+  draft: CharacterDraft,
+  resolver: RulesPackCharacterResolver,
+):
+  | { readonly ok: true; readonly value: FinalStartingAcquisition }
+  | { readonly ok: false; readonly error: string } {
+  const mode = draft.selections.startingEquipmentMode ?? 'packages';
+  const result = draft.selections.startingWealth;
+  if (mode === 'packages') {
+    if (result !== undefined) {
+      return {
+        ok: false,
+        error: 'starting-wealth evidence cannot be present in package mode',
+      };
+    }
+    const background = backgroundRecordForDraft(draft, resolver);
+    const walletGp = (background?.equipmentGrants ?? []).reduce(
+      (sum, grant) => sum + (grant.currencyGp ?? 0),
+      0,
+    );
+    if (!Number.isSafeInteger(walletGp) || walletGp < 0) {
+      return {
+        ok: false,
+        error: 'package currency is outside the safe integer range',
+      };
+    }
+    return { ok: true, value: { mode, walletGp } };
+  }
+  if (result === undefined) {
+    return { ok: false, error: 'starting-wealth mode requires one roll' };
+  }
+  const classResult = resolver.resolveClass(draft.selections.className ?? '');
+  if (!classResult.ok) return { ok: false, error: classResult.message };
+  if (result.classKey !== classResult.record.key) {
+    return {
+      ok: false,
+      error: 'starting-wealth result does not match selected class',
+    };
+  }
+  try {
+    validateStartingWealthResult(result, resolver);
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'invalid starting-wealth evidence',
+    };
+  }
+  return { ok: true, value: { mode, walletGp: result.totalGp, result } };
 }
 
 function buildFinalizedCharacter(
@@ -206,6 +288,7 @@ function buildFinalizedCharacter(
   metadata: FinalizeMetadata,
   resolver: RulesPackCharacterResolver,
   engine: CharacterCreationEngine,
+  acquisition: FinalStartingAcquisition,
 ): CharacterSheet {
   const selections = draft.selections;
   const classRecord = requireRecord(
@@ -280,7 +363,7 @@ function buildFinalizedCharacter(
     armorProficiencies: [...(classRecord.armorProficiencies ?? [])],
     weaponProficiencies: [...(classRecord.weaponProficiencies ?? [])],
     equipment: collectEquipment(draft, engine, classRecord, backgroundRecord),
-    wallet: walletForDraft(draft, backgroundRecord),
+    wallet: walletForDraft(acquisition),
     languages: collectLanguages(
       draft,
       engine,
@@ -437,21 +520,9 @@ function collectEquipment(
 }
 
 function walletForDraft(
-  draft: CharacterDraft,
-  background: ResolvedBackgroundData | undefined,
+  acquisition: FinalStartingAcquisition,
 ): CharacterWallet {
-  if (draft.selections.startingEquipmentMode === 'starting-wealth') {
-    const result = draft.selections.startingWealth;
-    if (result === undefined || result.totalGp < 0) {
-      throw new Error('starting-wealth mode requires a valid roll result');
-    }
-    return { cp: 0, sp: 0, ep: 0, gp: result.totalGp, pp: 0 };
-  }
-  const gp = (background?.equipmentGrants ?? []).reduce(
-    (sum, grant) => sum + (grant.currencyGp ?? 0),
-    0,
-  );
-  return { cp: 0, sp: 0, ep: 0, gp, pp: 0 };
+  return { cp: 0, sp: 0, ep: 0, gp: acquisition.walletGp, pp: 0 };
 }
 
 /** Fixed ancestry + background languages merged with the player's chosen ones. */

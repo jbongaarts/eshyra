@@ -32,6 +32,7 @@ import type { BackgroundEquipmentGrant } from './srdCreationChoices.js';
 import {
   SRD_5_1_ARTISAN_TOOLS,
   SRD_5_1_MUSICAL_INSTRUMENTS,
+  SRD_5_1_OTHER_TOOLS,
 } from './srdCreationChoices.js';
 import type {
   StartingEquipmentGrant as ResolvedEquipmentGrant,
@@ -1275,13 +1276,7 @@ function listToolProficiencies(stack: ResolvedRulesStack): readonly string[] {
   const values = new Set<string>([
     ...SRD_5_1_ARTISAN_TOOLS,
     ...SRD_5_1_MUSICAL_INSTRUMENTS,
-    'Disguise kit',
-    'Navigator’s tools',
-    'Thieves’ tools',
-    'Gaming set',
-    'Herbalism kit',
-    'Poisoner’s kit',
-    'Forgery kit',
+    ...SRD_5_1_OTHER_TOOLS,
   ]);
   for (const cls of listClasses(stack)) {
     for (const value of cls.toolProficiencies ?? []) values.add(value);

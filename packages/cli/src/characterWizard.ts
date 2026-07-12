@@ -30,7 +30,6 @@ import {
   ABILITY_SCORE_NAMES,
   type AbilityScoreMethod,
   type AbilityScoreName,
-  assertSupportedCharacterBuild,
   type CharacterCreationDiagnostic,
   type CharacterCreationEngine,
   type CharacterDraft,
@@ -44,6 +43,7 @@ import {
   rollStartingWealth,
   summarizePointBuy,
   summarizeStandardArray,
+  validateStartingWealthResult,
 } from '@eshyra/core';
 import type { CharacterDraftStore } from './characterDraftStore.js';
 import type { CliIO } from './playTypes.js';
@@ -84,12 +84,13 @@ export async function runCharacterWizard(
   deps: CharacterWizardDeps,
   options: CharacterWizardOptions,
 ): Promise<CharacterWizardResult> {
-  if (options.resume !== undefined) {
-    assertSupportedCharacterBuild(options.resume, {
-      operation: 'character-creation draft resume',
-    });
-  }
-  const wizard = new Wizard(deps, options);
+  const wizard = new Wizard(
+    deps,
+    options,
+    options.resume === undefined
+      ? undefined
+      : deps.engine.recomputeDraft(options.resume),
+  );
   return wizard.run();
 }
 
@@ -113,14 +114,13 @@ class Wizard {
   private draft: CharacterDraft;
   private dirty: boolean;
   private readonly steps: readonly { id: string; label: string }[];
-  private pendingChoiceInput: string | undefined;
-
   constructor(
     private readonly deps: CharacterWizardDeps,
     private readonly options: CharacterWizardOptions,
+    resume?: CharacterDraft,
   ) {
     this.draft =
-      options.resume ??
+      resume ??
       deps.engine.createDraft({ id: options.draftId, mode: options.mode });
     // A resumed draft is in sync with disk; a fresh one has nothing to lose yet.
     this.dirty = false;
@@ -644,12 +644,8 @@ class Wizard {
   private async runClassChoices(): Promise<Nav> {
     this.write('');
     this.write('== Class choices ==');
-    const mode = await this.chooseStartingEquipmentMode();
-    if (mode !== 'advance') return mode;
-    if (this.draft.selections.startingEquipmentMode === 'starting-wealth') {
-      const wealth = await this.ensureStartingWealth();
-      if (wealth !== 'advance') return wealth;
-    }
+    const acquisition = await this.runStartingAcquisition();
+    if (acquisition !== 'advance') return acquisition;
     const groups = this.deps.engine.mechanicalChoices(this.draft);
     if (groups.length === 0) {
       this.write('No additional level-1 choices for this character.');
@@ -668,12 +664,26 @@ class Wizard {
     return 'advance';
   }
 
+  private async runStartingAcquisition(): Promise<Nav> {
+    for (;;) {
+      const mode = await this.chooseStartingEquipmentMode();
+      if (mode === 'stay') continue;
+      if (mode !== 'advance') return mode;
+      if (this.draft.selections.startingEquipmentMode !== 'starting-wealth') {
+        return 'advance';
+      }
+      const wealth = await this.ensureStartingWealth();
+      if (wealth === 'stay') continue;
+      if (wealth !== 'advance') return wealth;
+      return 'advance';
+    }
+  }
+
   private async chooseStartingEquipmentMode(): Promise<Nav> {
     const current = this.draft.selections.startingEquipmentMode ?? 'packages';
     this.write(
-      `Starting acquisition (${current}): 1. Starting equipment packages  2. Starting wealth`,
+      `Starting acquisition: ${current}. Enter to keep, 1/packages, or 2/wealth:`,
     );
-    if (this.options.resume !== undefined) return 'advance';
     const answer = await this.deps.io.prompt('Acquisition> ');
     if (answer === undefined) return 'eof';
     const value = answer.trim().toLowerCase();
@@ -685,8 +695,8 @@ class Wizard {
           ? 'starting-wealth'
           : undefined;
     if (mode === undefined) {
-      this.pendingChoiceInput = answer;
-      return 'advance';
+      this.write('Invalid acquisition. Choose 1/packages or 2/wealth.');
+      return 'stay';
     }
     this.draft = this.deps.engine.setStartingEquipmentMode(this.draft, mode);
     this.dirty = true;
@@ -696,41 +706,70 @@ class Wizard {
   private async ensureStartingWealth(): Promise<Nav> {
     const classKey = this.resolvedClassKey();
     if (classKey === undefined) return 'back';
-    const existing = this.draft.selections.startingWealth;
-    if (existing !== undefined) {
-      this.write(
-        `Starting wealth: ${existing.formula} [${existing.roll.rolls.join(', ')}] × ${existing.multiplierGp} = ${existing.totalGp} gp.`,
-      );
-      const answer = await this.deps.io.prompt(
-        'Enter to keep, reroll, or reset> ',
-      );
-      if (answer === undefined) return 'eof';
-      if (answer.trim().toLowerCase() === 'reset') {
-        this.draft = this.deps.engine.setStartingWealth(this.draft, undefined);
+    for (;;) {
+      const existing = this.draft.selections.startingWealth;
+      if (existing !== undefined) {
+        let valid = true;
+        try {
+          validateStartingWealthResult(existing, this.deps.resolver);
+        } catch (error) {
+          valid = false;
+          this.write(
+            `Stored starting wealth is invalid: ${error instanceof Error ? error.message : 're-roll or reset it.'}`,
+          );
+        }
+        this.write(
+          `Starting wealth: ${existing.formula} [${existing.roll.rolls.join(', ')}] × ${existing.multiplierGp} = ${existing.totalGp} gp.`,
+        );
+        const answer = await this.deps.io.prompt(
+          'Enter to keep, reroll, reset, back, or quit> ',
+        );
+        if (answer === undefined) return 'eof';
+        const command = answer.trim().toLowerCase();
+        if (command.length === 0) {
+          if (valid) return 'advance';
+          this.write(
+            'Invalid wealth evidence must be rerolled, reset, or changed to packages.',
+          );
+          continue;
+        }
+        if (command === 'back') return 'back';
+        if (command === 'quit' || command === 'exit') return this.confirmQuit();
+        if (command === 'reset') {
+          this.draft = this.deps.engine.setStartingWealth(
+            this.draft,
+            undefined,
+          );
+          this.dirty = true;
+          return 'stay';
+        }
+        if (command !== 'reroll') {
+          this.write(
+            'Invalid wealth command. Enter, reroll, reset, back, or quit.',
+          );
+          continue;
+        }
+      }
+      try {
+        const result = rollStartingWealth(
+          classKey,
+          this.deps.rng,
+          this.deps.resolver,
+        );
+        this.draft = this.deps.engine.setStartingWealth(this.draft, result);
         this.dirty = true;
+        this.write(
+          `Starting wealth: ${result.formula} [${result.roll.rolls.join(', ')}] × ${result.multiplierGp} = ${result.totalGp} gp.`,
+        );
+        return 'advance';
+      } catch (error) {
+        this.write(
+          error instanceof Error
+            ? error.message
+            : 'Starting wealth is unavailable.',
+        );
         return 'stay';
       }
-      if (answer.trim().toLowerCase() !== 'reroll') return 'advance';
-    }
-    try {
-      const result = rollStartingWealth(
-        classKey,
-        this.deps.rng,
-        this.deps.resolver,
-      );
-      this.draft = this.deps.engine.setStartingWealth(this.draft, result);
-      this.dirty = true;
-      this.write(
-        `Starting wealth: ${result.formula} [${result.roll.rolls.join(', ')}] × ${result.multiplierGp} = ${result.totalGp} gp.`,
-      );
-      return 'advance';
-    } catch (error) {
-      this.write(
-        error instanceof Error
-          ? error.message
-          : 'Starting wealth is unavailable.',
-      );
-      return 'stay';
     }
   }
 
@@ -774,9 +813,7 @@ class Wizard {
         this.write(`Choose ${need} — ${remaining} remaining:`);
         this.printChoiceOptions(options, selected);
       }
-      const input =
-        this.pendingChoiceInput ?? (await this.deps.io.prompt('> '));
-      this.pendingChoiceInput = undefined;
+      const input = await this.deps.io.prompt('> ');
       if (input === undefined) {
         return 'eof';
       }

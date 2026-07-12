@@ -188,6 +188,17 @@ export const SRD_5_1_MUSICAL_INSTRUMENTS: readonly string[] = [
   'Viol',
 ];
 
+/** The SRD tool-proficiency entries outside the artisan and musical tables. */
+export const SRD_5_1_OTHER_TOOLS: readonly string[] = [
+  'Disguise kit',
+  'Forgery kit',
+  'Gaming set',
+  'Herbalism kit',
+  'Navigator’s tools',
+  'Poisoner’s kit',
+  'Thieves’ tools',
+];
+
 /** Context the importer supplies (pack-derived, enumerable option sets). */
 export interface CreationChoiceContext {
   /** Sorted `spell:` keys of every wizard cantrip in the pack. */

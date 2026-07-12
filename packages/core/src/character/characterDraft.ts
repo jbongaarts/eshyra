@@ -203,6 +203,8 @@ const MECHANICAL_CHOICE_KINDS: ReadonlySet<Level1RequiredChoiceKind> = new Set([
  */
 export interface CharacterCreationEngine {
   createDraft(input: CreateDraftInput): CharacterDraft;
+  /** Rehydrate persisted state against the active resolver and engine rules. */
+  recomputeDraft(draft: CharacterDraft): CharacterDraft;
   setIdentity(
     draft: CharacterDraft,
     patch: Partial<CharacterDraftIdentity>,
@@ -539,7 +541,7 @@ export function createCharacterCreationEngine(
         const grantKey = normalizeProficiency(grant);
         if (!seen.has(grantKey)) {
           seen.add(grantKey);
-          owned.add(grant);
+          owned.add(grantKey);
           continue;
         }
         const id = `background.${kind}.replacement.${slug(grant)}.${ordinal++}`;
@@ -563,7 +565,9 @@ export function createCharacterCreationEngine(
           selected,
           satisfied: isChoiceSatisfied(choice, selected),
         });
-        for (const value of selected) owned.add(normalizeProficiency(value));
+        if (isChoiceSatisfied(choice, selected)) {
+          for (const value of selected) owned.add(normalizeProficiency(value));
+        }
       }
     }
     return result;
@@ -916,6 +920,20 @@ export function createCharacterCreationEngine(
         },
         stale: [],
         diagnostics: [],
+      });
+    },
+
+    recomputeDraft(draft): CharacterDraft {
+      assertSupportedCharacterBuild(draft, {
+        operation: 'character-creation draft resume',
+        resolver,
+      });
+      return recompute({
+        ...draft,
+        selections: {
+          startingEquipmentMode: 'packages',
+          ...draft.selections,
+        },
       });
     },
 

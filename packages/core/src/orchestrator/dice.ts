@@ -185,3 +185,136 @@ export function rollParsedDice(
     total: natural + modifier,
   };
 }
+
+/** Validate persisted dice evidence before it is used as game state. */
+export function validateDiceRollEvidence(
+  roll: DiceRoll,
+  expected: DiceNotation,
+): void {
+  if (
+    !roll ||
+    !Number.isSafeInteger(roll.count) ||
+    roll.count !== expected.count
+  ) {
+    throw new DiceError(
+      'dice evidence count does not match the expected expression',
+    );
+  }
+  if (!Number.isSafeInteger(roll.faces) || roll.faces !== expected.faces) {
+    throw new DiceError(
+      'dice evidence faces do not match the expected expression',
+    );
+  }
+  if (
+    !Number.isSafeInteger(roll.modifier) ||
+    roll.modifier !== expected.modifier
+  ) {
+    throw new DiceError(
+      'dice evidence modifier does not match the expected expression',
+    );
+  }
+  const parsed = parseDice(roll.notation);
+  if (
+    parsed.count !== expected.count ||
+    parsed.faces !== expected.faces ||
+    parsed.modifier !== expected.modifier ||
+    JSON.stringify(parsed.keep) !== JSON.stringify(expected.keep)
+  ) {
+    throw new DiceError(
+      'dice evidence notation does not match the expected expression',
+    );
+  }
+  if (
+    roll.rolls.length !== roll.count ||
+    roll.kept.length !== roll.keptIndices.length ||
+    roll.dropped.length !== roll.droppedIndices.length
+  ) {
+    throw new DiceError('dice evidence arrays are inconsistent');
+  }
+  const kept = new Set<number>();
+  const dropped = new Set<number>();
+  for (let index = 0; index < roll.rolls.length; index += 1) {
+    const value = roll.rolls[index];
+    if (!Number.isSafeInteger(value) || value < 1 || value > roll.faces) {
+      throw new DiceError('dice evidence contains an illegal die result');
+    }
+  }
+  const checkIndices = (indices: readonly number[], target: Set<number>) => {
+    let previous = -1;
+    for (const index of indices) {
+      if (
+        !Number.isSafeInteger(index) ||
+        index <= previous ||
+        index >= roll.rolls.length ||
+        target.has(index)
+      ) {
+        throw new DiceError(
+          'dice evidence contains invalid or duplicate die indices',
+        );
+      }
+      target.add(index);
+      previous = index;
+    }
+  };
+  checkIndices(roll.keptIndices, kept);
+  checkIndices(roll.droppedIndices, dropped);
+  for (const index of kept) {
+    if (
+      dropped.has(index) ||
+      roll.kept[roll.keptIndices.indexOf(index)] !== roll.rolls[index]
+    ) {
+      throw new DiceError(
+        'dice evidence kept/dropped accounting is inconsistent',
+      );
+    }
+  }
+  for (const index of dropped) {
+    if (
+      kept.has(index) ||
+      roll.dropped[roll.droppedIndices.indexOf(index)] !== roll.rolls[index]
+    ) {
+      throw new DiceError(
+        'dice evidence kept/dropped accounting is inconsistent',
+      );
+    }
+  }
+  if (kept.size + dropped.size !== roll.rolls.length) {
+    throw new DiceError('dice evidence does not account for every die');
+  }
+  if (
+    expected.keep === undefined &&
+    (dropped.size !== 0 || kept.size !== roll.rolls.length)
+  ) {
+    throw new DiceError('dice evidence unexpectedly contains dropped dice');
+  }
+  if (expected.keep !== undefined) {
+    const expectedKeptCount =
+      expected.keep.mode === 'kh' || expected.keep.mode === 'kl'
+        ? expected.keep.count
+        : expected.count - expected.keep.count;
+    if (
+      kept.size !== expectedKeptCount ||
+      dropped.size !== expected.count - expectedKeptCount
+    ) {
+      throw new DiceError('dice evidence keep/drop counts are inconsistent');
+    }
+    if (
+      roll.keep === undefined ||
+      JSON.stringify(roll.keep) !== JSON.stringify(expected.keep)
+    ) {
+      throw new DiceError('dice evidence keep/drop clause does not match');
+    }
+  } else if (roll.keep !== undefined) {
+    throw new DiceError(
+      'dice evidence unexpectedly contains a keep/drop clause',
+    );
+  }
+  const natural = roll.kept.reduce((sum, value) => sum + value, 0);
+  if (
+    !Number.isSafeInteger(natural) ||
+    roll.natural !== natural ||
+    roll.total !== natural + roll.modifier
+  ) {
+    throw new DiceError('dice evidence totals are inconsistent');
+  }
+}

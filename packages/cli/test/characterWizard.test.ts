@@ -85,6 +85,7 @@ describe('character wizard — concept-first happy path', () => {
       'wis 10',
       'cha 10',
       'done', // ability scores complete
+      '', // keep package acquisition mode
       // class-choices: Wizard skills (choose 2) + three equipment groups.
       'Arcana',
       'Investigation',
@@ -145,6 +146,8 @@ describe('character wizard — starting acquisition mode', () => {
       'Athletics',
       'Perception',
       'Dwarvish',
+      '',
+      '',
       '',
       '',
     ]);
@@ -349,6 +352,7 @@ describe('character wizard — ability-first flow', () => {
       'High Elf', // ancestry
       '', // background skip
       // class-choices: skills (choose 2) + three equipment groups.
+      '', // keep package acquisition mode
       'Arcana',
       'Investigation',
       '1', // a quarterstaff
@@ -442,6 +446,7 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     'wis 10',
     'cha 8',
     'done',
+    '', // keep package acquisition mode
   ] as const;
 
   it('collects a skill choice group and an equipment choice group', async () => {
@@ -588,6 +593,7 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
       '', // background keep
       // ability-scores already complete → done
       'done',
+      '', // keep package acquisition mode
       // class choices (all satisfied → edit mode): skills keep, equipment.0 fix
       '', // skills keep
       'clear', // equipment.0 → clear

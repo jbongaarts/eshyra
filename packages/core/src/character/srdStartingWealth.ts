@@ -1,4 +1,9 @@
-import { type DiceRoll, parseDice, rollDice } from '../orchestrator/dice.js';
+import {
+  type DiceRoll,
+  parseDice,
+  rollDice,
+  validateDiceRollEvidence,
+} from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import type {
   ResolvedStartingWealth,
@@ -32,6 +37,19 @@ export function rollStartingWealth(
 ): StartingWealthResult {
   const resolved = resolveStartingWealth(classKey, resolver);
   const roll = rollDice(resolved.formula, rng);
+  const parsed = parseDice(resolved.formula);
+  validateDiceRollEvidence(roll, parsed);
+  if (
+    !Number.isSafeInteger(resolved.multiplierGp) ||
+    resolved.multiplierGp <= 0 ||
+    !Number.isSafeInteger(roll.total) ||
+    roll.total < 0 ||
+    roll.total > Math.floor(Number.MAX_SAFE_INTEGER / resolved.multiplierGp)
+  ) {
+    throw new Error(
+      'starting-wealth multiplication exceeds safe integer range',
+    );
+  }
   const result = {
     classKey,
     formula: resolved.formula,
@@ -50,18 +68,15 @@ export function validateStartingWealthResult(
   const current = resolveStartingWealth(result.classKey, resolver);
   const parsed = parseDice(current.formula);
   const roll = result.roll;
+  validateDiceRollEvidence(roll, parsed);
   if (
     result.formula !== current.formula ||
     result.multiplierGp !== current.multiplierGp ||
-    roll.notation.replace(/\s+/g, '') !== current.formula ||
-    roll.count !== parsed.count ||
-    roll.faces !== parsed.faces ||
-    roll.modifier !== 0 ||
-    roll.keep !== undefined ||
-    roll.rolls.length !== roll.count ||
-    roll.kept.length !== roll.count ||
-    roll.natural !== roll.rolls.reduce((sum, value) => sum + value, 0) ||
-    roll.total !== roll.natural ||
+    !Number.isSafeInteger(result.multiplierGp) ||
+    result.multiplierGp <= 0 ||
+    !Number.isSafeInteger(result.totalGp) ||
+    result.totalGp < 0 ||
+    roll.total > Math.floor(Number.MAX_SAFE_INTEGER / result.multiplierGp) ||
     result.totalGp !== roll.total * result.multiplierGp
   ) {
     throw new Error('starting-wealth roll evidence is inconsistent');

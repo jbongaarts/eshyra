@@ -26,7 +26,12 @@
 // on mismatch — progression is never applied from a different pack than the one
 // the sheet was built under.
 
-import { type DiceRoll, rollDice } from '../orchestrator/dice.js';
+import {
+  type DiceRoll,
+  parseDice,
+  rollDice,
+  validateDiceRollEvidence,
+} from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
@@ -1036,7 +1041,6 @@ function recomputeAfterChoices(
   resolver: RulesPackCharacterResolver,
 ): LevelUpChangeSet {
   const increases = changeSet.abilityScoreIncreases ?? [];
-  if (increases.length === 0) return changeSet;
   const modifiers = {
     ...Object.fromEntries(
       Object.entries(sheet.abilityScores).map(([ability, score]) => [
@@ -1117,20 +1121,12 @@ function resolveHitPointChoice(
   const roll =
     choice.roll ??
     (rng === undefined ? undefined : rollDice(`1d${hitDie}`, rng));
-  if (
-    roll === undefined ||
-    roll.notation.replace(/\s+/g, '') !== `1d${hitDie}` ||
-    roll.count !== 1 ||
-    roll.faces !== hitDie ||
-    roll.modifier !== 0 ||
-    roll.keep !== undefined ||
-    roll.rolls.length !== 1 ||
-    roll.kept.length !== 1 ||
-    roll.natural !== roll.rolls[0] ||
-    roll.total !== roll.natural ||
-    roll.natural < 1 ||
-    roll.natural > hitDie
-  ) {
+  if (roll === undefined) {
+    throw new LevelUpEngineError('rolled hit-point evidence is malformed');
+  }
+  try {
+    validateDiceRollEvidence(roll, parseDice(`1d${hitDie}`));
+  } catch {
     throw new LevelUpEngineError('rolled hit-point evidence is malformed');
   }
   return {

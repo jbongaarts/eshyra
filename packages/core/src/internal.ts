@@ -687,6 +687,7 @@ export {
   parseDice,
   rollDice,
   rollParsedDice,
+  validateDiceRollEvidence,
 } from './orchestrator/dice.js';
 // DM-protocol prompt building and fenced tool-call parsing.
 export {
