@@ -11,7 +11,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AdventureModule, Db } from '../src/internal.js';
 import {
-  ActiveEffectError,
   adjustHp,
   auditActiveEffectIntegrity,
   beginTurn,
