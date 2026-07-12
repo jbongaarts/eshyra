@@ -200,13 +200,24 @@ a rule that re-creates the effect must create a new effect.
   the caller. The full roll is recorded in the effect's audit ledger and
   rides the tool result with `category: 'saving_throw'` for the roll ledger
   and turn trace.
-- **Incapacitation atomicity**: both damage paths break concentration inside
-  the same transaction as the HP/status write — `hpLifecycle.writeHpFields`
-  for characters, `updateCombatant` (which wraps its combatant write, actor
-  sync, and the F3 reaction in one transaction) for combatants. A cleanup
-  failure rolls back the entire HP event; a combatant can never be committed
-  as down while its concentration state is stale (tested via injected
-  cleanup failure).
+- **Incapacitation atomicity**: every incapacitation path breaks
+  concentration inside the same transaction as the write that caused it —
+  `hpLifecycle.writeHpFields` for character life-state transitions,
+  `updateCombatant` for combatant HP/status/condition writes, and
+  `addCondition` for character condition writes (which covers both the
+  `add_condition` tool and conditions projected by `start_effect`, so a
+  projected paralysis breaks its target's own concentration). Condition
+  incapacitation is grounded in the pack's structured relation data — the
+  condition record's `impliesCondition: incapacitated` mechanic (paralyzed,
+  petrified, stunned, unconscious) or `incapacitated` itself; namespaced
+  projected ids (`paralyzed:fx-hold`) resolve by base name; non-implying
+  conditions (poisoned, prone, …) never break. All reactions are
+  transition-gated (capable → incapacitated), so duplicate application and
+  already-incapacitated creatures trigger nothing. A cleanup failure rolls
+  back the entire causing write (tested via injected cleanup failure on both
+  the combatant and condition paths). The creation gate mirrors the same
+  three checks, so an already-incapacitated owner can never mint a live
+  effect the transition hooks would miss.
 - **Incapacitation/death** (F6 hook): any `life_state` transition out of
   `alive` breaks the character's concentration (`incapacitated`, or `dead`)
   inside the same HP transaction. F3 never duplicates the life-state machine —

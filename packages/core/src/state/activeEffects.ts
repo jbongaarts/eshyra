@@ -1024,11 +1024,68 @@ function readParticipantConditionIds(
 }
 
 /**
+ * Base condition name of a live condition entry id. Effect-projected ids are
+ * namespaced (`paralyzed:fx-hold`), so the segment before the first `:`
+ * names the condition the entry applies.
+ */
+function conditionBaseName(conditionId: string): string {
+  const base = conditionId.split(':')[0] ?? conditionId;
+  return base.trim().toLowerCase();
+}
+
+/**
+ * True when this condition id incapacitates: it names `incapacitated`
+ * itself, or its structured condition record in the campaign rules stack
+ * carries an `impliesCondition: incapacitated` mechanic (SRD: paralyzed,
+ * petrified, stunned, unconscious). Grounded in the pack's typed relation
+ * data — never a hardcoded condition list — so campaign packs that define
+ * their own incapacitating conditions are honored automatically. An id with
+ * no resolvable condition record does not incapacitate.
+ */
+export function conditionImpliesIncapacitated(
+  db: Db,
+  conditionId: string,
+): boolean {
+  const base = conditionBaseName(conditionId);
+  if (base === 'incapacitated') {
+    return true;
+  }
+  const record = lookupCampaignRecord(db, 'condition', `condition:${base}`);
+  if (record === undefined) {
+    return false;
+  }
+  const mechanics = (
+    record.data as {
+      mechanics?: { effects?: readonly Record<string, unknown>[] };
+    }
+  ).mechanics?.effects;
+  if (!Array.isArray(mechanics)) {
+    return false;
+  }
+  return mechanics.some(
+    (effect) =>
+      effect.kind === 'impliesCondition' &&
+      effect.condition === 'incapacitated',
+  );
+}
+
+/** True when any of these live condition entry ids incapacitates. */
+export function anyConditionImpliesIncapacitated(
+  db: Db,
+  conditionIds: readonly string[],
+): boolean {
+  return conditionIds.some((id) => conditionImpliesIncapacitated(db, id));
+}
+
+/**
  * Concentration requires a capable owner: an incapacitated or dead creature
- * cannot start concentrating (SRD concentration). This must be checked at
- * creation because the F6/combatant cleanup hooks fire only on *transitions*
- * (alive → non-alive, up → down) — admitting an already-down owner here
- * would create a live concentration effect nothing ever cleans up.
+ * cannot start concentrating (SRD concentration). Incapacitation is checked
+ * three ways — character life state (F6), combatant HP/status, and any
+ * carried condition whose structured record implies `incapacitated`. This
+ * must be checked at creation because the cleanup hooks fire only on
+ * *transitions* (alive → non-alive, up → down, capable → incapacitated) —
+ * admitting an already-down owner here would create a live concentration
+ * effect nothing ever cleans up.
  */
 function requireConcentrationCapableOwner(
   db: Db,
@@ -1045,28 +1102,39 @@ function requireConcentrationCapableOwner(
           '(concentration requires a capable, conscious owner)',
       );
     }
-    return;
+  } else {
+    const row = db
+      .prepare(
+        `SELECT hp_current, status FROM encounter_combatant
+         WHERE campaign_id = ? AND combatant_id = ?`,
+      )
+      .get(campaignId, owner.ref) as
+      | { hp_current: number; status: string }
+      | undefined;
+    if (
+      row !== undefined &&
+      (row.hp_current === 0 ||
+        row.status === 'dead' ||
+        row.status === 'unconscious')
+    ) {
+      throw new ActiveEffectError(
+        `combatant '${owner.ref}' is down (${
+          row.status === 'dead' || row.status === 'unconscious'
+            ? row.status
+            : '0 HP'
+        }) and cannot concentrate`,
+      );
+    }
   }
-  const row = db
-    .prepare(
-      `SELECT hp_current, status FROM encounter_combatant
-       WHERE campaign_id = ? AND combatant_id = ?`,
-    )
-    .get(campaignId, owner.ref) as
-    | { hp_current: number; status: string }
-    | undefined;
-  if (
-    row !== undefined &&
-    (row.hp_current === 0 ||
-      row.status === 'dead' ||
-      row.status === 'unconscious')
-  ) {
+  const incapacitating = readParticipantConditionIds(
+    db,
+    campaignId,
+    owner,
+  ).find((id) => conditionImpliesIncapacitated(db, id));
+  if (incapacitating !== undefined) {
     throw new ActiveEffectError(
-      `combatant '${owner.ref}' is down (${
-        row.status === 'dead' || row.status === 'unconscious'
-          ? row.status
-          : '0 HP'
-      }) and cannot concentrate`,
+      `${owner.kind} '${owner.ref}' carries the incapacitating condition ` +
+        `'${incapacitating}' and cannot concentrate`,
     );
   }
 }

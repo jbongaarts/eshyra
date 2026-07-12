@@ -15,7 +15,11 @@ export const addConditionTool: Tool = {
   mutates: true,
   description:
     'Add a condition to a character. No-op if a condition with the same id already exists. ' +
-    'Extra fields (duration, severity, etc.) are preserved.',
+    'Extra fields (duration, severity, etc.) are preserved. A condition that ' +
+    'incapacitates (incapacitated itself, or one whose record implies it — ' +
+    'paralyzed, stunned, petrified, unconscious) atomically breaks the ' +
+    "character's concentration; the result reports the ended effect " +
+    '(concentrationBroken).',
   inputSchema: {
     type: 'object',
     properties: {

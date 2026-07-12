@@ -11,12 +11,14 @@
 import { describe, expect, it } from 'vitest';
 import type { AdventureModule, Db } from '../src/internal.js';
 import {
+  addCondition,
   adjustHp,
   auditActiveEffectIntegrity,
   beginTurn,
   breakCombatantConcentration,
   closeCombatInstance,
   concentrationSaveDc,
+  conditionImpliesIncapacitated,
   createActiveEffect,
   createDefaultToolRegistry,
   createSeededRng,
@@ -2221,5 +2223,236 @@ describe('concentration owner capability', () => {
         .map((effect) => effect.effectId)
         .sort(),
     ).toEqual(['fx-ok-goblin', 'fx-ok-pc']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Condition-based incapacitation (re-review blocker: PR #437)
+// ---------------------------------------------------------------------------
+
+describe('condition-implied incapacitation', () => {
+  it('grounds the implication in structured condition records', () => {
+    const { db } = setup();
+    expect(conditionImpliesIncapacitated(db, 'incapacitated')).toBe(true);
+    for (const id of ['paralyzed', 'stunned', 'petrified', 'unconscious']) {
+      expect(conditionImpliesIncapacitated(db, id), id).toBe(true);
+    }
+    // Namespaced effect-projected ids resolve by their base condition name.
+    expect(conditionImpliesIncapacitated(db, 'paralyzed:fx-hold')).toBe(true);
+    for (const id of ['poisoned', 'prone', 'frightened', 'made-up-tag']) {
+      expect(conditionImpliesIncapacitated(db, id), id).toBe(false);
+    }
+  });
+
+  it('addCondition breaks a concentrating character atomically, per condition semantics', () => {
+    for (const conditionId of ['incapacitated', 'paralyzed', 'stunned']) {
+      const { db, pcId } = setup();
+      castBless(db, pcId);
+      const result = addCondition(
+        db,
+        { id: conditionId },
+        {
+          ...CTX,
+          characterId: pcId,
+        },
+      );
+      expect(result.added).toBe(true);
+      expect(result.concentrationBroken).toEqual({
+        effectId: 'fx-bless',
+        displayName: 'Bless',
+        cause: 'incapacitated',
+      });
+      // The break's cleanup removed Bless's owned projection; the new
+      // condition itself is preserved (returned snapshot is post-cleanup).
+      expect(result.conditions.map((c) => c.id)).toEqual([conditionId]);
+      expect(characterConditionIds(db, pcId)).toEqual([conditionId]);
+      const ended = listEffectEvents(db, CAMPAIGN, 'fx-bless').at(-1);
+      expect(ended?.detail).toMatchObject({
+        reason: 'concentration-broken',
+        detail: 'incapacitated',
+      });
+    }
+  });
+
+  it('a non-incapacitating condition never breaks concentration', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId);
+    const result = addCondition(
+      db,
+      { id: 'poisoned' },
+      {
+        ...CTX,
+        characterId: pcId,
+      },
+    );
+    expect(result.concentrationBroken).toBeUndefined();
+    expect(getConcentrationEffect(db, CAMPAIGN, pc(pcId))?.effectId).toBe(
+      'fx-bless',
+    );
+  });
+
+  it('is transition-gated: duplicates and already-incapacitated adds are inert', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId);
+    addCondition(db, { id: 'paralyzed' }, { ...CTX, characterId: pcId });
+    // Duplicate application no-ops entirely.
+    const duplicate = addCondition(
+      db,
+      { id: 'paralyzed' },
+      {
+        ...CTX,
+        characterId: pcId,
+      },
+    );
+    expect(duplicate.added).toBe(false);
+    expect(duplicate.concentrationBroken).toBeUndefined();
+    // A second incapacitating condition on an already-incapacitated
+    // character triggers nothing further (and there is nothing to break).
+    const second = addCondition(
+      db,
+      { id: 'stunned' },
+      {
+        ...CTX,
+        characterId: pcId,
+      },
+    );
+    expect(second.added).toBe(true);
+    expect(second.concentrationBroken).toBeUndefined();
+    expect(
+      listEffectEvents(db, CAMPAIGN, 'fx-bless').filter(
+        (event) => event.eventKind === 'ended',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('updateCombatant addCondition breaks a concentrating combatant', () => {
+    const { db } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-goblin-conc',
+      kind: 'spell-effect',
+      displayName: 'Goblin Focus',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      ...CTX,
+    });
+    // Poisoned does not break; stunned does — structured semantics, not ids.
+    const poisoned = updateCombatant(db, {
+      campaignId: CAMPAIGN,
+      combatantId: GOBLIN_1,
+      addCondition: { id: 'poisoned' },
+      ...CTX,
+    });
+    expect(poisoned.concentrationBroken).toBeUndefined();
+    const stunned = updateCombatant(db, {
+      campaignId: CAMPAIGN,
+      combatantId: GOBLIN_1,
+      addCondition: { id: 'stunned' },
+      ...CTX,
+    });
+    expect(stunned.concentrationBroken).toEqual({
+      effectId: 'fx-goblin-conc',
+      displayName: 'Goblin Focus',
+      cause: 'incapacitated',
+    });
+    // Unrelated conditions survive the break's cleanup.
+    expect(
+      (
+        JSON.parse(combatantState(db, GOBLIN_1).conditions_json) as {
+          id: string;
+        }[]
+      ).map((c) => c.id),
+    ).toEqual(['poisoned', 'stunned']);
+  });
+
+  it('an effect-projected incapacitating condition breaks the target’s own concentration', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId); // pc concentrates on fx-bless
+    // A hazard projects paralysis onto the concentrating character.
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-trap',
+      kind: 'condition-package',
+      displayName: 'Paralytic Trap',
+      source: { kind: 'hazard' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'minute',
+        anchor: 'effect-created',
+      },
+      targets: [{ kind: 'character', ref: pcId }],
+      conditions: [
+        { target: pc(pcId), condition: { id: 'paralyzed:fx-trap' } },
+      ],
+      ...CTX,
+    });
+    // Bless ended via the projection's incapacitation, with its own
+    // projection cleaned up; the trap effect still owns its projection.
+    const bless = listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
+      (effect) => effect.effectId === 'fx-bless',
+    );
+    expect(bless).toMatchObject({
+      status: 'ended',
+      endReason: 'concentration-broken',
+      endDetail: 'incapacitated',
+    });
+    expect(characterConditionIds(db, pcId)).toEqual(['paralyzed:fx-trap']);
+    const trap = listActiveEffects(db, CAMPAIGN).find(
+      (effect) => effect.effectId === 'fx-trap',
+    );
+    expect(trap?.status).toBe('active');
+    expect(trap?.links[0]?.status).toBe('active');
+  });
+
+  it('rolls back the condition write when the concentration cleanup fails', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId);
+    db.exec(
+      `CREATE TRIGGER inject_cleanup_failure BEFORE UPDATE ON active_effect
+       WHEN NEW.status = 'ended'
+       BEGIN SELECT RAISE(ABORT, 'injected cleanup failure'); END;`,
+    );
+    expect(() =>
+      addCondition(db, { id: 'paralyzed' }, { ...CTX, characterId: pcId }),
+    ).toThrow(/injected cleanup failure/);
+    db.exec('DROP TRIGGER inject_cleanup_failure;');
+    // The condition write rolled back with the failed break: no paralyzed
+    // entry, Bless still live with its projection, ledger unchanged.
+    expect(characterConditionIds(db, pcId)).toEqual(['blessed:fx-bless']);
+    expect(getConcentrationEffect(db, CAMPAIGN, pc(pcId))?.effectId).toBe(
+      'fx-bless',
+    );
+    expect(listEffectEvents(db, CAMPAIGN, 'fx-bless')).toHaveLength(1);
+  });
+
+  it('the creation gate refuses owners already carrying an incapacitating condition', () => {
+    const { db, pcId } = setup();
+    addCondition(db, { id: 'paralyzed' }, { ...CTX, characterId: pcId });
+    expect(() => castBless(db, pcId)).toThrow(
+      /incapacitating condition 'paralyzed'/,
+    );
+    expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
+
+    const combat = setupCombat();
+    updateCombatant(combat.db, {
+      campaignId: CAMPAIGN,
+      combatantId: GOBLIN_1,
+      addCondition: { id: 'stunned' },
+      ...CTX,
+    });
+    expect(() =>
+      createActiveEffect(combat.db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-goblin-late',
+        kind: 'spell-effect',
+        displayName: 'Late Focus',
+        source: { kind: 'ruling' },
+        concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+        duration: { kind: 'until-removed' },
+        ...CTX,
+      }),
+    ).toThrow(/incapacitating condition 'stunned'/);
   });
 });

@@ -1,6 +1,16 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
+// Function-level circular dependency with activeEffects.ts (which projects
+// conditions through addCondition/removeCondition): safe because both sides
+// only reference each other inside function bodies. The incapacitation
+// reaction lives here so EVERY condition write — the add_condition tool and
+// effect projections alike — carries the atomic concentration break.
+import {
+  anyConditionImpliesIncapacitated,
+  breakConcentrationOnLifeEvent,
+  conditionImpliesIncapacitated,
+} from './activeEffects.js';
 import { resolveCampaignAdvancementPolicy } from './advancementPolicy.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import {
@@ -32,6 +42,13 @@ export interface AddConditionInput {
 export interface AddConditionResult {
   added: boolean;
   conditions: readonly CharacterConditionEntry[];
+  /** Set when this condition incapacitated a concentrating character: the
+   *  F3 break + owned-projection cleanup happened in this transaction. */
+  concentrationBroken?: {
+    effectId: string;
+    displayName: string;
+    cause: 'incapacitated';
+  };
 }
 
 export function addCondition(
@@ -65,7 +82,44 @@ export function addCondition(
       ...ctx,
     });
 
-    return { added: true, conditions: updated };
+    // F3 reaction: a condition whose structured record implies
+    // `incapacitated` (or `incapacitated` itself) breaks the character's
+    // concentration, atomically with the condition write. Transition-gated:
+    // an already-incapacitated character triggers nothing further, and the
+    // duplicate-id no-op above never reaches here.
+    let concentrationBroken: AddConditionResult['concentrationBroken'];
+    if (
+      conditionImpliesIncapacitated(txnDb, condition.id) &&
+      !anyConditionImpliesIncapacitated(
+        txnDb,
+        current.map((c) => c.id),
+      )
+    ) {
+      const broken = breakConcentrationOnLifeEvent(
+        txnDb,
+        charId,
+        'incapacitated',
+        { provenance: ctx.provenance, sessionId: ctx.sessionId, at: ctx.at },
+      );
+      if (broken.broken && broken.effectId !== undefined) {
+        concentrationBroken = {
+          effectId: broken.effectId,
+          displayName: broken.displayName ?? broken.effectId,
+          cause: 'incapacitated',
+        };
+      }
+    }
+
+    return {
+      added: true,
+      // The break's cleanup may remove effect-owned conditions from this
+      // same character, so re-read rather than returning the stale snapshot.
+      conditions:
+        concentrationBroken === undefined
+          ? updated
+          : readConditions(txnDb, charId),
+      ...(concentrationBroken === undefined ? {} : { concentrationBroken }),
+    };
   });
 }
 

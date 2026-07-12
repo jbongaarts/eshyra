@@ -1068,11 +1068,13 @@ export type {
 export {
   ACTIVE_EFFECT_KINDS,
   ActiveEffectError,
+  anyConditionImpliesIncapacitated,
   auditActiveEffectIntegrity,
   breakCombatantConcentration,
   breakConcentrationOnLifeEvent,
   CONCENTRATION_BREAK_CAUSES,
   concentrationSaveDc,
+  conditionImpliesIncapacitated,
   createActiveEffect,
   DIRECT_CONCENTRATION_BREAK_CAUSES,
   EFFECT_ANCHOR_KINDS,

@@ -15,7 +15,10 @@ import type { RulesPack, RulesRecord } from '../rules/types.js';
 // both sides only reference each other inside function bodies, never during
 // module evaluation. The reaction lives here, not in the tool wrapper, so
 // EVERY updateCombatant caller gets the atomic incapacitation invariant.
-import { breakCombatantConcentration } from './activeEffects.js';
+import {
+  anyConditionImpliesIncapacitated,
+  breakCombatantConcentration,
+} from './activeEffects.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
 
 export type CombatInstanceStatus =
@@ -1034,16 +1037,31 @@ function updateCombatantInTxn(
   }
 
   // F3 reaction (same-transaction, mirroring hpLifecycle's character hook):
-  // a combatant that goes down — 0 HP or an explicit dead/unconscious status
-  // — is incapacitated, which breaks its concentration and cleans up the
-  // effect's owned projections atomically with this HP/status write.
+  // a combatant that goes down — 0 HP, an explicit dead/unconscious status,
+  // or a newly applied condition whose structured record implies
+  // `incapacitated` (paralyzed, stunned, …) — is incapacitated, which breaks
+  // its concentration and cleans up the effect's owned projections
+  // atomically with this write. Transition-gated on both sides so an
+  // already-incapacitated combatant (by any route) triggers nothing further.
   const wasDown =
     current.hpCurrent === 0 ||
     current.status === 'dead' ||
     current.status === 'unconscious';
   const isDown = nextHp === 0 || status === 'dead' || status === 'unconscious';
+  const wasIncapacitated =
+    wasDown ||
+    anyConditionImpliesIncapacitated(
+      db,
+      current.conditions.map((c) => c.id),
+    );
+  const isIncapacitated =
+    isDown ||
+    anyConditionImpliesIncapacitated(
+      db,
+      conditions.map((c) => c.id),
+    );
   let concentrationBroken: UpdateCombatantResult['concentrationBroken'];
-  if (!wasDown && isDown) {
+  if (!wasIncapacitated && isIncapacitated) {
     const broken = breakCombatantConcentration(
       db,
       input.campaignId,
