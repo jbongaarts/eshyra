@@ -1560,6 +1560,188 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
     );
   });
 
+  const privateSanctumDescription =
+    'You make an area within range magically secure. The area is a cube that can be as small as 5 feet to as large as 100 feet on each side. The spell lasts for the duration or until you use an action to dismiss it. When you cast the spell, you decide what sort of security the spell provides, choosing any or all of the following properties: • Sound can’t pass through the barrier at the edge of the warded area. • The barrier of the warded area appears dark and foggy, preventing vision (including darkvision) through it. • Sensors created by divination spells can’t appear inside the protected area or pass through the barrier at its perimeter. • Creatures in the area can’t be targeted by divination spells. • Nothing can teleport into or out of the warded area. • Planar travel is blocked within the warded area. Casting this spell on the same spot every day for a year makes this effect permanent.';
+  const tinyHutDescription =
+    'A 10-foot-radius immobile dome of force springs into existence around and above you and remains stationary for the duration. The spell ends if you leave its area. Nine creatures of Medium size or smaller can fit inside the dome with you. The spell fails if its area includes a larger creature or more than nine creatures. Creatures and objects within the dome when you cast this spell can move through it freely. All other creatures and objects are barred from passing through it. Spells and other magical effects can’t extend through the dome or be cast through it.';
+
+  it('projects exact ordered S3b effects and preserves Tiny Hut area metadata', () => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Private Sanctum',
+          description: privateSanctumDescription,
+        }),
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'wardedArea',
+        dimensions: {
+          shape: 'cube',
+          minimumSideFeet: 5,
+          maximumSideFeet: 100,
+        },
+        blocks: [
+          'sound',
+          'vision',
+          'divination-sensors',
+          'divination-targeting',
+          'teleportation',
+          'planar-travel',
+        ],
+        chooseProperties: true,
+      },
+      {
+        kind: 'permanenceAfterRepetition',
+        period: 'day',
+        count: 365,
+        result: 'permanent',
+      },
+    ]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Tiny Hut',
+          range: 'Self (10-foot-radius hemisphere)',
+          description: tinyHutDescription,
+        }),
+      ),
+    ).toMatchObject({
+      area: { shape: 'hemisphere', size: 10, unit: 'foot', origin: 'self' },
+      effects: [
+        {
+          kind: 'wardedArea',
+          blocks: ['creatures', 'objects', 'spell-effects'],
+          occupantLimit: { count: 9, maxSize: 'medium' },
+          castingTimeOccupantsExempt: true,
+        },
+        {
+          kind: 'triggeredEffect',
+          trigger: 'caster-leaves-warded-area',
+          result: 'spell-ends',
+        },
+      ],
+    });
+  });
+
+  it.each([
+    [
+      '5-to-100-foot cube dimensions',
+      'The area is a cube that can be as small as 5 feet to as large as 100 feet on each side.',
+    ],
+    [
+      'any-or-all security-property selection',
+      'choosing any or all of the following properties:',
+    ],
+    [
+      'sound boundary',
+      'Sound can’t pass through the barrier at the edge of the warded area.',
+    ],
+    [
+      'vision including darkvision boundary',
+      'preventing vision (including darkvision) through it.',
+    ],
+    [
+      'divination-sensor boundary',
+      'Sensors created by divination spells can’t appear inside the protected area or pass through the barrier at its perimeter.',
+    ],
+    [
+      'divination-targeting boundary',
+      'Creatures in the area can’t be targeted by divination spells.',
+    ],
+    [
+      'teleportation boundary',
+      'Nothing can teleport into or out of the warded area.',
+    ],
+    [
+      'planar-travel boundary',
+      'Planar travel is blocked within the warded area.',
+    ],
+    [
+      'daily repetition for one year permanence',
+      'Casting this spell on the same spot every day for a year makes this effect permanent.',
+    ],
+  ])('fails closed for Private Sanctum when %s disappears', (label, clause) => {
+    const changed = privateSanctumDescription.replace(clause, 'changed clause');
+    expect(changed).not.toBe(privateSanctumDescription);
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({ name: 'Private Sanctum', description: changed }),
+      ),
+    ).toThrow(
+      `S3b spell projection for Private Sanctum is missing reviewed source clause: ${label}`,
+    );
+  });
+
+  it.each([
+    ['caster departure ends spell', 'The spell ends if you leave its area.'],
+    [
+      'nine Medium-or-smaller occupant limit',
+      'Nine creatures of Medium size or smaller can fit inside the dome with you.',
+    ],
+    [
+      'larger-creature or excessive-count casting failure',
+      'The spell fails if its area includes a larger creature or more than nine creatures.',
+    ],
+    [
+      'casting-time creatures and objects pass freely',
+      'Creatures and objects within the dome when you cast this spell can move through it freely.',
+    ],
+    [
+      'other creatures and objects barred',
+      'All other creatures and objects are barred from passing through it.',
+    ],
+    [
+      'spells and magical effects cannot cross or be cast through',
+      'Spells and other magical effects can’t extend through the dome or be cast through it.',
+    ],
+  ])('fails closed for Tiny Hut when %s disappears', (label, clause) => {
+    const changed = tinyHutDescription.replace(clause, 'changed clause');
+    expect(changed).not.toBe(tinyHutDescription);
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Tiny Hut',
+          range: 'Self (10-foot-radius hemisphere)',
+          description: changed,
+        }),
+      ),
+    ).toThrow(
+      `S3b spell projection for Tiny Hut is missing reviewed source clause: ${label}`,
+    );
+  });
+
+  it('fails closed for Tiny Hut when its exact range field changes', () => {
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Tiny Hut',
+          range: 'Self (10-foot-radius sphere)',
+          description: tinyHutDescription,
+        }),
+      ),
+    ).toThrow(
+      'S3b spell projection for Tiny Hut is missing reviewed source clause: exact Self (10-foot-radius hemisphere) range',
+    );
+  });
+
+  it.each([
+    'Private Sanctum!',
+    'Private-Sanctum',
+    'Tiny Hut!',
+    'Tiny-Hut',
+  ])('does not accidentally project punctuation-variant spell name %s', (name) => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          name,
+          range: 'Self (10-foot-radius hemisphere)',
+          description: `${privateSanctumDescription} ${tinyHutDescription}`,
+        }),
+      ).effects,
+    ).toBeUndefined();
+  });
+
   it.each([
     undefined,
     'a statuette of yourself carved from bone',

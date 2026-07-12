@@ -172,16 +172,24 @@ GM-narrated result rather than a state gate.
   component: 'ivory-statuette-of-self', location: 'on-your-person' }`.
   Every emitted constant is gated by its reviewed source clauses. S3b and S3c
   remain pending.
-- `private-sanctum`, `tiny-hut`:
+- **S3b implemented (`eshyra-o9bd.18.7.9.8`):** `private-sanctum` and
+  `tiny-hut` emit the closed `wardedArea` contract below. The importer source
+  gates each boundary independently; this is canonical data only and has no
+  runtime ward enforcement.
   ```ts
   { kind: 'wardedArea',
     blocks: ('sound'|'vision'|'divination-sensors'|'divination-targeting'|
              'teleportation'|'planar-travel'|'spell-effects'|'objects'|'creatures')[],
-    chooseProperties?: boolean,       // private-sanctum menu
+    chooseProperties?: true,           // private-sanctum menu; requires dimensions
+    dimensions?: { shape: 'cube', minimumSideFeet: number, maximumSideFeet: number },
     occupantLimit?: { count: 9, maxSize: 'medium' },  // tiny-hut
-    castingTimeOccupantsExempt?: boolean }
+    castingTimeOccupantsExempt?: true }               // paired with occupantLimit
   ```
-  plus `permanenceAfterRepetition` on private-sanctum (S2 shape).
+  Private Sanctum's ordered effects are `wardedArea` followed by
+  `permanenceAfterRepetition { period: 'day', count: 365, result: 'permanent' }`.
+  Tiny Hut's ordered effects are `wardedArea` followed by
+  `triggeredEffect { trigger: 'caster-leaves-warded-area', result: 'spell-ends' }`.
+  S3c remains pending.
 - `gate`: existing `planeShift` payload + `{ kind: 'portal', diameterFeetMin: 5,
   diameterFeetMax: 20, frontOnly: true }`; named-creature draw stays prose.
 - `demiplane`: `{ kind: 'extradimensionalSpace', dimensionsFeet: 30,

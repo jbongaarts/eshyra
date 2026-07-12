@@ -121352,6 +121352,31 @@
           "amount": 24,
           "unit": "hour"
         },
+        "effects": [
+          {
+            "kind": "wardedArea",
+            "dimensions": {
+              "shape": "cube",
+              "minimumSideFeet": 5,
+              "maximumSideFeet": 100
+            },
+            "blocks": [
+              "sound",
+              "vision",
+              "divination-sensors",
+              "divination-targeting",
+              "teleportation",
+              "planar-travel"
+            ],
+            "chooseProperties": true
+          },
+          {
+            "kind": "permanenceAfterRepetition",
+            "period": "day",
+            "count": 365,
+            "result": "permanent"
+          }
+        ],
         "scaling": {
           "sourceText": "When you cast this spell using a spell slot of 5th level or higher, you can increase the size of the cube by 100 feet for each slot level beyond 4th. Thus you could protect a cube that can be up to 200 feet on one side by using a spell slot of 5th level."
         }
@@ -125712,7 +125737,27 @@
           "size": 10,
           "unit": "foot",
           "origin": "self"
-        }
+        },
+        "effects": [
+          {
+            "kind": "wardedArea",
+            "blocks": [
+              "creatures",
+              "objects",
+              "spell-effects"
+            ],
+            "occupantLimit": {
+              "count": 9,
+              "maxSize": "medium"
+            },
+            "castingTimeOccupantsExempt": true
+          },
+          {
+            "kind": "triggeredEffect",
+            "trigger": "caster-leaves-warded-area",
+            "result": "spell-ends"
+          }
+        ]
       },
       "componentMaterials": "a small crystal bead",
       "ritual": true

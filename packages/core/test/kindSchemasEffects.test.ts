@@ -1232,6 +1232,29 @@ describe('mechanics effect payload contracts', () => {
         castingTime: '1-action',
         target: 'self',
       },
+      {
+        kind: 'wardedArea',
+        blocks: [
+          'sound',
+          'vision',
+          'divination-sensors',
+          'divination-targeting',
+          'teleportation',
+          'planar-travel',
+        ],
+        dimensions: {
+          shape: 'cube',
+          minimumSideFeet: 5,
+          maximumSideFeet: 100,
+        },
+        chooseProperties: true,
+      },
+      {
+        kind: 'wardedArea',
+        blocks: ['creatures', 'objects', 'spell-effects'],
+        occupantLimit: { count: 9, maxSize: 'medium' },
+        castingTimeOccupantsExempt: true,
+      },
       { kind: 'exclusiveInstance', maxActive: 1, replacement: 'previous-ends' },
       {
         kind: 'componentPresenceTermination',
@@ -1499,6 +1522,137 @@ describe('mechanics effect payload contracts', () => {
     ).toThrow(/target/);
     expect(() =>
       validate({ kind: 'spellStoring', maximumSpellLevel: 5, extra: true }),
+    ).toThrow(/unsupported key/);
+    expect(() => validate({ kind: 'wardedArea' })).toThrow(/blocks/);
+    expect(() => validate({ kind: 'wardedArea', blocks: [] })).toThrow(
+      /non-empty/,
+    );
+    expect(() =>
+      validate({ kind: 'wardedArea', blocks: ['unsupported'] }),
+    ).toThrow(/supported ward boundary/);
+    expect(() =>
+      validate({ kind: 'wardedArea', blocks: ['sound', 'sound'] }),
+    ).toThrow(/duplicates/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        chooseProperties: false,
+      }),
+    ).toThrow(/chooseProperties/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        occupantLimit: { count: 9, maxSize: 'medium' },
+        castingTimeOccupantsExempt: false,
+      }),
+    ).toThrow(/castingTimeOccupantsExempt/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        dimensions: {
+          shape: 'sphere',
+          minimumSideFeet: 5,
+          maximumSideFeet: 5,
+        },
+        chooseProperties: true,
+      }),
+    ).toThrow(/shape/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        dimensions: {
+          shape: 'cube',
+          minimumSideFeet: 10,
+          maximumSideFeet: 5,
+        },
+        chooseProperties: true,
+      }),
+    ).toThrow(/must not exceed/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        dimensions: { shape: 'cube', minimumSideFeet: 0, maximumSideFeet: 5 },
+        chooseProperties: true,
+      }),
+    ).toThrow(/minimumSideFeet/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        dimensions: {
+          shape: 'cube',
+          minimumSideFeet: 5,
+          maximumSideFeet: 5,
+        },
+      }),
+    ).toThrow(/requires chooseProperties/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        occupantLimit: { count: 9, maxSize: 'colossal' },
+        castingTimeOccupantsExempt: true,
+      }),
+    ).toThrow(/maxSize/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        occupantLimit: { count: 0, maxSize: 'medium' },
+        castingTimeOccupantsExempt: true,
+      }),
+    ).toThrow(/count/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        occupantLimit: { count: 9, maxSize: 'medium' },
+      }),
+    ).toThrow(/must occur together/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        castingTimeOccupantsExempt: true,
+      }),
+    ).toThrow(/must occur together/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        occupantLimit: { count: 9, maxSize: 'medium' },
+        castingTimeOccupantsExempt: true,
+        chooseProperties: true,
+      }),
+    ).toThrow(/chooseProperties/);
+    expect(() =>
+      validate({ kind: 'wardedArea', blocks: ['sound'], extra: true }),
+    ).toThrow(/unsupported key/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        dimensions: {
+          shape: 'cube',
+          minimumSideFeet: 5,
+          maximumSideFeet: 5,
+          extra: true,
+        },
+        chooseProperties: true,
+      }),
+    ).toThrow(/unsupported key/);
+    expect(() =>
+      validate({
+        kind: 'wardedArea',
+        blocks: ['sound'],
+        occupantLimit: { count: 9, maxSize: 'medium', extra: true },
+        castingTimeOccupantsExempt: true,
+      }),
     ).toThrow(/unsupported key/);
     expect(() => validate({ kind: 'exclusiveInstance' })).toThrow(/maxActive/);
     expect(() =>
