@@ -38,6 +38,11 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import {
+  breakConcentrationOnLifeEvent,
+  concentrationSaveDc,
+  getCharacterConcentration,
+} from './activeEffects.js';
 import { endAllAttunementsOnDeath } from './attunement.js';
 import type { DomainMutationContext } from './domainMutations.js';
 import { MutateStateError, mutateStateBatch } from './mutateState.js';
@@ -88,6 +93,28 @@ export interface AdjustHpResult {
   deathSaveFailuresAdded: number;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
+  /**
+   * Set when the damaged character is concentrating and remains able: the
+   * SRD requires a Constitution save at this DC (max(10, floor(damage/2)),
+   * per damage event — temp-HP absorption does not lower it). Roll it via
+   * `resolve_check` and record the outcome via `resolve_concentration` (F3).
+   */
+  concentrationCheck?: {
+    effectId: string;
+    displayName: string;
+    dc: number;
+    damage: number;
+  };
+  /**
+   * Set when this damage broke concentration outright by incapacitating or
+   * killing the concentrating character (no save — the effect already ended
+   * and its owned projections were cleaned up).
+   */
+  concentrationBroken?: {
+    effectId: string;
+    displayName: string;
+    cause: 'incapacitated' | 'dead';
+  };
 }
 
 export interface AdjustHpOptions {
@@ -156,6 +183,17 @@ function writeHpFields(
   if (after.life_state === 'dead' && before.life_state !== 'dead') {
     endAllAttunementsOnDeath(db, charId);
   }
+  // Leaving 'alive' (dying or outright dead) is incapacitation, which breaks
+  // concentration (SRD concentration; F3). One-way reaction: the life-state
+  // machine stays here, the effect cleanup lives in activeEffects.
+  if (before.life_state === 'alive' && after.life_state !== 'alive') {
+    breakConcentrationOnLifeEvent(
+      db,
+      charId,
+      after.life_state === 'dead' ? 'dead' : 'incapacitated',
+      ctx,
+    );
+  }
 }
 
 export function adjustHp(
@@ -181,12 +219,36 @@ export function adjustHp(
       );
     }
 
+    // Snapshot concentration before the write: if the damage incapacitates,
+    // writeHpFields breaks it and the result must say which effect ended.
+    const concentrationBefore =
+      amount < 0 && row.life_state === 'alive'
+        ? getCharacterConcentration(txnDb, charId)
+        : undefined;
+
     const state =
       amount < 0
         ? applyDamage(row, -amount, options.critical === true)
         : applyHealing(row, amount);
 
     writeHpFields(txnDb, charId, row, state.after, ctx);
+
+    let concentrationCheck: AdjustHpResult['concentrationCheck'];
+    let concentrationBroken: AdjustHpResult['concentrationBroken'];
+    if (concentrationBefore !== undefined) {
+      if (state.after.life_state === 'alive') {
+        concentrationCheck = {
+          ...concentrationBefore,
+          dc: concentrationSaveDc(-amount),
+          damage: -amount,
+        };
+      } else {
+        concentrationBroken = {
+          ...concentrationBefore,
+          cause: state.after.life_state === 'dead' ? 'dead' : 'incapacitated',
+        };
+      }
+    }
 
     return {
       previousHp: row.hp_current,
@@ -203,6 +265,8 @@ export function adjustHp(
       deathSaveFailuresAdded: state.deathSaveFailuresAdded,
       deathSaveSuccesses: state.after.death_save_successes,
       deathSaveFailures: state.after.death_save_failures,
+      ...(concentrationCheck === undefined ? {} : { concentrationCheck }),
+      ...(concentrationBroken === undefined ? {} : { concentrationBroken }),
     };
   });
 }
