@@ -170,8 +170,8 @@ GM-narrated result rather than a state gate.
   `{ kind: 'exclusiveInstance', maxActive: 1, replacement: 'previous-ends' }`,
   and `{ kind: 'componentPresenceTermination',
   component: 'ivory-statuette-of-self', location: 'on-your-person' }`.
-  Every emitted constant is gated by its reviewed source clauses. S3b and S3c
-  remain pending.
+  Every emitted constant is gated by its reviewed source clauses. S3b is
+  implemented below; S3c remains pending.
 - **S3b implemented (`eshyra-o9bd.18.7.9.8`):** `private-sanctum` and
   `tiny-hut` emit the closed `wardedArea` contract below. The importer source
   gates each boundary independently; this is canonical data only and has no
