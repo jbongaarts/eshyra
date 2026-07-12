@@ -1462,6 +1462,119 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
     ).toThrow(/missing reviewed source clause: repeat-casting chance/);
   });
 
+  it.each([
+    [
+      'Alarm',
+      'You set an alarm against unwanted intrusion. Choose a door, a window, or an area within range that is no larger than a 20-foot cube. Until the spell ends, an alarm alerts you whenever a Tiny or larger creature touches or enters the warded area. When you cast the spell, you can designate creatures that won’t set off the alarm. You also choose whether the alarm is mental or audible. A mental alarm alerts you with a ping in your mind if you are within 1 mile of the warded area. This ping awakens you if you are sleeping. An audible alarm produces the sound of a hand bell for 10 seconds within 60 feet.',
+      [
+        {
+          kind: 'triggeredEffect',
+          trigger:
+            'tiny-or-larger-creature-touches-or-enters-warded-area-excluding-designated-creatures',
+          result:
+            'chosen-mental-alarm-within-1-mile-that-wakes-caster-or-audible-hand-bell-for-10-seconds-within-60-feet',
+          condition: 'warded-door-window-or-area-no-larger-than-20-foot-cube',
+        },
+      ],
+    ],
+    [
+      'Magic Mouth',
+      'You implant a message within an object in range, a message that is uttered when a trigger condition is met. Then speak the message, which must be 25 words or less. When you cast this spell, you can have the spell end after it delivers its message, or it can remain and repeat its message whenever the trigger occurs. The triggering circumstance can be as general or as detailed as you like, though it must be based on visual or audible conditions that occur within 30 feet of the object.',
+      [
+        {
+          kind: 'triggeredEffect',
+          trigger:
+            'specified-visual-or-audible-circumstance-occurs-within-30-feet-of-object',
+          result:
+            'object-recites-stored-message-up-to-25-words-once-or-repeatedly-as-chosen',
+        },
+      ],
+    ],
+    [
+      'Contingency',
+      'Choose a spell of 5th level or lower that you can cast, that has a casting time of 1 action, and that can target you. You cast that spell as part of casting contingency. Instead, it takes effect when a certain circumstance occurs. The contingent spell takes effect immediately after the circumstance is met for the first time, whether or not you want it to, and then contingency ends. You can use only one contingency spell at a time. If you cast this spell again, the effect of another contingency spell on you ends. Also, contingency ends on you if its material component is ever not on your person.',
+      [
+        {
+          kind: 'spellStoring',
+          maximumSpellLevel: 5,
+          capacity: 1,
+          castingTime: '1-action',
+          target: 'self',
+        },
+        {
+          kind: 'triggeredEffect',
+          trigger:
+            'specified-circumstance-first-occurs-before-contingency-ends',
+          result:
+            'stored-spell-immediately-takes-effect-on-self-and-contingency-ends',
+        },
+        {
+          kind: 'exclusiveInstance',
+          maxActive: 1,
+          replacement: 'previous-ends',
+        },
+        {
+          kind: 'componentPresenceTermination',
+          component: 'ivory-statuette-of-self',
+          location: 'on-your-person',
+        },
+      ],
+    ],
+  ])('projects reviewed S3a %s semantics exactly', (name, description, effects) => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          name,
+          description,
+          ...(name === 'Contingency'
+            ? {
+                componentMaterials:
+                  'a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp',
+              }
+            : {}),
+        }),
+      ).effects,
+    ).toEqual(effects);
+  });
+
+  it('projects nothing for non-S3a spell names', () => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Alarm Clock',
+          description: 'A warded area with a visual or audible trigger.',
+        }),
+      ).effects,
+    ).toBeUndefined();
+  });
+
+  it.each([
+    ['Alarm', '20-foot-cube ward boundary'],
+    ['Magic Mouth', '25-word message limit'],
+    ['Contingency', 'stored spell level no higher than 5'],
+  ])('fails closed for S3a %s when a reviewed clause disappears', (name, label) => {
+    expect(() =>
+      deriveSpellMechanics(baseSpell({ name, description: 'changed source' })),
+    ).toThrow(
+      `S3a spell projection for ${name} is missing reviewed source clause: ${label}`,
+    );
+  });
+
+  it.each([
+    undefined,
+    'a statuette of yourself carved from bone',
+  ])('fails closed for Contingency when the ivory statuette component identity is %s', (componentMaterials) => {
+    const description =
+      'Choose a spell of 5th level or lower that you can cast, that has a casting time of 1 action, and that can target you. Instead, it takes effect when a certain circumstance occurs. The contingent spell takes effect immediately after the circumstance is met for the first time, whether or not you want it to, and then contingency ends. You can use only one contingency spell at a time. If you cast this spell again, the effect of another contingency spell on you ends. Also, contingency ends on you if its material component is ever not on your person.';
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({ name: 'Contingency', description, componentMaterials }),
+      ),
+    ).toThrow(
+      'S3a spell projection for Contingency is missing reviewed source clause: ivory statuette component identity',
+    );
+  });
+
   it('parses structured durations from the closed SRD vocabulary', () => {
     expect(
       deriveSpellMechanics(baseSpell({ description: 'x' })).duration,

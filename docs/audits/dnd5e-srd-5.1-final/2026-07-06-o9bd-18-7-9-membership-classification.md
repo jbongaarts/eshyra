@@ -359,18 +359,18 @@ trigger, resetOn?, secret? }`.
 | `spell:sending` | flat 5 % failure when target on another plane; 25-word limit (reference) |
 | `spell:secret-chest` | cumulative 5 %/day after 60 days → effect ends; chest loss rule on end (reference) |
 
-### 2.3 Ward/trigger & spatial-boundary family — 8 — disposition: design (slice S3)
+### 2.3 Ward/trigger & spatial-boundary family — 8 — S3a implemented; S3b/S3c pending
 
 | key | clauses / reuse |
 |---|---|
-| `spell:alarm` | trigger: Tiny+ creature touches/enters warded ≤20-ft cube; designated exclusions; mental (≤1 mi, wakes sleeper) vs audible (60 ft, 10 s) mode. Reuse candidate: `triggeredEffect { trigger, result }` is string-typed — sufficient for a first pass |
-| `spell:magic-mouth` | stored ≤25-word message; visual/audible trigger ≤30 ft of object; once vs repeating mode. Reuse: `triggeredEffect` |
-| `spell:contingency` | stored spell (≤5th level, 1-action cast, self-target) + trigger circumstance; one-at-a-time; ends if component leaves person. Reuse: `spellStoring { maximumSpellLevel, capacity? }` + `triggeredEffect` |
-| `spell:private-sanctum` | ward-property menu (blocks sound / vision / divination sensors / divination targeting / teleport / planar travel); 5–100 ft cube; permanence after 1 year daily. Interacts with modeled `teleport`/`planeShift` kinds — genuine ward-flags design |
-| `spell:tiny-hut` | dome barrier: 9-creature Medium cap; casting-time occupants pass freely, others barred; spells can't cross; caster-exit ends. Area already in `area` metadata |
-| `spell:gate` | reclassified from accept 2026-07-06: planar portal is the deterministic core — reuse existing `planeShift` kind plus portal parameters (5–20 ft diameter, front-only traversal, instant transport). Named-creature draw and deity discretion remain prose |
-| `spell:demiplane` | reclassified from accept 2026-07-06: deterministic extradimensional-space state — 30-ft room, trapped-on-end transition, reconnect-to-previous-demiplane option. Spatial-boundary payload designed with private-sanctum/tiny-hut |
-| `spell:passwall` | reclassified from accept 2026-07-06: exact passage dimensions (≤5×8×20 ft) and safe-ejection-on-end state transition. Contrast move-earth (retained accept): passwall creates a persistent traversable state with a creature-affecting end transition; move-earth explicitly cannot trap/injure and is narrative reshaping |
+| `spell:alarm` | **Implemented S3a:** `triggeredEffect` preserves the Tiny+ touch/entry trigger, ≤20-ft cube boundary, exclusions, mental/audible choice, and both alarm outputs |
+| `spell:magic-mouth` | **Implemented S3a:** `triggeredEffect` preserves the ≤25-word message, visual/audible ≤30-ft trigger, and once/repeating choice |
+| `spell:contingency` | **Implemented S3a:** ordered `spellStoring`, `triggeredEffect`, `exclusiveInstance`, and `componentPresenceTermination` effects preserve the reviewed lifecycle |
+| `spell:private-sanctum` | **Pending S3b:** ward-property menu and 5–100 ft cube remain unprojected |
+| `spell:tiny-hut` | **Pending S3b:** dome barrier, occupant cap, casting-time exception, spell boundary, and caster-exit lifecycle remain unprojected |
+| `spell:gate` | **Pending S3c:** planar portal dimensions and front-only traversal remain unprojected |
+| `spell:demiplane` | **Pending S3c:** extradimensional room and end/reconnect state remain unprojected |
+| `spell:passwall` | **Pending S3c:** passage dimensions and safe-ejection end state remain unprojected |
 
 ### 2.4 Quantified-creation family — 2 — disposition: implemented (slice S2)
 
@@ -488,7 +488,9 @@ every membership key appears in exactly one disposition section):
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after
   C3+S2 rollout: 34 (53 - 2 C3 implemented - 17 S2 implemented) = S1 14 +
   S3 8 + accept 11 + accept\* 1. Residual membership after S1 rollout: 20
-  (34 - 14 S1 implemented) = S3 8 + accept 11 + accept\* 1.
+  (34 - 14 S1 implemented) = S3 8 + accept 11 + accept\* 1. S3a then
+  graduated three trigger-based spells, leaving 17 = S3b/S3c 5 + accept 11
+  + accept\* 1. S3 is therefore not complete.
 
 **14 records total (2 creatures + 12 spells) are closed permanently by this
 document.** An earlier revision claimed 26 permanent accepts (with

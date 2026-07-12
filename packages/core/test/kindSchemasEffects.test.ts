@@ -1226,6 +1226,19 @@ describe('mechanics effect payload contracts', () => {
       { kind: 'carryingCapacitySize', size: 'large' },
       { kind: 'spellStoring', maximumSpellLevel: 4, capacity: 1 },
       {
+        kind: 'spellStoring',
+        maximumSpellLevel: 5,
+        capacity: 1,
+        castingTime: '1-action',
+        target: 'self',
+      },
+      { kind: 'exclusiveInstance', maxActive: 1, replacement: 'previous-ends' },
+      {
+        kind: 'componentPresenceTermination',
+        component: 'ivory-statuette-of-self',
+        location: 'on-your-person',
+      },
+      {
         kind: 'illusoryDisguise',
         discernDc: 20,
         ability: 'intelligence',
@@ -1467,6 +1480,74 @@ describe('mechanics effect payload contracts', () => {
     expect(() =>
       validate({ kind: 'spellStoring', maximumSpellLevel: 10 }),
     ).toThrow(/<= 9/);
+    expect(() => validate({ kind: 'spellStoring' })).toThrow(
+      /maximumSpellLevel/,
+    );
+    expect(() =>
+      validate({
+        kind: 'spellStoring',
+        maximumSpellLevel: 5,
+        castingTime: '1 action',
+      }),
+    ).toThrow(/castingTime/);
+    expect(() =>
+      validate({
+        kind: 'spellStoring',
+        maximumSpellLevel: 5,
+        target: 'creature',
+      }),
+    ).toThrow(/target/);
+    expect(() =>
+      validate({ kind: 'spellStoring', maximumSpellLevel: 5, extra: true }),
+    ).toThrow(/unsupported key/);
+    expect(() => validate({ kind: 'exclusiveInstance' })).toThrow(/maxActive/);
+    expect(() =>
+      validate({
+        kind: 'exclusiveInstance',
+        maxActive: 2,
+        replacement: 'previous-ends',
+      }),
+    ).toThrow(/exactly 1/);
+    expect(() =>
+      validate({
+        kind: 'exclusiveInstance',
+        maxActive: 1,
+        replacement: 'replace',
+      }),
+    ).toThrow(/replacement/);
+    expect(() =>
+      validate({
+        kind: 'exclusiveInstance',
+        maxActive: 1,
+        replacement: 'previous-ends',
+        extra: true,
+      }),
+    ).toThrow(/unsupported key/);
+    expect(() => validate({ kind: 'componentPresenceTermination' })).toThrow(
+      /component/,
+    );
+    expect(() =>
+      validate({
+        kind: 'componentPresenceTermination',
+        component: 'other',
+        location: 'on-your-person',
+      }),
+    ).toThrow(/component/);
+    expect(() =>
+      validate({
+        kind: 'componentPresenceTermination',
+        component: 'ivory-statuette-of-self',
+        location: 'inventory',
+      }),
+    ).toThrow(/location/);
+    expect(() =>
+      validate({
+        kind: 'componentPresenceTermination',
+        component: 'ivory-statuette-of-self',
+        location: 'on-your-person',
+        extra: true,
+      }),
+    ).toThrow(/unsupported key/);
     expect(() => validate({ kind: 'percentChance', percent: 101 })).toThrow(
       /percent/,
     );

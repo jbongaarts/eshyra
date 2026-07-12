@@ -1607,6 +1607,103 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     ]);
   });
 
+  it('S3a trigger-based spells carry complete ordered effect contracts', () => {
+    expect(spellEffects('spell:alarm')).toEqual([
+      {
+        kind: 'triggeredEffect',
+        trigger:
+          'tiny-or-larger-creature-touches-or-enters-warded-area-excluding-designated-creatures',
+        result:
+          'chosen-mental-alarm-within-1-mile-that-wakes-caster-or-audible-hand-bell-for-10-seconds-within-60-feet',
+        condition: 'warded-door-window-or-area-no-larger-than-20-foot-cube',
+      },
+    ]);
+    expect(spellEffects('spell:magic-mouth')).toEqual([
+      {
+        kind: 'triggeredEffect',
+        trigger:
+          'specified-visual-or-audible-circumstance-occurs-within-30-feet-of-object',
+        result:
+          'object-recites-stored-message-up-to-25-words-once-or-repeatedly-as-chosen',
+      },
+    ]);
+    expect(spellEffects('spell:contingency')).toEqual([
+      {
+        kind: 'spellStoring',
+        maximumSpellLevel: 5,
+        capacity: 1,
+        castingTime: '1-action',
+        target: 'self',
+      },
+      {
+        kind: 'triggeredEffect',
+        trigger: 'specified-circumstance-first-occurs-before-contingency-ends',
+        result:
+          'stored-spell-immediately-takes-effect-on-self-and-contingency-ends',
+      },
+      { kind: 'exclusiveInstance', maxActive: 1, replacement: 'previous-ends' },
+      {
+        kind: 'componentPresenceTermination',
+        component: 'ivory-statuette-of-self',
+        location: 'on-your-person',
+      },
+    ]);
+
+    const s3a = new Set([
+      'spell:alarm',
+      'spell:magic-mouth',
+      'spell:contingency',
+    ]);
+    const graduated = getBundledDnd5eSrdPack().records.filter(
+      (record) =>
+        (record.data as Record<string, unknown>).mechanics &&
+        (
+          (record.data as Record<string, unknown>).mechanics as {
+            effects?: unknown[];
+          }
+        ).effects?.some(
+          (effect) =>
+            typeof effect === 'object' &&
+            effect !== null &&
+            ((effect as { kind?: unknown }).kind === 'exclusiveInstance' ||
+              (effect as { kind?: unknown }).kind ===
+                'componentPresenceTermination'),
+        ),
+    );
+    expect(graduated.map((record) => record.key)).toEqual([
+      'spell:contingency',
+    ]);
+    for (const key of s3a) {
+      const effects = spellEffects(key) as Array<Record<string, unknown>>;
+      expect(
+        effects.filter((effect) => effect.kind === 'triggeredEffect'),
+      ).toHaveLength(1);
+      expect(
+        effects.find((effect) => effect.kind === 'triggeredEffect')?.result,
+      ).toEqual(expect.any(String));
+    }
+    expect(
+      getBundledDnd5eSrdPack()
+        .records.filter((record) => record.kind === 'spell')
+        .flatMap((record) => {
+          const effects =
+            (
+              (record.data as Record<string, unknown>).mechanics as
+                | { effects?: unknown[] }
+                | undefined
+            )?.effects ?? [];
+          return effects.some(
+            (effect) =>
+              typeof effect === 'object' &&
+              effect !== null &&
+              (effect as { kind?: unknown }).kind === 'exclusiveInstance',
+          )
+            ? [record.key]
+            : [];
+        }),
+    ).toEqual(['spell:contingency']);
+  });
+
   it('S2 control weather carries onset and table-shift procedure mechanics', () => {
     expect(spellEffects('spell:control-weather')).toEqual([
       { kind: 'onsetTime', roll: '1d4', multiplierMinutes: 10 },

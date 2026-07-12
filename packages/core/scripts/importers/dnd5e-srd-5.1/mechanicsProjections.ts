@@ -1800,6 +1800,170 @@ function projectReviewedS2SpellEffects(
   }
 }
 
+function projectReviewedS3aSpellEffects(
+  spell: SpellExtraction,
+): readonly Mechanics[] {
+  const requireClauses = (
+    clauses: readonly { readonly label: string; readonly pattern: RegExp }[],
+  ): void => {
+    const missing = clauses.find(
+      ({ pattern }) => !pattern.test(spell.description),
+    );
+    if (missing !== undefined) {
+      throw new Error(
+        `S3a spell projection for ${spell.name} is missing reviewed source clause: ${missing.label}`,
+      );
+    }
+  };
+
+  switch (spell.name.toLowerCase().replaceAll('’', "'")) {
+    case 'alarm':
+      requireClauses([
+        {
+          label: '20-foot-cube ward boundary',
+          pattern:
+            /\bChoose a door, a window, or an area within range that is no larger than a 20-foot cube\./,
+        },
+        {
+          label: 'Tiny-or-larger touch/entry trigger',
+          pattern:
+            /\ban alarm alerts you whenever a Tiny or larger creature touches or enters the warded area\./,
+        },
+        {
+          label: 'designated creature exclusions',
+          pattern:
+            /\bWhen you cast the spell, you can designate creatures that won’t set off the alarm\./,
+        },
+        {
+          label: 'mental-versus-audible alarm selection',
+          pattern: /\bYou also choose whether the alarm is mental or audible\./,
+        },
+        {
+          label: 'mental one-mile waking behavior',
+          pattern:
+            /\bA mental alarm alerts you with a ping in your mind if you are within 1 mile of the warded area\. This ping awakens you if you are sleeping\./,
+        },
+        {
+          label: 'audible 60-foot ten-second behavior',
+          pattern:
+            /\bAn audible alarm produces the sound of a hand bell for 10 seconds within 60 feet\./,
+        },
+      ]);
+      return [
+        {
+          kind: 'triggeredEffect',
+          trigger:
+            'tiny-or-larger-creature-touches-or-enters-warded-area-excluding-designated-creatures',
+          result:
+            'chosen-mental-alarm-within-1-mile-that-wakes-caster-or-audible-hand-bell-for-10-seconds-within-60-feet',
+          condition: 'warded-door-window-or-area-no-larger-than-20-foot-cube',
+        },
+      ];
+    case 'magic mouth':
+      requireClauses([
+        {
+          label: '25-word message limit',
+          pattern: /\bthe message, which must be 25 words or less\b/,
+        },
+        {
+          label: 'visual or audible trigger circumstance',
+          pattern:
+            /\bthe triggering circumstance[^.]*must be based on visual or audible conditions\b/i,
+        },
+        {
+          label: '30-foot trigger boundary',
+          pattern:
+            /\bvisual or audible conditions that occur within 30 feet of the object\./,
+        },
+        {
+          label: 'once-versus-repeating choice',
+          pattern:
+            /\bthe spell end after it delivers its message, or it can remain and repeat its message whenever the trigger occurs\./,
+        },
+      ]);
+      return [
+        {
+          kind: 'triggeredEffect',
+          trigger:
+            'specified-visual-or-audible-circumstance-occurs-within-30-feet-of-object',
+          result:
+            'object-recites-stored-message-up-to-25-words-once-or-repeatedly-as-chosen',
+        },
+      ];
+    case 'contingency':
+      requireClauses([
+        {
+          label: 'stored spell level no higher than 5',
+          pattern: /\bChoose a spell of 5th level or lower\b/,
+        },
+        {
+          label: 'one-action casting-time restriction',
+          pattern: /\bthat has a casting time of 1 action\b/,
+        },
+        {
+          label: 'self-target eligibility',
+          pattern: /\band that can target you\./,
+        },
+        {
+          label: 'triggering-circumstance activation',
+          pattern:
+            /\bInstead, it takes effect when a certain circumstance occurs\./,
+        },
+        {
+          label: 'immediate first-occurrence activation and termination',
+          pattern:
+            /\bThe contingent spell takes effect immediately after the circumstance is met for the first time, whether or not you want it to, and then contingency ends\./,
+        },
+        {
+          label: 'one-active-instance replacement rule',
+          pattern:
+            /\bYou can use only one contingency spell at a time\. If you cast this spell again, the effect of another contingency spell on you ends\./,
+        },
+        {
+          label: 'component-must-remain-on-person termination rule',
+          pattern:
+            /\bcontingency ends on you if its material component is ever not on your person\./,
+        },
+      ]);
+      if (
+        spell.componentMaterials !==
+        'a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp'
+      ) {
+        throw new Error(
+          `S3a spell projection for ${spell.name} is missing reviewed source clause: ivory statuette component identity`,
+        );
+      }
+      return [
+        {
+          kind: 'spellStoring',
+          maximumSpellLevel: 5,
+          capacity: 1,
+          castingTime: '1-action',
+          target: 'self',
+        },
+        {
+          kind: 'triggeredEffect',
+          trigger:
+            'specified-circumstance-first-occurs-before-contingency-ends',
+          result:
+            'stored-spell-immediately-takes-effect-on-self-and-contingency-ends',
+        },
+        {
+          kind: 'exclusiveInstance',
+          maxActive: 1,
+          replacement: 'previous-ends',
+        },
+        {
+          kind: 'componentPresenceTermination',
+          component: 'ivory-statuette-of-self',
+          location: 'on-your-person',
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
 /**
  * Structured upcast scaling (eshyra-o9bd.18.7.4). The verbatim At Higher
  * Levels text always rides along as `sourceText`; the typed fields are added
@@ -1870,6 +2034,7 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     ...parseSpellEffects(spell.description),
     ...s1Summoning.effects,
     ...projectReviewedS2SpellEffects(spell),
+    ...projectReviewedS3aSpellEffects(spell),
   ];
   // "takes force damage equal to 1d8 + your spellcasting ability modifier"
   // (Spiritual Weapon) — a dealt-damage form parseDamage's "<dice> <type>

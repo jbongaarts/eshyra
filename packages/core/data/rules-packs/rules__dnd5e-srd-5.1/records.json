@@ -104082,7 +104082,15 @@
           "kind": "timed",
           "amount": 8,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "triggeredEffect",
+            "trigger": "tiny-or-larger-creature-touches-or-enters-warded-area-excluding-designated-creatures",
+            "result": "chosen-mental-alarm-within-1-mile-that-wakes-caster-or-audible-hand-bell-for-10-seconds-within-60-feet",
+            "condition": "warded-door-window-or-area-no-larger-than-20-foot-cube"
+          }
+        ]
       },
       "componentMaterials": "a tiny bell and a piece of fine silver wire",
       "ritual": true
@@ -109082,7 +109090,31 @@
           "kind": "timed",
           "amount": 10,
           "unit": "day"
-        }
+        },
+        "effects": [
+          {
+            "kind": "spellStoring",
+            "maximumSpellLevel": 5,
+            "capacity": 1,
+            "castingTime": "1-action",
+            "target": "self"
+          },
+          {
+            "kind": "triggeredEffect",
+            "trigger": "specified-circumstance-first-occurs-before-contingency-ends",
+            "result": "stored-spell-immediately-takes-effect-on-self-and-contingency-ends"
+          },
+          {
+            "kind": "exclusiveInstance",
+            "maxActive": 1,
+            "replacement": "previous-ends"
+          },
+          {
+            "kind": "componentPresenceTermination",
+            "component": "ivory-statuette-of-self",
+            "location": "on-your-person"
+          }
+        ]
       },
       "componentMaterials": "a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp"
     },
@@ -118604,7 +118636,14 @@
         "spellAttack": false,
         "duration": {
           "kind": "until-dispelled"
-        }
+        },
+        "effects": [
+          {
+            "kind": "triggeredEffect",
+            "trigger": "specified-visual-or-audible-circumstance-occurs-within-30-feet-of-object",
+            "result": "object-recites-stored-message-up-to-25-words-once-or-repeatedly-as-chosen"
+          }
+        ]
       },
       "componentMaterials": "a small bit of honeycomb and jade dust worth at least 10 gp, which the spell consumes",
       "ritual": true
