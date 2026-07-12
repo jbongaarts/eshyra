@@ -5,6 +5,8 @@ import type {
   CharacterChronicleStore,
 } from '../character/characterChronicle.js';
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
+import { normalizeCharacterWallet } from '../character/currency.js';
+import type { CharacterWallet } from '../character/finalizeCharacter.js';
 import { listClosedArcSummaries } from '../memory/campaignArc.js';
 import type {
   ArcSummaryRecord,
@@ -14,6 +16,10 @@ import type {
 import { selectAlwaysOnMemory } from '../memory/summary.js';
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import {
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
+} from '../rules/bundledSrdPack.js';
 import {
   type CombatTurnState,
   formatTurnBudget,
@@ -165,6 +171,8 @@ export interface ClockSnapshot {
 
 export interface StateSnapshot {
   character: CharacterSnapshot;
+  /** The acting character's canonical wallet; unavailable before sheet finalization. */
+  wallet: CharacterWallet | undefined;
   inventory: InventoryItem[];
   /** The acting character's attuned magic items (F5), at most three. */
   attunements: readonly AttunementEntry[];
@@ -304,6 +312,14 @@ export function readStateSnapshot(
     character.ability_scores_json,
   );
   const rawConditions = conditionsColumn.decode(character.conditions_json);
+  const sheetStore = createSqliteCharacterSheetStore(db);
+  const sheet = sheetStore.load(charId);
+  const wallet =
+    sheet === undefined ||
+    sheet.system !== DND5E_SRD_SYSTEM_ID ||
+    sheet.rulesPackId !== DND5E_SRD_PACK_ID
+      ? undefined
+      : normalizeCharacterWallet(sheet.wallet);
 
   return {
     character: {
@@ -329,6 +345,7 @@ export function readStateSnapshot(
       role: character.role,
       inspiration: character.inspiration === 1,
     },
+    wallet,
     inventory: inventoryRows.map((row) => {
       const rawProperties = inventoryPropertiesColumn.decode(
         row.properties_json,
@@ -572,6 +589,11 @@ function renderState(state: StateSnapshot): string {
       'Inspiration: available (spend or gift via use_inspiration; a spend grants advantage on one attack roll, saving throw, or ability check)',
     );
   }
+  lines.push(
+    state.wallet === undefined
+      ? 'Wallet: unavailable (no canonical character sheet)'
+      : `Wallet: ${state.wallet.cp} cp, ${state.wallet.sp} sp, ${state.wallet.ep} ep, ${state.wallet.gp} gp, ${state.wallet.pp} pp`,
+  );
   if (state.attunements.length > 0) {
     lines.push(
       `Attuned items (${state.attunements.length}/${ATTUNEMENT_SLOT_LIMIT}): ${state.attunements

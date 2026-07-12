@@ -101,6 +101,68 @@ function testSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
 }
 
 describe('Context Assembler', () => {
+  it('renders the acting character wallet, including legacy zero balances', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const store = createSqliteCharacterSheetStore(db);
+    store.save(
+      'pc-1',
+      testSheet({ wallet: { cp: 12, sp: 4, ep: 0, gp: 27, pp: 1 } }),
+    );
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'How much money do I have?',
+    });
+    expect(ctx.state.wallet).toEqual({ cp: 12, sp: 4, ep: 0, gp: 27, pp: 1 });
+    expect(renderContextMessage(ctx)).toContain(
+      'Wallet: 12 cp, 4 sp, 0 ep, 27 gp, 1 pp',
+    );
+    store.save('pc-1', testSheet());
+    const legacy = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'How much money do I have?',
+    });
+    expect(legacy.state.wallet).toEqual({ cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 });
+    db.close();
+  });
+
+  it('renders an unavailable wallet during bootstrap without a canonical sheet', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'How much money do I have?',
+    });
+    expect(ctx.state.wallet).toBeUndefined();
+    expect(renderContextMessage(ctx)).toContain(
+      'Wallet: unavailable (no canonical character sheet)',
+    );
+    db.close();
+  });
+
+  it('keeps the shared context usable for an unsupported canonical sheet', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      testSheet({ system: 'pathfinder', rulesPackId: 'pathfinder-core' }),
+    );
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'What do I carry?',
+    });
+    expect(ctx.state.wallet).toBeUndefined();
+    expect(renderContextMessage(ctx)).toContain(
+      'Wallet: unavailable (no canonical character sheet)',
+    );
+    db.close();
+  });
+
   it('renders an empty inventory explicitly in the bounded game state', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     const ctx = assembleContext({

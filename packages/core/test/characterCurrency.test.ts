@@ -147,4 +147,56 @@ describe('character currency wallet', () => {
     });
     expect(store.load('pc-1')?.wallet).toEqual(result.wallet);
   });
+
+  it('keeps same-timestamp wallet events in SQLite insertion order', () => {
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({ wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } }),
+    );
+    for (let i = 0; i < 12; i += 1) {
+      adjustCharacterCurrency(db, { kind: 'gain', amounts: { cp: 1 } }, ctx());
+    }
+    expect(listCharacterWalletEvents(db).map((event) => event.id)).toEqual(
+      Array.from({ length: 12 }, (_, i) => `pc-1:wallet:${i + 1}`),
+    );
+  });
+
+  it('rejects unsafe balances and arithmetic atomically', () => {
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({ wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } }),
+    );
+    adjustCharacterCurrency(
+      db,
+      { kind: 'gain', amounts: { cp: Number.MAX_SAFE_INTEGER } },
+      ctx(),
+    );
+    expect(() =>
+      adjustCharacterCurrency(db, { kind: 'gain', amounts: { cp: 1 } }, ctx()),
+    ).toThrow(MutateStateError);
+    expect(listCharacterWalletEvents(db)).toHaveLength(1);
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({
+        wallet: { cp: 0, sp: 0, ep: 0, gp: Number.MAX_SAFE_INTEGER, pp: 0 },
+      }),
+    );
+    expect(() =>
+      convertCharacterCurrency(
+        db,
+        { amount: Number.MAX_SAFE_INTEGER, from: 'gp', to: 'cp' },
+        ctx(),
+      ),
+    ).toThrow(MutateStateError);
+    expect(listCharacterWalletEvents(db)).toHaveLength(1);
+  });
+
+  it('fails closed for a missing or unsupported sheet', () => {
+    expect(() => getCharacterWallet(db, 'pc-1')).toThrow(MutateStateError);
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({ system: 'other', rulesPackId: 'other-pack' }),
+    );
+    expect(() => getCharacterWallet(db, 'pc-1')).toThrow(MutateStateError);
+  });
 });

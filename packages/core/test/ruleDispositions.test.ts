@@ -11,6 +11,7 @@ import {
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
 import {
+  DEFAULT_TOOLS,
   getBundledDnd5eSrdPack,
   type RulesPack,
   type RulesPackLicense,
@@ -74,6 +75,33 @@ function pack(records: readonly RulesRecord[]): RulesPack {
 }
 
 describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
+  it('closes every F10-owned coverage row against registered primitives', () => {
+    const rows = [
+      'rule:coinage',
+      'rule:crafting',
+      'rule:expenses-lifestyle-expenses',
+      'rule:practicing-a-profession',
+      'rule:researching',
+      'rule:selling-treasure',
+      'rule:silvered-weapons',
+      'rule:training',
+      'rule:wizard-your-spellbook',
+      'rule:self-sufficiency',
+      'rule:mounts-and-vehicles',
+    ];
+    const tools = new Set(DEFAULT_TOOLS.map((tool) => tool.name));
+    for (const row of rows) {
+      const coverage = ENGINE_PROCEDURE_COVERAGE[row];
+      expect(coverage).toBeDefined();
+      expect(coverage?.missing ?? '').not.toContain('→ F10');
+      if (coverage?.status === 'model-adjudicated-supported') {
+        expect(coverage.primitives).toContain('lookup_rules');
+        for (const primitive of coverage.primitives) {
+          expect(tools.has(primitive)).toBe(true);
+        }
+      }
+    }
+  });
   it('pins the exact 335-key semantic census against the committed pack', () => {
     expect(assertRuleDispositions(getBundledDnd5eSrdPack())).toEqual([]);
     const report = buildRuleDispositionReport();
@@ -93,8 +121,8 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // F4, eshyra-2n1t.6, implements spell-slot expenditure/recovery; keep
     // this in lockstep with EXPECTED_COVERAGE_CENSUS.
     expect(report.engineProcedure.implemented).toBe(31);
-    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(106);
-    expect(report.engineProcedure.partial).toHaveLength(24);
+    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(109);
+    expect(report.engineProcedure.partial).toHaveLength(21);
     expect(report.engineProcedure.unimplemented).toHaveLength(4);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
     // 8 rows carry an externally owned clause (armor-guidance,

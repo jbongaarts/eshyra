@@ -110,7 +110,7 @@ export function getCharacterWallet(
     throw new MutateStateError(`no character sheet stored for '${charId}'`);
   }
   assertDnd5eWalletSheet(sheet);
-  return normalizeWallet(sheet.wallet);
+  return normalizeCharacterWallet(sheet.wallet);
 }
 
 export function adjustCharacterCurrency(
@@ -119,7 +119,11 @@ export function adjustCharacterCurrency(
   ctx: CurrencyMutationContext,
 ): CharacterWalletMutationResult {
   const amounts = normalizeAmount(input.amounts);
-  if (walletTotal(amounts) === 0) {
+  if (
+    !DND5E_CURRENCY_DENOMINATIONS.some(
+      (denomination) => amounts[denomination] > 0,
+    )
+  ) {
     throw new MutateStateError(
       'currency amount must include at least one coin',
     );
@@ -128,7 +132,7 @@ export function adjustCharacterCurrency(
     const store = ctx.store ?? createSqliteCharacterSheetStore(txnDb);
     const charId = resolveCharacterId(txnDb, ctx.characterId);
     const sheet = loadWalletSheet(store, charId);
-    const previousWallet = normalizeWallet(sheet.wallet);
+    const previousWallet = normalizeCharacterWallet(sheet.wallet);
     const wallet =
       input.kind === 'gain'
         ? addWallets(previousWallet, amounts)
@@ -160,7 +164,7 @@ export function convertCharacterCurrency(
       'currency conversion requires two denominations',
     );
   }
-  if (!Number.isInteger(input.amount) || input.amount <= 0) {
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) {
     throw new MutateStateError('currency conversion amount must be positive');
   }
 
@@ -168,7 +172,7 @@ export function convertCharacterCurrency(
     const store = ctx.store ?? createSqliteCharacterSheetStore(txnDb);
     const charId = resolveCharacterId(txnDb, ctx.characterId);
     const sheet = loadWalletSheet(store, charId);
-    const previousWallet = normalizeWallet(sheet.wallet);
+    const previousWallet = normalizeCharacterWallet(sheet.wallet);
     if (previousWallet[input.from] < input.amount) {
       throw new MutateStateError(
         `not enough ${input.from} to convert ${input.amount} ${input.from}`,
@@ -176,6 +180,11 @@ export function convertCharacterCurrency(
     }
 
     const sourceValue = input.amount * DND5E_COIN_VALUES_IN_CP[input.from];
+    if (!Number.isSafeInteger(sourceValue)) {
+      throw new MutateStateError(
+        'currency conversion value is outside the safe integer range',
+      );
+    }
     const targetValue = DND5E_COIN_VALUES_IN_CP[input.to];
     if (sourceValue % targetValue !== 0) {
       throw new MutateStateError(
@@ -183,10 +192,20 @@ export function convertCharacterCurrency(
       );
     }
     const targetAmount = sourceValue / targetValue;
+    if (!Number.isSafeInteger(targetAmount)) {
+      throw new MutateStateError(
+        'currency conversion result is outside the safe integer range',
+      );
+    }
+    const targetWalletAmount = safeAdd(
+      previousWallet[input.to],
+      targetAmount,
+      'currency conversion result',
+    );
     const wallet = {
       ...previousWallet,
       [input.from]: previousWallet[input.from] - input.amount,
-      [input.to]: previousWallet[input.to] + targetAmount,
+      [input.to]: targetWalletAmount,
     };
     const amounts = {
       [input.from]: -input.amount,
@@ -219,7 +238,7 @@ export function listCharacterWalletEvents(
               source, occurred_at, provenance, session_id
          FROM character_wallet_event
         WHERE character_id = ?
-        ORDER BY occurred_at, id`,
+        ORDER BY occurred_at, rowid`,
     )
     .all(charId) as CharacterWalletEventRow[];
   return rows.map(rowToWalletEvent);
@@ -259,7 +278,7 @@ function saveWalletSheet(
   store.save(characterId, { ...sheet, wallet });
 }
 
-function normalizeWallet(
+export function normalizeCharacterWallet(
   wallet: Partial<CharacterWallet> | undefined,
 ): CharacterWallet {
   return normalizeAmount(wallet ?? EMPTY_WALLET);
@@ -269,7 +288,7 @@ function normalizeAmount(amounts: Partial<CharacterWallet>): CharacterWallet {
   const wallet = { ...EMPTY_WALLET };
   for (const denomination of DND5E_CURRENCY_DENOMINATIONS) {
     const value = amounts[denomination] ?? 0;
-    if (!Number.isInteger(value)) {
+    if (!Number.isSafeInteger(value)) {
       throw new MutateStateError(
         `currency amount for ${denomination} must be an integer`,
       );
@@ -297,11 +316,11 @@ function addWallets(
   right: CharacterWallet,
 ): CharacterWallet {
   return {
-    cp: left.cp + right.cp,
-    sp: left.sp + right.sp,
-    ep: left.ep + right.ep,
-    gp: left.gp + right.gp,
-    pp: left.pp + right.pp,
+    cp: safeAdd(left.cp, right.cp, 'cp wallet balance'),
+    sp: safeAdd(left.sp, right.sp, 'sp wallet balance'),
+    ep: safeAdd(left.ep, right.ep, 'ep wallet balance'),
+    gp: safeAdd(left.gp, right.gp, 'gp wallet balance'),
+    pp: safeAdd(left.pp, right.pp, 'pp wallet balance'),
   };
 }
 
@@ -326,11 +345,12 @@ function subtractWallets(
   return wallet;
 }
 
-function walletTotal(wallet: CharacterWallet): number {
-  return DND5E_CURRENCY_DENOMINATIONS.reduce(
-    (sum, denomination) => sum + wallet[denomination],
-    0,
-  );
+function safeAdd(left: number, right: number, label: string): number {
+  const result = left + right;
+  if (!Number.isSafeInteger(result)) {
+    throw new MutateStateError(`${label} is outside the safe integer range`);
+  }
+  return result;
 }
 
 interface RecordCharacterWalletEventInput {

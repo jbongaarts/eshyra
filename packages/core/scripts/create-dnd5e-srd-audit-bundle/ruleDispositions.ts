@@ -1910,10 +1910,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'movement-cost ruling',
   },
   'rule:coinage': {
-    status: 'partial',
-    missing:
-      'exchange math code-owned but NOT exposed to the DM (no wallet tool, no context field) → F10; coin weight is an encumbrance ruling',
-    runtimeOwner: ['packages/core/src/character/currency.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: [
+      'convert_currency',
+      'gain_currency',
+      'lookup_rules',
+      'spend_currency',
+    ],
+    contextRequirement:
+      'acting wallet snapshot; transaction intent and coin-weight ruling',
   },
   'rule:combat-step-by-step': {
     status: 'model-adjudicated-supported',
@@ -2008,7 +2013,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:crafting': {
     status: 'partial',
     missing:
-      'pacing/eligibility are rulings; missing: DM-accessible canonical currency read/write for costs and progress (currency.ts exists; no gameplay tool) → F10',
+      'deterministic crafting cost/progress arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:critical-hits': {
     status: 'implemented',
@@ -2137,7 +2142,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:expenses-lifestyle-expenses': {
     status: 'partial',
     missing:
-      'missing: canonical currency mutation surface for lifestyle costs → F10',
+      'deterministic per-day lifestyle-cost multiplication is not exposed as a registered calculation primitive',
   },
   'rule:experience-points': {
     status: 'partial',
@@ -2432,9 +2437,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'movement-cost + save rulings',
   },
   'rule:mounts-and-vehicles': {
-    status: 'partial',
-    missing:
-      'mount stats structured as equipment records; pull-capacity arithmetic landed with F9 (calc carry_capacity vehiclePullLb, ×5 base capacity); missing: purchase currency surface → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'give_item', 'lookup_rules', 'spend_currency'],
+    contextRequirement:
+      'purchase availability and mount selection ruling; acting wallet and carry-capacity context',
     runtimeOwner: ['packages/core/src/orchestrator/calc.ts'],
   },
   'rule:movement-and-position': {
@@ -2512,7 +2518,8 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:practicing-a-profession': {
     status: 'partial',
-    missing: 'missing: canonical currency surface for earnings → F10',
+    missing:
+      'deterministic profession-earnings arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:proficiency-bonus': {
     status: 'implemented',
@@ -2568,7 +2575,8 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:researching': {
     status: 'partial',
-    missing: 'missing: canonical currency surface for the gp/day cost → F10',
+    missing:
+      'deterministic per-day research-cost multiplication is not exposed as a registered calculation primitive',
   },
   'rule:rituals': {
     status: 'model-adjudicated-supported',
@@ -2601,12 +2609,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:self-sufficiency': {
     status: 'partial',
     missing:
-      'lifestyle-equivalence is a ruling; missing: currency-offset accounting surface → F10',
+      'deterministic lifestyle-offset arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:selling-treasure': {
     status: 'partial',
     missing:
-      'half/full-price policy is deterministic; missing: canonical currency mutation surface → F10',
+      'deterministic half/full-price resale transform is not exposed as a registered calculation primitive',
   },
   'rule:short-rest': {
     status: 'unimplemented',
@@ -2619,8 +2627,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'contest → prone/push ruling',
   },
   'rule:silvered-weapons': {
-    status: 'partial',
-    missing: 'missing: canonical currency surface for the flat costs → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['give_item', 'lookup_rules', 'spend_currency'],
+    contextRequirement:
+      'silvering availability and item identity ruling; acting wallet snapshot',
   },
   'rule:somatic-s': {
     status: 'model-adjudicated-supported',
@@ -2778,7 +2788,8 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:training': {
     status: 'partial',
-    missing: 'missing: canonical currency surface for 250 days × 1 gp → F10',
+    missing:
+      'deterministic 250 days × 1 gp training-cost arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:tremorsense': {
     status: 'model-adjudicated-supported',
@@ -2881,7 +2892,8 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:wizard-your-spellbook': {
     status: 'partial',
-    missing: 'missing: canonical currency surface for copy costs → F10',
+    missing:
+      'deterministic spell-copy cost-per-level multiplication is not exposed as a registered calculation primitive',
   },
   'rule:working-together': {
     status: 'model-adjudicated-supported',
@@ -2941,14 +2953,16 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * movement costs) remain — as originally classified — model-adjudicated
  * over the primitives. casting-a-spell-at-a-higher-level stays partial
  * (upcast scaling needs structured spell `scaling` data, landing with the
- * F4 interplay) and mounts-and-vehicles stays partial for its F10
- * currency clause.
+ * F4 interplay). F10 exposed the wallet, mutation invariants, persistence, and
+ * audit trail, but deterministic resale and downtime-cost transforms remain
+ * partial until registered calculation primitives own those numbers. The
+ * reviewed census is now 31/109/21/4/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
     implemented: 31,
-    'model-adjudicated-supported': 106,
-    partial: 24,
+    'model-adjudicated-supported': 109,
+    partial: 21,
     unimplemented: 4,
     'design-blocked': 10,
   });
