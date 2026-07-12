@@ -13,6 +13,8 @@ export interface DeriveSpellcastingValuesInput {
 export interface DerivedSpellcastingValues {
   readonly baseSpellSaveDc: number;
   readonly baseSpellAttackModifier: number;
+  readonly spellSaveDcContributions: readonly DerivedModifierContribution[];
+  readonly spellAttackContributions: readonly DerivedModifierContribution[];
   readonly spellSaveDcModifierTotal: number;
   readonly spellAttackModifierTotal: number;
   readonly spellSaveDc: number;
@@ -21,16 +23,30 @@ export interface DerivedSpellcastingValues {
 
 function total(
   contributions: readonly DerivedModifierContribution[] | undefined,
-): number {
-  return (contributions ?? []).reduce((sum, contribution) => {
+): {
+  readonly total: number;
+  readonly contributions: readonly DerivedModifierContribution[];
+} {
+  let sum = 0;
+  const applied: DerivedModifierContribution[] = [];
+  for (const contribution of contributions ?? []) {
     if (
+      typeof contribution.sourceRef !== 'string' ||
       contribution.sourceRef.trim().length === 0 ||
       !Number.isSafeInteger(contribution.value)
     ) {
       throw new Error('spellcasting modifier contribution is malformed');
     }
-    return sum + contribution.value;
-  }, 0);
+    sum += contribution.value;
+    if (!Number.isSafeInteger(sum)) {
+      throw new Error('spellcasting modifier contribution total overflowed');
+    }
+    applied.push({
+      sourceRef: contribution.sourceRef,
+      value: contribution.value,
+    });
+  }
+  return { total: sum, contributions: applied };
 }
 
 export function deriveSpellcastingValues(
@@ -45,14 +61,30 @@ export function deriveSpellcastingValues(
   const baseSpellSaveDc = 8 + input.proficiencyBonus + input.abilityModifier;
   const baseSpellAttackModifier =
     input.proficiencyBonus + input.abilityModifier;
-  const spellSaveDcModifierTotal = total(input.spellSaveDcModifiers);
-  const spellAttackModifierTotal = total(input.spellAttackModifiers);
+  if (
+    !Number.isSafeInteger(baseSpellSaveDc) ||
+    !Number.isSafeInteger(baseSpellAttackModifier)
+  ) {
+    throw new Error('spellcasting base values overflowed');
+  }
+  const spellSave = total(input.spellSaveDcModifiers);
+  const spellAttack = total(input.spellAttackModifiers);
+  const spellSaveDc = baseSpellSaveDc + spellSave.total;
+  const spellAttackModifier = baseSpellAttackModifier + spellAttack.total;
+  if (
+    !Number.isSafeInteger(spellSaveDc) ||
+    !Number.isSafeInteger(spellAttackModifier)
+  ) {
+    throw new Error('spellcasting derived values overflowed');
+  }
   return {
     baseSpellSaveDc,
     baseSpellAttackModifier,
-    spellSaveDcModifierTotal,
-    spellAttackModifierTotal,
-    spellSaveDc: baseSpellSaveDc + spellSaveDcModifierTotal,
-    spellAttackModifier: baseSpellAttackModifier + spellAttackModifierTotal,
+    spellSaveDcContributions: spellSave.contributions,
+    spellAttackContributions: spellAttack.contributions,
+    spellSaveDcModifierTotal: spellSave.total,
+    spellAttackModifierTotal: spellAttack.total,
+    spellSaveDc,
+    spellAttackModifier,
   };
 }

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   type CharacterDraft,
+  createSeededRng,
   finalizeCharacterDraft,
   getDnd5eCharacterCreationEngine,
+  rollStartingWealth,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
 
@@ -132,6 +134,22 @@ describe('finalizeCharacterDraft', () => {
     // Languages: Human's fixed Common plus the one chosen language.
     expect(c.languages).toContain('Common');
     expect(c.languages.length).toBe(2);
+  });
+
+  it('finalizes starting wealth without package equipment or currency', () => {
+    let draft = completeDraft();
+    draft = engine.setStartingEquipmentMode(draft, 'starting-wealth');
+    draft = engine.setStartingWealth(
+      draft,
+      rollStartingWealth('class:fighter', createSeededRng(7)),
+    );
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.character.startingEquipmentMode).toBe('starting-wealth');
+      expect(result.character.equipment).toEqual([]);
+      expect(result.character.wallet?.gp).toBe(120);
+    }
   });
 
   it('refuses multiclass-shaped draft state before finalization can flatten it', () => {

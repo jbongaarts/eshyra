@@ -193,6 +193,12 @@ export function validateDiceRollEvidence(
 ): void {
   if (
     !roll ||
+    typeof roll.notation !== 'string' ||
+    !Array.isArray(roll.rolls) ||
+    !Array.isArray(roll.kept) ||
+    !Array.isArray(roll.keptIndices) ||
+    !Array.isArray(roll.dropped) ||
+    !Array.isArray(roll.droppedIndices) ||
     !Number.isSafeInteger(roll.count) ||
     roll.count !== expected.count
   ) {
@@ -298,6 +304,15 @@ export function validateDiceRollEvidence(
     ) {
       throw new DiceError('dice evidence keep/drop counts are inconsistent');
     }
+    const expectedIndices = selectKeptIndices(roll.rolls, expected.keep);
+    if (
+      expectedIndices.length !== roll.keptIndices.length ||
+      expectedIndices.some(
+        (index, position) => index !== roll.keptIndices[position],
+      )
+    ) {
+      throw new DiceError('dice evidence selected the wrong kept dice');
+    }
     if (
       roll.keep === undefined ||
       JSON.stringify(roll.keep) !== JSON.stringify(expected.keep)
@@ -309,9 +324,25 @@ export function validateDiceRollEvidence(
       'dice evidence unexpectedly contains a keep/drop clause',
     );
   }
+  const expectedKeptIndices =
+    expected.keep === undefined
+      ? roll.rolls.map((_, index) => index)
+      : selectKeptIndices(roll.rolls, expected.keep);
+  if (
+    expectedKeptIndices.length !== roll.keptIndices.length ||
+    expectedKeptIndices.some(
+      (index, position) => index !== roll.keptIndices[position],
+    )
+  ) {
+    throw new DiceError('dice evidence selected the wrong kept dice');
+  }
   const natural = roll.kept.reduce((sum, value) => sum + value, 0);
   if (
     !Number.isSafeInteger(natural) ||
+    !Number.isSafeInteger(roll.natural) ||
+    !Number.isSafeInteger(roll.total) ||
+    !Number.isSafeInteger(roll.modifier) ||
+    !Number.isSafeInteger(natural + roll.modifier) ||
     roll.natural !== natural ||
     roll.total !== natural + roll.modifier
   ) {

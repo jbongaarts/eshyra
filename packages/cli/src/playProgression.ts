@@ -115,43 +115,37 @@ export async function runLevelUpCommand(
     return;
   }
 
-  const hpAnswer = await deps.io.prompt(
-    'Hit points: fixed average or roll? [fixed] ',
-  );
-  if (hpAnswer === undefined) {
-    deps.io.write('Level-up cancelled.');
-    return;
-  }
   let hitPointChoice: import('@eshyra/core').LevelUpHitPointChoice = {
     method: 'fixed-average',
   };
-  let confirmationAnswer: string | undefined;
-  if (/^y(es)?$/i.test(hpAnswer.trim())) confirmationAnswer = hpAnswer;
-  if (/^roll$/i.test(hpAnswer.trim())) {
-    const hitDie = preview.changeSet.hitPoints.hitDie;
-    const roll = rollDice(`1d${hitDie}`, deps.characterRng);
-    hitPointChoice = { method: 'rolled', roll };
-  } else if (
-    hpAnswer.trim().length > 0 &&
-    !/^y(es)?$/i.test(hpAnswer.trim()) &&
-    !/^fixed(?:-average)?$/i.test(hpAnswer.trim())
-  ) {
-    deps.io.write('Choose fixed or roll.');
-    return;
+  for (;;) {
+    const hpAnswer = await deps.io.prompt(
+      'Hit points: fixed average or roll? [fixed] ',
+    );
+    if (hpAnswer === undefined || /^(?:cancel|back)$/i.test(hpAnswer.trim())) {
+      deps.io.write('Level-up cancelled.');
+      return;
+    }
+    if (/^(?:roll|rolled)$/i.test(hpAnswer.trim())) {
+      const hitDie = preview.changeSet.hitPoints.hitDie;
+      const roll = rollDice(`1d${hitDie}`, deps.characterRng);
+      hitPointChoice = { method: 'rolled', roll };
+      break;
+    }
+    if (/^(?:fixed|fixed-average)?$/i.test(hpAnswer.trim())) break;
+    deps.io.write('Choose fixed, roll, cancel, or back.');
   }
   const finalPreview = runGuidedLevelUp(db, {
     ...base,
     choices,
     hitPointChoice,
-    rng: deps.characterRng,
   });
   if (finalPreview.outcome !== 'preview') {
     deps.io.write('Level-up could not be previewed.');
     return;
   }
   printPreview(deps.io, finalPreview.changeSet);
-  const answer =
-    confirmationAnswer ?? (await deps.io.prompt('Apply level-up? [y/N] '));
+  const answer = await deps.io.prompt('Apply level-up? [y/N] ');
   if (answer === undefined || !/^y(es)?$/i.test(answer.trim())) {
     deps.io.write('Level-up cancelled.');
     return;
@@ -161,7 +155,6 @@ export async function runLevelUpCommand(
     ...base,
     choices,
     hitPointChoice,
-    rng: deps.characterRng,
     confirm: true,
     at: deps.now(),
   });

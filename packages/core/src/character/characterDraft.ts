@@ -46,6 +46,7 @@ import {
   deriveLevel1Values,
   LEVEL_1_PROFICIENCY_BONUS,
 } from './derivedValues.js';
+import { normalizeProficiency } from './proficiency.js';
 import {
   enumerateLevel1RequiredChoices,
   type Level1RequiredChoice,
@@ -59,17 +60,14 @@ import {
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
 import { SRD_5_1_SKILLS } from './srdCreationChoices.js';
-import { validateStartingWealthResult } from './srdStartingWealth.js';
+import {
+  type StartingWealthResult,
+  validateStartingWealthResult,
+} from './srdStartingWealth.js';
 
 export type StartingEquipmentMode = 'packages' | 'starting-wealth';
 
-export interface StartingWealthResult {
-  readonly classKey: string;
-  readonly formula: string;
-  readonly roll: import('../orchestrator/dice.js').DiceRoll;
-  readonly multiplierGp: number;
-  readonly totalGp: number;
-}
+export type { StartingWealthResult } from './srdStartingWealth.js';
 
 /** Severity of an incremental draft diagnostic. */
 export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
@@ -397,7 +395,18 @@ export function createCharacterCreationEngine(
     validateSpells(selections, classRecord, diagnostics, stale);
     validateStartingEquipment(selections, diagnostics);
 
-    return { ...draft, derived, diagnostics, stale };
+    const next = { ...draft, derived, diagnostics, stale };
+    const generatedReplacementIds = new Set(
+      mechanicalChoices(next)
+        .filter((entry) => isReplacementChoiceId(entry.choice.id))
+        .map((entry) => entry.choice.id),
+    );
+    const choices = Object.fromEntries(
+      Object.entries(selections.choices ?? {}).filter(
+        ([id]) => !isReplacementChoiceId(id) || generatedReplacementIds.has(id),
+      ),
+    );
+    return { ...next, selections: { ...selections, choices } };
   }
 
   function validateStartingEquipment(
@@ -526,48 +535,51 @@ export function createCharacterCreationEngine(
   ): readonly MechanicalChoiceState[] {
     const result = [...choices];
     for (const kind of ['skills', 'tools'] as const) {
+      const ordinaryEntries = result.filter(
+        (entry) => entry.choice.kind === kind,
+      );
+      if (ordinaryEntries.some((entry) => !entry.satisfied)) continue;
       const grants = [
         ...(kind === 'skills' ? (background?.skillProficiencies ?? []) : []),
         ...(kind === 'tools' ? (classRecord.toolProficiencies ?? []) : []),
         ...(kind === 'tools' ? (background?.toolProficiencies ?? []) : []),
-        ...result
-          .filter((entry) => entry.choice.kind === kind)
-          .flatMap((entry) => entry.selected),
+        ...ordinaryEntries.flatMap((entry) => entry.selected),
       ];
-      const seen = new Set<string>();
-      const owned = new Set<string>();
-      let ordinal = 0;
+      const ordinaryKeys = new Set(grants.map(normalizeProficiency));
+      const occurrences = new Map<string, number>();
+      const duplicates: { key: string; label: string; occurrence: number }[] =
+        [];
       for (const grant of grants) {
-        const grantKey = normalizeProficiency(grant);
-        if (!seen.has(grantKey)) {
-          seen.add(grantKey);
-          owned.add(grantKey);
-          continue;
-        }
-        const id = `background.${kind}.replacement.${slug(grant)}.${ordinal++}`;
-        const selected = stored[id] ?? [];
-        const domain =
-          kind === 'skills' ? SRD_5_1_SKILLS : resolver.listToolProficiencies();
+        const key = normalizeProficiency(grant);
+        const occurrence = (occurrences.get(key) ?? 0) + 1;
+        occurrences.set(key, occurrence);
+        if (occurrence > 1)
+          duplicates.push({ key, label: grant, occurrence: occurrence - 1 });
+      }
+      const domain = normalizeDomain(
+        kind === 'skills' ? SRD_5_1_SKILLS : resolver.listToolProficiencies(),
+      );
+      const validReplacements = new Set<string>();
+      for (const duplicate of duplicates) {
+        const id = `proficiency-replacement.${kind}.${slug(duplicate.label)}.${duplicate.occurrence}`;
         const from = domain.filter(
-          (value) => !owned.has(normalizeProficiency(value)),
+          (value) =>
+            !ordinaryKeys.has(normalizeProficiency(value)) &&
+            !validReplacements.has(normalizeProficiency(value)),
         );
+        const selected = stored[id] ?? [];
         const choice = {
           id,
           kind,
           source: 'background' as const,
           status: 'structured' as const,
-          label: `Replace duplicate ${kind.slice(0, -1)} proficiency (${grant})`,
+          label: `Replace duplicate ${kind.slice(0, -1)} proficiency (${duplicate.label})`,
           choose: 1,
           from,
         };
-        result.push({
-          choice,
-          selected,
-          satisfied: isChoiceSatisfied(choice, selected),
-        });
-        if (isChoiceSatisfied(choice, selected)) {
-          for (const value of selected) owned.add(normalizeProficiency(value));
-        }
+        const satisfied = isChoiceSatisfied(choice, selected);
+        result.push({ choice, selected, satisfied });
+        if (satisfied) validReplacements.add(normalizeProficiency(selected[0]));
       }
     }
     return result;
@@ -581,13 +593,18 @@ export function createCharacterCreationEngine(
       .replace(/^-|-$/g, '');
   }
 
-  function normalizeProficiency(value: string): string {
-    return value
-      .trim()
-      .toLowerCase()
-      .replace(/[’']/g, '')
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim();
+  function normalizeDomain(values: readonly string[]): readonly string[] {
+    const seen = new Set<string>();
+    return values.filter((value) => {
+      const key = normalizeProficiency(value);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function isReplacementChoiceId(id: string): boolean {
+    return id.startsWith('proficiency-replacement.');
   }
 
   /**
@@ -996,8 +1013,15 @@ export function createCharacterCreationEngine(
     },
 
     setStartingEquipmentMode(draft, mode): CharacterDraft {
+      const choices = { ...(draft.selections.choices ?? {}) };
+      if (mode === 'starting-wealth') {
+        for (const id of Object.keys(choices)) {
+          if (id.startsWith('class.equipment.')) delete choices[id];
+        }
+      }
       return withSelections(draft, {
         startingEquipmentMode: mode,
+        choices,
         ...(mode === 'packages' ? { startingWealth: undefined } : {}),
       });
     },

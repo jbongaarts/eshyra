@@ -408,6 +408,7 @@ export {
   SRD_5_1_SKILL_ABILITIES,
   SRD_5_1_SKILLS,
   SRD_5_1_STANDARD_LANGUAGES,
+  SRD_5_1_TOOL_PROFICIENCY_CATEGORIES,
 } from './character/srdCreationChoices.js';
 export type { EquipmentPackContent } from './character/srdEquipmentPacks.js';
 export { readEquipmentPackContents } from './character/srdEquipmentPacks.js';

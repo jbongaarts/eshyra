@@ -36,6 +36,7 @@ import {
 } from './characterDraft.js';
 import type { AbilityScoreName } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
+import { normalizeProficiency } from './proficiency.js';
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedBackgroundData,
@@ -261,6 +262,16 @@ function validateFinalStartingAcquisition(
   if (result === undefined) {
     return { ok: false, error: 'starting-wealth mode requires one roll' };
   }
+  if (
+    Object.entries(draft.selections.choices ?? {}).some(
+      ([id, values]) => id.startsWith('class.equipment.') && values.length > 0,
+    )
+  ) {
+    return {
+      ok: false,
+      error: 'starting-wealth mode cannot include package equipment',
+    };
+  }
   const classResult = resolver.resolveClass(draft.selections.className ?? '');
   if (!classResult.ok) return { ok: false, error: classResult.message };
   if (result.classKey !== classResult.record.key) {
@@ -382,6 +393,19 @@ function assertProficiencyInvariant(
   classRecord: ResolvedClassData,
   backgroundRecord: ResolvedBackgroundData | undefined,
 ): void {
+  const generated = new Set(
+    engine
+      .mechanicalChoices(draft)
+      .filter((entry) => isReplacementChoiceId(entry.choice.id))
+      .map((entry) => entry.choice.id),
+  );
+  for (const id of Object.keys(draft.selections.choices ?? {})) {
+    if (isReplacementChoiceId(id) && !generated.has(id)) {
+      throw new Error(
+        `finalization invariant: stale proficiency replacement '${id}'`,
+      );
+    }
+  }
   const skills = resolveProficiencySet(
     draft,
     engine,
@@ -415,37 +439,64 @@ function resolveProficiencySet(
     .mechanicalChoices(draft)
     .filter((entry) => entry.choice.kind === kind);
   const ordinary = entries
-    .filter((entry) => !entry.choice.id.includes('.replacement.'))
+    .filter((entry) => !isReplacementChoiceId(entry.choice.id))
     .flatMap((entry) => entry.selected);
-  const replacements = entries
-    .filter((entry) => entry.choice.id.includes('.replacement.'))
-    .flatMap((entry) => entry.selected);
+  const replacements = new Map(
+    entries
+      .filter((entry) => isReplacementChoiceId(entry.choice.id))
+      .map((entry) => [entry.choice.id, entry] as const),
+  );
   const result: string[] = [];
   const seen = new Set<string>();
-  let replacementIndex = 0;
+  const ordinaryKeys = new Set(
+    [...fixed, ...ordinary].map(normalizeProficiency),
+  );
+  const occurrences = new Map<string, number>();
   for (const value of [...fixed, ...ordinary]) {
     const key = normalizeProficiency(value);
+    const occurrence = (occurrences.get(key) ?? 0) + 1;
+    occurrences.set(key, occurrence);
     if (!seen.has(key)) {
       seen.add(key);
       result.push(value);
       continue;
     }
-    const replacement = replacements[replacementIndex++];
+    const replacementId = `proficiency-replacement.${kind}.${slug(value)}.${occurrence - 1}`;
+    const replacement = replacements.get(replacementId);
+    const replacementValue = replacement?.selected[0];
     if (
       replacement === undefined ||
-      seen.has(normalizeProficiency(replacement))
+      !replacement.satisfied ||
+      replacementValue === undefined ||
+      seen.has(normalizeProficiency(replacementValue))
     ) {
       throw new Error(
         `finalization invariant: unresolved duplicate ${kind} proficiency`,
       );
     }
-    seen.add(normalizeProficiency(replacement));
-    result.push(replacement);
+    seen.add(normalizeProficiency(replacementValue));
+    result.push(replacementValue);
   }
-  if (replacementIndex !== replacements.length) {
-    throw new Error(`finalization invariant: stale ${kind} replacement`);
+  if (result.length !== fixed.length + ordinary.length) {
+    throw new Error(`finalization invariant: ${kind} grant count changed`);
+  }
+  if (
+    replacements.size !==
+    [...fixed, ...ordinary].length - ordinaryKeys.size
+  ) {
+    throw new Error(
+      `finalization invariant: ${kind} replacement count changed`,
+    );
   }
   return result;
+}
+
+function isReplacementChoiceId(id: string): boolean {
+  return id.startsWith('proficiency-replacement.');
+}
+
+function slug(value: string): string {
+  return normalizeProficiency(value).replace(/ /g, '-');
 }
 
 function classRecordForDraft(
@@ -465,15 +516,6 @@ function backgroundRecordForDraft(
   if (draft.selections.background === undefined) return undefined;
   const result = resolver.resolveBackground(draft.selections.background);
   return result.ok ? result.record : undefined;
-}
-
-function normalizeProficiency(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[’']/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
 }
 
 /**

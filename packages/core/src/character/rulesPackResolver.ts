@@ -26,13 +26,13 @@ import { parseDice } from '../orchestrator/dice.js';
 import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
 import { lookupRulesRecord, type RulesLookupResult } from '../rules/lookup.js';
 import { type ResolvedRulesStack, resolveRulesStack } from '../rules/stack.js';
-import type { RulesRecordKind } from '../rules/types.js';
+import type { RulesRecord, RulesRecordKind } from '../rules/types.js';
 import type { AbilityScoreName } from './creation.js';
 import type { BackgroundEquipmentGrant } from './srdCreationChoices.js';
 import {
   SRD_5_1_ARTISAN_TOOLS,
   SRD_5_1_MUSICAL_INSTRUMENTS,
-  SRD_5_1_OTHER_TOOLS,
+  SRD_5_1_TOOL_PROFICIENCY_CATEGORIES,
 } from './srdCreationChoices.js';
 import type {
   StartingEquipmentGrant as ResolvedEquipmentGrant,
@@ -1273,23 +1273,44 @@ function resolveStartingWealth(
 }
 
 function listToolProficiencies(stack: ResolvedRulesStack): readonly string[] {
-  const values = new Set<string>([
-    ...SRD_5_1_ARTISAN_TOOLS,
-    ...SRD_5_1_MUSICAL_INSTRUMENTS,
-    ...SRD_5_1_OTHER_TOOLS,
-  ]);
+  const values = new Map<string, string>();
+  const add = (value: string) => {
+    const key = normalizeName(value);
+    if (!values.has(key)) values.set(key, value);
+  };
+  for (const record of equipmentRecords(stack)) {
+    add(record.name);
+  }
+  for (const value of SRD_5_1_ARTISAN_TOOLS) add(value);
+  for (const value of SRD_5_1_MUSICAL_INSTRUMENTS) add(value);
+  for (const value of SRD_5_1_TOOL_PROFICIENCY_CATEGORIES) add(value);
   for (const cls of listClasses(stack)) {
-    for (const value of cls.toolProficiencies ?? []) values.add(value);
+    for (const value of cls.toolProficiencies ?? []) add(value);
     for (const spec of cls.toolProficiencyChoices ?? []) {
-      for (const value of spec.from ?? []) values.add(value);
+      for (const value of spec.from ?? []) add(value);
     }
   }
   for (const background of listByKind(stack, 'background', (key) =>
     resolveBackground(stack, key),
   )) {
-    for (const value of background.toolProficiencies ?? []) values.add(value);
+    for (const value of background.toolProficiencies ?? []) add(value);
   }
-  return [...values].sort((a, b) => a.localeCompare(b));
+  return [...values.values()].sort((a, b) => a.localeCompare(b));
+}
+
+function equipmentRecords(stack: ResolvedRulesStack): readonly RulesRecord[] {
+  const index = stack.recordsByKind.get('equipment');
+  if (index === undefined) return [];
+  return [...index.byKey.values()]
+    .map(({ record }) => record)
+    .filter((record) => {
+      const data = record.data;
+      return (
+        typeof data === 'object' &&
+        data !== null &&
+        (data as { category?: unknown }).category === 'tool'
+      );
+    });
 }
 
 function normalizeName(value: string): string {

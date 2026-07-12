@@ -91,6 +91,30 @@ describe('character creation draft engine', () => {
     expect(draft.stale).toContain('spells');
   });
 
+  it('builds replacement domains from all ordinary grants before any replacement', () => {
+    let draft = fullValidDraft();
+    draft = engine.setClass(draft, 'Cleric');
+    draft = engine.setBackground(draft, 'Acolyte');
+    draft = engine.setChoice(draft, 'class.skills', ['History', 'Insight']);
+    const replacement = engine
+      .mechanicalChoices(draft)
+      .find(
+        (entry) =>
+          entry.choice.id === 'proficiency-replacement.skills.insight.1',
+      );
+    expect(replacement?.satisfied).toBe(false);
+    expect(replacement?.choice.from).not.toContain('Religion');
+    expect(replacement?.choice.from).not.toContain('History');
+    draft = engine.setChoice(draft, replacement?.choice.id ?? '', [
+      'Acrobatics',
+    ]);
+    expect(
+      engine
+        .mechanicalChoices(draft)
+        .find((entry) => entry.choice.id === replacement?.choice.id)?.satisfied,
+    ).toBe(true);
+  });
+
   it('changing ancestry preserves base scores but recomputes derived values', () => {
     let draft = fullValidDraft();
     // Human (set by fullValidDraft) raises every score by 1: STR 15→16 (+3),

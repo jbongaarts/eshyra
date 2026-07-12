@@ -19,24 +19,28 @@ describe('starting wealth', () => {
   });
 
   it('resolves every bundled class from the committed table', () => {
-    const classes = [
-      'barbarian',
-      'bard',
-      'cleric',
-      'druid',
-      'fighter',
-      'monk',
-      'paladin',
-      'ranger',
-      'rogue',
-      'sorcerer',
-      'warlock',
-      'wizard',
-    ];
-    for (const classKey of classes) {
-      expect(resolveStartingWealth(`class:${classKey}`).classKey).toBe(
-        `class:${classKey}`,
-      );
+    const expected = {
+      barbarian: ['2d4', 10],
+      bard: ['5d4', 10],
+      cleric: ['5d4', 10],
+      druid: ['2d4', 10],
+      fighter: ['5d4', 10],
+      monk: ['5d4', 1],
+      paladin: ['5d4', 10],
+      ranger: ['5d4', 10],
+      rogue: ['4d4', 10],
+      sorcerer: ['3d4', 10],
+      warlock: ['4d4', 10],
+      wizard: ['4d4', 10],
+    } as const;
+    for (const [classKey, [formula, multiplierGp]] of Object.entries(
+      expected,
+    )) {
+      expect(resolveStartingWealth(`class:${classKey}`)).toMatchObject({
+        classKey: `class:${classKey}`,
+        formula,
+        multiplierGp,
+      });
     }
   });
 

@@ -188,15 +188,14 @@ export const SRD_5_1_MUSICAL_INSTRUMENTS: readonly string[] = [
   'Viol',
 ];
 
-/** The SRD tool-proficiency entries outside the artisan and musical tables. */
-export const SRD_5_1_OTHER_TOOLS: readonly string[] = [
-  'Disguise kit',
-  'Forgery kit',
-  'Gaming set',
-  'Herbalism kit',
-  'Navigator’s tools',
-  'Poisoner’s kit',
-  'Thieves’ tools',
+/** Source-audited proficiency categories without individual equipment rows. */
+export const SRD_5_1_TOOL_PROFICIENCY_CATEGORIES: readonly string[] = [
+  'Dice set',
+  'Dragonchess set',
+  'Playing card set',
+  'Three-Dragon Ante set',
+  'Vehicles (land)',
+  'Vehicles (water)',
 ];
 
 /** Context the importer supplies (pack-derived, enumerable option sets). */

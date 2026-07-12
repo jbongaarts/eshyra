@@ -13,10 +13,8 @@
 //   - class features granted at that level (by ref),
 //   - spellcasting capacity (cantrips/spells-known counts, spell slots).
 // And from the class hit die + the sheet's Constitution modifier:
-//   - the HP increase, using the SRD fixed-average method (the deterministic,
-//     no-roll policy: floor(hitDie/2)+1 per level + CON modifier, minimum 1).
-//     The rolled alternative would have to flow through the seeded dice path to
-//     stay auditable; that is deferred until a recipe selects it.
+//   - the HP increase, using fixed average or immutable caller-supplied rolled
+//     evidence, with floor(hitDie/2)+1 and CON modifier for fixed average.
 //
 // The whole step is one transaction: the updated sheet is saved, the live
 // `character` projection (level, hp_max, hp_current) is mutated through the
@@ -29,10 +27,8 @@
 import {
   type DiceRoll,
   parseDice,
-  rollDice,
   validateDiceRollEvidence,
 } from '../orchestrator/dice.js';
-import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import {
@@ -75,9 +71,8 @@ export interface LevelUpDelta<T> {
 /** How the HP increase was determined for one level-up step. */
 export interface LevelUpHitPoints {
   /**
-   * The HP method used. Only `fixed-average` is supported today — the
-   * deterministic, no-roll SRD "take the average" rule. A `rolled` method is
-   * deferred until it can flow through the seeded dice path.
+   * The HP method used. Both fixed average and caller-supplied rolled evidence
+   * are persisted for replay and audit.
    */
   readonly method: 'fixed-average' | 'rolled';
   readonly hitDie: number;
@@ -124,10 +119,9 @@ export interface LevelUpChangeSet {
   >;
 }
 
-export interface LevelUpHitPointChoice {
-  readonly method: 'fixed-average' | 'rolled';
-  readonly roll?: DiceRoll;
-}
+export type LevelUpHitPointChoice =
+  | { readonly method: 'fixed-average' }
+  | { readonly method: 'rolled'; readonly roll: DiceRoll };
 
 export interface AppliedAbilityScoreIncrease {
   readonly ability: import('./creation.js').AbilityScoreName;
@@ -160,7 +154,6 @@ export interface PreviewLevelUpInput {
   readonly binding?: CampaignRulesBinding;
   readonly choices?: LevelUpChoiceSelections;
   readonly hitPointChoice?: LevelUpHitPointChoice;
-  readonly rng?: Rng;
 }
 
 /** Inputs to {@link applyLevelUp}. */
@@ -179,7 +172,6 @@ export interface ApplyLevelUpInput {
    */
   readonly choices?: LevelUpChoiceSelections;
   readonly hitPointChoice?: LevelUpHitPointChoice;
-  readonly rng?: Rng;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -373,7 +365,6 @@ export function applyLevelUp(
       binding,
       choices: input.choices,
       hitPointChoice: input.hitPointChoice,
-      rng: input.rng,
     });
     if (!preview.ok) {
       throw new LevelUpRequiredChoicesError(preview.requiredChoices);
@@ -450,7 +441,6 @@ export function previewLevelUpChangeSet(
     resolver,
     binding,
     input.hitPointChoice,
-    input.rng,
   );
   return {
     ok: true,
@@ -476,7 +466,6 @@ export function computeLevelUpChangeSet(
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
   binding: CampaignRulesBinding = DEFAULT_DND5E_SRD_BINDING,
   hitPointChoice: LevelUpHitPointChoice = { method: 'fixed-average' },
-  rng?: Rng,
 ): LevelUpChangeSet {
   assertSupportedCharacterBuild(sheet, {
     operation: 'level-up change-set computation',
@@ -508,7 +497,6 @@ export function computeLevelUpChangeSet(
     hitDie,
     constitutionModifier,
     hitPointChoice,
-    rng,
   );
 
   const existingSubclassFeatureRefs =
@@ -1106,7 +1094,6 @@ function resolveHitPointChoice(
   hitDie: number,
   constitutionModifier: number,
   choice: LevelUpHitPointChoice,
-  rng: Rng | undefined,
 ): {
   readonly method: 'fixed-average' | 'rolled';
   readonly naturalRoll?: number;
@@ -1118,12 +1105,7 @@ function resolveHitPointChoice(
       increment: hitPointIncrement(hitDie, constitutionModifier),
     };
   }
-  const roll =
-    choice.roll ??
-    (rng === undefined ? undefined : rollDice(`1d${hitDie}`, rng));
-  if (roll === undefined) {
-    throw new LevelUpEngineError('rolled hit-point evidence is malformed');
-  }
+  const roll = choice.roll;
   try {
     validateDiceRollEvidence(roll, parseDice(`1d${hitDie}`));
   } catch {

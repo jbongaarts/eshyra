@@ -4,6 +4,7 @@ import {
   DiceError,
   parseDice,
   rollDice,
+  validateDiceRollEvidence,
 } from '../src/internal.js';
 
 /**
@@ -78,6 +79,19 @@ describe('F1 keep/drop grammar parsing', () => {
 });
 
 describe('F1 canonical roll representation', () => {
+  it('rejects forged keep/drop selection and unsafe evidence', () => {
+    const roll = rollDice('4d6dl1', createSeededRng(7));
+    const forged = { ...roll, keptIndices: [0, 1, 2], droppedIndices: [3] };
+    expect(() => validateDiceRollEvidence(forged, parseDice('4d6dl1'))).toThrow(
+      /wrong kept dice|accounting/,
+    );
+    expect(() =>
+      validateDiceRollEvidence(
+        { ...roll, total: Number.MAX_SAFE_INTEGER + 1 },
+        parseDice('4d6dl1'),
+      ),
+    ).toThrow();
+  });
   it('separates rolled facts from selection: kept ∪ dropped = rolls', () => {
     const roll = rollDice('4d6dl1', createSeededRng(7));
     expect(roll.rolls).toHaveLength(4);
