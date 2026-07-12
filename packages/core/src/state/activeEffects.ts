@@ -2556,6 +2556,62 @@ export function unsuppressEffect(
   });
 }
 
+/** One-line prompt/CLI rendering of a live effect, e.g.
+ *  `fx-bless: Bless [active] (spell-effect, spell:bless) — concentration:
+ *   character pc-1 — 1 minute(s) from spell-cast — targets: character pc-1 —
+ *   owns: condition 'blessed' on character pc-1`. */
+export function formatActiveEffect(effect: ActiveEffectView): string {
+  const source =
+    effect.source.ref === undefined
+      ? effect.source.kind
+      : `${effect.source.kind} ${effect.source.ref}`;
+  const parts = [
+    `${effect.effectId}: ${effect.displayName} [${effect.status}] (${effect.kind}, ${source})`,
+  ];
+  if (effect.concentrationOwner !== undefined) {
+    parts.push(
+      `concentration: ${effect.concentrationOwner.kind} ${effect.concentrationOwner.ref}`,
+    );
+  }
+  const d = effect.duration;
+  if (d.kind === 'timed') {
+    const rounds =
+      d.deadlineRound === undefined
+        ? ''
+        : ` (expires at combat round ${d.deadlineRound})`;
+    parts.push(`${d.amount} ${d.unit}(s) from ${d.anchorKind}${rounds}`);
+  } else if (d.kind === 'until-trigger') {
+    parts.push(`until trigger: ${d.trigger}`);
+  } else {
+    parts.push(d.kind);
+  }
+  if (effect.dismissible) {
+    parts.push('dismissible');
+  }
+  const activeTargets = effect.targets.filter(
+    (target) => target.status === 'active',
+  );
+  if (activeTargets.length > 0) {
+    parts.push(
+      `targets: ${activeTargets
+        .map((target) => `${target.kind} ${target.ref}`)
+        .join(', ')}`,
+    );
+  }
+  const activeLinks = effect.links.filter((link) => link.status === 'active');
+  if (activeLinks.length > 0) {
+    parts.push(
+      `owns: ${activeLinks
+        .map(
+          (link) =>
+            `${link.linkKind} '${link.projectionRef}' on ${link.target.kind} ${link.target.ref}`,
+        )
+        .join(', ')}`,
+    );
+  }
+  return parts.join(' — ');
+}
+
 export interface ExpiredEffectSummary {
   readonly effectId: string;
   readonly displayName: string;

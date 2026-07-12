@@ -30,6 +30,11 @@ import {
   resolveActingCharacterId,
 } from '../state/activeCharacter.js';
 import {
+  type ActiveEffectView,
+  formatActiveEffect,
+  listActiveEffects,
+} from '../state/activeEffects.js';
+import {
   ATTUNEMENT_SLOT_LIMIT,
   type AttunementEntry,
   listAttunements,
@@ -176,6 +181,9 @@ export interface StateSnapshot {
   inventory: InventoryItem[];
   /** The acting character's attuned magic items (F5), at most three. */
   attunements: readonly AttunementEntry[];
+  /** Live (active or suppressed) durable effects (F3): concentration and
+   *  timed spells, condition packages, curses, summon control, wards. */
+  activeEffects: readonly ActiveEffectView[];
   combatants: EncounterCombatant[];
   /** Structured turn/budget state of the active combat instance (F2);
    *  undefined when no combat is active. */
@@ -363,6 +371,8 @@ export function readStateSnapshot(
     }),
     attunements:
       campaignId === undefined ? [] : listAttunements(db, campaignId, charId),
+    activeEffects:
+      campaignId === undefined ? [] : listActiveEffects(db, campaignId),
     combatants: campaignId === undefined ? [] : listCombatants(db, campaignId),
     combatTurnState:
       campaignId === undefined
@@ -600,6 +610,14 @@ function renderState(state: StateSnapshot): string {
         .map((entry) => `${entry.displayName} (${entry.itemId})`)
         .join(', ')}`,
     );
+  }
+  if (state.activeEffects.length > 0) {
+    lines.push(
+      'Active effects (F3 lifecycle; end via end_effect, never prose):',
+    );
+    for (const effect of state.activeEffects) {
+      lines.push(`- ${formatActiveEffect(effect)}`);
+    }
   }
   if (state.inventory.length > 0) {
     lines.push(

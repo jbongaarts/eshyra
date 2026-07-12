@@ -4,6 +4,11 @@ import {
   setReactionAllowance,
 } from '../state/actionEconomy.js';
 import {
+  breakCombatantConcentration,
+  concentrationSaveDc,
+  getConcentrationEffect,
+} from '../state/activeEffects.js';
+import {
   type CombatantStatus,
   EncounterCombatantError,
   updateCombatant,
@@ -178,11 +183,53 @@ export const updateCombatantTool: Tool = {
         sessionId: ctx.sessionId,
         at: ctx.at,
       });
-      return ok(
-        reactionAllowance === undefined
-          ? update
-          : { ...update, reactionAllowance },
-      );
+      // F3 concentration reactions: a combatant that drops to 0 HP or is
+      // marked down/dead loses concentration outright (incapacitated); one
+      // that takes damage and stays up owes the Constitution save.
+      let concentration:
+        | { broken: unknown }
+        | { checkRequired: unknown }
+        | undefined;
+      const downed =
+        update.combatant.hpCurrent === 0 ||
+        update.combatant.status === 'dead' ||
+        update.combatant.status === 'unconscious';
+      if (downed) {
+        const broken = breakCombatantConcentration(
+          ctx.db,
+          ctx.campaignId,
+          a.combatantId,
+          update.combatant.status === 'dead' ? 'dead' : 'incapacitated',
+          {
+            provenance: `model:${ctx.turnId}`,
+            sessionId: ctx.sessionId,
+            at: ctx.at,
+          },
+        );
+        if (broken.broken) {
+          concentration = { broken };
+        }
+      } else if (typeof a.hpDelta === 'number' && a.hpDelta < 0) {
+        const live = getConcentrationEffect(ctx.db, ctx.campaignId, {
+          kind: 'combatant',
+          ref: a.combatantId,
+        });
+        if (live !== undefined) {
+          concentration = {
+            checkRequired: {
+              effectId: live.effectId,
+              displayName: live.displayName,
+              dc: concentrationSaveDc(-a.hpDelta),
+              damage: -a.hpDelta,
+            },
+          };
+        }
+      }
+      return ok({
+        ...update,
+        ...(reactionAllowance === undefined ? {} : { reactionAllowance }),
+        ...(concentration === undefined ? {} : { concentration }),
+      });
     } catch (e) {
       if (e instanceof EncounterCombatantError) {
         return err('invalid_target', e.message);

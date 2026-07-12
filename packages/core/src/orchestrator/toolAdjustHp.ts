@@ -22,7 +22,11 @@ export const adjustHpTool: Tool = {
     '(two if critical=true) and knocks a stable character back to dying. ' +
     'Healing a dying or stable character returns them to consciousness; ' +
     'healing a dead character is refused. Death state and death-save ' +
-    'counters are maintained by this tool — never track them in prose.',
+    'counters are maintained by this tool — never track them in prose. ' +
+    'If the damaged character is concentrating, the result reports the ' +
+    'required Constitution save (concentrationCheck with its DC — roll it ' +
+    'via resolve_check, record via resolve_concentration) or that ' +
+    'concentration broke outright from incapacitation (concentrationBroken).',
   inputSchema: {
     type: 'object',
     properties: {

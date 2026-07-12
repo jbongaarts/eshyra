@@ -19,6 +19,8 @@ import {
   closeCombatInstance,
   concentrationSaveDc,
   createActiveEffect,
+  createDefaultToolRegistry,
+  createSeededRng,
   endActiveEffect,
   expireElapsedRoundEffects,
   getActiveCharacterId,
@@ -1794,5 +1796,85 @@ describe('durable-state validation', () => {
     // The strict read boundary still works — dangling refs are auditable,
     // not structurally corrupt.
     expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// update_combatant tool wiring (combatant damage -> check prompt / break)
+// ---------------------------------------------------------------------------
+
+describe('update_combatant concentration wiring', () => {
+  function toolCtx(db: Db) {
+    return {
+      db,
+      rng: createSeededRng(7),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'turn-1',
+      at: NOW,
+    };
+  }
+
+  it('prompts the save on damage and breaks concentration when the combatant drops', () => {
+    const { db } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-goblin-conc',
+      kind: 'spell-effect',
+      displayName: 'Goblin Focus',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      ...CTX,
+    });
+    const registry = createDefaultToolRegistry();
+    const ctx = toolCtx(db);
+
+    const damaged = registry.invoke(
+      'update_combatant',
+      { combatantId: GOBLIN_1, hpDelta: -3 },
+      ctx,
+    );
+    expect(damaged).toMatchObject({
+      ok: true,
+      data: {
+        concentration: {
+          checkRequired: { effectId: 'fx-goblin-conc', dc: 10, damage: 3 },
+        },
+      },
+    });
+
+    const downed = registry.invoke(
+      'update_combatant',
+      { combatantId: GOBLIN_1, hpDelta: -100 },
+      ctx,
+    );
+    expect(downed).toMatchObject({
+      ok: true,
+      data: {
+        concentration: {
+          broken: { broken: true, effectId: 'fx-goblin-conc' },
+        },
+      },
+    });
+    expect(
+      getConcentrationEffect(db, CAMPAIGN, {
+        kind: 'combatant',
+        ref: GOBLIN_1,
+      }),
+    ).toBeUndefined();
+
+    // A further update of the downed combatant reports nothing to break.
+    const again = registry.invoke(
+      'update_combatant',
+      { combatantId: GOBLIN_1, hpDelta: -1 },
+      ctx,
+    );
+    expect(again.ok).toBe(true);
+    if (again.ok) {
+      expect(
+        (again.data as { concentration?: unknown }).concentration,
+      ).toBeUndefined();
+    }
   });
 });
