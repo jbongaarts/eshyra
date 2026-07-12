@@ -39,6 +39,7 @@ import {
   type ProgressionEventRecord,
   recordProgressionEvent,
 } from '../state/progression.js';
+import { syncSpellSlots } from '../state/spellSlots.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   assertSheetMatchesPack,
@@ -345,6 +346,17 @@ export function applyLevelUp(
 
     input.store.save(characterId, updatedSheet);
     projectToLiveCharacter(txnDb, characterId, changeSet, input);
+    // F4 slot state is derived from the newly committed sole-class sheet and
+    // its live level projection. Reconcile inside this transaction so prompt
+    // context never advertises the pre-level capacity while a later spell cast
+    // would lazily allow the increased pool.
+    syncSpellSlots(txnDb, {
+      characterId,
+      resolver,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
     const event = recordProgressionEvent(txnDb, {
       characterId,
       kind: 'level-up',
