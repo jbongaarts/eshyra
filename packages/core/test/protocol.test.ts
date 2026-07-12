@@ -30,10 +30,20 @@ describe('DM system prompt', () => {
       'mark_scene',
       'lookup_rules',
       'record_world_fact',
+      'gain_currency',
+      'spend_currency',
+      'convert_currency',
     ]) {
       expect(prompt).toContain(name);
     }
     expect(prompt).toContain('## Tool-Call Protocol');
+  });
+
+  it('includes the canonical currency contract', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain('Currency is canonical code-owned state');
+    expect(prompt).toContain('Purchases compose');
+    expect(prompt).toContain('break coins or make change');
   });
 
   it('teaches when to promote consequential improvised lore', () => {

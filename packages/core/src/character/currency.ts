@@ -219,7 +219,7 @@ export function listCharacterWalletEvents(
               source, occurred_at, provenance, session_id
          FROM character_wallet_event
         WHERE character_id = ?
-        ORDER BY occurred_at, id`,
+        ORDER BY occurred_at, rowid`,
     )
     .all(charId) as CharacterWalletEventRow[];
   return rows.map(rowToWalletEvent);

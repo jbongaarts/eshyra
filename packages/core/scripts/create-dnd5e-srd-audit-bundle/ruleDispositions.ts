@@ -1910,10 +1910,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'movement-cost ruling',
   },
   'rule:coinage': {
-    status: 'partial',
-    missing:
-      'exchange math code-owned but NOT exposed to the DM (no wallet tool, no context field) → F10; coin weight is an encumbrance ruling',
-    runtimeOwner: ['packages/core/src/character/currency.ts'],
+    status: 'model-adjudicated-supported',
+    primitives: [
+      'convert_currency',
+      'gain_currency',
+      'lookup_rules',
+      'spend_currency',
+    ],
+    contextRequirement:
+      'acting wallet snapshot; transaction intent and coin-weight ruling',
   },
   'rule:combat-step-by-step': {
     status: 'model-adjudicated-supported',
@@ -2006,9 +2011,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'degree-of-cover selection is the classic ruling; the ±2/±5 AC and Dex-save bonuses ride resolve_check declared modifiers (composition owned by rule:modifiers-to-the-roll)',
   },
   'rule:crafting': {
-    status: 'partial',
-    missing:
-      'pacing/eligibility are rulings; missing: DM-accessible canonical currency read/write for costs and progress (currency.ts exists; no gameplay tool) → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
+    contextRequirement:
+      'crafting eligibility, progress, and pacing ruling; acting wallet snapshot',
   },
   'rule:critical-hits': {
     status: 'implemented',
@@ -2135,9 +2141,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'component default assumption',
   },
   'rule:expenses-lifestyle-expenses': {
-    status: 'partial',
-    missing:
-      'missing: canonical currency mutation surface for lifestyle costs → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
+    contextRequirement:
+      'lifestyle category and elapsed-day cost application ruling; acting wallet snapshot',
   },
   'rule:experience-points': {
     status: 'partial',
@@ -2432,9 +2439,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'movement-cost + save rulings',
   },
   'rule:mounts-and-vehicles': {
-    status: 'partial',
-    missing:
-      'mount stats structured as equipment records; pull-capacity arithmetic landed with F9 (calc carry_capacity vehiclePullLb, ×5 base capacity); missing: purchase currency surface → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['calc', 'give_item', 'lookup_rules', 'spend_currency'],
+    contextRequirement:
+      'purchase availability and mount selection ruling; acting wallet and carry-capacity context',
     runtimeOwner: ['packages/core/src/orchestrator/calc.ts'],
   },
   'rule:movement-and-position': {
@@ -2511,8 +2519,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'delivery-type exposure rulings; hazard data structured',
   },
   'rule:practicing-a-profession': {
-    status: 'partial',
-    missing: 'missing: canonical currency surface for earnings → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['gain_currency', 'lookup_rules', 'update_clock'],
+    contextRequirement:
+      'profession availability, earnings, and downtime pacing ruling; acting wallet snapshot',
   },
   'rule:proficiency-bonus': {
     status: 'implemented',
@@ -2567,8 +2577,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'fixed DC 15, no derivation (not an arithmetic clause, so the `food`/`speed` correction does not apply); the 3-day counter is durably representable as a character condition entry over the owned clock (low-frequency state-ownership principle, as food/water)',
   },
   'rule:researching': {
-    status: 'partial',
-    missing: 'missing: canonical currency surface for the gp/day cost → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
+    contextRequirement:
+      'research access, result, and downtime pacing ruling; acting wallet snapshot',
   },
   'rule:rituals': {
     status: 'model-adjudicated-supported',
@@ -2599,14 +2611,21 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'check-based action',
   },
   'rule:self-sufficiency': {
-    status: 'partial',
-    missing:
-      'lifestyle-equivalence is a ruling; missing: currency-offset accounting surface → F10',
+    status: 'model-adjudicated-supported',
+    primitives: [
+      'gain_currency',
+      'lookup_rules',
+      'spend_currency',
+      'update_clock',
+    ],
+    contextRequirement:
+      'self-sufficiency category and currency offset ruling; acting wallet snapshot',
   },
   'rule:selling-treasure': {
-    status: 'partial',
-    missing:
-      'half/full-price policy is deterministic; missing: canonical currency mutation surface → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['gain_currency', 'lookup_rules', 'remove_item'],
+    contextRequirement:
+      'merchant agreement and half/full-price outcome ruling; inventory and acting wallet visible',
   },
   'rule:short-rest': {
     status: 'unimplemented',
@@ -2619,8 +2638,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'contest → prone/push ruling',
   },
   'rule:silvered-weapons': {
-    status: 'partial',
-    missing: 'missing: canonical currency surface for the flat costs → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['give_item', 'lookup_rules', 'spend_currency'],
+    contextRequirement:
+      'silvering availability and item identity ruling; acting wallet snapshot',
   },
   'rule:somatic-s': {
     status: 'model-adjudicated-supported',
@@ -2777,8 +2798,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'rolls + combatant state code-owned; group-roll/tie rulings',
   },
   'rule:training': {
-    status: 'partial',
-    missing: 'missing: canonical currency surface for 250 days × 1 gp → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
+    contextRequirement:
+      'training eligibility, outcome, and 250-day pacing ruling; acting wallet snapshot',
   },
   'rule:tremorsense': {
     status: 'model-adjudicated-supported',
@@ -2880,8 +2903,10 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:wizard-your-spellbook': {
-    status: 'partial',
-    missing: 'missing: canonical currency surface for copy costs → F10',
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'spend_currency'],
+    contextRequirement:
+      'spell-copy access, selection, and spellbook-content ruling; acting wallet snapshot',
   },
   'rule:working-together': {
     status: 'model-adjudicated-supported',
@@ -2941,14 +2966,17 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * movement costs) remain — as originally classified — model-adjudicated
  * over the primitives. casting-a-spell-at-a-higher-level stays partial
  * (upcast scaling needs structured spell `scaling` data, landing with the
- * F4 interplay) and mounts-and-vehicles stays partial for its F10
- * currency clause.
+ * F4 interplay). F10 then moved eleven currency-dependent clauses from
+ * partial to model-adjudicated-supported: the wallet, mutation invariants,
+ * persistence, and audit trail are code-owned, while transaction intent,
+ * merchant outcomes, category selection, and downtime pacing remain DM
+ * rulings. The census is now 31/117/13/4/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
     implemented: 31,
-    'model-adjudicated-supported': 106,
-    partial: 24,
+    'model-adjudicated-supported': 117,
+    partial: 13,
     unimplemented: 4,
     'design-blocked': 10,
   });

@@ -27,7 +27,9 @@ import { awardInspirationTool } from './toolAwardInspiration.js';
 import { beginTurnTool } from './toolBeginTurn.js';
 import { calcTool } from './toolCalc.js';
 import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
+import { convertCurrencyTool } from './toolConvertCurrency.js';
 import { endAttunementTool } from './toolEndAttunement.js';
+import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
 import { lookupRulesTool } from './toolLookupRules.js';
@@ -48,6 +50,7 @@ import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
 import { setSurprisedTool } from './toolSetSurprised.js';
 import { setWorldFactTool } from './toolSetWorldFact.js';
+import { spendCurrencyTool } from './toolSpendCurrency.js';
 import { spendSpellSlotTool } from './toolSpendSpellSlot.js';
 import { spendTurnResourceTool } from './toolSpendTurnResource.js';
 import { spendUsageTool } from './toolSpendUsage.js';
@@ -86,6 +89,9 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   endAttunementTool,
   awardInspirationTool,
   useInspirationTool,
+  gainCurrencyTool,
+  spendCurrencyTool,
+  convertCurrencyTool,
   giveItemTool,
   removeItemTool,
   updateClockTool,

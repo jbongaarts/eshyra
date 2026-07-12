@@ -147,4 +147,26 @@ describe('character currency wallet', () => {
     });
     expect(store.load('pc-1')?.wallet).toEqual(result.wallet);
   });
+
+  it('keeps same-timestamp wallet events in SQLite insertion order', () => {
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({ wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } }),
+    );
+    for (let i = 0; i < 12; i += 1) {
+      adjustCharacterCurrency(db, { kind: 'gain', amounts: { cp: 1 } }, ctx());
+    }
+    expect(listCharacterWalletEvents(db).map((event) => event.id)).toEqual(
+      Array.from({ length: 12 }, (_, i) => `pc-1:wallet:${i + 1}`),
+    );
+  });
+
+  it('fails closed for a missing or unsupported sheet', () => {
+    expect(() => getCharacterWallet(db, 'pc-1')).toThrow(MutateStateError);
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({ system: 'other', rulesPackId: 'other-pack' }),
+    );
+    expect(() => getCharacterWallet(db, 'pc-1')).toThrow(MutateStateError);
+  });
 });
