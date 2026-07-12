@@ -161,6 +161,36 @@ describe('character currency wallet', () => {
     );
   });
 
+  it('rejects unsafe balances and arithmetic atomically', () => {
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({ wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } }),
+    );
+    adjustCharacterCurrency(
+      db,
+      { kind: 'gain', amounts: { cp: Number.MAX_SAFE_INTEGER } },
+      ctx(),
+    );
+    expect(() =>
+      adjustCharacterCurrency(db, { kind: 'gain', amounts: { cp: 1 } }, ctx()),
+    ).toThrow(MutateStateError);
+    expect(listCharacterWalletEvents(db)).toHaveLength(1);
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      makeSheet({
+        wallet: { cp: 0, sp: 0, ep: 0, gp: Number.MAX_SAFE_INTEGER, pp: 0 },
+      }),
+    );
+    expect(() =>
+      convertCharacterCurrency(
+        db,
+        { amount: Number.MAX_SAFE_INTEGER, from: 'gp', to: 'cp' },
+        ctx(),
+      ),
+    ).toThrow(MutateStateError);
+    expect(listCharacterWalletEvents(db)).toHaveLength(1);
+  });
+
   it('fails closed for a missing or unsupported sheet', () => {
     expect(() => getCharacterWallet(db, 'pc-1')).toThrow(MutateStateError);
     createSqliteCharacterSheetStore(db).save(

@@ -144,6 +144,25 @@ describe('Context Assembler', () => {
     db.close();
   });
 
+  it('keeps the shared context usable for an unsupported canonical sheet', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      testSheet({ system: 'pathfinder', rulesPackId: 'pathfinder-core' }),
+    );
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'What do I carry?',
+    });
+    expect(ctx.state.wallet).toBeUndefined();
+    expect(renderContextMessage(ctx)).toContain(
+      'Wallet: unavailable (no canonical character sheet)',
+    );
+    db.close();
+  });
+
   it('renders an empty inventory explicitly in the bounded game state', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     const ctx = assembleContext({

@@ -5,7 +5,7 @@ import type {
   CharacterChronicleStore,
 } from '../character/characterChronicle.js';
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
-import { getCharacterWallet } from '../character/currency.js';
+import { normalizeCharacterWallet } from '../character/currency.js';
 import type { CharacterWallet } from '../character/finalizeCharacter.js';
 import { listClosedArcSummaries } from '../memory/campaignArc.js';
 import type {
@@ -16,6 +16,10 @@ import type {
 import { selectAlwaysOnMemory } from '../memory/summary.js';
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import {
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
+} from '../rules/bundledSrdPack.js';
 import {
   type CombatTurnState,
   formatTurnBudget,
@@ -309,10 +313,13 @@ export function readStateSnapshot(
   );
   const rawConditions = conditionsColumn.decode(character.conditions_json);
   const sheetStore = createSqliteCharacterSheetStore(db);
+  const sheet = sheetStore.load(charId);
   const wallet =
-    sheetStore.load(charId) === undefined
+    sheet === undefined ||
+    sheet.system !== DND5E_SRD_SYSTEM_ID ||
+    sheet.rulesPackId !== DND5E_SRD_PACK_ID
       ? undefined
-      : getCharacterWallet(db, charId, sheetStore);
+      : normalizeCharacterWallet(sheet.wallet);
 
   return {
     character: {

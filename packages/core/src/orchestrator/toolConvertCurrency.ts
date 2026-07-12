@@ -21,7 +21,11 @@ export const convertCurrencyTool: Tool = {
   inputSchema: {
     type: 'object',
     properties: {
-      amount: { type: 'integer', minimum: 1 },
+      amount: {
+        type: 'integer',
+        minimum: 1,
+        maximum: Number.MAX_SAFE_INTEGER,
+      },
       from: { ...CURRENCY_DENOMINATION_SCHEMA },
       to: { ...CURRENCY_DENOMINATION_SCHEMA },
       ...CURRENCY_TARGET_PROPERTY,
@@ -34,7 +38,7 @@ export const convertCurrencyTool: Tool = {
     if (isToolFailure(record)) return record;
     if (
       typeof record.amount !== 'number' ||
-      !Number.isInteger(record.amount) ||
+      !Number.isSafeInteger(record.amount) ||
       record.amount < 1 ||
       typeof record.from !== 'string' ||
       typeof record.to !== 'string' ||

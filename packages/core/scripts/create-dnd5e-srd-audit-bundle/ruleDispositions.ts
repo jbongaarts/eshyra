@@ -2011,10 +2011,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'degree-of-cover selection is the classic ruling; the ±2/±5 AC and Dex-save bonuses ride resolve_check declared modifiers (composition owned by rule:modifiers-to-the-roll)',
   },
   'rule:crafting': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
-    contextRequirement:
-      'crafting eligibility, progress, and pacing ruling; acting wallet snapshot',
+    status: 'partial',
+    missing:
+      'deterministic crafting cost/progress arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:critical-hits': {
     status: 'implemented',
@@ -2141,10 +2140,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'component default assumption',
   },
   'rule:expenses-lifestyle-expenses': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
-    contextRequirement:
-      'lifestyle category and elapsed-day cost application ruling; acting wallet snapshot',
+    status: 'partial',
+    missing:
+      'deterministic per-day lifestyle-cost multiplication is not exposed as a registered calculation primitive',
   },
   'rule:experience-points': {
     status: 'partial',
@@ -2519,10 +2517,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'delivery-type exposure rulings; hazard data structured',
   },
   'rule:practicing-a-profession': {
-    status: 'model-adjudicated-supported',
-    primitives: ['gain_currency', 'lookup_rules', 'update_clock'],
-    contextRequirement:
-      'profession availability, earnings, and downtime pacing ruling; acting wallet snapshot',
+    status: 'partial',
+    missing:
+      'deterministic profession-earnings arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:proficiency-bonus': {
     status: 'implemented',
@@ -2577,10 +2574,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'fixed DC 15, no derivation (not an arithmetic clause, so the `food`/`speed` correction does not apply); the 3-day counter is durably representable as a character condition entry over the owned clock (low-frequency state-ownership principle, as food/water)',
   },
   'rule:researching': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
-    contextRequirement:
-      'research access, result, and downtime pacing ruling; acting wallet snapshot',
+    status: 'partial',
+    missing:
+      'deterministic per-day research-cost multiplication is not exposed as a registered calculation primitive',
   },
   'rule:rituals': {
     status: 'model-adjudicated-supported',
@@ -2611,21 +2607,14 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'check-based action',
   },
   'rule:self-sufficiency': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'gain_currency',
-      'lookup_rules',
-      'spend_currency',
-      'update_clock',
-    ],
-    contextRequirement:
-      'self-sufficiency category and currency offset ruling; acting wallet snapshot',
+    status: 'partial',
+    missing:
+      'deterministic lifestyle-offset arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:selling-treasure': {
-    status: 'model-adjudicated-supported',
-    primitives: ['gain_currency', 'lookup_rules', 'remove_item'],
-    contextRequirement:
-      'merchant agreement and half/full-price outcome ruling; inventory and acting wallet visible',
+    status: 'partial',
+    missing:
+      'deterministic half/full-price resale transform is not exposed as a registered calculation primitive',
   },
   'rule:short-rest': {
     status: 'unimplemented',
@@ -2798,10 +2787,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'rolls + combatant state code-owned; group-roll/tie rulings',
   },
   'rule:training': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'spend_currency', 'update_clock'],
-    contextRequirement:
-      'training eligibility, outcome, and 250-day pacing ruling; acting wallet snapshot',
+    status: 'partial',
+    missing:
+      'deterministic 250 days × 1 gp training-cost arithmetic is not exposed as a registered calculation primitive',
   },
   'rule:tremorsense': {
     status: 'model-adjudicated-supported',
@@ -2903,10 +2891,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:wizard-your-spellbook': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'spend_currency'],
-    contextRequirement:
-      'spell-copy access, selection, and spellbook-content ruling; acting wallet snapshot',
+    status: 'partial',
+    missing:
+      'deterministic spell-copy cost-per-level multiplication is not exposed as a registered calculation primitive',
   },
   'rule:working-together': {
     status: 'model-adjudicated-supported',
@@ -2966,17 +2953,16 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * movement costs) remain — as originally classified — model-adjudicated
  * over the primitives. casting-a-spell-at-a-higher-level stays partial
  * (upcast scaling needs structured spell `scaling` data, landing with the
- * F4 interplay). F10 then moved eleven currency-dependent clauses from
- * partial to model-adjudicated-supported: the wallet, mutation invariants,
- * persistence, and audit trail are code-owned, while transaction intent,
- * merchant outcomes, category selection, and downtime pacing remain DM
- * rulings. The census is now 31/117/13/4/10.
+ * F4 interplay). F10 exposed the wallet, mutation invariants, persistence, and
+ * audit trail, but deterministic resale and downtime-cost transforms remain
+ * partial until registered calculation primitives own those numbers. The
+ * reviewed census is now 31/109/21/4/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
     implemented: 31,
-    'model-adjudicated-supported': 117,
-    partial: 13,
+    'model-adjudicated-supported': 109,
+    partial: 21,
     unimplemented: 4,
     'design-blocked': 10,
   });

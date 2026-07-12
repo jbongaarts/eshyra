@@ -27,6 +27,7 @@ export const CURRENCY_AMOUNTS_SCHEMA: JsonSchema = {
       {
         type: 'integer',
         minimum: 0,
+        maximum: Number.MAX_SAFE_INTEGER,
       },
     ]),
   ),
@@ -53,7 +54,11 @@ export function parseCurrencyAmounts(
   }
   for (const denomination of DND5E_CURRENCY_DENOMINATIONS) {
     const amount = input[denomination] ?? 0;
-    if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 0) {
+    if (
+      typeof amount !== 'number' ||
+      !Number.isSafeInteger(amount) ||
+      amount < 0
+    ) {
       return err(
         'currency_error',
         `${denomination} must be a non-negative integer`,
