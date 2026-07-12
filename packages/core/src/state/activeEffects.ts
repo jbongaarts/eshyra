@@ -1023,6 +1023,54 @@ function readParticipantConditionIds(
   ).map((entry) => entry.id);
 }
 
+/**
+ * Concentration requires a capable owner: an incapacitated or dead creature
+ * cannot start concentrating (SRD concentration). This must be checked at
+ * creation because the F6/combatant cleanup hooks fire only on *transitions*
+ * (alive → non-alive, up → down) — admitting an already-down owner here
+ * would create a live concentration effect nothing ever cleans up.
+ */
+function requireConcentrationCapableOwner(
+  db: Db,
+  campaignId: string,
+  owner: EffectParticipant,
+): void {
+  if (owner.kind === 'character') {
+    const row = db
+      .prepare('SELECT life_state FROM character WHERE id = ?')
+      .get(owner.ref) as { life_state: string } | undefined;
+    if (row !== undefined && row.life_state !== 'alive') {
+      throw new ActiveEffectError(
+        `character '${owner.ref}' is ${row.life_state} and cannot concentrate ` +
+          '(concentration requires a capable, conscious owner)',
+      );
+    }
+    return;
+  }
+  const row = db
+    .prepare(
+      `SELECT hp_current, status FROM encounter_combatant
+       WHERE campaign_id = ? AND combatant_id = ?`,
+    )
+    .get(campaignId, owner.ref) as
+    | { hp_current: number; status: string }
+    | undefined;
+  if (
+    row !== undefined &&
+    (row.hp_current === 0 ||
+      row.status === 'dead' ||
+      row.status === 'unconscious')
+  ) {
+    throw new ActiveEffectError(
+      `combatant '${owner.ref}' is down (${
+        row.status === 'dead' || row.status === 'unconscious'
+          ? row.status
+          : '0 HP'
+      }) and cannot concentrate`,
+    );
+  }
+}
+
 function nextEventSeq(db: Db, campaignId: string, effectId: string): number {
   const row = db
     .prepare(
@@ -1542,6 +1590,11 @@ export function createActiveEffect(
         input.campaignId,
         input.concentration.owner,
         'concentration.owner',
+      );
+      requireConcentrationCapableOwner(
+        txnDb,
+        input.campaignId,
+        input.concentration.owner,
       );
     }
 

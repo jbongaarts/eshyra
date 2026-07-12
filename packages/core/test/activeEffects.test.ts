@@ -32,6 +32,7 @@ import {
   refreshEffect,
   removeEffectTarget,
   resolveConcentrationCheck,
+  stabilizeCharacter,
   startAdventureRun,
   startEncounter,
   suppressEffect,
@@ -2102,5 +2103,123 @@ describe('anchor semantics', () => {
       ).toThrow(/schema-reserved|eshyra-2n1t\.5\.1/);
     }
     expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Concentration owner capability (re-review blocker: PR #437)
+// ---------------------------------------------------------------------------
+
+describe('concentration owner capability', () => {
+  function tryConcentrate(db: Db, pcId: string, effectId = 'fx-late') {
+    return () =>
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId,
+        kind: 'spell-effect',
+        displayName: 'Late Bless',
+        source: { kind: 'ruling' },
+        concentration: { owner: pc(pcId) },
+        duration: { kind: 'until-removed' },
+        conditions: [
+          { target: pc(pcId), condition: { id: `late:${effectId}` } },
+        ],
+        ...CTX,
+      });
+  }
+
+  it('refuses a dying, stable, or dead character owner', () => {
+    for (const [lifeState, prepare] of [
+      ['dying', (db: Db) => adjustHp(db, -20, CTX)],
+      [
+        'stable',
+        (db: Db) => {
+          adjustHp(db, -20, CTX);
+          stabilizeCharacter(db, CTX);
+        },
+      ],
+      ['dead', (db: Db) => adjustHp(db, -40, CTX)],
+    ] as const) {
+      const { db, pcId } = setup();
+      prepare(db);
+      expect(tryConcentrate(db, pcId)).toThrow(
+        new RegExp(`is ${lifeState} and cannot concentrate`),
+      );
+      // Nothing was written: no effect row, no ledger, no projection.
+      expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
+      expect(listEffectEvents(db, CAMPAIGN, 'fx-late')).toHaveLength(0);
+      expect(characterConditionIds(db, pcId)).toEqual([]);
+    }
+  });
+
+  it('refuses a 0-HP, unconscious, or dead combatant owner', () => {
+    for (const down of [
+      { hpDelta: -100 }, // hp 0 -> status dead
+      { status: 'unconscious' as const },
+      { status: 'dead' as const },
+    ]) {
+      const { db } = setupCombat();
+      updateCombatant(db, {
+        campaignId: CAMPAIGN,
+        combatantId: GOBLIN_1,
+        ...down,
+        ...CTX,
+      });
+      expect(() =>
+        createActiveEffect(db, {
+          campaignId: CAMPAIGN,
+          effectId: 'fx-goblin-late',
+          kind: 'spell-effect',
+          displayName: 'Late Focus',
+          source: { kind: 'ruling' },
+          concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+          duration: { kind: 'until-removed' },
+          ...CTX,
+        }),
+      ).toThrow(/is down .* and cannot concentrate/);
+      expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
+    }
+  });
+
+  it('a refusal never replaces prior concentration or touches its state', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId);
+    // Going down breaks Bless via the F6 hook; capture its ended state.
+    adjustHp(db, -20, CTX);
+    const endedBless = listActiveEffects(db, CAMPAIGN, {
+      includeEnded: true,
+    }).find((effect) => effect.effectId === 'fx-bless');
+    const blessEvents = listEffectEvents(db, CAMPAIGN, 'fx-bless').length;
+
+    expect(tryConcentrate(db, pcId)).toThrow(/cannot concentrate/);
+
+    expect(
+      listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
+        (effect) => effect.effectId === 'fx-bless',
+      ),
+    ).toEqual(endedBless);
+    expect(listEffectEvents(db, CAMPAIGN, 'fx-bless')).toHaveLength(
+      blessEvents,
+    );
+  });
+
+  it('a living character and an active combatant still succeed', () => {
+    const { db, pcId } = setupCombat();
+    expect(tryConcentrate(db, pcId, 'fx-ok-pc')).not.toThrow();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-ok-goblin',
+      kind: 'spell-effect',
+      displayName: 'Goblin Focus',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      ...CTX,
+    });
+    expect(
+      listActiveEffects(db, CAMPAIGN)
+        .map((effect) => effect.effectId)
+        .sort(),
+    ).toEqual(['fx-ok-goblin', 'fx-ok-pc']);
   });
 });

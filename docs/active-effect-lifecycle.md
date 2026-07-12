@@ -172,6 +172,11 @@ a rule that re-creates the effect must create a new effect.
 - At most one active/suppressed concentration effect per owner
   (`character` or `combatant`), enforced in code **and** by a partial unique
   index.
+- The owner must be **capable** at creation: a non-`alive` character or a
+  0-HP/unconscious/dead combatant cannot start concentrating. This is a
+  creation gate, not a hook, because the cleanup reactions below fire only on
+  transitions — admitting an already-down owner would mint a live effect
+  nothing ever cleans up.
 - Creating a new concentration effect while the owner concentrates ends the
   prior effect first — reason `concentration-broken`, detail
   `new-concentration`, provenance naming the replacing effect — in the same
