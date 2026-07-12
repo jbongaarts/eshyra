@@ -22,11 +22,17 @@
  * rather than silently picking one.
  */
 
+import { parseDice } from '../orchestrator/dice.js';
 import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
 import { lookupRulesRecord, type RulesLookupResult } from '../rules/lookup.js';
 import { type ResolvedRulesStack, resolveRulesStack } from '../rules/stack.js';
 import type { RulesRecordKind } from '../rules/types.js';
 import type { AbilityScoreName } from './creation.js';
+import type { BackgroundEquipmentGrant } from './srdCreationChoices.js';
+import {
+  SRD_5_1_ARTISAN_TOOLS,
+  SRD_5_1_MUSICAL_INSTRUMENTS,
+} from './srdCreationChoices.js';
 import type {
   StartingEquipmentGrant as ResolvedEquipmentGrant,
   StartingEquipmentFilterSelect,
@@ -54,6 +60,13 @@ export interface ResolvedChoiceSpec {
   readonly choose?: number;
   readonly from?: readonly string[];
   readonly any?: boolean;
+}
+
+export interface ResolvedStartingWealth {
+  readonly classKey: string;
+  readonly formula: string;
+  readonly multiplierGp: number;
+  readonly sourceRef: string;
 }
 
 /**
@@ -272,6 +285,7 @@ export interface ResolvedBackgroundData {
   readonly languages?: string | readonly ResolvedLanguageGrant[];
   /** Verbatim equipment package prose; not yet structured into items. */
   readonly equipment?: string;
+  readonly equipmentGrants?: readonly BackgroundEquipmentGrant[];
 }
 
 /**
@@ -303,6 +317,9 @@ export interface RulesPackCharacterResolver {
   resolveBackground(
     nameOrRef: string,
   ): CharacterResolution<ResolvedBackgroundData>;
+  resolveStartingWealth(
+    classKey: string,
+  ): CharacterResolution<ResolvedStartingWealth>;
   /**
    * Every well-formed `class` record in the stack, in canonical-key order.
    * Drives ability-score-driven class recommendations (eshyra-b69j.7), which
@@ -323,6 +340,7 @@ export interface RulesPackCharacterResolver {
   listSubclasses(): readonly ResolvedSubclassData[];
   /** Every well-formed `feature` record, in canonical-key order. */
   listFeatures(): readonly ResolvedFeatureData[];
+  listToolProficiencies(): readonly string[];
 }
 
 /** Build a resolver over an already-resolved rules stack (e.g. for tests). */
@@ -336,6 +354,7 @@ export function createRulesPackCharacterResolver(
     resolveSpell: (nameOrRef) => resolveSpell(stack, nameOrRef),
     resolveAncestry: (nameOrRef) => resolveAncestry(stack, nameOrRef),
     resolveBackground: (nameOrRef) => resolveBackground(stack, nameOrRef),
+    resolveStartingWealth: (classKey) => resolveStartingWealth(stack, classKey),
     listClasses: () => listClasses(stack),
     listAncestries: () =>
       listByKind(stack, 'ancestry', (key) => resolveAncestry(stack, key)),
@@ -347,6 +366,7 @@ export function createRulesPackCharacterResolver(
       listByKind(stack, 'subclass', (key) => resolveSubclass(stack, key)),
     listFeatures: () =>
       listByKind(stack, 'feature', (key) => resolveFeature(stack, key)),
+    listToolProficiencies: () => listToolProficiencies(stack),
   };
 }
 
@@ -1148,8 +1168,141 @@ function resolveBackground(
           ? raw.languages
           : parseLanguageGrants(raw.languages),
       equipment: typeof raw.equipment === 'string' ? raw.equipment : undefined,
+      equipmentGrants: parseBackgroundEquipmentGrants(raw.equipmentGrants),
     },
   };
+}
+
+function parseBackgroundEquipmentGrants(
+  value: unknown,
+): readonly BackgroundEquipmentGrant[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const grants: BackgroundEquipmentGrant[] = [];
+  for (const entry of value) {
+    if (
+      !isRecord(entry) ||
+      typeof entry.name !== 'string' ||
+      typeof entry.quantity !== 'number' ||
+      !Number.isSafeInteger(entry.quantity) ||
+      entry.quantity < 1
+    )
+      continue;
+    grants.push({
+      quantity: entry.quantity,
+      name: entry.name,
+      ...(typeof entry.ref === 'string' ? { ref: entry.ref } : {}),
+      ...(typeof entry.select === 'string'
+        ? { select: entry.select as BackgroundEquipmentGrant['select'] }
+        : {}),
+      ...(typeof entry.detail === 'string' ? { detail: entry.detail } : {}),
+      ...(typeof entry.currencyGp === 'number' &&
+      Number.isSafeInteger(entry.currencyGp)
+        ? { currencyGp: entry.currencyGp }
+        : {}),
+    });
+  }
+  return grants.length > 0 ? grants : undefined;
+}
+
+function resolveStartingWealth(
+  stack: ResolvedRulesStack,
+  classKey: string,
+): CharacterResolution<ResolvedStartingWealth> {
+  const table = lookup(stack, 'table', 'table:starting-wealth-by-class');
+  if (!table.ok || !isRecord(table.record.data)) {
+    return malformed('table', 'table:starting-wealth-by-class');
+  }
+  const columns = table.record.data.columns;
+  const rows = table.record.data.rows;
+  if (
+    !isStringArray(columns) ||
+    columns.length !== 2 ||
+    columns[0] !== 'Class' ||
+    columns[1] !== 'Starting Wealth' ||
+    !Array.isArray(rows)
+  ) {
+    return malformed('table', table.record.key);
+  }
+  const classes = listClasses(stack);
+  const target = classes.find((entry) => entry.key === classKey);
+  if (target === undefined) {
+    return {
+      ok: false,
+      code: 'not_found',
+      message: `unknown class '${classKey}'`,
+    };
+  }
+  const matches = rows.filter(
+    (row): row is unknown[] =>
+      Array.isArray(row) &&
+      row.length === 2 &&
+      typeof row[0] === 'string' &&
+      normalizeName(row[0]) === normalizeName(target.name),
+  );
+  if (matches.length !== 1) {
+    return {
+      ok: false,
+      code: matches.length === 0 ? 'not_found' : 'malformed',
+      message: `starting-wealth table has ${matches.length} rows for ${target.name}`,
+    };
+  }
+  const text = matches[0]?.[1];
+  if (typeof text !== 'string') return malformed('table', table.record.key);
+  const match = /^(\d+d\d+)(?:\s*[×x*]\s*(\d+))?\s*gp$/i.exec(text.trim());
+  if (match === null) return malformed('table', table.record.key);
+  try {
+    const formula = match[1] as string;
+    parseDice(formula);
+    const multiplierGp = match[2] === undefined ? 1 : Number(match[2]);
+    if (!Number.isSafeInteger(multiplierGp) || multiplierGp < 1) {
+      return malformed('table', table.record.key);
+    }
+    return {
+      ok: true,
+      record: {
+        classKey: target.key,
+        formula,
+        multiplierGp,
+        sourceRef: table.record.key,
+      },
+    };
+  } catch {
+    return malformed('table', table.record.key);
+  }
+}
+
+function listToolProficiencies(stack: ResolvedRulesStack): readonly string[] {
+  const values = new Set<string>([
+    ...SRD_5_1_ARTISAN_TOOLS,
+    ...SRD_5_1_MUSICAL_INSTRUMENTS,
+    'Disguise kit',
+    'Navigator’s tools',
+    'Thieves’ tools',
+    'Gaming set',
+    'Herbalism kit',
+    'Poisoner’s kit',
+    'Forgery kit',
+  ]);
+  for (const cls of listClasses(stack)) {
+    for (const value of cls.toolProficiencies ?? []) values.add(value);
+    for (const spec of cls.toolProficiencyChoices ?? []) {
+      for (const value of spec.from ?? []) values.add(value);
+    }
+  }
+  for (const background of listByKind(stack, 'background', (key) =>
+    resolveBackground(stack, key),
+  )) {
+    for (const value of background.toolProficiencies ?? []) values.add(value);
+  }
+  return [...values].sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[’']/g, '')
+    .replace(/[^a-z0-9]+/g, ' ');
 }
 
 /**

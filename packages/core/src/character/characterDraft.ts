@@ -412,7 +412,7 @@ export function createCharacterCreationEngine(
         });
       } else {
         try {
-          validateStartingWealthResult(selections.startingWealth);
+          validateStartingWealthResult(selections.startingWealth, resolver);
           const classRecord = resolveClass(selections.className);
           if (
             classRecord !== undefined &&
@@ -494,10 +494,13 @@ export function createCharacterCreationEngine(
       abilityModifiers: draft.derived.abilityModifiers,
     });
     const stored = draft.selections.choices ?? {};
+    const mechanical = all.filter((choice) =>
+      MECHANICAL_CHOICE_KINDS.has(choice.kind),
+    );
     const choices = (
       draft.selections.startingEquipmentMode === 'starting-wealth'
-        ? all.filter((choice) => choice.kind !== 'equipment')
-        : all.filter((choice) => MECHANICAL_CHOICE_KINDS.has(choice.kind))
+        ? mechanical.filter((choice) => choice.kind !== 'equipment')
+        : mechanical
     ).map((choice) => ({
       choice,
       selected: stored[choice.id] ?? [],
@@ -508,6 +511,7 @@ export function createCharacterCreationEngine(
       classRecord,
       resolveBackground(draft.selections.background),
       stored,
+      resolver,
     );
   }
 
@@ -516,6 +520,7 @@ export function createCharacterCreationEngine(
     classRecord: ResolvedClassData,
     background: ResolvedBackgroundData | undefined,
     stored: Readonly<Record<string, readonly string[]>>,
+    resolver: RulesPackCharacterResolver,
   ): readonly MechanicalChoiceState[] {
     const result = [...choices];
     for (const kind of ['skills', 'tools'] as const) {
@@ -531,17 +536,18 @@ export function createCharacterCreationEngine(
       const owned = new Set<string>();
       let ordinal = 0;
       for (const grant of grants) {
-        if (!seen.has(grant)) {
-          seen.add(grant);
+        const grantKey = normalizeProficiency(grant);
+        if (!seen.has(grantKey)) {
+          seen.add(grantKey);
           owned.add(grant);
           continue;
         }
         const id = `background.${kind}.replacement.${slug(grant)}.${ordinal++}`;
         const selected = stored[id] ?? [];
         const domain =
-          kind === 'skills' ? SRD_5_1_SKILLS : uniqueToolDomain(result);
+          kind === 'skills' ? SRD_5_1_SKILLS : resolver.listToolProficiencies();
         const from = domain.filter(
-          (value) => !owned.has(value) || selected.includes(value),
+          (value) => !owned.has(normalizeProficiency(value)),
         );
         const choice = {
           id,
@@ -557,22 +563,10 @@ export function createCharacterCreationEngine(
           selected,
           satisfied: isChoiceSatisfied(choice, selected),
         });
-        for (const value of selected) owned.add(value);
+        for (const value of selected) owned.add(normalizeProficiency(value));
       }
     }
     return result;
-  }
-
-  function uniqueToolDomain(
-    choices: readonly MechanicalChoiceState[],
-  ): readonly string[] {
-    return [
-      ...new Set(
-        choices
-          .filter((entry) => entry.choice.kind === 'tools')
-          .flatMap((entry) => entry.choice.from ?? []),
-      ),
-    ];
   }
 
   function slug(value: string): string {
@@ -581,6 +575,15 @@ export function createCharacterCreationEngine(
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  function normalizeProficiency(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[’']/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
   }
 
   /**

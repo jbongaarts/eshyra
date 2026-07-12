@@ -43,7 +43,6 @@ import {
   type ResolvedLanguageGrant,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
-import { getBackgroundCreationFacts } from './srdCreationChoices.js';
 
 /** D&D 5e coin denominations carried by a character, not inventory rows. */
 export interface CharacterWallet {
@@ -189,6 +188,13 @@ export function finalizeCharacterDraft(
     return { ok: false, missing, errors };
   }
 
+  assertProficiencyInvariant(
+    draft,
+    engine,
+    classRecordForDraft(draft, resolver),
+    backgroundRecordForDraft(draft, resolver),
+  );
+
   return {
     ok: true,
     character: buildFinalizedCharacter(draft, metadata, resolver, engine),
@@ -261,15 +267,15 @@ function buildFinalizedCharacter(
     ...(draft.derived.spellAttackModifier !== undefined
       ? { spellAttackModifier: draft.derived.spellAttackModifier }
       : {}),
-    skillProficiencies: dedupe([
-      // Background grants fixed skills; the class grants skill *choices*.
-      ...(backgroundRecord?.skillProficiencies ?? []),
-      ...selectedOfKind(draft, engine, 'skills'),
-    ]),
-    toolProficiencies: dedupe([
+    skillProficiencies: resolveProficiencySet(
+      draft,
+      engine,
+      'skills',
+      backgroundRecord?.skillProficiencies ?? [],
+    ),
+    toolProficiencies: resolveProficiencySet(draft, engine, 'tools', [
       ...(classRecord.toolProficiencies ?? []),
       ...(backgroundRecord?.toolProficiencies ?? []),
-      ...selectedOfKind(draft, engine, 'tools'),
     ]),
     armorProficiencies: [...(classRecord.armorProficiencies ?? [])],
     weaponProficiencies: [...(classRecord.weaponProficiencies ?? [])],
@@ -287,16 +293,104 @@ function buildFinalizedCharacter(
   return finalized;
 }
 
-/** Selected options across every mechanical choice of a kind, in choice order. */
-function selectedOfKind(
+function assertProficiencyInvariant(
+  draft: CharacterDraft,
+  engine: CharacterCreationEngine,
+  classRecord: ResolvedClassData,
+  backgroundRecord: ResolvedBackgroundData | undefined,
+): void {
+  const skills = resolveProficiencySet(
+    draft,
+    engine,
+    'skills',
+    backgroundRecord?.skillProficiencies ?? [],
+  );
+  const tools = resolveProficiencySet(draft, engine, 'tools', [
+    ...(classRecord.toolProficiencies ?? []),
+    ...(backgroundRecord?.toolProficiencies ?? []),
+  ]);
+  for (const [kind, values] of [
+    ['skill', skills],
+    ['tool', tools],
+  ] as const) {
+    const normalized = values.map(normalizeProficiency);
+    if (new Set(normalized).size !== normalized.length) {
+      throw new Error(
+        `finalization invariant: unresolved duplicate ${kind} proficiency`,
+      );
+    }
+  }
+}
+
+function resolveProficiencySet(
   draft: CharacterDraft,
   engine: CharacterCreationEngine,
   kind: 'skills' | 'tools',
+  fixed: readonly string[],
 ): readonly string[] {
-  return engine
+  const entries = engine
     .mechanicalChoices(draft)
-    .filter((entry) => entry.choice.kind === kind)
+    .filter((entry) => entry.choice.kind === kind);
+  const ordinary = entries
+    .filter((entry) => !entry.choice.id.includes('.replacement.'))
     .flatMap((entry) => entry.selected);
+  const replacements = entries
+    .filter((entry) => entry.choice.id.includes('.replacement.'))
+    .flatMap((entry) => entry.selected);
+  const result: string[] = [];
+  const seen = new Set<string>();
+  let replacementIndex = 0;
+  for (const value of [...fixed, ...ordinary]) {
+    const key = normalizeProficiency(value);
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(value);
+      continue;
+    }
+    const replacement = replacements[replacementIndex++];
+    if (
+      replacement === undefined ||
+      seen.has(normalizeProficiency(replacement))
+    ) {
+      throw new Error(
+        `finalization invariant: unresolved duplicate ${kind} proficiency`,
+      );
+    }
+    seen.add(normalizeProficiency(replacement));
+    result.push(replacement);
+  }
+  if (replacementIndex !== replacements.length) {
+    throw new Error(`finalization invariant: stale ${kind} replacement`);
+  }
+  return result;
+}
+
+function classRecordForDraft(
+  draft: CharacterDraft,
+  resolver: RulesPackCharacterResolver,
+): ResolvedClassData {
+  const result = resolver.resolveClass(draft.selections.className ?? '');
+  if (!result.ok)
+    throw new Error('finalization invariant: class did not resolve');
+  return result.record;
+}
+
+function backgroundRecordForDraft(
+  draft: CharacterDraft,
+  resolver: RulesPackCharacterResolver,
+): ResolvedBackgroundData | undefined {
+  if (draft.selections.background === undefined) return undefined;
+  const result = resolver.resolveBackground(draft.selections.background);
+  return result.ok ? result.record : undefined;
+}
+
+function normalizeProficiency(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[’']/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 /**
@@ -330,7 +424,13 @@ function collectEquipment(
     }
     equipment.push(...(chosenById.get(`class.equipment.${index}`) ?? []));
   });
-  if (backgroundRecord?.equipment !== undefined) {
+  if (backgroundRecord?.equipmentGrants !== undefined) {
+    for (const grant of backgroundRecord.equipmentGrants) {
+      equipment.push(
+        `${grant.quantity > 1 ? `${grant.quantity} ` : ''}${grant.name}`,
+      );
+    }
+  } else if (backgroundRecord?.equipment !== undefined) {
     equipment.push(backgroundRecord.equipment);
   }
   return equipment;
@@ -347,20 +447,11 @@ function walletForDraft(
     }
     return { cp: 0, sp: 0, ep: 0, gp: result.totalGp, pp: 0 };
   }
-  const facts =
-    background?.key === undefined
-      ? undefined
-      : getBackgroundCreationFacts(background.key);
-  const gp = (facts?.equipmentGrants ?? []).reduce(
+  const gp = (background?.equipmentGrants ?? []).reduce(
     (sum, grant) => sum + (grant.currencyGp ?? 0),
     0,
   );
   return { cp: 0, sp: 0, ep: 0, gp, pp: 0 };
-}
-
-/** Order-preserving de-duplication. */
-function dedupe(values: readonly string[]): readonly string[] {
-  return [...new Set(values)];
 }
 
 /** Fixed ancestry + background languages merged with the player's chosen ones. */

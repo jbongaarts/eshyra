@@ -126,6 +126,45 @@ describe('character wizard — concept-first happy path', () => {
   });
 });
 
+describe('character wizard — starting acquisition mode', () => {
+  it('reaches starting wealth, rolls once, and skips only equipment choices', async () => {
+    const { deps: d, lines } = deps([
+      'Mira',
+      'Fighter',
+      'Human',
+      '',
+      'point_buy',
+      'str 15',
+      'dex 14',
+      'con 13',
+      'int 12',
+      'wis 10',
+      'cha 8',
+      'done',
+      '2',
+      'Athletics',
+      'Perception',
+      'Dwarvish',
+      '',
+      '',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'wealth',
+    });
+    expect(result.outcome).toBe('completed');
+    expect(result.draft.selections.startingEquipmentMode).toBe(
+      'starting-wealth',
+    );
+    expect(result.draft.selections.startingWealth?.roll.rolls).toHaveLength(5);
+    expect(
+      result.draft.selections.choices?.['class.equipment.0'],
+    ).toBeUndefined();
+    expect(text(lines)).toContain('Starting wealth: 5d4');
+    expect(text(lines)).toContain('Acquisition: starting-wealth');
+  });
+});
+
 describe('character wizard — resolver-backed choices', () => {
   it('accepts an unambiguous class prefix', async () => {
     const { deps: d } = deps(['Hero', 'wiz', 'Elf', '', 'point_buy', 'quit']);

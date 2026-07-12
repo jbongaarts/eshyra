@@ -1795,12 +1795,16 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: [
       'packages/core/test/characterDraftEngine.test.ts',
       'packages/core/test/finalizeCharacter.test.ts',
+      'packages/cli/test/characterWizard.test.ts',
     ],
   },
   'rule:backgrounds-proficiencies': {
     status: 'implemented',
     runtimeOwner: ['packages/core/src/character/characterDraft.ts'],
-    evidence: ['packages/core/test/characterDraftEngine.test.ts'],
+    evidence: [
+      'packages/core/test/characterDraftEngine.test.ts',
+      'packages/cli/test/characterWizard.test.ts',
+    ],
   },
   'rule:being-prone': {
     status: 'model-adjudicated-supported',
@@ -1810,7 +1814,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:beyond-1st-level': {
     status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
-    evidence: ['packages/core/test/levelUpEngine.test.ts'],
+    evidence: [
+      'packages/core/test/levelUpEngine.test.ts',
+      'packages/core/test/guidedLevelUpFlow.test.ts',
+      'packages/cli/test/play.test.ts',
+    ],
   },
   'rule:blindsight': {
     status: 'model-adjudicated-supported',

@@ -413,6 +413,7 @@ export {
   formatCampaignAdventureAudit,
 } from './orchestrator/adventureAudit.js';
 export type { RecentSceneEvidence } from './orchestrator/contextAssembler.js';
+export { rollDice } from './orchestrator/dice.js';
 export type {
   ExecutedToolCall,
   RunTurnDeps,

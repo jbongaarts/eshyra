@@ -7,6 +7,7 @@
  * confirmation. It never asks the model to infer mechanics.
  */
 
+import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import {
   DEFAULT_DND5E_SRD_BINDING,
@@ -24,6 +25,7 @@ import {
   type LevelUpChangeSet,
   type LevelUpChoiceSelections,
   LevelUpEngineError,
+  type LevelUpHitPointChoice,
   type LevelUpRequiredChoice,
   previewLevelUpChangeSet,
 } from './levelUpEngine.js';
@@ -74,6 +76,8 @@ export interface GuidedLevelUpInput {
   readonly characterId?: string;
   readonly resolver?: RulesPackCharacterResolver;
   readonly choices?: LevelUpChoiceSelections;
+  readonly hitPointChoice?: LevelUpHitPointChoice;
+  readonly rng?: Rng;
   /**
    * `undefined` means "show the preview and wait for the caller to ask again";
    * `false` means the player saw the preview and declined; `true` commits.
@@ -114,6 +118,8 @@ export function runGuidedLevelUp(
     resolver,
     binding,
     choices: input.choices,
+    hitPointChoice: input.hitPointChoice,
+    rng: input.rng,
   });
   if (!preview.ok) {
     return {
@@ -150,6 +156,8 @@ export function runGuidedLevelUp(
     characterId,
     resolver,
     choices: input.choices,
+    hitPointChoice: input.hitPointChoice,
+    rng: input.rng,
     source: input.source,
     provenance: input.provenance,
     sessionId: input.sessionId,

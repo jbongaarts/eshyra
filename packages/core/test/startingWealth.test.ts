@@ -18,6 +18,28 @@ describe('starting wealth', () => {
     expect(left.totalGp).toBe(left.roll.total * 10);
   });
 
+  it('resolves every bundled class from the committed table', () => {
+    const classes = [
+      'barbarian',
+      'bard',
+      'cleric',
+      'druid',
+      'fighter',
+      'monk',
+      'paladin',
+      'ranger',
+      'rogue',
+      'sorcerer',
+      'warlock',
+      'wizard',
+    ];
+    for (const classKey of classes) {
+      expect(resolveStartingWealth(`class:${classKey}`).classKey).toBe(
+        `class:${classKey}`,
+      );
+    }
+  });
+
   it('rejects forged or inconsistent evidence', () => {
     const result = rollStartingWealth('class:wizard', createSeededRng(2));
     expect(() =>
