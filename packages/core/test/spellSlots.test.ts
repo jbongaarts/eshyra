@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CharacterSheet } from '../src/internal.js';
 import {
+  createDefaultToolRegistry,
+  createSeededRng,
   createSqliteCharacterSheetStore,
   mutateState,
   readSpellSlots,
@@ -183,6 +185,72 @@ describe('spell-slot economy — single-class Pact Magic', () => {
     });
     db.close();
   });
+
+  it('carries spent Pact Magic slots across a Warlock slot-level increase', () => {
+    const db = setup('class:warlock', 2);
+    syncSpellSlots(db, CTX);
+    spendSpellSlot(db, { spellLevel: 1, ...CTX });
+    spendSpellSlot(db, { spellLevel: 1, ...CTX });
+
+    createSqliteCharacterSheetStore(db).save('pc-1', sheet('class:warlock', 3));
+    mutateState(db, {
+      target: 'character',
+      field: 'level',
+      op: 'set',
+      value: 3,
+      ...CTX,
+    });
+
+    expect(syncSpellSlots(db, CTX)).toEqual([
+      expect.objectContaining({
+        pool: 'pact_magic',
+        spellLevel: 2,
+        slotsMax: 2,
+        slotsUsed: 2,
+        slotsRemaining: 0,
+      }),
+    ]);
+    db.close();
+  });
+});
+
+describe('spend_spell_slot tool', () => {
+  it('resolves the spell’s actual pack level instead of trusting model input', () => {
+    const db = setup('class:wizard', 5);
+    const registry = createDefaultToolRegistry();
+    const context = {
+      db,
+      rng: createSeededRng(1),
+      campaignId: 'campaign-1',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'turn-1',
+      at: AT,
+    };
+
+    const tooLow = registry.invoke(
+      'spend_spell_slot',
+      { spell: 'Fireball', slotLevel: 1 },
+      context,
+    );
+    expect(tooLow).toMatchObject({
+      ok: false,
+      code: 'spell_slot_error',
+      message: expect.stringMatching(/level 3 spell requires a slot/),
+    });
+    const legal = registry.invoke(
+      'spend_spell_slot',
+      { spell: 'Fireball', slotLevel: 3 },
+      context,
+    );
+    expect(legal).toMatchObject({
+      ok: true,
+      data: {
+        spent: true,
+        counter: { spellLevel: 3, slotsUsed: 1 },
+      },
+    });
+    db.close();
+  });
 });
 
 describe('spell-slot economy — ADR 0018 boundary', () => {
@@ -206,6 +274,9 @@ describe('spell-slot economy — ADR 0018 boundary', () => {
       UnsupportedCharacterBuildError,
     );
     expect(() => spendSpellSlot(db, { spellLevel: 1, ...CTX })).toThrow(
+      UnsupportedCharacterBuildError,
+    );
+    expect(() => spendSpellSlot(db, { spellLevel: 0, ...CTX })).toThrow(
       UnsupportedCharacterBuildError,
     );
     expect(() => restoreSpellSlots(db, { event: 'long_rest', ...CTX })).toThrow(

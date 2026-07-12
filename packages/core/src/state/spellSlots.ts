@@ -152,18 +152,24 @@ export function spendSpellSlot(
     if (input.slotLevel !== undefined) {
       throw new SpellSlotError('cantrips do not use a spell slot');
     }
-    const characterId = resolveCharacterId(db, input.characterId);
-    return {
-      spent: false,
-      counter: {
-        characterId,
-        pool: 'spellcasting',
-        spellLevel: 0,
-        slotsMax: 0,
-        slotsUsed: 0,
-        slotsRemaining: 0,
-      },
-    };
+    return withTransaction(db, (txnDb) => {
+      const characterId = resolveCharacterId(txnDb, input.characterId);
+      // Cantrips do not seed or mutate a slot counter, but a cast is still a
+      // character-build operation. Run the entire ADR 0018 / pack / live-level
+      // validation path before returning the at-will exemption.
+      resolveSlotCapacities(txnDb, characterId, input.resolver);
+      return {
+        spent: false,
+        counter: {
+          characterId,
+          pool: 'spellcasting',
+          spellLevel: 0,
+          slotsMax: 0,
+          slotsUsed: 0,
+          slotsRemaining: 0,
+        },
+      };
+    });
   }
   if (input.slotLevel !== undefined && input.slotLevel < input.spellLevel) {
     throw new SpellSlotError(
@@ -363,6 +369,7 @@ function reconcileSlots(
   capacities: readonly SlotCapacity[],
   input: SpellSlotMutationContext,
 ): void {
+  reconcilePactMagicSlot(db, characterId, capacities, input);
   const existing = readSlotRows(db, characterId);
   const expected = new Map(
     capacities.map((capacity) => [
@@ -409,6 +416,56 @@ function reconcileSlots(
       input.provenance,
       input.sessionId,
       input.at,
+    );
+  }
+}
+
+/**
+ * Pact Magic has exactly one pool in the single-class domain. Its slot level
+ * changes with Warlock progression, but that is a capacity transformation —
+ * not a rest — so an existing expenditure must move with the pool.
+ */
+function reconcilePactMagicSlot(
+  db: Db,
+  characterId: string,
+  capacities: readonly SlotCapacity[],
+  input: SpellSlotMutationContext,
+): void {
+  const desired = capacities.filter((slot) => slot.pool === 'pact_magic');
+  if (desired.length > 1) {
+    throw new SpellSlotError(
+      `multiple Pact Magic slot levels resolved for '${characterId}'`,
+    );
+  }
+  const existing = readSlotRows(db, characterId).filter(
+    (slot) => slot.pool_kind === 'pact_magic',
+  );
+  if (existing.length > 1) {
+    throw new SpellSlotError(
+      `multiple persisted Pact Magic pools found for '${characterId}'`,
+    );
+  }
+  const target = desired[0];
+  const prior = existing[0];
+  if (
+    target !== undefined &&
+    prior !== undefined &&
+    prior.spell_level !== target.spellLevel
+  ) {
+    db.prepare(
+      `UPDATE character_spell_slot
+       SET spell_level = ?, slots_max = ?, slots_used = MIN(slots_used, ?),
+           provenance = ?, session_id = ?, updated_at = ?
+       WHERE character_id = ? AND pool_kind = 'pact_magic' AND spell_level = ?`,
+    ).run(
+      target.spellLevel,
+      target.slotsMax,
+      target.slotsMax,
+      input.provenance,
+      input.sessionId,
+      input.at,
+      characterId,
+      prior.spell_level,
     );
   }
 }
