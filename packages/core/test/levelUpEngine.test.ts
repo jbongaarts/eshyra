@@ -6,20 +6,31 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyLevelUp,
+  assembleContext,
   type CharacterSheet,
   CharacterSheetPackMismatchError,
   computeLevelUpChangeSet,
   createSqliteCharacterSheetStore,
   detectLevelUpRequiredChoices,
+  getBundledDnd5eCharacterResolver,
   getProgressionState,
   LevelUpEngineError,
   LevelUpRequiredChoicesError,
   listProgressionEvents,
   mutateState,
   previewLevelUpChangeSet,
+  readSpellSlots,
+  renderContextMessage,
+  spendSpellSlot,
+  syncSpellSlots,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
-import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
+import {
+  bareDb,
+  DEFAULT_TEST_CAMPAIGN_ID,
+  DEFAULT_TEST_SESSION_ID,
+  freshDbWithSession,
+} from './support/db.js';
 
 const AT = '2026-05-27T12:00:00.000Z';
 const APPLY = {
@@ -196,6 +207,173 @@ describe('applyLevelUp — martial (Fighter)', () => {
       proficiencyBonus: { from: 2, to: 3 },
     });
     expect(result.event.id).toBe(events[0].id);
+    db.close();
+  });
+});
+
+describe('applyLevelUp — spell-slot reconciliation', () => {
+  it('immediately exposes increased ordinary slot capacity with prior expenditure retained', () => {
+    const db = freshDbWithSession();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({
+        classKey: 'class:cleric',
+        className: 'Cleric',
+        maxHitPoints: 9,
+        modifiers: { constitution: 1, wisdom: 3 },
+        spellSaveDc: 13,
+        spellAttackModifier: 5,
+        subclass: { key: 'subclass:life-domain', name: 'Life Domain' },
+      }),
+    );
+    seedLiveHp(db, 9, 9);
+    syncSpellSlots(db, APPLY);
+    spendSpellSlot(db, { spellLevel: 1, ...APPLY });
+    spendSpellSlot(db, { spellLevel: 1, ...APPLY });
+
+    applyLevelUp(db, { store, ...APPLY });
+
+    expect(readSpellSlots(db)).toEqual([
+      expect.objectContaining({
+        pool: 'spellcasting',
+        spellLevel: 1,
+        slotsMax: 3,
+        slotsUsed: 2,
+        slotsRemaining: 1,
+      }),
+    ]);
+    const context = assembleContext({
+      db,
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      playerInput: 'I prepare another spell.',
+    });
+    expect(context.state.spentSpellSlots).toEqual([
+      expect.objectContaining({ slotsMax: 3, slotsUsed: 2, slotsRemaining: 1 }),
+    ]);
+    expect(renderContextMessage(context)).toContain(
+      'Spell slots spent: level 1: 2/3',
+    );
+    db.close();
+  });
+
+  it('immediately migrates spent Pact Magic slots to their new level', () => {
+    const db = freshDbWithSession();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({
+        classKey: 'class:warlock',
+        className: 'Warlock',
+        level: 2,
+        maxHitPoints: 14,
+      }),
+    );
+    seedLiveHp(db, 14, 14);
+    mutateState(db, {
+      target: 'character',
+      field: 'level',
+      op: 'set',
+      value: 2,
+      provenance: 'test:init',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: AT,
+    });
+    syncSpellSlots(db, APPLY);
+    spendSpellSlot(db, { spellLevel: 1, ...APPLY });
+    spendSpellSlot(db, { spellLevel: 1, ...APPLY });
+
+    // Warlock's real level-3 row has player choices the current level-up
+    // engine correctly blocks. Keep this integration focused on the committed
+    // F4 projection by supplying a source-shaped row with those unrelated
+    // choices already resolved; its Pact Magic capacity remains 2 level-2
+    // slots, exactly as the bundled progression specifies.
+    const bundled = getBundledDnd5eCharacterResolver();
+    const resolver = {
+      ...bundled,
+      resolveClass(nameOrRef: string) {
+        const resolved = bundled.resolveClass(nameOrRef);
+        if (!resolved.ok || resolved.record.key !== 'class:warlock') {
+          return resolved;
+        }
+        return {
+          ok: true as const,
+          record: {
+            ...resolved.record,
+            progression: resolved.record.progression?.map((row) =>
+              row.level === 3
+                ? {
+                    ...row,
+                    featureRefs: [],
+                    subclassFeatureSlots: [],
+                    featureImprovements: [],
+                    spellcasting:
+                      row.spellcasting === undefined
+                        ? undefined
+                        : {
+                            ...row.spellcasting,
+                            spellsKnown: 3,
+                            invocationsKnown: 2,
+                          },
+                  }
+                : row,
+            ),
+          },
+        };
+      },
+      resolveClassLevel(nameOrRef: string, level: number) {
+        const resolved = bundled.resolveClassLevel(nameOrRef, level);
+        if (!resolved.ok || nameOrRef !== 'class:warlock' || level !== 3) {
+          return resolved;
+        }
+        return {
+          ok: true as const,
+          record: {
+            ...resolved.record,
+            featureRefs: [],
+            subclassFeatureSlots: [],
+            featureImprovements: [],
+            spellcasting:
+              resolved.record.spellcasting === undefined
+                ? undefined
+                : {
+                    ...resolved.record.spellcasting,
+                    spellsKnown: 3,
+                    invocationsKnown: 2,
+                  },
+          },
+        };
+      },
+    };
+
+    applyLevelUp(db, { store, resolver, ...APPLY });
+
+    expect(readSpellSlots(db)).toEqual([
+      expect.objectContaining({
+        pool: 'pact_magic',
+        spellLevel: 2,
+        slotsMax: 2,
+        slotsUsed: 2,
+        slotsRemaining: 0,
+      }),
+    ]);
+    const context = assembleContext({
+      db,
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      playerInput: 'I summon another blast.',
+    });
+    expect(context.state.spentSpellSlots).toEqual([
+      expect.objectContaining({
+        pool: 'pact_magic',
+        spellLevel: 2,
+        slotsUsed: 2,
+      }),
+    ]);
+    expect(renderContextMessage(context)).toContain(
+      'Spell slots spent: Pact Magic level 2: 2/2',
+    );
     db.close();
   });
 });

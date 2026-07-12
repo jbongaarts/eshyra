@@ -1845,7 +1845,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:casting-a-spell-at-a-higher-level': {
     status: 'partial',
     missing:
-      'choosing to upcast is a ruling; missing: upcast scaling transform (extra dice/targets per slot level above base, from structured `scaling`) → F9; slot-level legality gate → F4',
+      'choosing to upcast is a ruling; missing: upcast scaling transform (extra dice/targets per slot level above base, from structured `scaling`) → F9',
   },
   'rule:casting-a-spell-attack-rolls': {
     status: 'model-adjudicated-supported',
@@ -2655,9 +2655,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'half-pace ruling',
   },
   'rule:spell-slots': {
-    status: 'unimplemented',
-    missing:
-      'F4: durable expenditure/restoration economy (expend ≥ spell level; long-rest restore); progression structured, live-state owner missing',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/spellSlots.ts',
+      'packages/core/src/orchestrator/toolSpendSpellSlot.ts',
+    ],
+    evidence: ['packages/core/test/spellSlots.test.ts'],
   },
   'rule:spellcasting': {
     status: 'design-blocked',
@@ -2943,10 +2946,10 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 30,
+    implemented: 31,
     'model-adjudicated-supported': 106,
     partial: 24,
-    unimplemented: 5,
+    unimplemented: 4,
     'design-blocked': 10,
   });
 

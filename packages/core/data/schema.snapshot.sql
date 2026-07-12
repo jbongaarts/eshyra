@@ -217,6 +217,19 @@ CREATE TABLE character_sheet (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE character_spell_slot (
+  character_id TEXT NOT NULL REFERENCES character(id),
+  pool_kind TEXT NOT NULL CHECK (pool_kind IN ('spellcasting', 'pact_magic')),
+  spell_level INTEGER NOT NULL CHECK (spell_level BETWEEN 1 AND 9),
+  slots_max INTEGER NOT NULL CHECK (slots_max >= 1),
+  slots_used INTEGER NOT NULL DEFAULT 0
+    CHECK (slots_used >= 0 AND slots_used <= slots_max),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (character_id, pool_kind, spell_level)
+);
+
 CREATE TABLE character_wallet_event (
   id TEXT PRIMARY KEY,
   character_id TEXT NOT NULL,
@@ -561,6 +574,9 @@ CREATE INDEX campaign_overlay_lore_npc
 CREATE UNIQUE INDEX campaign_session_one_open
   ON campaign_session(campaign_id)
   WHERE status = 'open';
+
+CREATE INDEX character_spell_slot_character
+  ON character_spell_slot(character_id, pool_kind, spell_level);
 
 CREATE UNIQUE INDEX combat_instance_one_active_per_campaign
   ON combat_instance(campaign_id) WHERE status = 'active';

@@ -47,6 +47,7 @@ import {
 } from '../state/liveStateSchema.js';
 import type { PartyMember } from '../state/party.js';
 import { listParty } from '../state/party.js';
+import { readSpellSlots, type SpellSlotCounter } from '../state/spellSlots.js';
 import {
   formatUsageCounter,
   readSpentUsageCounters,
@@ -174,6 +175,8 @@ export interface StateSnapshot {
   /** Every usage counter with spent uses (F5): expended X/Day abilities,
    *  recharge abilities waiting on their roll, item charges down, etc. */
   spentUsageCounters: readonly UsageCounter[];
+  /** Seeded spell-slot pools with at least one expended slot (F4). */
+  spentSpellSlots: readonly SpellSlotCounter[];
   campaignActors: CampaignActor[];
   plotFlags: Record<string, unknown>;
   clock: ClockSnapshot;
@@ -350,6 +353,9 @@ export function readStateSnapshot(
         : readCombatTurnState(db, campaignId),
     spentUsageCounters:
       campaignId === undefined ? [] : readSpentUsageCounters(db, campaignId),
+    spentSpellSlots: readSpellSlots(db, charId).filter(
+      (slot) => slot.slotsUsed > 0,
+    ),
     campaignActors:
       campaignId === undefined ? [] : listCampaignActors(db, campaignId),
     plotFlags,
@@ -672,6 +678,16 @@ function renderState(state: StateSnapshot): string {
     for (const counter of state.spentUsageCounters) {
       lines.push(`- ${counter.ownerLabel}: ${formatUsageCounter(counter)}`);
     }
+  }
+  if (state.spentSpellSlots.length > 0) {
+    lines.push(
+      `Spell slots spent: ${state.spentSpellSlots
+        .map(
+          (slot) =>
+            `${slot.pool === 'pact_magic' ? 'Pact Magic ' : ''}level ${slot.spellLevel}: ${slot.slotsUsed}/${slot.slotsMax}`,
+        )
+        .join('; ')}`,
+    );
   }
   if (state.campaignActors.length > 0) {
     lines.push('Persistent actors:');

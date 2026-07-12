@@ -48,6 +48,7 @@ import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
 import { setSurprisedTool } from './toolSetSurprised.js';
 import { setWorldFactTool } from './toolSetWorldFact.js';
+import { spendSpellSlotTool } from './toolSpendSpellSlot.js';
 import { spendTurnResourceTool } from './toolSpendTurnResource.js';
 import { spendUsageTool } from './toolSpendUsage.js';
 import { stabilizeCharacterTool } from './toolStabilizeCharacter.js';
@@ -77,6 +78,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   grantTempHpTool,
   addConditionTool,
   removeConditionTool,
+  spendSpellSlotTool,
   spendUsageTool,
   restoreUsageTool,
   resetUsageTool,

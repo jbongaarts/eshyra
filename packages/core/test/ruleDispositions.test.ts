@@ -90,11 +90,12 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // eshyra-2n1t.3 + eshyra-2n1t.11 moved the 16 fully-tool-owned
     // dice-grammar / resolution / derived-math rows to implemented and 9
     // clause-only rows to model-adjudicated-supported); keep them in
-    // lockstep with EXPECTED_COVERAGE_CENSUS.
-    expect(report.engineProcedure.implemented).toBe(30);
+    // F4, eshyra-2n1t.6, implements spell-slot expenditure/recovery; keep
+    // this in lockstep with EXPECTED_COVERAGE_CENSUS.
+    expect(report.engineProcedure.implemented).toBe(31);
     expect(report.engineProcedure.modelAdjudicatedSupported).toBe(106);
     expect(report.engineProcedure.partial).toHaveLength(24);
-    expect(report.engineProcedure.unimplemented).toHaveLength(5);
+    expect(report.engineProcedure.unimplemented).toHaveLength(4);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
     // 8 rows carry an externally owned clause (armor-guidance,
     // casting-a-spell-saving-throws, charges, special-weapons,
