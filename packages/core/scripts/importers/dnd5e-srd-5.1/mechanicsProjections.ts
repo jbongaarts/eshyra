@@ -1925,6 +1925,14 @@ function projectReviewedS3aSpellEffects(
             /\bcontingency ends on you if its material component is ever not on your person\./,
         },
       ]);
+      if (
+        spell.componentMaterials !==
+        'a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp'
+      ) {
+        throw new Error(
+          `S3a spell projection for ${spell.name} is missing reviewed source clause: ivory statuette component identity`,
+        );
+      }
       return [
         {
           kind: 'spellStoring',

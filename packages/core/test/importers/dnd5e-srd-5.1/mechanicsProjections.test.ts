@@ -1522,7 +1522,18 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
     ],
   ])('projects reviewed S3a %s semantics exactly', (name, description, effects) => {
     expect(
-      deriveSpellMechanics(baseSpell({ name, description })).effects,
+      deriveSpellMechanics(
+        baseSpell({
+          name,
+          description,
+          ...(name === 'Contingency'
+            ? {
+                componentMaterials:
+                  'a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp',
+              }
+            : {}),
+        }),
+      ).effects,
     ).toEqual(effects);
   });
 
@@ -1546,6 +1557,21 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
       deriveSpellMechanics(baseSpell({ name, description: 'changed source' })),
     ).toThrow(
       `S3a spell projection for ${name} is missing reviewed source clause: ${label}`,
+    );
+  });
+
+  it.each([
+    undefined,
+    'a statuette of yourself carved from bone',
+  ])('fails closed for Contingency when the ivory statuette component identity is %s', (componentMaterials) => {
+    const description =
+      'Choose a spell of 5th level or lower that you can cast, that has a casting time of 1 action, and that can target you. Instead, it takes effect when a certain circumstance occurs. The contingent spell takes effect immediately after the circumstance is met for the first time, whether or not you want it to, and then contingency ends. You can use only one contingency spell at a time. If you cast this spell again, the effect of another contingency spell on you ends. Also, contingency ends on you if its material component is ever not on your person.';
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({ name: 'Contingency', description, componentMaterials }),
+      ),
+    ).toThrow(
+      'S3a spell projection for Contingency is missing reviewed source clause: ivory statuette component identity',
     );
   });
 

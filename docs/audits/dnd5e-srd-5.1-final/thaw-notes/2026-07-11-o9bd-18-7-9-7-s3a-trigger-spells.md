@@ -44,14 +44,15 @@ Demiplane, and Passwall remain pending S3b/S3c beads.
 
 ## Source gating and contracts
 
-The importer uses exact labeled guards against `spell.description` for every
-constant: Alarm checks the cube, Tiny+ touch/entry, exclusions, alarm-mode
+The importer uses exact labeled guards against `spell.description` and
+`spell.componentMaterials` for every constant: Alarm checks the cube, Tiny+ touch/entry, exclusions, alarm-mode
 choice, one-mile/waking mental behavior, and 60-foot/10-second audible
 behavior. Magic Mouth checks the 25-word limit, visual/audible trigger,
 30-foot boundary, and once/repeat choice. Contingency checks the fifth-level
 cap, one-action casting time, self-target eligibility, circumstance trigger,
 first-occurrence immediate activation and termination, exclusive replacement,
-and component-on-person termination. A missing or changed clause throws the
+and component-on-person termination; it also requires the exact ivory statuette
+component identity from `componentMaterials`. A missing or changed clause throws the
 labeled `S3a spell projection ... missing reviewed source clause` error.
 
 `triggeredEffect` is reused unchanged. `exclusiveInstance` and
