@@ -33,8 +33,8 @@ describe('validateAbilityScoresJson', () => {
     expect(result).toEqual(VALID_SCORES);
   });
 
-  it('accepts boundary values 0 and 30', () => {
-    const scores = { ...VALID_SCORES, strength: 0, charisma: 30 };
+  it('accepts boundary values 1 and 30', () => {
+    const scores = { ...VALID_SCORES, strength: 1, charisma: 30 };
     expect(() => validateAbilityScoresJson(scores, 'test')).not.toThrow();
   });
 
@@ -97,13 +97,13 @@ describe('validateAbilityScoresJson', () => {
     );
   });
 
-  it('rejects a value below 0 (-1)', () => {
-    const bad = { ...VALID_SCORES, strength: -1 };
+  it('rejects a value below 1 (0)', () => {
+    const bad = { ...VALID_SCORES, strength: 0 };
     expect(() => validateAbilityScoresJson(bad, 'test')).toThrow(
       LiveStateSchemaError,
     );
     expect(() => validateAbilityScoresJson(bad, 'test')).toThrow(
-      'between 0 and 30',
+      'between 1 and 30',
     );
   });
 
@@ -113,7 +113,7 @@ describe('validateAbilityScoresJson', () => {
       LiveStateSchemaError,
     );
     expect(() => validateAbilityScoresJson(bad, 'test')).toThrow(
-      'between 0 and 30',
+      'between 1 and 30',
     );
   });
 

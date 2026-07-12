@@ -6,7 +6,7 @@ import { migrateDatabase } from './migrationRunner.js';
  *
  * Live queryable state — validated at both the mutateState write boundary and
  * the contextAssembler read boundary via `state/liveStateSchema.ts`:
- *   - `character.ability_scores_json`   (shape: AbilityScores — exactly 6 keys, int 0–30)
+ *   - `character.ability_scores_json`   (shape: AbilityScores — exactly 6 keys, int 1–30)
  *   - `character.conditions_json`       (shape: CharacterConditionEntry[] — array of {id}+)
  *   - `inventory.properties_json`       (shape: InventoryItemProperties — plain JSON object)
  *

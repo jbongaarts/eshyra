@@ -58,6 +58,18 @@ import {
   type ResolvedClassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import { SRD_5_1_SKILLS } from './srdCreationChoices.js';
+import { validateStartingWealthResult } from './srdStartingWealth.js';
+
+export type StartingEquipmentMode = 'packages' | 'starting-wealth';
+
+export interface StartingWealthResult {
+  readonly classKey: string;
+  readonly formula: string;
+  readonly roll: import('../orchestrator/dice.js').DiceRoll;
+  readonly multiplierGp: number;
+  readonly totalGp: number;
+}
 
 /** Severity of an incremental draft diagnostic. */
 export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
@@ -118,6 +130,8 @@ export interface Dnd5eDraftSelections {
    * equipment/proficiency flow (eshyra-b69j.13).
    */
   readonly choices?: Readonly<Record<string, readonly string[]>>;
+  readonly startingEquipmentMode?: StartingEquipmentMode;
+  readonly startingWealth?: StartingWealthResult;
 }
 
 /**
@@ -225,6 +239,14 @@ export interface CharacterCreationEngine {
     draft: CharacterDraft,
     choiceId: string,
     values: readonly string[] | undefined,
+  ): CharacterDraft;
+  setStartingEquipmentMode(
+    draft: CharacterDraft,
+    mode: StartingEquipmentMode,
+  ): CharacterDraft;
+  setStartingWealth(
+    draft: CharacterDraft,
+    result: StartingWealthResult | undefined,
   ): CharacterDraft;
   /**
    * The structured level-1 mechanical choices (skills, tools, equipment,
@@ -371,8 +393,53 @@ export function createCharacterCreationEngine(
     );
 
     validateSpells(selections, classRecord, diagnostics, stale);
+    validateStartingEquipment(selections, diagnostics);
 
     return { ...draft, derived, diagnostics, stale };
+  }
+
+  function validateStartingEquipment(
+    selections: Dnd5eDraftSelections,
+    diagnostics: CharacterCreationDiagnostic[],
+  ): void {
+    const mode = selections.startingEquipmentMode ?? 'packages';
+    if (mode === 'starting-wealth') {
+      if (selections.startingWealth === undefined) {
+        diagnostics.push({
+          field: 'startingWealth',
+          severity: 'error',
+          message: 'starting-wealth mode requires one roll',
+        });
+      } else {
+        try {
+          validateStartingWealthResult(selections.startingWealth);
+          const classRecord = resolveClass(selections.className);
+          if (
+            classRecord !== undefined &&
+            selections.startingWealth.classKey !== classRecord.key
+          ) {
+            throw new Error(
+              'starting-wealth result does not match selected class',
+            );
+          }
+        } catch (error) {
+          diagnostics.push({
+            field: 'startingWealth',
+            severity: 'error',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'invalid starting-wealth result',
+          });
+        }
+      }
+    } else if (selections.startingWealth !== undefined) {
+      diagnostics.push({
+        field: 'startingWealth',
+        severity: 'error',
+        message: 'starting-wealth evidence cannot be present in package mode',
+      });
+    }
   }
 
   function resolveClass(value: string | undefined) {
@@ -427,16 +494,93 @@ export function createCharacterCreationEngine(
       abilityModifiers: draft.derived.abilityModifiers,
     });
     const stored = draft.selections.choices ?? {};
-    return all
-      .filter((choice) => MECHANICAL_CHOICE_KINDS.has(choice.kind))
-      .map((choice) => {
-        const selected = stored[choice.id] ?? [];
-        return {
+    const choices = (
+      draft.selections.startingEquipmentMode === 'starting-wealth'
+        ? all.filter((choice) => choice.kind !== 'equipment')
+        : all.filter((choice) => MECHANICAL_CHOICE_KINDS.has(choice.kind))
+    ).map((choice) => ({
+      choice,
+      selected: stored[choice.id] ?? [],
+      satisfied: isChoiceSatisfied(choice, stored[choice.id] ?? []),
+    }));
+    return appendProficiencyReplacements(
+      choices,
+      classRecord,
+      resolveBackground(draft.selections.background),
+      stored,
+    );
+  }
+
+  function appendProficiencyReplacements(
+    choices: readonly MechanicalChoiceState[],
+    classRecord: ResolvedClassData,
+    background: ResolvedBackgroundData | undefined,
+    stored: Readonly<Record<string, readonly string[]>>,
+  ): readonly MechanicalChoiceState[] {
+    const result = [...choices];
+    for (const kind of ['skills', 'tools'] as const) {
+      const grants = [
+        ...(kind === 'skills' ? (background?.skillProficiencies ?? []) : []),
+        ...(kind === 'tools' ? (classRecord.toolProficiencies ?? []) : []),
+        ...(kind === 'tools' ? (background?.toolProficiencies ?? []) : []),
+        ...result
+          .filter((entry) => entry.choice.kind === kind)
+          .flatMap((entry) => entry.selected),
+      ];
+      const seen = new Set<string>();
+      const owned = new Set<string>();
+      let ordinal = 0;
+      for (const grant of grants) {
+        if (!seen.has(grant)) {
+          seen.add(grant);
+          owned.add(grant);
+          continue;
+        }
+        const id = `background.${kind}.replacement.${slug(grant)}.${ordinal++}`;
+        const selected = stored[id] ?? [];
+        const domain =
+          kind === 'skills' ? SRD_5_1_SKILLS : uniqueToolDomain(result);
+        const from = domain.filter(
+          (value) => !owned.has(value) || selected.includes(value),
+        );
+        const choice = {
+          id,
+          kind,
+          source: 'background' as const,
+          status: 'structured' as const,
+          label: `Replace duplicate ${kind.slice(0, -1)} proficiency (${grant})`,
+          choose: 1,
+          from,
+        };
+        result.push({
           choice,
           selected,
           satisfied: isChoiceSatisfied(choice, selected),
-        };
-      });
+        });
+        for (const value of selected) owned.add(value);
+      }
+    }
+    return result;
+  }
+
+  function uniqueToolDomain(
+    choices: readonly MechanicalChoiceState[],
+  ): readonly string[] {
+    return [
+      ...new Set(
+        choices
+          .filter((entry) => entry.choice.kind === 'tools')
+          .flatMap((entry) => entry.choice.from ?? []),
+      ),
+    ];
+  }
+
+  function slug(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 
   /**
@@ -757,7 +901,10 @@ export function createCharacterCreationEngine(
         creationMode: input.mode,
         level: input.level ?? DEFAULT_LEVEL,
         identity: { ...input.identity },
-        selections: { ...input.selections },
+        selections: {
+          startingEquipmentMode: 'packages',
+          ...input.selections,
+        },
         derived: {
           proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
           abilityModifiers: {},
@@ -777,7 +924,12 @@ export function createCharacterCreationEngine(
     },
 
     setClass(draft, value): CharacterDraft {
-      return withSelections(draft, { className: value });
+      return withSelections(draft, {
+        className: value,
+        ...(value !== draft.selections.className
+          ? { startingWealth: undefined }
+          : {}),
+      });
     },
 
     setAncestry(draft, value): CharacterDraft {
@@ -820,6 +972,17 @@ export function createCharacterCreationEngine(
         choices[choiceId] = [...values];
       }
       return withSelections(draft, { choices });
+    },
+
+    setStartingEquipmentMode(draft, mode): CharacterDraft {
+      return withSelections(draft, {
+        startingEquipmentMode: mode,
+        ...(mode === 'packages' ? { startingWealth: undefined } : {}),
+      });
+    },
+
+    setStartingWealth(draft, result): CharacterDraft {
+      return withSelections(draft, { startingWealth: result });
     },
 
     mechanicalChoices,

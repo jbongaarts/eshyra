@@ -159,13 +159,17 @@ describe('finalizeCharacterDraft', () => {
       wisdom: 15,
       charisma: 8,
     });
-    for (const entry of engine.mechanicalChoices(draft)) {
-      const need = entry.choice.choose ?? 0;
-      draft = engine.setChoice(
-        draft,
-        entry.choice.id,
-        (entry.choice.from ?? []).slice(0, need),
-      );
+    for (let pass = 0; pass < 3; pass += 1) {
+      for (const entry of engine.mechanicalChoices(draft)) {
+        const need = entry.choice.choose ?? 0;
+        if (!entry.satisfied) {
+          draft = engine.setChoice(
+            draft,
+            entry.choice.id,
+            (entry.choice.from ?? []).slice(0, need),
+          );
+        }
+      }
     }
     const result = finalizeCharacterDraft(draft, META);
     expect(result.ok).toBe(true);

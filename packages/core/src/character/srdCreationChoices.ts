@@ -40,6 +40,7 @@ export interface BackgroundEquipmentGrant {
   readonly ref?: string;
   readonly select?: StartingEquipmentFilterSelect;
   readonly detail?: string;
+  readonly currencyGp?: number;
 }
 
 /** Closed vocabulary of ancestry/background creation-choice categories. */
@@ -330,6 +331,7 @@ const ACOLYTE_FACTS: BackgroundCreationFacts = {
       name: 'pouch',
       ref: 'equipment:pouch',
       detail: 'containing 15 gp',
+      currencyGp: 15,
     },
   ],
 };

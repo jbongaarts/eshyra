@@ -14,6 +14,10 @@
 // fields in CharacterConditionEntry and InventoryItemProperties. `undefined`
 // is intentionally absent (JSON.parse never produces it).
 
+import {
+  LIVE_STATE_MAX_ABILITY_SCORE,
+  LIVE_STATE_MIN_ABILITY_SCORE,
+} from '../character/abilities.js';
 import type { AbilityScoreName, AbilityScores } from '../character/creation.js';
 
 export type { AbilityScoreName, AbilityScores };
@@ -82,10 +86,6 @@ function assertPlainJsonObject(
   }
 }
 
-function isFiniteInteger(n: unknown): n is number {
-  return typeof n === 'number' && Number.isFinite(n) && Number.isInteger(n);
-}
-
 /**
  * Walk a value and verify every leaf is a valid JSON plain-data type.
  * Rejects `undefined`, `NaN`, `Infinity`, functions, and class instances.
@@ -126,7 +126,7 @@ function assertJsonValue(value: unknown, path: string): void {
 
 /**
  * Validate a parsed ability-scores JSON value. Expects exactly the six
- * canonical D&D / PF2e keys, each an integer in [0, 30].
+ * canonical D&D / PF2e keys, each an integer in [1, 30].
  *
  * @throws {LiveStateSchemaError}
  */
@@ -155,12 +155,19 @@ export function validateAbilityScoresJson(
   // Each value must be a finite integer in [0, 30].
   for (const key of ABILITY_SCORE_KEYS) {
     const score = obj[key];
-    if (!isFiniteInteger(score)) {
+    if (
+      typeof score !== 'number' ||
+      !Number.isFinite(score) ||
+      !Number.isInteger(score)
+    ) {
       throw new LiveStateSchemaError(`${path}.${key} must be a finite integer`);
     }
-    if (score < 0 || score > 30) {
+    if (
+      score < LIVE_STATE_MIN_ABILITY_SCORE ||
+      score > LIVE_STATE_MAX_ABILITY_SCORE
+    ) {
       throw new LiveStateSchemaError(
-        `${path}.${key} must be between 0 and 30 (got ${score})`,
+        `${path}.${key} must be between ${LIVE_STATE_MIN_ABILITY_SCORE} and ${LIVE_STATE_MAX_ABILITY_SCORE} (got ${score})`,
       );
     }
   }

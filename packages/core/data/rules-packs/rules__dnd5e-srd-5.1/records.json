@@ -2299,7 +2299,8 @@
           "quantity": 1,
           "name": "pouch",
           "ref": "equipment:pouch",
-          "detail": "containing 15 gp"
+          "detail": "containing 15 gp",
+          "currencyGp": 15
         }
       ],
       "tableRefs": [

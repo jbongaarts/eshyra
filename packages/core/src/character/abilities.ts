@@ -20,6 +20,20 @@ export const ABILITY_SCORE_NAMES: readonly AbilityScoreName[] = [
   'charisma',
 ];
 
+/** Bounds for ability scores stored in the generic live character state. */
+export const LIVE_STATE_MIN_ABILITY_SCORE = 1;
+export const LIVE_STATE_MAX_ABILITY_SCORE = 30;
+
+export function isValidLiveStateAbilityScore(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= LIVE_STATE_MIN_ABILITY_SCORE &&
+    value <= LIVE_STATE_MAX_ABILITY_SCORE
+  );
+}
+
 /** Point-buy cost per base score (8–15), before ancestry bonuses. */
 export const POINT_BUY_COSTS: ReadonlyMap<number, number> = new Map([
   [8, 0],

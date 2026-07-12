@@ -193,6 +193,8 @@ export type {
   FinalizableDraftResult,
   MechanicalChoiceState,
   RequiredChoice,
+  StartingEquipmentMode,
+  StartingWealthResult,
 } from './character/characterDraft.js';
 export {
   createCharacterCreationEngine,
@@ -284,12 +286,14 @@ export type {
 export { runGuidedLevelUp } from './character/guidedLevelUpFlow.js';
 // Deterministic level-up application engine (eshyra-lupf.8).
 export type {
+  AppliedAbilityScoreIncrease,
   ApplyLevelUpInput,
   ApplyLevelUpResult,
   LevelUpAppliedChoice,
   LevelUpChangeSet,
   LevelUpChoiceSelections,
   LevelUpDelta,
+  LevelUpHitPointChoice,
   LevelUpHitPoints,
   LevelUpRequiredChoice,
   LevelUpRequiredChoiceKind,
@@ -357,6 +361,12 @@ export {
   createRulesPackCharacterResolver,
   getBundledDnd5eCharacterResolver,
 } from './character/rulesPackResolver.js';
+export type {
+  DerivedModifierContribution,
+  DerivedSpellcastingValues,
+  DeriveSpellcastingValuesInput,
+} from './character/spellcastingDerivation.js';
+export { deriveSpellcastingValues } from './character/spellcastingDerivation.js';
 // Source-cited character-creation oracles (eshyra-o9bd.15): retained for tests
 // and audit parity only. Runtime code reads generated pack metadata instead.
 export type {
@@ -419,6 +429,11 @@ export {
   StartingEquipmentGrantError,
   startingEquipmentGrantPhrases,
 } from './character/srdStartingEquipmentGrants.js';
+export {
+  resolveStartingWealth,
+  rollStartingWealth,
+  validateStartingWealthResult,
+} from './character/srdStartingWealth.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {

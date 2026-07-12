@@ -27,6 +27,7 @@
 
 import { ABILITY_SCORE_NAMES } from './abilities.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
+import type { StartingEquipmentMode } from './characterDraft.js';
 import {
   type CharacterCreationEngine,
   type CharacterDraft,
@@ -42,6 +43,7 @@ import {
   type ResolvedLanguageGrant,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import { getBackgroundCreationFacts } from './srdCreationChoices.js';
 
 /** D&D 5e coin denominations carried by a character, not inventory rows. */
 export interface CharacterWallet {
@@ -105,6 +107,7 @@ export interface CharacterSheet {
   readonly rulesPackId: string;
   readonly recipeId: string;
   readonly creationMode: string;
+  readonly startingEquipmentMode?: StartingEquipmentMode;
   readonly level: number;
   readonly identity: { readonly name: string; readonly concept?: string };
   readonly class: FinalizedRecordRef;
@@ -235,6 +238,9 @@ function buildFinalizedCharacter(
     rulesPackId: draft.rulesPackId,
     recipeId: draft.recipeId,
     creationMode: draft.creationMode,
+    ...(selections.startingEquipmentMode !== undefined
+      ? { startingEquipmentMode: selections.startingEquipmentMode }
+      : {}),
     level: draft.level,
     identity: {
       name: (draft.identity.name ?? '').trim(),
@@ -268,7 +274,7 @@ function buildFinalizedCharacter(
     armorProficiencies: [...(classRecord.armorProficiencies ?? [])],
     weaponProficiencies: [...(classRecord.weaponProficiencies ?? [])],
     equipment: collectEquipment(draft, engine, classRecord, backgroundRecord),
-    wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    wallet: walletForDraft(draft, backgroundRecord),
     languages: collectLanguages(
       draft,
       engine,
@@ -303,6 +309,9 @@ function collectEquipment(
   classRecord: ResolvedClassData,
   backgroundRecord: ResolvedBackgroundData | undefined,
 ): readonly string[] {
+  if (draft.selections.startingEquipmentMode === 'starting-wealth') {
+    return [];
+  }
   const chosenById = new Map(
     engine
       .mechanicalChoices(draft)
@@ -325,6 +334,28 @@ function collectEquipment(
     equipment.push(backgroundRecord.equipment);
   }
   return equipment;
+}
+
+function walletForDraft(
+  draft: CharacterDraft,
+  background: ResolvedBackgroundData | undefined,
+): CharacterWallet {
+  if (draft.selections.startingEquipmentMode === 'starting-wealth') {
+    const result = draft.selections.startingWealth;
+    if (result === undefined || result.totalGp < 0) {
+      throw new Error('starting-wealth mode requires a valid roll result');
+    }
+    return { cp: 0, sp: 0, ep: 0, gp: result.totalGp, pp: 0 };
+  }
+  const facts =
+    background?.key === undefined
+      ? undefined
+      : getBackgroundCreationFacts(background.key);
+  const gp = (facts?.equipmentGrants ?? []).reduce(
+    (sum, grant) => sum + (grant.currencyGp ?? 0),
+    0,
+  );
+  return { cp: 0, sp: 0, ep: 0, gp, pp: 0 };
 }
 
 /** Order-preserving de-duplication. */
