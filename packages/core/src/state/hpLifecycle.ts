@@ -96,8 +96,8 @@ export interface AdjustHpResult {
   /**
    * Set when the damaged character is concentrating and remains able: the
    * SRD requires a Constitution save at this DC (max(10, floor(damage/2)),
-   * per damage event — temp-HP absorption does not lower it). Roll it via
-   * `resolve_check` and record the outcome via `resolve_concentration` (F3).
+   * per damage event — temp-HP absorption does not lower it). Resolve it
+   * via `resolve_concentration`, which rolls the save itself (F3/F9).
    */
   concentrationCheck?: {
     effectId: string;

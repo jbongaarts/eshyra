@@ -93,11 +93,15 @@ Every timer records **quantity + semantic unit + explicit anchor** (PR #428
 lesson). The duration is a discriminated union:
 
 - `timed` — `amount` (≥1) + `unit` (`round` | `minute` | `hour` | `day`) +
-  `anchor_kind` (`spell-cast` | `effect-created` | `trigger-occurred` |
-  `source-turn-start` | `target-turn-start`). At creation the engine stamps
-  `anchor_at` (ISO), `anchor_game_time` (campaign clock snapshot), and — for
-  `round`-unit timers, which **require an active combat instance** —
-  `anchor_combat_instance_id` + `anchor_round`.
+  `anchor_kind`. Anchors are semantically validated, not just enum-checked:
+  `spell-cast` requires a spell source, `effect-created` is always available,
+  and `trigger-occurred` / `source-turn-start` / `target-turn-start` are
+  **schema-reserved and refused** until the F2 turn-boundary/trigger
+  integration gives them exact semantics (`eshyra-2n1t.5.1`) — the engine
+  never stamps an anchor it cannot honestly evaluate. At creation the engine
+  stamps `anchor_at` (ISO), `anchor_game_time` (campaign clock snapshot),
+  and — for `round`-unit timers, which **require an active combat
+  instance** — `anchor_combat_instance_id` + `anchor_round`.
 - `until-dismissed` — no deadline; requires `dismissible`.
 - `until-removed` — no natural expiry (curses, until-dispelled effects); ends
   only by dispel/source/ruling operations.
@@ -117,8 +121,8 @@ Deterministic expiry evaluation:
   (`clock.in_game_time`) is narrative text, so expiry is a declared operation —
   but only a `timed`/`until-trigger` effect can expire, the audit event records
   the declared elapsed reasoning, and the typed timer is preserved for review.
-  Turn-relative anchors are stored exactly and evaluated conservatively at
-  round granularity; exact turn-boundary auto-expiry is F2-integration rollout.
+  Turn-relative and trigger anchors are refused at creation until the F2
+  integration (`eshyra-2n1t.5.1`) can evaluate them exactly.
 
 ## 4. Status machine
 
@@ -179,14 +183,25 @@ a rule that re-creates the effect must create a new effect.
 - **Damage checks**: whenever a concentrating creature takes damage, the save
   DC is `max(10, floor(damage/2))` **per damage event** — computed from the
   damage dealt, not the net HP delta (temp HP absorb the loss, not the event).
-  The d20 itself is rolled through the existing F9 `resolve_check` seam
-  (seeded, ledgered) — F3 does not own a dice implementation.
-  `resolveConcentrationCheck` consumes the outcome evidence and fails closed:
-  the damage must be a positive integer, the `vs` the roll was made against
-  must equal the engine-computed DC, and the owner must actually be
-  concentrating — all validated before any mutation. Success appends a
-  `concentration-check` audit event; failure appends it and ends the effect
-  with break cleanup.
+  The outcome is **never model-declared**: the `resolve_concentration` tool
+  rolls the d20 itself through the F9 `resolveD20` primitive (seeded RNG,
+  2d20kh1/kl1 under advantage/disadvantage) against the engine-computed DC —
+  the model only declares which Constitution-save modifiers apply, its normal
+  F9 ruling — and applies the lifecycle transition atomically.
+  `resolveConcentrationCheck` accepts only verifiable roll evidence
+  (`ConcentrationSaveEvidence`: dice form, every die, kept-die selection,
+  modifier arithmetic, DC) and fails closed on any inconsistency before any
+  mutation; the outcome is then derived from `total >= dc`, never read from
+  the caller. The full roll is recorded in the effect's audit ledger and
+  rides the tool result with `category: 'saving_throw'` for the roll ledger
+  and turn trace.
+- **Incapacitation atomicity**: both damage paths break concentration inside
+  the same transaction as the HP/status write — `hpLifecycle.writeHpFields`
+  for characters, `updateCombatant` (which wraps its combatant write, actor
+  sync, and the F3 reaction in one transaction) for combatants. A cleanup
+  failure rolls back the entire HP event; a combatant can never be committed
+  as down while its concentration state is stale (tested via injected
+  cleanup failure).
 - **Incapacitation/death** (F6 hook): any `life_state` transition out of
   `alive` breaks the character's concentration (`incapacitated`, or `dead`)
   inside the same HP transaction. F3 never duplicates the life-state machine —

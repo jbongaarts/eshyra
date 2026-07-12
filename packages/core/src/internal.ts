@@ -1034,6 +1034,7 @@ export type {
   ConcentrationBreakOnLifeEventResult,
   ConcentrationCheckInput,
   ConcentrationCheckResult,
+  ConcentrationSaveEvidence,
   CreateActiveEffectInput,
   CreateActiveEffectResult,
   EffectActorLinkInput,
@@ -1088,6 +1089,7 @@ export {
   refreshEffect,
   removeEffectTarget,
   resolveConcentrationCheck,
+  SUPPORTED_EFFECT_ANCHOR_KINDS,
   suppressEffect,
   unsuppressEffect,
 } from './state/activeEffects.js';

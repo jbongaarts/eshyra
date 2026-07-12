@@ -36,6 +36,7 @@ import {
   startEncounter,
   suppressEffect,
   unsuppressEffect,
+  updateCombatant,
 } from '../src/internal.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
@@ -650,6 +651,18 @@ describe('concentration invariant', () => {
 // Concentration checks (F9 evidence seam)
 // ---------------------------------------------------------------------------
 
+/** Well-formed 1d20 save evidence for a given kept die and modifier. */
+function saveEvidence(vs: number, natural: number, modifierTotal: number) {
+  return {
+    vs,
+    dice: '1d20',
+    rolls: [natural],
+    natural,
+    modifierTotal,
+    total: natural + modifierTotal,
+  };
+}
+
 describe('resolveConcentrationCheck', () => {
   it('computes the SRD DC', () => {
     expect(concentrationSaveDc(1)).toBe(10);
@@ -658,21 +671,20 @@ describe('resolveConcentrationCheck', () => {
     expect(concentrationSaveDc(57)).toBe(28);
   });
 
-  it('a successful save maintains the effect and records evidence', () => {
+  it('derives success from the validated evidence and maintains the effect', () => {
     const { db, pcId } = setup();
     castBless(db, pcId);
     const result = resolveConcentrationCheck(db, {
       campaignId: CAMPAIGN,
       owner: pc(pcId),
       damage: 22,
-      vs: 11,
-      outcome: 'success',
-      rollRef: 'turn-7:resolve_check',
+      save: saveEvidence(11, 15, 3),
       ...CTX,
     });
     expect(result).toMatchObject({
       effectId: 'fx-bless',
       dc: 11,
+      outcome: 'success',
       broken: false,
     });
     expect(getConcentrationEffect(db, CAMPAIGN, pc(pcId))?.effectId).toBe(
@@ -683,22 +695,26 @@ describe('resolveConcentrationCheck', () => {
     expect(events.at(-1)?.detail).toEqual({
       damage: 22,
       dc: 11,
+      dice: '1d20',
+      rolls: [15],
+      natural: 15,
+      modifierTotal: 3,
+      total: 18,
       outcome: 'success',
-      rollRef: 'turn-7:resolve_check',
     });
   });
 
-  it('a failed save ends the effect with break cleanup', () => {
+  it('derives failure from the total and ends the effect with break cleanup', () => {
     const { db, pcId } = setup();
     castBless(db, pcId);
     const result = resolveConcentrationCheck(db, {
       campaignId: CAMPAIGN,
       owner: pc(pcId),
       damage: 7,
-      vs: 10,
-      outcome: 'failure',
+      save: saveEvidence(10, 4, 2),
       ...CTX,
     });
+    expect(result.outcome).toBe('failure');
     expect(result.broken).toBe(true);
     expect(result.cleanup?.links).toEqual([
       {
@@ -712,29 +728,86 @@ describe('resolveConcentrationCheck', () => {
     expect(characterConditionIds(db, pcId)).toEqual([]);
   });
 
-  it('rejects malformed evidence before any mutation', () => {
+  it('honors advantage/disadvantage kept-die selection rules', () => {
     const { db, pcId } = setup();
     castBless(db, pcId);
+    const result = resolveConcentrationCheck(db, {
+      campaignId: CAMPAIGN,
+      owner: pc(pcId),
+      damage: 22,
+      save: {
+        vs: 11,
+        dice: '2d20kh1',
+        rolls: [6, 14],
+        natural: 14,
+        modifierTotal: 0,
+        total: 14,
+      },
+      ...CTX,
+    });
+    expect(result.outcome).toBe('success');
+  });
+
+  it('rejects malformed or inconsistent evidence before any mutation', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId);
+    // Wrong DC for 22 damage.
     expect(() =>
       resolveConcentrationCheck(db, {
         campaignId: CAMPAIGN,
         owner: pc(pcId),
         damage: 22,
-        vs: 10, // wrong DC for 22 damage
-        outcome: 'failure',
+        save: saveEvidence(10, 4, 0),
         ...CTX,
       }),
     ).toThrow(/requires DC 11/);
+    // Non-positive damage.
     expect(() =>
       resolveConcentrationCheck(db, {
         campaignId: CAMPAIGN,
         owner: pc(pcId),
         damage: 0,
-        vs: 10,
-        outcome: 'failure',
+        save: saveEvidence(10, 4, 0),
         ...CTX,
       }),
     ).toThrow(/positive integer/);
+    // Arithmetic that does not add up.
+    expect(() =>
+      resolveConcentrationCheck(db, {
+        campaignId: CAMPAIGN,
+        owner: pc(pcId),
+        damage: 22,
+        save: { ...saveEvidence(11, 4, 0), total: 19 },
+        ...CTX,
+      }),
+    ).toThrow(/does not equal natural/);
+    // A kept die that is not the advantage maximum.
+    expect(() =>
+      resolveConcentrationCheck(db, {
+        campaignId: CAMPAIGN,
+        owner: pc(pcId),
+        damage: 22,
+        save: {
+          vs: 11,
+          dice: '2d20kh1',
+          rolls: [6, 14],
+          natural: 6,
+          modifierTotal: 0,
+          total: 6,
+        },
+        ...CTX,
+      }),
+    ).toThrow(/does not match the 2d20kh1 kept die/);
+    // An unrecognized dice form.
+    expect(() =>
+      resolveConcentrationCheck(db, {
+        campaignId: CAMPAIGN,
+        owner: pc(pcId),
+        damage: 22,
+        save: { ...saveEvidence(11, 4, 0), dice: '3d20' },
+        ...CTX,
+      }),
+    ).toThrow(/save dice must be one of/);
     // No ledger writes, effect untouched.
     expect(listEffectEvents(db, CAMPAIGN, 'fx-bless')).toHaveLength(1);
     expect(getConcentrationEffect(db, CAMPAIGN, pc(pcId))?.effectId).toBe(
@@ -749,8 +822,7 @@ describe('resolveConcentrationCheck', () => {
         campaignId: CAMPAIGN,
         owner: pc(pcId),
         damage: 10,
-        vs: 10,
-        outcome: 'failure',
+        save: saveEvidence(10, 4, 0),
         ...CTX,
       }),
     ).toThrow(/not concentrating/);
@@ -1705,9 +1777,7 @@ describe('replay determinism', () => {
       campaignId: CAMPAIGN,
       owner: pc(pcId),
       damage: 22,
-      vs: 11,
-      outcome: 'success',
-      rollRef: 'turn-3:resolve_check',
+      save: saveEvidence(11, 15, 3),
       ...CTX,
     });
     castBless(db, pcId, 'fx-bless-2');
@@ -1852,7 +1922,7 @@ describe('update_combatant concentration wiring', () => {
       ok: true,
       data: {
         concentration: {
-          broken: { broken: true, effectId: 'fx-goblin-conc' },
+          broken: { effectId: 'fx-goblin-conc', cause: 'dead' },
         },
       },
     });
@@ -1875,5 +1945,162 @@ describe('update_combatant concentration wiring', () => {
         (again.data as { concentration?: unknown }).concentration,
       ).toBeUndefined();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Combatant incapacitation atomicity (review blocker: PR #437)
+// ---------------------------------------------------------------------------
+
+describe('updateCombatant concentration atomicity', () => {
+  it('rolls back the HP/status write when the concentration cleanup fails', () => {
+    const { db } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-goblin-conc',
+      kind: 'spell-effect',
+      displayName: 'Goblin Focus',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      conditions: [
+        {
+          target: { kind: 'combatant', ref: GOBLIN_2 },
+          condition: { id: 'focused:fx-goblin-conc' },
+        },
+      ],
+      ...CTX,
+    });
+    const before = {
+      goblin1: combatantState(db, GOBLIN_1),
+      goblin2: combatantState(db, GOBLIN_2),
+      hp: db
+        .prepare(
+          `SELECT hp_current FROM encounter_combatant
+           WHERE campaign_id = ? AND combatant_id = ?`,
+        )
+        .get(CAMPAIGN, GOBLIN_1) as { hp_current: number },
+      events: listEffectEvents(db, CAMPAIGN, 'fx-goblin-conc').length,
+    };
+    // Inject a failure into the terminal effect transition so the break
+    // cleanup fails after the combatant write and condition removal.
+    db.exec(
+      `CREATE TRIGGER inject_cleanup_failure BEFORE UPDATE ON active_effect
+       WHEN NEW.status = 'ended'
+       BEGIN SELECT RAISE(ABORT, 'injected cleanup failure'); END;`,
+    );
+
+    expect(() =>
+      updateCombatant(db, {
+        campaignId: CAMPAIGN,
+        combatantId: GOBLIN_1,
+        hpDelta: -100,
+        ...CTX,
+      }),
+    ).toThrow(/injected cleanup failure/);
+
+    // Everything rolled back together: HP, status, the projected condition
+    // on the other goblin, the effect row, and the audit ledger.
+    db.exec('DROP TRIGGER inject_cleanup_failure;');
+    const after = {
+      goblin1: combatantState(db, GOBLIN_1),
+      goblin2: combatantState(db, GOBLIN_2),
+      hp: db
+        .prepare(
+          `SELECT hp_current FROM encounter_combatant
+           WHERE campaign_id = ? AND combatant_id = ?`,
+        )
+        .get(CAMPAIGN, GOBLIN_1) as { hp_current: number },
+      events: listEffectEvents(db, CAMPAIGN, 'fx-goblin-conc').length,
+    };
+    expect(after).toEqual(before);
+    expect(after.hp.hp_current).toBeGreaterThan(0);
+    expect(after.goblin1.status).toBe('alive');
+    expect(
+      getConcentrationEffect(db, CAMPAIGN, { kind: 'combatant', ref: GOBLIN_1 })
+        ?.effectId,
+    ).toBe('fx-goblin-conc');
+  });
+
+  it('reports the atomic break on the domain result itself', () => {
+    const { db } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-goblin-conc',
+      kind: 'spell-effect',
+      displayName: 'Goblin Focus',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      ...CTX,
+    });
+    const result = updateCombatant(db, {
+      campaignId: CAMPAIGN,
+      combatantId: GOBLIN_1,
+      hpDelta: -100,
+      ...CTX,
+    });
+    expect(result.concentrationBroken).toEqual({
+      effectId: 'fx-goblin-conc',
+      displayName: 'Goblin Focus',
+      cause: 'dead',
+    });
+    // An explicit unconscious status also downs (and would break) — but an
+    // already-down combatant triggers nothing further.
+    const again = updateCombatant(db, {
+      campaignId: CAMPAIGN,
+      combatantId: GOBLIN_1,
+      status: 'unconscious',
+      ...CTX,
+    });
+    expect(again.concentrationBroken).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Anchor semantic validation (review blocker: PR #437)
+// ---------------------------------------------------------------------------
+
+describe('anchor semantics', () => {
+  it("refuses 'spell-cast' anchors on non-spell sources", () => {
+    const { db } = setup();
+    expect(() =>
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-anchor-1',
+        kind: 'condition-package',
+        displayName: 'Mislabeled',
+        source: { kind: 'ruling' },
+        duration: {
+          kind: 'timed',
+          amount: 1,
+          unit: 'hour',
+          anchor: 'spell-cast',
+        },
+        ...CTX,
+      }),
+    ).toThrow(/requires a spell source/);
+  });
+
+  it('refuses the schema-reserved anchors until eshyra-2n1t.5.1 lands', () => {
+    const { db } = setup();
+    for (const anchor of [
+      'trigger-occurred',
+      'source-turn-start',
+      'target-turn-start',
+    ] as const) {
+      expect(() =>
+        createActiveEffect(db, {
+          campaignId: CAMPAIGN,
+          effectId: `fx-anchor-${anchor}`,
+          kind: 'condition-package',
+          displayName: 'Reserved Anchor',
+          source: { kind: 'ruling' },
+          duration: { kind: 'timed', amount: 1, unit: 'hour', anchor },
+          ...CTX,
+        }),
+      ).toThrow(/schema-reserved|eshyra-2n1t\.5\.1/);
+    }
+    expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
   });
 });

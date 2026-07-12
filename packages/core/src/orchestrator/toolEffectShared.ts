@@ -50,14 +50,11 @@ export const EFFECT_DURATION_SCHEMA: JsonSchema = {
     unit: { type: 'string', enum: ['round', 'minute', 'hour', 'day'] },
     anchor: {
       type: 'string',
-      enum: [
-        'spell-cast',
-        'effect-created',
-        'trigger-occurred',
-        'source-turn-start',
-        'target-turn-start',
-      ],
-      description: 'What the timer counts from.',
+      enum: ['spell-cast', 'effect-created'],
+      description:
+        'What the timer counts from. "spell-cast" requires a spell source; ' +
+        'turn-relative and trigger anchors are reserved until the F2 ' +
+        'turn-boundary integration lands.',
     },
     trigger: {
       type: 'string',

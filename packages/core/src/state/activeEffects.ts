@@ -95,6 +95,14 @@ export const EFFECT_ANCHOR_KINDS = [
 ] as const;
 export type EffectAnchorKind = (typeof EFFECT_ANCHOR_KINDS)[number];
 
+/** Anchors whose semantics the engine fully supports today. The other three
+ *  are schema-reserved for the F2 turn-boundary/trigger integration
+ *  (eshyra-2n1t.5.1) and are refused at creation/refresh. */
+export const SUPPORTED_EFFECT_ANCHOR_KINDS: readonly EffectAnchorKind[] = [
+  'spell-cast',
+  'effect-created',
+];
+
 /** Typed duration: every timer names quantity + semantic unit + anchor. */
 export type EffectDurationInput =
   | {
@@ -292,22 +300,40 @@ export interface EndActiveEffectResult {
   readonly cleanup: EffectCleanupSummary;
 }
 
+/**
+ * Verifiable evidence of the Constitution save the engine rolled (the F9
+ * d20 seam). The outcome is never declared: it is derived here from
+ * `total >= vs` after the evidence itself is validated for internal
+ * consistency (dice form, kept-die selection, arithmetic, and the DC).
+ */
+export interface ConcentrationSaveEvidence {
+  /** DC the save was resolved against — must equal the engine-computed DC. */
+  readonly vs: number;
+  /** Expression rolled: 1d20, 2d20kh1 (advantage), or 2d20kl1. */
+  readonly dice: string;
+  /** Every d20 generated (two under advantage/disadvantage). */
+  readonly rolls: readonly number[];
+  /** The kept die — must match the dice expression's selection rule. */
+  readonly natural: number;
+  /** Σ declared modifiers + applied proficiency. */
+  readonly modifierTotal: number;
+  /** natural + modifierTotal. */
+  readonly total: number;
+}
+
 export interface ConcentrationCheckInput extends EffectMutationContext {
   readonly campaignId: string;
   readonly owner: EffectParticipant;
   /** Full damage of the event (before temp-HP absorption). */
   readonly damage: number;
-  /** DC the save was rolled against — must equal the engine-computed DC. */
-  readonly vs: number;
-  readonly outcome: 'success' | 'failure';
-  /** Provenance pointer to the seeded roll (e.g. the resolve_check turn). */
-  readonly rollRef?: string;
+  readonly save: ConcentrationSaveEvidence;
 }
 
 export interface ConcentrationCheckResult {
   readonly effectId: string;
   readonly displayName: string;
   readonly dc: number;
+  /** Derived by the engine from the validated evidence: total >= dc. */
   readonly outcome: 'success' | 'failure';
   readonly broken: boolean;
   readonly cleanup?: EffectCleanupSummary;
@@ -1050,12 +1076,20 @@ interface ValidatedDuration {
  * timers require an active combat instance — outside structured combat a
  * round timer has neither a deadline nor an advancing clock, which is one of
  * the impossible states this module rejects.
+ *
+ * Anchor semantics are validated, not just enum membership: `spell-cast`
+ * requires a spell source (it is meaningless otherwise), `effect-created` is
+ * always available, and the remaining anchors are schema-reserved until the
+ * F2 turn-boundary/trigger integration gives them exact semantics
+ * (eshyra-2n1t.5.1) — accepting them now would stamp an anchor the engine
+ * cannot honestly evaluate.
  */
 function validateDuration(
   db: Db,
   campaignId: string,
   duration: EffectDurationInput,
   dismissible: boolean,
+  sourceKind: EffectSourceKind,
   ctx: EffectMutationContext,
 ): ValidatedDuration {
   const empty: Omit<ValidatedDuration, 'kind'> = {
@@ -1083,6 +1117,19 @@ function validateDuration(
       if (!EFFECT_ANCHOR_KINDS.includes(duration.anchor)) {
         throw new ActiveEffectError(
           `duration anchor must be one of: ${EFFECT_ANCHOR_KINDS.join(', ')}`,
+        );
+      }
+      if (!SUPPORTED_EFFECT_ANCHOR_KINDS.includes(duration.anchor)) {
+        throw new ActiveEffectError(
+          `anchor '${duration.anchor}' is schema-reserved until the F2 turn-boundary/` +
+            'trigger integration lands (eshyra-2n1t.5.1); anchor to ' +
+            `${SUPPORTED_EFFECT_ANCHOR_KINDS.join(' or ')} instead`,
+        );
+      }
+      if (duration.anchor === 'spell-cast' && sourceKind !== 'spell') {
+        throw new ActiveEffectError(
+          `anchor 'spell-cast' requires a spell source (got '${sourceKind}'); ` +
+            "use 'effect-created'",
         );
       }
       let instanceId: string | null = null;
@@ -1554,6 +1601,7 @@ export function createActiveEffect(
       input.campaignId,
       input.duration,
       dismissible,
+      input.source.kind,
       input,
     );
     if (recordDuration !== undefined) {
@@ -2050,6 +2098,62 @@ function validateDeclaredExpiry(
 // Concentration checks & life-state reactions
 // ---------------------------------------------------------------------------
 
+/** The three d20 forms the F9 resolver produces, with their kept-die rule. */
+const SAVE_DICE_FORMS: Readonly<
+  Record<string, { count: number; kept: (rolls: readonly number[]) => number }>
+> = {
+  '1d20': { count: 1, kept: (rolls) => rolls[0] as number },
+  '2d20kh1': { count: 2, kept: (rolls) => Math.max(...rolls) },
+  '2d20kl1': { count: 2, kept: (rolls) => Math.min(...rolls) },
+};
+
+/**
+ * Validate the save evidence for internal consistency: recognized dice form,
+ * legal d20 faces, kept-die selection matching the form, and arithmetic.
+ * The outcome is never part of the evidence — it is derived from the total.
+ */
+function validateSaveEvidence(
+  save: ConcentrationSaveEvidence,
+  dc: number,
+): void {
+  if (save.vs !== dc) {
+    throw new ActiveEffectError(
+      `the save was resolved against DC ${save.vs} but this damage requires ` +
+        `DC ${dc} (max(10, floor(damage/2)))`,
+    );
+  }
+  const form = SAVE_DICE_FORMS[save.dice];
+  if (form === undefined) {
+    throw new ActiveEffectError(
+      `save dice must be one of ${Object.keys(SAVE_DICE_FORMS).join(', ')} (got '${save.dice}')`,
+    );
+  }
+  if (
+    save.rolls.length !== form.count ||
+    save.rolls.some((r) => !Number.isInteger(r) || r < 1 || r > 20)
+  ) {
+    throw new ActiveEffectError(
+      `save rolls must be ${form.count} integer(s) in [1, 20] for ${save.dice}`,
+    );
+  }
+  if (save.natural !== form.kept(save.rolls)) {
+    throw new ActiveEffectError(
+      `save natural ${save.natural} does not match the ${save.dice} kept die of ` +
+        `[${save.rolls.join(', ')}]`,
+    );
+  }
+  if (
+    !Number.isInteger(save.modifierTotal) ||
+    !Number.isInteger(save.total) ||
+    save.total !== save.natural + save.modifierTotal
+  ) {
+    throw new ActiveEffectError(
+      `save total ${save.total} does not equal natural ${save.natural} + ` +
+        `modifiers ${save.modifierTotal}`,
+    );
+  }
+}
+
 export function resolveConcentrationCheck(
   db: Db,
   input: ConcentrationCheckInput,
@@ -2061,18 +2165,12 @@ export function resolveConcentrationCheck(
           'triggering event, before temporary-HP absorption)',
       );
     }
-    if (input.outcome !== 'success' && input.outcome !== 'failure') {
-      throw new ActiveEffectError(
-        "concentration check outcome must be 'success' or 'failure'",
-      );
-    }
     const dc = concentrationSaveDc(input.damage);
-    if (input.vs !== dc) {
-      throw new ActiveEffectError(
-        `the save was rolled against DC ${input.vs} but ${input.damage} damage requires ` +
-          `DC ${dc} (max(10, floor(damage/2))); re-roll against the correct DC`,
-      );
-    }
+    validateSaveEvidence(input.save, dc);
+    // Engine-derived outcome: checks and saves have no natural auto
+    // success/failure in the SRD, so the total decides.
+    const outcome: 'success' | 'failure' =
+      input.save.total >= dc ? 'success' : 'failure';
     const row = txnDb
       .prepare(
         `SELECT ${EFFECT_COLUMNS} FROM active_effect
@@ -2097,14 +2195,18 @@ export function resolveConcentrationCheck(
       {
         damage: input.damage,
         dc,
-        outcome: input.outcome,
-        ...(input.rollRef === undefined ? {} : { rollRef: input.rollRef }),
+        dice: input.save.dice,
+        rolls: [...input.save.rolls],
+        natural: input.save.natural,
+        modifierTotal: input.save.modifierTotal,
+        total: input.save.total,
+        outcome,
       },
       input,
     );
 
     let cleanup: EffectCleanupSummary | undefined;
-    if (input.outcome === 'failure') {
+    if (outcome === 'failure') {
       cleanup = finalizeEnd(
         txnDb,
         row,
@@ -2116,8 +2218,8 @@ export function resolveConcentrationCheck(
       effectId: row.effect_id,
       displayName: row.display_name,
       dc,
-      outcome: input.outcome,
-      broken: input.outcome === 'failure',
+      outcome,
+      broken: outcome === 'failure',
       ...(cleanup === undefined ? {} : { cleanup }),
     };
   });
@@ -2402,6 +2504,7 @@ export function refreshEffect(
       input.campaignId,
       durationInput,
       row.dismissible === 1,
+      row.source_kind,
       input,
     );
     // A refreshed duration is grounded the same way a created one is: a

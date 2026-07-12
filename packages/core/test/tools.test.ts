@@ -838,38 +838,68 @@ describe('active-effect tools (F3, eshyra-2n1t.5)', () => {
     }
   });
 
-  it('resolve_concentration validates the DC and applies break cleanup', () => {
+  it('resolve_concentration rolls the save itself — outcome is never declared', () => {
     const c = ctx();
     const registry = createDefaultToolRegistry();
     registry.invoke('start_effect', blessArgs('fx-1'), c);
 
-    const wrongDc = registry.invoke(
+    // A declared outcome is a schema violation, not an accepted input.
+    const declaredOutcome = registry.invoke(
       'resolve_concentration',
       {
         owner: { kind: 'character', ref: 'pc-1' },
         damage: 22,
-        vs: 10,
-        outcome: 'failure',
+        outcome: 'success',
       },
       c,
     );
-    expect(wrongDc).toMatchObject({ ok: false, code: 'effect_error' });
+    expect(declaredOutcome).toMatchObject({ ok: false, code: 'invalid_args' });
     expect(conditionIds(c.db)).toEqual(['blessed:fx-1']);
 
+    // A +100 modifier makes total >= DC certain: the engine derives success
+    // from its own roll and the effect survives.
+    const succeeded = registry.invoke(
+      'resolve_concentration',
+      {
+        owner: { kind: 'character', ref: 'pc-1' },
+        damage: 22,
+        modifiers: [{ label: 'war caster (test)', value: 100 }],
+      },
+      c,
+    );
+    expect(succeeded).toMatchObject({
+      ok: true,
+      data: {
+        category: 'saving_throw',
+        effectId: 'fx-1',
+        dc: 11,
+        outcome: 'success',
+        broken: false,
+      },
+    });
+    if (succeeded.ok) {
+      const data = succeeded.data as {
+        resolution: { dice: string; rolls: number[]; total: number };
+      };
+      expect(data.resolution.dice).toBe('1d20');
+      expect(data.resolution.rolls).toHaveLength(1);
+      expect(data.resolution.total).toBeGreaterThanOrEqual(11);
+    }
+    expect(conditionIds(c.db)).toEqual(['blessed:fx-1']);
+
+    // A -100 modifier makes failure certain: the effect ends with cleanup.
     const failed = registry.invoke(
       'resolve_concentration',
       {
         owner: { kind: 'character', ref: 'pc-1' },
         damage: 22,
-        vs: 11,
-        outcome: 'failure',
-        rollRef: 'turn-1:resolve_check',
+        modifiers: [{ label: 'cursed (test)', value: -100 }],
       },
       c,
     );
     expect(failed).toMatchObject({
       ok: true,
-      data: { effectId: 'fx-1', dc: 11, broken: true },
+      data: { effectId: 'fx-1', dc: 11, outcome: 'failure', broken: true },
     });
     expect(conditionIds(c.db)).toEqual([]);
   });

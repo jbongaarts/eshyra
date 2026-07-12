@@ -4,7 +4,6 @@ import {
   setReactionAllowance,
 } from '../state/actionEconomy.js';
 import {
-  breakCombatantConcentration,
   concentrationSaveDc,
   getConcentrationEffect,
 } from '../state/activeEffects.js';
@@ -183,9 +182,9 @@ export const updateCombatantTool: Tool = {
         sessionId: ctx.sessionId,
         at: ctx.at,
       });
-      // F3 concentration reactions: a combatant that drops to 0 HP or is
-      // marked down/dead loses concentration outright (incapacitated); one
-      // that takes damage and stays up owes the Constitution save.
+      // F3 concentration reactions. The incapacitation/death break happened
+      // INSIDE updateCombatant's transaction (never here — the tool only
+      // reports it); a combatant damaged but still up owes the save.
       let concentration:
         | { broken: unknown }
         | { checkRequired: unknown }
@@ -194,22 +193,9 @@ export const updateCombatantTool: Tool = {
         update.combatant.hpCurrent === 0 ||
         update.combatant.status === 'dead' ||
         update.combatant.status === 'unconscious';
-      if (downed) {
-        const broken = breakCombatantConcentration(
-          ctx.db,
-          ctx.campaignId,
-          a.combatantId,
-          update.combatant.status === 'dead' ? 'dead' : 'incapacitated',
-          {
-            provenance: `model:${ctx.turnId}`,
-            sessionId: ctx.sessionId,
-            at: ctx.at,
-          },
-        );
-        if (broken.broken) {
-          concentration = { broken };
-        }
-      } else if (typeof a.hpDelta === 'number' && a.hpDelta < 0) {
+      if (update.concentrationBroken !== undefined) {
+        concentration = { broken: update.concentrationBroken };
+      } else if (!downed && typeof a.hpDelta === 'number' && a.hpDelta < 0) {
         const live = getConcentrationEffect(ctx.db, ctx.campaignId, {
           kind: 'combatant',
           ref: a.combatantId,

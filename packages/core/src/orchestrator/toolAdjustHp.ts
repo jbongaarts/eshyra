@@ -24,8 +24,8 @@ export const adjustHpTool: Tool = {
     'healing a dead character is refused. Death state and death-save ' +
     'counters are maintained by this tool — never track them in prose. ' +
     'If the damaged character is concentrating, the result reports the ' +
-    'required Constitution save (concentrationCheck with its DC — roll it ' +
-    'via resolve_check, record via resolve_concentration) or that ' +
+    'required Constitution save (concentrationCheck with its DC — resolve ' +
+    'it with resolve_concentration, which rolls the save itself) or that ' +
     'concentration broke outright from incapacitation (concentrationBroken).',
   inputSchema: {
     type: 'object',
