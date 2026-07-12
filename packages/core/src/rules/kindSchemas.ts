@@ -106,6 +106,8 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'seeInMagicalDarkness',
   'spellReflection',
   'spellStoring',
+  'exclusiveInstance',
+  'componentPresenceTermination',
   'swarm',
   'teleport',
   'tunneler',
@@ -3009,6 +3011,11 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqInt(effect, 'reflectedOn', path, 1);
   },
   spellStoring: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      ['kind', 'maximumSpellLevel', 'capacity', 'castingTime', 'target'],
+      path,
+    );
     const level = reqInt(effect, 'maximumSpellLevel', path, 1);
     if (level > 9) {
       throw new RulesPackError(
@@ -3016,6 +3023,33 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       );
     }
     optInt(effect, 'capacity', path, 1);
+    optEnum(effect, 'castingTime', path, new Set(['1-action']));
+    optEnum(effect, 'target', path, new Set(['self']));
+  },
+  exclusiveInstance: (effect, path) => {
+    requireOnlyKeys(effect, ['kind', 'maxActive', 'replacement'], path);
+    const maxActive = reqInt(effect, 'maxActive', path, 1);
+    if (maxActive !== 1) {
+      throw new RulesPackError(`${path}.maxActive must be exactly 1`);
+    }
+    if (effect.replacement !== 'previous-ends') {
+      throw new RulesPackError(
+        `${path}.replacement must be "previous-ends", got ${JSON.stringify(effect.replacement)}`,
+      );
+    }
+  },
+  componentPresenceTermination: (effect, path) => {
+    requireOnlyKeys(effect, ['kind', 'component', 'location'], path);
+    if (effect.component !== 'ivory-statuette-of-self') {
+      throw new RulesPackError(
+        `${path}.component must be "ivory-statuette-of-self", got ${JSON.stringify(effect.component)}`,
+      );
+    }
+    if (effect.location !== 'on-your-person') {
+      throw new RulesPackError(
+        `${path}.location must be "on-your-person", got ${JSON.stringify(effect.location)}`,
+      );
+    }
   },
   swarm: (effect, path) => {
     if (effect.canOccupyOtherCreaturesSpace !== true) {

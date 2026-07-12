@@ -1178,9 +1178,7 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
  * stale here and must be removed.
  */
 export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
-  'spell:alarm',
   'spell:commune-with-nature',
-  'spell:contingency',
   'spell:creation',
   'spell:demiplane',
   'spell:druidcraft',
@@ -1189,7 +1187,6 @@ export const ACCEPTED_METADATA_ONLY_SPELLS: readonly string[] = Object.freeze([
   'spell:identify',
   'spell:illusory-script',
   'spell:legend-lore',
-  'spell:magic-mouth',
   'spell:mending',
   'spell:move-earth',
   'spell:passwall',

@@ -154,15 +154,24 @@ GM-narrated result rather than a state gate.
 
 ## S3 — ward/trigger & spatial boundaries (8 spells)
 
-- `alarm`, `magic-mouth`: reuse `triggeredEffect { trigger, result }`
-  verbatim (first pass; no new kind).
-- `contingency`: `spellStoring { maximumSpellLevel: 5, capacity: 1,
-  castingTime: '1-action', target: 'self' }` + `triggeredEffect` +
-  `{ kind: 'exclusiveInstance', maxActive: 1, replacement: 'previous-ends' }`
-  + `{ kind: 'componentPresenceTermination',
-       component: 'ivory-statuette-of-self',
-       location: 'on-your-person' }`. These are deterministic limits, not
-  riders.
+- **S3a implemented (`eshyra-o9bd.18.7.9.7`):** `alarm` emits
+  `{ kind: 'triggeredEffect', trigger:
+  'tiny-or-larger-creature-touches-or-enters-warded-area-excluding-designated-creatures',
+  result: 'chosen-mental-alarm-within-1-mile-that-wakes-caster-or-audible-hand-bell-for-10-seconds-within-60-feet',
+  condition: 'warded-door-window-or-area-no-larger-than-20-foot-cube' }`.
+  `magic-mouth` emits `{ kind: 'triggeredEffect', trigger:
+  'specified-visual-or-audible-circumstance-occurs-within-30-feet-of-object',
+  result: 'object-recites-stored-message-up-to-25-words-once-or-repeatedly-as-chosen' }`.
+  `contingency` emits, in order, `{ kind: 'spellStoring',
+  maximumSpellLevel: 5, capacity: 1, castingTime: '1-action', target: 'self' }`,
+  `{ kind: 'triggeredEffect', trigger:
+  'specified-circumstance-first-occurs-before-contingency-ends', result:
+  'stored-spell-immediately-takes-effect-on-self-and-contingency-ends' }`,
+  `{ kind: 'exclusiveInstance', maxActive: 1, replacement: 'previous-ends' }`,
+  and `{ kind: 'componentPresenceTermination',
+  component: 'ivory-statuette-of-self', location: 'on-your-person' }`.
+  Every emitted constant is gated by its reviewed source clauses. S3b and S3c
+  remain pending.
 - `private-sanctum`, `tiny-hut`:
   ```ts
   { kind: 'wardedArea',
