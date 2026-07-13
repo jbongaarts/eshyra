@@ -1,15 +1,15 @@
 # eshyra-o9bd.18.7.9 — Exhaustive classification of reviewed memberships
 
-Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399. C5/C6/C7/C8/C9 rollouts:
+Date: 2026-07-06. Bead: `eshyra-o9bd.18.7.9`. PR: #399. C4/C5/C6/C7/C8/C9 rollouts:
 beads `eshyra-o9bd.18.7.9.11`, `eshyra-o9bd.18.7.9.12`,
 `eshyra-o9bd.18.7.9.13`, `eshyra-o9bd.18.7.9.14`, and
-`eshyra-o9bd.18.7.9.15`.
+`eshyra-o9bd.18.7.9.15`, with C4 in bead `eshyra-o9bd.18.7.9.10`.
 (`eshyra-o9bd-18-7-9-membership-corrections`).
 
 This is the authoritative, record-by-record semantic disposition source for
 the reviewed creature-entry refs now represented by
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and for
-`ACCEPTED_METADATA_ONLY_SPELLS` (20 keys after S1 rollout) in
+`ACCEPTED_METADATA_ONLY_SPELLS` (12 final residual keys) in
 `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts` as of this
 branch. Seventy-two creature-entry refs were reviewed in total: 6 were
 implemented during the original pass and the 16 C2 False Appearance refs were
@@ -17,10 +17,8 @@ implemented in the follow-up rollout, and the 10 C3 refs were implemented in a
 second follow-up rollout, and the 22 C1 shape-change refs were implemented in
 a later rollout. The C5 Split, C6 damage-absorption, C7 Berserk, C8 Rampage,
 and C9 residual-creature rollouts described below have graduated their 14 refs,
-leaving 4 residual refs represented in the per-ref registry. Of those 4
-residual refs, 2 are
-permanent `accepted-prose-only` entries and 2 are pending `finding` entries
-routed to C4. Spell
+leaving 2 permanent `accepted-prose-only` refs represented in the per-ref
+registry. C4 is implemented by bead `eshyra-o9bd.18.7.9.10`. Spell
 metadata-only membership remains represented separately by
 `ACCEPTED_METADATA_ONLY_SPELLS`; the 14 S1 summoning/control spells and the 17
 S2 small deterministic-clause spells have graduated out. Every record's full
@@ -41,7 +39,7 @@ Disposition vocabulary:
 - **design** — deterministic but needs a genuinely new contract/domain
   decision before rollout (Opus-tier design, then rollout).
 
-## 1. Creature-entry refs (72 reviewed total; 2 pending findings; 4 residual registry entries)
+## 1. Creature-entry refs (72 reviewed total; 0 pending findings; 2 residual registry entries)
 
 ### 1.1 Shape-change family — 22 refs — disposition: implemented (slice C1)
 
@@ -199,20 +197,19 @@ mechanics themselves, per record:
 The bundle's readiness registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` in
 `create-dnd5e-srd-audit-bundle/cli.ts`, superseding the former
 `ACCEPTED_PROSE_CREATURE_ENTRY_REFS`) additionally now records a per-ref
-disposition — `accepted-prose-only` for the 2 genuine accepts (§1.5) or
-`finding` (with `bead`/`slice`) for the other 2 residual refs classified in
-this document — so the bucket-level `creature-entry#mechanical-prose` /
-`creature-entry#narrative-prose` policy entries can never again blanket-bless
-the remaining C4 pending work as accepted prose.
+disposition — `accepted-prose-only` for the 2 genuine accepts (§1.5), with
+future findings requiring explicit `bead`/`slice` metadata — so the bucket-level `creature-entry#mechanical-prose` /
+`creature-entry#narrative-prose` policy entry cannot blanket-bless an
+unreviewed ref as accepted prose.
 
-#### 1.6.2 Reckless family — 2 refs — disposition: design (new slice C4)
+#### 1.6.2 Reckless family — 2 refs — disposition: implemented (slice C4; bead `eshyra-o9bd.18.7.9.10`)
 
-Deterministic two-sided toggle: the creature can grant itself advantage on
-its own melee attack rolls for the turn, at the cost of granting advantage to
-attacks made against it until the start of its next turn. No existing kind
-captures a self-elected, symmetric advantage trade; needs a small new
-contract (e.g. `recklessAttack { grants: 'advantage-on-melee-attacks',
-tradeoff: 'advantage-to-attacks-against-self', until: 'start-of-next-turn' }`).
+Deterministic two-sided toggle: at the start of its turn, the creature may
+elect one linked, schema-validated `recklessAttack` effect. It grants
+advantage on `all-melee-weapon-attack-rolls` for the `current-turn`, trading
+that for advantage on `all-attack-rolls-against-self` until
+`until-start-of-next-turn`. The benefit and tradeoff remain one object so the
+optional bargain cannot be split into unrelated modifiers.
 
 - `creature:berserker#traits:Reckless`
 - `creature:minotaur#traits:Reckless`
@@ -298,9 +295,9 @@ Not in the same family as each other, but djinni/efreeti share one contract
 24 = 6 implemented (§1.6.1, removed from the array) + 2 folded into existing
 families (§1.3/§1.4, aboleth and ettin) + 16 newly classified into slices
 C4–C9 (2 Reckless + 2 Split + 4 Absorption + 2 Berserk + 2 Rampage + 4
-single-record residuals: Shriek, Djinni, Efreeti, Shield). C5, C6, C7, C8,
-and C9 are now implemented, so the current residual registry is 4 entries: 2
-accepted prose-only refs plus 2 pending findings (C4 2).
+single-record residuals: Shriek, Djinni, Efreeti, Shield). C4, C5, C6, C7,
+C8, and C9 are now implemented, so the current residual registry is 2
+entries: the 2 permanent accepted prose-only refs.
 
 ## 2. Metadata-only spells (53)
 
@@ -453,18 +450,17 @@ None of the remaining slices below is started unless stated.
 | **C3** telepathy/knowledge/state | `telepathy`, `communication`, `locationKnowledge`, `pathMemory`, sleep-exception payloads; 10 creature refs (§1.3–1.4) + 2 spells (§2.9) | yes, small | **Implemented** |
 | **S1** summoning | `summoning` payload extension (option menus, control economy, lifecycle transitions, statblock modification); 14 spells | yes — implemented | **Implemented** |
 | **S2** small deterministic clauses | `percentChance` (5, §2.2), quantified creation (2, §2.4), conjured-utility-object (2, §2.5), reclassified clause set (8, §2.8: onset die/stage shift, travel rates, barrier thresholds, difficult-terrain flag, recast lockout, concurrent caps ×2, permanence) | yes, small shapes | **Implemented** |
-| **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward-flags design; gate (`planeShift` reuse + portal params), demiplane, passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Opus** for ward flags/spatial; Codex for triggeredEffect reuse |
+| **S3** ward/trigger & spatial boundaries | alarm + magic-mouth via existing `triggeredEffect`; contingency via `spellStoring`+`triggeredEffect`; private-sanctum/tiny-hut ward flags; gate, demiplane, and passwall spatial-state payloads; 8 spells (§2.3) | partial reuse; ward flags + spatial payloads new | **Implemented** |
 | **S4** membership bookkeeping | after each slice: exact removals/updates in the relevant registry (`CREATURE_ENTRY_REVIEWED_DISPOSITIONS` for creature-entry findings, `ACCEPTED_*` for accepted spell metadata/prose buckets), count reconciliation, readiness-report deltas, pack regeneration | no | **Codex** |
-| **C4** reckless family | `recklessAttack` two-sided advantage-toggle contract; 2 refs (§1.6.2) | yes, small | **Opus** design, Codex rollout |
+| **C4** reckless family | `recklessAttack` two-sided advantage-toggle contract; 2 refs (§1.6.2) | yes, small | **Implemented** (bead `eshyra-o9bd.18.7.9.10`) |
 | **C5** split family | `splitOnDamage` reproduction-on-damage contract; 2 refs (§1.6.3) | yes, small | **Implemented** (bead `eshyra-o9bd.18.7.9.11`) |
 | **C6** damage-absorption family | `damageAbsorption` contract; 4 refs (§1.6.4) | yes, trivial shape | **Implemented** (bead `eshyra-o9bd.18.7.9.12`) |
 | **C7** berserk family | `berserk` state-machine contract with d6 entry, continuation/exits, and Flesh Golem calming; 2 refs (§1.6.5) | yes — genuine state machine | **Implemented** (bead `eshyra-o9bd.18.7.9.13`) |
 | **C8** rampage family | `triggeredBonusAction` with linked reduction trigger and move-and-bite result; 2 refs (§1.6.6) | yes, small closed contract | **Implemented** (bead `eshyra-o9bd.18.7.9.14`) |
 | **C9** single-record residuals | `soundAlarm` (shrieker), `onDeathBodyDisposal` (djinni + efreeti, shared), `reactionAcBonus` (shield guardian); 4 refs, 3 contracts (§1.6.7) | yes, small shapes | **Implemented** (bead `eshyra-o9bd.18.7.9.15`) |
 
-Ordering: C1/C2/C3/C5/C6/C7/C8/C9 and S1/S2 are implemented. S3 remains last
-because it interacts with modeled teleport/planar kinds. Only C4 (§1.6,
-residual reconciliation pass) remains to land; it does not block S3.
+Ordering: C1–C9 and S1–S3 are implemented. No implementation slices remain
+under this artifact.
 
 Reconciliation (mechanically verified 2026-07-06 against
 `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` and `ACCEPTED_METADATA_ONLY_SPELLS`;
@@ -478,11 +474,11 @@ every membership key appears in exactly one disposition section):
   (C4 2 + C5 2 + C6 4 + C7 2 + C8 2 + C9 4, C9's 4 refs sharing 3 contracts
   since djinni/efreeti share `onDeathBodyDisposal`)
 - creatures total reviewed by this artifact: 72 (48 + 24); residual
-  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C5/C6/C7/C8/C9
-  rollouts: 4 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented
+  `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` membership after the C4/C5/C6/C7/C8/C9
+  rollouts: 2 (72 - 6 implemented - 16 C2 implemented - 10 C3 implemented
   - 22 C1 implemented - 2 C5 implemented - 4 C6 implemented - 2 C7
-  implemented - 2 C8 implemented - 4 C9 implemented) = accept\* 2 + C4 2
-  (2+2 = 4). The 2 pending findings are C4 2.
+  implemented - 2 C8 implemented - 4 C9 implemented - 2 C4 implemented) =
+  2 permanent accepted-prose-only refs. Pending findings: 0.
 - spells originally classified here: 53 = S1 14 (§2.1) + S2 17 (§2.2 5 +
   §2.4 2 + §2.5 2 + §2.8 8) + S3 8 (§2.3) + C3 2 (§2.9) + accept 11 (§2.7) +
   accept\* 1 (§2.6). Residual `ACCEPTED_METADATA_ONLY_SPELLS` membership after
@@ -509,3 +505,7 @@ only made the printed size table available for lookup. It did not represent the
 fixed construct abilities, conditional movement, senses, attack procedure, or
 summoning/control semantics. Those are now carried by the typed `summoning`
 effect while the table remains the owner of size-varying AC/HP/attack values.
+
+Final closure: all C1–C9 and S1–S3 implementation slices are complete under
+this artifact; the creature readiness report has zero pending findings, and no
+implementation work remains here.

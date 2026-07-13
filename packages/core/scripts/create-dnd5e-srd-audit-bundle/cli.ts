@@ -1049,10 +1049,10 @@ export type GameplayReadinessBucket =
  *   - `unsupported` — a projection is not applicable; `reason` documents it.
  *   - `finding` — deterministic modeling is owed and `bead` names the open
  *     issue that will drive the bucket to zero.
- *   - `reviewed-per-ref` — the bucket mixes genuinely accepted prose with
- *     reviewed pending findings; this bucket-level entry only certifies that
- *     per-ref review is in force (see `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`)
- *     — it must never itself be read as blanket acceptance.
+ *   - `reviewed-per-ref` — the bucket carries an explicit per-ref review;
+ *     this bucket-level entry only certifies that review is in force (see
+ *     `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`) — it must never itself be read
+ *     as blanket acceptance.
  *
  * Records that are already modeled never need an entry. The policy is
  * fail-closed both ways (`assertGameplayReadinessDispositions`): a non-empty
@@ -1103,54 +1103,23 @@ export type CreatureEntryReviewedDisposition =
       readonly reason: string;
     };
 
-const CREATURE_ENTRY_FINDINGS_BEAD = 'eshyra-o9bd.18.7.9';
-
-function creatureEntryFinding(
-  slice: string,
-  reason: string,
-): CreatureEntryReviewedDisposition {
-  return {
-    status: 'finding',
-    bead: CREATURE_ENTRY_FINDINGS_BEAD,
-    slice,
-    reason,
-  };
-}
-
 function creatureEntryAcceptedProse(
   reason: string,
 ): CreatureEntryReviewedDisposition {
   return { status: 'accepted-prose-only', reason };
 }
 
-const CREATURE_ENTRY_SLICE_REASONS: Readonly<Record<string, string>> =
-  Object.freeze({
-    C2: 'False Appearance family: uniform motionless/indistinguishable auto-rule; needs a small falseAppearance contract (eshyra-o9bd.18.7.9 §1.2).',
-    C3: 'Telepathy/communication/innate-knowledge family: no telepathy/communication/locationKnowledge/pathMemory/sleep-exception kind exists yet; needs small new contracts (eshyra-o9bd.18.7.9 §1.3–§1.4).',
-    C4: 'Reckless family: self-elected symmetric advantage trade-off with no existing kind; needs a small recklessAttack contract (eshyra-o9bd.18.7.9 §1.6.2).',
-    C5: 'Split family: deterministic reproduction-on-damage; needs a small splitOnDamage contract (eshyra-o9bd.18.7.9 §1.6.3).',
-    C6: 'Damage-absorption family: deterministic immune-and-heal pattern; needs a small damageAbsorption contract (eshyra-o9bd.18.7.9 §1.6.4).',
-    C7: 'Berserk family: stateful d6-threshold behavior (plus a calming sub-clause on the flesh golem); a genuine state machine, not a small payload (eshyra-o9bd.18.7.9 §1.6.5).',
-  });
-
-function creatureEntrySliceFinding(
-  slice: keyof typeof CREATURE_ENTRY_SLICE_REASONS,
-): CreatureEntryReviewedDisposition {
-  return creatureEntryFinding(slice, CREATURE_ENTRY_SLICE_REASONS[slice]);
-}
-
 /**
  * Per-ref reviewed disposition for every creature-entry ref currently
- * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 4
- * currently residual: 2 permanent accepted-prose refs and 2 pending C4
- * findings). Only the two vampire "Vampire Weaknesses" header refs
- * are genuinely permanent prose acceptance (§1.5); the other 2 are reviewed
- * deterministic findings bucketed into slice C4 (§1.6.2). This registry —
+ * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 2
+ * currently residual: the 2 permanent accepted-prose refs. Only the two
+ * vampire "Vampire Weaknesses" header refs
+ * are genuinely permanent prose acceptance (§1.5). This registry —
  * not the bucket-level
  * `creature-entry#mechanical-prose` / `creature-entry#narrative-prose`
  * dispositions — is what the fail-closed MEMBERSHIP check consults per ref,
- * so a broad bucket-level policy can never hide a reviewed-but-pending
- * finding behind blanket "accepted-prose-only" status: a ref missing from
+ * so a broad bucket-level policy can never hide an unreviewed ref behind
+ * blanket "accepted-prose-only" status: a ref missing from
  * this registry fails the build (newly unclassified), and a reviewed ref
  * that gains substantive mechanics goes stale here and must be explicitly
  * removed.
@@ -1164,10 +1133,6 @@ export const CREATURE_ENTRY_REVIEWED_DISPOSITIONS: Readonly<
   ),
   'creature:vampire-spawn#traits:Vampire Weaknesses':
     creatureEntryAcceptedProse('Same as vampire (eshyra-o9bd.18.7.9 §1.5).'),
-
-  // C4 — Reckless family (2, §1.6.2).
-  'creature:berserker#traits:Reckless': creatureEntrySliceFinding('C4'),
-  'creature:minotaur#traits:Reckless': creatureEntrySliceFinding('C4'),
 });
 
 /**
@@ -1230,18 +1195,8 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   // per-day/rest use economies, legendary resistance, regeneration, healing,
   // multiattack counts, save/check/attack-roll modifiers, spellcasting spell
   // lists, breathing/jump grammars, and triggered-effect markers. Each
-  // remaining unmodeled entry is individually reviewed in
-  // `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`: 2 refs are genuinely permanent
-  // prose acceptance (the Vampire Weaknesses header, §1.5); the other 2 are
-  // reviewed deterministic findings pending an implementation slice
-  // (C4). This bucket-level entry status is `reviewed-per-ref` — NOT
-  // `accepted-prose-only` — precisely so it cannot itself grant blanket
-  // acceptance and hide those 2 pending findings.
-  'creature-entry#mechanical-prose': {
-    status: 'reviewed-per-ref',
-    reason:
-      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slice C4 (eshyra-o9bd.18.7.9 §1.6.2). This bucket-level entry does not itself accept or close any record.',
-  },
+  // The mechanical-prose bucket is empty after C4; keep the remaining
+  // Vampire Weaknesses headers in the narrative reviewed-per-ref bucket.
   'spell#metadata-only': {
     status: 'accepted-prose-only',
     reason:
@@ -1250,7 +1205,7 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   'creature-entry#narrative-prose': {
     status: 'reviewed-per-ref',
     reason:
-      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — either genuinely accepted prose (§1.5) or a reviewed pending finding in slice C4 (eshyra-o9bd.18.7.9 §1.6.2). This bucket-level entry does not itself accept or close any record.',
+      'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS; the remaining Vampire Weaknesses headers are permanent accepted prose (§1.5).',
   },
   'hazard#prose-only': {
     status: 'finding',
@@ -1530,7 +1485,7 @@ export function buildGameplayReadinessReport(
   );
   // Per-ref reviewed-disposition breakdown (eshyra-o9bd.18.7.9 §1): computed
   // directly from the live prose-entry set against the reviewed registry, so
-  // "accepted" vs "pending finding" counts can never be conflated by a
+  // "accepted" vs "finding" counts can never be conflated by a
   // broad bucket-level status.
   const findingsBySlice: Record<string, number> = {};
   let acceptedProseOnlyCount = 0;
@@ -1752,8 +1707,8 @@ export function buildGameplayReadinessReport(
   // review: a non-empty prose bucket without a reviewed bucket-level
   // disposition still fails, but MEMBERSHIP is now checked per ref against
   // `CREATURE_ENTRY_REVIEWED_DISPOSITIONS` rather than a blanket
-  // accepted-prose-only bucket status — so a reviewed-but-pending finding
-  // (currently C4) can never be silently blessed by the bucket disposition.
+  // accepted-prose-only bucket status — so an unreviewed ref can never be
+  // silently blessed by the bucket disposition.
   const entryBuckets: ReadonlyArray<
     readonly [GameplayReadinessBucket, readonly { readonly ref: string }[]]
   > = [

@@ -97,6 +97,128 @@ function setAt(
 }
 
 describe('mechanics effect payload contracts', () => {
+  const recklessAttack = () => ({
+    kind: 'recklessAttack',
+    activation: { timing: 'start-of-turn', optional: true },
+    benefit: {
+      rolls: 'all-melee-weapon-attack-rolls',
+      mode: 'advantage',
+      duration: 'current-turn',
+    },
+    tradeoff: {
+      rolls: 'all-attack-rolls-against-self',
+      mode: 'advantage',
+      duration: 'until-start-of-next-turn',
+    },
+  });
+
+  it('accepts only the closed Reckless two-sided bargain contract', () => {
+    expect(() => validate(recklessAttack())).not.toThrow();
+
+    const invalid = [
+      [
+        'missing activation',
+        (effect: Record<string, unknown>) => {
+          effect.activation = undefined;
+        },
+      ],
+      [
+        'missing benefit',
+        (effect: Record<string, unknown>) => {
+          effect.benefit = undefined;
+        },
+      ],
+      [
+        'missing tradeoff',
+        (effect: Record<string, unknown>) => {
+          effect.tradeoff = undefined;
+        },
+      ],
+      [
+        'extra top-level field',
+        (effect: Record<string, unknown>) => {
+          effect.extra = true;
+        },
+      ],
+      [
+        'extra nested field',
+        (effect: Record<string, unknown>) => {
+          (effect.benefit as Record<string, unknown>).extra = true;
+        },
+      ],
+      [
+        'wrong activation timing',
+        (effect: Record<string, unknown>) => {
+          (effect.activation as Record<string, unknown>).timing = 'end-of-turn';
+        },
+      ],
+      [
+        'missing optional',
+        (effect: Record<string, unknown>) => {
+          (effect.activation as Record<string, unknown>).optional = undefined;
+        },
+      ],
+      [
+        'false optional',
+        (effect: Record<string, unknown>) => {
+          (effect.activation as Record<string, unknown>).optional = false;
+        },
+      ],
+      [
+        'wrong benefit rolls',
+        (effect: Record<string, unknown>) => {
+          (effect.benefit as Record<string, unknown>).rolls =
+            'all-attack-rolls';
+        },
+      ],
+      [
+        'wrong benefit mode',
+        (effect: Record<string, unknown>) => {
+          (effect.benefit as Record<string, unknown>).mode = 'disadvantage';
+        },
+      ],
+      [
+        'wrong benefit duration',
+        (effect: Record<string, unknown>) => {
+          (effect.benefit as Record<string, unknown>).duration =
+            'until-start-of-next-turn';
+        },
+      ],
+      [
+        'narrow tradeoff rolls',
+        (effect: Record<string, unknown>) => {
+          (effect.tradeoff as Record<string, unknown>).rolls =
+            'melee-attack-rolls-against-self';
+        },
+      ],
+      [
+        'wrong tradeoff subject',
+        (effect: Record<string, unknown>) => {
+          (effect.tradeoff as Record<string, unknown>).rolls =
+            'all-attack-rolls-against-other';
+        },
+      ],
+      [
+        'wrong tradeoff mode',
+        (effect: Record<string, unknown>) => {
+          (effect.tradeoff as Record<string, unknown>).mode = 'disadvantage';
+        },
+      ],
+      [
+        'wrong tradeoff duration',
+        (effect: Record<string, unknown>) => {
+          (effect.tradeoff as Record<string, unknown>).duration =
+            'end-of-next-turn';
+        },
+      ],
+    ] as const;
+    for (const [label, mutate] of invalid) {
+      const effect = structuredClone(recklessAttack());
+      mutate(effect);
+      expect(() => validate(effect), label).toThrow();
+    }
+  });
+
   const berserk = (threshold: number, includeCalming = false) => ({
     kind: 'berserk',
     initialState: 'calm',

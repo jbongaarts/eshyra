@@ -21425,8 +21425,21 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "At the start of its turn"
+                "kind": "recklessAttack",
+                "activation": {
+                  "timing": "start-of-turn",
+                  "optional": true
+                },
+                "benefit": {
+                  "rolls": "all-melee-weapon-attack-rolls",
+                  "mode": "advantage",
+                  "duration": "current-turn"
+                },
+                "tradeoff": {
+                  "rolls": "all-attack-rolls-against-self",
+                  "mode": "advantage",
+                  "duration": "until-start-of-next-turn"
+                }
               }
             ]
           }
@@ -46306,8 +46319,21 @@
           "mechanics": {
             "effects": [
               {
-                "kind": "triggeredEffect",
-                "trigger": "At the start of its turn"
+                "kind": "recklessAttack",
+                "activation": {
+                  "timing": "start-of-turn",
+                  "optional": true
+                },
+                "benefit": {
+                  "rolls": "all-melee-weapon-attack-rolls",
+                  "mode": "advantage",
+                  "duration": "current-turn"
+                },
+                "tradeoff": {
+                  "rolls": "all-attack-rolls-against-self",
+                  "mode": "advantage",
+                  "duration": "until-start-of-next-turn"
+                }
               }
             ]
           }
