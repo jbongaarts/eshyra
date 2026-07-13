@@ -33,6 +33,8 @@ describe('DM system prompt', () => {
       'gain_currency',
       'spend_currency',
       'convert_currency',
+      'suppress_effect',
+      'unsuppress_effect',
     ]) {
       expect(prompt).toContain(name);
     }

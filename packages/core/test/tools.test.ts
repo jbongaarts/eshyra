@@ -171,6 +171,7 @@ describe('ToolRegistry', () => {
         'refresh_effect',
         'remove_effect_target',
         'resolve_concentration',
+        'suppress_effect',
         'restore_usage',
         'roll',
         'set_plot_flag',
@@ -185,6 +186,7 @@ describe('ToolRegistry', () => {
         'start_encounter',
         'update_clock',
         'update_combatant',
+        'unsuppress_effect',
         'use_inspiration',
         'world_query',
       ].sort(),
@@ -966,6 +968,149 @@ describe('active-effect tools (F3, eshyra-2n1t.5)', () => {
       },
     });
   });
+
+  it('exposes suppression through the registered tools without cleanup', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    expect(
+      registry.list().filter((name) => name === 'suppress_effect'),
+    ).toHaveLength(1);
+    expect(
+      registry.list().filter((name) => name === 'unsuppress_effect'),
+    ).toHaveLength(1);
+
+    expect(
+      registry.invoke('start_effect', blessArgs('fx-suppressed'), c).ok,
+    ).toBe(true);
+    const beforeLinks = c.db
+      .prepare(`SELECT link_kind, target_kind, target_ref, projection_ref, status
+        FROM active_effect_link WHERE effect_id = 'fx-suppressed'`)
+      .all();
+    const beforeTargets = c.db
+      .prepare(`SELECT target_kind, target_ref, status
+        FROM active_effect_target WHERE effect_id = 'fx-suppressed'`)
+      .all();
+
+    expect(
+      registry.invoke(
+        'suppress_effect',
+        { effectId: 'fx-suppressed', note: 'antimagic field' },
+        c,
+      ),
+    ).toMatchObject({ ok: true, data: { status: 'suppressed' } });
+    expect(
+      c.db
+        .prepare(
+          `SELECT status FROM active_effect WHERE effect_id = 'fx-suppressed'`,
+        )
+        .pluck()
+        .get(),
+    ).toBe('suppressed');
+    expect(
+      c.db
+        .prepare(
+          `SELECT COUNT(*) FROM character WHERE id = 'pc-1' AND conditions_json LIKE '%blessed:fx-suppressed%'`,
+        )
+        .pluck()
+        .get(),
+    ).toBe(1);
+    expect(
+      c.db
+        .prepare(
+          `SELECT effect_id FROM active_effect WHERE campaign_id = 'campaign-1' AND concentration_owner_ref = 'pc-1' AND status IN ('active', 'suppressed')`,
+        )
+        .pluck()
+        .get(),
+    ).toBe('fx-suppressed');
+    expect(
+      c.db
+        .prepare(
+          `SELECT link_kind, target_kind, target_ref, projection_ref, status FROM active_effect_link WHERE effect_id = 'fx-suppressed'`,
+        )
+        .all(),
+    ).toEqual(beforeLinks);
+    expect(
+      c.db
+        .prepare(
+          `SELECT target_kind, target_ref, status FROM active_effect_target WHERE effect_id = 'fx-suppressed'`,
+        )
+        .all(),
+    ).toEqual(beforeTargets);
+
+    const events = c.db
+      .prepare(
+        `SELECT event_kind, provenance, detail_json FROM active_effect_event WHERE effect_id = 'fx-suppressed' ORDER BY seq`,
+      )
+      .all() as {
+      event_kind: string;
+      provenance: string;
+      detail_json: string;
+    }[];
+    expect(events.at(-1)).toMatchObject({
+      event_kind: 'suppressed',
+      provenance: 'model:turn-1',
+    });
+    expect(JSON.parse(events.at(-1)?.detail_json ?? '{}')).toEqual({
+      note: 'antimagic field',
+    });
+
+    expect(
+      registry.invoke('unsuppress_effect', { effectId: 'fx-suppressed' }, c),
+    ).toMatchObject({ ok: true, data: { status: 'active' } });
+    expect(
+      c.db
+        .prepare(
+          `SELECT event_kind, provenance FROM active_effect_event WHERE effect_id = 'fx-suppressed' ORDER BY seq`,
+        )
+        .all()
+        .at(-1),
+    ).toEqual({ event_kind: 'unsuppressed', provenance: 'model:turn-1' });
+  });
+
+  it('preserves suppression errors and cleans normally on a terminal end', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    registry.invoke('start_effect', blessArgs('fx-terminal-suppressed'), c);
+    registry.invoke(
+      'suppress_effect',
+      { effectId: 'fx-terminal-suppressed' },
+      c,
+    );
+    const ledgerBefore = c.db
+      .prepare(
+        `SELECT event_kind, detail_json FROM active_effect_event WHERE effect_id = 'fx-terminal-suppressed' ORDER BY seq`,
+      )
+      .all();
+    expect(
+      registry.invoke(
+        'suppress_effect',
+        { effectId: 'fx-terminal-suppressed' },
+        c,
+      ),
+    ).toMatchObject({ ok: false, code: 'effect_error' });
+    expect(
+      registry.invoke('unsuppress_effect', { effectId: 'missing' }, c),
+    ).toMatchObject({ ok: false, code: 'effect_error' });
+    expect(
+      c.db
+        .prepare(
+          `SELECT event_kind, detail_json FROM active_effect_event WHERE effect_id = 'fx-terminal-suppressed' ORDER BY seq`,
+        )
+        .all(),
+    ).toEqual(ledgerBefore);
+    expect(
+      registry.invoke(
+        'end_effect',
+        {
+          effectId: 'fx-terminal-suppressed',
+          reason: 'concentration-broken',
+          detail: 'voluntary',
+        },
+        c,
+      ),
+    ).toMatchObject({ ok: true, data: { changed: true } });
+    expect(conditionIds(c.db)).toEqual([]);
+  });
 });
 
 describe('world_query tool', () => {
@@ -1410,6 +1555,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'refresh_effect',
         'remove_effect_target',
         'resolve_concentration',
+        'suppress_effect',
         'restore_usage',
         'roll',
         'set_plot_flag',
@@ -1424,6 +1570,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'start_encounter',
         'update_clock',
         'update_combatant',
+        'unsuppress_effect',
         'use_inspiration',
         'world_query',
       ].sort(),
