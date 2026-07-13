@@ -228,6 +228,21 @@ describe('ToolRegistry', () => {
     }
   });
 
+  it('exposes no generic mutate_state tool (F3 mutation audit §5)', () => {
+    // The historical general canon-write wrapper was deleted: a generic
+    // model-facing setter over lifecycle-owned fields (HP, life state,
+    // death saves, conditions) would bypass the F6/F3 semantic operations.
+    // The mutateState primitive remains a trusted /internal-only seam.
+    const registry = createDefaultToolRegistry();
+    expect(registry.has('mutate_state')).toBe(false);
+    expect(
+      registry.definitions().map((definition) => definition.name),
+    ).not.toContain('mutate_state');
+    expect(DEFAULT_TOOLS.map((tool) => tool.name)).not.toContain(
+      'mutate_state',
+    );
+  });
+
   it('treats an unknown tool as mutating (fail-safe staging)', () => {
     expect(new ToolRegistry().isMutating('does_not_exist')).toBe(true);
   });

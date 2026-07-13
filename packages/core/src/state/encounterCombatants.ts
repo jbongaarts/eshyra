@@ -17,6 +17,7 @@ import type { RulesPack, RulesRecord } from '../rules/types.js';
 // EVERY updateCombatant caller gets the atomic incapacitation invariant.
 import {
   anyConditionImpliesIncapacitated,
+  applyCombatClosureToEffects,
   breakCombatantConcentration,
 } from './activeEffects.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
@@ -190,12 +191,13 @@ export interface UpdateCombatantResult {
   readonly hpDelta: number | undefined;
   readonly conditionAdded: boolean;
   readonly conditionRemoved: boolean;
-  /** Set when this update downed the combatant while it was concentrating:
-   *  the F3 break + owned-projection cleanup happened in this transaction. */
+  /** Set when this update downed or removed the combatant while it was
+   *  concentrating: the F3 break + owned-projection cleanup happened in
+   *  this transaction ('owner-removed' = transitioned to inactive). */
   readonly concentrationBroken?: {
     readonly effectId: string;
     readonly displayName: string;
-    readonly cause: 'incapacitated' | 'dead';
+    readonly cause: 'incapacitated' | 'dead' | 'owner-removed';
   };
 }
 
@@ -820,6 +822,17 @@ export function closeCombatInstance(
   db: Db,
   input: CloseCombatInstanceInput,
 ): CombatInstance {
+  // One transaction covers the F3 closure boundary and the status flip: a
+  // closed instance can never be committed while live effect state still
+  // points at its combatants (F3 mutation audit §7). The effect reactions
+  // run FIRST, while the combatants are still mutable.
+  return withTransaction(db, (txnDb) => closeCombatInstanceInTxn(txnDb, input));
+}
+
+function closeCombatInstanceInTxn(
+  db: Db,
+  input: CloseCombatInstanceInput,
+): CombatInstance {
   const instance =
     input.combatInstanceId === undefined
       ? activeInstance(db, input.campaignId)
@@ -832,6 +845,11 @@ export function closeCombatInstance(
       `combat instance '${instance.combatInstanceId}' is ${instance.status} and cannot be reactivated or closed again`,
     );
   }
+  applyCombatClosureToEffects(db, input.campaignId, instance.combatInstanceId, {
+    provenance: input.provenance,
+    sessionId: input.sessionId,
+    at: input.at,
+  });
   db.prepare(
     `UPDATE combat_instance
      SET status = ?, provenance = ?, session_id = ?, updated_at = ?, closed_at = ?
@@ -1046,8 +1064,13 @@ function updateCombatantInTxn(
   const wasDown =
     current.hpCurrent === 0 ||
     current.status === 'dead' ||
-    current.status === 'unconscious';
-  const isDown = nextHp === 0 || status === 'dead' || status === 'unconscious';
+    current.status === 'unconscious' ||
+    current.status === 'inactive';
+  const isDown =
+    nextHp === 0 ||
+    status === 'dead' ||
+    status === 'unconscious' ||
+    status === 'inactive';
   const wasIncapacitated =
     wasDown ||
     anyConditionImpliesIncapacitated(
@@ -1066,7 +1089,11 @@ function updateCombatantInTxn(
       db,
       input.campaignId,
       input.combatantId,
-      status === 'dead' ? 'dead' : 'incapacitated',
+      status === 'dead'
+        ? 'dead'
+        : status === 'inactive'
+          ? 'owner-removed'
+          : 'incapacitated',
       {
         provenance: input.provenance,
         sessionId: input.sessionId,
@@ -1077,7 +1104,12 @@ function updateCombatantInTxn(
       concentrationBroken = {
         effectId: broken.effectId,
         displayName: broken.displayName ?? broken.effectId,
-        cause: status === 'dead' ? 'dead' : 'incapacitated',
+        cause:
+          status === 'dead'
+            ? 'dead'
+            : status === 'inactive'
+              ? 'owner-removed'
+              : 'incapacitated',
       };
     }
   }

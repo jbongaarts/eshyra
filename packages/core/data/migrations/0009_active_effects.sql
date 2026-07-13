@@ -221,6 +221,7 @@ CREATE TABLE active_effect_event (
     'unsuppressed',
     'concentration-check',
     'target-removed',
+    'combat-closed',
     'ended'
   )),
   detail_json TEXT NOT NULL,

@@ -135,6 +135,7 @@ export const CONCENTRATION_BREAK_CAUSES = [
   'dead',
   'new-concentration',
   'forced',
+  'owner-removed',
 ] as const;
 export type ConcentrationBreakCause =
   (typeof CONCENTRATION_BREAK_CAUSES)[number];
@@ -381,6 +382,7 @@ export interface ActiveEffectEventView {
     | 'unsuppressed'
     | 'concentration-check'
     | 'target-removed'
+    | 'combat-closed'
     | 'ended';
   readonly detail: Record<string, unknown>;
   readonly occurredAt: string;
@@ -643,6 +645,13 @@ function effectView(
           `${activeLink.link_kind} projection '${activeLink.projection_ref}' — cleanup did not complete`,
       );
     }
+    const activeTarget = targets.find((target) => target.status === 'active');
+    if (activeTarget !== undefined) {
+      throw new ActiveEffectError(
+        `active_effect '${row.effect_id}' is ended but still has an active target ` +
+          `${activeTarget.target_kind} '${activeTarget.target_ref}' — cleanup did not complete`,
+      );
+    }
   }
   if (
     row.duration_kind === 'timed' &&
@@ -875,24 +884,57 @@ export interface ActiveEffectIntegrityIssue {
 }
 
 /**
- * Referential-integrity audit over durable effect state: dangling character/
- * combatant references and structural violations, reported (not thrown) so
- * debug surfaces can show them. The strict read boundary is
- * {@link listActiveEffects}.
+ * Full-coverage integrity audit over durable effect state (F3 mutation audit
+ * §8). Shares the structural invariant definitions with the strict read
+ * boundary ({@link listActiveEffects} via {@link effectView}) and adds the
+ * referential/reachability checks the read boundary deliberately leaves to
+ * diagnostics: missing or unreachable source actors, concentration owners,
+ * targets, and link holders; incapable concentration owners; condition links
+ * whose claimed condition entry is absent; unlicensed link kinds; orphan
+ * child rows; and event-ledger sequence/terminal violations. Collects every
+ * issue rather than stopping at the first.
  */
 export function auditActiveEffectIntegrity(
   db: Db,
   campaignId: string,
 ): ActiveEffectIntegrityIssue[] {
   const issues: ActiveEffectIntegrityIssue[] = [];
+
+  // Orphan child rows: targets/links/events whose owning effect is absent.
+  for (const table of [
+    'active_effect_target',
+    'active_effect_link',
+    'active_effect_event',
+  ]) {
+    const orphans = db
+      .prepare(
+        `SELECT DISTINCT effect_id FROM ${table}
+         WHERE campaign_id = ?
+           AND effect_id NOT IN
+             (SELECT effect_id FROM active_effect WHERE campaign_id = ?)
+         ORDER BY effect_id`,
+      )
+      .all(campaignId, campaignId) as { effect_id: string }[];
+    for (const orphan of orphans) {
+      issues.push({
+        effectId: orphan.effect_id,
+        issue: `orphan ${table} rows exist without an owning active_effect row`,
+      });
+    }
+  }
+
   const rows = db
     .prepare(
-      `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id = ?`,
+      `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id = ?
+       ORDER BY created_at, effect_id`,
     )
     .all(campaignId) as ActiveEffectRow[];
   for (const row of rows) {
     const targets = readTargetRows(db, campaignId, row.effect_id);
     const links = readLinkRows(db, campaignId, row.effect_id);
+
+    // Structural invariants: the exact checks the strict read boundary throws
+    // on, evaluated non-fatally here.
     try {
       effectView(row, targets, links);
     } catch (e) {
@@ -900,31 +942,159 @@ export function auditActiveEffectIntegrity(
         effectId: row.effect_id,
         issue: e instanceof Error ? e.message : String(e),
       });
-      continue;
     }
+
+    // Event-ledger invariants: contiguous seq from 1; exactly one terminal
+    // event iff the effect ended.
+    const events = db
+      .prepare(
+        `SELECT seq, event_kind FROM active_effect_event
+         WHERE campaign_id = ? AND effect_id = ? ORDER BY seq`,
+      )
+      .all(campaignId, row.effect_id) as { seq: number; event_kind: string }[];
+    if (events.some((event, index) => event.seq !== index + 1)) {
+      issues.push({
+        effectId: row.effect_id,
+        issue: `event ledger seq is not contiguous from 1 (got ${events
+          .map((event) => event.seq)
+          .join(', ')})`,
+      });
+    }
+    const terminalEvents = events.filter(
+      (event) => event.event_kind === 'ended',
+    ).length;
+    const expectedTerminal = row.status === 'ended' ? 1 : 0;
+    if (terminalEvents !== expectedTerminal) {
+      issues.push({
+        effectId: row.effect_id,
+        issue: `expected ${expectedTerminal} terminal 'ended' event(s) for status '${row.status}', found ${terminalEvents}`,
+      });
+    }
+
     if (row.status === 'ended') {
       continue;
     }
-    for (const participant of [
-      ...targets
-        .filter((t) => t.status === 'active' && t.target_kind !== 'scope')
-        .map((t) => ({
-          kind: t.target_kind as EffectParticipantKind,
-          ref: t.target_ref,
-          role: 'target',
-        })),
-      ...links
-        .filter((l) => l.status === 'active')
-        .map((l) => ({
-          kind: l.target_kind,
-          ref: l.target_ref,
-          role: `${l.link_kind} link`,
-        })),
-    ]) {
-      if (!participantExists(db, campaignId, participant)) {
+
+    // Kind license: links must be of kinds the effect's semantic family
+    // permits (corruption can only arrive via direct writes).
+    const profile = EFFECT_KIND_PROFILES[row.kind];
+    for (const link of links) {
+      if (
+        link.status === 'active' &&
+        !profile.linkKinds.includes(link.link_kind)
+      ) {
         issues.push({
           effectId: row.effect_id,
-          issue: `${participant.role} references missing ${participant.kind} '${participant.ref}'`,
+          issue: `active '${link.link_kind}' link is not licensed for kind '${row.kind}'`,
+        });
+      }
+    }
+
+    // Source actor: exists and reachable.
+    if (row.source_actor_kind !== null && row.source_actor_ref !== null) {
+      const sourceActor = {
+        kind: row.source_actor_kind,
+        ref: row.source_actor_ref,
+      };
+      if (!participantRowExists(db, campaignId, sourceActor)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `source actor references missing ${sourceActor.kind} '${sourceActor.ref}'`,
+        });
+      } else if (!participantReachable(db, campaignId, sourceActor)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `source actor ${sourceActor.kind} '${sourceActor.ref}' is unreachable (closed combat instance)`,
+        });
+      }
+    }
+
+    // Concentration owner: exists, reachable, and capable.
+    if (
+      row.requires_concentration === 1 &&
+      row.concentration_owner_kind !== null &&
+      row.concentration_owner_ref !== null
+    ) {
+      const owner = {
+        kind: row.concentration_owner_kind,
+        ref: row.concentration_owner_ref,
+      };
+      if (!participantRowExists(db, campaignId, owner)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `concentration owner references missing ${owner.kind} '${owner.ref}'`,
+        });
+      } else if (!participantReachable(db, campaignId, owner)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `concentration owner ${owner.kind} '${owner.ref}' is unreachable (closed combat instance)`,
+        });
+      } else {
+        try {
+          requireConcentrationCapableOwner(db, campaignId, owner);
+        } catch (e) {
+          issues.push({
+            effectId: row.effect_id,
+            issue: `concentration owner is incapable: ${
+              e instanceof Error ? e.message : String(e)
+            }`,
+          });
+        }
+      }
+    }
+
+    // Active targets: exist and reachable.
+    for (const target of targets) {
+      if (target.status !== 'active' || target.target_kind === 'scope') {
+        continue;
+      }
+      const participant = {
+        kind: target.target_kind as EffectParticipantKind,
+        ref: target.target_ref,
+      };
+      if (!participantRowExists(db, campaignId, participant)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `target references missing ${participant.kind} '${participant.ref}'`,
+        });
+      } else if (!participantReachable(db, campaignId, participant)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `target ${participant.kind} '${participant.ref}' is unreachable (closed combat instance)`,
+        });
+      }
+    }
+
+    // Active links: holder exists and is reachable; condition links must
+    // find the exact condition entry they claim to own on the holder.
+    for (const link of links) {
+      if (link.status !== 'active') {
+        continue;
+      }
+      const holder = { kind: link.target_kind, ref: link.target_ref };
+      if (!participantRowExists(db, campaignId, holder)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `${link.link_kind} link references missing ${holder.kind} '${holder.ref}'`,
+        });
+        continue;
+      }
+      if (!participantReachable(db, campaignId, holder)) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `${link.link_kind} link holder ${holder.kind} '${holder.ref}' is unreachable (closed combat instance)`,
+        });
+        continue;
+      }
+      if (
+        link.link_kind === 'condition' &&
+        !readParticipantConditionIds(db, campaignId, holder).includes(
+          link.projection_ref,
+        )
+      ) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `condition link claims '${link.projection_ref}' on ${holder.kind} '${holder.ref}' but no such condition entry exists`,
         });
       }
     }
@@ -943,7 +1113,43 @@ function requireNonEmptyString(value: unknown, label: string): string {
   return value;
 }
 
-function participantExists(
+// ---------------------------------------------------------------------------
+// Participant predicates (2026-07-12 F3 mutation audit §7)
+//
+// Distinct questions get distinct predicates — row existence alone answers
+// none of the others. A combatant is *reachable* only while its combat
+// instance is active: `updateCombatant` refuses mutations afterwards, so a
+// merely-existing historical row cannot be targeted, own an effect, receive
+// projections, or hold concentration. `closeCombatInstance` applies the F3
+// closure policy so live effect state never points at unreachable combatants.
+// ---------------------------------------------------------------------------
+
+interface CombatantParticipantRow {
+  readonly hp_current: number;
+  readonly status: string;
+  readonly instance_status: string;
+}
+
+function readCombatantParticipant(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+): CombatantParticipantRow | undefined {
+  return db
+    .prepare(
+      `SELECT ec.hp_current, ec.status, ci.status AS instance_status
+       FROM encounter_combatant ec
+       JOIN combat_instance ci
+         ON ci.campaign_id = ec.campaign_id
+        AND ci.combat_instance_id = ec.combat_instance_id
+       WHERE ec.campaign_id = ? AND ec.combatant_id = ?`,
+    )
+    .get(campaignId, combatantId) as CombatantParticipantRow | undefined;
+}
+
+/** Row existence only — the weakest predicate; used by the integrity audit
+ *  to distinguish "missing" from "unreachable". */
+function participantRowExists(
   db: Db,
   campaignId: string,
   participant: { kind: EffectParticipantKind; ref: string },
@@ -956,15 +1162,29 @@ function participantExists(
     );
   }
   return (
-    db
-      .prepare(
-        `SELECT 1 FROM encounter_combatant
-         WHERE campaign_id = ? AND combatant_id = ?`,
-      )
-      .get(campaignId, participant.ref) !== undefined
+    readCombatantParticipant(db, campaignId, participant.ref) !== undefined
   );
 }
 
+/** Mechanically reachable: characters always (rows are never deleted in
+ *  production); combatants only while their combat instance is active. */
+function participantReachable(
+  db: Db,
+  campaignId: string,
+  participant: { kind: EffectParticipantKind; ref: string },
+): boolean {
+  if (participant.kind === 'character') {
+    return participantRowExists(db, campaignId, participant);
+  }
+  const row = readCombatantParticipant(db, campaignId, participant.ref);
+  return row !== undefined && row.instance_status === 'active';
+}
+
+/**
+ * Require a participant that can be targeted, own an effect, or receive
+ * projected mutations: it must exist AND be reachable. The error
+ * distinguishes a missing row from a combatant whose instance closed.
+ */
 function requireParticipant(
   db: Db,
   campaignId: string,
@@ -977,9 +1197,25 @@ function requireParticipant(
       `${label} kind must be 'character' or 'combatant'`,
     );
   }
-  if (!participantExists(db, campaignId, participant)) {
+  if (participant.kind === 'character') {
+    if (!participantRowExists(db, campaignId, participant)) {
+      throw new ActiveEffectError(
+        `${label} references unknown character '${participant.ref}'`,
+      );
+    }
+    return;
+  }
+  const row = readCombatantParticipant(db, campaignId, participant.ref);
+  if (row === undefined) {
     throw new ActiveEffectError(
-      `${label} references unknown ${participant.kind} '${participant.ref}'`,
+      `${label} references unknown combatant '${participant.ref}'`,
+    );
+  }
+  if (row.instance_status !== 'active') {
+    throw new ActiveEffectError(
+      `${label} references combatant '${participant.ref}' whose combat instance is ` +
+        `${row.instance_status}; a combatant outside an active instance cannot be ` +
+        'referenced by new effect state (see the F3 combat-closure policy)',
     );
   }
 }
@@ -1115,14 +1351,15 @@ function requireConcentrationCapableOwner(
       row !== undefined &&
       (row.hp_current === 0 ||
         row.status === 'dead' ||
-        row.status === 'unconscious')
+        row.status === 'unconscious' ||
+        row.status === 'inactive')
     ) {
+      // 'inactive' means removed from active play (audit §7); 'escaped' is
+      // documented as still capable while the instance stays active.
       throw new ActiveEffectError(
-        `combatant '${owner.ref}' is down (${
-          row.status === 'dead' || row.status === 'unconscious'
-            ? row.status
-            : '0 HP'
-        }) and cannot concentrate`,
+        `combatant '${owner.ref}' is ${
+          row.hp_current === 0 && row.status !== 'dead' ? '0 HP' : row.status
+        } and cannot concentrate`,
       );
     }
   }
@@ -1491,14 +1728,14 @@ function finalizeEnd(
     input.detail === undefined
       ? input.reason
       : `${input.reason}:${input.detail}`;
-  const cleanup = cleanupOwnedState(
-    db,
-    row.campaign_id,
-    row.effect_id,
-    mode,
-    reasonLabel,
-    ctx,
-  );
+  // Terminal transition FIRST, cleanup second (F3 mutation audit,
+  // invariant 12): cleanup can cascade — removing an owned actor sets it
+  // inactive, which breaks that actor's own concentration, whose cleanup can
+  // cascade further. Every nested break queries live status, so flipping to
+  // 'ended' before cleanup makes re-entry onto this effect a no-op: no
+  // double-end, no duplicate terminal event, no infinite recursion, and no
+  // dependence on iteration order. The transient ended-with-active-links
+  // state is invisible outside this transaction.
   db.prepare(
     `UPDATE active_effect
      SET status = 'ended', end_reason = ?, end_detail = ?, ended_at = ?,
@@ -1513,6 +1750,14 @@ function finalizeEnd(
     ctx.at,
     row.campaign_id,
     row.effect_id,
+  );
+  const cleanup = cleanupOwnedState(
+    db,
+    row.campaign_id,
+    row.effect_id,
+    mode,
+    reasonLabel,
+    ctx,
   );
   appendEvent(
     db,
@@ -1809,6 +2054,21 @@ export function createActiveEffect(
         );
       }
       seenProjections.add(key);
+      // Unsupported topology (audit §4): a concentration effect that projects
+      // an incapacitating condition onto its own concentration owner would
+      // end itself during creation — reject at preflight instead.
+      if (
+        input.concentration !== undefined &&
+        projection.target.kind === input.concentration.owner.kind &&
+        projection.target.ref === input.concentration.owner.ref &&
+        conditionImpliesIncapacitated(txnDb, projection.condition.id)
+      ) {
+        throw new ActiveEffectError(
+          `condition '${projection.condition.id}' incapacitates, and its target is this ` +
+            "effect's own concentration owner — the effect would break itself; this " +
+            'topology is rejected before any write',
+        );
+      }
       const existing = readParticipantConditionIds(
         txnDb,
         input.campaignId,
@@ -2421,7 +2681,7 @@ export function breakCombatantConcentration(
   db: Db,
   campaignId: string,
   combatantId: string,
-  cause: 'incapacitated' | 'dead',
+  cause: 'incapacitated' | 'dead' | 'owner-removed',
   ctx: EffectMutationContext,
 ): ConcentrationBreakOnLifeEventResult {
   const row = db
@@ -2900,4 +3160,187 @@ export function expireElapsedRoundEffects(
     }
     return expired;
   });
+}
+
+// ---------------------------------------------------------------------------
+// Combat-instance closure policy (F3 mutation audit §7)
+// ---------------------------------------------------------------------------
+
+export interface CombatClosureEffectReactions {
+  /** Combatant-owned concentration effects ended (cause 'owner-removed'). */
+  readonly concentrationBroken: readonly {
+    readonly effectId: string;
+    readonly displayName: string;
+  }[];
+  /** Combatant targets of the closing instance removed ('combat-ended'). */
+  readonly targetsRemoved: number;
+  /** Condition links removed / actor links released ('combat-ended'). */
+  readonly linksCleaned: number;
+}
+
+/**
+ * Apply the fail-closed combat-closure boundary to live effect state, called
+ * by `closeCombatInstance` inside its transaction and BEFORE the instance
+ * status flips, while the instance's combatants are still mutable:
+ *
+ * 1. Live concentration owned by a combatant of the closing instance breaks
+ *    (cause 'owner-removed') with break-policy cleanup.
+ * 2. Remaining live effects' active targets that are combatants of the
+ *    instance are removed (reason 'combat-ended'), cleaning exactly their
+ *    owned projections.
+ * 3. Leftover active condition links on the instance's combatants are
+ *    removed (projection deleted while the holder is still reachable), and
+ *    active actor links to them are released — the engine relinquishes
+ *    ownership it can no longer exercise, recorded in a 'combat-closed'
+ *    audit event per affected effect.
+ *
+ * Character-owned effects (and their character/scope targets) are untouched:
+ * combat ending does not end spells. Rebinding persistent summons to
+ * campaign-actor identity is eshyra-2n1t.5.3.
+ */
+export function applyCombatClosureToEffects(
+  db: Db,
+  campaignId: string,
+  combatInstanceId: string,
+  ctx: EffectMutationContext,
+): CombatClosureEffectReactions {
+  const combatantIds = new Set(
+    (
+      db
+        .prepare(
+          `SELECT combatant_id FROM encounter_combatant
+           WHERE campaign_id = ? AND combat_instance_id = ?
+           ORDER BY combatant_id`,
+        )
+        .all(campaignId, combatInstanceId) as { combatant_id: string }[]
+    ).map((row) => row.combatant_id),
+  );
+  if (combatantIds.size === 0) {
+    return { concentrationBroken: [], targetsRemoved: 0, linksCleaned: 0 };
+  }
+
+  // 1. Break combatant-owned concentration (deterministic order).
+  const concentrationBroken: { effectId: string; displayName: string }[] = [];
+  const ownedRows = (
+    db
+      .prepare(
+        `SELECT ${EFFECT_COLUMNS} FROM active_effect
+         WHERE campaign_id = ? AND requires_concentration = 1
+           AND concentration_owner_kind = 'combatant'
+           AND status IN ('active', 'suppressed')
+         ORDER BY created_at, effect_id`,
+      )
+      .all(campaignId) as ActiveEffectRow[]
+  ).filter(
+    (row) =>
+      row.concentration_owner_ref !== null &&
+      combatantIds.has(row.concentration_owner_ref),
+  );
+  for (const row of ownedRows) {
+    finalizeEnd(
+      db,
+      row,
+      {
+        reason: 'concentration-broken',
+        detail: 'owner-removed',
+        note: `combat instance '${combatInstanceId}' closed`,
+      },
+      ctx,
+    );
+    concentrationBroken.push({
+      effectId: row.effect_id,
+      displayName: row.display_name,
+    });
+  }
+
+  // 2 + 3. Detach the instance's combatants from remaining live effects.
+  let targetsRemoved = 0;
+  let linksCleaned = 0;
+  const liveRows = db
+    .prepare(
+      `SELECT ${EFFECT_COLUMNS} FROM active_effect
+       WHERE campaign_id = ? AND status IN ('active', 'suppressed')
+       ORDER BY created_at, effect_id`,
+    )
+    .all(campaignId) as ActiveEffectRow[];
+  for (const row of liveRows) {
+    for (const target of readTargetRows(db, campaignId, row.effect_id)) {
+      if (
+        target.status === 'active' &&
+        target.target_kind === 'combatant' &&
+        combatantIds.has(target.target_ref)
+      ) {
+        removeEffectTarget(db, {
+          campaignId,
+          effectId: row.effect_id,
+          target: { kind: 'combatant', ref: target.target_ref },
+          reason: 'combat-ended',
+          ...ctx,
+        });
+        targetsRemoved += 1;
+      }
+    }
+    const leftoverLinks = readLinkRows(db, campaignId, row.effect_id).filter(
+      (link) =>
+        link.status === 'active' &&
+        link.target_kind === 'combatant' &&
+        combatantIds.has(link.target_ref),
+    );
+    if (leftoverLinks.length === 0) {
+      continue;
+    }
+    const actions: EffectCleanupAction[] = [];
+    for (const link of leftoverLinks) {
+      // Actor links are released (ownership can no longer be exercised);
+      // condition links are removed while the holder is still mutable.
+      const action: EffectCleanupAction['action'] =
+        link.link_kind === 'actor'
+          ? 'released'
+          : removeProjection(db, campaignId, link, ctx);
+      db.prepare(
+        `UPDATE active_effect_link
+         SET status = ?, removed_reason = 'combat-ended', removed_at = ?,
+             provenance = ?, session_id = ?, updated_at = ?
+         WHERE campaign_id = ? AND effect_id = ? AND link_kind = ?
+           AND target_kind = ? AND target_ref = ? AND projection_ref = ?`,
+      ).run(
+        action === 'released' ? 'released' : 'removed',
+        ctx.at,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        campaignId,
+        row.effect_id,
+        link.link_kind,
+        link.target_kind,
+        link.target_ref,
+        link.projection_ref,
+      );
+      actions.push({
+        linkKind: link.link_kind,
+        target: { kind: link.target_kind, ref: link.target_ref },
+        projectionRef: link.projection_ref,
+        action,
+      });
+      linksCleaned += 1;
+    }
+    appendEvent(
+      db,
+      campaignId,
+      row.effect_id,
+      'combat-closed',
+      {
+        combatInstanceId,
+        cleanup: actions.map((action) => ({
+          linkKind: action.linkKind,
+          targetKind: action.target.kind,
+          targetRef: action.target.ref,
+          projectionRef: action.projectionRef,
+          action: action.action,
+        })),
+      },
+      ctx,
+    );
+  }
+  return { concentrationBroken, targetsRemoved, linksCleaned };
 }

@@ -163,7 +163,7 @@ describe('renderToolResults', () => {
     const results: Array<{ tool: string; result: ToolResult }> = [
       { tool: 'roll', result: { ok: true, data: { total: 17 } } },
       {
-        tool: 'mutate_state',
+        tool: 'add_condition',
         result: { ok: false, code: 'mutate_error', message: 'bad field' },
       },
     ];

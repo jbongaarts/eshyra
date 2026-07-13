@@ -269,7 +269,28 @@ fresh database reproduces byte-identical `active_effect*` rows (tested).
 Failed operations throw before mutating; multi-write cleanup is atomic
 (tested via mid-operation collision rollback).
 
-## 8. Downstream hooks
+## 8. Participant lifecycle boundaries
+
+The full policy (with the mechanical mutation inventory behind it) lives in
+`docs/audits/2026-07-12-f3-mutation-lifecycle-audit.md` §7. In short:
+combatant participants must belong to an **active** combat instance to be
+referenced by new effect state; `closeCombatInstance` atomically breaks
+combatant-owned concentration (`owner-removed`), removes combatant targets
+and condition projections (`combat-ended`), and **releases** owned actor
+links, so live effects never point at unreachable combatants
+(character-owned effects survive closure — combat ending does not end
+spells; campaign-actor rebinding is `eshyra-2n1t.5.3`). `inactive` means
+removed from play: it cannot start concentrating and transitioning into it
+breaks concentration, which is what lets owned-actor cleanup cascade
+(terminal transitions flip status before cleanup, so cycles terminate).
+`escaped` combatants remain capable while the instance is active. Condition
+links are deliberately independent of the target list — a summoned actor may
+carry an owned condition without being a spell "target"; target removal
+cleans exactly the links addressed to that target. There is no generic
+model-facing mutation tool: `mutateState` is a trusted `/internal` seam and
+the historical `mutate_state` wrapper was deleted (audit §5).
+
+## 9. Downstream hooks
 
 - **F7 rest engine**: long rest is a caller of `endActiveEffect`/
   `expire`-style sweeps; F3 exposes the typed timers it needs.
