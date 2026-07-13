@@ -13,6 +13,7 @@ import type { AdventureModule, Db } from '../src/internal.js';
 import {
   addCondition,
   adjustHp,
+  applyCombatClosureToEffects,
   auditActiveEffectIntegrity,
   beginTurn,
   breakCombatantConcentration,
@@ -3552,6 +3553,176 @@ describe('re-entrant cleanup supersession', () => {
     ).toEqual([]);
     expect(combatantState(db, GOBLIN_1).status).toBe('alive');
     expect(listEffectEvents(db, CAMPAIGN, 'fx-new')).toHaveLength(0);
+    expectCleanAudit(db);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stale-snapshot terminal transitions (PR #437 re-review)
+// ---------------------------------------------------------------------------
+
+describe('stale-snapshot terminalization', () => {
+  /** Round-timed A owns combatant GOBLIN_1 (remove-on-end); round-timed B is
+   *  concentrated on by GOBLIN_1. Expiring A cascades into ending B before
+   *  any snapshot loop reaches B's stale entry. */
+  function buildTimerCascade(db: Db) {
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-a',
+      kind: 'summoning',
+      displayName: 'A',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      actors: [
+        {
+          combatantId: GOBLIN_1,
+          cleanupOnEnd: 'remove',
+          cleanupOnBreak: 'remove',
+        },
+      ],
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-b',
+      kind: 'spell-effect',
+      displayName: 'B',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+  }
+
+  function assertFirstReasonWon(db: Db) {
+    const byId = new Map(
+      listActiveEffects(db, CAMPAIGN, { includeEnded: true }).map((effect) => [
+        effect.effectId,
+        effect,
+      ]),
+    );
+    // A's terminal transition is its own expiry.
+    expect(byId.get('fx-a')).toMatchObject({
+      status: 'ended',
+      endReason: 'expired',
+    });
+    // B's winning terminal transition is the cascaded owner-removed break —
+    // the stale timer entry did NOT overwrite it to 'expired'.
+    expect(byId.get('fx-b')).toMatchObject({
+      status: 'ended',
+      endReason: 'concentration-broken',
+      endDetail: 'owner-removed',
+    });
+    for (const effectId of ['fx-a', 'fx-b']) {
+      const events = listEffectEvents(db, CAMPAIGN, effectId);
+      expect(
+        events.filter((event) => event.eventKind === 'ended'),
+        effectId,
+      ).toHaveLength(1);
+      expect(events.at(-1)?.eventKind, effectId).toBe('ended');
+    }
+    expect(
+      String(listEffectEvents(db, CAMPAIGN, 'fx-b').at(-1)?.detail.reason),
+    ).toBe('concentration-broken');
+    expectCleanAudit(db);
+  }
+
+  it('combat closure: the stale timer entry for B loses and is not reported', () => {
+    const { db, combatInstanceId } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    buildTimerCascade(db);
+    const reactions = applyCombatClosureToEffects(
+      db,
+      CAMPAIGN,
+      combatInstanceId,
+      CTX,
+    );
+    // Only A's terminal transition belongs to the timer settlement.
+    expect(reactions.timersExpired).toEqual([
+      { effectId: 'fx-a', displayName: 'A' },
+    ]);
+    assertFirstReasonWon(db);
+  });
+
+  it('round-expiry sweep: same cascade, same first-reason-wins outcome', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    buildTimerCascade(db);
+    // Both deadlines (round 3) are due at round 3.
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      round: 3,
+      ...CTX,
+    });
+    const expired = expireElapsedRoundEffects(db, {
+      campaignId: CAMPAIGN,
+      ...CTX,
+    });
+    expect(expired.map((entry) => entry.effectId)).toEqual(['fx-a']);
+    assertFirstReasonWon(db);
+  });
+
+  it('a second terminalization attempt no-ops without changing durable state', () => {
+    const { db, combatInstanceId } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    buildTimerCascade(db);
+    applyCombatClosureToEffects(db, CAMPAIGN, combatInstanceId, CTX);
+    const dump = () => ({
+      effects: db
+        .prepare('SELECT * FROM active_effect ORDER BY effect_id')
+        .all(),
+      links: db
+        .prepare(
+          'SELECT * FROM active_effect_link ORDER BY effect_id, link_kind, projection_ref',
+        )
+        .all(),
+      targets: db
+        .prepare(
+          'SELECT * FROM active_effect_target ORDER BY effect_id, target_kind, target_ref',
+        )
+        .all(),
+      events: db
+        .prepare('SELECT * FROM active_effect_event ORDER BY effect_id, seq')
+        .all(),
+    });
+    const before = dump();
+    // Every terminal path re-attempted against the already-ended rows: the
+    // durable-row claim loses everywhere and nothing changes.
+    const again = applyCombatClosureToEffects(
+      db,
+      CAMPAIGN,
+      combatInstanceId,
+      CTX,
+    );
+    expect(again.timersExpired).toEqual([]);
+    expect(again.concentrationBroken).toEqual([]);
+    expect(
+      breakCombatantConcentration(db, CAMPAIGN, GOBLIN_1, 'dead', CTX).broken,
+    ).toBe(false);
+    expect(dump()).toEqual(before);
     expectCleanAudit(db);
   });
 });

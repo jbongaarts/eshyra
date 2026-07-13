@@ -1435,10 +1435,12 @@ function appendEvent(
   detail: Record<string, unknown>,
   ctx: EffectMutationContext,
 ): void {
-  // Ledger invariant: 'ended' is the FINAL event. finalizeEnd flips status
-  // before appending its own 'ended' event, so this guard both blocks any
-  // transition event a re-entrant caller might try to append after a
-  // terminal cascade and never blocks the terminal event itself.
+  // Ledger invariants: 'ended' is the FINAL event and there is exactly one.
+  // finalizeEnd flips status before appending its own 'ended' event, so the
+  // non-terminal guard blocks any transition event a re-entrant caller might
+  // try to append after a terminal cascade without blocking the terminal
+  // event itself — and the terminal guard makes a SECOND 'ended' event
+  // impossible even if a future caller reaches this seam with stale state.
   if (eventKind !== 'ended') {
     const status = db
       .prepare(
@@ -1450,6 +1452,19 @@ function appendEvent(
       throw new ActiveEffectError(
         `cannot append '${eventKind}' event to ended effect '${effectId}': ` +
           "'ended' is the final ledger event",
+      );
+    }
+  } else {
+    const existingTerminal = db
+      .prepare(
+        `SELECT 1 FROM active_effect_event
+         WHERE campaign_id = ? AND effect_id = ? AND event_kind = 'ended'`,
+      )
+      .get(campaignId, effectId);
+    if (existingTerminal !== undefined) {
+      throw new ActiveEffectError(
+        `effect '${effectId}' already has its terminal 'ended' event; a second ` +
+          'terminal event is never appended',
       );
     }
   }
@@ -1775,41 +1790,65 @@ interface FinalizeEndInput {
   readonly trigger?: string;
 }
 
-/** Shared terminal transition: cleanup + status flip + 'ended' event. */
+interface FinalizeEndOutcome {
+  /** True iff THIS call performed the terminal transition. False when the
+   *  durable row was already ended — typically by a nested cascade from an
+   *  earlier iteration of the caller's snapshot loop — in which case the
+   *  first winning reason/detail/provenance/cleanup/event are untouched. */
+  readonly performed: boolean;
+  readonly cleanup: EffectCleanupSummary;
+}
+
+/**
+ * Shared terminal transition: status claim + cleanup + 'ended' event.
+ *
+ * Terminal authority comes from the DURABLE row, never the caller's snapshot
+ * (F3 mutation audit, invariant 20): the status flip is a conditional UPDATE
+ * that only succeeds while the effect is still live, so a stale snapshot row
+ * can never terminalize twice, overwrite the winning end reason, re-run
+ * cleanup, or append a second 'ended' event — callers learn they lost via
+ * `performed: false` and must not report the transition as theirs.
+ *
+ * The claim happens FIRST, cleanup second (invariant 12): cleanup can
+ * cascade — removing an owned actor sets it inactive, which breaks that
+ * actor's own concentration, whose cleanup can cascade further. Every nested
+ * break re-derives liveness from the durable row, so re-entry onto this
+ * effect is a no-op: no double-end, no duplicate terminal event, no infinite
+ * recursion, no dependence on iteration order. The transient
+ * ended-with-active-links state is invisible outside the transaction.
+ */
 function finalizeEnd(
   db: Db,
   row: ActiveEffectRow,
   input: FinalizeEndInput,
   ctx: EffectMutationContext,
-): EffectCleanupSummary {
+): FinalizeEndOutcome {
   const mode = input.reason === 'concentration-broken' ? 'break' : 'end';
   const reasonLabel =
     input.detail === undefined
       ? input.reason
       : `${input.reason}:${input.detail}`;
-  // Terminal transition FIRST, cleanup second (F3 mutation audit,
-  // invariant 12): cleanup can cascade — removing an owned actor sets it
-  // inactive, which breaks that actor's own concentration, whose cleanup can
-  // cascade further. Every nested break queries live status, so flipping to
-  // 'ended' before cleanup makes re-entry onto this effect a no-op: no
-  // double-end, no duplicate terminal event, no infinite recursion, and no
-  // dependence on iteration order. The transient ended-with-active-links
-  // state is invisible outside this transaction.
-  db.prepare(
-    `UPDATE active_effect
-     SET status = 'ended', end_reason = ?, end_detail = ?, ended_at = ?,
-         provenance = ?, session_id = ?, updated_at = ?
-     WHERE campaign_id = ? AND effect_id = ?`,
-  ).run(
-    input.reason,
-    input.detail ?? null,
-    ctx.at,
-    ctx.provenance,
-    ctx.sessionId,
-    ctx.at,
-    row.campaign_id,
-    row.effect_id,
-  );
+  const claim = db
+    .prepare(
+      `UPDATE active_effect
+       SET status = 'ended', end_reason = ?, end_detail = ?, ended_at = ?,
+           provenance = ?, session_id = ?, updated_at = ?
+       WHERE campaign_id = ? AND effect_id = ?
+         AND status IN ('active', 'suppressed')`,
+    )
+    .run(
+      input.reason,
+      input.detail ?? null,
+      ctx.at,
+      ctx.provenance,
+      ctx.sessionId,
+      ctx.at,
+      row.campaign_id,
+      row.effect_id,
+    );
+  if (claim.changes === 0) {
+    return { performed: false, cleanup: { links: [], targetsRemoved: 0 } };
+  }
   const cleanup = cleanupOwnedState(
     db,
     row.campaign_id,
@@ -1841,7 +1880,7 @@ function finalizeEnd(
     },
     ctx,
   );
-  return cleanup;
+  return { performed: true, cleanup };
 }
 
 // ---------------------------------------------------------------------------
@@ -2197,7 +2236,9 @@ export function createActiveEffect(
     // concentration effect deterministically (SRD concentration).
     let replaced: CreateActiveEffectResult['replaced'];
     if (priorConcentration !== undefined) {
-      const cleanup = finalizeEnd(
+      // Fresh row: read during validation with no mutations in between; the
+      // primitive re-verifies against the durable row regardless.
+      const outcome = finalizeEnd(
         txnDb,
         priorConcentration,
         {
@@ -2207,11 +2248,13 @@ export function createActiveEffect(
         },
         input,
       );
-      replaced = {
-        effectId: priorConcentration.effect_id,
-        displayName: priorConcentration.display_name,
-        cleanup,
-      };
+      if (outcome.performed) {
+        replaced = {
+          effectId: priorConcentration.effect_id,
+          displayName: priorConcentration.display_name,
+          cleanup: outcome.cleanup,
+        };
+      }
     }
 
     txnDb
@@ -2476,7 +2519,8 @@ export function endActiveEffect(
         break;
     }
 
-    const cleanup = finalizeEnd(
+    // Fresh row: read at operation start; validation performs no mutations.
+    const outcome = finalizeEnd(
       txnDb,
       row,
       {
@@ -2488,9 +2532,9 @@ export function endActiveEffect(
       input,
     );
     return {
-      changed: true,
+      changed: outcome.performed,
       effect: requireEffectView(txnDb, input.campaignId, input.effectId),
-      cleanup,
+      cleanup: outcome.cleanup,
     };
   });
 }
@@ -2664,12 +2708,13 @@ export function resolveConcentrationCheck(
 
     let cleanup: EffectCleanupSummary | undefined;
     if (outcome === 'failure') {
+      // Fresh row: only this check's own ledger event happened since read.
       cleanup = finalizeEnd(
         txnDb,
         row,
         { reason: 'concentration-broken', detail: 'damage-save-failed' },
         input,
-      );
+      ).cleanup;
     }
     return {
       effectId: row.effect_id,
@@ -2712,18 +2757,25 @@ export function breakConcentrationOnLifeEvent(
   if (rows.length === 0) {
     return { broken: false };
   }
-  for (const row of rows) {
-    finalizeEnd(
-      db,
-      row,
-      { reason: 'concentration-broken', detail: cause },
-      ctx,
-    );
+  // Snapshot loop (one row per campaign): a prior row's cleanup could in
+  // principle cascade into a later row, so only rows whose terminal
+  // transition THIS loop actually performed are reported.
+  const performed = rows.filter(
+    (row) =>
+      finalizeEnd(
+        db,
+        row,
+        { reason: 'concentration-broken', detail: cause },
+        ctx,
+      ).performed,
+  );
+  if (performed.length === 0) {
+    return { broken: false };
   }
   return {
     broken: true,
-    effectId: rows[0]?.effect_id,
-    displayName: rows[0]?.display_name,
+    effectId: performed[0]?.effect_id,
+    displayName: performed[0]?.display_name,
   };
 }
 
@@ -2772,7 +2824,17 @@ export function breakCombatantConcentration(
   if (row === undefined) {
     return { broken: false };
   }
-  finalizeEnd(db, row, { reason: 'concentration-broken', detail: cause }, ctx);
+  // Fresh row (read in this call); the primitive re-verifies regardless.
+  if (
+    !finalizeEnd(
+      db,
+      row,
+      { reason: 'concentration-broken', detail: cause },
+      ctx,
+    ).performed
+  ) {
+    return { broken: false };
+  }
   return {
     broken: true,
     effectId: row.effect_id,
@@ -3270,7 +3332,11 @@ export function expireElapsedRoundEffects(
       ) {
         continue;
       }
-      const cleanup = finalizeEnd(
+      // Snapshot loop: an earlier expiry's cleanup can cascade and end a
+      // later snapshot row (owned-actor removal -> owner-removed break).
+      // The primitive claims against the durable row; a stale entry loses
+      // and is NOT reported as expired by this sweep.
+      const outcome = finalizeEnd(
         txnDb,
         row,
         {
@@ -3279,12 +3345,14 @@ export function expireElapsedRoundEffects(
         },
         input,
       );
-      expired.push({
-        effectId: row.effect_id,
-        displayName: row.display_name,
-        deadlineRound: deadline,
-        cleanup,
-      });
+      if (outcome.performed) {
+        expired.push({
+          effectId: row.effect_id,
+          displayName: row.display_name,
+          deadlineRound: deadline,
+          cleanup: outcome.cleanup,
+        });
+      }
     }
     return expired;
   });
@@ -3396,7 +3464,12 @@ export function applyCombatClosureToEffects(
       deadline === undefined
         ? 0
         : Math.max(0, deadline - Math.max(1, instanceRound.round_number));
-    finalizeEnd(
+    // Snapshot loop: an earlier settlement's cleanup can cascade and end a
+    // later snapshot row (e.g. expiring A removes its owned actor, whose
+    // inactivation breaks B as owner-removed). The primitive claims against
+    // the durable row; a stale entry loses, keeps its winning terminal
+    // reason, and is NOT reported in timersExpired.
+    const outcome = finalizeEnd(
       db,
       row,
       {
@@ -3409,10 +3482,12 @@ export function applyCombatClosureToEffects(
       },
       ctx,
     );
-    timersExpired.push({
-      effectId: row.effect_id,
-      displayName: row.display_name,
-    });
+    if (outcome.performed) {
+      timersExpired.push({
+        effectId: row.effect_id,
+        displayName: row.display_name,
+      });
+    }
   }
 
   if (combatantIds.size === 0) {
@@ -3437,11 +3512,12 @@ export function applyCombatClosureToEffects(
     ) {
       continue;
     }
+    // Snapshot loop over a fresh re-read; the primitive still decides.
     const live = readEffectRow(db, campaignId, row.effect_id);
     if (live === undefined || live.status === 'ended') {
       continue;
     }
-    finalizeEnd(
+    const outcome = finalizeEnd(
       db,
       live,
       {
@@ -3451,10 +3527,12 @@ export function applyCombatClosureToEffects(
       },
       ctx,
     );
-    concentrationBroken.push({
-      effectId: row.effect_id,
-      displayName: row.display_name,
-    });
+    if (outcome.performed) {
+      concentrationBroken.push({
+        effectId: row.effect_id,
+        displayName: row.display_name,
+      });
+    }
   }
 
   // 3 + 4. Detach the instance's combatants from remaining live effects.

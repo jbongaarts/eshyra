@@ -138,6 +138,27 @@ transaction. Reachability: five F3 tools + DOM hooks from `hpLifecycle`,
     advance: round-unit timers anchored to a closing instance are settled
     (expired) at the closure boundary, and the audit reports any live round
     timer whose anchoring instance is missing or inactive.
+20. **Snapshot enumeration never grants authority to terminalize.** The
+    terminal primitive (`finalizeEnd`) claims the transition with a
+    conditional UPDATE against the DURABLE row (`… AND status IN ('active',
+    'suppressed')`) and reports `performed: false` when the row was already
+    ended by a nested cascade — the first winning reason, detail,
+    provenance, cleanup, and terminal event are untouched, cleanup never
+    re-runs, and result summaries (`timersExpired`, `expired`,
+    `concentrationBroken`, `broken`, `replaced`) count only transitions the
+    reporting operation actually performed. Defense in depth at the ledger
+    seam: `appendEvent` refuses a second `'ended'` event outright, so a
+    duplicate terminal event is impossible even for a hypothetical future
+    caller that bypasses the primitive's claim.
+
+    `finalizeEnd` caller classification (all verified): fresh rows —
+    `endActiveEffect`, `createActiveEffect` replacement (validation-phase
+    read, no mutations between), `resolveConcentrationCheck` (only its own
+    check event between read and end), `breakCombatantConcentration`;
+    snapshot loops (a prior iteration's cascade can end a later row — all
+    gate their reports on `performed`) — combat-closure timer settlement,
+    combat-closure owner breaks, `expireElapsedRoundEffects`,
+    `breakConcentrationOnLifeEvent` (multi-campaign rows).
 
 ## 4. Unsupported topologies (fail-closed at preflight)
 
@@ -278,4 +299,9 @@ no-combatant-refs, deadline reached and unreached); and the re-entrancy
 suite (the 4-node target-removal cascade returning `superseded: true` with
 un-overwritten provenance and a final terminal event, the same cycle settled
 by closure, and a creation superseded by its own projection cascade rolling
-back completely).
+back completely); and the stale-snapshot terminalization suite (the
+A-expires→B-breaks cascade proven through both the closure timer settlement
+and the ordinary round-expiry sweep — first reason wins, one terminal event
+each, summaries report only the operation's own transitions — plus a full
+re-run of every terminal path against ended rows proving byte-identical
+durable state).
