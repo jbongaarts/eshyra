@@ -57,6 +57,18 @@ function hasLedger(db: Db): boolean {
   );
 }
 
+function activeEffectTableNames(db: Db): string[] {
+  return (
+    db
+      .prepare(
+        `SELECT name FROM sqlite_master
+         WHERE type = 'table' AND name LIKE 'active_effect%'
+         ORDER BY name`,
+      )
+      .all() as { name: string }[]
+  ).map((row) => row.name);
+}
+
 describe('prepareDatabaseForMigrations', () => {
   it('classifies an empty database as empty', () => {
     const db = openDatabase(':memory:');
@@ -182,9 +194,24 @@ describe('migrateDatabase (end to end)', () => {
     const db = openDatabase(':memory:');
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('empty');
-    expect(result.migrations.applied).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    expect(readMigrationLedger(db).map((r) => r.version)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9,
+    expect(result.migrations.applied).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
+      [1, 'initial'],
+      [2, 'character_sheet'],
+      [3, 'progression_state_and_ledger'],
+      [4, 'character_wallet_event'],
+      [5, 'death_state_and_temp_hp'],
+      [6, 'action_economy_turn_budget'],
+      [7, 'usage_attunement_inspiration'],
+      [8, 'character_spell_slots'],
+      [9, 'legal_default_ability_scores'],
+      [10, 'active_effects'],
+    ]);
+    expect(activeEffectTableNames(db)).toEqual([
+      'active_effect',
+      'active_effect_event',
+      'active_effect_link',
+      'active_effect_target',
     ]);
     db.close();
   });
@@ -195,8 +222,22 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.action).toBe('adopted');
     expect(result.legacy.adoptedFromVersion).toBe(15);
     // 0001 is adopted (already applied); the post-baseline migrations apply.
-    expect(result.migrations.applied).toEqual([2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(result.migrations.applied).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
+    expect(
+      readMigrationLedger(db)
+        .slice(-2)
+        .map((r) => [r.version, r.name]),
+    ).toEqual([
+      [9, 'legal_default_ability_scores'],
+      [10, 'active_effects'],
+    ]);
+    expect(activeEffectTableNames(db)).toEqual([
+      'active_effect',
+      'active_effect_event',
+      'active_effect_link',
+      'active_effect_target',
+    ]);
     db.close();
   });
 
@@ -248,7 +289,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
 
     const result = migrateDatabase(db, { now: NOW });
 
-    expect(result.migrations.applied).toEqual([5, 6, 7, 8, 9]);
+    expect(result.migrations.applied).toEqual([5, 6, 7, 8, 9, 10]);
     const row = db
       .prepare(
         `SELECT life_state, death_save_successes, death_save_failures

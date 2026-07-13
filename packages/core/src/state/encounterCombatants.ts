@@ -1,5 +1,6 @@
 import type { AdventureModule } from '../adventure/types.js';
 import type { Db } from '../persistence/db.js';
+import { withTransaction } from '../persistence/db.js';
 import {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,
@@ -9,6 +10,16 @@ import { lookupRulesRecord } from '../rules/lookup.js';
 import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
 import { resolveRulesStack } from '../rules/stack.js';
 import type { RulesPack, RulesRecord } from '../rules/types.js';
+// Function-level circular dependency with activeEffects.ts (which mutates
+// combatants through updateCombatant during effect cleanup): safe because
+// both sides only reference each other inside function bodies, never during
+// module evaluation. The reaction lives here, not in the tool wrapper, so
+// EVERY updateCombatant caller gets the atomic incapacitation invariant.
+import {
+  anyConditionImpliesIncapacitated,
+  applyCombatClosureToEffects,
+  breakCombatantConcentration,
+} from './activeEffects.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
 
 export type CombatInstanceStatus =
@@ -180,6 +191,14 @@ export interface UpdateCombatantResult {
   readonly hpDelta: number | undefined;
   readonly conditionAdded: boolean;
   readonly conditionRemoved: boolean;
+  /** Set when this update downed or removed the combatant while it was
+   *  concentrating: the F3 break + owned-projection cleanup happened in
+   *  this transaction ('owner-removed' = transitioned to inactive). */
+  readonly concentrationBroken?: {
+    readonly effectId: string;
+    readonly displayName: string;
+    readonly cause: 'incapacitated' | 'dead' | 'owner-removed';
+  };
 }
 
 export class EncounterCombatantError extends Error {
@@ -803,6 +822,17 @@ export function closeCombatInstance(
   db: Db,
   input: CloseCombatInstanceInput,
 ): CombatInstance {
+  // One transaction covers the F3 closure boundary and the status flip: a
+  // closed instance can never be committed while live effect state still
+  // points at its combatants (F3 mutation audit §7). The effect reactions
+  // run FIRST, while the combatants are still mutable.
+  return withTransaction(db, (txnDb) => closeCombatInstanceInTxn(txnDb, input));
+}
+
+function closeCombatInstanceInTxn(
+  db: Db,
+  input: CloseCombatInstanceInput,
+): CombatInstance {
   const instance =
     input.combatInstanceId === undefined
       ? activeInstance(db, input.campaignId)
@@ -815,6 +845,11 @@ export function closeCombatInstance(
       `combat instance '${instance.combatInstanceId}' is ${instance.status} and cannot be reactivated or closed again`,
     );
   }
+  applyCombatClosureToEffects(db, input.campaignId, instance.combatInstanceId, {
+    provenance: input.provenance,
+    sessionId: input.sessionId,
+    at: input.at,
+  });
   db.prepare(
     `UPDATE combat_instance
      SET status = ?, provenance = ?, session_id = ?, updated_at = ?, closed_at = ?
@@ -898,6 +933,16 @@ function readCombatant(
 }
 
 export function updateCombatant(
+  db: Db,
+  input: UpdateCombatantInput,
+): UpdateCombatantResult {
+  // One transaction covers the combatant write, the actor sync, AND the F3
+  // concentration reaction below: a combatant can never be committed as
+  // down/dead while its concentration cleanup is lost or partial.
+  return withTransaction(db, (txnDb) => updateCombatantInTxn(txnDb, input));
+}
+
+function updateCombatantInTxn(
   db: Db,
   input: UpdateCombatantInput,
 ): UpdateCombatantResult {
@@ -1009,6 +1054,66 @@ export function updateCombatant(
     });
   }
 
+  // F3 reaction (same-transaction, mirroring hpLifecycle's character hook):
+  // a combatant that goes down — 0 HP, an explicit dead/unconscious status,
+  // or a newly applied condition whose structured record implies
+  // `incapacitated` (paralyzed, stunned, …) — is incapacitated, which breaks
+  // its concentration and cleans up the effect's owned projections
+  // atomically with this write. Transition-gated on both sides so an
+  // already-incapacitated combatant (by any route) triggers nothing further.
+  const wasDown =
+    current.hpCurrent === 0 ||
+    current.status === 'dead' ||
+    current.status === 'unconscious' ||
+    current.status === 'inactive';
+  const isDown =
+    nextHp === 0 ||
+    status === 'dead' ||
+    status === 'unconscious' ||
+    status === 'inactive';
+  const wasIncapacitated =
+    wasDown ||
+    anyConditionImpliesIncapacitated(
+      db,
+      current.conditions.map((c) => c.id),
+    );
+  const isIncapacitated =
+    isDown ||
+    anyConditionImpliesIncapacitated(
+      db,
+      conditions.map((c) => c.id),
+    );
+  let concentrationBroken: UpdateCombatantResult['concentrationBroken'];
+  if (!wasIncapacitated && isIncapacitated) {
+    const broken = breakCombatantConcentration(
+      db,
+      input.campaignId,
+      input.combatantId,
+      status === 'dead'
+        ? 'dead'
+        : status === 'inactive'
+          ? 'owner-removed'
+          : 'incapacitated',
+      {
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+      },
+    );
+    if (broken.broken && broken.effectId !== undefined) {
+      concentrationBroken = {
+        effectId: broken.effectId,
+        displayName: broken.displayName ?? broken.effectId,
+        cause:
+          status === 'dead'
+            ? 'dead'
+            : status === 'inactive'
+              ? 'owner-removed'
+              : 'incapacitated',
+      };
+    }
+  }
+
   const combatant = readCombatant(db, input.campaignId, input.combatantId);
   if (combatant === undefined) {
     throw new EncounterCombatantError('combatant disappeared during update');
@@ -1020,5 +1125,6 @@ export function updateCombatant(
     hpDelta: input.hpDelta,
     conditionAdded,
     conditionRemoved,
+    ...(concentrationBroken === undefined ? {} : { concentrationBroken }),
   };
 }

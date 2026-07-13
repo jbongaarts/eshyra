@@ -4,6 +4,10 @@ import {
   setReactionAllowance,
 } from '../state/actionEconomy.js';
 import {
+  concentrationSaveDc,
+  getConcentrationEffect,
+} from '../state/activeEffects.js';
+import {
   type CombatantStatus,
   EncounterCombatantError,
   updateCombatant,
@@ -178,11 +182,40 @@ export const updateCombatantTool: Tool = {
         sessionId: ctx.sessionId,
         at: ctx.at,
       });
-      return ok(
-        reactionAllowance === undefined
-          ? update
-          : { ...update, reactionAllowance },
-      );
+      // F3 concentration reactions. The incapacitation/death break happened
+      // INSIDE updateCombatant's transaction (never here — the tool only
+      // reports it); a combatant damaged but still up owes the save.
+      let concentration:
+        | { broken: unknown }
+        | { checkRequired: unknown }
+        | undefined;
+      const downed =
+        update.combatant.hpCurrent === 0 ||
+        update.combatant.status === 'dead' ||
+        update.combatant.status === 'unconscious';
+      if (update.concentrationBroken !== undefined) {
+        concentration = { broken: update.concentrationBroken };
+      } else if (!downed && typeof a.hpDelta === 'number' && a.hpDelta < 0) {
+        const live = getConcentrationEffect(ctx.db, ctx.campaignId, {
+          kind: 'combatant',
+          ref: a.combatantId,
+        });
+        if (live !== undefined) {
+          concentration = {
+            checkRequired: {
+              effectId: live.effectId,
+              displayName: live.displayName,
+              dc: concentrationSaveDc(-a.hpDelta),
+              damage: -a.hpDelta,
+            },
+          };
+        }
+      }
+      return ok({
+        ...update,
+        ...(reactionAllowance === undefined ? {} : { reactionAllowance }),
+        ...(concentration === undefined ? {} : { concentration }),
+      });
     } catch (e) {
       if (e instanceof EncounterCombatantError) {
         return err('invalid_target', e.message);

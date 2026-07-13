@@ -10,6 +10,23 @@ import {
   validateInventoryPropertiesJson,
 } from './liveStateSchema.js';
 
+// Trust boundary (2026-07-12 F3 mutation audit,
+// docs/audits/2026-07-12-f3-mutation-lifecycle-audit.md §5/§6):
+// `mutateState` / `mutateStateBatch` are the TRUSTED INTERNAL persistence
+// seam the domain operations are built on. They validate shape, field
+// allowlists, and provenance, but deliberately perform NO lifecycle
+// reactions — writing a lifecycle-owned field here (hp_current, hp_temp,
+// life_state, death saves, conditions_json, and the combatant analogues)
+// skips the F6 death machine, attunement release, and F3 concentration
+// breaks. Those fields are written through their domain operations
+// (hpLifecycle, domainMutations, activeEffects, encounterCombatants);
+// direct calls are reserved for trusted domain code, creation/import/
+// level-up projection, and test setup. This module is exported from
+// `@eshyra/core/internal` only and MUST NOT be wrapped into a model-facing
+// tool: the historical general `mutate_state` tool wrapper was deleted by
+// PR #437 for exactly this reason, and tools.test.ts pins that no such
+// tool exists in the default registry.
+
 /**
  * Codec for the JSON-valued columns mutate_state writes — plot_flags /
  * overlay_facts `value_json` and the character / inventory `*_json` fields.

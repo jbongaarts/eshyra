@@ -1965,9 +1965,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       'trap initiative/actions procedure; encounter tools suffice',
   },
   'rule:concentration': {
-    status: 'unimplemented',
-    missing:
-      'F3: durable concentration marker, auto Con save DC max(10, ⌊dmg/2⌋) on every damage instance, single-instance invariant, break conditions — high-frequency cross-turn state machine',
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/state/activeEffects.ts',
+      'packages/core/src/state/hpLifecycle.ts',
+      'packages/core/src/orchestrator/toolResolveConcentration.ts',
+      'packages/core/src/orchestrator/toolStartEffect.ts',
+      'packages/core/src/orchestrator/toolEndEffect.ts',
+    ],
+    evidence: ['packages/core/test/activeEffects.test.ts'],
   },
   'rule:cone': {
     status: 'model-adjudicated-supported',
@@ -2964,15 +2970,16 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * (upcast scaling needs structured spell `scaling` data, landing with the
  * F4 interplay). F10 exposed the wallet, mutation invariants, persistence, and
  * audit trail, but deterministic resale and downtime-cost transforms remain
- * partial until registered calculation primitives own those numbers. The
- * reviewed census is now 36/109/17/3/10.
+ * partial until registered calculation primitives own those numbers. F3,
+ * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
+ * reviewed stacked census is now 37/109/17/2/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 36,
+    implemented: 37,
     'model-adjudicated-supported': 109,
     partial: 17,
-    unimplemented: 3,
+    unimplemented: 2,
     'design-blocked': 10,
   });
 

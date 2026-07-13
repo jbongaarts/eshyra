@@ -17,7 +17,13 @@ export const closeCombatInstanceTool: Tool = {
   name: 'close_combat_instance',
   mutates: true,
   description:
-    'Close the active combat instance so it cannot become active again. args: { status: "completed"|"abandoned"|"fled"|"interrupted", combatInstanceId?: string }.',
+    'Close the active combat instance so it cannot become active again. ' +
+    'Atomically applies the F3 effect boundary: concentration owned by ' +
+    'combatants of this instance breaks (owner-removed), effect targets/' +
+    'condition projections on them are removed (combat-ended), and owned ' +
+    'summon links are released. Character-owned effects survive. args: ' +
+    '{ status: "completed"|"abandoned"|"fled"|"interrupted", ' +
+    'combatInstanceId?: string }.',
   inputSchema: {
     type: 'object',
     properties: {

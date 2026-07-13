@@ -9,7 +9,9 @@ such as `inventory` when starting equipment is added. `completeCharacterCreation
 takes an optional `characterId` (defaulting to `pc-1`) so a campaign can hold
 more than one player character, and it sets the created PC as the active
 character. Character creation does not own a second sheet model. It emits
-`mutate_state`-compatible writes so the same persistence and provenance rules
+`MutateStateInput`-shaped writes (the internal `mutateState` persistence
+seam — there is no model-facing generic mutation tool) so the same
+persistence and provenance rules
 apply to created characters, DM-authored corrections, and future import output.
 See `docs/multi-pc-design.md` for the party model and
 `docs/design/character-progression.md` for the post-creation progression and
@@ -40,7 +42,7 @@ by `base.systemId`. The bundled validators cover:
   currently accepted.
 
 When validation succeeds, the flow writes the accepted sheet into canonical
-state through `mutate_state`. Both validators project into the same canonical
+state through the internal `mutateState` seam. Both validators project into the same canonical
 `character` row (`name`, `ancestry`, `class_name`, `level`, `hp_current`,
 `hp_max`, `ability_scores_json`) — system-specific detail (e.g. Pathfinder
 background, feats, equipment) is summarized in the completion prompt for now.

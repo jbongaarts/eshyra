@@ -153,6 +153,7 @@ describe('ToolRegistry', () => {
         'close_combat_instance',
         'convert_currency',
         'end_attunement',
+        'end_effect',
         'gain_currency',
         'give_item',
         'grant_temporary_hp',
@@ -167,6 +168,9 @@ describe('ToolRegistry', () => {
         'resolve_check',
         'resolve_contest',
         'resolve_damage',
+        'refresh_effect',
+        'remove_effect_target',
+        'resolve_concentration',
         'restore_usage',
         'roll',
         'set_plot_flag',
@@ -177,6 +181,7 @@ describe('ToolRegistry', () => {
         'spend_turn_resource',
         'spend_usage',
         'stabilize_character',
+        'start_effect',
         'start_encounter',
         'update_clock',
         'update_combatant',
@@ -221,6 +226,21 @@ describe('ToolRegistry', () => {
         );
       }
     }
+  });
+
+  it('exposes no generic mutate_state tool (F3 mutation audit §5)', () => {
+    // The historical general canon-write wrapper was deleted: a generic
+    // model-facing setter over lifecycle-owned fields (HP, life state,
+    // death saves, conditions) would bypass the F6/F3 semantic operations.
+    // The mutateState primitive remains a trusted /internal-only seam.
+    const registry = createDefaultToolRegistry();
+    expect(registry.has('mutate_state')).toBe(false);
+    expect(
+      registry.definitions().map((definition) => definition.name),
+    ).not.toContain('mutate_state');
+    expect(DEFAULT_TOOLS.map((tool) => tool.name)).not.toContain(
+      'mutate_state',
+    );
   });
 
   it('treats an unknown tool as mutating (fail-safe staging)', () => {
@@ -747,6 +767,207 @@ describe('domain mutation tools', () => {
   });
 });
 
+describe('active-effect tools (F3, eshyra-2n1t.5)', () => {
+  const blessArgs = (effectId: string) => ({
+    effectId,
+    kind: 'spell-effect',
+    displayName: 'Bless',
+    source: { kind: 'spell', ref: 'spell:bless' },
+    concentrationOwner: { kind: 'character', ref: 'pc-1' },
+    duration: {
+      kind: 'timed',
+      amount: 1,
+      unit: 'minute',
+      anchor: 'spell-cast',
+    },
+    conditions: [
+      {
+        target: { kind: 'character', ref: 'pc-1' },
+        condition: { id: `blessed:${effectId}` },
+      },
+    ],
+  });
+
+  function conditionIds(db: import('../src/index.js').Db): string[] {
+    const row = db
+      .prepare(`SELECT conditions_json FROM character WHERE id = 'pc-1'`)
+      .get() as { conditions_json: string };
+    return (JSON.parse(row.conditions_json) as { id: string }[]).map(
+      (entry) => entry.id,
+    );
+  }
+
+  it('start_effect creates the effect and reports concentration replacement', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    const first = registry.invoke('start_effect', blessArgs('fx-1'), c);
+    expect(first.ok).toBe(true);
+    if (first.ok) {
+      expect(first.data).toMatchObject({
+        effect: { effectId: 'fx-1', status: 'active' },
+      });
+    }
+    expect(conditionIds(c.db)).toEqual(['blessed:fx-1']);
+
+    const second = registry.invoke('start_effect', blessArgs('fx-2'), c);
+    expect(second.ok).toBe(true);
+    if (second.ok) {
+      expect(second.data).toMatchObject({
+        effect: { effectId: 'fx-2' },
+        replaced: { effectId: 'fx-1' },
+      });
+    }
+    // Exactly the replaced effect's projection was cleaned up.
+    expect(conditionIds(c.db)).toEqual(['blessed:fx-2']);
+  });
+
+  it('start_effect rejects schema violations and lifecycle violations distinctly', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    const missingDuration = registry.invoke(
+      'start_effect',
+      {
+        effectId: 'fx-x',
+        kind: 'spell-effect',
+        displayName: 'X',
+        source: { kind: 'ruling' },
+      },
+      c,
+    );
+    expect(missingDuration).toMatchObject({ ok: false, code: 'invalid_args' });
+
+    const instantaneous = registry.invoke(
+      'start_effect',
+      {
+        effectId: 'fx-cure',
+        kind: 'spell-effect',
+        displayName: 'Cure Wounds',
+        source: { kind: 'spell', ref: 'spell:cure-wounds' },
+        duration: { kind: 'until-removed' },
+      },
+      c,
+    );
+    expect(instantaneous).toMatchObject({ ok: false, code: 'effect_error' });
+    if (!instantaneous.ok) {
+      expect(instantaneous.message).toMatch(/instantaneous/);
+    }
+  });
+
+  it('resolve_concentration rolls the save itself — outcome is never declared', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    registry.invoke('start_effect', blessArgs('fx-1'), c);
+
+    // A declared outcome is a schema violation, not an accepted input.
+    const declaredOutcome = registry.invoke(
+      'resolve_concentration',
+      {
+        owner: { kind: 'character', ref: 'pc-1' },
+        damage: 22,
+        outcome: 'success',
+      },
+      c,
+    );
+    expect(declaredOutcome).toMatchObject({ ok: false, code: 'invalid_args' });
+    expect(conditionIds(c.db)).toEqual(['blessed:fx-1']);
+
+    // A +100 modifier makes total >= DC certain: the engine derives success
+    // from its own roll and the effect survives.
+    const succeeded = registry.invoke(
+      'resolve_concentration',
+      {
+        owner: { kind: 'character', ref: 'pc-1' },
+        damage: 22,
+        modifiers: [{ label: 'war caster (test)', value: 100 }],
+      },
+      c,
+    );
+    expect(succeeded).toMatchObject({
+      ok: true,
+      data: {
+        category: 'saving_throw',
+        effectId: 'fx-1',
+        dc: 11,
+        outcome: 'success',
+        broken: false,
+      },
+    });
+    if (succeeded.ok) {
+      const data = succeeded.data as {
+        resolution: { dice: string; rolls: number[]; total: number };
+      };
+      expect(data.resolution.dice).toBe('1d20');
+      expect(data.resolution.rolls).toHaveLength(1);
+      expect(data.resolution.total).toBeGreaterThanOrEqual(11);
+    }
+    expect(conditionIds(c.db)).toEqual(['blessed:fx-1']);
+
+    // A -100 modifier makes failure certain: the effect ends with cleanup.
+    const failed = registry.invoke(
+      'resolve_concentration',
+      {
+        owner: { kind: 'character', ref: 'pc-1' },
+        damage: 22,
+        modifiers: [{ label: 'cursed (test)', value: -100 }],
+      },
+      c,
+    );
+    expect(failed).toMatchObject({
+      ok: true,
+      data: { effectId: 'fx-1', dc: 11, outcome: 'failure', broken: true },
+    });
+    expect(conditionIds(c.db)).toEqual([]);
+  });
+
+  it('end_effect maps lifecycle refusals and performs voluntary breaks', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    registry.invoke('start_effect', blessArgs('fx-1'), c);
+
+    const dismissed = registry.invoke(
+      'end_effect',
+      { effectId: 'fx-1', reason: 'dismissed' },
+      c,
+    );
+    expect(dismissed).toMatchObject({ ok: false, code: 'effect_error' });
+
+    const broken = registry.invoke(
+      'end_effect',
+      { effectId: 'fx-1', reason: 'concentration-broken', detail: 'voluntary' },
+      c,
+    );
+    expect(broken).toMatchObject({ ok: true, data: { changed: true } });
+    expect(conditionIds(c.db)).toEqual([]);
+  });
+
+  it('adjust_hp surfaces the concentration save through the tool result', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    c.db
+      .prepare(
+        `UPDATE character SET hp_max = 20, hp_current = 20 WHERE id = 'pc-1'`,
+      )
+      .run();
+    registry.invoke('start_effect', blessArgs('fx-1'), c);
+
+    const damaged = registry.invoke('adjust_hp', { amount: -9 }, c);
+    expect(damaged).toMatchObject({
+      ok: true,
+      data: {
+        concentrationCheck: { effectId: 'fx-1', dc: 10, damage: 9 },
+      },
+    });
+
+    const downed = registry.invoke('adjust_hp', { amount: -20 }, c);
+    expect(downed).toMatchObject({
+      ok: true,
+      data: {
+        concentrationBroken: { effectId: 'fx-1', cause: 'incapacitated' },
+      },
+    });
+  });
+});
+
 describe('world_query tool', () => {
   it('returns not_found for an absent target', () => {
     const result = createDefaultToolRegistry().invoke(
@@ -1171,6 +1392,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'close_combat_instance',
         'convert_currency',
         'end_attunement',
+        'end_effect',
         'gain_currency',
         'give_item',
         'grant_temporary_hp',
@@ -1185,6 +1407,9 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'resolve_check',
         'resolve_contest',
         'resolve_damage',
+        'refresh_effect',
+        'remove_effect_target',
+        'resolve_concentration',
         'restore_usage',
         'roll',
         'set_plot_flag',
@@ -1195,6 +1420,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'spend_turn_resource',
         'spend_usage',
         'stabilize_character',
+        'start_effect',
         'start_encounter',
         'update_clock',
         'update_combatant',

@@ -29,6 +29,7 @@ import { calcTool } from './toolCalc.js';
 import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { convertCurrencyTool } from './toolConvertCurrency.js';
 import { endAttunementTool } from './toolEndAttunement.js';
+import { endEffectTool } from './toolEndEffect.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
@@ -37,12 +38,15 @@ import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
 import { recordDeathSaveTool } from './toolRecordDeathSave.js';
 import { recordWorldFactTool } from './toolRecordWorldFact.js';
+import { refreshEffectTool } from './toolRefreshEffect.js';
 import type { Tool } from './toolRegistry.js';
 import { ToolRegistry } from './toolRegistry.js';
 import { removeConditionTool } from './toolRemoveCondition.js';
+import { removeEffectTargetTool } from './toolRemoveEffectTarget.js';
 import { removeItemTool } from './toolRemoveItem.js';
 import { resetUsageTool } from './toolResetUsage.js';
 import { resolveCheckTool } from './toolResolveCheck.js';
+import { resolveConcentrationTool } from './toolResolveConcentration.js';
 import { resolveContestTool } from './toolResolveContest.js';
 import { resolveDamageTool } from './toolResolveDamage.js';
 import { restoreUsageTool } from './toolRestoreUsage.js';
@@ -55,6 +59,7 @@ import { spendSpellSlotTool } from './toolSpendSpellSlot.js';
 import { spendTurnResourceTool } from './toolSpendTurnResource.js';
 import { spendUsageTool } from './toolSpendUsage.js';
 import { stabilizeCharacterTool } from './toolStabilizeCharacter.js';
+import { startEffectTool } from './toolStartEffect.js';
 import { startEncounterTool } from './toolStartEncounter.js';
 import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
@@ -82,6 +87,11 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   addConditionTool,
   removeConditionTool,
   spendSpellSlotTool,
+  startEffectTool,
+  endEffectTool,
+  refreshEffectTool,
+  removeEffectTargetTool,
+  resolveConcentrationTool,
   spendUsageTool,
   restoreUsageTool,
   resetUsageTool,
