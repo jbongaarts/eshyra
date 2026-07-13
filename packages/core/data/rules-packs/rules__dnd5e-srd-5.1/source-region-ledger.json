@@ -3,19 +3,19 @@
     "entries": 2685,
     "proseRegions": 2658,
     "pureStructure": 27,
-    "record": 2124,
+    "record": 2122,
     "childOf": 448,
+    "structuredField": 83,
     "intentionallyIgnored": {
       "deity-table-column-header": 1,
       "front-matter": 2,
-      "spell-list-header": 81,
       "table-rows-emitted-as-records": 2
     },
     "pureDocumentStructure": 27,
     "unrepresented": 0,
     "broadStructuralIgnores": 0,
     "ownedEmission": {
-      "contained": 1016,
+      "contained": 1014,
       "sentencesContained": 508,
       "structuredEquivalent": 1045,
       "unemitted": 0
@@ -16780,8 +16780,24 @@
       "firstPhrase": "Dancing Lights Light Mage Hand Mending Message Minor Illusion Prestidigitation True Strike Vicious Mockery",
       "lastPhrase": "Dancing Lights Light Mage Hand Mending Message Minor Illusion Prestidigitation True Strike Vicious Mockery",
       "normalizedCharCount": 106,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 0,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:dancing-lights",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:prestidigitation",
+          "spell:true-strike",
+          "spell:vicious-mockery"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p105-l13-prose",
@@ -16800,8 +16816,35 @@
       "firstPhrase": "Animal Friendship Bane Charm Person Comprehend Languages Cure Wounds Detect Magic Disguise Self Faerie",
       "lastPhrase": "Laughter Identify Illusory Script Longstrider Silent Image Sleep Speak with Animals Thunderwave Unseen Servant",
       "normalizedCharCount": 260,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 1,
+        "memberCount": 20,
+        "spellKeys": [
+          "spell:animal-friendship",
+          "spell:bane",
+          "spell:charm-person",
+          "spell:comprehend-languages",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:faerie-fire",
+          "spell:feather-fall",
+          "spell:healing-word",
+          "spell:heroism",
+          "spell:hideous-laughter",
+          "spell:identify",
+          "spell:illusory-script",
+          "spell:longstrider",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:speak-with-animals",
+          "spell:thunderwave",
+          "spell:unseen-servant"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p105-l34-prose",
@@ -16820,8 +16863,34 @@
       "firstPhrase": "Animal Messenger Blindness/Deafness Calm Emotions Detect Thoughts Enhance Ability Enthrall Heat Metal Hold Person",
       "lastPhrase": "Hold Person Invisibility Knock Lesser Restoration Locate Animals or Plants Locate Object Magic Mouth",
       "normalizedCharCount": 202,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 2,
+        "memberCount": 19,
+        "spellKeys": [
+          "spell:animal-messenger",
+          "spell:blindness-deafness",
+          "spell:calm-emotions",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enthrall",
+          "spell:heat-metal",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:magic-mouth",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:silence",
+          "spell:suggestion",
+          "spell:zone-of-truth"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p105-l48-prose",
@@ -16840,8 +16909,34 @@
       "firstPhrase": "See Invisibility Shatter Silence Suggestion Zone of Truth",
       "lastPhrase": "See Invisibility Shatter Silence Suggestion Zone of Truth",
       "normalizedCharCount": 57,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 2,
+        "memberCount": 19,
+        "spellKeys": [
+          "spell:animal-messenger",
+          "spell:blindness-deafness",
+          "spell:calm-emotions",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enthrall",
+          "spell:heat-metal",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:magic-mouth",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:silence",
+          "spell:suggestion",
+          "spell:zone-of-truth"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p105-l54-prose",
@@ -16860,8 +16955,30 @@
       "firstPhrase": "Bestow Curse Clairvoyance Dispel Magic Fear Glyph of Warding Hypnotic Pattern Major Image Nondetection",
       "lastPhrase": "Plant Growth Sending Speak with Dead Speak with Plants Stinking Cloud Tiny Hut Tongues",
       "normalizedCharCount": 189,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 3,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:bestow-curse",
+          "spell:clairvoyance",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:glyph-of-warding",
+          "spell:hypnotic-pattern",
+          "spell:major-image",
+          "spell:nondetection",
+          "spell:plant-growth",
+          "spell:sending",
+          "spell:speak-with-dead",
+          "spell:speak-with-plants",
+          "spell:stinking-cloud",
+          "spell:tiny-hut",
+          "spell:tongues"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p105-l70-prose",
@@ -16880,8 +16997,23 @@
       "firstPhrase": "Compulsion Confusion Dimension Door Freedom of Movement Greater Invisibility Hallucinatory Terrain Locate Creature Polymorph",
       "lastPhrase": "Compulsion Confusion Dimension Door Freedom of Movement Greater Invisibility Hallucinatory Terrain Locate Creature Polymorph",
       "normalizedCharCount": 124,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 4,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:compulsion",
+          "spell:confusion",
+          "spell:dimension-door",
+          "spell:freedom-of-movement",
+          "spell:greater-invisibility",
+          "spell:hallucinatory-terrain",
+          "spell:locate-creature",
+          "spell:polymorph"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p105-l79-prose",
@@ -16900,8 +17032,31 @@
       "firstPhrase": "Animate Objects Awaken Dominate Person Dream Geas Greater Restoration Hold Monster Legend Lore Mass",
       "lastPhrase": "Mass Cure Wounds Mislead Modify Memory Planar Binding Raise Dead Scrying Seeming Teleportation Circle",
       "normalizedCharCount": 196,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 5,
+        "memberCount": 16,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:awaken",
+          "spell:dominate-person",
+          "spell:dream",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:hold-monster",
+          "spell:legend-lore",
+          "spell:mass-cure-wounds",
+          "spell:mislead",
+          "spell:modify-memory",
+          "spell:planar-binding",
+          "spell:raise-dead",
+          "spell:scrying",
+          "spell:seeming",
+          "spell:teleportation-circle"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p105-l96-prose",
@@ -16920,11 +17075,22 @@
       "firstPhrase": "Eyebite",
       "lastPhrase": "Eyebite",
       "normalizedCharCount": 7,
-      "classification": "record:spell:eyebite",
-      "targetKey": "spell:eyebite",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 6,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:eyebite",
+          "spell:find-the-path",
+          "spell:guards-and-wards",
+          "spell:irresistible-dance",
+          "spell:mass-suggestion",
+          "spell:programmed-illusion",
+          "spell:true-seeing"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l0-prose",
@@ -16943,8 +17109,22 @@
       "firstPhrase": "Find the Path Guards and Wards Irresistible Dance Mass Suggestion Programmed Illusion True Seeing",
       "lastPhrase": "Find the Path Guards and Wards Irresistible Dance Mass Suggestion Programmed Illusion True Seeing",
       "normalizedCharCount": 97,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 6,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:eyebite",
+          "spell:find-the-path",
+          "spell:guards-and-wards",
+          "spell:irresistible-dance",
+          "spell:mass-suggestion",
+          "spell:programmed-illusion",
+          "spell:true-seeing"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l7-prose",
@@ -16963,8 +17143,25 @@
       "firstPhrase": "Arcane Sword Etherealness Forcecage Magnificent Mansion Mirage Arcane Project Image Regenerate Resurrection Symbol Teleport",
       "lastPhrase": "Arcane Sword Etherealness Forcecage Magnificent Mansion Mirage Arcane Project Image Regenerate Resurrection Symbol Teleport",
       "normalizedCharCount": 123,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 7,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:arcane-sword",
+          "spell:etherealness",
+          "spell:forcecage",
+          "spell:magnificent-mansion",
+          "spell:mirage-arcane",
+          "spell:project-image",
+          "spell:regenerate",
+          "spell:resurrection",
+          "spell:symbol",
+          "spell:teleport"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l18-prose",
@@ -16983,8 +17180,20 @@
       "firstPhrase": "Dominate Monster Feeblemind Glibness Mind Blank Power Word Stun",
       "lastPhrase": "Dominate Monster Feeblemind Glibness Mind Blank Power Word Stun",
       "normalizedCharCount": 63,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 8,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:glibness",
+          "spell:mind-blank",
+          "spell:power-word-stun"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l24-prose",
@@ -17003,8 +17212,18 @@
       "firstPhrase": "Foresight Power Word Kill True Polymorph",
       "lastPhrase": "Foresight Power Word Kill True Polymorph",
       "normalizedCharCount": 40,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 9,
+        "memberCount": 3,
+        "spellKeys": [
+          "spell:foresight",
+          "spell:power-word-kill",
+          "spell:true-polymorph"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l29-prose",
@@ -17023,8 +17242,22 @@
       "firstPhrase": "Guidance Light Mending Resistance Sacred Flame Spare the Dying Thaumaturgy",
       "lastPhrase": "Guidance Light Mending Resistance Sacred Flame Spare the Dying Thaumaturgy",
       "normalizedCharCount": 74,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 0,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:guidance",
+          "spell:light",
+          "spell:mending",
+          "spell:resistance",
+          "spell:sacred-flame",
+          "spell:spare-the-dying",
+          "spell:thaumaturgy"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l37-prose",
@@ -17043,8 +17276,30 @@
       "firstPhrase": "Bane Bless Command Create or Destroy Water Cure Wounds Detect Evil and Good Detect",
       "lastPhrase": "Detect Evil and Good Detect Magic Detect Poison and Disease Guiding Bolt Healing Word",
       "normalizedCharCount": 140,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 1,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:bane",
+          "spell:bless",
+          "spell:command",
+          "spell:create-or-destroy-water",
+          "spell:cure-wounds",
+          "spell:detect-evil-and-good",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:guiding-bolt",
+          "spell:healing-word",
+          "spell:inflict-wounds",
+          "spell:protection-from-evil-and-good",
+          "spell:purify-food-and-drink",
+          "spell:sanctuary",
+          "spell:shield-of-faith"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l47-prose",
@@ -17063,8 +17318,30 @@
       "firstPhrase": "Inflict Wounds Protection from Evil and Good Purify Food and Drink Sanctuary Shield of",
       "lastPhrase": "Wounds Protection from Evil and Good Purify Food and Drink Sanctuary Shield of Faith",
       "normalizedCharCount": 92,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 1,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:bane",
+          "spell:bless",
+          "spell:command",
+          "spell:create-or-destroy-water",
+          "spell:cure-wounds",
+          "spell:detect-evil-and-good",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:guiding-bolt",
+          "spell:healing-word",
+          "spell:inflict-wounds",
+          "spell:protection-from-evil-and-good",
+          "spell:purify-food-and-drink",
+          "spell:sanctuary",
+          "spell:shield-of-faith"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l53-prose",
@@ -17083,8 +17360,32 @@
       "firstPhrase": "Aid Augury Blindness/Deafness Calm Emotions Continual Flame Enhance Ability Find Traps Gentle Repose Hold",
       "lastPhrase": "Prayer of Healing Protection from Poison Silence Spiritual Weapon Warding Bond Zone of Truth",
       "normalizedCharCount": 238,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 2,
+        "memberCount": 17,
+        "spellKeys": [
+          "spell:aid",
+          "spell:augury",
+          "spell:blindness-deafness",
+          "spell:calm-emotions",
+          "spell:continual-flame",
+          "spell:enhance-ability",
+          "spell:find-traps",
+          "spell:gentle-repose",
+          "spell:hold-person",
+          "spell:lesser-restoration",
+          "spell:locate-object",
+          "spell:prayer-of-healing",
+          "spell:protection-from-poison",
+          "spell:silence",
+          "spell:spiritual-weapon",
+          "spell:warding-bond",
+          "spell:zone-of-truth"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l71-prose",
@@ -17103,8 +17404,34 @@
       "firstPhrase": "Animate Dead Beacon of Hope Bestow Curse Clairvoyance Create Food and Water Daylight Dispel",
       "lastPhrase": "from Energy Remove Curse Revivify Sending Speak with Dead Spirit Guardians Tongues Water Walk",
       "normalizedCharCount": 266,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 3,
+        "memberCount": 19,
+        "spellKeys": [
+          "spell:animate-dead",
+          "spell:beacon-of-hope",
+          "spell:bestow-curse",
+          "spell:clairvoyance",
+          "spell:create-food-and-water",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:glyph-of-warding",
+          "spell:magic-circle",
+          "spell:mass-healing-word",
+          "spell:meld-into-stone",
+          "spell:protection-from-energy",
+          "spell:remove-curse",
+          "spell:revivify",
+          "spell:sending",
+          "spell:speak-with-dead",
+          "spell:spirit-guardians",
+          "spell:tongues",
+          "spell:water-walk"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p106-l91-prose",
@@ -17123,8 +17450,23 @@
       "firstPhrase": "Banishment Control Water Death Ward Divination Freedom of Movement Guardian of Faith",
       "lastPhrase": "Banishment Control Water Death Ward Divination Freedom of Movement Guardian of Faith",
       "normalizedCharCount": 84,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 4,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:control-water",
+          "spell:death-ward",
+          "spell:divination",
+          "spell:freedom-of-movement",
+          "spell:guardian-of-faith",
+          "spell:locate-creature",
+          "spell:stone-shape"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l0-prose",
@@ -17143,8 +17485,23 @@
       "firstPhrase": "Locate Creature Stone Shape",
       "lastPhrase": "Locate Creature Stone Shape",
       "normalizedCharCount": 27,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 4,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:control-water",
+          "spell:death-ward",
+          "spell:divination",
+          "spell:freedom-of-movement",
+          "spell:guardian-of-faith",
+          "spell:locate-creature",
+          "spell:stone-shape"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l3-prose",
@@ -17163,8 +17520,28 @@
       "firstPhrase": "Commune Contagion Dispel Evil and Good Flame Strike Geas Greater Restoration Hallow Insect Plague",
       "lastPhrase": "Restoration Hallow Insect Plague Legend Lore Mass Cure Wounds Planar Binding Raise Dead Scrying",
       "normalizedCharCount": 160,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 5,
+        "memberCount": 13,
+        "spellKeys": [
+          "spell:commune",
+          "spell:contagion",
+          "spell:dispel-evil-and-good",
+          "spell:flame-strike",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:hallow",
+          "spell:insect-plague",
+          "spell:legend-lore",
+          "spell:mass-cure-wounds",
+          "spell:planar-binding",
+          "spell:raise-dead",
+          "spell:scrying"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l17-prose",
@@ -17183,8 +17560,25 @@
       "firstPhrase": "Blade Barrier Create Undead Find the Path Forbiddance Harm Heal Heroes’ Feast Planar Ally",
       "lastPhrase": "the Path Forbiddance Harm Heal Heroes’ Feast Planar Ally True Seeing Word of Recall",
       "normalizedCharCount": 116,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 6,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:blade-barrier",
+          "spell:create-undead",
+          "spell:find-the-path",
+          "spell:forbiddance",
+          "spell:harm",
+          "spell:heal",
+          "spell:heroes-feast",
+          "spell:planar-ally",
+          "spell:true-seeing",
+          "spell:word-of-recall"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l28-prose",
@@ -17203,8 +17597,23 @@
       "firstPhrase": "Conjure Celestial Divine Word Etherealness Fire Storm Plane Shift Regenerate Resurrection Symbol",
       "lastPhrase": "Conjure Celestial Divine Word Etherealness Fire Storm Plane Shift Regenerate Resurrection Symbol",
       "normalizedCharCount": 96,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 7,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:conjure-celestial",
+          "spell:divine-word",
+          "spell:etherealness",
+          "spell:fire-storm",
+          "spell:plane-shift",
+          "spell:regenerate",
+          "spell:resurrection",
+          "spell:symbol"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l37-prose",
@@ -17223,8 +17632,19 @@
       "firstPhrase": "Antimagic Field Control Weather Earthquake Holy Aura",
       "lastPhrase": "Antimagic Field Control Weather Earthquake Holy Aura",
       "normalizedCharCount": 52,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 8,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:antimagic-field",
+          "spell:control-weather",
+          "spell:earthquake",
+          "spell:holy-aura"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l42-prose",
@@ -17243,8 +17663,19 @@
       "firstPhrase": "Astral Projection Gate Mass Heal True Resurrection",
       "lastPhrase": "Astral Projection Gate Mass Heal True Resurrection",
       "normalizedCharCount": 50,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 9,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:astral-projection",
+          "spell:gate",
+          "spell:mass-heal",
+          "spell:true-resurrection"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l48-prose",
@@ -17263,8 +17694,22 @@
       "firstPhrase": "Druidcraft Guidance Mending Poison Spray Produce Flame Resistance Shillelagh",
       "lastPhrase": "Druidcraft Guidance Mending Poison Spray Produce Flame Resistance Shillelagh",
       "normalizedCharCount": 76,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 0,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:druidcraft",
+          "spell:guidance",
+          "spell:mending",
+          "spell:poison-spray",
+          "spell:produce-flame",
+          "spell:resistance",
+          "spell:shillelagh"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l56-prose",
@@ -17283,8 +17728,31 @@
       "firstPhrase": "Animal Friendship Charm Person Create or Destroy Water Cure Wounds Detect Magic Detect Poison",
       "lastPhrase": "Cloud Goodberry Healing Word Jump Longstrider Purify Food and Drink Speak with Animals Thunderwave",
       "normalizedCharCount": 229,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 1,
+        "memberCount": 16,
+        "spellKeys": [
+          "spell:animal-friendship",
+          "spell:charm-person",
+          "spell:create-or-destroy-water",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:entangle",
+          "spell:faerie-fire",
+          "spell:fog-cloud",
+          "spell:goodberry",
+          "spell:healing-word",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:purify-food-and-drink",
+          "spell:speak-with-animals",
+          "spell:thunderwave"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l73-prose",
@@ -17303,8 +17771,32 @@
       "firstPhrase": "Animal Messenger Barkskin Darkvision Enhance Ability Find Traps Flame Blade Flaming Sphere Gust of",
       "lastPhrase": "Animals or Plants Locate Object Moonbeam Pass without Trace Protection from Poison Spike Growth",
       "normalizedCharCount": 248,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 2,
+        "memberCount": 17,
+        "spellKeys": [
+          "spell:animal-messenger",
+          "spell:barkskin",
+          "spell:darkvision",
+          "spell:enhance-ability",
+          "spell:find-traps",
+          "spell:flame-blade",
+          "spell:flaming-sphere",
+          "spell:gust-of-wind",
+          "spell:heat-metal",
+          "spell:hold-person",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:moonbeam",
+          "spell:pass-without-trace",
+          "spell:protection-from-poison",
+          "spell:spike-growth"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p107-l91-prose",
@@ -17323,8 +17815,27 @@
       "firstPhrase": "Call Lightning Conjure Animals Daylight Dispel Magic",
       "lastPhrase": "Call Lightning Conjure Animals Daylight Dispel Magic",
       "normalizedCharCount": 52,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 3,
+        "memberCount": 12,
+        "spellKeys": [
+          "spell:call-lightning",
+          "spell:conjure-animals",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:meld-into-stone",
+          "spell:plant-growth",
+          "spell:protection-from-energy",
+          "spell:sleet-storm",
+          "spell:speak-with-plants",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:wind-wall"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l0-prose",
@@ -17343,8 +17854,27 @@
       "firstPhrase": "Meld into Stone Plant Growth Protection from Energy Sleet Storm Speak with Plants Water",
       "lastPhrase": "Protection from Energy Sleet Storm Speak with Plants Water Breathing Water Walk Wind Wall",
       "normalizedCharCount": 118,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 3,
+        "memberCount": 12,
+        "spellKeys": [
+          "spell:call-lightning",
+          "spell:conjure-animals",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:meld-into-stone",
+          "spell:plant-growth",
+          "spell:protection-from-energy",
+          "spell:sleet-storm",
+          "spell:speak-with-plants",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:wind-wall"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l9-prose",
@@ -17363,8 +17893,30 @@
       "firstPhrase": "Blight Confusion Conjure Minor Elementals Conjure Woodland Beings Control Water Dominate Beast Freedom of",
       "lastPhrase": "Insect Hallucinatory Terrain Ice Storm Locate Creature Polymorph Stone Shape Stoneskin Wall of Fire",
       "normalizedCharCount": 220,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 4,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:blight",
+          "spell:confusion",
+          "spell:conjure-minor-elementals",
+          "spell:conjure-woodland-beings",
+          "spell:control-water",
+          "spell:dominate-beast",
+          "spell:freedom-of-movement",
+          "spell:giant-insect",
+          "spell:hallucinatory-terrain",
+          "spell:ice-storm",
+          "spell:locate-creature",
+          "spell:polymorph",
+          "spell:stone-shape",
+          "spell:stoneskin",
+          "spell:wall-of-fire"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l25-prose",
@@ -17383,8 +17935,29 @@
       "firstPhrase": "Antilife Shell Awaken Commune with Nature Conjure Elemental Contagion Geas Greater Restoration Insect Plague",
       "lastPhrase": "Insect Plague Mass Cure Wounds Planar Binding Reincarnate Scrying Tree Stride Wall of Stone",
       "normalizedCharCount": 186,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 5,
+        "memberCount": 14,
+        "spellKeys": [
+          "spell:antilife-shell",
+          "spell:awaken",
+          "spell:commune-with-nature",
+          "spell:conjure-elemental",
+          "spell:contagion",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:insect-plague",
+          "spell:mass-cure-wounds",
+          "spell:planar-binding",
+          "spell:reincarnate",
+          "spell:scrying",
+          "spell:tree-stride",
+          "spell:wall-of-stone"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l40-prose",
@@ -17403,8 +17976,24 @@
       "firstPhrase": "Conjure Fey Find the Path Heal Heroes’ Feast Move Earth Sunbeam Transport via Plants",
       "lastPhrase": "Heal Heroes’ Feast Move Earth Sunbeam Transport via Plants Wall of Thorns Wind Walk",
       "normalizedCharCount": 109,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 6,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:conjure-fey",
+          "spell:find-the-path",
+          "spell:heal",
+          "spell:heroes-feast",
+          "spell:move-earth",
+          "spell:sunbeam",
+          "spell:transport-via-plants",
+          "spell:wall-of-thorns",
+          "spell:wind-walk"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l50-prose",
@@ -17423,8 +18012,20 @@
       "firstPhrase": "Fire Storm Mirage Arcane Plane Shift Regenerate Reverse Gravity",
       "lastPhrase": "Fire Storm Mirage Arcane Plane Shift Regenerate Reverse Gravity",
       "normalizedCharCount": 63,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 7,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:fire-storm",
+          "spell:mirage-arcane",
+          "spell:plane-shift",
+          "spell:regenerate",
+          "spell:reverse-gravity"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l56-prose",
@@ -17443,8 +18044,21 @@
       "firstPhrase": "Animal Shapes Antipathy/Sympathy Control Weather Earthquake Feeblemind Sunburst",
       "lastPhrase": "Animal Shapes Antipathy/Sympathy Control Weather Earthquake Feeblemind Sunburst",
       "normalizedCharCount": 79,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 8,
+        "memberCount": 6,
+        "spellKeys": [
+          "spell:animal-shapes",
+          "spell:antipathy-sympathy",
+          "spell:control-weather",
+          "spell:earthquake",
+          "spell:feeblemind",
+          "spell:sunburst"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l63-prose",
@@ -17463,8 +18077,19 @@
       "firstPhrase": "Foresight Shapechange Storm of Vengeance True Resurrection",
       "lastPhrase": "Foresight Shapechange Storm of Vengeance True Resurrection",
       "normalizedCharCount": 58,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 9,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:foresight",
+          "spell:shapechange",
+          "spell:storm-of-vengeance",
+          "spell:true-resurrection"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l69-prose",
@@ -17483,8 +18108,26 @@
       "firstPhrase": "Bless Command Cure Wounds Detect Evil and Good Detect Magic Detect Poison and Disease",
       "lastPhrase": "Favor Heroism Protection from Evil and Good Purify Food and Drink Shield of Faith",
       "normalizedCharCount": 174,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 1,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:bless",
+          "spell:command",
+          "spell:cure-wounds",
+          "spell:detect-evil-and-good",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:divine-favor",
+          "spell:heroism",
+          "spell:protection-from-evil-and-good",
+          "spell:purify-food-and-drink",
+          "spell:shield-of-faith"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l81-prose",
@@ -17503,8 +18146,23 @@
       "firstPhrase": "Aid Branding Smite Find Steed Lesser Restoration Locate Object Magic Weapon Protection from Poison",
       "lastPhrase": "Find Steed Lesser Restoration Locate Object Magic Weapon Protection from Poison Zone of Truth",
       "normalizedCharCount": 112,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 2,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:aid",
+          "spell:branding-smite",
+          "spell:find-steed",
+          "spell:lesser-restoration",
+          "spell:locate-object",
+          "spell:magic-weapon",
+          "spell:protection-from-poison",
+          "spell:zone-of-truth"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p108-l90-prose",
@@ -17523,8 +18181,21 @@
       "firstPhrase": "Create Food and Water Daylight Dispel Magic Magic Circle Remove Curse Revivify",
       "lastPhrase": "Create Food and Water Daylight Dispel Magic Magic Circle Remove Curse Revivify",
       "normalizedCharCount": 78,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 3,
+        "memberCount": 6,
+        "spellKeys": [
+          "spell:create-food-and-water",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:magic-circle",
+          "spell:remove-curse",
+          "spell:revivify"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l1-prose",
@@ -17543,8 +18214,18 @@
       "firstPhrase": "Banishment Death Ward Locate Creature",
       "lastPhrase": "Banishment Death Ward Locate Creature",
       "normalizedCharCount": 37,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 4,
+        "memberCount": 3,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:death-ward",
+          "spell:locate-creature"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l5-prose",
@@ -17563,8 +18244,18 @@
       "firstPhrase": "Dispel Evil and Good Geas Raise Dead",
       "lastPhrase": "Dispel Evil and Good Geas Raise Dead",
       "normalizedCharCount": 36,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 5,
+        "memberCount": 3,
+        "spellKeys": [
+          "spell:dispel-evil-and-good",
+          "spell:geas",
+          "spell:raise-dead"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l10-prose",
@@ -17583,8 +18274,26 @@
       "firstPhrase": "Alarm Animal Friendship Cure Wounds Detect Magic Detect Poison and Disease Fog Cloud Goodberry",
       "lastPhrase": "Detect Poison and Disease Fog Cloud Goodberry Hunter's Mark Jump Longstrider Speak with Animals",
       "normalizedCharCount": 144,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 1,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:alarm",
+          "spell:animal-friendship",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:fog-cloud",
+          "spell:goodberry",
+          "spell:hunters-mark",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:speak-with-animals"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l22-prose",
@@ -17603,8 +18312,26 @@
       "firstPhrase": "Animal Messenger Barkskin Darkvision Find Traps Lesser Restoration Locate Animals or Plants Locate Object",
       "lastPhrase": "Animals or Plants Locate Object Pass without Trace Protection from Poison Silence Spike Growth",
       "normalizedCharCount": 168,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 2,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:animal-messenger",
+          "spell:barkskin",
+          "spell:darkvision",
+          "spell:find-traps",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:pass-without-trace",
+          "spell:protection-from-poison",
+          "spell:silence",
+          "spell:spike-growth"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l34-prose",
@@ -17623,8 +18350,24 @@
       "firstPhrase": "Conjure Animals Daylight Nondetection Plant Growth Protection from Energy Speak with Plants Water Breathing",
       "lastPhrase": "Plant Growth Protection from Energy Speak with Plants Water Breathing Water Walk Wind Wall",
       "normalizedCharCount": 128,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 3,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:conjure-animals",
+          "spell:daylight",
+          "spell:nondetection",
+          "spell:plant-growth",
+          "spell:protection-from-energy",
+          "spell:speak-with-plants",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:wind-wall"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l44-prose",
@@ -17643,8 +18386,19 @@
       "firstPhrase": "Conjure Woodland Beings Freedom of Movement Locate Creature",
       "lastPhrase": "Conjure Woodland Beings Freedom of Movement Locate Creature",
       "normalizedCharCount": 59,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 4,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:conjure-woodland-beings",
+          "spell:freedom-of-movement",
+          "spell:locate-creature",
+          "spell:stoneskin"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l47-prose",
@@ -17663,8 +18417,19 @@
       "firstPhrase": "Stoneskin",
       "lastPhrase": "Stoneskin",
       "normalizedCharCount": 9,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 4,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:conjure-woodland-beings",
+          "spell:freedom-of-movement",
+          "spell:locate-creature",
+          "spell:stoneskin"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l49-prose",
@@ -17683,11 +18448,17 @@
       "firstPhrase": "Commune with Nature Tree Stride",
       "lastPhrase": "Commune with Nature Tree Stride",
       "normalizedCharCount": 31,
-      "classification": "record:table:circle-of-the-land-forest",
-      "targetKey": "table:circle-of-the-land-forest",
-      "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 5,
+        "memberCount": 2,
+        "spellKeys": [
+          "spell:commune-with-nature",
+          "spell:tree-stride"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l53-prose",
@@ -17706,8 +18477,29 @@
       "firstPhrase": "Acid Splash Chill Touch Dancing Lights Fire Bolt Light Mage Hand Mending Message Minor",
       "lastPhrase": "Mending Message Minor Illusion Poison Spray Prestidigitation Ray of Frost Shocking Grasp True Strike",
       "normalizedCharCount": 165,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 0,
+        "memberCount": 14,
+        "spellKeys": [
+          "spell:acid-splash",
+          "spell:chill-touch",
+          "spell:dancing-lights",
+          "spell:fire-bolt",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:ray-of-frost",
+          "spell:shocking-grasp",
+          "spell:true-strike"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l68-prose",
@@ -17726,8 +18518,32 @@
       "firstPhrase": "Burning Hands Charm Person Color Spray Comprehend Languages Detect Magic Disguise Self Expeditious Retreat",
       "lastPhrase": "Feather Fall Fog Cloud Jump Mage Armor Magic Missile Shield Silent Image Sleep Thunderwave",
       "normalizedCharCount": 208,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 1,
+        "memberCount": 17,
+        "spellKeys": [
+          "spell:burning-hands",
+          "spell:charm-person",
+          "spell:color-spray",
+          "spell:comprehend-languages",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:expeditious-retreat",
+          "spell:false-life",
+          "spell:feather-fall",
+          "spell:fog-cloud",
+          "spell:jump",
+          "spell:mage-armor",
+          "spell:magic-missile",
+          "spell:shield",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:thunderwave"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p109-l86-prose",
@@ -17746,8 +18562,36 @@
       "firstPhrase": "Alter Self Blindness/Deafness Blur Darkness Darkvision Detect Thoughts Enhance Ability Enlarge/Reduce Gust of Wind",
       "lastPhrase": "Alter Self Blindness/Deafness Blur Darkness Darkvision Detect Thoughts Enhance Ability Enlarge/Reduce Gust of Wind",
       "normalizedCharCount": 114,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 2,
+        "memberCount": 21,
+        "spellKeys": [
+          "spell:alter-self",
+          "spell:blindness-deafness",
+          "spell:blur",
+          "spell:darkness",
+          "spell:darkvision",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enlarge-reduce",
+          "spell:gust-of-wind",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:levitate",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:scorching-ray",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:web"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l0-prose",
@@ -17766,8 +18610,36 @@
       "firstPhrase": "Hold Person Invisibility Knock Levitate Mirror Image Misty Step Scorching Ray See Invisibility Shatter",
       "lastPhrase": "Levitate Mirror Image Misty Step Scorching Ray See Invisibility Shatter Spider Climb Suggestion Web",
       "normalizedCharCount": 130,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 2,
+        "memberCount": 21,
+        "spellKeys": [
+          "spell:alter-self",
+          "spell:blindness-deafness",
+          "spell:blur",
+          "spell:darkness",
+          "spell:darkvision",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enlarge-reduce",
+          "spell:gust-of-wind",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:levitate",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:scorching-ray",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:web"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l13-prose",
@@ -17786,8 +18658,35 @@
       "firstPhrase": "Blink Clairvoyance Counterspell Daylight Dispel Magic Fear Fireball Fly Gaseous Form Haste Hypnotic Pattern",
       "lastPhrase": "Image Protection from Energy Sleet Storm Slow Stinking Cloud Tongues Water Breathing Water Walk",
       "normalizedCharCount": 224,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 3,
+        "memberCount": 20,
+        "spellKeys": [
+          "spell:blink",
+          "spell:clairvoyance",
+          "spell:counterspell",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fireball",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:haste",
+          "spell:hypnotic-pattern",
+          "spell:lightning-bolt",
+          "spell:major-image",
+          "spell:protection-from-energy",
+          "spell:sleet-storm",
+          "spell:slow",
+          "spell:stinking-cloud",
+          "spell:tongues",
+          "spell:water-breathing",
+          "spell:water-walk"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l34-prose",
@@ -17806,8 +18705,25 @@
       "firstPhrase": "Banishment Blight Confusion Dimension Door Dominate Beast Greater Invisibility Ice Storm Polymorph Stoneskin Wall",
       "lastPhrase": "Confusion Dimension Door Dominate Beast Greater Invisibility Ice Storm Polymorph Stoneskin Wall of Fire",
       "normalizedCharCount": 121,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 4,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:blight",
+          "spell:confusion",
+          "spell:dimension-door",
+          "spell:dominate-beast",
+          "spell:greater-invisibility",
+          "spell:ice-storm",
+          "spell:polymorph",
+          "spell:stoneskin",
+          "spell:wall-of-fire"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l45-prose",
@@ -17826,8 +18742,26 @@
       "firstPhrase": "Animate Objects Cloudkill Cone of Cold Creation Dominate Person",
       "lastPhrase": "Animate Objects Cloudkill Cone of Cold Creation Dominate Person",
       "normalizedCharCount": 63,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 5,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:hold-monster",
+          "spell:insect-plague",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:teleportation-circle",
+          "spell:wall-of-stone"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l50-prose",
@@ -17846,8 +18780,26 @@
       "firstPhrase": "Hold Monster Insect Plague Seeming Telekinesis Teleportation Circle Wall of Stone",
       "lastPhrase": "Hold Monster Insect Plague Seeming Telekinesis Teleportation Circle Wall of Stone",
       "normalizedCharCount": 81,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 5,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:hold-monster",
+          "spell:insect-plague",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:teleportation-circle",
+          "spell:wall-of-stone"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l57-prose",
@@ -17866,8 +18818,24 @@
       "firstPhrase": "Chain Lightning Circle of Death Disintegrate Eyebite Globe of Invulnerability Mass Suggestion Move Earth",
       "lastPhrase": "of Death Disintegrate Eyebite Globe of Invulnerability Mass Suggestion Move Earth Sunbeam True Seeing",
       "normalizedCharCount": 124,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 6,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:chain-lightning",
+          "spell:circle-of-death",
+          "spell:disintegrate",
+          "spell:eyebite",
+          "spell:globe-of-invulnerability",
+          "spell:mass-suggestion",
+          "spell:move-earth",
+          "spell:sunbeam",
+          "spell:true-seeing"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l67-prose",
@@ -17886,8 +18854,23 @@
       "firstPhrase": "Delayed Blast Fireball Etherealness Finger of Death Fire Storm Plane Shift Prismatic Spray Reverse",
       "lastPhrase": "Fireball Etherealness Finger of Death Fire Storm Plane Shift Prismatic Spray Reverse Gravity Teleport",
       "normalizedCharCount": 115,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 7,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:delayed-blast-fireball",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:fire-storm",
+          "spell:plane-shift",
+          "spell:prismatic-spray",
+          "spell:reverse-gravity",
+          "spell:teleport"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l76-prose",
@@ -17906,8 +18889,20 @@
       "firstPhrase": "Dominate Monster Earthquake Incendiary Cloud Power Word Stun Sunburst",
       "lastPhrase": "Dominate Monster Earthquake Incendiary Cloud Power Word Stun Sunburst",
       "normalizedCharCount": 69,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 8,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:dominate-monster",
+          "spell:earthquake",
+          "spell:incendiary-cloud",
+          "spell:power-word-stun",
+          "spell:sunburst"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l82-prose",
@@ -17926,8 +18921,20 @@
       "firstPhrase": "Gate Meteor Swarm Power Word Kill Time Stop Wish",
       "lastPhrase": "Gate Meteor Swarm Power Word Kill Time Stop Wish",
       "normalizedCharCount": 48,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 9,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:gate",
+          "spell:meteor-swarm",
+          "spell:power-word-kill",
+          "spell:time-stop",
+          "spell:wish"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p110-l89-prose",
@@ -17946,8 +18953,22 @@
       "firstPhrase": "Chill Touch Eldritch Blast Mage Hand Minor Illusion Poison Spray Prestidigitation True Strike",
       "lastPhrase": "Chill Touch Eldritch Blast Mage Hand Minor Illusion Poison Spray Prestidigitation True Strike",
       "normalizedCharCount": 93,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 0,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:chill-touch",
+          "spell:eldritch-blast",
+          "spell:mage-hand",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:true-strike"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l1-prose",
@@ -17966,8 +18987,22 @@
       "firstPhrase": "Charm Person Comprehend Languages Expeditious Retreat Hellish Rebuke Illusory Script Protection from Evil and",
       "lastPhrase": "Languages Expeditious Retreat Hellish Rebuke Illusory Script Protection from Evil and Good Unseen Servant",
       "normalizedCharCount": 129,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 1,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:charm-person",
+          "spell:comprehend-languages",
+          "spell:expeditious-retreat",
+          "spell:hellish-rebuke",
+          "spell:illusory-script",
+          "spell:protection-from-evil-and-good",
+          "spell:unseen-servant"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l9-prose",
@@ -17986,8 +19021,25 @@
       "firstPhrase": "Darkness Enthrall Hold Person Invisibility Mirror Image Misty Step Ray of Enfeeblement Shatter Spider",
       "lastPhrase": "Hold Person Invisibility Mirror Image Misty Step Ray of Enfeeblement Shatter Spider Climb Suggestion",
       "normalizedCharCount": 118,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 2,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:darkness",
+          "spell:enthrall",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:ray-of-enfeeblement",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l20-prose",
@@ -18006,8 +19058,26 @@
       "firstPhrase": "Counterspell Dispel Magic Fear Fly Gaseous Form Hypnotic Pattern Magic Circle Major Image Remove",
       "lastPhrase": "Fly Gaseous Form Hypnotic Pattern Magic Circle Major Image Remove Curse Tongues Vampiric Touch",
       "normalizedCharCount": 125,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 3,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:counterspell",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:hypnotic-pattern",
+          "spell:magic-circle",
+          "spell:major-image",
+          "spell:remove-curse",
+          "spell:tongues",
+          "spell:vampiric-touch"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l32-prose",
@@ -18026,8 +19096,19 @@
       "firstPhrase": "Banishment Blight Dimension Door Hallucinatory Terrain",
       "lastPhrase": "Banishment Blight Dimension Door Hallucinatory Terrain",
       "normalizedCharCount": 54,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 4,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:blight",
+          "spell:dimension-door",
+          "spell:hallucinatory-terrain"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l37-prose",
@@ -18046,8 +19127,19 @@
       "firstPhrase": "Contact Other Plane Dream Hold Monster Scrying",
       "lastPhrase": "Contact Other Plane Dream Hold Monster Scrying",
       "normalizedCharCount": 46,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 5,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:contact-other-plane",
+          "spell:dream",
+          "spell:hold-monster",
+          "spell:scrying"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l42-prose",
@@ -18066,8 +19158,22 @@
       "firstPhrase": "Circle of Death Conjure Fey Create Undead Eyebite Flesh to Stone Mass Suggestion",
       "lastPhrase": "Circle of Death Conjure Fey Create Undead Eyebite Flesh to Stone Mass Suggestion",
       "normalizedCharCount": 80,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 6,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:circle-of-death",
+          "spell:conjure-fey",
+          "spell:create-undead",
+          "spell:eyebite",
+          "spell:flesh-to-stone",
+          "spell:mass-suggestion",
+          "spell:true-seeing"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l48-prose",
@@ -18086,8 +19192,22 @@
       "firstPhrase": "True Seeing",
       "lastPhrase": "True Seeing",
       "normalizedCharCount": 11,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 6,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:circle-of-death",
+          "spell:conjure-fey",
+          "spell:create-undead",
+          "spell:eyebite",
+          "spell:flesh-to-stone",
+          "spell:mass-suggestion",
+          "spell:true-seeing"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l50-prose",
@@ -18106,8 +19226,19 @@
       "firstPhrase": "Etherealness Finger of Death Forcecage Plane Shift",
       "lastPhrase": "Etherealness Finger of Death Forcecage Plane Shift",
       "normalizedCharCount": 50,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 7,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:forcecage",
+          "spell:plane-shift"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l55-prose",
@@ -18126,8 +19257,20 @@
       "firstPhrase": "Demiplane Dominate Monster Feeblemind Glibness Power Word Stun",
       "lastPhrase": "Demiplane Dominate Monster Feeblemind Glibness Power Word Stun",
       "normalizedCharCount": 62,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 8,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:demiplane",
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:glibness",
+          "spell:power-word-stun"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l61-prose",
@@ -18146,8 +19289,20 @@
       "firstPhrase": "Astral Projection Foresight Imprisonment Power Word Kill True Polymorph",
       "lastPhrase": "Astral Projection Foresight Imprisonment Power Word Kill True Polymorph",
       "normalizedCharCount": 71,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 9,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:astral-projection",
+          "spell:foresight",
+          "spell:imprisonment",
+          "spell:power-word-kill",
+          "spell:true-polymorph"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l68-prose",
@@ -18166,8 +19321,29 @@
       "firstPhrase": "Acid Splash Chill Touch Dancing Lights Fire Bolt Light Mage Hand Mending Message Minor",
       "lastPhrase": "Mending Message Minor Illusion Poison Spray Prestidigitation Ray of Frost Shocking Grasp True Strike",
       "normalizedCharCount": 165,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 0,
+        "memberCount": 14,
+        "spellKeys": [
+          "spell:acid-splash",
+          "spell:chill-touch",
+          "spell:dancing-lights",
+          "spell:fire-bolt",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:ray-of-frost",
+          "spell:shocking-grasp",
+          "spell:true-strike"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p111-l83-prose",
@@ -18186,8 +19362,42 @@
       "firstPhrase": "Alarm Burning Hands Charm Person Color Spray Comprehend Languages Detect Magic Disguise Self Expeditious",
       "lastPhrase": "Detect Magic Disguise Self Expeditious Retreat False Life Feather Fall Find Familiar Floating Disk",
       "normalizedCharCount": 164,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 1,
+        "memberCount": 27,
+        "spellKeys": [
+          "spell:alarm",
+          "spell:burning-hands",
+          "spell:charm-person",
+          "spell:color-spray",
+          "spell:comprehend-languages",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:expeditious-retreat",
+          "spell:false-life",
+          "spell:feather-fall",
+          "spell:find-familiar",
+          "spell:floating-disk",
+          "spell:fog-cloud",
+          "spell:grease",
+          "spell:hideous-laughter",
+          "spell:identify",
+          "spell:illusory-script",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:mage-armor",
+          "spell:magic-missile",
+          "spell:protection-from-evil-and-good",
+          "spell:shield",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:thunderwave",
+          "spell:unseen-servant"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p112-l0-prose",
@@ -18206,8 +19416,42 @@
       "firstPhrase": "Fog Cloud Grease Hideous Laughter Identify Illusory Script Jump Longstrider Mage Armor Magic Missile",
       "lastPhrase": "Magic Missile Protection from Evil and Good Shield Silent Image Sleep Thunderwave Unseen Servant",
       "normalizedCharCount": 183,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 1,
+        "memberCount": 27,
+        "spellKeys": [
+          "spell:alarm",
+          "spell:burning-hands",
+          "spell:charm-person",
+          "spell:color-spray",
+          "spell:comprehend-languages",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:expeditious-retreat",
+          "spell:false-life",
+          "spell:feather-fall",
+          "spell:find-familiar",
+          "spell:floating-disk",
+          "spell:fog-cloud",
+          "spell:grease",
+          "spell:hideous-laughter",
+          "spell:identify",
+          "spell:illusory-script",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:mage-armor",
+          "spell:magic-missile",
+          "spell:protection-from-evil-and-good",
+          "spell:shield",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:thunderwave",
+          "spell:unseen-servant"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p112-l16-prose",
@@ -18226,8 +19470,46 @@
       "firstPhrase": "Acid Arrow Alter Self Arcane Lock Arcanist’s Magic Aura Blindness/Deafness Blur Continual Flame Darkness",
       "lastPhrase": "Ray of Enfeeblement Rope Trick Scorching Ray See Invisibility Shatter Spider Climb Suggestion Web",
       "normalizedCharCount": 389,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 2,
+        "memberCount": 31,
+        "spellKeys": [
+          "spell:acid-arrow",
+          "spell:alter-self",
+          "spell:arcane-lock",
+          "spell:arcanists-magic-aura",
+          "spell:blindness-deafness",
+          "spell:blur",
+          "spell:continual-flame",
+          "spell:darkness",
+          "spell:darkvision",
+          "spell:detect-thoughts",
+          "spell:enlarge-reduce",
+          "spell:flaming-sphere",
+          "spell:gentle-repose",
+          "spell:gust-of-wind",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:levitate",
+          "spell:locate-object",
+          "spell:magic-mouth",
+          "spell:magic-weapon",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:ray-of-enfeeblement",
+          "spell:rope-trick",
+          "spell:scorching-ray",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:web"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p112-l48-prose",
@@ -18246,8 +19528,43 @@
       "firstPhrase": "Animate Dead Bestow Curse Blink",
       "lastPhrase": "Animate Dead Bestow Curse Blink",
       "normalizedCharCount": 31,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 3,
+        "memberCount": 28,
+        "spellKeys": [
+          "spell:animate-dead",
+          "spell:bestow-curse",
+          "spell:blink",
+          "spell:clairvoyance",
+          "spell:counterspell",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fireball",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:glyph-of-warding",
+          "spell:haste",
+          "spell:hypnotic-pattern",
+          "spell:lightning-bolt",
+          "spell:magic-circle",
+          "spell:major-image",
+          "spell:nondetection",
+          "spell:phantom-steed",
+          "spell:protection-from-energy",
+          "spell:remove-curse",
+          "spell:sending",
+          "spell:sleet-storm",
+          "spell:slow",
+          "spell:stinking-cloud",
+          "spell:tiny-hut",
+          "spell:tongues",
+          "spell:vampiric-touch",
+          "spell:water-breathing"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p112-l51-prose",
@@ -18266,8 +19583,43 @@
       "firstPhrase": "Clairvoyance Counterspell Dispel Magic Fear Fireball Fly Gaseous Form Glyph of Warding Haste Hypnotic",
       "lastPhrase": "Curse Sending Sleet Storm Slow Stinking Cloud Tiny Hut Tongues Vampiric Touch Water Breathing",
       "normalizedCharCount": 300,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 3,
+        "memberCount": 28,
+        "spellKeys": [
+          "spell:animate-dead",
+          "spell:bestow-curse",
+          "spell:blink",
+          "spell:clairvoyance",
+          "spell:counterspell",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fireball",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:glyph-of-warding",
+          "spell:haste",
+          "spell:hypnotic-pattern",
+          "spell:lightning-bolt",
+          "spell:magic-circle",
+          "spell:major-image",
+          "spell:nondetection",
+          "spell:phantom-steed",
+          "spell:protection-from-energy",
+          "spell:remove-curse",
+          "spell:sending",
+          "spell:sleet-storm",
+          "spell:slow",
+          "spell:stinking-cloud",
+          "spell:tiny-hut",
+          "spell:tongues",
+          "spell:vampiric-touch",
+          "spell:water-breathing"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p112-l77-prose",
@@ -18286,8 +19638,38 @@
       "firstPhrase": "Arcane Eye Banishment Black Tentacles Blight Confusion Conjure Minor Elementals Control Water Dimension Door",
       "lastPhrase": "Killer Polymorph Private Sanctum Resilient Sphere Secret Chest Stone Shape Stoneskin Wall of Fire",
       "normalizedCharCount": 323,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 4,
+        "memberCount": 23,
+        "spellKeys": [
+          "spell:arcane-eye",
+          "spell:banishment",
+          "spell:black-tentacles",
+          "spell:blight",
+          "spell:confusion",
+          "spell:conjure-minor-elementals",
+          "spell:control-water",
+          "spell:dimension-door",
+          "spell:fabricate",
+          "spell:faithful-hound",
+          "spell:fire-shield",
+          "spell:greater-invisibility",
+          "spell:hallucinatory-terrain",
+          "spell:ice-storm",
+          "spell:locate-creature",
+          "spell:phantasmal-killer",
+          "spell:polymorph",
+          "spell:private-sanctum",
+          "spell:resilient-sphere",
+          "spell:secret-chest",
+          "spell:stone-shape",
+          "spell:stoneskin",
+          "spell:wall-of-fire"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p112-l101-prose",
@@ -18306,8 +19688,38 @@
       "firstPhrase": "Animate Objects",
       "lastPhrase": "Animate Objects",
       "normalizedCharCount": 15,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 5,
+        "memberCount": 23,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:arcane-hand",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:conjure-elemental",
+          "spell:contact-other-plane",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:dream",
+          "spell:geas",
+          "spell:hold-monster",
+          "spell:legend-lore",
+          "spell:mislead",
+          "spell:modify-memory",
+          "spell:passwall",
+          "spell:planar-binding",
+          "spell:scrying",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:telepathic-bond",
+          "spell:teleportation-circle",
+          "spell:wall-of-force",
+          "spell:wall-of-stone"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p113-l0-prose",
@@ -18326,8 +19738,38 @@
       "firstPhrase": "Arcane Hand Cloudkill Cone of Cold Conjure Elemental Contact Other Plane Creation Dominate Person",
       "lastPhrase": "Binding Scrying Seeming Telekinesis Telepathic Bond Teleportation Circle Wall of Force Wall of Stone",
       "normalizedCharCount": 272,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 5,
+        "memberCount": 23,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:arcane-hand",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:conjure-elemental",
+          "spell:contact-other-plane",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:dream",
+          "spell:geas",
+          "spell:hold-monster",
+          "spell:legend-lore",
+          "spell:mislead",
+          "spell:modify-memory",
+          "spell:passwall",
+          "spell:planar-binding",
+          "spell:scrying",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:telepathic-bond",
+          "spell:teleportation-circle",
+          "spell:wall-of-force",
+          "spell:wall-of-stone"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p113-l23-prose",
@@ -18346,8 +19788,34 @@
       "firstPhrase": "Chain Lightning Circle of Death Contingency Create Undead Disintegrate Eyebite Flesh to Stone Freezing",
       "lastPhrase": "Magic Jar Mass Suggestion Move Earth Programmed Illusion Sunbeam True Seeing Wall of Ice",
       "normalizedCharCount": 275,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 6,
+        "memberCount": 19,
+        "spellKeys": [
+          "spell:chain-lightning",
+          "spell:circle-of-death",
+          "spell:contingency",
+          "spell:create-undead",
+          "spell:disintegrate",
+          "spell:eyebite",
+          "spell:flesh-to-stone",
+          "spell:freezing-sphere",
+          "spell:globe-of-invulnerability",
+          "spell:guards-and-wards",
+          "spell:instant-summons",
+          "spell:irresistible-dance",
+          "spell:magic-jar",
+          "spell:mass-suggestion",
+          "spell:move-earth",
+          "spell:programmed-illusion",
+          "spell:sunbeam",
+          "spell:true-seeing",
+          "spell:wall-of-ice"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p113-l43-prose",
@@ -18366,8 +19834,30 @@
       "firstPhrase": "Arcane Sword Delayed Blast Fireball Etherealness Finger of Death Forcecage Magnificent Mansion Mirage Arcane",
       "lastPhrase": "Delayed Blast Fireball Etherealness Finger of Death Forcecage Magnificent Mansion Mirage Arcane Plane Shift",
       "normalizedCharCount": 120,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 7,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:arcane-sword",
+          "spell:delayed-blast-fireball",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:forcecage",
+          "spell:magnificent-mansion",
+          "spell:mirage-arcane",
+          "spell:plane-shift",
+          "spell:prismatic-spray",
+          "spell:project-image",
+          "spell:reverse-gravity",
+          "spell:sequester",
+          "spell:simulacrum",
+          "spell:symbol",
+          "spell:teleport"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p113-l51-prose",
@@ -18386,8 +19876,30 @@
       "firstPhrase": "Prismatic Spray Project Image Reverse Gravity Sequester Simulacrum Symbol Teleport",
       "lastPhrase": "Prismatic Spray Project Image Reverse Gravity Sequester Simulacrum Symbol Teleport",
       "normalizedCharCount": 82,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 7,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:arcane-sword",
+          "spell:delayed-blast-fireball",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:forcecage",
+          "spell:magnificent-mansion",
+          "spell:mirage-arcane",
+          "spell:plane-shift",
+          "spell:prismatic-spray",
+          "spell:project-image",
+          "spell:reverse-gravity",
+          "spell:sequester",
+          "spell:simulacrum",
+          "spell:symbol",
+          "spell:teleport"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p113-l59-prose",
@@ -18406,8 +19918,27 @@
       "firstPhrase": "Antimagic Field Antipathy/Sympathy Clone Control Weather Demiplane Dominate Monster Feeblemind Incendiary Cloud Maze Mind",
       "lastPhrase": "Weather Demiplane Dominate Monster Feeblemind Incendiary Cloud Maze Mind Blank Power Word Stun Sunburst",
       "normalizedCharCount": 152,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 8,
+        "memberCount": 12,
+        "spellKeys": [
+          "spell:antimagic-field",
+          "spell:antipathy-sympathy",
+          "spell:clone",
+          "spell:control-weather",
+          "spell:demiplane",
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:incendiary-cloud",
+          "spell:maze",
+          "spell:mind-blank",
+          "spell:power-word-stun",
+          "spell:sunburst"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p113-l72-prose",
@@ -18426,8 +19957,27 @@
       "firstPhrase": "Astral Projection Foresight Gate Imprisonment Meteor Swarm Power Word Kill Prismatic Wall Shapechange Time",
       "lastPhrase": "Meteor Swarm Power Word Kill Prismatic Wall Shapechange Time Stop True Polymorph Weird Wish",
       "normalizedCharCount": 137,
-      "classification": "intentionally-ignored:spell-list-header",
-      "ignoreReason": "spell-list-header"
+      "classification": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 9,
+        "memberCount": 12,
+        "spellKeys": [
+          "spell:astral-projection",
+          "spell:foresight",
+          "spell:gate",
+          "spell:imprisonment",
+          "spell:meteor-swarm",
+          "spell:power-word-kill",
+          "spell:prismatic-wall",
+          "spell:shapechange",
+          "spell:time-stop",
+          "spell:true-polymorph",
+          "spell:weird",
+          "spell:wish"
+        ]
+      },
+      "guardNotes": "Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted."
     },
     {
       "id": "p114-l0-pure-structure",

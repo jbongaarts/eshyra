@@ -46,6 +46,12 @@ interface CoverageEntry {
   readonly text: string;
   readonly section: string | null;
   readonly status: string;
+  readonly structuredFieldEvidence?: {
+    readonly sourceClass: string;
+    readonly spellLevel: number | null;
+    readonly memberCount: number;
+    readonly spellKeys: readonly string[];
+  };
 }
 
 interface AmbiguousNameCollision {
@@ -72,6 +78,7 @@ interface CoverageReport {
     readonly childOf: number;
     readonly ambiguous: number;
     readonly taxonomy: number;
+    readonly structuredField: number;
     readonly ignored: Readonly<Record<string, number>>;
     readonly knownGap: Readonly<Record<string, number>>;
     readonly unaccounted: number;
@@ -106,6 +113,7 @@ interface SourceRegionLedger {
     readonly pureStructure: number;
     readonly record: number;
     readonly childOf: number;
+    readonly structuredField: number;
     readonly intentionallyIgnored: Readonly<Record<string, number>>;
     readonly pureDocumentStructure: number;
     readonly unrepresented: number;
@@ -166,10 +174,50 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
       coverage.summary.childOf +
       coverage.summary.ambiguous +
       coverage.summary.taxonomy +
+      coverage.summary.structuredField +
       coverage.summary.unaccounted +
       Object.values(coverage.summary.ignored).reduce((a, b) => a + b, 0) +
       Object.values(coverage.summary.knownGap).reduce((a, b) => a + b, 0);
     expect(counted).toBe(coverage.entries.length);
+  });
+
+  it('represents every spell-list heading with source-positioned membership evidence', () => {
+    const spellEntries = coverage.entries.filter(
+      (entry) =>
+        entry.page >= 105 &&
+        entry.page <= 113 &&
+        entry.status === 'structured-field:spell.data.classes',
+    );
+    expect(spellEntries).toHaveLength(78);
+    expect(spellEntries.every((entry) => entry.structuredFieldEvidence)).toBe(
+      true,
+    );
+    const levelGroups = spellEntries.filter(
+      (entry) => entry.structuredFieldEvidence?.spellLevel !== null,
+    );
+    expect(levelGroups).toHaveLength(70);
+    expect(
+      levelGroups.every((entry) =>
+        entry.structuredFieldEvidence?.spellKeys.every((key) =>
+          key.startsWith('spell:'),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      levelGroups.reduce(
+        (count, entry) =>
+          count + (entry.structuredFieldEvidence?.memberCount ?? 0),
+        0,
+      ),
+    ).toBe(778);
+    expect(
+      coverage.entries.some(
+        (entry) =>
+          entry.page >= 105 &&
+          entry.page <= 113 &&
+          entry.status === 'ignored:spell-list-header',
+      ),
+    ).toBe(false);
   });
 
   it('every known-gap status names an eshyra bead', () => {
@@ -294,6 +342,7 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     expect(coverage.summary.childOf).toBe(462);
     expect(coverage.summary.ambiguous).toBe(187);
     expect(coverage.summary.taxonomy).toBe(33);
+    expect(coverage.summary.structuredField).toBe(78);
     expect(coverage.summary.unaccounted).toBe(0);
     // eshyra-4a7.6 (PR2) added two class-chapter ignore reasons: the 9 class
     // progression-table column-header fragments (table internals) and the 2
@@ -329,7 +378,6 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
       'deity-table-column-header': 1,
       'document-structure': 29,
       'front-matter': 2,
-      'spell-list-header': 78,
       'table-rows-emitted-as-records': 13,
     });
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
@@ -366,12 +414,8 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     expect(sourceRegionLedger.summary.proseRegions).toBeGreaterThan(2000);
     expect(sourceRegionLedger.summary.unrepresented).toBe(0);
     expect(sourceRegionLedger.summary.broadStructuralIgnores).toBe(0);
-    // eshyra-o9bd.7.3: projecting table:circle-of-the-land-forest puts its
-    // spell names into generated record data, so the PDF region previously
-    // ignored as a spell-list-header ("Commune with Nature Tree Stride") is now
-    // attributed to that table record. Ignored spell-list headers drop 82 -> 81
-    // and represented records rise by one — a source coverage improvement, not a
-    // regression.
+    // eshyra-o9bd.18.8.3: spell-list regions are source-positioned structured
+    // ownership, so duplicate spell names cannot be claimed by a subclass table.
     // eshyra-erf5.5: table-rows-only pages (p69's Adventuring Gear price-list
     // body, the p360-361 deity-table column-header run) now carry explicit
     // table-rows entries instead of silently owning nothing, classified under
@@ -379,9 +423,33 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     expect(sourceRegionLedger.summary.intentionallyIgnored).toEqual({
       'deity-table-column-header': 1,
       'front-matter': 2,
-      'spell-list-header': 81,
       'table-rows-emitted-as-records': 2,
     });
+    expect(sourceRegionLedger.summary.structuredField).toBe(83);
+  });
+
+  it('source-positions the page-109 Ranger sentinel away from the Circle table', () => {
+    const region = sourceRegionLedger.entries.find(
+      (entry) =>
+        entry.pageStart === 109 &&
+        entry.firstPhrase.includes('Commune with Nature'),
+    );
+    expect(region).toEqual(
+      expect.objectContaining({
+        classification: 'structured-field:spell.data.classes',
+      }),
+    );
+    expect(region?.classification).not.toBe(
+      'record:table:circle-of-the-land-forest',
+    );
+    expect(
+      sourceRegionLedger.entries.some(
+        (entry) =>
+          entry.pageStart >= 105 &&
+          entry.pageStart <= 113 &&
+          entry.classification === 'intentionally-ignored:spell-list-header',
+      ),
+    ).toBe(false);
   });
 
   it('gives every previously silent table-rows-only page explicit accounting (eshyra-erf5.5)', () => {

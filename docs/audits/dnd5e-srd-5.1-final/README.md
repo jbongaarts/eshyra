@@ -140,11 +140,12 @@ The importer **fails closed** if any source structure is unaccounted.
 | Metric | Value |
 | --- | ---: |
 | Inventory items (typography-derived source structures) | 2258 |
-| → mapped to a record | 1452 |
-| → child-of another record | 456 |
+| → mapped to a record | 1444 |
+| → child-of another record | 462 |
 | → ambiguous (name shared by ≥2 records; resolved) | 187 |
 | → taxonomy | 33 |
-| → reasoned ignore | 130 |
+| → represented by structured field (`spell.data.classes`) | 78 |
+| → reasoned ignore | 54 |
 | **→ unaccounted** | **0** ✅ |
 | **→ known-gap** | **0** ✅ |
 
@@ -160,21 +161,21 @@ a record/child or be an explicitly reasoned ignore.
 
 | Metric | Value |
 | --- | ---: |
-| Ledger entries | 2655 |
-| Prose regions | 2628 |
-| → owned by a record | 2101 |
-| → child-of a record | 443 |
+| Ledger entries | 2685 |
+| Prose regions | 2658 |
+| → owned by a record | 2122 |
+| → child-of a record | 448 |
+| → represented by structured field (`spell.data.classes`) | 83 |
 | → intentionally ignored: front-matter | 2 |
-| → intentionally ignored: spell-list-header | 82 |
 | Pure document structure (headings, no prose) | 27 |
 | **Unrepresented prose** | **0** ✅ |
 | **Broad structural ignores** | **0** ✅ |
 
-The 84 intentionally-ignored regions were inspected: 2 are front-matter (the
-page-1 Legal Information preamble and the page-2 blank), and 82 are spell-list
-regions on pp.105–113 whose content — spell→class membership — is captured
-structurally on each spell record's `classes` field. That membership was proven
-complete bidirectionally (§9), so **no prose content is hidden behind an ignore**.
+The 2 intentionally-ignored regions are front-matter (the page-1 Legal
+Information preamble and the page-2 blank). The 83 spell-list regions on
+pp.105–113 are explicitly owned by the structured `spell.data.classes`
+relationship, with source class/level, member count, and resolved spell keys in
+the artifact evidence. **No spell-list content is hidden behind an ignore.**
 
 ## 8. High-risk areas audited
 
@@ -228,7 +229,7 @@ interleave) and **direct PDF page rendering** for the highest-risk areas:
 | Magic items (Orb of Dragonkind, Sentient items, Artifacts, Deck of Many Things + Avatar of Death, Necklace of Prayer Beads, Teleport) | ✅ Present | All present; Orb is a 3165ch artifact magic-item; Artifacts heading correctly structural (Orb is the only SRD artifact). |
 | Half-Dragon Template | ✅ Present | `rule:half-dragon-template` + `table:half-dragon-breath-weapon` + `table:half-dragon-damage-resistance`. |
 | Giant Fly / Avatar of Death inline stat blocks | ✅ Present | `stat-block:giant-fly`, `stat-block:avatar-of-death`, each linked from its owner via `data.statBlockRefs`. |
-| Spell-list membership (pp.105–113) | ✅ Exact | 778 PDF references ↔ 778 record memberships, 0 discrepancies (§ below). |
+| Spell-list membership (pp.105–113) | ✅ Exact | 70 class/level groups; 778 PDF references ↔ 778 record memberships, 0 discrepancies; coverage owned by `spell.data.classes`. |
 
 ### Spell-list bidirectional proof
 
@@ -237,6 +238,7 @@ coordinate items (column-split by x, read top-to-bottom per column) and
 cross-checked against the pack:
 
 - **778 PDF spell-list references** (class,spell pairs) checked.
+- **70 class/level groups** reconstructed with source page and heading context.
 - **778 record class-membership pairs** — exact match.
 - 319 distinct listed spells = 319 spell records.
 - Per class: Bard 112, Cleric 105, Druid 105, Paladin 31, Ranger 37, Sorcerer

@@ -98,6 +98,7 @@ import {
   buildSourceCoverageReport,
   type CoverageRule,
   evaluateSourceCoverage,
+  spellListStructuredFieldRules,
 } from './sourceInventoryCoverage.js';
 import {
   assertSourceRegionLedger,
@@ -3578,10 +3579,15 @@ export async function runImporter(
     | undefined;
   if (input.sourceCoverageRules !== undefined) {
     const inventory = buildSourceInventory(pages);
+    const spellListEntries = parseSpellClassLevelLists(spellListPages);
+    const coverageRules = [
+      ...input.sourceCoverageRules,
+      ...spellListStructuredFieldRules(spellListEntries, pack.records),
+    ];
     const coverageEntries = evaluateSourceCoverage(
       inventory,
       pack.records,
-      input.sourceCoverageRules,
+      coverageRules,
     );
     assertSourceCoverage(coverageEntries, {
       statBlockExceptionReasons: input.statBlockCoverageExceptionReasons,
@@ -3614,7 +3620,7 @@ export async function runImporter(
     // `applyClassLists` and fail closed on any drift.
     assertSpellListParity(
       auditSpellListParity(
-        parseSpellClassLevelLists(spellListPages),
+        spellListEntries,
         pack.records.filter((record) => record.kind === 'spell'),
       ),
     );

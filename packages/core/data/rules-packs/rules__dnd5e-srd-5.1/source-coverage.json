@@ -4,12 +4,12 @@
     "childOf": 462,
     "ambiguous": 187,
     "taxonomy": 33,
+    "structuredField": 78,
     "ignored": {
       "class-progression-table-internal": 9,
       "deity-table-column-header": 1,
       "document-structure": 29,
       "front-matter": 2,
-      "spell-list-header": 78,
       "table-rows-emitted-as-records": 13
     },
     "knownGap": {},
@@ -7626,7 +7626,126 @@
       "structure": "heading",
       "text": "Bard Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": null,
+        "memberCount": 112,
+        "spellKeys": [
+          "spell:dancing-lights",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:prestidigitation",
+          "spell:true-strike",
+          "spell:vicious-mockery",
+          "spell:animal-friendship",
+          "spell:bane",
+          "spell:charm-person",
+          "spell:comprehend-languages",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:faerie-fire",
+          "spell:feather-fall",
+          "spell:healing-word",
+          "spell:heroism",
+          "spell:hideous-laughter",
+          "spell:identify",
+          "spell:illusory-script",
+          "spell:longstrider",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:speak-with-animals",
+          "spell:thunderwave",
+          "spell:unseen-servant",
+          "spell:animal-messenger",
+          "spell:blindness-deafness",
+          "spell:calm-emotions",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enthrall",
+          "spell:heat-metal",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:magic-mouth",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:silence",
+          "spell:suggestion",
+          "spell:zone-of-truth",
+          "spell:bestow-curse",
+          "spell:clairvoyance",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:glyph-of-warding",
+          "spell:hypnotic-pattern",
+          "spell:major-image",
+          "spell:nondetection",
+          "spell:plant-growth",
+          "spell:sending",
+          "spell:speak-with-dead",
+          "spell:speak-with-plants",
+          "spell:stinking-cloud",
+          "spell:tiny-hut",
+          "spell:tongues",
+          "spell:compulsion",
+          "spell:confusion",
+          "spell:dimension-door",
+          "spell:freedom-of-movement",
+          "spell:greater-invisibility",
+          "spell:hallucinatory-terrain",
+          "spell:locate-creature",
+          "spell:polymorph",
+          "spell:animate-objects",
+          "spell:awaken",
+          "spell:dominate-person",
+          "spell:dream",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:hold-monster",
+          "spell:legend-lore",
+          "spell:mass-cure-wounds",
+          "spell:mislead",
+          "spell:modify-memory",
+          "spell:planar-binding",
+          "spell:raise-dead",
+          "spell:scrying",
+          "spell:seeming",
+          "spell:teleportation-circle",
+          "spell:eyebite",
+          "spell:find-the-path",
+          "spell:guards-and-wards",
+          "spell:irresistible-dance",
+          "spell:mass-suggestion",
+          "spell:programmed-illusion",
+          "spell:true-seeing",
+          "spell:arcane-sword",
+          "spell:etherealness",
+          "spell:forcecage",
+          "spell:magnificent-mansion",
+          "spell:mirage-arcane",
+          "spell:project-image",
+          "spell:regenerate",
+          "spell:resurrection",
+          "spell:symbol",
+          "spell:teleport",
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:glibness",
+          "spell:mind-blank",
+          "spell:power-word-stun",
+          "spell:foresight",
+          "spell:power-word-kill",
+          "spell:true-polymorph"
+        ]
+      }
     },
     {
       "page": 105,
@@ -7635,7 +7754,23 @@
       "structure": "heading",
       "text": "Cantrips (0 Level)",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 0,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:dancing-lights",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:prestidigitation",
+          "spell:true-strike",
+          "spell:vicious-mockery"
+        ]
+      }
     },
     {
       "page": 105,
@@ -7644,7 +7779,34 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 1,
+        "memberCount": 20,
+        "spellKeys": [
+          "spell:animal-friendship",
+          "spell:bane",
+          "spell:charm-person",
+          "spell:comprehend-languages",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:faerie-fire",
+          "spell:feather-fall",
+          "spell:healing-word",
+          "spell:heroism",
+          "spell:hideous-laughter",
+          "spell:identify",
+          "spell:illusory-script",
+          "spell:longstrider",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:speak-with-animals",
+          "spell:thunderwave",
+          "spell:unseen-servant"
+        ]
+      }
     },
     {
       "page": 105,
@@ -7653,7 +7815,33 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 2,
+        "memberCount": 19,
+        "spellKeys": [
+          "spell:animal-messenger",
+          "spell:blindness-deafness",
+          "spell:calm-emotions",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enthrall",
+          "spell:heat-metal",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:magic-mouth",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:silence",
+          "spell:suggestion",
+          "spell:zone-of-truth"
+        ]
+      }
     },
     {
       "page": 105,
@@ -7662,7 +7850,29 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 3,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:bestow-curse",
+          "spell:clairvoyance",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:glyph-of-warding",
+          "spell:hypnotic-pattern",
+          "spell:major-image",
+          "spell:nondetection",
+          "spell:plant-growth",
+          "spell:sending",
+          "spell:speak-with-dead",
+          "spell:speak-with-plants",
+          "spell:stinking-cloud",
+          "spell:tiny-hut",
+          "spell:tongues"
+        ]
+      }
     },
     {
       "page": 105,
@@ -7671,7 +7881,22 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 4,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:compulsion",
+          "spell:confusion",
+          "spell:dimension-door",
+          "spell:freedom-of-movement",
+          "spell:greater-invisibility",
+          "spell:hallucinatory-terrain",
+          "spell:locate-creature",
+          "spell:polymorph"
+        ]
+      }
     },
     {
       "page": 105,
@@ -7680,7 +7905,30 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 5,
+        "memberCount": 16,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:awaken",
+          "spell:dominate-person",
+          "spell:dream",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:hold-monster",
+          "spell:legend-lore",
+          "spell:mass-cure-wounds",
+          "spell:mislead",
+          "spell:modify-memory",
+          "spell:planar-binding",
+          "spell:raise-dead",
+          "spell:scrying",
+          "spell:seeming",
+          "spell:teleportation-circle"
+        ]
+      }
     },
     {
       "page": 105,
@@ -7689,7 +7937,21 @@
       "structure": "heading",
       "text": "6th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 6,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:eyebite",
+          "spell:find-the-path",
+          "spell:guards-and-wards",
+          "spell:irresistible-dance",
+          "spell:mass-suggestion",
+          "spell:programmed-illusion",
+          "spell:true-seeing"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7698,7 +7960,24 @@
       "structure": "heading",
       "text": "7th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 7,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:arcane-sword",
+          "spell:etherealness",
+          "spell:forcecage",
+          "spell:magnificent-mansion",
+          "spell:mirage-arcane",
+          "spell:project-image",
+          "spell:regenerate",
+          "spell:resurrection",
+          "spell:symbol",
+          "spell:teleport"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7707,7 +7986,19 @@
       "structure": "heading",
       "text": "8th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 8,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:glibness",
+          "spell:mind-blank",
+          "spell:power-word-stun"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7716,7 +8007,17 @@
       "structure": "heading",
       "text": "9th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Bard",
+        "spellLevel": 9,
+        "memberCount": 3,
+        "spellKeys": [
+          "spell:foresight",
+          "spell:power-word-kill",
+          "spell:true-polymorph"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7725,7 +8026,119 @@
       "structure": "heading",
       "text": "Cleric Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": null,
+        "memberCount": 105,
+        "spellKeys": [
+          "spell:guidance",
+          "spell:light",
+          "spell:mending",
+          "spell:resistance",
+          "spell:sacred-flame",
+          "spell:spare-the-dying",
+          "spell:thaumaturgy",
+          "spell:bane",
+          "spell:bless",
+          "spell:command",
+          "spell:create-or-destroy-water",
+          "spell:cure-wounds",
+          "spell:detect-evil-and-good",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:guiding-bolt",
+          "spell:healing-word",
+          "spell:inflict-wounds",
+          "spell:protection-from-evil-and-good",
+          "spell:purify-food-and-drink",
+          "spell:sanctuary",
+          "spell:shield-of-faith",
+          "spell:aid",
+          "spell:augury",
+          "spell:blindness-deafness",
+          "spell:calm-emotions",
+          "spell:continual-flame",
+          "spell:enhance-ability",
+          "spell:find-traps",
+          "spell:gentle-repose",
+          "spell:hold-person",
+          "spell:lesser-restoration",
+          "spell:locate-object",
+          "spell:prayer-of-healing",
+          "spell:protection-from-poison",
+          "spell:silence",
+          "spell:spiritual-weapon",
+          "spell:warding-bond",
+          "spell:zone-of-truth",
+          "spell:animate-dead",
+          "spell:beacon-of-hope",
+          "spell:bestow-curse",
+          "spell:clairvoyance",
+          "spell:create-food-and-water",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:glyph-of-warding",
+          "spell:magic-circle",
+          "spell:mass-healing-word",
+          "spell:meld-into-stone",
+          "spell:protection-from-energy",
+          "spell:remove-curse",
+          "spell:revivify",
+          "spell:sending",
+          "spell:speak-with-dead",
+          "spell:spirit-guardians",
+          "spell:tongues",
+          "spell:water-walk",
+          "spell:banishment",
+          "spell:control-water",
+          "spell:death-ward",
+          "spell:divination",
+          "spell:freedom-of-movement",
+          "spell:guardian-of-faith",
+          "spell:locate-creature",
+          "spell:stone-shape",
+          "spell:commune",
+          "spell:contagion",
+          "spell:dispel-evil-and-good",
+          "spell:flame-strike",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:hallow",
+          "spell:insect-plague",
+          "spell:legend-lore",
+          "spell:mass-cure-wounds",
+          "spell:planar-binding",
+          "spell:raise-dead",
+          "spell:scrying",
+          "spell:blade-barrier",
+          "spell:create-undead",
+          "spell:find-the-path",
+          "spell:forbiddance",
+          "spell:harm",
+          "spell:heal",
+          "spell:heroes-feast",
+          "spell:planar-ally",
+          "spell:true-seeing",
+          "spell:word-of-recall",
+          "spell:conjure-celestial",
+          "spell:divine-word",
+          "spell:etherealness",
+          "spell:fire-storm",
+          "spell:plane-shift",
+          "spell:regenerate",
+          "spell:resurrection",
+          "spell:symbol",
+          "spell:antimagic-field",
+          "spell:control-weather",
+          "spell:earthquake",
+          "spell:holy-aura",
+          "spell:astral-projection",
+          "spell:gate",
+          "spell:mass-heal",
+          "spell:true-resurrection"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7734,7 +8147,21 @@
       "structure": "heading",
       "text": "Cantrips (0 Level)",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 0,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:guidance",
+          "spell:light",
+          "spell:mending",
+          "spell:resistance",
+          "spell:sacred-flame",
+          "spell:spare-the-dying",
+          "spell:thaumaturgy"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7743,7 +8170,29 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 1,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:bane",
+          "spell:bless",
+          "spell:command",
+          "spell:create-or-destroy-water",
+          "spell:cure-wounds",
+          "spell:detect-evil-and-good",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:guiding-bolt",
+          "spell:healing-word",
+          "spell:inflict-wounds",
+          "spell:protection-from-evil-and-good",
+          "spell:purify-food-and-drink",
+          "spell:sanctuary",
+          "spell:shield-of-faith"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7752,7 +8201,31 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 2,
+        "memberCount": 17,
+        "spellKeys": [
+          "spell:aid",
+          "spell:augury",
+          "spell:blindness-deafness",
+          "spell:calm-emotions",
+          "spell:continual-flame",
+          "spell:enhance-ability",
+          "spell:find-traps",
+          "spell:gentle-repose",
+          "spell:hold-person",
+          "spell:lesser-restoration",
+          "spell:locate-object",
+          "spell:prayer-of-healing",
+          "spell:protection-from-poison",
+          "spell:silence",
+          "spell:spiritual-weapon",
+          "spell:warding-bond",
+          "spell:zone-of-truth"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7761,7 +8234,33 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 3,
+        "memberCount": 19,
+        "spellKeys": [
+          "spell:animate-dead",
+          "spell:beacon-of-hope",
+          "spell:bestow-curse",
+          "spell:clairvoyance",
+          "spell:create-food-and-water",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:glyph-of-warding",
+          "spell:magic-circle",
+          "spell:mass-healing-word",
+          "spell:meld-into-stone",
+          "spell:protection-from-energy",
+          "spell:remove-curse",
+          "spell:revivify",
+          "spell:sending",
+          "spell:speak-with-dead",
+          "spell:spirit-guardians",
+          "spell:tongues",
+          "spell:water-walk"
+        ]
+      }
     },
     {
       "page": 106,
@@ -7770,7 +8269,22 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 4,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:control-water",
+          "spell:death-ward",
+          "spell:divination",
+          "spell:freedom-of-movement",
+          "spell:guardian-of-faith",
+          "spell:locate-creature",
+          "spell:stone-shape"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7779,7 +8293,27 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 5,
+        "memberCount": 13,
+        "spellKeys": [
+          "spell:commune",
+          "spell:contagion",
+          "spell:dispel-evil-and-good",
+          "spell:flame-strike",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:hallow",
+          "spell:insect-plague",
+          "spell:legend-lore",
+          "spell:mass-cure-wounds",
+          "spell:planar-binding",
+          "spell:raise-dead",
+          "spell:scrying"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7788,7 +8322,24 @@
       "structure": "heading",
       "text": "6th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 6,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:blade-barrier",
+          "spell:create-undead",
+          "spell:find-the-path",
+          "spell:forbiddance",
+          "spell:harm",
+          "spell:heal",
+          "spell:heroes-feast",
+          "spell:planar-ally",
+          "spell:true-seeing",
+          "spell:word-of-recall"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7797,7 +8348,22 @@
       "structure": "heading",
       "text": "7th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 7,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:conjure-celestial",
+          "spell:divine-word",
+          "spell:etherealness",
+          "spell:fire-storm",
+          "spell:plane-shift",
+          "spell:regenerate",
+          "spell:resurrection",
+          "spell:symbol"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7806,7 +8372,18 @@
       "structure": "heading",
       "text": "8th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 8,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:antimagic-field",
+          "spell:control-weather",
+          "spell:earthquake",
+          "spell:holy-aura"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7815,7 +8392,18 @@
       "structure": "heading",
       "text": "9th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Cleric",
+        "spellLevel": 9,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:astral-projection",
+          "spell:gate",
+          "spell:mass-heal",
+          "spell:true-resurrection"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7824,7 +8412,119 @@
       "structure": "heading",
       "text": "Druid Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": null,
+        "memberCount": 105,
+        "spellKeys": [
+          "spell:druidcraft",
+          "spell:guidance",
+          "spell:mending",
+          "spell:poison-spray",
+          "spell:produce-flame",
+          "spell:resistance",
+          "spell:shillelagh",
+          "spell:animal-friendship",
+          "spell:charm-person",
+          "spell:create-or-destroy-water",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:entangle",
+          "spell:faerie-fire",
+          "spell:fog-cloud",
+          "spell:goodberry",
+          "spell:healing-word",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:purify-food-and-drink",
+          "spell:speak-with-animals",
+          "spell:thunderwave",
+          "spell:animal-messenger",
+          "spell:barkskin",
+          "spell:darkvision",
+          "spell:enhance-ability",
+          "spell:find-traps",
+          "spell:flame-blade",
+          "spell:flaming-sphere",
+          "spell:gust-of-wind",
+          "spell:heat-metal",
+          "spell:hold-person",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:moonbeam",
+          "spell:pass-without-trace",
+          "spell:protection-from-poison",
+          "spell:spike-growth",
+          "spell:call-lightning",
+          "spell:conjure-animals",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:meld-into-stone",
+          "spell:plant-growth",
+          "spell:protection-from-energy",
+          "spell:sleet-storm",
+          "spell:speak-with-plants",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:wind-wall",
+          "spell:blight",
+          "spell:confusion",
+          "spell:conjure-minor-elementals",
+          "spell:conjure-woodland-beings",
+          "spell:control-water",
+          "spell:dominate-beast",
+          "spell:freedom-of-movement",
+          "spell:giant-insect",
+          "spell:hallucinatory-terrain",
+          "spell:ice-storm",
+          "spell:locate-creature",
+          "spell:polymorph",
+          "spell:stone-shape",
+          "spell:stoneskin",
+          "spell:wall-of-fire",
+          "spell:antilife-shell",
+          "spell:awaken",
+          "spell:commune-with-nature",
+          "spell:conjure-elemental",
+          "spell:contagion",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:insect-plague",
+          "spell:mass-cure-wounds",
+          "spell:planar-binding",
+          "spell:reincarnate",
+          "spell:scrying",
+          "spell:tree-stride",
+          "spell:wall-of-stone",
+          "spell:conjure-fey",
+          "spell:find-the-path",
+          "spell:heal",
+          "spell:heroes-feast",
+          "spell:move-earth",
+          "spell:sunbeam",
+          "spell:transport-via-plants",
+          "spell:wall-of-thorns",
+          "spell:wind-walk",
+          "spell:fire-storm",
+          "spell:mirage-arcane",
+          "spell:plane-shift",
+          "spell:regenerate",
+          "spell:reverse-gravity",
+          "spell:animal-shapes",
+          "spell:antipathy-sympathy",
+          "spell:control-weather",
+          "spell:earthquake",
+          "spell:feeblemind",
+          "spell:sunburst",
+          "spell:foresight",
+          "spell:shapechange",
+          "spell:storm-of-vengeance",
+          "spell:true-resurrection"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7833,7 +8533,21 @@
       "structure": "heading",
       "text": "Cantrips (0 Level)",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 0,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:druidcraft",
+          "spell:guidance",
+          "spell:mending",
+          "spell:poison-spray",
+          "spell:produce-flame",
+          "spell:resistance",
+          "spell:shillelagh"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7842,7 +8556,30 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 1,
+        "memberCount": 16,
+        "spellKeys": [
+          "spell:animal-friendship",
+          "spell:charm-person",
+          "spell:create-or-destroy-water",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:entangle",
+          "spell:faerie-fire",
+          "spell:fog-cloud",
+          "spell:goodberry",
+          "spell:healing-word",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:purify-food-and-drink",
+          "spell:speak-with-animals",
+          "spell:thunderwave"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7851,7 +8588,31 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 2,
+        "memberCount": 17,
+        "spellKeys": [
+          "spell:animal-messenger",
+          "spell:barkskin",
+          "spell:darkvision",
+          "spell:enhance-ability",
+          "spell:find-traps",
+          "spell:flame-blade",
+          "spell:flaming-sphere",
+          "spell:gust-of-wind",
+          "spell:heat-metal",
+          "spell:hold-person",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:moonbeam",
+          "spell:pass-without-trace",
+          "spell:protection-from-poison",
+          "spell:spike-growth"
+        ]
+      }
     },
     {
       "page": 107,
@@ -7860,7 +8621,26 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 3,
+        "memberCount": 12,
+        "spellKeys": [
+          "spell:call-lightning",
+          "spell:conjure-animals",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:meld-into-stone",
+          "spell:plant-growth",
+          "spell:protection-from-energy",
+          "spell:sleet-storm",
+          "spell:speak-with-plants",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:wind-wall"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7869,7 +8649,29 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 4,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:blight",
+          "spell:confusion",
+          "spell:conjure-minor-elementals",
+          "spell:conjure-woodland-beings",
+          "spell:control-water",
+          "spell:dominate-beast",
+          "spell:freedom-of-movement",
+          "spell:giant-insect",
+          "spell:hallucinatory-terrain",
+          "spell:ice-storm",
+          "spell:locate-creature",
+          "spell:polymorph",
+          "spell:stone-shape",
+          "spell:stoneskin",
+          "spell:wall-of-fire"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7878,7 +8680,28 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 5,
+        "memberCount": 14,
+        "spellKeys": [
+          "spell:antilife-shell",
+          "spell:awaken",
+          "spell:commune-with-nature",
+          "spell:conjure-elemental",
+          "spell:contagion",
+          "spell:geas",
+          "spell:greater-restoration",
+          "spell:insect-plague",
+          "spell:mass-cure-wounds",
+          "spell:planar-binding",
+          "spell:reincarnate",
+          "spell:scrying",
+          "spell:tree-stride",
+          "spell:wall-of-stone"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7887,7 +8710,23 @@
       "structure": "heading",
       "text": "6th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 6,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:conjure-fey",
+          "spell:find-the-path",
+          "spell:heal",
+          "spell:heroes-feast",
+          "spell:move-earth",
+          "spell:sunbeam",
+          "spell:transport-via-plants",
+          "spell:wall-of-thorns",
+          "spell:wind-walk"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7896,7 +8735,19 @@
       "structure": "heading",
       "text": "7th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 7,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:fire-storm",
+          "spell:mirage-arcane",
+          "spell:plane-shift",
+          "spell:regenerate",
+          "spell:reverse-gravity"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7905,7 +8756,20 @@
       "structure": "heading",
       "text": "8th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 8,
+        "memberCount": 6,
+        "spellKeys": [
+          "spell:animal-shapes",
+          "spell:antipathy-sympathy",
+          "spell:control-weather",
+          "spell:earthquake",
+          "spell:feeblemind",
+          "spell:sunburst"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7914,7 +8778,18 @@
       "structure": "heading",
       "text": "9th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Druid",
+        "spellLevel": 9,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:foresight",
+          "spell:shapechange",
+          "spell:storm-of-vengeance",
+          "spell:true-resurrection"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7923,7 +8798,45 @@
       "structure": "heading",
       "text": "Paladin Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": null,
+        "memberCount": 31,
+        "spellKeys": [
+          "spell:bless",
+          "spell:command",
+          "spell:cure-wounds",
+          "spell:detect-evil-and-good",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:divine-favor",
+          "spell:heroism",
+          "spell:protection-from-evil-and-good",
+          "spell:purify-food-and-drink",
+          "spell:shield-of-faith",
+          "spell:aid",
+          "spell:branding-smite",
+          "spell:find-steed",
+          "spell:lesser-restoration",
+          "spell:locate-object",
+          "spell:magic-weapon",
+          "spell:protection-from-poison",
+          "spell:zone-of-truth",
+          "spell:create-food-and-water",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:magic-circle",
+          "spell:remove-curse",
+          "spell:revivify",
+          "spell:banishment",
+          "spell:death-ward",
+          "spell:locate-creature",
+          "spell:dispel-evil-and-good",
+          "spell:geas",
+          "spell:raise-dead"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7932,7 +8845,25 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 1,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:bless",
+          "spell:command",
+          "spell:cure-wounds",
+          "spell:detect-evil-and-good",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:divine-favor",
+          "spell:heroism",
+          "spell:protection-from-evil-and-good",
+          "spell:purify-food-and-drink",
+          "spell:shield-of-faith"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7941,7 +8872,22 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 2,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:aid",
+          "spell:branding-smite",
+          "spell:find-steed",
+          "spell:lesser-restoration",
+          "spell:locate-object",
+          "spell:magic-weapon",
+          "spell:protection-from-poison",
+          "spell:zone-of-truth"
+        ]
+      }
     },
     {
       "page": 108,
@@ -7950,7 +8896,20 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 3,
+        "memberCount": 6,
+        "spellKeys": [
+          "spell:create-food-and-water",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:magic-circle",
+          "spell:remove-curse",
+          "spell:revivify"
+        ]
+      }
     },
     {
       "page": 109,
@@ -7959,7 +8918,17 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 4,
+        "memberCount": 3,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:death-ward",
+          "spell:locate-creature"
+        ]
+      }
     },
     {
       "page": 109,
@@ -7968,7 +8937,17 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Paladin",
+        "spellLevel": 5,
+        "memberCount": 3,
+        "spellKeys": [
+          "spell:dispel-evil-and-good",
+          "spell:geas",
+          "spell:raise-dead"
+        ]
+      }
     },
     {
       "page": 109,
@@ -7977,7 +8956,51 @@
       "structure": "heading",
       "text": "Ranger Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": null,
+        "memberCount": 37,
+        "spellKeys": [
+          "spell:alarm",
+          "spell:animal-friendship",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:fog-cloud",
+          "spell:goodberry",
+          "spell:hunters-mark",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:speak-with-animals",
+          "spell:animal-messenger",
+          "spell:barkskin",
+          "spell:darkvision",
+          "spell:find-traps",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:pass-without-trace",
+          "spell:protection-from-poison",
+          "spell:silence",
+          "spell:spike-growth",
+          "spell:conjure-animals",
+          "spell:daylight",
+          "spell:nondetection",
+          "spell:plant-growth",
+          "spell:protection-from-energy",
+          "spell:speak-with-plants",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:wind-wall",
+          "spell:conjure-woodland-beings",
+          "spell:freedom-of-movement",
+          "spell:locate-creature",
+          "spell:stoneskin",
+          "spell:commune-with-nature",
+          "spell:tree-stride"
+        ]
+      }
     },
     {
       "page": 109,
@@ -7986,7 +9009,25 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 1,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:alarm",
+          "spell:animal-friendship",
+          "spell:cure-wounds",
+          "spell:detect-magic",
+          "spell:detect-poison-and-disease",
+          "spell:fog-cloud",
+          "spell:goodberry",
+          "spell:hunters-mark",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:speak-with-animals"
+        ]
+      }
     },
     {
       "page": 109,
@@ -7995,7 +9036,25 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 2,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:animal-messenger",
+          "spell:barkskin",
+          "spell:darkvision",
+          "spell:find-traps",
+          "spell:lesser-restoration",
+          "spell:locate-animals-or-plants",
+          "spell:locate-object",
+          "spell:pass-without-trace",
+          "spell:protection-from-poison",
+          "spell:silence",
+          "spell:spike-growth"
+        ]
+      }
     },
     {
       "page": 109,
@@ -8004,7 +9063,23 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 3,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:conjure-animals",
+          "spell:daylight",
+          "spell:nondetection",
+          "spell:plant-growth",
+          "spell:protection-from-energy",
+          "spell:speak-with-plants",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:wind-wall"
+        ]
+      }
     },
     {
       "page": 109,
@@ -8013,7 +9088,18 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 4,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:conjure-woodland-beings",
+          "spell:freedom-of-movement",
+          "spell:locate-creature",
+          "spell:stoneskin"
+        ]
+      }
     },
     {
       "page": 109,
@@ -8022,7 +9108,16 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Ranger",
+        "spellLevel": 5,
+        "memberCount": 2,
+        "spellKeys": [
+          "spell:commune-with-nature",
+          "spell:tree-stride"
+        ]
+      }
     },
     {
       "page": 109,
@@ -8031,7 +9126,134 @@
       "structure": "heading",
       "text": "Sorcerer Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": null,
+        "memberCount": 120,
+        "spellKeys": [
+          "spell:acid-splash",
+          "spell:chill-touch",
+          "spell:dancing-lights",
+          "spell:fire-bolt",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:ray-of-frost",
+          "spell:shocking-grasp",
+          "spell:true-strike",
+          "spell:burning-hands",
+          "spell:charm-person",
+          "spell:color-spray",
+          "spell:comprehend-languages",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:expeditious-retreat",
+          "spell:false-life",
+          "spell:feather-fall",
+          "spell:fog-cloud",
+          "spell:jump",
+          "spell:mage-armor",
+          "spell:magic-missile",
+          "spell:shield",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:thunderwave",
+          "spell:alter-self",
+          "spell:blindness-deafness",
+          "spell:blur",
+          "spell:darkness",
+          "spell:darkvision",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enlarge-reduce",
+          "spell:gust-of-wind",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:levitate",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:scorching-ray",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:web",
+          "spell:blink",
+          "spell:clairvoyance",
+          "spell:counterspell",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fireball",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:haste",
+          "spell:hypnotic-pattern",
+          "spell:lightning-bolt",
+          "spell:major-image",
+          "spell:protection-from-energy",
+          "spell:sleet-storm",
+          "spell:slow",
+          "spell:stinking-cloud",
+          "spell:tongues",
+          "spell:water-breathing",
+          "spell:water-walk",
+          "spell:banishment",
+          "spell:blight",
+          "spell:confusion",
+          "spell:dimension-door",
+          "spell:dominate-beast",
+          "spell:greater-invisibility",
+          "spell:ice-storm",
+          "spell:polymorph",
+          "spell:stoneskin",
+          "spell:wall-of-fire",
+          "spell:animate-objects",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:hold-monster",
+          "spell:insect-plague",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:teleportation-circle",
+          "spell:wall-of-stone",
+          "spell:chain-lightning",
+          "spell:circle-of-death",
+          "spell:disintegrate",
+          "spell:eyebite",
+          "spell:globe-of-invulnerability",
+          "spell:mass-suggestion",
+          "spell:move-earth",
+          "spell:sunbeam",
+          "spell:true-seeing",
+          "spell:delayed-blast-fireball",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:fire-storm",
+          "spell:plane-shift",
+          "spell:prismatic-spray",
+          "spell:reverse-gravity",
+          "spell:teleport",
+          "spell:dominate-monster",
+          "spell:earthquake",
+          "spell:incendiary-cloud",
+          "spell:power-word-stun",
+          "spell:sunburst",
+          "spell:gate",
+          "spell:meteor-swarm",
+          "spell:power-word-kill",
+          "spell:time-stop",
+          "spell:wish"
+        ]
+      }
     },
     {
       "page": 109,
@@ -8040,7 +9262,28 @@
       "structure": "heading",
       "text": "Cantrips (0 Level)",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 0,
+        "memberCount": 14,
+        "spellKeys": [
+          "spell:acid-splash",
+          "spell:chill-touch",
+          "spell:dancing-lights",
+          "spell:fire-bolt",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:ray-of-frost",
+          "spell:shocking-grasp",
+          "spell:true-strike"
+        ]
+      }
     },
     {
       "page": 109,
@@ -8049,7 +9292,31 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 1,
+        "memberCount": 17,
+        "spellKeys": [
+          "spell:burning-hands",
+          "spell:charm-person",
+          "spell:color-spray",
+          "spell:comprehend-languages",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:expeditious-retreat",
+          "spell:false-life",
+          "spell:feather-fall",
+          "spell:fog-cloud",
+          "spell:jump",
+          "spell:mage-armor",
+          "spell:magic-missile",
+          "spell:shield",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:thunderwave"
+        ]
+      }
     },
     {
       "page": 109,
@@ -8058,7 +9325,35 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 2,
+        "memberCount": 21,
+        "spellKeys": [
+          "spell:alter-self",
+          "spell:blindness-deafness",
+          "spell:blur",
+          "spell:darkness",
+          "spell:darkvision",
+          "spell:detect-thoughts",
+          "spell:enhance-ability",
+          "spell:enlarge-reduce",
+          "spell:gust-of-wind",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:levitate",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:scorching-ray",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:web"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8067,7 +9362,34 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 3,
+        "memberCount": 20,
+        "spellKeys": [
+          "spell:blink",
+          "spell:clairvoyance",
+          "spell:counterspell",
+          "spell:daylight",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fireball",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:haste",
+          "spell:hypnotic-pattern",
+          "spell:lightning-bolt",
+          "spell:major-image",
+          "spell:protection-from-energy",
+          "spell:sleet-storm",
+          "spell:slow",
+          "spell:stinking-cloud",
+          "spell:tongues",
+          "spell:water-breathing",
+          "spell:water-walk"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8076,7 +9398,24 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 4,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:blight",
+          "spell:confusion",
+          "spell:dimension-door",
+          "spell:dominate-beast",
+          "spell:greater-invisibility",
+          "spell:ice-storm",
+          "spell:polymorph",
+          "spell:stoneskin",
+          "spell:wall-of-fire"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8085,7 +9424,25 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 5,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:hold-monster",
+          "spell:insect-plague",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:teleportation-circle",
+          "spell:wall-of-stone"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8094,7 +9451,23 @@
       "structure": "heading",
       "text": "6th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 6,
+        "memberCount": 9,
+        "spellKeys": [
+          "spell:chain-lightning",
+          "spell:circle-of-death",
+          "spell:disintegrate",
+          "spell:eyebite",
+          "spell:globe-of-invulnerability",
+          "spell:mass-suggestion",
+          "spell:move-earth",
+          "spell:sunbeam",
+          "spell:true-seeing"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8103,7 +9476,22 @@
       "structure": "heading",
       "text": "7th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 7,
+        "memberCount": 8,
+        "spellKeys": [
+          "spell:delayed-blast-fireball",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:fire-storm",
+          "spell:plane-shift",
+          "spell:prismatic-spray",
+          "spell:reverse-gravity",
+          "spell:teleport"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8112,7 +9500,19 @@
       "structure": "heading",
       "text": "8th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 8,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:dominate-monster",
+          "spell:earthquake",
+          "spell:incendiary-cloud",
+          "spell:power-word-stun",
+          "spell:sunburst"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8121,7 +9521,19 @@
       "structure": "heading",
       "text": "9th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Sorcerer",
+        "spellLevel": 9,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:gate",
+          "spell:meteor-swarm",
+          "spell:power-word-kill",
+          "spell:time-stop",
+          "spell:wish"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8130,7 +9542,78 @@
       "structure": "heading",
       "text": "Warlock Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": null,
+        "memberCount": 64,
+        "spellKeys": [
+          "spell:chill-touch",
+          "spell:eldritch-blast",
+          "spell:mage-hand",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:true-strike",
+          "spell:charm-person",
+          "spell:comprehend-languages",
+          "spell:expeditious-retreat",
+          "spell:hellish-rebuke",
+          "spell:illusory-script",
+          "spell:protection-from-evil-and-good",
+          "spell:unseen-servant",
+          "spell:darkness",
+          "spell:enthrall",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:ray-of-enfeeblement",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:counterspell",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:hypnotic-pattern",
+          "spell:magic-circle",
+          "spell:major-image",
+          "spell:remove-curse",
+          "spell:tongues",
+          "spell:vampiric-touch",
+          "spell:banishment",
+          "spell:blight",
+          "spell:dimension-door",
+          "spell:hallucinatory-terrain",
+          "spell:contact-other-plane",
+          "spell:dream",
+          "spell:hold-monster",
+          "spell:scrying",
+          "spell:circle-of-death",
+          "spell:conjure-fey",
+          "spell:create-undead",
+          "spell:eyebite",
+          "spell:flesh-to-stone",
+          "spell:mass-suggestion",
+          "spell:true-seeing",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:forcecage",
+          "spell:plane-shift",
+          "spell:demiplane",
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:glibness",
+          "spell:power-word-stun",
+          "spell:astral-projection",
+          "spell:foresight",
+          "spell:imprisonment",
+          "spell:power-word-kill",
+          "spell:true-polymorph"
+        ]
+      }
     },
     {
       "page": 110,
@@ -8139,7 +9622,21 @@
       "structure": "heading",
       "text": "Cantrips (0 Level)",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 0,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:chill-touch",
+          "spell:eldritch-blast",
+          "spell:mage-hand",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:true-strike"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8148,7 +9645,21 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 1,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:charm-person",
+          "spell:comprehend-languages",
+          "spell:expeditious-retreat",
+          "spell:hellish-rebuke",
+          "spell:illusory-script",
+          "spell:protection-from-evil-and-good",
+          "spell:unseen-servant"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8157,7 +9668,24 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 2,
+        "memberCount": 10,
+        "spellKeys": [
+          "spell:darkness",
+          "spell:enthrall",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:ray-of-enfeeblement",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8166,7 +9694,25 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 3,
+        "memberCount": 11,
+        "spellKeys": [
+          "spell:counterspell",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:hypnotic-pattern",
+          "spell:magic-circle",
+          "spell:major-image",
+          "spell:remove-curse",
+          "spell:tongues",
+          "spell:vampiric-touch"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8175,7 +9721,18 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 4,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:banishment",
+          "spell:blight",
+          "spell:dimension-door",
+          "spell:hallucinatory-terrain"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8184,7 +9741,18 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 5,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:contact-other-plane",
+          "spell:dream",
+          "spell:hold-monster",
+          "spell:scrying"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8193,7 +9761,21 @@
       "structure": "heading",
       "text": "6th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 6,
+        "memberCount": 7,
+        "spellKeys": [
+          "spell:circle-of-death",
+          "spell:conjure-fey",
+          "spell:create-undead",
+          "spell:eyebite",
+          "spell:flesh-to-stone",
+          "spell:mass-suggestion",
+          "spell:true-seeing"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8202,7 +9784,18 @@
       "structure": "heading",
       "text": "7th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 7,
+        "memberCount": 4,
+        "spellKeys": [
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:forcecage",
+          "spell:plane-shift"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8211,7 +9804,19 @@
       "structure": "heading",
       "text": "8th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 8,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:demiplane",
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:glibness",
+          "spell:power-word-stun"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8220,7 +9825,19 @@
       "structure": "heading",
       "text": "9th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Warlock",
+        "spellLevel": 9,
+        "memberCount": 5,
+        "spellKeys": [
+          "spell:astral-projection",
+          "spell:foresight",
+          "spell:imprisonment",
+          "spell:power-word-kill",
+          "spell:true-polymorph"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8229,7 +9846,218 @@
       "structure": "heading",
       "text": "Wizard Spells",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": null,
+        "memberCount": 204,
+        "spellKeys": [
+          "spell:acid-splash",
+          "spell:chill-touch",
+          "spell:dancing-lights",
+          "spell:fire-bolt",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:ray-of-frost",
+          "spell:shocking-grasp",
+          "spell:true-strike",
+          "spell:alarm",
+          "spell:burning-hands",
+          "spell:charm-person",
+          "spell:color-spray",
+          "spell:comprehend-languages",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:expeditious-retreat",
+          "spell:false-life",
+          "spell:feather-fall",
+          "spell:find-familiar",
+          "spell:floating-disk",
+          "spell:fog-cloud",
+          "spell:grease",
+          "spell:hideous-laughter",
+          "spell:identify",
+          "spell:illusory-script",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:mage-armor",
+          "spell:magic-missile",
+          "spell:protection-from-evil-and-good",
+          "spell:shield",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:thunderwave",
+          "spell:unseen-servant",
+          "spell:acid-arrow",
+          "spell:alter-self",
+          "spell:arcane-lock",
+          "spell:arcanists-magic-aura",
+          "spell:blindness-deafness",
+          "spell:blur",
+          "spell:continual-flame",
+          "spell:darkness",
+          "spell:darkvision",
+          "spell:detect-thoughts",
+          "spell:enlarge-reduce",
+          "spell:flaming-sphere",
+          "spell:gentle-repose",
+          "spell:gust-of-wind",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:levitate",
+          "spell:locate-object",
+          "spell:magic-mouth",
+          "spell:magic-weapon",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:ray-of-enfeeblement",
+          "spell:rope-trick",
+          "spell:scorching-ray",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:web",
+          "spell:animate-dead",
+          "spell:bestow-curse",
+          "spell:blink",
+          "spell:clairvoyance",
+          "spell:counterspell",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fireball",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:glyph-of-warding",
+          "spell:haste",
+          "spell:hypnotic-pattern",
+          "spell:lightning-bolt",
+          "spell:magic-circle",
+          "spell:major-image",
+          "spell:nondetection",
+          "spell:phantom-steed",
+          "spell:protection-from-energy",
+          "spell:remove-curse",
+          "spell:sending",
+          "spell:sleet-storm",
+          "spell:slow",
+          "spell:stinking-cloud",
+          "spell:tiny-hut",
+          "spell:tongues",
+          "spell:vampiric-touch",
+          "spell:water-breathing",
+          "spell:arcane-eye",
+          "spell:banishment",
+          "spell:black-tentacles",
+          "spell:blight",
+          "spell:confusion",
+          "spell:conjure-minor-elementals",
+          "spell:control-water",
+          "spell:dimension-door",
+          "spell:fabricate",
+          "spell:faithful-hound",
+          "spell:fire-shield",
+          "spell:greater-invisibility",
+          "spell:hallucinatory-terrain",
+          "spell:ice-storm",
+          "spell:locate-creature",
+          "spell:phantasmal-killer",
+          "spell:polymorph",
+          "spell:private-sanctum",
+          "spell:resilient-sphere",
+          "spell:secret-chest",
+          "spell:stone-shape",
+          "spell:stoneskin",
+          "spell:wall-of-fire",
+          "spell:animate-objects",
+          "spell:arcane-hand",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:conjure-elemental",
+          "spell:contact-other-plane",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:dream",
+          "spell:geas",
+          "spell:hold-monster",
+          "spell:legend-lore",
+          "spell:mislead",
+          "spell:modify-memory",
+          "spell:passwall",
+          "spell:planar-binding",
+          "spell:scrying",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:telepathic-bond",
+          "spell:teleportation-circle",
+          "spell:wall-of-force",
+          "spell:wall-of-stone",
+          "spell:chain-lightning",
+          "spell:circle-of-death",
+          "spell:contingency",
+          "spell:create-undead",
+          "spell:disintegrate",
+          "spell:eyebite",
+          "spell:flesh-to-stone",
+          "spell:freezing-sphere",
+          "spell:globe-of-invulnerability",
+          "spell:guards-and-wards",
+          "spell:instant-summons",
+          "spell:irresistible-dance",
+          "spell:magic-jar",
+          "spell:mass-suggestion",
+          "spell:move-earth",
+          "spell:programmed-illusion",
+          "spell:sunbeam",
+          "spell:true-seeing",
+          "spell:wall-of-ice",
+          "spell:arcane-sword",
+          "spell:delayed-blast-fireball",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:forcecage",
+          "spell:magnificent-mansion",
+          "spell:mirage-arcane",
+          "spell:plane-shift",
+          "spell:prismatic-spray",
+          "spell:project-image",
+          "spell:reverse-gravity",
+          "spell:sequester",
+          "spell:simulacrum",
+          "spell:symbol",
+          "spell:teleport",
+          "spell:antimagic-field",
+          "spell:antipathy-sympathy",
+          "spell:clone",
+          "spell:control-weather",
+          "spell:demiplane",
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:incendiary-cloud",
+          "spell:maze",
+          "spell:mind-blank",
+          "spell:power-word-stun",
+          "spell:sunburst",
+          "spell:astral-projection",
+          "spell:foresight",
+          "spell:gate",
+          "spell:imprisonment",
+          "spell:meteor-swarm",
+          "spell:power-word-kill",
+          "spell:prismatic-wall",
+          "spell:shapechange",
+          "spell:time-stop",
+          "spell:true-polymorph",
+          "spell:weird",
+          "spell:wish"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8238,7 +10066,28 @@
       "structure": "heading",
       "text": "Cantrips (0 Level)",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 0,
+        "memberCount": 14,
+        "spellKeys": [
+          "spell:acid-splash",
+          "spell:chill-touch",
+          "spell:dancing-lights",
+          "spell:fire-bolt",
+          "spell:light",
+          "spell:mage-hand",
+          "spell:mending",
+          "spell:message",
+          "spell:minor-illusion",
+          "spell:poison-spray",
+          "spell:prestidigitation",
+          "spell:ray-of-frost",
+          "spell:shocking-grasp",
+          "spell:true-strike"
+        ]
+      }
     },
     {
       "page": 111,
@@ -8247,7 +10096,41 @@
       "structure": "heading",
       "text": "1st Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 1,
+        "memberCount": 27,
+        "spellKeys": [
+          "spell:alarm",
+          "spell:burning-hands",
+          "spell:charm-person",
+          "spell:color-spray",
+          "spell:comprehend-languages",
+          "spell:detect-magic",
+          "spell:disguise-self",
+          "spell:expeditious-retreat",
+          "spell:false-life",
+          "spell:feather-fall",
+          "spell:find-familiar",
+          "spell:floating-disk",
+          "spell:fog-cloud",
+          "spell:grease",
+          "spell:hideous-laughter",
+          "spell:identify",
+          "spell:illusory-script",
+          "spell:jump",
+          "spell:longstrider",
+          "spell:mage-armor",
+          "spell:magic-missile",
+          "spell:protection-from-evil-and-good",
+          "spell:shield",
+          "spell:silent-image",
+          "spell:sleep",
+          "spell:thunderwave",
+          "spell:unseen-servant"
+        ]
+      }
     },
     {
       "page": 112,
@@ -8256,7 +10139,45 @@
       "structure": "heading",
       "text": "2nd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 2,
+        "memberCount": 31,
+        "spellKeys": [
+          "spell:acid-arrow",
+          "spell:alter-self",
+          "spell:arcane-lock",
+          "spell:arcanists-magic-aura",
+          "spell:blindness-deafness",
+          "spell:blur",
+          "spell:continual-flame",
+          "spell:darkness",
+          "spell:darkvision",
+          "spell:detect-thoughts",
+          "spell:enlarge-reduce",
+          "spell:flaming-sphere",
+          "spell:gentle-repose",
+          "spell:gust-of-wind",
+          "spell:hold-person",
+          "spell:invisibility",
+          "spell:knock",
+          "spell:levitate",
+          "spell:locate-object",
+          "spell:magic-mouth",
+          "spell:magic-weapon",
+          "spell:mirror-image",
+          "spell:misty-step",
+          "spell:ray-of-enfeeblement",
+          "spell:rope-trick",
+          "spell:scorching-ray",
+          "spell:see-invisibility",
+          "spell:shatter",
+          "spell:spider-climb",
+          "spell:suggestion",
+          "spell:web"
+        ]
+      }
     },
     {
       "page": 112,
@@ -8265,7 +10186,42 @@
       "structure": "heading",
       "text": "3rd Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 3,
+        "memberCount": 28,
+        "spellKeys": [
+          "spell:animate-dead",
+          "spell:bestow-curse",
+          "spell:blink",
+          "spell:clairvoyance",
+          "spell:counterspell",
+          "spell:dispel-magic",
+          "spell:fear",
+          "spell:fireball",
+          "spell:fly",
+          "spell:gaseous-form",
+          "spell:glyph-of-warding",
+          "spell:haste",
+          "spell:hypnotic-pattern",
+          "spell:lightning-bolt",
+          "spell:magic-circle",
+          "spell:major-image",
+          "spell:nondetection",
+          "spell:phantom-steed",
+          "spell:protection-from-energy",
+          "spell:remove-curse",
+          "spell:sending",
+          "spell:sleet-storm",
+          "spell:slow",
+          "spell:stinking-cloud",
+          "spell:tiny-hut",
+          "spell:tongues",
+          "spell:vampiric-touch",
+          "spell:water-breathing"
+        ]
+      }
     },
     {
       "page": 112,
@@ -8274,7 +10230,37 @@
       "structure": "heading",
       "text": "4th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 4,
+        "memberCount": 23,
+        "spellKeys": [
+          "spell:arcane-eye",
+          "spell:banishment",
+          "spell:black-tentacles",
+          "spell:blight",
+          "spell:confusion",
+          "spell:conjure-minor-elementals",
+          "spell:control-water",
+          "spell:dimension-door",
+          "spell:fabricate",
+          "spell:faithful-hound",
+          "spell:fire-shield",
+          "spell:greater-invisibility",
+          "spell:hallucinatory-terrain",
+          "spell:ice-storm",
+          "spell:locate-creature",
+          "spell:phantasmal-killer",
+          "spell:polymorph",
+          "spell:private-sanctum",
+          "spell:resilient-sphere",
+          "spell:secret-chest",
+          "spell:stone-shape",
+          "spell:stoneskin",
+          "spell:wall-of-fire"
+        ]
+      }
     },
     {
       "page": 112,
@@ -8283,7 +10269,37 @@
       "structure": "heading",
       "text": "5th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 5,
+        "memberCount": 23,
+        "spellKeys": [
+          "spell:animate-objects",
+          "spell:arcane-hand",
+          "spell:cloudkill",
+          "spell:cone-of-cold",
+          "spell:conjure-elemental",
+          "spell:contact-other-plane",
+          "spell:creation",
+          "spell:dominate-person",
+          "spell:dream",
+          "spell:geas",
+          "spell:hold-monster",
+          "spell:legend-lore",
+          "spell:mislead",
+          "spell:modify-memory",
+          "spell:passwall",
+          "spell:planar-binding",
+          "spell:scrying",
+          "spell:seeming",
+          "spell:telekinesis",
+          "spell:telepathic-bond",
+          "spell:teleportation-circle",
+          "spell:wall-of-force",
+          "spell:wall-of-stone"
+        ]
+      }
     },
     {
       "page": 113,
@@ -8292,7 +10308,33 @@
       "structure": "heading",
       "text": "6th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 6,
+        "memberCount": 19,
+        "spellKeys": [
+          "spell:chain-lightning",
+          "spell:circle-of-death",
+          "spell:contingency",
+          "spell:create-undead",
+          "spell:disintegrate",
+          "spell:eyebite",
+          "spell:flesh-to-stone",
+          "spell:freezing-sphere",
+          "spell:globe-of-invulnerability",
+          "spell:guards-and-wards",
+          "spell:instant-summons",
+          "spell:irresistible-dance",
+          "spell:magic-jar",
+          "spell:mass-suggestion",
+          "spell:move-earth",
+          "spell:programmed-illusion",
+          "spell:sunbeam",
+          "spell:true-seeing",
+          "spell:wall-of-ice"
+        ]
+      }
     },
     {
       "page": 113,
@@ -8301,7 +10343,29 @@
       "structure": "heading",
       "text": "7th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 7,
+        "memberCount": 15,
+        "spellKeys": [
+          "spell:arcane-sword",
+          "spell:delayed-blast-fireball",
+          "spell:etherealness",
+          "spell:finger-of-death",
+          "spell:forcecage",
+          "spell:magnificent-mansion",
+          "spell:mirage-arcane",
+          "spell:plane-shift",
+          "spell:prismatic-spray",
+          "spell:project-image",
+          "spell:reverse-gravity",
+          "spell:sequester",
+          "spell:simulacrum",
+          "spell:symbol",
+          "spell:teleport"
+        ]
+      }
     },
     {
       "page": 113,
@@ -8310,7 +10374,26 @@
       "structure": "heading",
       "text": "8th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 8,
+        "memberCount": 12,
+        "spellKeys": [
+          "spell:antimagic-field",
+          "spell:antipathy-sympathy",
+          "spell:clone",
+          "spell:control-weather",
+          "spell:demiplane",
+          "spell:dominate-monster",
+          "spell:feeblemind",
+          "spell:incendiary-cloud",
+          "spell:maze",
+          "spell:mind-blank",
+          "spell:power-word-stun",
+          "spell:sunburst"
+        ]
+      }
     },
     {
       "page": 113,
@@ -8319,7 +10402,26 @@
       "structure": "heading",
       "text": "9th Level",
       "section": "Spellcasting",
-      "status": "ignored:spell-list-header"
+      "status": "structured-field:spell.data.classes",
+      "structuredFieldEvidence": {
+        "sourceClass": "Wizard",
+        "spellLevel": 9,
+        "memberCount": 12,
+        "spellKeys": [
+          "spell:astral-projection",
+          "spell:foresight",
+          "spell:gate",
+          "spell:imprisonment",
+          "spell:meteor-swarm",
+          "spell:power-word-kill",
+          "spell:prismatic-wall",
+          "spell:shapechange",
+          "spell:time-stop",
+          "spell:true-polymorph",
+          "spell:weird",
+          "spell:wish"
+        ]
+      }
     },
     {
       "page": 114,

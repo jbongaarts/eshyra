@@ -198,6 +198,7 @@ function buildSlice(
           : page.lineGaps.slice(firstLine, lastLineExclusive);
       out.push({
         pageNumber: page.pageNumber,
+        sourceLineOffset: firstLine,
         lines,
         ...(lineHeights === undefined ? {} : { lineHeights }),
         ...(lineGaps === undefined ? {} : { lineGaps }),
