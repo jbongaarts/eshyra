@@ -27,16 +27,20 @@
 
 import { ABILITY_SCORE_NAMES } from './abilities.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
-import type { StartingEquipmentMode } from './characterDraft.js';
 import {
   type CharacterCreationEngine,
   type CharacterDraft,
   getDnd5eCharacterCreationEngine,
+  parseStartingEquipmentMode,
   type RequiredChoice,
+  type StartingEquipmentMode,
 } from './characterDraft.js';
 import type { AbilityScoreName } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
-import { normalizeProficiency } from './proficiency.js';
+import {
+  normalizeProficiency,
+  proficiencyReplacementId,
+} from './proficiency.js';
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedBackgroundData,
@@ -237,7 +241,13 @@ function validateFinalStartingAcquisition(
 ):
   | { readonly ok: true; readonly value: FinalStartingAcquisition }
   | { readonly ok: false; readonly error: string } {
-  const mode = draft.selections.startingEquipmentMode ?? 'packages';
+  const mode =
+    draft.selections.startingEquipmentMode === undefined
+      ? 'packages'
+      : parseStartingEquipmentMode(draft.selections.startingEquipmentMode);
+  if (mode === undefined) {
+    return { ok: false, error: 'invalid starting acquisition mode' };
+  }
   const result = draft.selections.startingWealth;
   if (mode === 'packages') {
     if (result !== undefined) {
@@ -461,7 +471,7 @@ function resolveProficiencySet(
       result.push(value);
       continue;
     }
-    const replacementId = `proficiency-replacement.${kind}.${slug(value)}.${occurrence - 1}`;
+    const replacementId = proficiencyReplacementId(kind, value, occurrence - 1);
     const replacement = replacements.get(replacementId);
     const replacementValue = replacement?.selected[0];
     if (
@@ -493,10 +503,6 @@ function resolveProficiencySet(
 
 function isReplacementChoiceId(id: string): boolean {
   return id.startsWith('proficiency-replacement.');
-}
-
-function slug(value: string): string {
-  return normalizeProficiency(value).replace(/ /g, '-');
 }
 
 function classRecordForDraft(

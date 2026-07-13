@@ -70,7 +70,7 @@ describe('finalizeCharacterDraft', () => {
     draft = engine.setAbilityScoreMethod(draft, 'point_buy');
     draft = engine.setAbilityScores(draft, {
       strength: 15,
-      dexterity: 14,
+      dexterity: 13,
       constitution: 13,
       intelligence: 12,
       wisdom: 10,
@@ -150,6 +150,63 @@ describe('finalizeCharacterDraft', () => {
       expect(result.character.equipment).toEqual([]);
       expect(result.character.wallet?.gp).toBe(120);
     }
+  });
+
+  it('finalizes a Hill Dwarf Monk duplicate tool grant with a replacement', () => {
+    let draft = engine.createDraft({ id: 'monk-tools', mode: 'concept-first' });
+    draft = engine.setIdentity(draft, { name: 'Korin' });
+    draft = engine.setClass(draft, 'Monk');
+    draft = engine.setAncestry(draft, 'Hill Dwarf');
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScores(draft, {
+      strength: 15,
+      dexterity: 13,
+      constitution: 13,
+      intelligence: 9,
+      wisdom: 14,
+      charisma: 8,
+    });
+    for (let pass = 0; pass < 4; pass += 1) {
+      for (const entry of engine.mechanicalChoices(draft)) {
+        if (entry.satisfied) continue;
+        const values =
+          entry.choice.kind === 'tools' &&
+          (entry.choice.from ?? []).includes('Smith’s tools')
+            ? ['Smith’s tools']
+            : (entry.choice.from ?? []).slice(0, entry.choice.choose ?? 0);
+        draft = engine.setChoice(draft, entry.choice.id, values);
+      }
+    }
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.character.toolProficiencies).toContain('Smith’s tools');
+      expect(result.character.toolProficiencies).toContain(
+        'Alchemist’s supplies',
+      );
+    }
+  });
+
+  it('returns a normal failure for malformed persisted wealth evidence', () => {
+    const base = engine.setStartingEquipmentMode(
+      completeDraft(),
+      'starting-wealth',
+    );
+    const draft = {
+      ...base,
+      selections: {
+        ...base.selections,
+        startingWealth: {
+          classKey: 'class:fighter',
+          formula: '5d4',
+          roll: null,
+          multiplierGp: 10,
+          totalGp: 100,
+        },
+      },
+    } as unknown as CharacterDraft;
+    expect(() => finalizeCharacterDraft(draft, META)).not.toThrow();
+    expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
   });
 
   it('refuses multiclass-shaped draft state before finalization can flatten it', () => {

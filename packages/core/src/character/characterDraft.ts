@@ -46,7 +46,10 @@ import {
   deriveLevel1Values,
   LEVEL_1_PROFICIENCY_BONUS,
 } from './derivedValues.js';
-import { normalizeProficiency } from './proficiency.js';
+import {
+  normalizeProficiency,
+  proficiencyReplacementId,
+} from './proficiency.js';
 import {
   enumerateLevel1RequiredChoices,
   type Level1RequiredChoice,
@@ -66,6 +69,14 @@ import {
 } from './srdStartingWealth.js';
 
 export type StartingEquipmentMode = 'packages' | 'starting-wealth';
+
+export function parseStartingEquipmentMode(
+  value: unknown,
+): StartingEquipmentMode | undefined {
+  return value === 'packages' || value === 'starting-wealth'
+    ? value
+    : undefined;
+}
 
 export type { StartingWealthResult } from './srdStartingWealth.js';
 
@@ -354,7 +365,23 @@ export function createCharacterCreationEngine(
     });
     const diagnostics: CharacterCreationDiagnostic[] = [];
     const stale: string[] = [];
-    const { selections } = draft;
+    const rawMode = (draft.selections as Record<string, unknown>)
+      .startingEquipmentMode;
+    const parsedMode =
+      rawMode === undefined ? 'packages' : parseStartingEquipmentMode(rawMode);
+    if (parsedMode === undefined) {
+      diagnostics.push({
+        field: 'startingEquipmentMode',
+        severity: 'error',
+        message:
+          'starting acquisition mode must be packages or starting-wealth',
+        value: rawMode,
+      });
+    }
+    const selections = {
+      ...draft.selections,
+      startingEquipmentMode: parsedMode ?? 'packages',
+    };
 
     const classRecord = resolveClass(selections.className);
     if (selections.className !== undefined && classRecord === undefined) {
@@ -561,7 +588,11 @@ export function createCharacterCreationEngine(
       );
       const validReplacements = new Set<string>();
       for (const duplicate of duplicates) {
-        const id = `proficiency-replacement.${kind}.${slug(duplicate.label)}.${duplicate.occurrence}`;
+        const id = proficiencyReplacementId(
+          kind,
+          duplicate.label,
+          duplicate.occurrence,
+        );
         const from = domain.filter(
           (value) =>
             !ordinaryKeys.has(normalizeProficiency(value)) &&
@@ -583,14 +614,6 @@ export function createCharacterCreationEngine(
       }
     }
     return result;
-  }
-
-  function slug(value: string): string {
-    return value
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
   }
 
   function normalizeDomain(values: readonly string[]): readonly string[] {

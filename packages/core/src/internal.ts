@@ -318,6 +318,10 @@ export {
   PathfinderCharacterCreationError,
   validatePathfinderCharacterDraft,
 } from './character/pathfinder2e.js';
+export {
+  normalizeProficiency,
+  proficiencyReplacementId,
+} from './character/proficiency.js';
 // Character-creation recipe boundary (eshyra-b69j.4): the system-agnostic
 // contract plus the D&D 5e SRD recipe that owns modes, step order, validation,
 // derived values, and finalization. The shared creation shell depends only on
@@ -408,7 +412,7 @@ export {
   SRD_5_1_SKILL_ABILITIES,
   SRD_5_1_SKILLS,
   SRD_5_1_STANDARD_LANGUAGES,
-  SRD_5_1_TOOL_PROFICIENCY_CATEGORIES,
+  SRD_5_1_VEHICLE_PROFICIENCIES,
 } from './character/srdCreationChoices.js';
 export type { EquipmentPackContent } from './character/srdEquipmentPacks.js';
 export { readEquipmentPackContents } from './character/srdEquipmentPacks.js';

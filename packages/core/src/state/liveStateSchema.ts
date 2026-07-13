@@ -152,7 +152,7 @@ export function validateAbilityScoresJson(
     }
   }
 
-  // Each value must be a finite integer in [0, 30].
+  // Each value must be a finite integer in [1, 30].
   for (const key of ABILITY_SCORE_KEYS) {
     const score = obj[key];
     if (

@@ -164,14 +164,7 @@ describe('pack-derived tool proficiency domain', () => {
       ),
     );
     expect(normalized.has('gaming set')).toBe(false);
-    for (const value of [
-      'Dice set',
-      'Dragonchess set',
-      'Playing card set',
-      'Three-Dragon Ante set',
-      'Vehicles (land)',
-      'Vehicles (water)',
-    ])
+    for (const value of ['Vehicles (land)', 'Vehicles (water)'])
       expect(domain).toContain(value);
     for (const record of pack.records) {
       const data = record.data as { category?: unknown };

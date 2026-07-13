@@ -65,6 +65,14 @@ export function validateStartingWealthResult(
   result: StartingWealthResult,
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
 ): void {
+  if (
+    typeof result !== 'object' ||
+    result === null ||
+    typeof result.classKey !== 'string' ||
+    typeof result.formula !== 'string'
+  ) {
+    throw new Error('starting-wealth roll evidence is malformed');
+  }
   const current = resolveStartingWealth(result.classKey, resolver);
   const parsed = parseDice(current.formula);
   const roll = result.roll;

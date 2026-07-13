@@ -189,11 +189,7 @@ export const SRD_5_1_MUSICAL_INSTRUMENTS: readonly string[] = [
 ];
 
 /** Source-audited proficiency categories without individual equipment rows. */
-export const SRD_5_1_TOOL_PROFICIENCY_CATEGORIES: readonly string[] = [
-  'Dice set',
-  'Dragonchess set',
-  'Playing card set',
-  'Three-Dragon Ante set',
+export const SRD_5_1_VEHICLE_PROFICIENCIES: readonly string[] = [
   'Vehicles (land)',
   'Vehicles (water)',
 ];

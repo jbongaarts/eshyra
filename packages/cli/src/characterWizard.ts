@@ -100,6 +100,31 @@ function isReplacementChoiceId(id: string): boolean {
   return id.startsWith('proficiency-replacement.');
 }
 
+function wealthEvidenceShape(value: unknown): value is {
+  readonly formula: string;
+  readonly roll: { readonly rolls: readonly number[] };
+  readonly multiplierGp: number;
+  readonly totalGp: number;
+} {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  const roll = record.roll;
+  return (
+    typeof record.formula === 'string' &&
+    typeof record.multiplierGp === 'number' &&
+    typeof record.totalGp === 'number' &&
+    typeof roll === 'object' &&
+    roll !== null &&
+    Array.isArray((roll as Record<string, unknown>).rolls)
+  );
+}
+
+function wealthEvidenceSummary(value: unknown): string {
+  if (!wealthEvidenceShape(value))
+    return '(invalid or incomplete roll evidence)';
+  return `${value.formula} [${value.roll.rolls.join(', ')}] × ${value.multiplierGp} = ${value.totalGp} gp`;
+}
+
 /** Per-step configuration for an enumerable, resolver-backed choice. */
 interface ChoiceConfig {
   readonly noun: string;
@@ -753,23 +778,25 @@ class Wizard {
     for (;;) {
       const existing = this.draft.selections.startingWealth;
       if (existing !== undefined) {
-        let valid = true;
-        try {
-          validateStartingWealthResult(existing, this.deps.resolver);
-          if (existing.classKey !== classKey) {
-            throw new Error(
-              'starting-wealth result does not match the selected class',
+        let valid = wealthEvidenceShape(existing);
+        if (valid) {
+          try {
+            validateStartingWealthResult(existing, this.deps.resolver);
+            if (existing.classKey !== classKey) {
+              throw new Error(
+                'starting-wealth result does not match the selected class',
+              );
+            }
+          } catch (error) {
+            valid = false;
+            this.write(
+              `Stored starting wealth is invalid: ${error instanceof Error ? error.message : 're-roll or reset it.'}`,
             );
           }
-        } catch (error) {
-          valid = false;
-          this.write(
-            `Stored starting wealth is invalid: ${error instanceof Error ? error.message : 're-roll or reset it.'}`,
-          );
+        } else {
+          this.write('Stored starting wealth is invalid or incomplete.');
         }
-        this.write(
-          `Starting wealth: ${existing.formula} [${existing.roll.rolls.join(', ')}] × ${existing.multiplierGp} = ${existing.totalGp} gp.`,
-        );
+        this.write(`Starting wealth: ${wealthEvidenceSummary(existing)}`);
         const answer = await this.deps.io.prompt(
           'Enter to keep, reroll, reset, back, or quit> ',
         );
@@ -1228,9 +1255,8 @@ class Wizard {
       `Acquisition: ${d.selections.startingEquipmentMode ?? 'packages'}`,
     );
     if (d.selections.startingWealth !== undefined) {
-      const wealth = d.selections.startingWealth;
       this.write(
-        `Wealth: ${wealth.formula} [${wealth.roll.rolls.join(', ')}] × ${wealth.multiplierGp} = ${wealth.totalGp} gp`,
+        `Wealth: ${wealthEvidenceSummary(d.selections.startingWealth)}`,
       );
     }
     this.write(`Scores:    ${this.abilityLine()}`);

@@ -28,11 +28,10 @@ import { lookupRulesRecord, type RulesLookupResult } from '../rules/lookup.js';
 import { type ResolvedRulesStack, resolveRulesStack } from '../rules/stack.js';
 import type { RulesRecord, RulesRecordKind } from '../rules/types.js';
 import type { AbilityScoreName } from './creation.js';
-import type { BackgroundEquipmentGrant } from './srdCreationChoices.js';
 import {
-  SRD_5_1_ARTISAN_TOOLS,
-  SRD_5_1_MUSICAL_INSTRUMENTS,
-  SRD_5_1_TOOL_PROFICIENCY_CATEGORIES,
+  type BackgroundEquipmentGrant,
+  getAncestryCreationChoices,
+  SRD_5_1_VEHICLE_PROFICIENCIES,
 } from './srdCreationChoices.js';
 import type {
   StartingEquipmentGrant as ResolvedEquipmentGrant,
@@ -272,6 +271,7 @@ export interface ResolvedAncestryData {
   readonly abilityScoreIncreases?: readonly ResolvedAncestryAbilityScoreIncrease[];
   /** Structured ancestry language grants. */
   readonly languages?: readonly ResolvedLanguageGrant[];
+  readonly toolProficiencyChoices?: readonly ResolvedChoiceSpec[];
   /** Racial traits as `{ name, text }`. */
   readonly traits?: readonly ResolvedAncestryTrait[];
 }
@@ -1026,6 +1026,15 @@ function resolveAncestry(
       ),
       languages: parseLanguageGrants(raw.languages),
       traits: parseAncestryTraits(raw.traits),
+      toolProficiencyChoices: getAncestryCreationChoices(result.record.key, {
+        wizardCantrips: [],
+      })
+        ?.filter((choice) => choice.category === 'tool')
+        .map((choice) => ({
+          text: choice.prompt,
+          choose: choice.choose,
+          from: choice.from,
+        })),
     },
   };
 }
@@ -1281,9 +1290,7 @@ function listToolProficiencies(stack: ResolvedRulesStack): readonly string[] {
   for (const record of equipmentRecords(stack)) {
     add(record.name);
   }
-  for (const value of SRD_5_1_ARTISAN_TOOLS) add(value);
-  for (const value of SRD_5_1_MUSICAL_INSTRUMENTS) add(value);
-  for (const value of SRD_5_1_TOOL_PROFICIENCY_CATEGORIES) add(value);
+  for (const value of SRD_5_1_VEHICLE_PROFICIENCIES) add(value);
   for (const cls of listClasses(stack)) {
     for (const value of cls.toolProficiencies ?? []) add(value);
     for (const spec of cls.toolProficiencyChoices ?? []) {

@@ -47,6 +47,27 @@ describe('character creation draft engine', () => {
     expect(draft.derived.proficiencyBonus).toBe(2);
   });
 
+  it('rehydrates invalid persisted acquisition modes as non-finalizable state', () => {
+    const draft = {
+      ...fullValidDraft(),
+      selections: {
+        ...fullValidDraft().selections,
+        startingEquipmentMode: 'bogus',
+      },
+    } as CharacterDraft;
+    const rehydrated = engine.recomputeDraft(draft);
+    expect(rehydrated.selections.startingEquipmentMode).toBe('packages');
+    expect(rehydrated.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'startingEquipmentMode',
+          severity: 'error',
+        }),
+      ]),
+    );
+    expect(engine.isFinalizable(rehydrated)).toBe(false);
+  });
+
   it.each([
     ['classes', ['Fighter', 'Wizard']],
     ['classLevels', { 'class:fighter': 1, 'class:wizard': 1 }],
