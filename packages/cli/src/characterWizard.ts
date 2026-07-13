@@ -30,7 +30,6 @@ import {
   ABILITY_SCORE_NAMES,
   type AbilityScoreMethod,
   type AbilityScoreName,
-  assertSupportedCharacterBuild,
   type CharacterCreationDiagnostic,
   type CharacterCreationEngine,
   type CharacterDraft,
@@ -41,8 +40,10 @@ import {
   type RulesPackCharacterResolver,
   recommendClasses,
   rollAbilityScoreSet,
+  rollStartingWealth,
   summarizePointBuy,
   summarizeStandardArray,
+  validateStartingWealthResult,
 } from '@eshyra/core';
 import type { CharacterDraftStore } from './characterDraftStore.js';
 import type { CliIO } from './playTypes.js';
@@ -83,16 +84,46 @@ export async function runCharacterWizard(
   deps: CharacterWizardDeps,
   options: CharacterWizardOptions,
 ): Promise<CharacterWizardResult> {
-  if (options.resume !== undefined) {
-    assertSupportedCharacterBuild(options.resume, {
-      operation: 'character-creation draft resume',
-    });
-  }
-  const wizard = new Wizard(deps, options);
+  const wizard = new Wizard(
+    deps,
+    options,
+    options.resume === undefined
+      ? undefined
+      : deps.engine.recomputeDraft(options.resume),
+  );
   return wizard.run();
 }
 
 type Nav = 'advance' | 'back' | 'stay' | 'quit' | 'eof' | 'goto-choices';
+
+function isReplacementChoiceId(id: string): boolean {
+  return id.startsWith('proficiency-replacement.');
+}
+
+function wealthEvidenceShape(value: unknown): value is {
+  readonly formula: string;
+  readonly roll: { readonly rolls: readonly number[] };
+  readonly multiplierGp: number;
+  readonly totalGp: number;
+} {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  const roll = record.roll;
+  return (
+    typeof record.formula === 'string' &&
+    typeof record.multiplierGp === 'number' &&
+    typeof record.totalGp === 'number' &&
+    typeof roll === 'object' &&
+    roll !== null &&
+    Array.isArray((roll as Record<string, unknown>).rolls)
+  );
+}
+
+function wealthEvidenceSummary(value: unknown): string {
+  if (!wealthEvidenceShape(value))
+    return '(invalid or incomplete roll evidence)';
+  return `${value.formula} [${value.roll.rolls.join(', ')}] × ${value.multiplierGp} = ${value.totalGp} gp`;
+}
 
 /** Per-step configuration for an enumerable, resolver-backed choice. */
 interface ChoiceConfig {
@@ -112,13 +143,13 @@ class Wizard {
   private draft: CharacterDraft;
   private dirty: boolean;
   private readonly steps: readonly { id: string; label: string }[];
-
   constructor(
     private readonly deps: CharacterWizardDeps,
     private readonly options: CharacterWizardOptions,
+    resume?: CharacterDraft,
   ) {
     this.draft =
-      options.resume ??
+      resume ??
       deps.engine.createDraft({ id: options.draftId, mode: options.mode });
     // A resumed draft is in sync with disk; a fresh one has nothing to lose yet.
     this.dirty = false;
@@ -457,6 +488,12 @@ class Wizard {
         );
         return 'goto-choices';
       }
+      if (!this.deps.engine.isFinalizable(this.draft)) {
+        this.write(
+          'Draft is not finalizable yet; fix the errors shown in review.',
+        );
+        return 'stay';
+      }
       return 'advance';
     }
     this.write(
@@ -642,22 +679,190 @@ class Wizard {
   private async runClassChoices(): Promise<Nav> {
     this.write('');
     this.write('== Class choices ==');
-    const groups = this.deps.engine.mechanicalChoices(this.draft);
-    if (groups.length === 0) {
+    const acquisition = await this.runStartingAcquisition();
+    if (acquisition !== 'advance') return acquisition;
+    const initial = this.deps.engine.mechanicalChoices(this.draft);
+    if (initial.length === 0) {
       this.write('No additional level-1 choices for this character.');
       return 'advance';
     }
-    // Walk every group — including already-satisfied ones — so a returning or
-    // resuming player can review and correct a prior pick (a satisfied group
-    // opens in edit mode: keep or `clear`). Groups are addressed by id so the
-    // walk is stable across edits.
-    for (const group of groups) {
-      const nav = await this.runChoiceGroup(group.choice);
+    const ordinaryIds = initial
+      .filter((entry) => !isReplacementChoiceId(entry.choice.id))
+      .map((entry) => entry.choice.id);
+    for (const id of ordinaryIds) {
+      if (
+        !this.deps.engine
+          .mechanicalChoices(this.draft)
+          .some((entry) => entry.choice.id === id)
+      )
+        continue;
+      const nav = await this.runChoiceGroup(id);
       if (nav !== 'advance') {
-        return nav; // back / quit / eof bubble up
+        return nav;
       }
     }
+    for (;;) {
+      const replacements = this.deps.engine
+        .mechanicalChoices(this.draft)
+        .filter((entry) => isReplacementChoiceId(entry.choice.id));
+      const pending = replacements.find((entry) => !entry.satisfied);
+      if (pending === undefined) break;
+      const nav = await this.runChoiceGroup(pending.choice.id);
+      if (nav !== 'advance') return nav;
+    }
     return 'advance';
+  }
+
+  private async runStartingAcquisition(): Promise<Nav> {
+    for (;;) {
+      const mode = await this.chooseStartingEquipmentMode();
+      if (mode === 'stay') continue;
+      if (mode !== 'advance') return mode;
+      if (this.draft.selections.startingEquipmentMode !== 'starting-wealth') {
+        return 'advance';
+      }
+      const wealth = await this.ensureStartingWealth();
+      if (wealth === 'stay') continue;
+      if (wealth !== 'advance') return wealth;
+      return 'advance';
+    }
+  }
+
+  private async chooseStartingEquipmentMode(): Promise<Nav> {
+    const current = this.draft.selections.startingEquipmentMode ?? 'packages';
+    this.write(
+      `Starting acquisition: ${current}. Enter to keep, 1/packages, or 2/wealth:`,
+    );
+    const answer = await this.deps.io.prompt('Acquisition> ');
+    if (answer === undefined) return 'eof';
+    const command = parseCommand(answer);
+    if (command.name === '?' || command.name === 'help') {
+      this.write(
+        'Choose packages or wealth; commands: review, save, back, quit.',
+      );
+      return 'stay';
+    }
+    if (command.name === 'review') {
+      this.printReview();
+      return 'stay';
+    }
+    if (command.name === 'save') {
+      this.deps.store.save(this.draft);
+      this.dirty = false;
+      this.write('Draft saved.');
+      return 'stay';
+    }
+    if (command.name === 'back') return 'back';
+    if (command.name === 'quit' || command.name === 'exit')
+      return this.confirmQuit();
+    const value = answer.trim().toLowerCase();
+    if (value.length === 0) return 'advance';
+    const mode =
+      value === '1' || value === 'packages' || value === 'package'
+        ? 'packages'
+        : value === '2' || value === 'wealth' || value === 'starting-wealth'
+          ? 'starting-wealth'
+          : undefined;
+    if (mode === undefined) {
+      this.write('Invalid acquisition. Choose 1/packages or 2/wealth.');
+      return 'stay';
+    }
+    this.draft = this.deps.engine.setStartingEquipmentMode(this.draft, mode);
+    this.dirty = true;
+    return 'advance';
+  }
+
+  private async ensureStartingWealth(): Promise<Nav> {
+    const classKey = this.resolvedClassKey();
+    if (classKey === undefined) return 'back';
+    for (;;) {
+      const existing = this.draft.selections.startingWealth;
+      if (existing !== undefined) {
+        let valid = wealthEvidenceShape(existing);
+        if (valid) {
+          try {
+            validateStartingWealthResult(existing, this.deps.resolver);
+            if (existing.classKey !== classKey) {
+              throw new Error(
+                'starting-wealth result does not match the selected class',
+              );
+            }
+          } catch (error) {
+            valid = false;
+            this.write(
+              `Stored starting wealth is invalid: ${error instanceof Error ? error.message : 're-roll or reset it.'}`,
+            );
+          }
+        } else {
+          this.write('Stored starting wealth is invalid or incomplete.');
+        }
+        this.write(`Starting wealth: ${wealthEvidenceSummary(existing)}`);
+        const answer = await this.deps.io.prompt(
+          'Enter to keep, reroll, reset, back, or quit> ',
+        );
+        if (answer === undefined) return 'eof';
+        const command = answer.trim().toLowerCase();
+        if (command.length === 0) {
+          if (valid) return 'advance';
+          this.write(
+            'Invalid wealth evidence must be rerolled, reset, or changed to packages.',
+          );
+          continue;
+        }
+        if (command === 'back') return 'back';
+        if (command === 'quit' || command === 'exit') return this.confirmQuit();
+        if (command === 'help' || command === '?') {
+          this.write(
+            'Commands: review, save, back, quit; local commands: reroll, reset.',
+          );
+          continue;
+        }
+        if (command === 'review') {
+          this.printReview();
+          continue;
+        }
+        if (command === 'save') {
+          this.deps.store.save(this.draft);
+          this.dirty = false;
+          this.write('Draft saved.');
+          continue;
+        }
+        if (command === 'reset') {
+          this.draft = this.deps.engine.setStartingWealth(
+            this.draft,
+            undefined,
+          );
+          this.dirty = true;
+          return 'stay';
+        }
+        if (command !== 'reroll') {
+          this.write(
+            'Invalid wealth command. Enter, reroll, reset, back, or quit.',
+          );
+          continue;
+        }
+      }
+      try {
+        const result = rollStartingWealth(
+          classKey,
+          this.deps.rng,
+          this.deps.resolver,
+        );
+        this.draft = this.deps.engine.setStartingWealth(this.draft, result);
+        this.dirty = true;
+        this.write(
+          `Starting wealth: ${result.formula} [${result.roll.rolls.join(', ')}] × ${result.multiplierGp} = ${result.totalGp} gp.`,
+        );
+        return 'advance';
+      } catch (error) {
+        this.write(
+          error instanceof Error
+            ? error.message
+            : 'Starting wealth is unavailable.',
+        );
+        return 'stay';
+      }
+    }
   }
 
   /**
@@ -669,30 +874,33 @@ class Wizard {
    * A group being filled for the first time auto-advances once complete.
    * Selections are stored through the engine so they persist and resume.
    */
-  private async runChoiceGroup(choice: {
-    id: string;
-    label: string;
-    choose?: number;
-    from?: readonly string[];
-  }): Promise<Nav> {
-    const need = choice.choose ?? 0;
-    const options = choice.from ?? [];
-    const startedSatisfied =
-      need > 0 &&
-      (this.draft.selections.choices?.[choice.id] ?? []).length >= need;
+  private async runChoiceGroup(choiceId: string): Promise<Nav> {
+    const initial = this.deps.engine
+      .mechanicalChoices(this.draft)
+      .find((entry) => entry.choice.id === choiceId);
+    if (initial === undefined) return 'advance';
+    const startedSatisfied = initial.satisfied;
     // First-pass fills auto-advance for low friction; a group opened already
     // satisfied waits for an explicit keep so it can be edited.
     let autoAdvance = !startedSatisfied;
     this.write('');
-    this.write(choice.label);
+    this.write(initial.choice.label);
     for (;;) {
-      const selected = [...(this.draft.selections.choices?.[choice.id] ?? [])];
-      const remaining = need - selected.length;
-      if (remaining <= 0 && autoAdvance) {
+      const state = this.deps.engine
+        .mechanicalChoices(this.draft)
+        .find((entry) => entry.choice.id === choiceId);
+      if (state === undefined) return 'advance';
+      const choice = state.choice;
+      const need = choice.choose ?? 0;
+      const options = choice.from ?? [];
+      const selected = [...state.selected];
+      const complete = state.satisfied;
+      const remaining = complete ? 0 : Math.max(need - selected.length, 1);
+      if (complete && autoAdvance) {
         this.write(`Selected: ${selected.join(', ')}.`);
         return 'advance';
       }
-      if (remaining <= 0) {
+      if (complete) {
         this.write(
           `Selected: ${selected.join(', ')} — Enter to keep, or \`clear\` to choose again.`,
         );
@@ -739,7 +947,7 @@ class Wizard {
         continue;
       }
       if (input.trim().length === 0) {
-        if (remaining <= 0) {
+        if (complete) {
           this.write(`Selected: ${selected.join(', ')}.`);
           return 'advance'; // keep the existing selection
         }
@@ -751,7 +959,7 @@ class Wizard {
         this.write(`"${input.trim()}" is not an option here.`);
         continue;
       }
-      if (remaining <= 0) {
+      if (selected.length >= need) {
         // Full and in edit mode. A single-pick group replaces; a multi-pick
         // group must be cleared first to avoid ambiguity.
         if (need === 1) {
@@ -984,6 +1192,13 @@ class Wizard {
     return result.ok ? result.record.name : undefined;
   }
 
+  private resolvedClassKey(): string | undefined {
+    const selected = this.draft.selections.className;
+    if (selected === undefined) return undefined;
+    const result = this.deps.resolver.resolveClass(selected);
+    return result.ok ? result.record.key : undefined;
+  }
+
   private printRequiredChoices(): void {
     const className = this.draft.selections.className;
     if (className === undefined) {
@@ -1036,6 +1251,14 @@ class Wizard {
     this.write(
       `Background:${d.selections.background ? ` ${d.selections.background}` : ' (none)'}`,
     );
+    this.write(
+      `Acquisition: ${d.selections.startingEquipmentMode ?? 'packages'}`,
+    );
+    if (d.selections.startingWealth !== undefined) {
+      this.write(
+        `Wealth: ${wealthEvidenceSummary(d.selections.startingWealth)}`,
+      );
+    }
     this.write(`Scores:    ${this.abilityLine()}`);
     if (d.derived.maxHitPoints !== undefined) {
       this.write(`Max HP:    ${d.derived.maxHitPoints}`);

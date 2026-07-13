@@ -142,6 +142,8 @@ export type {
   CharacterCreationDiagnostic,
   CharacterCreationEngine,
   CharacterDraft,
+  StartingEquipmentMode,
+  StartingWealthResult,
 } from './character/characterDraft.js';
 export { getDnd5eCharacterCreationEngine } from './character/characterDraft.js';
 // Cross-campaign character registry (ADR 0012).
@@ -214,13 +216,26 @@ export type {
 } from './character/guidedLevelUpFlow.js';
 export { runGuidedLevelUp } from './character/guidedLevelUpFlow.js';
 export type {
+  AppliedAbilityScoreIncrease,
   LevelUpChangeSet,
   LevelUpChoiceSelections,
+  LevelUpHitPointChoice,
   LevelUpRequiredChoice,
 } from './character/levelUpEngine.js';
 export { enumerateLevel1RequiredChoices } from './character/requiredChoices.js';
 export type { RulesPackCharacterResolver } from './character/rulesPackResolver.js';
 export { getBundledDnd5eCharacterResolver } from './character/rulesPackResolver.js';
+export type {
+  DerivedModifierContribution,
+  DerivedSpellcastingValues,
+  DeriveSpellcastingValuesInput,
+} from './character/spellcastingDerivation.js';
+export { deriveSpellcastingValues } from './character/spellcastingDerivation.js';
+export {
+  resolveStartingWealth,
+  rollStartingWealth,
+  validateStartingWealthResult,
+} from './character/srdStartingWealth.js';
 export type {
   AdapterFamily as ConfigAdapterFamily,
   EshyraConfig,
@@ -398,6 +413,7 @@ export {
   formatCampaignAdventureAudit,
 } from './orchestrator/adventureAudit.js';
 export type { RecentSceneEvidence } from './orchestrator/contextAssembler.js';
+export { rollDice } from './orchestrator/dice.js';
 export type {
   ExecutedToolCall,
   RunTurnDeps,

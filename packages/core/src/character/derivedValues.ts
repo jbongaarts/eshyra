@@ -43,6 +43,7 @@ import {
   abilityModifier,
 } from './abilities.js';
 import type { AbilityScoreName } from './creation.js';
+import { deriveSpellcastingValues } from './spellcastingDerivation.js';
 
 /** Level-1 proficiency bonus is +2 for every D&D 5e class. */
 export const LEVEL_1_PROFICIENCY_BONUS = 2;
@@ -173,13 +174,12 @@ export function deriveLevel1Values(
     input.spellcastingAbility !== undefined
       ? abilityModifiers[input.spellcastingAbility]
       : undefined;
-  const spellSaveDc =
+  const spellcasting =
     spellcastingModifier !== undefined
-      ? 8 + LEVEL_1_PROFICIENCY_BONUS + spellcastingModifier
-      : undefined;
-  const spellAttackModifier =
-    spellcastingModifier !== undefined
-      ? LEVEL_1_PROFICIENCY_BONUS + spellcastingModifier
+      ? deriveSpellcastingValues({
+          proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
+          abilityModifier: spellcastingModifier,
+        })
       : undefined;
 
   return {
@@ -188,8 +188,12 @@ export function deriveLevel1Values(
     finalAbilityScores,
     savingThrows,
     ...(maxHitPoints !== undefined ? { maxHitPoints } : {}),
-    ...(spellSaveDc !== undefined ? { spellSaveDc } : {}),
-    ...(spellAttackModifier !== undefined ? { spellAttackModifier } : {}),
+    ...(spellcasting !== undefined
+      ? {
+          spellSaveDc: spellcasting.spellSaveDc,
+          spellAttackModifier: spellcasting.spellAttackModifier,
+        }
+      : {}),
   };
 }
 

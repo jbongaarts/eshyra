@@ -9,7 +9,7 @@ export const DEFAULT_TEST_SESSION_STARTED_AT = '2026-05-20T09:00:00.000Z';
 /**
  * Default valid ability scores used to satisfy the live-state shape validator
  * when tests create a session but do not set up a full character. Every key is
- * present and every value is an integer in [0, 30].
+ * present and every value is an integer in [1, 30].
  */
 export const DEFAULT_TEST_ABILITY_SCORES = {
   strength: 10,

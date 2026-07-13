@@ -47,6 +47,10 @@ import {
   LEVEL_1_PROFICIENCY_BONUS,
 } from './derivedValues.js';
 import {
+  normalizeProficiency,
+  proficiencyReplacementId,
+} from './proficiency.js';
+import {
   enumerateLevel1RequiredChoices,
   type Level1RequiredChoice,
   type Level1RequiredChoiceKind,
@@ -58,6 +62,23 @@ import {
   type ResolvedClassData,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import { SRD_5_1_SKILLS } from './srdCreationChoices.js';
+import {
+  type StartingWealthResult,
+  validateStartingWealthResult,
+} from './srdStartingWealth.js';
+
+export type StartingEquipmentMode = 'packages' | 'starting-wealth';
+
+export function parseStartingEquipmentMode(
+  value: unknown,
+): StartingEquipmentMode | undefined {
+  return value === 'packages' || value === 'starting-wealth'
+    ? value
+    : undefined;
+}
+
+export type { StartingWealthResult } from './srdStartingWealth.js';
 
 /** Severity of an incremental draft diagnostic. */
 export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
@@ -118,6 +139,8 @@ export interface Dnd5eDraftSelections {
    * equipment/proficiency flow (eshyra-b69j.13).
    */
   readonly choices?: Readonly<Record<string, readonly string[]>>;
+  readonly startingEquipmentMode?: StartingEquipmentMode;
+  readonly startingWealth?: StartingWealthResult;
 }
 
 /**
@@ -189,6 +212,8 @@ const MECHANICAL_CHOICE_KINDS: ReadonlySet<Level1RequiredChoiceKind> = new Set([
  */
 export interface CharacterCreationEngine {
   createDraft(input: CreateDraftInput): CharacterDraft;
+  /** Rehydrate persisted state against the active resolver and engine rules. */
+  recomputeDraft(draft: CharacterDraft): CharacterDraft;
   setIdentity(
     draft: CharacterDraft,
     patch: Partial<CharacterDraftIdentity>,
@@ -225,6 +250,14 @@ export interface CharacterCreationEngine {
     draft: CharacterDraft,
     choiceId: string,
     values: readonly string[] | undefined,
+  ): CharacterDraft;
+  setStartingEquipmentMode(
+    draft: CharacterDraft,
+    mode: StartingEquipmentMode,
+  ): CharacterDraft;
+  setStartingWealth(
+    draft: CharacterDraft,
+    result: StartingWealthResult | undefined,
   ): CharacterDraft;
   /**
    * The structured level-1 mechanical choices (skills, tools, equipment,
@@ -332,7 +365,23 @@ export function createCharacterCreationEngine(
     });
     const diagnostics: CharacterCreationDiagnostic[] = [];
     const stale: string[] = [];
-    const { selections } = draft;
+    const rawMode = (draft.selections as Record<string, unknown>)
+      .startingEquipmentMode;
+    const parsedMode =
+      rawMode === undefined ? 'packages' : parseStartingEquipmentMode(rawMode);
+    if (parsedMode === undefined) {
+      diagnostics.push({
+        field: 'startingEquipmentMode',
+        severity: 'error',
+        message:
+          'starting acquisition mode must be packages or starting-wealth',
+        value: rawMode,
+      });
+    }
+    const selections = {
+      ...draft.selections,
+      startingEquipmentMode: parsedMode ?? 'packages',
+    };
 
     const classRecord = resolveClass(selections.className);
     if (selections.className !== undefined && classRecord === undefined) {
@@ -371,8 +420,64 @@ export function createCharacterCreationEngine(
     );
 
     validateSpells(selections, classRecord, diagnostics, stale);
+    validateStartingEquipment(selections, diagnostics);
 
-    return { ...draft, derived, diagnostics, stale };
+    const next = { ...draft, derived, diagnostics, stale };
+    const generatedReplacementIds = new Set(
+      mechanicalChoices(next)
+        .filter((entry) => isReplacementChoiceId(entry.choice.id))
+        .map((entry) => entry.choice.id),
+    );
+    const choices = Object.fromEntries(
+      Object.entries(selections.choices ?? {}).filter(
+        ([id]) => !isReplacementChoiceId(id) || generatedReplacementIds.has(id),
+      ),
+    );
+    return { ...next, selections: { ...selections, choices } };
+  }
+
+  function validateStartingEquipment(
+    selections: Dnd5eDraftSelections,
+    diagnostics: CharacterCreationDiagnostic[],
+  ): void {
+    const mode = selections.startingEquipmentMode ?? 'packages';
+    if (mode === 'starting-wealth') {
+      if (selections.startingWealth === undefined) {
+        diagnostics.push({
+          field: 'startingWealth',
+          severity: 'error',
+          message: 'starting-wealth mode requires one roll',
+        });
+      } else {
+        try {
+          validateStartingWealthResult(selections.startingWealth, resolver);
+          const classRecord = resolveClass(selections.className);
+          if (
+            classRecord !== undefined &&
+            selections.startingWealth.classKey !== classRecord.key
+          ) {
+            throw new Error(
+              'starting-wealth result does not match selected class',
+            );
+          }
+        } catch (error) {
+          diagnostics.push({
+            field: 'startingWealth',
+            severity: 'error',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'invalid starting-wealth result',
+          });
+        }
+      }
+    } else if (selections.startingWealth !== undefined) {
+      diagnostics.push({
+        field: 'startingWealth',
+        severity: 'error',
+        message: 'starting-wealth evidence cannot be present in package mode',
+      });
+    }
   }
 
   function resolveClass(value: string | undefined) {
@@ -427,16 +532,102 @@ export function createCharacterCreationEngine(
       abilityModifiers: draft.derived.abilityModifiers,
     });
     const stored = draft.selections.choices ?? {};
-    return all
-      .filter((choice) => MECHANICAL_CHOICE_KINDS.has(choice.kind))
-      .map((choice) => {
-        const selected = stored[choice.id] ?? [];
-        return {
-          choice,
-          selected,
-          satisfied: isChoiceSatisfied(choice, selected),
+    const mechanical = all.filter((choice) =>
+      MECHANICAL_CHOICE_KINDS.has(choice.kind),
+    );
+    const choices = (
+      draft.selections.startingEquipmentMode === 'starting-wealth'
+        ? mechanical.filter((choice) => choice.kind !== 'equipment')
+        : mechanical
+    ).map((choice) => ({
+      choice,
+      selected: stored[choice.id] ?? [],
+      satisfied: isChoiceSatisfied(choice, stored[choice.id] ?? []),
+    }));
+    return appendProficiencyReplacements(
+      choices,
+      classRecord,
+      resolveBackground(draft.selections.background),
+      stored,
+      resolver,
+    );
+  }
+
+  function appendProficiencyReplacements(
+    choices: readonly MechanicalChoiceState[],
+    classRecord: ResolvedClassData,
+    background: ResolvedBackgroundData | undefined,
+    stored: Readonly<Record<string, readonly string[]>>,
+    resolver: RulesPackCharacterResolver,
+  ): readonly MechanicalChoiceState[] {
+    const result = [...choices];
+    for (const kind of ['skills', 'tools'] as const) {
+      const ordinaryEntries = result.filter(
+        (entry) => entry.choice.kind === kind,
+      );
+      if (ordinaryEntries.some((entry) => !entry.satisfied)) continue;
+      const grants = [
+        ...(kind === 'skills' ? (background?.skillProficiencies ?? []) : []),
+        ...(kind === 'tools' ? (classRecord.toolProficiencies ?? []) : []),
+        ...(kind === 'tools' ? (background?.toolProficiencies ?? []) : []),
+        ...ordinaryEntries.flatMap((entry) => entry.selected),
+      ];
+      const ordinaryKeys = new Set(grants.map(normalizeProficiency));
+      const occurrences = new Map<string, number>();
+      const duplicates: { key: string; label: string; occurrence: number }[] =
+        [];
+      for (const grant of grants) {
+        const key = normalizeProficiency(grant);
+        const occurrence = (occurrences.get(key) ?? 0) + 1;
+        occurrences.set(key, occurrence);
+        if (occurrence > 1)
+          duplicates.push({ key, label: grant, occurrence: occurrence - 1 });
+      }
+      const domain = normalizeDomain(
+        kind === 'skills' ? SRD_5_1_SKILLS : resolver.listToolProficiencies(),
+      );
+      const validReplacements = new Set<string>();
+      for (const duplicate of duplicates) {
+        const id = proficiencyReplacementId(
+          kind,
+          duplicate.label,
+          duplicate.occurrence,
+        );
+        const from = domain.filter(
+          (value) =>
+            !ordinaryKeys.has(normalizeProficiency(value)) &&
+            !validReplacements.has(normalizeProficiency(value)),
+        );
+        const selected = stored[id] ?? [];
+        const choice = {
+          id,
+          kind,
+          source: 'background' as const,
+          status: 'structured' as const,
+          label: `Replace duplicate ${kind.slice(0, -1)} proficiency (${duplicate.label})`,
+          choose: 1,
+          from,
         };
-      });
+        const satisfied = isChoiceSatisfied(choice, selected);
+        result.push({ choice, selected, satisfied });
+        if (satisfied) validReplacements.add(normalizeProficiency(selected[0]));
+      }
+    }
+    return result;
+  }
+
+  function normalizeDomain(values: readonly string[]): readonly string[] {
+    const seen = new Set<string>();
+    return values.filter((value) => {
+      const key = normalizeProficiency(value);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function isReplacementChoiceId(id: string): boolean {
+    return id.startsWith('proficiency-replacement.');
   }
 
   /**
@@ -757,7 +948,10 @@ export function createCharacterCreationEngine(
         creationMode: input.mode,
         level: input.level ?? DEFAULT_LEVEL,
         identity: { ...input.identity },
-        selections: { ...input.selections },
+        selections: {
+          startingEquipmentMode: 'packages',
+          ...input.selections,
+        },
         derived: {
           proficiencyBonus: LEVEL_1_PROFICIENCY_BONUS,
           abilityModifiers: {},
@@ -769,6 +963,20 @@ export function createCharacterCreationEngine(
       });
     },
 
+    recomputeDraft(draft): CharacterDraft {
+      assertSupportedCharacterBuild(draft, {
+        operation: 'character-creation draft resume',
+        resolver,
+      });
+      return recompute({
+        ...draft,
+        selections: {
+          startingEquipmentMode: 'packages',
+          ...draft.selections,
+        },
+      });
+    },
+
     setIdentity(draft, patch): CharacterDraft {
       return recompute({
         ...draft,
@@ -777,7 +985,12 @@ export function createCharacterCreationEngine(
     },
 
     setClass(draft, value): CharacterDraft {
-      return withSelections(draft, { className: value });
+      return withSelections(draft, {
+        className: value,
+        ...(value !== draft.selections.className
+          ? { startingWealth: undefined }
+          : {}),
+      });
     },
 
     setAncestry(draft, value): CharacterDraft {
@@ -820,6 +1033,24 @@ export function createCharacterCreationEngine(
         choices[choiceId] = [...values];
       }
       return withSelections(draft, { choices });
+    },
+
+    setStartingEquipmentMode(draft, mode): CharacterDraft {
+      const choices = { ...(draft.selections.choices ?? {}) };
+      if (mode === 'starting-wealth') {
+        for (const id of Object.keys(choices)) {
+          if (id.startsWith('class.equipment.')) delete choices[id];
+        }
+      }
+      return withSelections(draft, {
+        startingEquipmentMode: mode,
+        choices,
+        ...(mode === 'packages' ? { startingWealth: undefined } : {}),
+      });
+    },
+
+    setStartingWealth(draft, result): CharacterDraft {
+      return withSelections(draft, { startingWealth: result });
     },
 
     mechanicalChoices,

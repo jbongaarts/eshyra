@@ -85,6 +85,7 @@ describe('character wizard — concept-first happy path', () => {
       'wis 10',
       'cha 10',
       'done', // ability scores complete
+      '', // keep package acquisition mode
       // class-choices: Wizard skills (choose 2) + three equipment groups.
       'Arcana',
       'Investigation',
@@ -123,6 +124,47 @@ describe('character wizard — concept-first happy path', () => {
     expect(store.saved.has('mira')).toBe(true);
     // The exact mode label is shown.
     expect(text(lines)).toContain('Concept-first — I know what I want to play');
+  });
+});
+
+describe('character wizard — starting acquisition mode', () => {
+  it('reaches starting wealth, rolls once, and skips only equipment choices', async () => {
+    const { deps: d, lines } = deps([
+      'Mira',
+      'Fighter',
+      'Human',
+      '',
+      'point_buy',
+      'str 15',
+      'dex 14',
+      'con 13',
+      'int 12',
+      'wis 10',
+      'cha 8',
+      'done',
+      '2',
+      'Athletics',
+      'Perception',
+      'Dwarvish',
+      '',
+      '',
+      '',
+      '',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'wealth',
+    });
+    expect(result.outcome).toBe('completed');
+    expect(result.draft.selections.startingEquipmentMode).toBe(
+      'starting-wealth',
+    );
+    expect(result.draft.selections.startingWealth?.roll.rolls).toHaveLength(5);
+    expect(
+      result.draft.selections.choices?.['class.equipment.0'],
+    ).toBeUndefined();
+    expect(text(lines)).toContain('Starting wealth: 5d4');
+    expect(text(lines)).toContain('Acquisition: starting-wealth');
   });
 });
 
@@ -310,6 +352,7 @@ describe('character wizard — ability-first flow', () => {
       'High Elf', // ancestry
       '', // background skip
       // class-choices: skills (choose 2) + three equipment groups.
+      '', // keep package acquisition mode
       'Arcana',
       'Investigation',
       '1', // a quarterstaff
@@ -403,6 +446,7 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     'wis 10',
     'cha 8',
     'done',
+    '', // keep package acquisition mode
   ] as const;
 
   it('collects a skill choice group and an equipment choice group', async () => {
@@ -549,6 +593,7 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
       '', // background keep
       // ability-scores already complete → done
       'done',
+      '', // keep package acquisition mode
       // class choices (all satisfied → edit mode): skills keep, equipment.0 fix
       '', // skills keep
       'clear', // equipment.0 → clear

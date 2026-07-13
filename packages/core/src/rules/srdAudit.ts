@@ -291,6 +291,7 @@ export const SRD_5_1_STANDALONE_TABLES: ReadonlySet<string> = new Set([
   // CR -> proficiency bonus monster-statistics reference (p. 256). Consulted by
   // both rule:monsters-saving-throws and rule:monsters-skills; no single owner.
   'table:proficiency-bonus-by-challenge-rating',
+  'table:starting-wealth-by-class',
 ]);
 
 // ---------------------------------------------------------------------------

@@ -574,6 +574,7 @@ describe('runPlay', () => {
       'mira',
       'gain xp',
       '/levelup',
+      'fixed',
       'y',
       '/quit',
     ]);

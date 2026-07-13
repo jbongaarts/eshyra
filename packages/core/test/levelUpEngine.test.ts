@@ -56,6 +56,8 @@ interface SheetOverrides {
   maxHitPoints?: number;
   proficiencyBonus?: number;
   modifiers?: Partial<Record<(typeof ABILITIES)[number], number>>;
+  finalScores?: Partial<Record<(typeof ABILITIES)[number], number>>;
+  proficientSaves?: readonly (typeof ABILITIES)[number][];
   spellSaveDc?: number;
   spellAttackModifier?: number;
   subclass?: { readonly key: string; readonly name: string };
@@ -70,8 +72,16 @@ function buildSheet(overrides: SheetOverrides = {}): CharacterSheet {
   const savingThrows = {} as CharacterSheet['savingThrows'];
   for (const name of ABILITIES) {
     const modifier = modifiers[name] ?? 0;
-    abilityScores[name] = { base: 10, final: 10 + modifier * 2, modifier };
-    savingThrows[name] = { modifier, proficient: false };
+    abilityScores[name] = {
+      base: 10,
+      final: overrides.finalScores?.[name] ?? 10 + modifier * 2,
+      modifier,
+    };
+    const proficient = overrides.proficientSaves?.includes(name) ?? false;
+    savingThrows[name] = {
+      modifier: modifier + (proficient ? (overrides.proficiencyBonus ?? 2) : 0),
+      proficient,
+    };
   }
   return {
     schemaVersion: 1,
@@ -132,6 +142,32 @@ function seedLiveHp(
 }
 
 describe('applyLevelUp — martial (Fighter)', () => {
+  it('raises proficient saves at the level-4→5 proficiency boundary', () => {
+    const db = freshDbWithSession();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({
+        level: 4,
+        proficiencyBonus: 2,
+        maxHitPoints: 30,
+        modifiers: { strength: 3, constitution: 2, dexterity: 1 },
+        proficientSaves: ['strength', 'constitution'],
+      }),
+    );
+    seedLiveHp(db, 30, 30);
+    const result = applyLevelUp(db, { store, ...APPLY });
+    expect(result.sheet.proficiencyBonus).toBe(3);
+    expect(result.sheet.savingThrows.strength.modifier).toBe(6);
+    expect(result.sheet.savingThrows.constitution.modifier).toBe(5);
+    expect(result.sheet.savingThrows.dexterity.modifier).toBe(1);
+    expect(result.changeSet.savingThrows?.strength.to.modifier).toBe(6);
+    expect(listProgressionEvents(db)[0]?.appliedChanges).toMatchObject({
+      proficiencyBonus: { from: 2, to: 3 },
+    });
+    db.close();
+  });
+
   it('applies a level-1→2 step with exact pack-derived deltas', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
@@ -207,6 +243,86 @@ describe('applyLevelUp — martial (Fighter)', () => {
       proficiencyBonus: { from: 2, to: 3 },
     });
     expect(result.event.id).toBe(events[0].id);
+    db.close();
+  });
+});
+
+describe('applyLevelUp — ASI canonical recomputation', () => {
+  it('updates caster scores, saves, spellcasting, live state, HP, and ledger atomically', () => {
+    const db = freshDbWithSession();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({
+        classKey: 'class:cleric',
+        className: 'Cleric',
+        level: 3,
+        maxHitPoints: 20,
+        modifiers: { wisdom: 3, constitution: 0 },
+        finalScores: { wisdom: 17, constitution: 11 },
+        spellSaveDc: 13,
+        spellAttackModifier: 5,
+        proficientSaves: ['wisdom'],
+      }),
+    );
+    seedLiveHp(db, 20, 15);
+    const baseResolver = getBundledDnd5eCharacterResolver();
+    const resolver = {
+      ...baseResolver,
+      resolveClassLevel: (name: string, level: number) => {
+        const resolved = baseResolver.resolveClassLevel(name, level);
+        if (resolved.ok && name === 'class:cleric' && level === 4) {
+          return {
+            ...resolved,
+            record: { ...resolved.record, spellcasting: undefined },
+          };
+        }
+        return resolved;
+      },
+    };
+    const result = applyLevelUp(db, {
+      store,
+      resolver,
+      choices: {
+        'level.4.ability-score-improvement': ['Wisdom', 'Constitution'],
+      },
+      ...APPLY,
+    });
+    expect(result.changeSet.abilityScoreIncreases).toHaveLength(2);
+    expect(result.changeSet.hitPoints).toMatchObject({
+      increment: 6,
+      retroactiveConstitutionAdjustment: 3,
+      maxHitPoints: { from: 20, to: 29 },
+    });
+    expect(result.sheet.abilityScores.wisdom).toMatchObject({
+      final: 18,
+      modifier: 4,
+    });
+    expect(result.sheet.abilityScores.constitution).toMatchObject({
+      final: 12,
+      modifier: 1,
+    });
+    expect(result.sheet.spellSaveDc).toBe(14);
+    expect(result.sheet.spellAttackModifier).toBe(6);
+    expect(result.sheet.savingThrows.wisdom.modifier).toBe(6);
+    const row = db
+      .prepare(
+        'SELECT level, hp_max, hp_current, ability_scores_json FROM character WHERE id = ?',
+      )
+      .get('pc-1') as {
+      level: number;
+      hp_max: number;
+      hp_current: number;
+      ability_scores_json: string;
+    };
+    expect(row.level).toBe(4);
+    expect(row.hp_max).toBe(29);
+    expect(row.hp_current).toBe(24);
+    expect(JSON.parse(row.ability_scores_json)).toMatchObject({
+      wisdom: 18,
+      constitution: 12,
+    });
+    expect(listProgressionEvents(db)).toHaveLength(1);
     db.close();
   });
 });

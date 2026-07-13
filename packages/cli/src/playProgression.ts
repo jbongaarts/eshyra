@@ -7,6 +7,7 @@ import {
   type LevelUpChoiceSelections,
   type LevelUpRequiredChoice,
   listProgressionEvents,
+  rollDice,
   runGuidedLevelUp,
   UnsupportedCharacterBuildError,
 } from '@eshyra/core';
@@ -44,7 +45,7 @@ export function showProgression(io: CliIO, db: Db): void {
 }
 
 export async function runLevelUpCommand(
-  deps: Pick<PlayDeps, 'characterResolver' | 'io' | 'now'>,
+  deps: Pick<PlayDeps, 'characterResolver' | 'characterRng' | 'io' | 'now'>,
   db: Db,
   sessionId: string,
 ): Promise<void> {
@@ -92,7 +93,11 @@ export async function runLevelUpCommand(
     choices = collected;
   }
 
-  const preview = runGuidedLevelUp(db, { ...base, choices });
+  const preview = runGuidedLevelUp(db, {
+    ...base,
+    choices,
+    hitPointChoice: { method: 'fixed-average' },
+  });
   if (preview.outcome === 'needs-choices') {
     printMissingChoices(deps.io, preview.requiredChoices);
     return;
@@ -110,7 +115,36 @@ export async function runLevelUpCommand(
     return;
   }
 
-  printPreview(deps.io, preview.changeSet);
+  let hitPointChoice: import('@eshyra/core').LevelUpHitPointChoice = {
+    method: 'fixed-average',
+  };
+  for (;;) {
+    const hpAnswer = await deps.io.prompt(
+      'Hit points: fixed average or roll? [fixed] ',
+    );
+    if (hpAnswer === undefined || /^(?:cancel|back)$/i.test(hpAnswer.trim())) {
+      deps.io.write('Level-up cancelled.');
+      return;
+    }
+    if (/^(?:roll|rolled)$/i.test(hpAnswer.trim())) {
+      const hitDie = preview.changeSet.hitPoints.hitDie;
+      const roll = rollDice(`1d${hitDie}`, deps.characterRng);
+      hitPointChoice = { method: 'rolled', roll };
+      break;
+    }
+    if (/^(?:fixed|fixed-average)?$/i.test(hpAnswer.trim())) break;
+    deps.io.write('Choose fixed, roll, cancel, or back.');
+  }
+  const finalPreview = runGuidedLevelUp(db, {
+    ...base,
+    choices,
+    hitPointChoice,
+  });
+  if (finalPreview.outcome !== 'preview') {
+    deps.io.write('Level-up could not be previewed.');
+    return;
+  }
+  printPreview(deps.io, finalPreview.changeSet);
   const answer = await deps.io.prompt('Apply level-up? [y/N] ');
   if (answer === undefined || !/^y(es)?$/i.test(answer.trim())) {
     deps.io.write('Level-up cancelled.');
@@ -120,6 +154,7 @@ export async function runLevelUpCommand(
   const committed = runGuidedLevelUp(db, {
     ...base,
     choices,
+    hitPointChoice,
     confirm: true,
     at: deps.now(),
   });
@@ -150,7 +185,13 @@ async function collectSupportedChoices(
     if (answer === undefined || answer.trim().length === 0) {
       return undefined;
     }
-    choices[choice.id] = [answer.trim()];
+    choices[choice.id] =
+      choice.kind === 'ability-score-improvement'
+        ? answer
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : [answer.trim()];
   }
   return choices;
 }
@@ -182,8 +223,22 @@ function printPreview(io: CliIO, changeSet: LevelUpChangeSet): void {
     `Level-up preview: level ${changeSet.level.from} -> ${changeSet.level.to}.`,
   );
   io.write(
-    `HP max: ${changeSet.hitPoints.maxHitPoints.from} -> ${changeSet.hitPoints.maxHitPoints.to} (+${changeSet.hitPoints.increment}).`,
+    `HP max: ${changeSet.hitPoints.maxHitPoints.from} -> ${changeSet.hitPoints.maxHitPoints.to} (+${changeSet.hitPoints.increment}${changeSet.hitPoints.retroactiveConstitutionAdjustment ? `; retroactive ${changeSet.hitPoints.retroactiveConstitutionAdjustment >= 0 ? '+' : ''}${changeSet.hitPoints.retroactiveConstitutionAdjustment}` : ''}).`,
   );
+  if (changeSet.hitPoints.method === 'rolled') {
+    io.write(
+      `HP: rolled ${changeSet.hitPoints.naturalRoll} on d${changeSet.hitPoints.hitDie} + Constitution ${changeSet.hitPoints.constitutionModifier} = ${changeSet.hitPoints.increment}.`,
+    );
+  } else {
+    io.write(
+      `HP: fixed average + Constitution ${changeSet.hitPoints.constitutionModifier} = ${changeSet.hitPoints.increment}.`,
+    );
+  }
+  for (const increase of changeSet.abilityScoreIncreases ?? []) {
+    io.write(
+      `ASI: ${increase.ability} ${increase.finalScore.from} -> ${increase.finalScore.to} (modifier ${increase.modifier.from} -> ${increase.modifier.to}).`,
+    );
+  }
   if (changeSet.featuresGained.length > 0) {
     io.write(`Features gained: ${changeSet.featuresGained.join(', ')}.`);
   }

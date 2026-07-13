@@ -5,7 +5,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { getBundledDnd5eSrdPack, type RulesRecord } from '../src/internal.js';
+import {
+  getBundledDnd5eCharacterResolver,
+  getBundledDnd5eSrdPack,
+  type RulesRecord,
+} from '../src/internal.js';
 
 const pack = getBundledDnd5eSrdPack();
 const byKey = new Map(pack.records.map((r) => [r.key, r] as const));
@@ -144,5 +148,37 @@ describe('background creation choices', () => {
     expect((acolyte.data as { equipment?: string }).equipment).toContain(
       'holy symbol',
     );
+  });
+});
+
+describe('pack-derived tool proficiency domain', () => {
+  it('contains structured tools and audited categories without generic gaming set', () => {
+    const domain = getBundledDnd5eCharacterResolver().listToolProficiencies();
+    const normalized = new Set(
+      domain.map((value) =>
+        value
+          .toLowerCase()
+          .replace(/[’']/g, '')
+          .replace(/[^a-z0-9]+/g, ' ')
+          .trim(),
+      ),
+    );
+    expect(normalized.has('gaming set')).toBe(false);
+    for (const value of ['Vehicles (land)', 'Vehicles (water)'])
+      expect(domain).toContain(value);
+    for (const record of pack.records) {
+      const data = record.data as { category?: unknown };
+      if (record.kind === 'equipment' && data.category === 'tool') {
+        expect(
+          normalized.has(
+            record.name
+              .toLowerCase()
+              .replace(/[’']/g, '')
+              .replace(/[^a-z0-9]+/g, ' ')
+              .trim(),
+          ),
+        ).toBe(true);
+      }
+    }
   });
 });

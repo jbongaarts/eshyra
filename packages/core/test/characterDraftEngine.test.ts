@@ -47,6 +47,27 @@ describe('character creation draft engine', () => {
     expect(draft.derived.proficiencyBonus).toBe(2);
   });
 
+  it('rehydrates invalid persisted acquisition modes as non-finalizable state', () => {
+    const draft = {
+      ...fullValidDraft(),
+      selections: {
+        ...fullValidDraft().selections,
+        startingEquipmentMode: 'bogus',
+      },
+    } as CharacterDraft;
+    const rehydrated = engine.recomputeDraft(draft);
+    expect(rehydrated.selections.startingEquipmentMode).toBe('packages');
+    expect(rehydrated.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'startingEquipmentMode',
+          severity: 'error',
+        }),
+      ]),
+    );
+    expect(engine.isFinalizable(rehydrated)).toBe(false);
+  });
+
   it.each([
     ['classes', ['Fighter', 'Wizard']],
     ['classLevels', { 'class:fighter': 1, 'class:wizard': 1 }],
@@ -89,6 +110,30 @@ describe('character creation draft engine', () => {
     expect(draft.selections.spells).toEqual(['Fire Bolt']);
     expect(errorFields(draft)).toContain('spells');
     expect(draft.stale).toContain('spells');
+  });
+
+  it('builds replacement domains from all ordinary grants before any replacement', () => {
+    let draft = fullValidDraft();
+    draft = engine.setClass(draft, 'Cleric');
+    draft = engine.setBackground(draft, 'Acolyte');
+    draft = engine.setChoice(draft, 'class.skills', ['History', 'Insight']);
+    const replacement = engine
+      .mechanicalChoices(draft)
+      .find(
+        (entry) =>
+          entry.choice.id === 'proficiency-replacement.skills.insight.1',
+      );
+    expect(replacement?.satisfied).toBe(false);
+    expect(replacement?.choice.from).not.toContain('Religion');
+    expect(replacement?.choice.from).not.toContain('History');
+    draft = engine.setChoice(draft, replacement?.choice.id ?? '', [
+      'Acrobatics',
+    ]);
+    expect(
+      engine
+        .mechanicalChoices(draft)
+        .find((entry) => entry.choice.id === replacement?.choice.id)?.satisfied,
+    ).toBe(true);
   });
 
   it('changing ancestry preserves base scores but recomputes derived values', () => {

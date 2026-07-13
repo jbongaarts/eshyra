@@ -193,6 +193,8 @@ export type {
   FinalizableDraftResult,
   MechanicalChoiceState,
   RequiredChoice,
+  StartingEquipmentMode,
+  StartingWealthResult,
 } from './character/characterDraft.js';
 export {
   createCharacterCreationEngine,
@@ -284,12 +286,14 @@ export type {
 export { runGuidedLevelUp } from './character/guidedLevelUpFlow.js';
 // Deterministic level-up application engine (eshyra-lupf.8).
 export type {
+  AppliedAbilityScoreIncrease,
   ApplyLevelUpInput,
   ApplyLevelUpResult,
   LevelUpAppliedChoice,
   LevelUpChangeSet,
   LevelUpChoiceSelections,
   LevelUpDelta,
+  LevelUpHitPointChoice,
   LevelUpHitPoints,
   LevelUpRequiredChoice,
   LevelUpRequiredChoiceKind,
@@ -314,6 +318,10 @@ export {
   PathfinderCharacterCreationError,
   validatePathfinderCharacterDraft,
 } from './character/pathfinder2e.js';
+export {
+  normalizeProficiency,
+  proficiencyReplacementId,
+} from './character/proficiency.js';
 // Character-creation recipe boundary (eshyra-b69j.4): the system-agnostic
 // contract plus the D&D 5e SRD recipe that owns modes, step order, validation,
 // derived values, and finalization. The shared creation shell depends only on
@@ -357,6 +365,12 @@ export {
   createRulesPackCharacterResolver,
   getBundledDnd5eCharacterResolver,
 } from './character/rulesPackResolver.js';
+export type {
+  DerivedModifierContribution,
+  DerivedSpellcastingValues,
+  DeriveSpellcastingValuesInput,
+} from './character/spellcastingDerivation.js';
+export { deriveSpellcastingValues } from './character/spellcastingDerivation.js';
 // Source-cited character-creation oracles (eshyra-o9bd.15): retained for tests
 // and audit parity only. Runtime code reads generated pack metadata instead.
 export type {
@@ -398,6 +412,7 @@ export {
   SRD_5_1_SKILL_ABILITIES,
   SRD_5_1_SKILLS,
   SRD_5_1_STANDARD_LANGUAGES,
+  SRD_5_1_VEHICLE_PROFICIENCIES,
 } from './character/srdCreationChoices.js';
 export type { EquipmentPackContent } from './character/srdEquipmentPacks.js';
 export { readEquipmentPackContents } from './character/srdEquipmentPacks.js';
@@ -419,6 +434,11 @@ export {
   StartingEquipmentGrantError,
   startingEquipmentGrantPhrases,
 } from './character/srdStartingEquipmentGrants.js';
+export {
+  resolveStartingWealth,
+  rollStartingWealth,
+  validateStartingWealthResult,
+} from './character/srdStartingWealth.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics
 // plus the sink contract the CLI implements over the data root.
 export type {
@@ -672,6 +692,7 @@ export {
   parseDice,
   rollDice,
   rollParsedDice,
+  validateDiceRollEvidence,
 } from './orchestrator/dice.js';
 // DM-protocol prompt building and fenced tool-call parsing.
 export {

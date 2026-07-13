@@ -1699,12 +1699,12 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:ability-scores-and-modifiers': {
-    status: 'partial',
-    missing: 'generic 1-30 range validation on non-PC ability writes → F8',
+    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/character/abilities.ts',
       'packages/core/src/character/derivedValues.ts',
     ],
+    evidence: ['packages/core/test/liveStateSchema.test.ts'],
   },
   'rule:activating-an-item': {
     status: 'model-adjudicated-supported',
@@ -1787,18 +1787,24 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/attunement.test.ts'],
   },
   'rule:backgrounds-equipment': {
-    status: 'partial',
-    missing:
-      'coin-purchase alternative + package-XOR-coin gate in the code-owned creation flow → F8',
+    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/character/srdStartingEquipmentGrants.ts',
       'packages/core/src/character/srdEquipmentPacks.ts',
     ],
+    evidence: [
+      'packages/core/test/characterDraftEngine.test.ts',
+      'packages/core/test/finalizeCharacter.test.ts',
+      'packages/cli/test/characterWizard.test.ts',
+    ],
   },
   'rule:backgrounds-proficiencies': {
-    status: 'unimplemented',
-    missing:
-      'F8: duplicate-proficiency replacement is a creation-engine validator; creation is a code-owned flow, so the gap is engine work (small)',
+    status: 'implemented',
+    runtimeOwner: ['packages/core/src/character/characterDraft.ts'],
+    evidence: [
+      'packages/core/test/characterDraftEngine.test.ts',
+      'packages/cli/test/characterWizard.test.ts',
+    ],
   },
   'rule:being-prone': {
     status: 'model-adjudicated-supported',
@@ -1806,10 +1812,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'prone condition + movement-cost ruling',
   },
   'rule:beyond-1st-level': {
-    status: 'partial',
-    missing:
-      'rolled-HP via seeded dice, ASI-cap-20 enforcement at improvement time → F8',
+    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
+    evidence: [
+      'packages/core/test/levelUpEngine.test.ts',
+      'packages/core/test/guidedLevelUpFlow.test.ts',
+      'packages/cli/test/play.test.ts',
+    ],
   },
   'rule:blindsight': {
     status: 'model-adjudicated-supported',
@@ -1860,9 +1869,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   'rule:casting-a-spell-saving-throws': {
     status: 'partial',
-    missing:
-      'special-modifier application in derivation; item-bonus data clause → eshyra-o9bd.18.7.7.2; application hook → F8',
+    missing: 'item-bonus special-modifier data clause → eshyra-o9bd.18.7.7.2',
     runtimeOwner: ['packages/core/src/character/derivedValues.ts'],
+    evidence: ['packages/core/test/derivedValues.test.ts'],
     externalClauses: [
       {
         clause: 'item-bonus special-modifier data',
@@ -1971,9 +1980,9 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
       "contest procedure model-adjudicated over seeded dice; the 1/dawn control-attempt limit is hostable as a declared F5 usage counter (maxUses 1, reset dawn); missing: durable charmed 1d12 h duration and repeat-on-damage save trigger → F3's active-effect lifecycle",
   },
   'rule:constitution-hit-points': {
-    status: 'partial',
-    missing: 'retroactive hp_max recalc on Con-mod change → F8',
+    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
+    evidence: ['packages/core/test/levelUpEngine.test.ts'],
   },
   'rule:consumables': {
     status: 'model-adjudicated-supported',
@@ -2956,14 +2965,14 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * F4 interplay). F10 exposed the wallet, mutation invariants, persistence, and
  * audit trail, but deterministic resale and downtime-cost transforms remain
  * partial until registered calculation primitives own those numbers. The
- * reviewed census is now 31/109/21/4/10.
+ * reviewed census is now 36/109/17/3/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 31,
+    implemented: 36,
     'model-adjudicated-supported': 109,
-    partial: 21,
-    unimplemented: 4,
+    partial: 17,
+    unimplemented: 3,
     'design-blocked': 10,
   });
 

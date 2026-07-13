@@ -40,6 +40,7 @@ export interface BackgroundEquipmentGrant {
   readonly ref?: string;
   readonly select?: StartingEquipmentFilterSelect;
   readonly detail?: string;
+  readonly currencyGp?: number;
 }
 
 /** Closed vocabulary of ancestry/background creation-choice categories. */
@@ -187,6 +188,12 @@ export const SRD_5_1_MUSICAL_INSTRUMENTS: readonly string[] = [
   'Viol',
 ];
 
+/** Source-audited proficiency categories without individual equipment rows. */
+export const SRD_5_1_VEHICLE_PROFICIENCIES: readonly string[] = [
+  'Vehicles (land)',
+  'Vehicles (water)',
+];
+
 /** Context the importer supplies (pack-derived, enumerable option sets). */
 export interface CreationChoiceContext {
   /** Sorted `spell:` keys of every wizard cantrip in the pack. */
@@ -330,6 +337,7 @@ const ACOLYTE_FACTS: BackgroundCreationFacts = {
       name: 'pouch',
       ref: 'equipment:pouch',
       detail: 'containing 15 gp',
+      currencyGp: 15,
     },
   ],
 };

@@ -209,6 +209,7 @@ describe('runCreateCharacter — finalization (eshyra-b69j.14)', () => {
     'wis 10',
     'cha 8',
     'done',
+    '', // keep package acquisition mode
     'Athletics',
     'Perception',
     '1',

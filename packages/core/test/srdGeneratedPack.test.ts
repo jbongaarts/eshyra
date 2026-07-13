@@ -288,7 +288,7 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 104 -> 108 (eshyra-4a7.10.5): the four Appendix PH-B deity tables
   // (Celtic/Greek/Egyptian/Norse Deities), reconstructed by parseDeityTables
   // from the page-interleaved column blocks.
-  table: 108,
+  table: 109,
 };
 
 /**
@@ -886,8 +886,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'table',
     field: 'legend',
-    missingCount: 107,
-    totalInKind: 108,
+    missingCount: 108,
+    totalInKind: 109,
   },
   // Semantic table projections. The first slice (eshyra-o9bd.7) projected the
   // feature-owned Destroy Undead / Beast Shapes tables and the Races Draconic
@@ -898,8 +898,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'table',
     field: 'projection',
-    missingCount: 86,
-    totalInKind: 108,
+    missingCount: 87,
+    totalInKind: 109,
   },
 ];
 
@@ -4385,6 +4385,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:staff-of-the-magi',
         'table:standard-exchange-rates',
         'table:standard-languages',
+        'table:starting-wealth-by-class',
         'table:tan-bag-of-tricks',
         'table:teleport-familiarity',
         'table:temperature',
@@ -4415,7 +4416,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
     it('contains exactly the reviewed table name set', () => {
       expect(tables.map((record) => record.name).sort()).toEqual(
-        [...EXPECTED_SRD_5_1_TABLE_NAMES].sort(),
+        [...EXPECTED_SRD_5_1_TABLE_NAMES, 'Starting Wealth by Class'].sort(),
       );
       expect(new Set(EXPECTED_SRD_5_1_TABLE_NAMES).size).toBe(
         EXPECTED_SRD_5_1_TABLE_NAMES.length,

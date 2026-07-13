@@ -31,10 +31,16 @@ import {
   type CharacterCreationEngine,
   type CharacterDraft,
   getDnd5eCharacterCreationEngine,
+  parseStartingEquipmentMode,
   type RequiredChoice,
+  type StartingEquipmentMode,
 } from './characterDraft.js';
 import type { AbilityScoreName } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
+import {
+  normalizeProficiency,
+  proficiencyReplacementId,
+} from './proficiency.js';
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedBackgroundData,
@@ -42,6 +48,8 @@ import {
   type ResolvedLanguageGrant,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import type { StartingWealthResult } from './srdStartingWealth.js';
+import { validateStartingWealthResult } from './srdStartingWealth.js';
 
 /** D&D 5e coin denominations carried by a character, not inventory rows. */
 export interface CharacterWallet {
@@ -105,6 +113,7 @@ export interface CharacterSheet {
   readonly rulesPackId: string;
   readonly recipeId: string;
   readonly creationMode: string;
+  readonly startingEquipmentMode?: StartingEquipmentMode;
   readonly level: number;
   readonly identity: { readonly name: string; readonly concept?: string };
   readonly class: FinalizedRecordRef;
@@ -186,10 +195,122 @@ export function finalizeCharacterDraft(
     return { ok: false, missing, errors };
   }
 
+  const acquisition = validateFinalStartingAcquisition(draft, resolver);
+  if (!acquisition.ok)
+    return { ok: false, missing, errors: [acquisition.error] };
+  try {
+    assertProficiencyInvariant(
+      draft,
+      engine,
+      classRecordForDraft(draft, resolver),
+      backgroundRecordForDraft(draft, resolver),
+    );
+  } catch (error) {
+    return {
+      ok: false,
+      missing,
+      errors: [
+        error instanceof Error ? error.message : 'invalid proficiency choices',
+      ],
+    };
+  }
+
   return {
     ok: true,
-    character: buildFinalizedCharacter(draft, metadata, resolver, engine),
+    character: buildFinalizedCharacter(
+      draft,
+      metadata,
+      resolver,
+      engine,
+      acquisition.value,
+    ),
   };
+}
+
+type FinalStartingAcquisition =
+  | { readonly mode: 'packages'; readonly walletGp: number }
+  | {
+      readonly mode: 'starting-wealth';
+      readonly walletGp: number;
+      readonly result: StartingWealthResult;
+    };
+
+function isStartingWealthResultLike(
+  value: unknown,
+): value is StartingWealthResult {
+  return typeof value === 'object' && value !== null;
+}
+
+function validateFinalStartingAcquisition(
+  draft: CharacterDraft,
+  resolver: RulesPackCharacterResolver,
+):
+  | { readonly ok: true; readonly value: FinalStartingAcquisition }
+  | { readonly ok: false; readonly error: string } {
+  const mode =
+    draft.selections.startingEquipmentMode === undefined
+      ? 'packages'
+      : parseStartingEquipmentMode(draft.selections.startingEquipmentMode);
+  if (mode === undefined) {
+    return { ok: false, error: 'invalid starting acquisition mode' };
+  }
+  const result = draft.selections.startingWealth;
+  if (mode === 'packages') {
+    if (result !== undefined) {
+      return {
+        ok: false,
+        error: 'starting-wealth evidence cannot be present in package mode',
+      };
+    }
+    const background = backgroundRecordForDraft(draft, resolver);
+    const walletGp = (background?.equipmentGrants ?? []).reduce(
+      (sum, grant) => sum + (grant.currencyGp ?? 0),
+      0,
+    );
+    if (!Number.isSafeInteger(walletGp) || walletGp < 0) {
+      return {
+        ok: false,
+        error: 'package currency is outside the safe integer range',
+      };
+    }
+    return { ok: true, value: { mode, walletGp } };
+  }
+  if (result === undefined) {
+    return { ok: false, error: 'starting-wealth mode requires one roll' };
+  }
+  if (!isStartingWealthResultLike(result)) {
+    return { ok: false, error: 'invalid starting-wealth evidence' };
+  }
+  if (
+    Object.entries(draft.selections.choices ?? {}).some(
+      ([id, values]) => id.startsWith('class.equipment.') && values.length > 0,
+    )
+  ) {
+    return {
+      ok: false,
+      error: 'starting-wealth mode cannot include package equipment',
+    };
+  }
+  const classResult = resolver.resolveClass(draft.selections.className ?? '');
+  if (!classResult.ok) return { ok: false, error: classResult.message };
+  if (result.classKey !== classResult.record.key) {
+    return {
+      ok: false,
+      error: 'starting-wealth result does not match selected class',
+    };
+  }
+  try {
+    validateStartingWealthResult(result, resolver);
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'invalid starting-wealth evidence',
+    };
+  }
+  return { ok: true, value: { mode, walletGp: result.totalGp, result } };
 }
 
 function buildFinalizedCharacter(
@@ -197,6 +318,7 @@ function buildFinalizedCharacter(
   metadata: FinalizeMetadata,
   resolver: RulesPackCharacterResolver,
   engine: CharacterCreationEngine,
+  acquisition: FinalStartingAcquisition,
 ): CharacterSheet {
   const selections = draft.selections;
   const classRecord = requireRecord(
@@ -235,6 +357,9 @@ function buildFinalizedCharacter(
     rulesPackId: draft.rulesPackId,
     recipeId: draft.recipeId,
     creationMode: draft.creationMode,
+    ...(selections.startingEquipmentMode !== undefined
+      ? { startingEquipmentMode: selections.startingEquipmentMode }
+      : {}),
     level: draft.level,
     identity: {
       name: (draft.identity.name ?? '').trim(),
@@ -255,20 +380,20 @@ function buildFinalizedCharacter(
     ...(draft.derived.spellAttackModifier !== undefined
       ? { spellAttackModifier: draft.derived.spellAttackModifier }
       : {}),
-    skillProficiencies: dedupe([
-      // Background grants fixed skills; the class grants skill *choices*.
-      ...(backgroundRecord?.skillProficiencies ?? []),
-      ...selectedOfKind(draft, engine, 'skills'),
-    ]),
-    toolProficiencies: dedupe([
+    skillProficiencies: resolveProficiencySet(
+      draft,
+      engine,
+      'skills',
+      backgroundRecord?.skillProficiencies ?? [],
+    ),
+    toolProficiencies: resolveProficiencySet(draft, engine, 'tools', [
       ...(classRecord.toolProficiencies ?? []),
       ...(backgroundRecord?.toolProficiencies ?? []),
-      ...selectedOfKind(draft, engine, 'tools'),
     ]),
     armorProficiencies: [...(classRecord.armorProficiencies ?? [])],
     weaponProficiencies: [...(classRecord.weaponProficiencies ?? [])],
     equipment: collectEquipment(draft, engine, classRecord, backgroundRecord),
-    wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    wallet: walletForDraft(acquisition),
     languages: collectLanguages(
       draft,
       engine,
@@ -281,16 +406,131 @@ function buildFinalizedCharacter(
   return finalized;
 }
 
-/** Selected options across every mechanical choice of a kind, in choice order. */
-function selectedOfKind(
+function assertProficiencyInvariant(
+  draft: CharacterDraft,
+  engine: CharacterCreationEngine,
+  classRecord: ResolvedClassData,
+  backgroundRecord: ResolvedBackgroundData | undefined,
+): void {
+  const generated = new Set(
+    engine
+      .mechanicalChoices(draft)
+      .filter((entry) => isReplacementChoiceId(entry.choice.id))
+      .map((entry) => entry.choice.id),
+  );
+  for (const id of Object.keys(draft.selections.choices ?? {})) {
+    if (isReplacementChoiceId(id) && !generated.has(id)) {
+      throw new Error(
+        `finalization invariant: stale proficiency replacement '${id}'`,
+      );
+    }
+  }
+  const skills = resolveProficiencySet(
+    draft,
+    engine,
+    'skills',
+    backgroundRecord?.skillProficiencies ?? [],
+  );
+  const tools = resolveProficiencySet(draft, engine, 'tools', [
+    ...(classRecord.toolProficiencies ?? []),
+    ...(backgroundRecord?.toolProficiencies ?? []),
+  ]);
+  for (const [kind, values] of [
+    ['skill', skills],
+    ['tool', tools],
+  ] as const) {
+    const normalized = values.map(normalizeProficiency);
+    if (new Set(normalized).size !== normalized.length) {
+      throw new Error(
+        `finalization invariant: unresolved duplicate ${kind} proficiency`,
+      );
+    }
+  }
+}
+
+function resolveProficiencySet(
   draft: CharacterDraft,
   engine: CharacterCreationEngine,
   kind: 'skills' | 'tools',
+  fixed: readonly string[],
 ): readonly string[] {
-  return engine
+  const entries = engine
     .mechanicalChoices(draft)
-    .filter((entry) => entry.choice.kind === kind)
+    .filter((entry) => entry.choice.kind === kind);
+  const ordinary = entries
+    .filter((entry) => !isReplacementChoiceId(entry.choice.id))
     .flatMap((entry) => entry.selected);
+  const replacements = new Map(
+    entries
+      .filter((entry) => isReplacementChoiceId(entry.choice.id))
+      .map((entry) => [entry.choice.id, entry] as const),
+  );
+  const result: string[] = [];
+  const seen = new Set<string>();
+  const ordinaryKeys = new Set(
+    [...fixed, ...ordinary].map(normalizeProficiency),
+  );
+  const occurrences = new Map<string, number>();
+  for (const value of [...fixed, ...ordinary]) {
+    const key = normalizeProficiency(value);
+    const occurrence = (occurrences.get(key) ?? 0) + 1;
+    occurrences.set(key, occurrence);
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(value);
+      continue;
+    }
+    const replacementId = proficiencyReplacementId(kind, value, occurrence - 1);
+    const replacement = replacements.get(replacementId);
+    const replacementValue = replacement?.selected[0];
+    if (
+      replacement === undefined ||
+      !replacement.satisfied ||
+      replacementValue === undefined ||
+      seen.has(normalizeProficiency(replacementValue))
+    ) {
+      throw new Error(
+        `finalization invariant: unresolved duplicate ${kind} proficiency`,
+      );
+    }
+    seen.add(normalizeProficiency(replacementValue));
+    result.push(replacementValue);
+  }
+  if (result.length !== fixed.length + ordinary.length) {
+    throw new Error(`finalization invariant: ${kind} grant count changed`);
+  }
+  if (
+    replacements.size !==
+    [...fixed, ...ordinary].length - ordinaryKeys.size
+  ) {
+    throw new Error(
+      `finalization invariant: ${kind} replacement count changed`,
+    );
+  }
+  return result;
+}
+
+function isReplacementChoiceId(id: string): boolean {
+  return id.startsWith('proficiency-replacement.');
+}
+
+function classRecordForDraft(
+  draft: CharacterDraft,
+  resolver: RulesPackCharacterResolver,
+): ResolvedClassData {
+  const result = resolver.resolveClass(draft.selections.className ?? '');
+  if (!result.ok)
+    throw new Error('finalization invariant: class did not resolve');
+  return result.record;
+}
+
+function backgroundRecordForDraft(
+  draft: CharacterDraft,
+  resolver: RulesPackCharacterResolver,
+): ResolvedBackgroundData | undefined {
+  if (draft.selections.background === undefined) return undefined;
+  const result = resolver.resolveBackground(draft.selections.background);
+  return result.ok ? result.record : undefined;
 }
 
 /**
@@ -303,6 +543,9 @@ function collectEquipment(
   classRecord: ResolvedClassData,
   backgroundRecord: ResolvedBackgroundData | undefined,
 ): readonly string[] {
+  if (draft.selections.startingEquipmentMode === 'starting-wealth') {
+    return [];
+  }
   const chosenById = new Map(
     engine
       .mechanicalChoices(draft)
@@ -321,15 +564,22 @@ function collectEquipment(
     }
     equipment.push(...(chosenById.get(`class.equipment.${index}`) ?? []));
   });
-  if (backgroundRecord?.equipment !== undefined) {
+  if (backgroundRecord?.equipmentGrants !== undefined) {
+    for (const grant of backgroundRecord.equipmentGrants) {
+      equipment.push(
+        `${grant.quantity > 1 ? `${grant.quantity} ` : ''}${grant.name}`,
+      );
+    }
+  } else if (backgroundRecord?.equipment !== undefined) {
     equipment.push(backgroundRecord.equipment);
   }
   return equipment;
 }
 
-/** Order-preserving de-duplication. */
-function dedupe(values: readonly string[]): readonly string[] {
-  return [...new Set(values)];
+function walletForDraft(
+  acquisition: FinalStartingAcquisition,
+): CharacterWallet {
+  return { cp: 0, sp: 0, ep: 0, gp: acquisition.walletGp, pp: 0 };
 }
 
 /** Fixed ancestry + background languages merged with the player's chosen ones. */

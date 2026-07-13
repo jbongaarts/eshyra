@@ -24,6 +24,7 @@ import {
   type LevelUpChangeSet,
   type LevelUpChoiceSelections,
   LevelUpEngineError,
+  type LevelUpHitPointChoice,
   type LevelUpRequiredChoice,
   previewLevelUpChangeSet,
 } from './levelUpEngine.js';
@@ -74,6 +75,7 @@ export interface GuidedLevelUpInput {
   readonly characterId?: string;
   readonly resolver?: RulesPackCharacterResolver;
   readonly choices?: LevelUpChoiceSelections;
+  readonly hitPointChoice?: LevelUpHitPointChoice;
   /**
    * `undefined` means "show the preview and wait for the caller to ask again";
    * `false` means the player saw the preview and declined; `true` commits.
@@ -114,6 +116,7 @@ export function runGuidedLevelUp(
     resolver,
     binding,
     choices: input.choices,
+    hitPointChoice: input.hitPointChoice,
   });
   if (!preview.ok) {
     return {
@@ -150,6 +153,7 @@ export function runGuidedLevelUp(
     characterId,
     resolver,
     choices: input.choices,
+    hitPointChoice: input.hitPointChoice,
     source: input.source,
     provenance: input.provenance,
     sessionId: input.sessionId,

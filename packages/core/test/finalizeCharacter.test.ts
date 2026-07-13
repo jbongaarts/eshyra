@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   type CharacterDraft,
+  createSeededRng,
   finalizeCharacterDraft,
   getDnd5eCharacterCreationEngine,
+  rollStartingWealth,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
 
@@ -68,7 +70,7 @@ describe('finalizeCharacterDraft', () => {
     draft = engine.setAbilityScoreMethod(draft, 'point_buy');
     draft = engine.setAbilityScores(draft, {
       strength: 15,
-      dexterity: 14,
+      dexterity: 13,
       constitution: 13,
       intelligence: 12,
       wisdom: 10,
@@ -134,6 +136,97 @@ describe('finalizeCharacterDraft', () => {
     expect(c.languages.length).toBe(2);
   });
 
+  it('finalizes starting wealth without package equipment or currency', () => {
+    let draft = completeDraft();
+    draft = engine.setStartingEquipmentMode(draft, 'starting-wealth');
+    draft = engine.setStartingWealth(
+      draft,
+      rollStartingWealth('class:fighter', createSeededRng(7)),
+    );
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.character.startingEquipmentMode).toBe('starting-wealth');
+      expect(result.character.equipment).toEqual([]);
+      expect(result.character.wallet?.gp).toBe(120);
+    }
+  });
+
+  it('finalizes a Hill Dwarf Monk duplicate tool grant with a replacement', () => {
+    let draft = engine.createDraft({ id: 'monk-tools', mode: 'concept-first' });
+    draft = engine.setIdentity(draft, { name: 'Korin' });
+    draft = engine.setClass(draft, 'Monk');
+    draft = engine.setAncestry(draft, 'Hill Dwarf');
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScores(draft, {
+      strength: 15,
+      dexterity: 13,
+      constitution: 13,
+      intelligence: 9,
+      wisdom: 14,
+      charisma: 8,
+    });
+    for (let pass = 0; pass < 4; pass += 1) {
+      for (const entry of engine.mechanicalChoices(draft)) {
+        if (entry.satisfied) continue;
+        const values =
+          entry.choice.kind === 'tools' &&
+          (entry.choice.from ?? []).includes('Smith’s tools')
+            ? ['Smith’s tools']
+            : (entry.choice.from ?? []).slice(0, entry.choice.choose ?? 0);
+        draft = engine.setChoice(draft, entry.choice.id, values);
+      }
+    }
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.character.toolProficiencies).toContain('Smith’s tools');
+      expect(result.character.toolProficiencies).toContain(
+        'Alchemist’s supplies',
+      );
+    }
+  });
+
+  it('returns normal failures for malformed persisted wealth evidence', () => {
+    let valid = engine.setStartingEquipmentMode(
+      completeDraft(),
+      'starting-wealth',
+    );
+    valid = engine.setStartingWealth(
+      valid,
+      rollStartingWealth('class:fighter', createSeededRng(7)),
+    );
+
+    const corruptedDrafts = [
+      {
+        ...valid,
+        selections: { ...valid.selections, startingWealth: null },
+      },
+      {
+        ...valid,
+        selections: {
+          ...valid.selections,
+          startingWealth: {
+            ...valid.selections.startingWealth,
+            classKey: undefined,
+          },
+        },
+      },
+      {
+        ...valid,
+        selections: {
+          ...valid.selections,
+          startingWealth: { ...valid.selections.startingWealth, roll: null },
+        },
+      },
+    ] as unknown as CharacterDraft[];
+
+    for (const draft of corruptedDrafts) {
+      expect(() => finalizeCharacterDraft(draft, META)).not.toThrow();
+      expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    }
+  });
+
   it('refuses multiclass-shaped draft state before finalization can flatten it', () => {
     const draft = {
       ...completeDraft(),
@@ -159,13 +252,17 @@ describe('finalizeCharacterDraft', () => {
       wisdom: 15,
       charisma: 8,
     });
-    for (const entry of engine.mechanicalChoices(draft)) {
-      const need = entry.choice.choose ?? 0;
-      draft = engine.setChoice(
-        draft,
-        entry.choice.id,
-        (entry.choice.from ?? []).slice(0, need),
-      );
+    for (let pass = 0; pass < 3; pass += 1) {
+      for (const entry of engine.mechanicalChoices(draft)) {
+        const need = entry.choice.choose ?? 0;
+        if (!entry.satisfied) {
+          draft = engine.setChoice(
+            draft,
+            entry.choice.id,
+            (entry.choice.from ?? []).slice(0, need),
+          );
+        }
+      }
     }
     const result = finalizeCharacterDraft(draft, META);
     expect(result.ok).toBe(true);

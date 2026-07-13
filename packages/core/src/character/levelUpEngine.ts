@@ -13,10 +13,8 @@
 //   - class features granted at that level (by ref),
 //   - spellcasting capacity (cantrips/spells-known counts, spell slots).
 // And from the class hit die + the sheet's Constitution modifier:
-//   - the HP increase, using the SRD fixed-average method (the deterministic,
-//     no-roll policy: floor(hitDie/2)+1 per level + CON modifier, minimum 1).
-//     The rolled alternative would have to flow through the seeded dice path to
-//     stay auditable; that is deferred until a recipe selects it.
+//   - the HP increase, using fixed average or immutable caller-supplied rolled
+//     evidence, with floor(hitDie/2)+1 and CON modifier for fixed average.
 //
 // The whole step is one transaction: the updated sheet is saved, the live
 // `character` projection (level, hp_max, hp_current) is mutated through the
@@ -26,6 +24,11 @@
 // on mismatch — progression is never applied from a different pack than the one
 // the sheet was built under.
 
+import {
+  type DiceRoll,
+  parseDice,
+  validateDiceRollEvidence,
+} from '../orchestrator/dice.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import {
@@ -40,11 +43,13 @@ import {
   recordProgressionEvent,
 } from '../state/progression.js';
 import { syncSpellSlots } from '../state/spellSlots.js';
+import { abilityModifier, abilityNameFromToken } from './abilities.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   assertSheetMatchesPack,
   type CharacterSheetStore,
 } from './characterSheetStore.js';
+import type { SavingThrowDerived } from './derivedValues.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
 import {
   getBundledDnd5eCharacterResolver,
@@ -55,6 +60,7 @@ import {
   type ResolvedSubclassFeatureSlot,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+import { deriveSpellcastingValues } from './spellcastingDerivation.js';
 
 /** A before/after pair for a single scalar value changed by a level-up. */
 export interface LevelUpDelta<T> {
@@ -65,13 +71,14 @@ export interface LevelUpDelta<T> {
 /** How the HP increase was determined for one level-up step. */
 export interface LevelUpHitPoints {
   /**
-   * The HP method used. Only `fixed-average` is supported today — the
-   * deterministic, no-roll SRD "take the average" rule. A `rolled` method is
-   * deferred until it can flow through the seeded dice path.
+   * The HP method used. Both fixed average and caller-supplied rolled evidence
+   * are persisted for replay and audit.
    */
-  readonly method: 'fixed-average';
+  readonly method: 'fixed-average' | 'rolled';
   readonly hitDie: number;
   readonly constitutionModifier: number;
+  readonly naturalRoll?: number;
+  readonly retroactiveConstitutionAdjustment?: number;
   /** HP gained this level: max(1, floor(hitDie/2)+1 + CON modifier). */
   readonly increment: number;
   readonly maxHitPoints: LevelUpDelta<number>;
@@ -103,6 +110,24 @@ export interface LevelUpChangeSet {
   readonly spellAttackModifier?: LevelUpDelta<number | undefined>;
   /** Supported level-up choices applied as part of this step. */
   readonly choicesApplied?: readonly LevelUpAppliedChoice[];
+  readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
+  readonly savingThrows?: Readonly<
+    Record<
+      import('./creation.js').AbilityScoreName,
+      LevelUpDelta<SavingThrowDerived>
+    >
+  >;
+}
+
+export type LevelUpHitPointChoice =
+  | { readonly method: 'fixed-average' }
+  | { readonly method: 'rolled'; readonly roll: DiceRoll };
+
+export interface AppliedAbilityScoreIncrease {
+  readonly ability: import('./creation.js').AbilityScoreName;
+  readonly amount: 1 | 2;
+  readonly finalScore: LevelUpDelta<number>;
+  readonly modifier: LevelUpDelta<number>;
 }
 
 /** Result of {@link applyLevelUp}: the updated sheet, change set, and ledger row. */
@@ -128,6 +153,7 @@ export interface PreviewLevelUpInput {
   readonly resolver?: RulesPackCharacterResolver;
   readonly binding?: CampaignRulesBinding;
   readonly choices?: LevelUpChoiceSelections;
+  readonly hitPointChoice?: LevelUpHitPointChoice;
 }
 
 /** Inputs to {@link applyLevelUp}. */
@@ -145,6 +171,7 @@ export interface ApplyLevelUpInput {
    * Unsupported choices still block even when present.
    */
   readonly choices?: LevelUpChoiceSelections;
+  readonly hitPointChoice?: LevelUpHitPointChoice;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -198,10 +225,14 @@ export type LevelUpChoiceSelections = Readonly<
 
 export interface LevelUpAppliedChoice {
   readonly id: string;
-  readonly kind: Extract<LevelUpRequiredChoiceKind, 'subclass'>;
+  readonly kind: Extract<
+    LevelUpRequiredChoiceKind,
+    'subclass' | 'ability-score-improvement'
+  >;
   readonly value: string;
   readonly label: string;
   readonly featureRefs: readonly string[];
+  readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
 }
 
 /**
@@ -333,6 +364,7 @@ export function applyLevelUp(
       resolver,
       binding,
       choices: input.choices,
+      hitPointChoice: input.hitPointChoice,
     });
     if (!preview.ok) {
       throw new LevelUpRequiredChoicesError(preview.requiredChoices);
@@ -404,13 +436,19 @@ export function previewLevelUpChangeSet(
   if (resolvedChoices.blockers.length > 0) {
     return { ok: false, requiredChoices: resolvedChoices.blockers };
   }
-  const baseChangeSet = computeLevelUpChangeSet(sheet, resolver, binding);
+  const baseChangeSet = computeLevelUpChangeSet(
+    sheet,
+    resolver,
+    binding,
+    input.hitPointChoice,
+  );
   return {
     ok: true,
     requiredChoices,
-    changeSet: applyResolvedChoicesToChangeSet(
-      baseChangeSet,
-      resolvedChoices.applied,
+    changeSet: recomputeAfterChoices(
+      applyResolvedChoicesToChangeSet(baseChangeSet, resolvedChoices.applied),
+      sheet,
+      resolver,
     ),
   };
 }
@@ -427,6 +465,7 @@ export function computeLevelUpChangeSet(
   sheet: CharacterSheet,
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
   binding: CampaignRulesBinding = DEFAULT_DND5E_SRD_BINDING,
+  hitPointChoice: LevelUpHitPointChoice = { method: 'fixed-average' },
 ): LevelUpChangeSet {
   assertSupportedCharacterBuild(sheet, {
     operation: 'level-up change-set computation',
@@ -454,7 +493,11 @@ export function computeLevelUpChangeSet(
 
   const hitDie = classResult.record.hitDie;
   const constitutionModifier = sheet.abilityScores.constitution.modifier;
-  const increment = hitPointIncrement(hitDie, constitutionModifier);
+  const hp = resolveHitPointChoice(
+    hitDie,
+    constitutionModifier,
+    hitPointChoice,
+  );
 
   const existingSubclassFeatureRefs =
     row.subclassFeatureSlots.length > 0
@@ -468,13 +511,14 @@ export function computeLevelUpChangeSet(
       to: row.proficiencyBonus,
     },
     hitPoints: {
-      method: 'fixed-average',
+      method: hp.method,
       hitDie,
       constitutionModifier,
-      increment,
+      ...(hp.naturalRoll !== undefined ? { naturalRoll: hp.naturalRoll } : {}),
+      increment: hp.increment,
       maxHitPoints: {
         from: sheet.maxHitPoints,
-        to: sheet.maxHitPoints + increment,
+        to: sheet.maxHitPoints + hp.increment,
       },
     },
     featuresGained: [...row.featureRefs, ...existingSubclassFeatureRefs],
@@ -649,6 +693,22 @@ function featureRequiredChoice(
       from: subclasses.map((subclass) => subclass.name),
     };
   }
+  if (kind === 'ability-score-improvement') {
+    return {
+      ...base,
+      status: 'supported',
+      label: 'Increase one ability by 2, or two abilities by 1 each',
+      from: [
+        'Strength',
+        'Dexterity',
+        'Constitution',
+        'Intelligence',
+        'Wisdom',
+        'Charisma',
+      ],
+      reason: `level ${toLevel} grants an Ability Score Improvement`,
+    };
+  }
   return {
     ...base,
     status: 'unsupported',
@@ -660,7 +720,7 @@ function featureRequiredChoice(
 function levelUpChoiceLabel(kind: LevelUpRequiredChoiceKind): string {
   switch (kind) {
     case 'ability-score-improvement':
-      return 'Choose an Ability Score Improvement or feat';
+      return 'Choose an Ability Score Improvement';
     case 'fighting-style':
       return 'Choose a fighting style';
     case 'expertise':
@@ -760,7 +820,10 @@ function resolveLevelUpChoices(
       continue;
     }
     const selected = selections[choice.id] ?? [];
-    if (selected.length !== (choice.choose ?? 1)) {
+    if (
+      choice.kind !== 'ability-score-improvement' &&
+      selected.length !== (choice.choose ?? 1)
+    ) {
       blockers.push(choice);
       continue;
     }
@@ -796,6 +859,57 @@ function resolveLevelUpChoices(
         value: subclass.key,
         label: subclass.name,
         featureRefs,
+      });
+      continue;
+    }
+    if (choice.kind === 'ability-score-improvement') {
+      const names = selected
+        .map((value) => abilityNameFromToken(value))
+        .filter(
+          (value): value is import('./creation.js').AbilityScoreName =>
+            value !== undefined,
+        );
+      if (
+        (selected.length !== 1 && selected.length !== 2) ||
+        names.length !== selected.length ||
+        new Set(names).size !== names.length
+      ) {
+        blockers.push(choice);
+        continue;
+      }
+      const amounts = names.length === 1 ? [2] : [1, 1];
+      if (
+        names.some(
+          (ability, index) =>
+            sheet.abilityScores[ability].final + amounts[index] > 20,
+        )
+      ) {
+        blockers.push({
+          ...choice,
+          reason: 'Ability Score Improvement cannot raise an ability above 20',
+        });
+        continue;
+      }
+      const increases = names.map((ability, index) => {
+        const from = sheet.abilityScores[ability].final;
+        const to = from + amounts[index];
+        return {
+          ability,
+          amount: amounts[index] as 1 | 2,
+          finalScore: { from, to },
+          modifier: {
+            from: sheet.abilityScores[ability].modifier,
+            to: abilityModifier(to),
+          },
+        };
+      });
+      applied.push({
+        id: choice.id,
+        kind: choice.kind,
+        value: selected.join(', '),
+        label: choice.label,
+        featureRefs: [],
+        abilityScoreIncreases: increases,
       });
       continue;
     }
@@ -869,11 +983,98 @@ function applyResolvedChoicesToChangeSet(
     return changeSet;
   }
   const selectedFeatureRefs = applied.flatMap((choice) => choice.featureRefs);
+  const abilityScoreIncreases = applied.flatMap(
+    (choice) => choice.abilityScoreIncreases ?? [],
+  );
+  const constitution = abilityScoreIncreases.find(
+    (entry) => entry.ability === 'constitution',
+  );
+  if (constitution !== undefined) {
+    const delta = constitution.modifier.to - constitution.modifier.from;
+    const natural = changeSet.hitPoints.naturalRoll;
+    const base = natural ?? Math.floor(changeSet.hitPoints.hitDie / 2) + 1;
+    const increment = Math.max(1, base + constitution.modifier.to);
+    const retroactiveConstitutionAdjustment = delta * changeSet.level.from;
+    const totalDelta = increment + retroactiveConstitutionAdjustment;
+    return {
+      ...changeSet,
+      featuresGained: [...changeSet.featuresGained, ...selectedFeatureRefs],
+      choicesApplied: applied,
+      abilityScoreIncreases,
+      hitPoints: {
+        ...changeSet.hitPoints,
+        constitutionModifier: constitution.modifier.to,
+        increment,
+        retroactiveConstitutionAdjustment,
+        maxHitPoints: {
+          from: changeSet.hitPoints.maxHitPoints.from,
+          to: changeSet.hitPoints.maxHitPoints.from + totalDelta,
+        },
+      },
+    };
+  }
   return {
     ...changeSet,
     featuresGained: [...changeSet.featuresGained, ...selectedFeatureRefs],
     choicesApplied: applied,
+    abilityScoreIncreases: applied.flatMap(
+      (choice) => choice.abilityScoreIncreases ?? [],
+    ),
   };
+}
+
+function recomputeAfterChoices(
+  changeSet: LevelUpChangeSet,
+  sheet: CharacterSheet,
+  resolver: RulesPackCharacterResolver,
+): LevelUpChangeSet {
+  const increases = changeSet.abilityScoreIncreases ?? [];
+  const modifiers = {
+    ...Object.fromEntries(
+      Object.entries(sheet.abilityScores).map(([ability, score]) => [
+        ability,
+        score.modifier,
+      ]),
+    ),
+  } as Record<import('./creation.js').AbilityScoreName, number>;
+  for (const increase of increases)
+    modifiers[increase.ability] = increase.modifier.to;
+  const classResult = resolver.resolveClass(sheet.class.key);
+  if (!classResult.ok) throw new LevelUpEngineError(classResult.message);
+  const savingThrows = {} as Record<
+    import('./creation.js').AbilityScoreName,
+    LevelUpDelta<SavingThrowDerived>
+  >;
+  for (const ability of Object.keys(
+    sheet.abilityScores,
+  ) as import('./creation.js').AbilityScoreName[]) {
+    const isProficient = sheet.savingThrows[ability].proficient;
+    const from = sheet.savingThrows[ability];
+    const to = {
+      modifier:
+        modifiers[ability] + (isProficient ? changeSet.proficiencyBonus.to : 0),
+      proficient: isProficient,
+    };
+    savingThrows[ability] = { from, to };
+  }
+  const ability = classResult.record.spellcastingAbility;
+  const spell =
+    ability === undefined
+      ? {}
+      : (() => {
+          const derived = deriveSpellcastingValues({
+            proficiencyBonus: changeSet.proficiencyBonus.to,
+            abilityModifier: modifiers[ability],
+          });
+          return {
+            spellSaveDc: { from: sheet.spellSaveDc, to: derived.spellSaveDc },
+            spellAttackModifier: {
+              from: sheet.spellAttackModifier,
+              to: derived.spellAttackModifier,
+            },
+          };
+        })();
+  return { ...changeSet, savingThrows, ...spell };
 }
 
 /**
@@ -887,6 +1088,34 @@ function hitPointIncrement(
 ): number {
   const average = Math.floor(hitDie / 2) + 1;
   return Math.max(1, average + constitutionModifier);
+}
+
+function resolveHitPointChoice(
+  hitDie: number,
+  constitutionModifier: number,
+  choice: LevelUpHitPointChoice,
+): {
+  readonly method: 'fixed-average' | 'rolled';
+  readonly naturalRoll?: number;
+  readonly increment: number;
+} {
+  if (choice.method === 'fixed-average') {
+    return {
+      method: 'fixed-average',
+      increment: hitPointIncrement(hitDie, constitutionModifier),
+    };
+  }
+  const roll = choice.roll;
+  try {
+    validateDiceRollEvidence(roll, parseDice(`1d${hitDie}`));
+  } catch {
+    throw new LevelUpEngineError('rolled hit-point evidence is malformed');
+  }
+  return {
+    method: 'rolled',
+    naturalRoll: roll.natural,
+    increment: Math.max(1, roll.natural + constitutionModifier),
+  };
 }
 
 /**
@@ -915,15 +1144,19 @@ function spellcastingChanges(
     return { spellcasting: row.spellcasting };
   }
   const abilityModifier = sheet.abilityScores[ability].modifier;
+  const derived = deriveSpellcastingValues({
+    proficiencyBonus: newProficiencyBonus,
+    abilityModifier,
+  });
   return {
     spellcasting: row.spellcasting,
     spellSaveDc: {
       from: sheet.spellSaveDc,
-      to: 8 + newProficiencyBonus + abilityModifier,
+      to: derived.spellSaveDc,
     },
     spellAttackModifier: {
       from: sheet.spellAttackModifier,
-      to: newProficiencyBonus + abilityModifier,
+      to: derived.spellAttackModifier,
     },
   };
 }
@@ -940,6 +1173,24 @@ function applyChangeSetToSheet(
     level: changeSet.level.to,
     proficiencyBonus: changeSet.proficiencyBonus.to,
     maxHitPoints: changeSet.hitPoints.maxHitPoints.to,
+    ...(changeSet.abilityScoreIncreases !== undefined
+      ? {
+          abilityScores: applyAbilityScoreIncreases(
+            sheet,
+            changeSet.abilityScoreIncreases,
+          ),
+        }
+      : {}),
+    ...(changeSet.savingThrows !== undefined
+      ? {
+          savingThrows: Object.fromEntries(
+            Object.entries(changeSet.savingThrows).map(([ability, delta]) => [
+              ability,
+              delta.to,
+            ]),
+          ) as CharacterSheet['savingThrows'],
+        }
+      : {}),
     ...(subclass !== undefined
       ? { subclass: { key: subclass.value, name: subclass.label } }
       : {}),
@@ -951,6 +1202,21 @@ function applyChangeSetToSheet(
       : {}),
   };
   return next;
+}
+
+function applyAbilityScoreIncreases(
+  sheet: CharacterSheet,
+  increases: readonly AppliedAbilityScoreIncrease[],
+): CharacterSheet['abilityScores'] {
+  const scores = { ...sheet.abilityScores };
+  for (const increase of increases) {
+    scores[increase.ability] = {
+      ...scores[increase.ability],
+      final: increase.finalScore.to,
+      modifier: increase.modifier.to,
+    };
+  }
+  return scores;
 }
 
 /**
@@ -982,6 +1248,34 @@ function projectToLiveCharacter(
     value: changeSet.level.to,
     ...ctx,
   });
+  if (changeSet.abilityScoreIncreases !== undefined) {
+    const liveScores = {
+      strength: 0,
+      dexterity: 0,
+      constitution: 0,
+      intelligence: 0,
+      wisdom: 0,
+      charisma: 0,
+    };
+    const sheet = input.store.load(characterId);
+    if (sheet === undefined)
+      throw new LevelUpEngineError(
+        'sheet disappeared during level-up projection',
+      );
+    for (const ability of Object.keys(
+      liveScores,
+    ) as (keyof typeof liveScores)[]) {
+      liveScores[ability] = sheet.abilityScores[ability].final;
+    }
+    mutateState(db, {
+      target: 'character',
+      id: characterId,
+      field: 'ability_scores_json',
+      op: 'set',
+      value: liveScores,
+      ...ctx,
+    });
+  }
   mutateState(db, {
     target: 'character',
     id: characterId,
@@ -996,7 +1290,10 @@ function projectToLiveCharacter(
       id: characterId,
       field: 'hp_current',
       op: 'set',
-      value: row.hp_current + changeSet.hitPoints.increment,
+      value:
+        row.hp_current +
+        (changeSet.hitPoints.maxHitPoints.to -
+          changeSet.hitPoints.maxHitPoints.from),
       ...ctx,
     });
   }

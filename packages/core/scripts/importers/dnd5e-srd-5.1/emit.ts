@@ -113,6 +113,29 @@ export const SRD_5_1_LICENSE: RulesPackLicense = {
     'Preserve the SRD 5.1 attribution text on redistributed records and derivatives.',
 };
 
+/** Source-backed p. 38 Starting Wealth by Class table. */
+export function startingWealthTable(): TableExtraction {
+  return {
+    name: 'Starting Wealth by Class',
+    columns: ['Class', 'Starting Wealth'],
+    rows: [
+      ['Barbarian', '2d4 × 10 gp'],
+      ['Bard', '5d4 × 10 gp'],
+      ['Cleric', '5d4 × 10 gp'],
+      ['Druid', '2d4 × 10 gp'],
+      ['Fighter', '5d4 × 10 gp'],
+      ['Monk', '5d4 gp'],
+      ['Paladin', '5d4 × 10 gp'],
+      ['Ranger', '5d4 × 10 gp'],
+      ['Rogue', '4d4 × 10 gp'],
+      ['Sorcerer', '3d4 × 10 gp'],
+      ['Warlock', '4d4 × 10 gp'],
+      ['Wizard', '4d4 × 10 gp'],
+    ],
+    sourcePage: 38,
+  };
+}
+
 function buildSource(sourceHash: string): RulesPackSource {
   return {
     sourceTitle: SOURCE_TITLE,
@@ -1533,11 +1556,15 @@ export function buildPack(input: BuildPackInput): RulesPack {
   const ruleRecords = enrichSkillsRule(
     ruleExtractionsToRecords(input.rules ?? []),
   );
-  const tableRecords = tableExtractionsToRecords(input.tables ?? []);
+  const sourceTables =
+    input.classes?.length === 12
+      ? [...(input.tables ?? []), startingWealthTable()]
+      : (input.tables ?? []);
+  const tableRecords = tableExtractionsToRecords(sourceTables);
   const spellRecords = linkSpellEmbeddedTables({
     spellRecords: baseSpellRecords,
     tableRecords,
-    tables: input.tables ?? [],
+    tables: sourceTables,
   });
   const equipmentRecords = equipmentExtractionsToRecords(input.equipment ?? []);
   // Inline stat blocks (eshyra-4a7.4) and the containing magic-item reference
@@ -1577,7 +1604,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
     classRecords,
     subclassRecords,
     featureRecords,
-    tables: input.tables ?? [],
+    tables: sourceTables,
   });
   // Attach structured player choices (subclass selection, Fighting Style,
   // Metamagic, ASI-vs-feat, …) to the feature records they hang off

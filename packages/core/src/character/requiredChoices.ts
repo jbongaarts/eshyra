@@ -350,6 +350,17 @@ function collectAncestryChoices(
   grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
+  (ancestry.toolProficiencyChoices ?? []).forEach((spec) => {
+    choices.push({
+      id: 'ancestry.tools',
+      kind: 'tools',
+      source: 'ancestry',
+      status: 'structured',
+      label: spec.text || 'Choose an ancestry tool proficiency',
+      choose: spec.choose,
+      from: spec.from,
+    });
+  });
   collectAncestryAbilityIncrease(ancestry, choices);
   collectAncestryLanguages(ancestry, grantedLanguages, choices);
 }

@@ -157,6 +157,7 @@ describe('guided character creation CLI transcripts (eshyra-b69j.15)', () => {
       'wis 10',
       'cha 8',
       'done',
+      '', // keep package acquisition mode
       'review',
       'quit',
       'n',
@@ -212,6 +213,7 @@ describe('guided character creation CLI transcripts (eshyra-b69j.15)', () => {
       'wis 10',
       'cha 8',
       'done',
+      '',
       'review',
       'quit',
       'n',
