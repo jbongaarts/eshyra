@@ -1842,6 +1842,63 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     }
   });
 
+  it('S3c portal and spatial-boundary spells carry exact ordered effects', () => {
+    expect(spellEffects('spell:gate')).toEqual([
+      { kind: 'planeShift', planes: ['current-plane', 'different-plane'] },
+      {
+        kind: 'portal',
+        diameterFeetMin: 5,
+        diameterFeetMax: 20,
+        frontOnly: true,
+      },
+    ]);
+    expect(spellEffects('spell:demiplane')).toEqual([
+      {
+        kind: 'extradimensionalSpace',
+        dimensionsFeet: 30,
+        onEnd: 'occupants-trapped',
+        reconnect: 'previous-or-known',
+      },
+    ]);
+    expect(spellEffects('spell:passwall')).toEqual([
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+      },
+    ]);
+
+    const refsByKind = (kind: string) =>
+      getBundledDnd5eSrdPack().records.flatMap((record) => {
+        const effects =
+          (
+            (record.data as Record<string, unknown>).mechanics as
+              | { effects?: unknown[] }
+              | undefined
+          )?.effects ?? [];
+        return effects.some(
+          (effect) =>
+            typeof effect === 'object' &&
+            effect !== null &&
+            (effect as { kind?: unknown }).kind === kind,
+        )
+          ? [record.key]
+          : [];
+      });
+    expect(refsByKind('portal')).toEqual(['spell:gate']);
+    expect(refsByKind('extradimensionalSpace')).toEqual(['spell:demiplane']);
+    expect(refsByKind('passage')).toEqual(['spell:passwall']);
+    for (const key of ['spell:gate', 'spell:demiplane', 'spell:passwall']) {
+      expect(
+        spellEffects(key).some(
+          (effect) => (effect as { kind?: unknown }).kind === 'wardedArea',
+        ),
+      ).toBe(false);
+    }
+  });
+
   it('S2 control weather carries onset and table-shift procedure mechanics', () => {
     expect(spellEffects('spell:control-weather')).toEqual([
       { kind: 'onsetTime', roll: '1d4', multiplierMinutes: 10 },

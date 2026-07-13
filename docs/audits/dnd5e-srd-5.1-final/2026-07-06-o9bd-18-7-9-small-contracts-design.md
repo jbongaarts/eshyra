@@ -171,7 +171,7 @@ GM-narrated result rather than a state gate.
   and `{ kind: 'componentPresenceTermination',
   component: 'ivory-statuette-of-self', location: 'on-your-person' }`.
   Every emitted constant is gated by its reviewed source clauses. S3b is
-  implemented below; S3c remains pending.
+  implemented below; S3c is implemented in the final spatial-boundary slice.
 - **S3b implemented (`eshyra-o9bd.18.7.9.8`):** `private-sanctum` and
   `tiny-hut` emit the closed `wardedArea` contract below. The importer source
   gates each boundary independently; this is canonical data only and has no
@@ -189,13 +189,27 @@ GM-narrated result rather than a state gate.
   `permanenceAfterRepetition { period: 'day', count: 365, result: 'permanent' }`.
   Tiny Hut's ordered effects are `wardedArea` followed by
   `triggeredEffect { trigger: 'caster-leaves-warded-area', result: 'spell-ends' }`.
-  S3c remains pending.
+  S3c is implemented below; the S3 family is complete.
 - `gate`: existing `planeShift` payload + `{ kind: 'portal', diameterFeetMin: 5,
   diameterFeetMax: 20, frontOnly: true }`; named-creature draw stays prose.
 - `demiplane`: `{ kind: 'extradimensionalSpace', dimensionsFeet: 30,
   onEnd: 'occupants-trapped', reconnect?: 'previous-or-known' }`.
 - `passwall`: `{ kind: 'passage', maxWidthFeet: 5, maxHeightFeet: 8,
   maxDepthFeet: 20, onEnd: 'safe-ejection' }`.
+
+S3c is implemented as canonical data only. `portal` is a closed payload with
+positive integer `diameterFeetMin`/`diameterFeetMax` (minimum no greater than
+maximum) and required `frontOnly: true`; it deliberately carries no
+destination. `extradimensionalSpace` requires positive integer
+`dimensionsFeet`, `onEnd: 'occupants-trapped'`, and optional
+`reconnect: 'previous-or-known'`. `passage` requires positive integer width,
+height, and depth maxima plus `onEnd: 'safe-ejection'`. All three reject
+unsupported keys and reuse the existing canonical `planeShift` contract.
+Gate's planar-ruler veto, named-creature draw/behavior, Demiplane's
+wood-or-stone and Medium-door prose, Passwall's eligible materials and
+no-instability prose remain prose-only; traversal, orientation, collision,
+storage, reconnect lookup, ejection, active effects, and spell execution are
+engine concerns.
 
 Ward `blocks: ['teleportation','planar-travel']` interacts with the
 modeled `teleport`/`planeShift` kinds — runtime enforcement is engine

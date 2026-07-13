@@ -110374,7 +110374,15 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "extradimensionalSpace",
+            "dimensionsFeet": 30,
+            "onEnd": "occupants-trapped",
+            "reconnect": "previous-or-known"
+          }
+        ]
       }
     },
     "source": "SRD 5.1 p. 134",
@@ -114610,7 +114618,22 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
-        }
+        },
+        "effects": [
+          {
+            "kind": "planeShift",
+            "planes": [
+              "current-plane",
+              "different-plane"
+            ]
+          },
+          {
+            "kind": "portal",
+            "diameterFeetMin": 5,
+            "diameterFeetMax": 20,
+            "frontOnly": true
+          }
+        ]
       },
       "componentMaterials": "a diamond worth at least 5,000 gp"
     },
@@ -120215,7 +120238,16 @@
           "kind": "timed",
           "amount": 1,
           "unit": "hour"
-        }
+        },
+        "effects": [
+          {
+            "kind": "passage",
+            "maxWidthFeet": 5,
+            "maxHeightFeet": 8,
+            "maxDepthFeet": 20,
+            "onEnd": "safe-ejection"
+          }
+        ]
       },
       "componentMaterials": "a pinch of sesame seeds"
     },

@@ -359,7 +359,7 @@ trigger, resetOn?, secret? }`.
 | `spell:sending` | flat 5 % failure when target on another plane; 25-word limit (reference) |
 | `spell:secret-chest` | cumulative 5 %/day after 60 days → effect ends; chest loss rule on end (reference) |
 
-### 2.3 Ward/trigger & spatial-boundary family — 8 — S3a/S3b implemented; S3c pending
+### 2.3 Ward/trigger & spatial-boundary family — 8 — S3a/S3b/S3c implemented; S3 complete
 
 | key | clauses / reuse |
 |---|---|
@@ -368,9 +368,9 @@ trigger, resetOn?, secret? }`.
 | `spell:contingency` | **Implemented S3a:** ordered `spellStoring`, `triggeredEffect`, `exclusiveInstance`, and `componentPresenceTermination` effects preserve the reviewed lifecycle |
 | `spell:private-sanctum` | **Implemented S3b:** `wardedArea` preserves the 5–100 ft cube, selectable sound/vision/divination/teleportation/planar boundaries; `permanenceAfterRepetition` preserves daily casting for one year |
 | `spell:tiny-hut` | **Implemented S3b:** `wardedArea` preserves creature/object/spell barriers, nine Medium-or-smaller occupants, casting-time exemption, and `triggeredEffect` preserves caster-departure termination |
-| `spell:gate` | **Pending S3c:** planar portal dimensions and front-only traversal remain unprojected |
-| `spell:demiplane` | **Pending S3c:** extradimensional room and end/reconnect state remain unprojected |
-| `spell:passwall` | **Pending S3c:** passage dimensions and safe-ejection end state remain unprojected |
+| `spell:gate` | **Implemented S3c:** existing `planeShift` plus closed `portal` dimensions/front-only contract |
+| `spell:demiplane` | **Implemented S3c:** closed `extradimensionalSpace` room and end/reconnect contract |
+| `spell:passwall` | **Implemented S3c:** closed `passage` dimensions and safe-ejection contract |
 
 ### 2.4 Quantified-creation family — 2 — disposition: implemented (slice S2)
 
@@ -490,8 +490,14 @@ every membership key appears in exactly one disposition section):
   S3 8 + accept 11 + accept\* 1. Residual membership after S1 rollout: 20
   (34 - 14 S1 implemented) = S3 8 + accept 11 + accept\* 1. S3a then
   graduated three trigger-based spells, leaving 17 = S3b/S3c 5 + accept 11
-  + accept\* 1. S3b then graduated Private Sanctum and Tiny Hut, leaving 15
-  = S3c 3 + accept 11 + accept\* 1. S3 is therefore not complete.
+  + accept\* 1. S3b then graduated Private Sanctum and Tiny Hut, leaving 15;
+  S3c graduated Gate, Demiplane, and Passwall, leaving 12 = accept 11 +
+  accept\* 1. The S3 family is complete.
+
+The exact residual metadata-only spell membership is 12 keys: `spell:commune-with-nature`,
+`spell:creation`, `spell:druidcraft`, `spell:fabricate`, `spell:identify`,
+`spell:illusory-script`, `spell:legend-lore`, `spell:mending`, `spell:move-earth`,
+`spell:planar-ally`, `spell:purify-food-and-drink`, and `spell:stone-shape`.
 
 **14 records total (2 creatures + 12 spells) are closed permanently by this
 document.** An earlier revision claimed 26 permanent accepts (with
