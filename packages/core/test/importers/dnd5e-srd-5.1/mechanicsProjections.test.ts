@@ -1725,6 +1725,162 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
     );
   });
 
+  const gateDescription =
+    'You conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence. The portal is a circular opening, which you can make 5 to 20 feet in diameter. You can orient the portal in any direction you choose. The portal lasts for the duration. The portal has a front and a back on each plane where it appears. Travel through the portal is possible only by moving through its front. Anything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal.';
+  const demiplaneDescription =
+    'You create a shadowy door on a flat solid surface that you can see within range. When opened, the door leads to a demiplane that appears to be an empty room 30 feet in each dimension, made of wood or stone. When the spell ends, the door disappears, and any creatures or objects inside the demiplane remain trapped there, as the door also disappears from the other side. Each time you cast this spell, you can create a new demiplane, or have the shadowy door connect to a demiplane you created with a previous casting of this spell. Additionally, if you know the nature and contents of a demiplane created by a casting of this spell by another creature, you can have the shadowy door connect to its demiplane instead.';
+  const passwallDescription =
+    'A passage appears at a point of your choice that you can see on a wooden, plaster, or stone surface (such as a wall, a ceiling, or a floor) within range, and lasts for the duration. You choose the opening’s dimensions: up to 5 feet wide, 8 feet tall, and 20 feet deep. When the opening disappears, any creatures or objects still in the passage created by the spell are safely ejected to an unoccupied space nearest to the surface on which you cast the spell.';
+
+  it('projects exact ordered S3c effects', () => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({ name: 'Gate', description: gateDescription }),
+      ).effects,
+    ).toEqual([
+      { kind: 'planeShift', planes: ['current-plane', 'different-plane'] },
+      {
+        kind: 'portal',
+        diameterFeetMin: 5,
+        diameterFeetMax: 20,
+        frontOnly: true,
+      },
+    ]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({ name: 'Demiplane', description: demiplaneDescription }),
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'extradimensionalSpace',
+        dimensionsFeet: 30,
+        onEnd: 'occupants-trapped',
+        reconnect: 'previous-or-known',
+      },
+    ]);
+    expect(
+      deriveSpellMechanics(
+        baseSpell({ name: 'Passwall', description: passwallDescription }),
+      ).effects,
+    ).toEqual([
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+      },
+    ]);
+  });
+
+  it.each([
+    [
+      'cross-plane portal link',
+      'You conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence.',
+    ],
+    ['circular portal opening', 'The portal is a circular opening,'],
+    [
+      '5-to-20-foot portal diameter',
+      'which you can make 5 to 20 feet in diameter.',
+    ],
+    [
+      'front-and-back portal faces',
+      'The portal has a front and a back on each plane where it appears.',
+    ],
+    [
+      'front-only traversal',
+      'Travel through the portal is possible only by moving through its front.',
+    ],
+    [
+      'instant cross-plane transport',
+      'Anything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal.',
+    ],
+  ])('fails closed for Gate when %s disappears', (label, clause) => {
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Gate',
+          description: gateDescription.replace(clause, 'changed clause'),
+        }),
+      ),
+    ).toThrow(
+      `S3c spell projection for Gate is missing reviewed source clause: ${label}`,
+    );
+  });
+
+  it.each([
+    [
+      'shadowy door leads to demiplane',
+      'When opened, the door leads to a demiplane',
+    ],
+    ['30-foot room in each dimension', '30 feet in each dimension'],
+    [
+      'occupants and objects trapped when door disappears',
+      'any creatures or objects inside the demiplane remain trapped there',
+    ],
+    [
+      'reconnect to caster-created previous demiplane',
+      'connect to a demiplane you created with a previous casting of this spell.',
+    ],
+    [
+      'reconnect to known other-creature demiplane',
+      'if you know the nature and contents of a demiplane created by a casting of this spell by another creature, you can have the shadowy door connect to its demiplane instead.',
+    ],
+  ])('fails closed for Demiplane when %s disappears', (label, clause) => {
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Demiplane',
+          description: demiplaneDescription.replace(clause, 'changed clause'),
+        }),
+      ),
+    ).toThrow(
+      `S3c spell projection for Demiplane is missing reviewed source clause: ${label}`,
+    );
+  });
+
+  it.each([
+    ['passage creation', 'A passage appears at a point of your choice'],
+    ['maximum width 5 feet', 'up to 5 feet wide'],
+    ['maximum height 8 feet', '8 feet tall'],
+    ['maximum depth 20 feet', '20 feet deep'],
+    [
+      'safe ejection on disappearance',
+      'any creatures or objects still in the passage created by the spell are safely ejected',
+    ],
+    [
+      'nearest unoccupied space by casting surface',
+      'to an unoccupied space nearest to the surface on which you cast the spell.',
+    ],
+  ])('fails closed for Passwall when %s disappears', (label, clause) => {
+    expect(() =>
+      deriveSpellMechanics(
+        baseSpell({
+          name: 'Passwall',
+          description: passwallDescription.replace(clause, 'changed clause'),
+        }),
+      ),
+    ).toThrow(
+      `S3c spell projection for Passwall is missing reviewed source clause: ${label}`,
+    );
+  });
+
+  it.each([
+    'Gate!',
+    'Gate-Portal',
+    'Demiplane!',
+    'Passwall!',
+  ])('does not project punctuation or hyphen variant %s', (name) => {
+    expect(
+      deriveSpellMechanics(
+        baseSpell({
+          name,
+          description: `${gateDescription} ${demiplaneDescription} ${passwallDescription}`,
+        }),
+      ).effects,
+    ).toBeUndefined();
+  });
+
   it.each([
     'Private Sanctum!',
     'Private-Sanctum',

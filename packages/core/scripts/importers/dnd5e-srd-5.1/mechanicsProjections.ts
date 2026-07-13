@@ -2111,6 +2111,133 @@ function projectReviewedS3bSpellEffects(
   }
 }
 
+function projectReviewedS3cSpellEffects(
+  spell: SpellExtraction,
+): readonly Mechanics[] {
+  const requireClauses = (
+    clauses: readonly { readonly label: string; readonly pattern: RegExp }[],
+  ): void => {
+    const missing = clauses.find(
+      ({ pattern }) => !pattern.test(spell.description),
+    );
+    if (missing !== undefined) {
+      throw new Error(
+        `S3c spell projection for ${spell.name} is missing reviewed source clause: ${missing.label}`,
+      );
+    }
+  };
+
+  switch (spell.name.toLowerCase().replaceAll('’', "'")) {
+    case 'gate':
+      requireClauses([
+        {
+          label: 'cross-plane portal link',
+          pattern:
+            /\bYou conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence\./,
+        },
+        {
+          label: 'circular portal opening',
+          pattern: /\bThe portal is a circular opening\b/,
+        },
+        {
+          label: '5-to-20-foot portal diameter',
+          pattern: /\bwhich you can make 5 to 20 feet in diameter\./,
+        },
+        {
+          label: 'front-and-back portal faces',
+          pattern:
+            /\bThe portal has a front and a back on each plane where it appears\./,
+        },
+        {
+          label: 'front-only traversal',
+          pattern:
+            /\bTravel through the portal is possible only by moving through its front\./,
+        },
+        {
+          label: 'instant cross-plane transport',
+          pattern:
+            /\bAnything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal\./,
+        },
+      ]);
+      return [
+        { kind: 'planeShift', planes: ['current-plane', 'different-plane'] },
+        {
+          kind: 'portal',
+          diameterFeetMin: 5,
+          diameterFeetMax: 20,
+          frontOnly: true,
+        },
+      ];
+    case 'demiplane':
+      requireClauses([
+        {
+          label: 'shadowy door leads to demiplane',
+          pattern:
+            /\bYou create a shadowy door on a flat solid surface that you can see within range\.[\s\S]*?\bWhen opened, the door leads to a demiplane\b/,
+        },
+        {
+          label: '30-foot room in each dimension',
+          pattern: /\bempty room 30 feet in each dimension\b/,
+        },
+        {
+          label: 'occupants and objects trapped when door disappears',
+          pattern:
+            /\bWhen the spell ends, the door disappears, and any creatures or objects inside the demiplane remain trapped there\b/,
+        },
+        {
+          label: 'reconnect to caster-created previous demiplane',
+          pattern:
+            /\bconnect to a demiplane you created with a previous casting of this spell\./,
+        },
+        {
+          label: 'reconnect to known other-creature demiplane',
+          pattern:
+            /\bif you know the nature and contents of a demiplane created by a casting of this spell by another creature, you can have the shadowy door connect to its demiplane instead\./,
+        },
+      ]);
+      return [
+        {
+          kind: 'extradimensionalSpace',
+          dimensionsFeet: 30,
+          onEnd: 'occupants-trapped',
+          reconnect: 'previous-or-known',
+        },
+      ];
+    case 'passwall':
+      requireClauses([
+        {
+          label: 'passage creation',
+          pattern:
+            /\bA passage appears at a point of your choice that you can see on a wooden, plaster, or stone surface\b/,
+        },
+        { label: 'maximum width 5 feet', pattern: /\bup to 5 feet wide\b/ },
+        { label: 'maximum height 8 feet', pattern: /\b8 feet tall\b/ },
+        { label: 'maximum depth 20 feet', pattern: /\b20 feet deep\b/ },
+        {
+          label: 'safe ejection on disappearance',
+          pattern:
+            /\bWhen the opening disappears, any creatures or objects still in the passage created by the spell are safely ejected\b/,
+        },
+        {
+          label: 'nearest unoccupied space by casting surface',
+          pattern:
+            /\bto an unoccupied space nearest to the surface on which you cast the spell\./,
+        },
+      ]);
+      return [
+        {
+          kind: 'passage',
+          maxWidthFeet: 5,
+          maxHeightFeet: 8,
+          maxDepthFeet: 20,
+          onEnd: 'safe-ejection',
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
 /**
  * Structured upcast scaling (eshyra-o9bd.18.7.4). The verbatim At Higher
  * Levels text always rides along as `sourceText`; the typed fields are added
@@ -2183,6 +2310,7 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     ...projectReviewedS2SpellEffects(spell),
     ...projectReviewedS3aSpellEffects(spell),
     ...projectReviewedS3bSpellEffects(spell),
+    ...projectReviewedS3cSpellEffects(spell),
   ];
   // "takes force damage equal to 1d8 + your spellcasting ability modifier"
   // (Spiritual Weapon) — a dealt-damage form parseDamage's "<dice> <type>

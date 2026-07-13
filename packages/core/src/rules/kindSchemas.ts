@@ -102,6 +102,9 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'moveThroughNarrowSpaces',
   'moveUpTo',
   'planeShift',
+  'portal',
+  'extradimensionalSpace',
+  'passage',
   'recurringDamage',
   'rejuvenation',
   'seeInMagicalDarkness',
@@ -3069,6 +3072,44 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     optInt(effect, 'threshold', path, 1);
     optStr(effect, 'trigger', path);
     optInt(effect, 'returnRangeFeet', path, 1);
+  },
+  portal: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      ['kind', 'diameterFeetMin', 'diameterFeetMax', 'frontOnly'],
+      path,
+    );
+    const minimum = reqInt(effect, 'diameterFeetMin', path, 1);
+    const maximum = reqInt(effect, 'diameterFeetMax', path, 1);
+    if (minimum > maximum) {
+      throw new RulesPackError(
+        `${path}.diameterFeetMin must not exceed diameterFeetMax`,
+      );
+    }
+    if (effect.frontOnly !== true) {
+      throw new RulesPackError(`${path}.frontOnly must be true`);
+    }
+  },
+  extradimensionalSpace: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      ['kind', 'dimensionsFeet', 'onEnd', 'reconnect'],
+      path,
+    );
+    reqInt(effect, 'dimensionsFeet', path, 1);
+    reqEnum(effect, 'onEnd', path, new Set(['occupants-trapped']));
+    optEnum(effect, 'reconnect', path, new Set(['previous-or-known']));
+  },
+  passage: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      ['kind', 'maxWidthFeet', 'maxHeightFeet', 'maxDepthFeet', 'onEnd'],
+      path,
+    );
+    reqInt(effect, 'maxWidthFeet', path, 1);
+    reqInt(effect, 'maxHeightFeet', path, 1);
+    reqInt(effect, 'maxDepthFeet', path, 1);
+    reqEnum(effect, 'onEnd', path, new Set(['safe-ejection']));
   },
   recurringDamage: (effect, path) => {
     if ((effect.amount === undefined) === (effect.dice === undefined)) {

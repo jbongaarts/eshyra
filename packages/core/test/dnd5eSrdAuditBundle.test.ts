@@ -204,8 +204,8 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     // 17 reviewed small deterministic-clause spells into typed mechanics, the
     // S1 rollout moved 14 summoning/control spells, S3a moved Alarm, Magic
     // Mouth, and Contingency, and S3b moved Private Sanctum and Tiny Hut.
-    // S3c remains metadata-only pending its own reviewed rollout.
-    expect(spells.spellsWithDeterministicEffects).toBe(304);
+    // S3c moved Gate, Demiplane, and Passwall into typed mechanics.
+    expect(spells.spellsWithDeterministicEffects).toBe(307);
     expect(spells.metadataOnlySpells).toBe(
       ACCEPTED_METADATA_ONLY_SPELLS.length,
     );

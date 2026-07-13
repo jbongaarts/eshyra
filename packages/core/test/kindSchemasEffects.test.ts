@@ -1969,6 +1969,219 @@ describe('mechanics effect payload contracts', () => {
       /portion/,
     );
   });
+
+  it('accepts the closed S3c spatial effect payloads', () => {
+    expect(() =>
+      validate({
+        kind: 'portal',
+        diameterFeetMin: 5,
+        diameterFeetMax: 20,
+        frontOnly: true,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'extradimensionalSpace',
+        dimensionsFeet: 30,
+        onEnd: 'occupants-trapped',
+        reconnect: 'previous-or-known',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    [
+      { kind: 'portal', diameterFeetMax: 20, frontOnly: true },
+      /diameterFeetMin/,
+    ],
+    [
+      { kind: 'portal', diameterFeetMin: 5, frontOnly: true },
+      /diameterFeetMax/,
+    ],
+    [
+      {
+        kind: 'portal',
+        diameterFeetMin: 0,
+        diameterFeetMax: 20,
+        frontOnly: true,
+      },
+      /diameterFeetMin/,
+    ],
+    [
+      {
+        kind: 'portal',
+        diameterFeetMin: 5.5,
+        diameterFeetMax: 20,
+        frontOnly: true,
+      },
+      /diameterFeetMin/,
+    ],
+    [
+      {
+        kind: 'portal',
+        diameterFeetMin: 21,
+        diameterFeetMax: 20,
+        frontOnly: true,
+      },
+      /must not exceed/,
+    ],
+    [{ kind: 'portal', diameterFeetMin: 5, diameterFeetMax: 20 }, /frontOnly/],
+    [
+      {
+        kind: 'portal',
+        diameterFeetMin: 5,
+        diameterFeetMax: 20,
+        frontOnly: false,
+      },
+      /frontOnly/,
+    ],
+    [
+      {
+        kind: 'portal',
+        diameterFeetMin: 5,
+        diameterFeetMax: 20,
+        frontOnly: true,
+        extra: true,
+      },
+      /unsupported key/,
+    ],
+    [
+      { kind: 'extradimensionalSpace', onEnd: 'occupants-trapped' },
+      /dimensionsFeet/,
+    ],
+    [
+      {
+        kind: 'extradimensionalSpace',
+        dimensionsFeet: 0,
+        onEnd: 'occupants-trapped',
+      },
+      /dimensionsFeet/,
+    ],
+    [
+      {
+        kind: 'extradimensionalSpace',
+        dimensionsFeet: 30.5,
+        onEnd: 'occupants-trapped',
+      },
+      /dimensionsFeet/,
+    ],
+    [{ kind: 'extradimensionalSpace', dimensionsFeet: 30 }, /onEnd/],
+    [
+      { kind: 'extradimensionalSpace', dimensionsFeet: 30, onEnd: 'other' },
+      /onEnd/,
+    ],
+    [
+      {
+        kind: 'extradimensionalSpace',
+        dimensionsFeet: 30,
+        onEnd: 'occupants-trapped',
+        reconnect: 'new',
+      },
+      /reconnect/,
+    ],
+    [
+      {
+        kind: 'extradimensionalSpace',
+        dimensionsFeet: 30,
+        onEnd: 'occupants-trapped',
+        extra: true,
+      },
+      /unsupported key/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxHeightFeet: 8,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+      },
+      /maxWidthFeet/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+      },
+      /maxHeightFeet/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8,
+        onEnd: 'safe-ejection',
+      },
+      /maxDepthFeet/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxWidthFeet: 0,
+        maxHeightFeet: 8,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+      },
+      /maxWidthFeet/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8.5,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+      },
+      /maxHeightFeet/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8,
+        maxDepthFeet: 20.5,
+        onEnd: 'safe-ejection',
+      },
+      /maxDepthFeet/,
+    ],
+    [
+      { kind: 'passage', maxWidthFeet: 5, maxHeightFeet: 8, maxDepthFeet: 20 },
+      /onEnd/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8,
+        maxDepthFeet: 20,
+        onEnd: 'unsafe',
+      },
+      /onEnd/,
+    ],
+    [
+      {
+        kind: 'passage',
+        maxWidthFeet: 5,
+        maxHeightFeet: 8,
+        maxDepthFeet: 20,
+        onEnd: 'safe-ejection',
+        extra: true,
+      },
+      /unsupported key/,
+    ],
+  ])('rejects malformed S3c effect payload %#', (effect, error) => {
+    expect(() => validate(effect)).toThrow(error);
+  });
 });
 
 /**
