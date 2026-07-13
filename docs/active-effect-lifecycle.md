@@ -3,7 +3,7 @@
 Bead: `eshyra-2n1t.5` (engine family F3; source:
 `docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md`
 §4). Runtime owner: `packages/core/src/state/activeEffects.ts`; durable schema:
-`packages/core/data/migrations/0009_active_effects.sql`; evidence:
+`packages/core/data/migrations/0010_active_effects.sql`; evidence:
 `packages/core/test/activeEffects.test.ts`.
 
 This document records the reviewed contract. The executable authority is the
@@ -29,7 +29,7 @@ sibling beads.
 
 ## 2. Durable model
 
-Four tables (migration 0009), all campaign-scoped, all carrying
+Four tables (migration 0010), all campaign-scoped, all carrying
 provenance/session/updated-at like every other live-state table:
 
 - **`active_effect`** — one row per effect instance. Identity

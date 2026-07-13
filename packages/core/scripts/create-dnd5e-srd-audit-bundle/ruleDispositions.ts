@@ -2971,15 +2971,15 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * F4 interplay). F10 exposed the wallet, mutation invariants, persistence, and
  * audit trail, but deterministic resale and downtime-cost transforms remain
  * partial until registered calculation primitives own those numbers. F3,
- * eshyra-2n1t.5, moved concentration to implemented. The reviewed stacked
- * census is now 37/109/16/3/10.
+ * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
+ * reviewed stacked census is now 37/109/17/2/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
     implemented: 37,
     'model-adjudicated-supported': 109,
-    partial: 16,
-    unimplemented: 3,
+    partial: 17,
+    unimplemented: 2,
     'design-blocked': 10,
   });
 

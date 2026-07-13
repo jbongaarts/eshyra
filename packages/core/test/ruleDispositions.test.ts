@@ -123,8 +123,8 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // EXPECTED_COVERAGE_CENSUS.
     expect(report.engineProcedure.implemented).toBe(37);
     expect(report.engineProcedure.modelAdjudicatedSupported).toBe(109);
-    expect(report.engineProcedure.partial).toHaveLength(16);
-    expect(report.engineProcedure.unimplemented).toHaveLength(3);
+    expect(report.engineProcedure.partial).toHaveLength(17);
+    expect(report.engineProcedure.unimplemented).toHaveLength(2);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
     // 8 rows carry an externally owned clause (armor-guidance,
     // casting-a-spell-saving-throws, charges, special-weapons,

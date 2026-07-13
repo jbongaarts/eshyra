@@ -1,4 +1,4 @@
--- Migration 0009: active-effect lifecycle & concentration (eshyra-2n1t.5,
+-- Migration 0010: active-effect lifecycle & concentration (eshyra-2n1t.5,
 -- engine family F3; source: docs/audits/dnd5e-srd-5.1-final/
 -- 2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4; design:
 -- docs/active-effect-lifecycle.md).
