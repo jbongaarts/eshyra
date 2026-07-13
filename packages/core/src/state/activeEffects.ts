@@ -350,6 +350,11 @@ export interface RemoveEffectTargetInput extends EffectMutationContext {
 
 export interface RemoveEffectTargetResult {
   readonly changed: boolean;
+  /** True when this removal's cleanup cascaded back and ENDED the effect:
+   *  the requested non-terminal transition was superseded by a terminal one
+   *  (the target row still carries this removal's provenance; the terminal
+   *  'ended' event closed the ledger). */
+  readonly superseded?: boolean;
   readonly effect: ActiveEffectView;
   readonly cleanup: readonly EffectCleanupAction[];
 }
@@ -970,9 +975,45 @@ export function auditActiveEffectIntegrity(
         issue: `expected ${expectedTerminal} terminal 'ended' event(s) for status '${row.status}', found ${terminalEvents}`,
       });
     }
+    if (
+      row.status === 'ended' &&
+      events.length > 0 &&
+      events.at(-1)?.event_kind !== 'ended'
+    ) {
+      issues.push({
+        effectId: row.effect_id,
+        issue: `'ended' must be the final ledger event, but the last event is '${events.at(-1)?.event_kind}'`,
+      });
+    }
 
     if (row.status === 'ended') {
       continue;
+    }
+
+    // A live round-unit timer must have an evaluable clock: its anchoring
+    // combat instance must exist and still be active (closeCombatInstance
+    // settles these; only direct writes can corrupt this).
+    if (
+      row.duration_kind === 'timed' &&
+      row.duration_unit === 'round' &&
+      row.anchor_combat_instance_id !== null
+    ) {
+      const anchorInstance = db
+        .prepare(
+          `SELECT status FROM combat_instance
+           WHERE campaign_id = ? AND combat_instance_id = ?`,
+        )
+        .get(campaignId, row.anchor_combat_instance_id) as
+        | { status: string }
+        | undefined;
+      if (anchorInstance === undefined || anchorInstance.status !== 'active') {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `live round timer is anchored to ${
+            anchorInstance === undefined ? 'missing' : anchorInstance.status
+          } combat instance '${row.anchor_combat_instance_id}' — its clock can never advance`,
+        });
+      }
     }
 
     // Kind license: links must be of kinds the effect's semantic family
@@ -1394,6 +1435,24 @@ function appendEvent(
   detail: Record<string, unknown>,
   ctx: EffectMutationContext,
 ): void {
+  // Ledger invariant: 'ended' is the FINAL event. finalizeEnd flips status
+  // before appending its own 'ended' event, so this guard both blocks any
+  // transition event a re-entrant caller might try to append after a
+  // terminal cascade and never blocks the terminal event itself.
+  if (eventKind !== 'ended') {
+    const status = db
+      .prepare(
+        `SELECT status FROM active_effect
+         WHERE campaign_id = ? AND effect_id = ?`,
+      )
+      .get(campaignId, effectId) as { status: EffectStatus } | undefined;
+    if (status?.status === 'ended') {
+      throw new ActiveEffectError(
+        `cannot append '${eventKind}' event to ended effect '${effectId}': ` +
+          "'ended' is the final ledger event",
+      );
+    }
+  }
   db.prepare(
     `INSERT INTO active_effect_event(
        campaign_id, effect_id, seq, event_kind, detail_json, occurred_at,
@@ -2245,6 +2304,23 @@ export function createActiveEffect(
           at: input.at,
         });
       }
+      // Re-entrancy policy: this projection can cascade (it may break a
+      // third party's concentration, whose cleanup can inactivate an actor
+      // that owns THIS effect's concentration and end it mid-create). A
+      // creation whose effect no longer lives cannot succeed — throw and
+      // roll the whole creation back rather than committing a projection
+      // ledger onto an ended effect.
+      if (
+        readEffectRow(txnDb, input.campaignId, input.effectId)?.status ===
+        'ended'
+      ) {
+        throw new ActiveEffectError(
+          `creating effect '${input.effectId}' was superseded: projecting ` +
+            `'${projection.condition.id}' cascaded back and ended the effect ` +
+            'mid-creation; nothing was committed — resolve the conflicting ' +
+            'concentration topology first',
+        );
+      }
       insertLink.run(
         input.campaignId,
         input.effectId,
@@ -2749,55 +2825,10 @@ export function removeEffectTarget(
       );
     }
 
-    // Partial multi-target cleanup: exactly this target's owned projections.
-    const actions: EffectCleanupAction[] = [];
-    if (input.target.kind !== 'scope') {
-      const links = readLinkRows(
-        txnDb,
-        input.campaignId,
-        input.effectId,
-      ).filter(
-        (link) =>
-          link.status === 'active' &&
-          link.target_kind === input.target.kind &&
-          link.target_ref === input.target.ref,
-      );
-      for (const link of links) {
-        const action =
-          link.cleanup_on_end === 'release'
-            ? 'released'
-            : removeProjection(txnDb, input.campaignId, link, input);
-        txnDb
-          .prepare(
-            `UPDATE active_effect_link
-             SET status = ?, removed_reason = ?, removed_at = ?,
-                 provenance = ?, session_id = ?, updated_at = ?
-             WHERE campaign_id = ? AND effect_id = ? AND link_kind = ?
-               AND target_kind = ? AND target_ref = ? AND projection_ref = ?`,
-          )
-          .run(
-            action === 'released' ? 'released' : 'removed',
-            `target-removed:${input.reason}`,
-            input.at,
-            input.provenance,
-            input.sessionId,
-            input.at,
-            input.campaignId,
-            input.effectId,
-            link.link_kind,
-            link.target_kind,
-            link.target_ref,
-            link.projection_ref,
-          );
-        actions.push({
-          linkKind: link.link_kind,
-          target: { kind: link.target_kind, ref: link.target_ref },
-          projectionRef: link.projection_ref,
-          action,
-        });
-      }
-    }
-
+    // Re-entrancy policy (F3 mutation audit, invariant 18): mark the target
+    // removed FIRST, so if a nested cleanup cascade ends this very effect
+    // mid-operation, the terminal sweep (which only touches ACTIVE targets)
+    // cannot overwrite this removal's provenance with 'effect-ended'.
     txnDb
       .prepare(
         `UPDATE active_effect_target
@@ -2818,27 +2849,124 @@ export function removeEffectTarget(
         input.target.ref,
       );
 
-    appendEvent(
-      txnDb,
-      input.campaignId,
-      input.effectId,
-      'target-removed',
-      {
-        target: { ...input.target },
-        reason: input.reason,
-        cleanup: actions.map((action) => ({
-          linkKind: action.linkKind,
-          targetKind: action.target.kind,
-          targetRef: action.target.ref,
-          projectionRef: action.projectionRef,
-          action: action.action,
-        })),
-      },
-      input,
-    );
+    // Partial multi-target cleanup: exactly this target's owned projections.
+    // Each projection removal can cascade (an owned-actor removal can break
+    // another owner's concentration, which can cascade back and END this
+    // effect); every iteration therefore re-reads before writing and never
+    // assumes the effect — or the link — is still live.
+    const actions: EffectCleanupAction[] = [];
+    let superseded = false;
+    if (input.target.kind !== 'scope') {
+      const links = readLinkRows(
+        txnDb,
+        input.campaignId,
+        input.effectId,
+      ).filter(
+        (link) =>
+          link.status === 'active' &&
+          link.target_kind === input.target.kind &&
+          link.target_ref === input.target.ref,
+      );
+      for (const link of links) {
+        // A prior iteration's cascade may have terminally closed this link.
+        const current = readLinkRows(
+          txnDb,
+          input.campaignId,
+          input.effectId,
+        ).find(
+          (candidate) =>
+            candidate.link_kind === link.link_kind &&
+            candidate.target_kind === link.target_kind &&
+            candidate.target_ref === link.target_ref &&
+            candidate.projection_ref === link.projection_ref,
+        );
+        if (current === undefined || current.status !== 'active') {
+          continue;
+        }
+        const action =
+          link.cleanup_on_end === 'release'
+            ? 'released'
+            : removeProjection(txnDb, input.campaignId, link, input);
+        // The cascade inside removeProjection may have ended this effect and
+        // terminally closed the link; only stamp our provenance if it is
+        // still ours to close — never overwrite the winning cleanup reason.
+        const after = readLinkRows(
+          txnDb,
+          input.campaignId,
+          input.effectId,
+        ).find(
+          (candidate) =>
+            candidate.link_kind === link.link_kind &&
+            candidate.target_kind === link.target_kind &&
+            candidate.target_ref === link.target_ref &&
+            candidate.projection_ref === link.projection_ref,
+        );
+        if (after !== undefined && after.status === 'active') {
+          txnDb
+            .prepare(
+              `UPDATE active_effect_link
+               SET status = ?, removed_reason = ?, removed_at = ?,
+                   provenance = ?, session_id = ?, updated_at = ?
+               WHERE campaign_id = ? AND effect_id = ? AND link_kind = ?
+                 AND target_kind = ? AND target_ref = ? AND projection_ref = ?`,
+            )
+            .run(
+              action === 'released' ? 'released' : 'removed',
+              `target-removed:${input.reason}`,
+              input.at,
+              input.provenance,
+              input.sessionId,
+              input.at,
+              input.campaignId,
+              input.effectId,
+              link.link_kind,
+              link.target_kind,
+              link.target_ref,
+              link.projection_ref,
+            );
+          actions.push({
+            linkKind: link.link_kind,
+            target: { kind: link.target_kind, ref: link.target_ref },
+            projectionRef: link.projection_ref,
+            action,
+          });
+        }
+        const liveNow = readEffectRow(txnDb, input.campaignId, input.effectId);
+        if (liveNow?.status === 'ended') {
+          superseded = true;
+          break;
+        }
+      }
+    }
+
+    // 'ended' is the final ledger event: when a cascade ended this effect,
+    // the terminal event already closed the ledger and no 'target-removed'
+    // event may follow it. The target row's 'saved'/'ruled' provenance and
+    // the terminal event's cleanup record remain the durable evidence.
+    if (!superseded) {
+      appendEvent(
+        txnDb,
+        input.campaignId,
+        input.effectId,
+        'target-removed',
+        {
+          target: { ...input.target },
+          reason: input.reason,
+          cleanup: actions.map((action) => ({
+            linkKind: action.linkKind,
+            targetKind: action.target.kind,
+            targetRef: action.target.ref,
+            projectionRef: action.projectionRef,
+            action: action.action,
+          })),
+        },
+        input,
+      );
+    }
 
     return {
       changed: true,
+      ...(superseded ? { superseded: true } : {}),
       effect: requireEffectView(txnDb, input.campaignId, input.effectId),
       cleanup: actions,
     };
@@ -3167,6 +3295,11 @@ export function expireElapsedRoundEffects(
 // ---------------------------------------------------------------------------
 
 export interface CombatClosureEffectReactions {
+  /** Round-anchored live effects expired at the closure boundary. */
+  readonly timersExpired: readonly {
+    readonly effectId: string;
+    readonly displayName: string;
+  }[];
   /** Combatant-owned concentration effects ended (cause 'owner-removed'). */
   readonly concentrationBroken: readonly {
     readonly effectId: string;
@@ -3176,27 +3309,39 @@ export interface CombatClosureEffectReactions {
   readonly targetsRemoved: number;
   /** Condition links removed / actor links released ('combat-ended'). */
   readonly linksCleaned: number;
+  /** Live effects whose source actor was a closing combatant: the pointer
+   *  was detached (the created event keeps the provenance forever). */
+  readonly sourceActorsDetached: number;
 }
 
 /**
  * Apply the fail-closed combat-closure boundary to live effect state, called
  * by `closeCombatInstance` inside its transaction and BEFORE the instance
- * status flips, while the instance's combatants are still mutable:
+ * status flips, while the instance's combatants are still mutable.
+ * Deterministic precedence (F3 mutation audit §7):
  *
- * 1. Live concentration owned by a combatant of the closing instance breaks
+ * 1. **Timers settle first**: every live effect whose round-unit timer is
+ *    anchored to the closing instance expires (reason 'expired') — its clock
+ *    can never advance again, and round-scale durations (6s/round) elapse
+ *    before anything mechanically relevant can happen after combat. The
+ *    audit note distinguishes deadline-reached from remaining-rounds cases.
+ * 2. Live concentration owned by a combatant of the instance breaks
  *    (cause 'owner-removed') with break-policy cleanup.
- * 2. Remaining live effects' active targets that are combatants of the
- *    instance are removed (reason 'combat-ended'), cleaning exactly their
- *    owned projections.
- * 3. Leftover active condition links on the instance's combatants are
- *    removed (projection deleted while the holder is still reachable), and
- *    active actor links to them are released — the engine relinquishes
- *    ownership it can no longer exercise, recorded in a 'combat-closed'
- *    audit event per affected effect.
+ * 3. Remaining live effects' active combatant targets of the instance are
+ *    removed (reason 'combat-ended'), cleaning exactly their projections.
+ * 4. Leftover active condition links on the instance's combatants are
+ *    removed (while the holder is still reachable) and active actor links
+ *    are released; live effects whose `source.actor` is an instance
+ *    combatant have that pointer detached (columns nulled — the 'created'
+ *    event records the original actor permanently). Recorded per effect in
+ *    a 'combat-closed' audit event.
  *
- * Character-owned effects (and their character/scope targets) are untouched:
- * combat ending does not end spells. Rebinding persistent summons to
- * campaign-actor identity is eshyra-2n1t.5.3.
+ * Every step re-reads liveness before writing: any step's cleanup can
+ * cascade (owned-actor removal → actor inactive → its concentration breaks)
+ * and end an effect a later step would otherwise touch. Character-owned
+ * effects with no combatant references survive untouched — combat ending
+ * does not end spells. Rebinding persistent summons to campaign-actor
+ * identity is eshyra-2n1t.5.3.
  */
 export function applyCombatClosureToEffects(
   db: Db,
@@ -3215,31 +3360,90 @@ export function applyCombatClosureToEffects(
         .all(campaignId, combatInstanceId) as { combatant_id: string }[]
     ).map((row) => row.combatant_id),
   );
-  if (combatantIds.size === 0) {
-    return { concentrationBroken: [], targetsRemoved: 0, linksCleaned: 0 };
-  }
 
-  // 1. Break combatant-owned concentration (deterministic order).
-  const concentrationBroken: { effectId: string; displayName: string }[] = [];
-  const ownedRows = (
+  const liveRowsOrdered = () =>
     db
       .prepare(
         `SELECT ${EFFECT_COLUMNS} FROM active_effect
-         WHERE campaign_id = ? AND requires_concentration = 1
-           AND concentration_owner_kind = 'combatant'
-           AND status IN ('active', 'suppressed')
+         WHERE campaign_id = ? AND status IN ('active', 'suppressed')
          ORDER BY created_at, effect_id`,
       )
-      .all(campaignId) as ActiveEffectRow[]
-  ).filter(
-    (row) =>
-      row.concentration_owner_ref !== null &&
-      combatantIds.has(row.concentration_owner_ref),
-  );
-  for (const row of ownedRows) {
+      .all(campaignId) as ActiveEffectRow[];
+
+  // 1. Settle round timers anchored to this instance — regardless of owner,
+  // source, targets, links, or suppression. A committed live effect may
+  // never retain a timer whose clock cannot advance.
+  const timersExpired: { effectId: string; displayName: string }[] = [];
+  for (const row of liveRowsOrdered()) {
+    if (
+      row.duration_kind !== 'timed' ||
+      row.duration_unit !== 'round' ||
+      row.anchor_combat_instance_id !== combatInstanceId
+    ) {
+      continue;
+    }
+    const instanceRound = db
+      .prepare(
+        `SELECT round_number FROM combat_instance
+         WHERE campaign_id = ? AND combat_instance_id = ?`,
+      )
+      .get(campaignId, combatInstanceId) as { round_number: number };
+    const deadline =
+      row.anchor_round === null || row.duration_amount === null
+        ? undefined
+        : row.anchor_round + row.duration_amount;
+    const remaining =
+      deadline === undefined
+        ? 0
+        : Math.max(0, deadline - Math.max(1, instanceRound.round_number));
     finalizeEnd(
       db,
       row,
+      {
+        reason: 'expired',
+        note:
+          remaining === 0
+            ? `round deadline ${deadline} reached when combat instance '${combatInstanceId}' closed`
+            : `combat instance '${combatInstanceId}' closed with ${remaining} round(s) remaining; ` +
+              'the round-scale duration elapses as combat ends',
+      },
+      ctx,
+    );
+    timersExpired.push({
+      effectId: row.effect_id,
+      displayName: row.display_name,
+    });
+  }
+
+  if (combatantIds.size === 0) {
+    return {
+      timersExpired,
+      concentrationBroken: [],
+      targetsRemoved: 0,
+      linksCleaned: 0,
+      sourceActorsDetached: 0,
+    };
+  }
+
+  // 2. Break combatant-owned concentration (re-read liveness: a timer
+  // settlement above may already have ended the effect).
+  const concentrationBroken: { effectId: string; displayName: string }[] = [];
+  for (const row of liveRowsOrdered()) {
+    if (
+      row.requires_concentration !== 1 ||
+      row.concentration_owner_kind !== 'combatant' ||
+      row.concentration_owner_ref === null ||
+      !combatantIds.has(row.concentration_owner_ref)
+    ) {
+      continue;
+    }
+    const live = readEffectRow(db, campaignId, row.effect_id);
+    if (live === undefined || live.status === 'ended') {
+      continue;
+    }
+    finalizeEnd(
+      db,
+      live,
       {
         reason: 'concentration-broken',
         detail: 'owner-removed',
@@ -3253,58 +3457,32 @@ export function applyCombatClosureToEffects(
     });
   }
 
-  // 2 + 3. Detach the instance's combatants from remaining live effects.
+  // 3 + 4. Detach the instance's combatants from remaining live effects.
+  // Actor links are released FIRST: a combatant that is both a target and
+  // an owned actor keeps the release disposition (the engine relinquishes
+  // ownership; it does not inactivate the entity at combat close), and the
+  // later target removal then only cleans condition projections.
   let targetsRemoved = 0;
   let linksCleaned = 0;
-  const liveRows = db
-    .prepare(
-      `SELECT ${EFFECT_COLUMNS} FROM active_effect
-       WHERE campaign_id = ? AND status IN ('active', 'suppressed')
-       ORDER BY created_at, effect_id`,
-    )
-    .all(campaignId) as ActiveEffectRow[];
-  for (const row of liveRows) {
-    for (const target of readTargetRows(db, campaignId, row.effect_id)) {
-      if (
-        target.status === 'active' &&
-        target.target_kind === 'combatant' &&
-        combatantIds.has(target.target_ref)
-      ) {
-        removeEffectTarget(db, {
-          campaignId,
-          effectId: row.effect_id,
-          target: { kind: 'combatant', ref: target.target_ref },
-          reason: 'combat-ended',
-          ...ctx,
-        });
-        targetsRemoved += 1;
-      }
-    }
-    const leftoverLinks = readLinkRows(db, campaignId, row.effect_id).filter(
-      (link) =>
-        link.status === 'active' &&
-        link.target_kind === 'combatant' &&
-        combatantIds.has(link.target_ref),
-    );
-    if (leftoverLinks.length === 0) {
-      continue;
-    }
+  let sourceActorsDetached = 0;
+  for (const row of liveRowsOrdered()) {
     const actions: EffectCleanupAction[] = [];
-    for (const link of leftoverLinks) {
-      // Actor links are released (ownership can no longer be exercised);
-      // condition links are removed while the holder is still mutable.
-      const action: EffectCleanupAction['action'] =
-        link.link_kind === 'actor'
-          ? 'released'
-          : removeProjection(db, campaignId, link, ctx);
+    for (const link of readLinkRows(db, campaignId, row.effect_id)) {
+      if (
+        link.status !== 'active' ||
+        link.link_kind !== 'actor' ||
+        link.target_kind !== 'combatant' ||
+        !combatantIds.has(link.target_ref)
+      ) {
+        continue;
+      }
       db.prepare(
         `UPDATE active_effect_link
-         SET status = ?, removed_reason = 'combat-ended', removed_at = ?,
-             provenance = ?, session_id = ?, updated_at = ?
+         SET status = 'released', removed_reason = 'combat-ended',
+             removed_at = ?, provenance = ?, session_id = ?, updated_at = ?
          WHERE campaign_id = ? AND effect_id = ? AND link_kind = ?
            AND target_kind = ? AND target_ref = ? AND projection_ref = ?`,
       ).run(
-        action === 'released' ? 'released' : 'removed',
         ctx.at,
         ctx.provenance,
         ctx.sessionId,
@@ -3320,27 +3498,150 @@ export function applyCombatClosureToEffects(
         linkKind: link.link_kind,
         target: { kind: link.target_kind, ref: link.target_ref },
         projectionRef: link.projection_ref,
-        action,
+        action: 'released',
       });
       linksCleaned += 1;
     }
-    appendEvent(
-      db,
-      campaignId,
-      row.effect_id,
-      'combat-closed',
-      {
-        combatInstanceId,
-        cleanup: actions.map((action) => ({
-          linkKind: action.linkKind,
-          targetKind: action.target.kind,
-          targetRef: action.target.ref,
-          projectionRef: action.projectionRef,
-          action: action.action,
-        })),
-      },
-      ctx,
-    );
+    for (const target of readTargetRows(db, campaignId, row.effect_id)) {
+      if (
+        target.status !== 'active' ||
+        target.target_kind !== 'combatant' ||
+        !combatantIds.has(target.target_ref)
+      ) {
+        continue;
+      }
+      // removeEffectTarget is itself re-entrancy safe; a cascade from an
+      // earlier removal can end this effect, so re-check before each call.
+      if (readEffectRow(db, campaignId, row.effect_id)?.status === 'ended') {
+        break;
+      }
+      removeEffectTarget(db, {
+        campaignId,
+        effectId: row.effect_id,
+        target: { kind: 'combatant', ref: target.target_ref },
+        reason: 'combat-ended',
+        ...ctx,
+      });
+      targetsRemoved += 1;
+    }
+    if (readEffectRow(db, campaignId, row.effect_id)?.status === 'ended') {
+      continue;
+    }
+
+    let effectEnded = false;
+    for (const link of readLinkRows(db, campaignId, row.effect_id)) {
+      if (
+        link.status !== 'active' ||
+        link.link_kind === 'actor' ||
+        link.target_kind !== 'combatant' ||
+        !combatantIds.has(link.target_ref)
+      ) {
+        continue;
+      }
+      // Leftover condition links (holders that were never effect targets)
+      // are removed while the holder is still mutable. The projection
+      // removal may cascade; never overwrite a terminal close.
+      const action: EffectCleanupAction['action'] = removeProjection(
+        db,
+        campaignId,
+        link,
+        ctx,
+      );
+      const after = readLinkRows(db, campaignId, row.effect_id).find(
+        (candidate) =>
+          candidate.link_kind === link.link_kind &&
+          candidate.target_kind === link.target_kind &&
+          candidate.target_ref === link.target_ref &&
+          candidate.projection_ref === link.projection_ref,
+      );
+      if (after !== undefined && after.status === 'active') {
+        db.prepare(
+          `UPDATE active_effect_link
+           SET status = ?, removed_reason = 'combat-ended', removed_at = ?,
+               provenance = ?, session_id = ?, updated_at = ?
+           WHERE campaign_id = ? AND effect_id = ? AND link_kind = ?
+             AND target_kind = ? AND target_ref = ? AND projection_ref = ?`,
+        ).run(
+          'removed',
+          ctx.at,
+          ctx.provenance,
+          ctx.sessionId,
+          ctx.at,
+          campaignId,
+          row.effect_id,
+          link.link_kind,
+          link.target_kind,
+          link.target_ref,
+          link.projection_ref,
+        );
+        actions.push({
+          linkKind: link.link_kind,
+          target: { kind: link.target_kind, ref: link.target_ref },
+          projectionRef: link.projection_ref,
+          action,
+        });
+        linksCleaned += 1;
+      }
+      if (readEffectRow(db, campaignId, row.effect_id)?.status === 'ended') {
+        effectEnded = true;
+        break;
+      }
+    }
+    if (effectEnded) {
+      continue;
+    }
+
+    // Source-actor detach: the pointer becomes unenforceable at closure; the
+    // effect itself survives (an NPC-cast curse on the PC outlives combat).
+    let detachedSourceActor:
+      | { kind: EffectParticipantKind; ref: string }
+      | undefined;
+    if (
+      row.source_actor_kind === 'combatant' &&
+      row.source_actor_ref !== null &&
+      combatantIds.has(row.source_actor_ref)
+    ) {
+      db.prepare(
+        `UPDATE active_effect
+         SET source_actor_kind = NULL, source_actor_ref = NULL,
+             provenance = ?, session_id = ?, updated_at = ?
+         WHERE campaign_id = ? AND effect_id = ?`,
+      ).run(ctx.provenance, ctx.sessionId, ctx.at, campaignId, row.effect_id);
+      detachedSourceActor = {
+        kind: row.source_actor_kind,
+        ref: row.source_actor_ref,
+      };
+      sourceActorsDetached += 1;
+    }
+
+    if (actions.length > 0 || detachedSourceActor !== undefined) {
+      appendEvent(
+        db,
+        campaignId,
+        row.effect_id,
+        'combat-closed',
+        {
+          combatInstanceId,
+          cleanup: actions.map((action) => ({
+            linkKind: action.linkKind,
+            targetKind: action.target.kind,
+            targetRef: action.target.ref,
+            projectionRef: action.projectionRef,
+            action: action.action,
+          })),
+          ...(detachedSourceActor === undefined
+            ? {}
+            : { sourceActorDetached: { ...detachedSourceActor } }),
+        },
+        ctx,
+      );
+    }
   }
-  return { concentrationBroken, targetsRemoved, linksCleaned };
+  return {
+    timersExpired,
+    concentrationBroken,
+    targetsRemoved,
+    linksCleaned,
+    sourceActorsDetached,
+  };
 }

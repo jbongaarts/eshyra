@@ -92,7 +92,9 @@ transaction. Reachability: five F3 tools + DOM hooks from `hpLifecycle`,
 4. Closing a combat instance cannot leave live effect state pointing at its
    combatants (§7).
 5. An ended effect has complete end provenance, exactly one terminal
-   transition/event, and no active links or targets.
+   transition/event, no active links or targets, and its `ended` event is
+   the FINAL ledger event — no transition event may follow terminal state
+   (enforced defensively at the `appendEvent` seam and audited).
 6. Every active condition link names the exact condition entry it created on
    its holder.
 7. Every active actor link points at a reachable combatant with typed
@@ -120,6 +122,22 @@ transaction. Reachability: five F3 tools + DOM hooks from `hpLifecycle`,
     tools (§6).
 16. The documented protocol matches `DEFAULT_TOOLS` (docs corrected, §5).
 17. No dormant tool wrapper remains ambiguous (§5).
+18. **Re-entrant non-terminal mutation policy**: any operation that invokes
+    nested cleanup (projection removal can cascade through combatant
+    inactivation into other effects' terminal transitions — including back
+    onto the operating effect) must re-read its own effect's and links'
+    status after every nested mutation, never write non-terminal state to an
+    ended effect, never overwrite the winning cleanup's removal provenance,
+    and report supersession honestly (`removeEffectTarget` marks the target
+    with its own provenance FIRST, skips terminally-closed links, suppresses
+    its `target-removed` event when superseded, and returns
+    `superseded: true`; `createActiveEffect` throws and rolls back entirely
+    when its own projection cascade ends the effect mid-creation; the
+    closure reactions re-read liveness before every step).
+19. No committed live effect may retain a timer whose clock can never
+    advance: round-unit timers anchored to a closing instance are settled
+    (expired) at the closure boundary, and the audit reports any live round
+    timer whose anchoring instance is missing or inactive.
 
 ## 4. Unsupported topologies (fail-closed at preflight)
 
@@ -180,17 +198,38 @@ expose **simple canonical facts**, never lifecycle-owned fields.
 
 - **Combat-instance closure** (`closeCombatInstance`, one transaction, F3
   reactions run *before* the status flip while combatants are still
-  mutable): (1) combatant-owned live concentration breaks with cause
-  `owner-removed` (break-policy cleanup); (2) live effects' active combatant
-  targets of the closing instance are removed (reason `combat-ended`) with
-  their owned projections cleaned; (3) remaining active condition links on
-  the instance's combatants are removed (projection deleted); (4) active
-  actor links to the instance's combatants are **released** (reason
-  `combat-ended`) — the engine relinquishes enforcement rather than deleting
-  the entity, honestly recording that ownership can no longer be exercised.
-  Character-owned effects (e.g. Bless) survive closure untouched.
-  Promotion/rebinding of persistent summons to campaign-actor identity is
-  the follow-up `eshyra-2n1t.5.3`.
+  mutable), deterministic precedence:
+  1. **Round timers anchored to the closing instance settle by expiry**
+     (reason `expired`) — regardless of owner kind, source, targets, links,
+     or suppression. Rationale: the clock can never advance again, and
+     round-scale durations (6 s/round) deterministically elapse before
+     anything mechanically relevant can happen after combat; the terminal
+     note distinguishes deadline-reached from remaining-rounds settlements.
+     Expiry precedes owner breaks: natural end wins over break when both
+     apply.
+  2. Combatant-owned live concentration breaks with cause `owner-removed`
+     (break-policy cleanup).
+  3. Active **actor links** to the instance's combatants are **released**
+     (reason `combat-ended`) — before target removal, so a combatant that is
+     both a target and an owned actor keeps the release disposition; the
+     engine relinquishes ownership rather than inactivating entities at
+     closure.
+  4. Live effects' active combatant targets of the instance are removed
+     (reason `combat-ended`) with their owned condition projections cleaned;
+     leftover condition links on non-target holders are removed likewise.
+  5. **Source actors are detached**: a live effect whose
+     `source_actor_kind/ref` names a closing combatant has the pointer
+     nulled (recorded as `sourceActorDetached` in the effect's
+     `combat-closed` event; the `created` event preserves the original actor
+     permanently). The effect itself survives — an NPC-cast curse on the PC
+     outlives combat. Interactions are ordered out: a source actor that is
+     also the concentration owner never reaches detach (the effect ended in
+     step 2); already dead/escaped/inactive source combatants detach
+     identically; the operation is idempotent (already-NULL columns are
+     skipped).
+  Character-owned effects with no combatant references (e.g. Bless) survive
+  closure untouched. Promotion/rebinding of persistent summons to
+  campaign-actor identity is the follow-up `eshyra-2n1t.5.3`.
 - **`inactive`** means removed from active play: an inactive combatant
   cannot start concentrating, and a transition into `inactive` breaks its
   concentration (cause `owner-removed`) atomically — including when the
@@ -216,8 +255,10 @@ first: missing/unreachable source actors, owners, targets, link holders
 (including closed-instance combatants); incapable concentration owners;
 condition links whose claimed entry is absent on the holder; actor links
 whose combatant is missing/unreachable; orphan target/link/event rows;
-non-contiguous event sequences; multiple terminal events; unlicensed link
-kinds.
+non-contiguous event sequences; multiple terminal events; an `ended` event
+that is not the final ledger event; live round timers whose anchoring combat
+instance is missing or inactive (a clock that can never advance); unlicensed
+link kinds.
 
 ## 9. Test mapping
 
@@ -228,5 +269,13 @@ afterward); cascade cases (chained inactive-breaks, deliberate ownership
 cycle terminating with single terminal events, self-incapacitation preflight
 rejection, projection breaking a third party's concentration mid-create,
 mixed cleanup policies on one target); combat-closure policy; corruption
-cases per audited invariant; injected-failure rollbacks (combatant and
-condition paths); replay determinism; and the `mutate_state` registry pin.
+cases per audited invariant; injected-failure rollbacks (combatant,
+condition, and combat-closure timer-settlement paths); replay determinism;
+the `mutate_state` registry pin; source-actor closure topologies
+(owner-coincident, target+link-coincident, escaped, targets-elsewhere);
+round-timer settlement (character/combatant-owned, suppressed,
+no-combatant-refs, deadline reached and unreached); and the re-entrancy
+suite (the 4-node target-removal cascade returning `superseded: true` with
+un-overwritten provenance and a final terminal event, the same cycle settled
+by closure, and a creation superseded by its own projection cascade rolling
+back completely).

@@ -1912,14 +1912,13 @@ describe('durable-state validation', () => {
       listActiveEffects(db, CAMPAIGN, { includeEnded: true }),
     ).toThrow(/cleanup did not complete/);
     const issues = auditActiveEffectIntegrity(db, CAMPAIGN);
-    expect(issues).toHaveLength(2);
-    expect(issues.map((entry) => entry.issue).join('\n')).toMatch(
-      /cleanup did not complete/,
-    );
-    // The corrupt row also lacks the terminal 'ended' ledger event.
-    expect(issues.map((entry) => entry.issue).join('\n')).toMatch(
-      /expected 1 terminal 'ended' event/,
-    );
+    expect(issues).toHaveLength(3);
+    const joined = issues.map((entry) => entry.issue).join('\n');
+    expect(joined).toMatch(/cleanup did not complete/);
+    // The corrupt row also lacks the terminal 'ended' ledger event, and its
+    // last event is therefore not 'ended'.
+    expect(joined).toMatch(/expected 1 terminal 'ended' event/);
+    expect(joined).toMatch(/'ended' must be the final ledger event/);
   });
 
   it('reports dangling participant references without throwing', () => {
@@ -3102,5 +3101,457 @@ describe('integrity audit corruption coverage', () => {
         .map((entry) => entry.issue)
         .join('\n'),
     ).toMatch(/'actor' link is not licensed for kind 'spell-effect'/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Combat closure: source actors & round timers (PR #437 holistic review)
+// ---------------------------------------------------------------------------
+
+describe('combat closure source-actor reconciliation', () => {
+  function close(db: Db, combatInstanceId: string) {
+    closeCombatInstance(db, {
+      campaignId: CAMPAIGN,
+      combatInstanceId,
+      status: 'completed',
+      ...CTX,
+    });
+  }
+
+  it('detaches a combatant source actor from a persistent effect targeting elsewhere', () => {
+    const { db, pcId, combatInstanceId } = setupCombat();
+    // An NPC-cast curse on the PC: it must SURVIVE combat, minus the pointer.
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-curse',
+      kind: 'curse',
+      displayName: 'Goblin Hex',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      targets: [{ kind: 'character', ref: pcId }],
+      conditions: [{ target: pc(pcId), condition: { id: 'hexed:fx-curse' } }],
+      ...CTX,
+    });
+    close(db, combatInstanceId);
+    const curse = listActiveEffects(db, CAMPAIGN).find(
+      (effect) => effect.effectId === 'fx-curse',
+    );
+    expect(curse?.status).toBe('active');
+    expect(curse?.source.actor).toBeUndefined();
+    expect(characterConditionIds(db, pcId)).toEqual(['hexed:fx-curse']);
+    // The detach is ledgered; the created event keeps the original actor.
+    const events = listEffectEvents(db, CAMPAIGN, 'fx-curse');
+    expect(events.at(-1)).toMatchObject({ eventKind: 'combat-closed' });
+    expect(events.at(-1)?.detail).toMatchObject({
+      sourceActorDetached: { kind: 'combatant', ref: GOBLIN_1 },
+    });
+    expect(events[0]?.detail).toMatchObject({
+      source: { actor: { kind: 'combatant', ref: GOBLIN_1 } },
+    });
+    expectCleanAudit(db);
+    // Idempotent: the columns are already NULL; a hypothetical re-run has
+    // nothing to detach (verified via the effect view remaining stable).
+    expect(
+      listActiveEffects(db, CAMPAIGN).find(
+        (effect) => effect.effectId === 'fx-curse',
+      )?.source.actor,
+    ).toBeUndefined();
+  });
+
+  it('handles every source-actor topology in one closure with a clean audit', () => {
+    const { db, pcId, combatInstanceId } = setupCombat();
+    // (a) Source actor is ALSO the concentration owner -> ends (owner-removed).
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-own-conc',
+      kind: 'spell-effect',
+      displayName: 'Own Focus',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      ...CTX,
+    });
+    // (b) Source actor is also a target and an owned actor link; effect
+    // itself persists (character-owned concentration is not in play).
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-self-summon',
+      kind: 'summoning',
+      displayName: 'Self Summon',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_2 } },
+      duration: { kind: 'until-removed' },
+      targets: [{ kind: 'combatant', ref: GOBLIN_2 }],
+      actors: [{ combatantId: GOBLIN_2 }],
+      ...CTX,
+    });
+    // (c) Source actor already escaped before closure.
+    updateCombatant(db, {
+      campaignId: CAMPAIGN,
+      combatantId: GOBLIN_1,
+      status: 'escaped',
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-escaped-source',
+      kind: 'condition-package',
+      displayName: 'Parting Gift',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      conditions: [{ target: pc(pcId), condition: { id: 'gift' } }],
+      ...CTX,
+    });
+    close(db, combatInstanceId);
+
+    // (a) ended by the owner break; source pointer irrelevant (not live).
+    expect(
+      listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
+        (effect) => effect.effectId === 'fx-own-conc',
+      ),
+    ).toMatchObject({ status: 'ended', endDetail: 'owner-removed' });
+    // (b) persists: target removed, actor link released, source detached.
+    const selfSummon = listActiveEffects(db, CAMPAIGN).find(
+      (effect) => effect.effectId === 'fx-self-summon',
+    );
+    expect(selfSummon?.status).toBe('active');
+    expect(selfSummon?.source.actor).toBeUndefined();
+    expect(selfSummon?.targets[0]?.status).toBe('removed');
+    expect(selfSummon?.links[0]?.status).toBe('released');
+    // (c) persists with the escaped source detached; PC condition intact.
+    const gift = listActiveEffects(db, CAMPAIGN).find(
+      (effect) => effect.effectId === 'fx-escaped-source',
+    );
+    expect(gift?.status).toBe('active');
+    expect(gift?.source.actor).toBeUndefined();
+    expect(characterConditionIds(db, pcId)).toContain('gift');
+    expectCleanAudit(db);
+  });
+});
+
+describe('combat closure round-timer settlement', () => {
+  function roundEffect(
+    db: Db,
+    effectId: string,
+    extras: Partial<Parameters<typeof createActiveEffect>[1]> = {},
+  ) {
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId,
+      kind: 'condition-package',
+      displayName: effectId,
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 3,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      ...extras,
+      ...CTX,
+    });
+  }
+
+  it('settles every round timer anchored to the closing instance', () => {
+    const { db, pcId, combatInstanceId } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    // Deadline NOT reached; no combatant references at all (condition on PC).
+    roundEffect(db, 'fx-round-char', {
+      conditions: [{ target: pc(pcId), condition: { id: 'shaken' } }],
+    });
+    // Combatant-owned round effect: timer precedence means it expires
+    // (reason 'expired'), not owner-removed.
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-round-goblin',
+      kind: 'spell-effect',
+      displayName: 'Goblin Round Focus',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 5,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    // Suppressed round effect settles too (suppression does not pause time).
+    roundEffect(db, 'fx-round-suppressed');
+    suppressEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-round-suppressed',
+      ...CTX,
+    });
+    // Deadline already reached: 1-round timer, then advance to round 2
+    // (deadline = 1 + 1); the 3- and 5-round timers stay unreached.
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-round-done',
+      kind: 'condition-package',
+      displayName: 'fx-round-done',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      round: 2,
+      ...CTX,
+    });
+
+    closeCombatInstance(db, {
+      campaignId: CAMPAIGN,
+      combatInstanceId,
+      status: 'completed',
+      ...CTX,
+    });
+
+    const ended = listActiveEffects(db, CAMPAIGN, { includeEnded: true });
+    for (const [effectId, notePattern] of [
+      ['fx-round-char', /round\(s\) remaining/],
+      ['fx-round-goblin', /round\(s\) remaining/],
+      ['fx-round-suppressed', /round\(s\) remaining/],
+      ['fx-round-done', /deadline .* reached/],
+    ] as const) {
+      const effect = ended.find((candidate) => candidate.effectId === effectId);
+      expect(effect, effectId).toMatchObject({
+        status: 'ended',
+        endReason: 'expired',
+      });
+      const terminal = listEffectEvents(db, CAMPAIGN, effectId).at(-1);
+      expect(terminal?.eventKind, effectId).toBe('ended');
+      expect(String(terminal?.detail.note), effectId).toMatch(notePattern);
+    }
+    // The PC's projected condition was cleaned by ordinary expiry cleanup.
+    expect(characterConditionIds(db, pcId)).toEqual([]);
+    expectCleanAudit(db);
+  });
+
+  it('rolls the whole closure back if timer settlement cleanup fails', () => {
+    const { db, pcId, combatInstanceId } = setupCombat();
+    roundEffect(db, 'fx-round-char', {
+      conditions: [{ target: pc(pcId), condition: { id: 'shaken' } }],
+    });
+    db.exec(
+      `CREATE TRIGGER inject_cleanup_failure BEFORE UPDATE ON active_effect
+       WHEN NEW.status = 'ended'
+       BEGIN SELECT RAISE(ABORT, 'injected cleanup failure'); END;`,
+    );
+    expect(() =>
+      closeCombatInstance(db, {
+        campaignId: CAMPAIGN,
+        combatInstanceId,
+        status: 'completed',
+        ...CTX,
+      }),
+    ).toThrow(/injected cleanup failure/);
+    db.exec('DROP TRIGGER inject_cleanup_failure;');
+    // Everything rolled back together: the instance is still active, the
+    // effect still live, the condition intact.
+    expect(
+      db
+        .prepare(
+          `SELECT status FROM combat_instance
+           WHERE campaign_id = ? AND combat_instance_id = ?`,
+        )
+        .get(CAMPAIGN, combatInstanceId),
+    ).toEqual({ status: 'active' });
+    expect(
+      listActiveEffects(db, CAMPAIGN).find(
+        (effect) => effect.effectId === 'fx-round-char',
+      )?.status,
+    ).toBe('active');
+    expect(characterConditionIds(db, pcId)).toEqual(['shaken']);
+    expectCleanAudit(db);
+  });
+
+  it('audits a live round timer whose anchor clock died behind the lifecycle’s back', () => {
+    const { db, combatInstanceId } = setupCombat();
+    roundEffect(db, 'fx-round-orphan');
+    db.prepare(
+      `UPDATE combat_instance SET status = 'completed'
+       WHERE campaign_id = ? AND combat_instance_id = ?`,
+    ).run(CAMPAIGN, combatInstanceId);
+    expect(
+      auditActiveEffectIntegrity(db, CAMPAIGN)
+        .map((entry) => entry.issue)
+        .join('\n'),
+    ).toMatch(/clock can never advance/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Re-entrant non-terminal transitions (PR #437 holistic review)
+// ---------------------------------------------------------------------------
+
+describe('re-entrant cleanup supersession', () => {
+  /** The adversarial 4-node topology: A concentrated by goblin 1, targets
+   *  and owns goblin 2; B concentrated by goblin 2, owns goblin 1. */
+  function buildCycle(db: Db) {
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-a',
+      kind: 'summoning',
+      displayName: 'A',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: { kind: 'until-removed' },
+      targets: [{ kind: 'combatant', ref: GOBLIN_2 }],
+      actors: [
+        {
+          combatantId: GOBLIN_2,
+          cleanupOnEnd: 'remove',
+          cleanupOnBreak: 'remove',
+        },
+      ],
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-b',
+      kind: 'summoning',
+      displayName: 'B',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_2 } },
+      duration: { kind: 'until-removed' },
+      actors: [
+        {
+          combatantId: GOBLIN_1,
+          cleanupOnEnd: 'remove',
+          cleanupOnBreak: 'remove',
+        },
+      ],
+      ...CTX,
+    });
+  }
+
+  function assertCycleSettled(db: Db) {
+    for (const effectId of ['fx-a', 'fx-b']) {
+      const events = listEffectEvents(db, CAMPAIGN, effectId);
+      expect(
+        events.filter((event) => event.eventKind === 'ended'),
+        effectId,
+      ).toHaveLength(1);
+      // 'ended' is the final ledger event — nothing follows the terminal.
+      expect(events.at(-1)?.eventKind, effectId).toBe('ended');
+    }
+    expectCleanAudit(db);
+  }
+
+  it('removing A’s target cascades back to ending A; the result reports supersession', () => {
+    const { db } = setupCombat();
+    buildCycle(db);
+    // Removing goblin 2 from A cleans A's actor link on goblin 2 -> goblin 2
+    // inactive -> B breaks (owner-removed) -> B's cleanup inactivates
+    // goblin 1 -> goblin 1's concentration is A itself -> A ends.
+    const result = removeEffectTarget(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-a',
+      target: { kind: 'combatant', ref: GOBLIN_2 },
+      reason: 'saved',
+      ...CTX,
+    });
+    expect(result.superseded).toBe(true);
+    expect(result.effect.status).toBe('ended');
+    // The target row keeps THIS removal's provenance — the terminal sweep
+    // did not overwrite it.
+    expect(result.effect.targets[0]).toMatchObject({
+      status: 'removed',
+      removedReason: 'saved',
+    });
+    // A's terminal cause is the cascaded owner removal.
+    expect(result.effect).toMatchObject({
+      endReason: 'concentration-broken',
+      endDetail: 'owner-removed',
+    });
+    assertCycleSettled(db);
+  });
+
+  it('closing the instance settles the same cycle deterministically', () => {
+    const { db, combatInstanceId } = setupCombat();
+    buildCycle(db);
+    closeCombatInstance(db, {
+      campaignId: CAMPAIGN,
+      combatInstanceId,
+      status: 'completed',
+      ...CTX,
+    });
+    for (const effectId of ['fx-a', 'fx-b']) {
+      expect(
+        listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
+          (effect) => effect.effectId === effectId,
+        )?.status,
+        effectId,
+      ).toBe('ended');
+    }
+    assertCycleSettled(db);
+  });
+
+  it('a creation superseded by its own projection cascade rolls back completely', () => {
+    const { db } = setupCombat();
+    // Existing: goblin 2 concentrates on fx-z, which OWNS goblin 1.
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-z',
+      kind: 'summoning',
+      displayName: 'Z',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_2 } },
+      duration: { kind: 'until-removed' },
+      actors: [
+        {
+          combatantId: GOBLIN_1,
+          cleanupOnEnd: 'remove',
+          cleanupOnBreak: 'remove',
+        },
+      ],
+      ...CTX,
+    });
+    // New effect: goblin 1 concentrates, and it stuns goblin 2. Projecting
+    // the stun breaks fx-z, whose cleanup inactivates goblin 1, ending the
+    // new effect mid-creation -> the whole creation must roll back.
+    expect(() =>
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-new',
+        kind: 'spell-effect',
+        displayName: 'New',
+        source: { kind: 'ruling' },
+        concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+        duration: { kind: 'until-removed' },
+        targets: [{ kind: 'combatant', ref: GOBLIN_2 }],
+        conditions: [
+          {
+            target: { kind: 'combatant', ref: GOBLIN_2 },
+            condition: { id: 'stunned:fx-new' },
+          },
+        ],
+        ...CTX,
+      }),
+    ).toThrow(/superseded/);
+    // Nothing committed: fx-z still live and owning, goblins untouched.
+    expect(
+      listActiveEffects(db, CAMPAIGN).map((effect) => effect.effectId),
+    ).toEqual(['fx-z']);
+    expect(
+      (
+        JSON.parse(combatantState(db, GOBLIN_2).conditions_json) as {
+          id: string;
+        }[]
+      ).map((c) => c.id),
+    ).toEqual([]);
+    expect(combatantState(db, GOBLIN_1).status).toBe('alive');
+    expect(listEffectEvents(db, CAMPAIGN, 'fx-new')).toHaveLength(0);
+    expectCleanAudit(db);
   });
 });

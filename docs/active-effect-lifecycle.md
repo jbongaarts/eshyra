@@ -274,16 +274,27 @@ Failed operations throw before mutating; multi-write cleanup is atomic
 The full policy (with the mechanical mutation inventory behind it) lives in
 `docs/audits/2026-07-12-f3-mutation-lifecycle-audit.md` §7. In short:
 combatant participants must belong to an **active** combat instance to be
-referenced by new effect state; `closeCombatInstance` atomically breaks
-combatant-owned concentration (`owner-removed`), removes combatant targets
-and condition projections (`combat-ended`), and **releases** owned actor
-links, so live effects never point at unreachable combatants
+referenced by new effect state; `closeCombatInstance` atomically — in
+deterministic precedence — settles round timers anchored to the instance by
+expiry (their clock can never advance again; round-scale remainders elapse
+as combat ends), breaks combatant-owned concentration (`owner-removed`),
+**releases** owned actor links (before target removal, so a combatant that
+is both target and owned actor keeps the release disposition), removes
+combatant targets and condition projections (`combat-ended`), and detaches
+combatant source-actor pointers (the `created` event keeps the provenance),
+so live effects never point at unreachable combatants or dead clocks
 (character-owned effects survive closure — combat ending does not end
 spells; campaign-actor rebinding is `eshyra-2n1t.5.3`). `inactive` means
 removed from play: it cannot start concentrating and transitioning into it
 breaks concentration, which is what lets owned-actor cleanup cascade
 (terminal transitions flip status before cleanup, so cycles terminate).
-`escaped` combatants remain capable while the instance is active. Condition
+`escaped` combatants remain capable while the instance is active. Every
+operation that invokes nested cleanup re-reads its own liveness afterwards:
+non-terminal writes never land on an ended effect, cleanup provenance is
+never overwritten by a superseded operation, `ended` is always the final
+ledger event (enforced at the event seam), and `remove_effect_target`
+reports `superseded: true` when its own cascade terminally ended the effect.
+Condition
 links are deliberately independent of the target list — a summoned actor may
 carry an owned condition without being a spell "target"; target removal
 cleans exactly the links addressed to that target. There is no generic
