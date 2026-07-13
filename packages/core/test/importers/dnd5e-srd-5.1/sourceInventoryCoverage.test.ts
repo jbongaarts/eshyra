@@ -710,6 +710,7 @@ describe('coverage report serialization', () => {
       childOf: 0,
       ambiguous: 0,
       taxonomy: 0,
+      structuredField: 0,
       ignored: { 'spell-list-header': 2 },
       knownGap: { 'eshyra-4a7.8': 1 },
       unaccounted: 1,

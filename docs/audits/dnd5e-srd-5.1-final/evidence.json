@@ -56,22 +56,25 @@
   },
   "sourceCoverage": {
     "inventoryItems": 2258,
-    "record": 1452,
-    "childOf": 456,
+    "record": 1444,
+    "childOf": 462,
     "ambiguous": 187,
     "taxonomy": 33,
-    "ignored": 130,
+    "structuredField": 78,
+    "ignored": 54,
     "unaccounted": 0,
     "knownGap": 0
   },
   "sourceRegionLedger": {
-    "entries": 2655,
-    "proseRegions": 2628,
-    "record": 2101,
-    "childOf": 443,
+    "entries": 2685,
+    "proseRegions": 2658,
+    "record": 2122,
+    "childOf": 448,
+    "structuredField": 83,
     "intentionallyIgnored": {
+      "deity-table-column-header": 1,
       "front-matter": 2,
-      "spell-list-header": 82
+      "table-rows-emitted-as-records": 2
     },
     "pureStructure": 27,
     "unrepresented": 0,

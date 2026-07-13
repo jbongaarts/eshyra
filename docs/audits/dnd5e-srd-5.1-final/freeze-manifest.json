@@ -30,15 +30,15 @@
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-coverage.json",
-      "sha256": "592ed617a23342ba8c466fd78a46b7f5c49955d9149b9fb16d140cd437d79de2"
+      "sha256": "10513af6e7f79d17fdb063666ac9edc162005e4f9db6ce525673fc5d79fabc1e"
     },
     {
       "path": "packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-region-ledger.json",
-      "sha256": "6af553245c4a657fd51c78d32a544513925e0ec1bbd238df454dc39167c26df6"
+      "sha256": "260700ca4fa84fd1b7e4e6e555f6d34b2acd12883cbd4e0eff049878fedf22a5"
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/README.md",
-      "sha256": "dca46e24f8c5e405abf4088c20aa015350afda674abce5b6b82780a503e4dc75"
+      "sha256": "f9326228082cf3b697db9ebcf5143de8af5d1b66a648248c1d89601502e3b6ed"
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/provenance.md",
@@ -46,7 +46,7 @@
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/evidence.json",
-      "sha256": "b7eead0bcc2f8563ac640887bfd7faaf49b875a8c991e4080350f87a6301216f"
+      "sha256": "1b6f55c613abcdedbd904c2bf46d9dab889461d7b06b99192cd0b93344a1ddb2"
     },
     {
       "path": "docs/audits/dnd5e-srd-5.1-final/record-counts.md",

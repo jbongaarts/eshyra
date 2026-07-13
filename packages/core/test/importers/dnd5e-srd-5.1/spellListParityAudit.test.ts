@@ -50,7 +50,17 @@ function entry(
   casterClass: SpellClassLevelEntry['casterClass'],
   level: number,
 ): SpellClassLevelEntry {
-  return { spellName, casterClass, level };
+  return {
+    spellName,
+    casterClass,
+    level,
+    sourcePage: 1,
+    sourceLineIndex: 0,
+    groupSourcePage: 1,
+    groupSourceLineIndex: 0,
+    classSourcePage: 1,
+    classSourceLineIndex: 0,
+  };
 }
 
 describe('auditSpellListParity', () => {

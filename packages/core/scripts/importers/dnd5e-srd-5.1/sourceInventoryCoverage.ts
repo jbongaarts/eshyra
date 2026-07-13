@@ -43,6 +43,7 @@
  */
 
 import { CREATURE_TAXONOMY_SPECS } from './creatureTaxonomy.js';
+import type { SpellClassLevelEntry } from './parseSpells.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 
 export type CoverageStatus =
@@ -54,6 +55,11 @@ export type CoverageStatus =
       readonly field: 'creature.familyPath';
       readonly path: readonly string[];
     }
+  | {
+      readonly kind: 'structured-field';
+      readonly field: 'spell.data.classes';
+      readonly evidence: SpellListCoverageEvidence;
+    }
   | { readonly kind: 'ignored'; readonly reason: string }
   | { readonly kind: 'known-gap'; readonly beadId: string }
   | { readonly kind: 'unaccounted' };
@@ -64,6 +70,13 @@ export interface CoverageRecordRef {
   readonly key: string;
   readonly name: string;
   readonly data?: unknown;
+}
+
+export interface SpellListCoverageEvidence {
+  readonly sourceClass: string;
+  readonly spellLevel: number | null;
+  readonly memberCount: number;
+  readonly spellKeys: readonly string[];
 }
 
 export interface SourceCoverageEntry {
@@ -95,6 +108,12 @@ export type CoverageRule =
   | {
       readonly type: 'record';
       readonly key: string;
+      readonly match: (item: SourceInventoryItem) => boolean;
+    }
+  | {
+      readonly type: 'structured-field';
+      readonly field: 'spell.data.classes';
+      readonly evidence: SpellListCoverageEvidence;
       readonly match: (item: SourceInventoryItem) => boolean;
     };
 
@@ -146,6 +165,78 @@ export function recordRule(
 }
 
 /**
+ * Build source-positioned ownership rules for the class spell-list groups.
+ * The parser supplies the group heading coordinates; names are used only to
+ * resolve the already-emitted spell keys for review evidence.
+ */
+export function spellListStructuredFieldRules(
+  entries: readonly SpellClassLevelEntry[],
+  records: readonly CoverageRecordRef[],
+): readonly CoverageRule[] {
+  const keyByName = new Map<string, string>();
+  for (const record of records) {
+    if (record.kind !== 'spell') continue;
+    keyByName.set(normalizeName(record.name), record.key);
+  }
+  const groups = new Map<string, SpellClassLevelEntry[]>();
+  for (const entry of entries) {
+    const key = `${entry.groupSourcePage}:${entry.groupSourceLineIndex}`;
+    const group = groups.get(key);
+    if (group === undefined) groups.set(key, [entry]);
+    else group.push(entry);
+  }
+  const levelRules = [...groups.values()].map((group) => {
+    const first = group[0];
+    const evidence: SpellListCoverageEvidence = {
+      sourceClass: first.casterClass,
+      spellLevel: first.level,
+      memberCount: group.length,
+      spellKeys: group.map(
+        (entry) =>
+          keyByName.get(normalizeName(entry.spellName)) ??
+          `unresolved:${normalizeName(entry.spellName)}`,
+      ),
+    };
+    return {
+      type: 'structured-field' as const,
+      field: 'spell.data.classes' as const,
+      evidence,
+      match: (item: SourceInventoryItem) =>
+        item.page === first.groupSourcePage &&
+        item.lineIndex === first.groupSourceLineIndex,
+    };
+  });
+  const classGroups = new Map<string, SpellClassLevelEntry[]>();
+  for (const entry of entries) {
+    const key = `${entry.classSourcePage}:${entry.classSourceLineIndex}`;
+    const group = classGroups.get(key);
+    if (group === undefined) classGroups.set(key, [entry]);
+    else group.push(entry);
+  }
+  const classRules = [...classGroups.values()].map((group) => {
+    const first = group[0];
+    return {
+      type: 'structured-field' as const,
+      field: 'spell.data.classes' as const,
+      evidence: {
+        sourceClass: first.casterClass,
+        spellLevel: null,
+        memberCount: group.length,
+        spellKeys: group.map(
+          (entry) =>
+            keyByName.get(normalizeName(entry.spellName)) ??
+            `unresolved:${normalizeName(entry.spellName)}`,
+        ),
+      },
+      match: (item: SourceInventoryItem) =>
+        item.page === first.classSourcePage &&
+        item.lineIndex === first.classSourceLineIndex,
+    };
+  });
+  return [...classRules, ...levelRules];
+}
+
+/**
  * Normalize text for name matching: case-fold, straighten curly quotes,
  * collapse whitespace. Hyphen clusters are already collapsed at the
  * extraction boundary (extract.ts `normalizePdfHyphenCluster`).
@@ -175,6 +266,12 @@ function statusForRule(rule: CoverageRule): CoverageStatus {
       };
     case 'record':
       return { kind: 'record', key: rule.key };
+    case 'structured-field':
+      return {
+        kind: 'structured-field',
+        field: rule.field,
+        evidence: rule.evidence,
+      };
   }
 }
 
@@ -374,6 +471,8 @@ export function formatCoverageStatus(status: CoverageStatus): string {
       return `ambiguous:${status.candidateKeys.join('|')}`;
     case 'taxonomy':
       return `taxonomy:${status.field}:${status.path.join(' > ')}`;
+    case 'structured-field':
+      return `structured-field:${status.field}`;
     case 'ignored':
       return `ignored:${status.reason}`;
     case 'known-gap':
@@ -392,6 +491,7 @@ export interface SourceCoverageReportEntry {
   readonly text: string;
   readonly section: string | null;
   readonly status: string;
+  readonly structuredFieldEvidence?: SpellListCoverageEvidence;
 }
 
 /**
@@ -430,6 +530,7 @@ export interface SourceCoverageReport {
     readonly childOf: number;
     readonly ambiguous: number;
     readonly taxonomy: number;
+    readonly structuredField: number;
     readonly ignored: Readonly<Record<string, number>>;
     readonly knownGap: Readonly<Record<string, number>>;
     readonly unaccounted: number;
@@ -475,6 +576,7 @@ export function buildSourceCoverageReport(
   let childOf = 0;
   let ambiguous = 0;
   let taxonomy = 0;
+  let structuredField = 0;
   let unaccounted = 0;
   const ignored = new Map<string, number>();
   const knownGap = new Map<string, number>();
@@ -491,6 +593,9 @@ export function buildSourceCoverageReport(
         break;
       case 'taxonomy':
         taxonomy += 1;
+        break;
+      case 'structured-field':
+        structuredField += 1;
         break;
       case 'ignored':
         ignored.set(status.reason, (ignored.get(status.reason) ?? 0) + 1);
@@ -593,6 +698,7 @@ export function buildSourceCoverageReport(
       childOf,
       ambiguous,
       taxonomy,
+      structuredField,
       ignored: sortedCounts(ignored),
       knownGap: sortedCounts(knownGap),
       unaccounted,
@@ -610,6 +716,9 @@ export function buildSourceCoverageReport(
       text: item.text,
       section: item.section,
       status: formatCoverageStatus(status),
+      ...(status.kind === 'structured-field'
+        ? { structuredFieldEvidence: status.evidence }
+        : {}),
     })),
   };
 }
@@ -746,14 +855,6 @@ const RACE_TRAIT_HEADINGS: ReadonlyArray<readonly [string, string]> = [
   ['Half-Orc Traits', 'ancestry:half-orc'],
   ['Tiefling Traits', 'ancestry:tiefling'],
 ];
-
-/** Spell-list level headers inside the per-class spell lists (p105-113). */
-const SPELL_LIST_LEVEL_HEADER =
-  /^(?:Cantrips \(0 Level\)|[1-9](?:st|nd|rd|th) Level)$/;
-
-/** Spell-list class headers ("Bard Spells" … "Wizard Spells", p105-113). */
-const SPELL_LIST_CLASS_HEADER =
-  /^(?:Bard|Cleric|Druid|Paladin|Ranger|Sorcerer|Warlock|Wizard) Spells$/;
 
 /**
  * Equipment-chapter reference tables whose ROWS are emitted as `equipment`
@@ -1202,14 +1303,6 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   // Arcane Traditions, …) now own their overview prose as `rule` records named
   // after the heading (eshyra-i2v4), so each auto-matches its heading by name
   // here instead of falling through to the document-structure default.
-  // Per-class spell-list headers (p105-113): pure list structure; the lists
-  // themselves are represented as `data.classes` on every spell record.
-  ignoreRule(
-    'spell-list-header',
-    (i) =>
-      SPELL_LIST_LEVEL_HEADER.test(i.text) ||
-      SPELL_LIST_CLASS_HEADER.test(i.text),
-  ),
   // Diseases and poisons now own their sample guidance as rule records below.
   // "Statistics for Objects" (p203) is the body of the emitted rule:objects
   // record (its AC/HP tables are separate emitted table records).

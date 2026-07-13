@@ -36,6 +36,7 @@ import {
   type CoverageRecordRef,
   formatCoverageStatus,
   type SourceCoverageEntry,
+  type SpellListCoverageEvidence,
 } from './sourceInventoryCoverage.js';
 import type { PageText } from './types.js';
 
@@ -52,6 +53,7 @@ export type SourceRegionType =
 export type SourceRegionClassification =
   | `record:${string}`
   | `child-of:${string}`
+  | `structured-field:${string}`
   | `intentionally-ignored:${string}`
   | 'pure-document-structure'
   | 'unrepresented';
@@ -99,6 +101,7 @@ export interface SourceRegionLedgerEntry {
   readonly lastPhrase: string;
   readonly normalizedCharCount: number;
   readonly classification: SourceRegionClassification;
+  readonly structuredFieldEvidence?: SpellListCoverageEvidence;
   readonly targetKey?: string;
   readonly ignoreReason?: string;
   readonly guardNotes?: string;
@@ -134,6 +137,7 @@ export interface SourceRegionLedger {
     readonly pureStructure: number;
     readonly record: number;
     readonly childOf: number;
+    readonly structuredField: number;
     readonly intentionallyIgnored: Readonly<Record<string, number>>;
     readonly pureDocumentStructure: number;
     readonly unrepresented: number;
@@ -173,6 +177,7 @@ interface FlatLine {
 interface ActiveOwner {
   readonly item: SourceInventoryItem;
   readonly status: string;
+  readonly structuredFieldEvidence?: SpellListCoverageEvidence;
 }
 
 interface SearchableRecord {
@@ -334,12 +339,25 @@ function classifyRegionByOwner(
   owner: ActiveOwner | undefined,
 ): Pick<
   SourceRegionLedgerEntry,
-  'classification' | 'targetKey' | 'ignoreReason' | 'guardNotes'
+  | 'classification'
+  | 'targetKey'
+  | 'ignoreReason'
+  | 'guardNotes'
+  | 'structuredFieldEvidence'
 > {
   if (owner === undefined) {
     return {
       classification: 'unrepresented',
       guardNotes: 'No preceding source structure owns this prose region.',
+    };
+  }
+
+  if (owner.status.startsWith('structured-field:')) {
+    return {
+      classification: owner.status as `structured-field:${string}`,
+      structuredFieldEvidence: owner.structuredFieldEvidence,
+      guardNotes:
+        'Source-positioned spell-list content is represented by spell.data.classes; duplicate record text is not consulted.',
     };
   }
 
@@ -820,6 +838,7 @@ function classifyRegion(
   | 'contentMatch'
   | 'emission'
   | 'emissionNotes'
+  | 'structuredFieldEvidence'
 > {
   if (pageStart <= FRONT_MATTER_MAX_PAGE) {
     return {
@@ -827,6 +846,10 @@ function classifyRegion(
       ignoreReason: 'front-matter',
       guardNotes: 'Front-matter prose is outside SRD rules content.',
     };
+  }
+
+  if (owner?.status.startsWith('structured-field:')) {
+    return classifyRegionByOwner(owner);
   }
 
   const ownerBased = classifyRegionByOwner(owner);
@@ -1183,6 +1206,7 @@ function summarize(
 ) {
   let record = 0;
   let childOf = 0;
+  let structuredField = 0;
   let pureDocumentStructure = 0;
   let unrepresented = 0;
   let broadStructuralIgnores = 0;
@@ -1212,6 +1236,8 @@ function summarize(
     }
     if (entry.classification.startsWith('record:')) record += 1;
     else if (entry.classification.startsWith('child-of:')) childOf += 1;
+    else if (entry.classification.startsWith('structured-field:'))
+      structuredField += 1;
     else if (entry.classification === 'pure-document-structure') {
       pureDocumentStructure += 1;
     } else if (entry.classification === 'unrepresented') {
@@ -1242,6 +1268,7 @@ function summarize(
     ).length,
     record,
     childOf,
+    structuredField,
     intentionallyIgnored: Object.fromEntries(
       [...intentionallyIgnored.entries()].sort(([a], [b]) =>
         a < b ? -1 : a > b ? 1 : 0,
@@ -1336,6 +1363,9 @@ export function buildSourceRegionLedger(
       owner = {
         item: coverage.item,
         status: formatCoverageStatus(coverage.status),
+        ...(coverage.status.kind === 'structured-field'
+          ? { structuredFieldEvidence: coverage.status.evidence }
+          : {}),
       };
       continue;
     }

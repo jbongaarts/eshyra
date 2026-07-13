@@ -73,6 +73,7 @@ const NUMBERED_LEVEL_HEADER = /^(\d+)(?:st|nd|rd|th) Level$/;
 interface FlatLine {
   readonly line: string;
   readonly page: number;
+  readonly lineIndex: number;
 }
 
 /**
@@ -107,8 +108,12 @@ function normalizeHyphenCluster(line: string): string {
 function flatten(pages: readonly PageText[]): readonly FlatLine[] {
   const out: FlatLine[] = [];
   for (const page of pages) {
-    for (const line of page.lines) {
-      out.push({ line: normalizeHyphenCluster(line), page: page.pageNumber });
+    for (const [lineIndex, line] of page.lines.entries()) {
+      out.push({
+        line: normalizeHyphenCluster(line),
+        page: page.pageNumber,
+        lineIndex: lineIndex + (page.sourceLineOffset ?? 0),
+      });
     }
   }
   return out;
@@ -462,6 +467,12 @@ export interface SpellClassLevelEntry {
   readonly casterClass: SpellCasterClass;
   /** 0 for a cantrip, otherwise the printed "Nth Level" number. */
   readonly level: number;
+  readonly sourcePage: number;
+  readonly sourceLineIndex: number;
+  readonly groupSourcePage: number;
+  readonly groupSourceLineIndex: number;
+  readonly classSourcePage: number;
+  readonly classSourceLineIndex: number;
 }
 
 /**
@@ -479,7 +490,11 @@ export function parseSpellClassLevelLists(
   const out: SpellClassLevelEntry[] = [];
   let currentClass: SpellCasterClass | undefined;
   let currentLevel: number | undefined;
-  for (const { line } of flat) {
+  let groupSourcePage: number | undefined;
+  let groupSourceLineIndex: number | undefined;
+  let classSourcePage: number | undefined;
+  let classSourceLineIndex: number | undefined;
+  for (const { line, page, lineIndex } of flat) {
     if (line.length === 0) {
       continue;
     }
@@ -487,16 +502,22 @@ export function parseSpellClassLevelLists(
     if (classHeader !== null) {
       currentClass = classHeader[1] as SpellCasterClass;
       currentLevel = undefined;
+      classSourcePage = page;
+      classSourceLineIndex = lineIndex;
       continue;
     }
     if (currentClass === undefined) continue;
     if (CANTRIP_LEVEL_HEADER.test(line)) {
       currentLevel = 0;
+      groupSourcePage = page;
+      groupSourceLineIndex = lineIndex;
       continue;
     }
     const numberedLevel = NUMBERED_LEVEL_HEADER.exec(line);
     if (numberedLevel !== null) {
       currentLevel = Number(numberedLevel[1]);
+      groupSourcePage = page;
+      groupSourceLineIndex = lineIndex;
       continue;
     }
     if (currentLevel === undefined) continue;
@@ -506,10 +527,26 @@ export function parseSpellClassLevelLists(
       currentLevel = undefined;
       continue;
     }
+    if (
+      groupSourcePage === undefined ||
+      groupSourceLineIndex === undefined ||
+      classSourcePage === undefined ||
+      classSourceLineIndex === undefined
+    ) {
+      throw new Error(
+        `spell-list entry "${line}" has no source class/level heading position`,
+      );
+    }
     out.push({
       spellName: line.trim(),
       casterClass: currentClass,
       level: currentLevel,
+      sourcePage: page,
+      sourceLineIndex: lineIndex,
+      groupSourcePage,
+      groupSourceLineIndex,
+      classSourcePage,
+      classSourceLineIndex,
     });
   }
   return out;

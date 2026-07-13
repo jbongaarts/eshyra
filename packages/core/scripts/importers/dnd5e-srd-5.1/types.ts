@@ -7,6 +7,8 @@
 
 export interface PageText {
   readonly pageNumber: number;
+  /** Original page-relative line offset when this page is a section slice. */
+  readonly sourceLineOffset?: number;
   readonly lines: readonly string[];
   /**
    * Rendered max font height (PDF user-space points) of each emitted line,
