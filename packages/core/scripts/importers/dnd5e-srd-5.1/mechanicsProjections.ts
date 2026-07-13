@@ -3171,11 +3171,13 @@ function parseC9ResidualEffect(
 /** The two reviewed SRD Reckless traits share one exact, fail-closed grammar. */
 function parseReckless(name: string, text: string): Mechanics | undefined {
   if (name !== 'Reckless') return undefined;
-  const match =
-    /^At the start of its turn, the (berserker|minotaur) can gain advantage on all melee weapon attack rolls(?: it makes)? during that turn, but attack rolls against it have advantage until the start of its next turn\.$/.exec(
-      text,
-    );
-  if (match === null) return undefined;
+  const isBerserker =
+    text ===
+    'At the start of its turn, the berserker can gain advantage on all melee weapon attack rolls during that turn, but attack rolls against it have advantage until the start of its next turn.';
+  const isMinotaur =
+    text ===
+    'At the start of its turn, the minotaur can gain advantage on all melee weapon attack rolls it makes during that turn, but attack rolls against it have advantage until the start of its next turn.';
+  if (!isBerserker && !isMinotaur) return undefined;
   return {
     kind: 'recklessAttack',
     activation: { timing: 'start-of-turn', optional: true },

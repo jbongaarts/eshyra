@@ -359,6 +359,45 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
       /no reviewed disposition/,
     );
   });
+
+  it('fails closed by per-ref MEMBERSHIP for an unreviewed narrative-prose entry', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'creature',
+          key: 'creature:narrative-regressed',
+          name: 'Narrative Regressed',
+          data: {
+            traits: [
+              {
+                name: 'Unreviewed Narrative',
+                text: 'The creature is known for its distinctive silhouette.',
+              },
+            ],
+          },
+        }),
+      ]),
+      [],
+    );
+
+    expect(
+      report.dispositions.find(
+        (disposition) =>
+          disposition.kind === 'creature-entry' &&
+          disposition.bucket === 'narrative-prose',
+      )?.status,
+    ).toBe('reviewed-per-ref');
+    expect(report.dispositionErrors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          'creature:narrative-regressed#traits:Unreviewed Narrative has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS',
+        ),
+      ]),
+    );
+    expect(() => assertGameplayReadinessDispositions(report)).toThrow(
+      /has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS/,
+    );
+  });
 });
 
 describe('D&D SRD audit bundle overlay-vs-pack parity report (eshyra-jk4d)', () => {

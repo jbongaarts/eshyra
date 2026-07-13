@@ -1111,8 +1111,9 @@ function creatureEntryAcceptedProse(
 
 /**
  * Per-ref reviewed disposition for every creature-entry ref currently
- * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 4
- * currently residual: the 2 permanent accepted-prose refs. Only the two vampire "Vampire Weaknesses" header refs
+ * without typed mechanics (eshyra-o9bd.18.7.9 §1: 72 refs reviewed, 2
+ * currently residual: the 2 permanent accepted-prose refs. Only the two
+ * vampire "Vampire Weaknesses" header refs
  * are genuinely permanent prose acceptance (§1.5). This registry —
  * not the bucket-level
  * `creature-entry#mechanical-prose` / `creature-entry#narrative-prose`

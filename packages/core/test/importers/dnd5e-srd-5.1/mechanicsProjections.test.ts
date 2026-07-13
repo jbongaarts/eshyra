@@ -75,6 +75,27 @@ describe('deriveCreatureEntryMechanics Reckless grammar (eshyra-o9bd.18.7.9.10)'
   });
 
   it.each([
+    [
+      'Berserker text with it makes inserted',
+      texts.berserker.replace(
+        'all melee weapon attack rolls during',
+        'all melee weapon attack rolls it makes during',
+      ),
+    ],
+    [
+      'Minotaur text with it makes removed',
+      texts.minotaur.replace(
+        ' attack rolls it makes during',
+        ' attack rolls during',
+      ),
+    ],
+  ] as const)('rejects %s', (_, text) => {
+    expect(deriveCreatureEntryMechanics('Reckless', text).effects).not.toEqual(
+      expect.arrayContaining([expected]),
+    );
+  });
+
+  it.each([
     ['wrong entry name', 'Other', texts.berserker],
     [
       'missing start boundary',
