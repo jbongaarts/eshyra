@@ -187,26 +187,44 @@ describe('finalizeCharacterDraft', () => {
     }
   });
 
-  it('returns a normal failure for malformed persisted wealth evidence', () => {
-    const base = engine.setStartingEquipmentMode(
+  it('returns normal failures for malformed persisted wealth evidence', () => {
+    let valid = engine.setStartingEquipmentMode(
       completeDraft(),
       'starting-wealth',
     );
-    const draft = {
-      ...base,
-      selections: {
-        ...base.selections,
-        startingWealth: {
-          classKey: 'class:fighter',
-          formula: '5d4',
-          roll: null,
-          multiplierGp: 10,
-          totalGp: 100,
+    valid = engine.setStartingWealth(
+      valid,
+      rollStartingWealth('class:fighter', createSeededRng(7)),
+    );
+
+    const corruptedDrafts = [
+      {
+        ...valid,
+        selections: { ...valid.selections, startingWealth: null },
+      },
+      {
+        ...valid,
+        selections: {
+          ...valid.selections,
+          startingWealth: {
+            ...valid.selections.startingWealth,
+            classKey: undefined,
+          },
         },
       },
-    } as unknown as CharacterDraft;
-    expect(() => finalizeCharacterDraft(draft, META)).not.toThrow();
-    expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+      {
+        ...valid,
+        selections: {
+          ...valid.selections,
+          startingWealth: { ...valid.selections.startingWealth, roll: null },
+        },
+      },
+    ] as unknown as CharacterDraft[];
+
+    for (const draft of corruptedDrafts) {
+      expect(() => finalizeCharacterDraft(draft, META)).not.toThrow();
+      expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    }
   });
 
   it('refuses multiclass-shaped draft state before finalization can flatten it', () => {

@@ -235,6 +235,12 @@ type FinalStartingAcquisition =
       readonly result: StartingWealthResult;
     };
 
+function isStartingWealthResultLike(
+  value: unknown,
+): value is StartingWealthResult {
+  return typeof value === 'object' && value !== null;
+}
+
 function validateFinalStartingAcquisition(
   draft: CharacterDraft,
   resolver: RulesPackCharacterResolver,
@@ -271,6 +277,9 @@ function validateFinalStartingAcquisition(
   }
   if (result === undefined) {
     return { ok: false, error: 'starting-wealth mode requires one roll' };
+  }
+  if (!isStartingWealthResultLike(result)) {
+    return { ok: false, error: 'invalid starting-wealth evidence' };
   }
   if (
     Object.entries(draft.selections.choices ?? {}).some(
