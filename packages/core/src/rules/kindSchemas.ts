@@ -70,6 +70,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'questionLimit',
   'recastLockout',
   'reactionAcBonus',
+  'recklessAttack',
   'senseSharing',
   'soundAlarm',
   'slowFall',
@@ -3896,6 +3897,49 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     }
     reqEnum(effect, 'subject', path, new Set(['amulet-wearer']));
     reqEnum(effect, 'duration', path, new Set(['against-triggering-attack']));
+  },
+  recklessAttack: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      ['kind', 'activation', 'benefit', 'tradeoff'],
+      path,
+    );
+    const activation = reqObj(effect, 'activation', path);
+    const activationPath = `${path}.activation`;
+    requireOnlyKeys(activation, ['timing', 'optional'], activationPath);
+    reqEnum(activation, 'timing', activationPath, new Set(['start-of-turn']));
+    if (activation.optional !== true) {
+      throw new RulesPackError(`${activationPath}.optional must be true`);
+    }
+
+    const benefit = reqObj(effect, 'benefit', path);
+    const benefitPath = `${path}.benefit`;
+    requireOnlyKeys(benefit, ['rolls', 'mode', 'duration'], benefitPath);
+    reqEnum(
+      benefit,
+      'rolls',
+      benefitPath,
+      new Set(['all-melee-weapon-attack-rolls']),
+    );
+    reqEnum(benefit, 'mode', benefitPath, new Set(['advantage']));
+    reqEnum(benefit, 'duration', benefitPath, new Set(['current-turn']));
+
+    const tradeoff = reqObj(effect, 'tradeoff', path);
+    const tradeoffPath = `${path}.tradeoff`;
+    requireOnlyKeys(tradeoff, ['rolls', 'mode', 'duration'], tradeoffPath);
+    reqEnum(
+      tradeoff,
+      'rolls',
+      tradeoffPath,
+      new Set(['all-attack-rolls-against-self']),
+    );
+    reqEnum(tradeoff, 'mode', tradeoffPath, new Set(['advantage']));
+    reqEnum(
+      tradeoff,
+      'duration',
+      tradeoffPath,
+      new Set(['until-start-of-next-turn']),
+    );
   },
   checkMinimum: (effect, path) => {
     reqAbility(effect, 'ability', path);

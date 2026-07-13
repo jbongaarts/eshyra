@@ -3168,12 +3168,38 @@ function parseC9ResidualEffect(
   return undefined;
 }
 
+/** The two reviewed SRD Reckless traits share one exact, fail-closed grammar. */
+function parseReckless(name: string, text: string): Mechanics | undefined {
+  if (name !== 'Reckless') return undefined;
+  const match =
+    /^At the start of its turn, the (berserker|minotaur) can gain advantage on all melee weapon attack rolls(?: it makes)? during that turn, but attack rolls against it have advantage until the start of its next turn\.$/.exec(
+      text,
+    );
+  if (match === null) return undefined;
+  return {
+    kind: 'recklessAttack',
+    activation: { timing: 'start-of-turn', optional: true },
+    benefit: {
+      rolls: 'all-melee-weapon-attack-rolls',
+      mode: 'advantage',
+      duration: 'current-turn',
+    },
+    tradeoff: {
+      rolls: 'all-attack-rolls-against-self',
+      mode: 'advantage',
+      duration: 'until-start-of-next-turn',
+    },
+  };
+}
+
 /**
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
 function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
-  const effects: Mechanics[] = [...parseModifierEffects(text)];
+  const reckless = parseReckless(name, text);
+  const effects: Mechanics[] =
+    reckless === undefined ? [...parseModifierEffects(text)] : [reckless];
   const changeShape = parseChangeShape(name, text);
   if (changeShape !== undefined) {
     effects.push(changeShape);
@@ -3204,7 +3230,7 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   // of this function — that marker carries no link back to the effect it
   // governs (eshyra-o9bd.18.7.9 §2 trigger/result linkage). This flag
   // suppresses the generic marker for those specific matches only.
-  let suppressGenericTrigger = false;
+  let suppressGenericTrigger = reckless !== undefined;
   if (splitOnDamage !== undefined) {
     suppressGenericTrigger = true;
   }

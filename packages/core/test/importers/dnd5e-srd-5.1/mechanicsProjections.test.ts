@@ -44,6 +44,117 @@ describe('deriveCreatureEntryMechanics recharge parsing (eshyra-54di)', () => {
   });
 });
 
+describe('deriveCreatureEntryMechanics Reckless grammar (eshyra-o9bd.18.7.9.10)', () => {
+  const expected = {
+    kind: 'recklessAttack',
+    activation: { timing: 'start-of-turn', optional: true },
+    benefit: {
+      rolls: 'all-melee-weapon-attack-rolls',
+      mode: 'advantage',
+      duration: 'current-turn',
+    },
+    tradeoff: {
+      rolls: 'all-attack-rolls-against-self',
+      mode: 'advantage',
+      duration: 'until-start-of-next-turn',
+    },
+  };
+  const texts = {
+    berserker:
+      'At the start of its turn, the berserker can gain advantage on all melee weapon attack rolls during that turn, but attack rolls against it have advantage until the start of its next turn.',
+    minotaur:
+      'At the start of its turn, the minotaur can gain advantage on all melee weapon attack rolls it makes during that turn, but attack rolls against it have advantage until the start of its next turn.',
+  };
+
+  it.each(
+    Object.entries(texts),
+  )('projects the exact %s source variant', (_, text) => {
+    expect(deriveCreatureEntryMechanics('Reckless', text).effects).toEqual([
+      expected,
+    ]);
+  });
+
+  it.each([
+    ['wrong entry name', 'Other', texts.berserker],
+    [
+      'missing start boundary',
+      'Reckless',
+      texts.berserker.replace('At the start of its turn, ', ''),
+    ],
+    [
+      'changed optional can semantics',
+      'Reckless',
+      texts.berserker.replace('can gain', 'gains'),
+    ],
+    [
+      'ranged benefit',
+      'Reckless',
+      texts.berserker.replace('melee weapon', 'ranged weapon'),
+    ],
+    [
+      'melee spell benefit',
+      'Reckless',
+      texts.berserker.replace(
+        'melee weapon attack rolls',
+        'melee spell attack rolls',
+      ),
+    ],
+    [
+      'generic attack benefit',
+      'Reckless',
+      texts.berserker.replace(
+        'all melee weapon attack rolls',
+        'all attack rolls',
+      ),
+    ],
+    [
+      'missing all benefit scope',
+      'Reckless',
+      texts.berserker.replace('all melee', 'melee'),
+    ],
+    [
+      'wrong benefit duration',
+      'Reckless',
+      texts.berserker.replace('during that turn', 'until the end of its turn'),
+    ],
+    [
+      'narrowed tradeoff',
+      'Reckless',
+      texts.berserker.replace(
+        'attack rolls against it',
+        'melee attack rolls against it',
+      ),
+    ],
+    [
+      'changed target',
+      'Reckless',
+      texts.berserker.replace('against it', 'against another creature'),
+    ],
+    [
+      'wrong end boundary',
+      'Reckless',
+      texts.berserker.replace(
+        'until the start of its next turn',
+        'until the end of its next turn',
+      ),
+    ],
+    [
+      'actor mismatch',
+      'Reckless',
+      texts.berserker.replace('against it', 'against the minotaur'),
+    ],
+    [
+      'unsupported actor',
+      'Reckless',
+      texts.berserker.replace('the berserker', 'the ogre'),
+    ],
+  ] as const)('fails closed on %s', (_, name, text) => {
+    expect(deriveCreatureEntryMechanics(name, text).effects).not.toEqual(
+      expect.arrayContaining([expected]),
+    );
+  });
+});
+
 describe('deriveCreatureEntryMechanics damage absorption (eshyra-o9bd.18.7.9 C6)', () => {
   it.each([
     ['Acid Absorption', 'acid', 'golem'],

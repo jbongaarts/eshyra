@@ -54,6 +54,55 @@ function spellAmbiguities(key: string): unknown[] | undefined {
 }
 
 describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () => {
+  it('C4 Reckless projects one linked optional bargain on exactly two reviewed refs', () => {
+    const recklessAttack = {
+      kind: 'recklessAttack',
+      activation: { timing: 'start-of-turn', optional: true },
+      benefit: {
+        rolls: 'all-melee-weapon-attack-rolls',
+        mode: 'advantage',
+        duration: 'current-turn',
+      },
+      tradeoff: {
+        rolls: 'all-attack-rolls-against-self',
+        mode: 'advantage',
+        duration: 'until-start-of-next-turn',
+      },
+    };
+    expect(
+      creatureEntry('creature:berserker', 'traits', 'Reckless').mechanics
+        ?.effects,
+    ).toEqual([recklessAttack]);
+    expect(
+      creatureEntry('creature:minotaur', 'traits', 'Reckless').mechanics
+        ?.effects,
+    ).toEqual([recklessAttack]);
+
+    const recklessRefs = getBundledDnd5eSrdPack().records.flatMap((record) => {
+      if (record.kind !== 'creature') return [];
+      const data = record.data as Record<string, unknown>;
+      return (['traits', 'actions', 'reactions'] as const).flatMap((section) =>
+        (Array.isArray(data[section])
+          ? (data[section] as Entry[])
+          : []
+        ).flatMap((entry) =>
+          entry.mechanics?.effects?.some(
+            (effect) =>
+              typeof effect === 'object' &&
+              effect !== null &&
+              (effect as { kind?: unknown }).kind === 'recklessAttack',
+          )
+            ? [`${record.key}#${section}:${entry.name}`]
+            : [],
+        ),
+      );
+    });
+    expect(recklessRefs.sort()).toEqual([
+      'creature:berserker#traits:Reckless',
+      'creature:minotaur#traits:Reckless',
+    ]);
+  });
+
   it('C8 Rampage projects exactly the two reviewed trigger-linked bonus actions', () => {
     const rampage = {
       kind: 'triggeredBonusAction',

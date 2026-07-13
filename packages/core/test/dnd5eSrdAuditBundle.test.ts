@@ -347,16 +347,16 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
       [],
     );
     expect(
-      regressed.dispositionErrors.filter((error) =>
-        error.includes(
-          'has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS',
-        ),
+      regressed.dispositionErrors.filter(
+        (error) =>
+          error.includes('creature-entry#mechanical-prose') &&
+          error.includes('no reviewed disposition'),
       ),
     ).toEqual([
       expect.stringContaining('creature:regressed#traits:Newly Unmodeled'),
     ]);
     expect(() => assertGameplayReadinessDispositions(regressed)).toThrow(
-      /has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS/,
+      /no reviewed disposition/,
     );
   });
 });
@@ -487,10 +487,10 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
       narrativeProse: 0,
     });
     expect(
-      report.dispositionErrors.filter((error) =>
-        error.includes(
-          'has no reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS',
-        ),
+      report.dispositionErrors.filter(
+        (error) =>
+          error.includes('creature-entry#mechanical-prose') &&
+          error.includes('no reviewed disposition'),
       ),
     ).toEqual([
       expect.stringContaining(
@@ -499,7 +499,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     ]);
   });
 
-  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the C9 rollout (2 accepted + 2 pending findings = 4)', () => {
+  it('pins CREATURE_ENTRY_REVIEWED_DISPOSITIONS after the final C4 rollout (2 accepted = 2)', () => {
     // This is a hard pin, not a derived recomputation: it exists so that a
     // future change to the registry (an addition, removal, or silent
     // reclassification) is caught here and forces an update to the
@@ -508,20 +508,19 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // 2026-07-06-o9bd-18-7-9-membership-classification.md §1/§3), rather
     // than only being caught by the coarser bucket-level fail-closed check.
     //
-    // The critical invariant this test guards: only the 2 genuinely accepted
-    // refs may carry `accepted-prose-only` — every other reviewed ref MUST
-    // be a `finding` with an explicit bead + slice, so a broad bucket-level
-    // policy can never hide reviewed-but-pending deterministic work behind
-    // blanket acceptance.
+    // The critical invariant this test guards: exactly the 2 genuinely
+    // accepted refs carry `accepted-prose-only`; modeled refs must graduate
+    // from this registry, and any future finding must carry explicit
+    // bead/slice metadata.
     const entries = Object.entries(CREATURE_ENTRY_REVIEWED_DISPOSITIONS);
-    expect(entries).toHaveLength(4);
+    expect(entries).toHaveLength(2);
 
     const accepted = entries.filter(
       ([, d]) => d.status === 'accepted-prose-only',
     );
     const findings = entries.filter(([, d]) => d.status === 'finding');
     expect(accepted).toHaveLength(2);
-    expect(findings).toHaveLength(2);
+    expect(findings).toHaveLength(0);
     expect(accepted.map(([ref]) => ref).sort()).toEqual([
       'creature:vampire#traits:Vampire Weaknesses',
       'creature:vampire-spawn#traits:Vampire Weaknesses',
@@ -544,9 +543,7 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
       findingsBySlice[disposition.slice] =
         (findingsBySlice[disposition.slice] ?? 0) + 1;
     }
-    expect(findingsBySlice).toEqual({
-      C4: 2,
-    });
+    expect(findingsBySlice).toEqual({});
 
     // The six refs implemented in the §1.6.1 reconciliation pass (existing
     // typed kinds: rejuvenation, extraDamage, movementRestriction) must have
@@ -618,9 +615,9 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
         'creature:shield-guardian#reactions:Shield',
       ]),
     );
-    // Refs newly classified into slice C4 remain tracked as pending
-    // findings (not blanket accepted), each with an explicit rationale.
-    expect(allRefs).toEqual(
+    // The two C4 refs have graduated from the registry because their typed
+    // projections are now present in the committed pack.
+    expect(allRefs).not.toEqual(
       expect.arrayContaining([
         'creature:berserker#traits:Reckless',
         'creature:minotaur#traits:Reckless',
@@ -682,27 +679,18 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     // Feature runtime projections landed (eshyra-o9bd.18.7.5): the residual
     // prose-only bucket is a reviewed accepted closure, not an open finding.
     expect(byKey.get('feature#prose-only')?.status).toBe('accepted-prose-only');
-    // The nested creature-entry buckets are `reviewed-per-ref`
-    // (eshyra-o9bd.18.7.9), NOT a blanket `accepted-prose-only` — record-
-    // level creature buckets are gone because all 317 creatures now carry
-    // typed nested mechanics, but the prose-entry buckets mix 2 genuinely
-    // accepted refs with 48 reviewed pending findings, so the bucket-level
-    // status must never claim blanket acceptance.
+    // All 317 creatures carry typed nested mechanics; only the narrative
+    // bucket remains for the two permanent Vampire Weaknesses headers.
     expect(byKey.get('creature#partial-structure')).toBeUndefined();
-    expect(byKey.get('creature-entry#mechanical-prose')?.status).toBe(
-      'reviewed-per-ref',
-    );
+    expect(byKey.get('creature-entry#mechanical-prose')).toBeUndefined();
     expect(byKey.get('creature-entry#narrative-prose')?.status).toBe(
       'reviewed-per-ref',
     );
-    // The per-ref breakdown is exact: 2 permanent accepts, 2 pending
-    // findings across the remaining slices.
+    // The per-ref breakdown is exact: 2 permanent accepts and no findings.
     expect(report.creatureEntries.reviewedDispositions).toEqual({
       acceptedProseOnly: 2,
-      pendingFindings: 2,
-      findingsBySlice: {
-        C4: 2,
-      },
+      pendingFindings: 0,
+      findingsBySlice: {},
     });
   });
 
