@@ -978,6 +978,12 @@ describe('active-effect tools (F3, eshyra-2n1t.5)', () => {
     expect(
       registry.list().filter((name) => name === 'unsuppress_effect'),
     ).toHaveLength(1);
+    expect(registry.listRequiresExplicitAction()).not.toContain(
+      'suppress_effect',
+    );
+    expect(registry.listRequiresExplicitAction()).not.toContain(
+      'unsuppress_effect',
+    );
 
     expect(
       registry.invoke('start_effect', blessArgs('fx-suppressed'), c).ok,

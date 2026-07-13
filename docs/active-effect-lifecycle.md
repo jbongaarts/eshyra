@@ -250,7 +250,7 @@ typed audit events.
 - `refreshEffect` — re-anchors an active effect's timer (Animate Dead-style
   reassertion), optionally with a new validated duration.
 - `suppressEffect` / `unsuppressEffect` — antimagic-style suppression without
-  end/cleanup, exposed to the model as the explicit-action tools
+  end/cleanup, exposed to the model as model-facing tools
   `suppress_effect` and `unsuppress_effect`.
 - `expireElapsedRoundEffects` — deterministic round-deadline sweep.
 

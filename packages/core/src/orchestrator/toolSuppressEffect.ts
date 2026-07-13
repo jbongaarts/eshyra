@@ -5,7 +5,6 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const suppressEffectTool: Tool = {
   name: 'suppress_effect',
-  requiresExplicitAction: true,
   mutates: true,
   description:
     'Temporarily suppress an active effect without ending it or cleaning up ' +

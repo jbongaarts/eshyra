@@ -5,7 +5,6 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const unsuppressEffectTool: Tool = {
   name: 'unsuppress_effect',
-  requiresExplicitAction: true,
   mutates: true,
   description:
     'Restore a suppressed effect to active status without creating a new ' +
