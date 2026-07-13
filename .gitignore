@@ -27,6 +27,9 @@ dist-release/
 # Claude Code local/personal settings (shared settings.json is tracked)
 .claude/settings.local.json
 
+# JetBrains IDE project settings (local to each checkout)
+.idea/
+
 # Importer scratch output: regenerated each run, not the canonical pack
 # location. See packages/core/scripts/importers/dnd5e-srd-5.1/README.md.
 packages/core/scripts/importers/*/.generated/
