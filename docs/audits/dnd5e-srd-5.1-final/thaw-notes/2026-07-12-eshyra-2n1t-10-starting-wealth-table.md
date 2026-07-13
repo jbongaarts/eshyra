@@ -17,4 +17,4 @@ other record payloads, source artifacts, or record kinds changed.
 
 `npm run verify:dnd5e-srd-pack` proves importer output matches the committed
 pack exactly. The refreshed records hash after rebasing onto current `main` is
-`92326e4aa02ac76ce1aefc19218e6740921af0de3f83101c04e00e734cdf69c1`.
+`ba970289ffbb820919a6fb586d795a0465dad2b0fbe4451e8d18c476646f8bb9`.
