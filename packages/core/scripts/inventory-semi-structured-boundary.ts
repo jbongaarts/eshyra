@@ -479,6 +479,33 @@ const rules: readonly ClassificationRule[] = [
       ),
   },
   {
+    name: 'equipment mechanics projections',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('equipment')({ recordKinds }) &&
+      (fieldPath.startsWith('data.weaponProperties') ||
+        fieldPath.startsWith('data.useProfile')),
+    classify: ({ fieldPath }) => {
+      const evidence =
+        fieldPath.endsWith('.source') ||
+        fieldPath.endsWith('.sourcePhrase') ||
+        fieldPath === 'data.useProfile.modelAdjudicatedQualifiers[]';
+      return result(
+        evidence ? 'source prose' : 'scalar-like',
+        evidence ? 'model-adjudicated' : 'complete',
+        evidence
+          ? 'retained source binding or explicitly adjudicated qualifier'
+          : 'equipment use-profile and closed weapon-property consumers',
+        'D&D equipment schema validates the closed projection vocabulary',
+        'equipment inventory, source-drift, schema, and readiness gates',
+        evidence ? null : 'EquipmentUseProfile / WeaponProperty',
+        evidence
+          ? 'equipmentMechanics.ts source binding'
+          : 'parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts',
+      );
+    },
+  },
+  {
     name: 'mechanics duration projection with source qualifier',
     matches: exactPath(
       'data.mechanics.duration.kind',

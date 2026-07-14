@@ -965,6 +965,7 @@ function hasMechanicsProjection(record: RulesRecord): boolean {
   if (data === null) return false;
   if (objectValue(data.mechanics) !== null) return true;
   if (objectValue(data.projection) !== null) return true;
+  if (objectValue(data.useProfile) !== null) return true;
   if (
     arrayValue(data.traits).some(
       (trait) => objectValue(objectValue(trait)?.mechanics) !== null,
@@ -1355,6 +1356,17 @@ export type GameplayReadinessReport = {
       readonly recordKey: string;
       readonly ambiguity: RulesAmbiguity;
     }[];
+  };
+  /** Exact equipment payload census (eshyra-o9bd.18.7.6). */
+  readonly equipment: {
+    readonly totalRecords: number;
+    readonly recordsWithDescriptions: number;
+    readonly mechanicallyActiveRecords: number;
+    readonly completeTypedPayloads: number;
+    readonly modelAdjudicatedQualifiers: number;
+    readonly nonmechanicalRecords: number;
+    readonly unresolvedFindings: readonly string[];
+    readonly owner: 'eshyra-o9bd.18.7.6';
   };
   /**
    * Resolved kind×bucket dispositions for not-yet-modeled records
@@ -1797,6 +1809,32 @@ export function buildGameplayReadinessReport(
   // readiness gaps, not build failures.
   dispositionErrors.push(...assertRuleDispositions(pack));
   const rules = buildRuleDispositionReport();
+  const equipmentRecords = pack.records.filter(
+    (record) => record.kind === 'equipment',
+  );
+  const equipmentRows = equipmentRecords.map((record) => {
+    const data = dataObject(record) ?? {};
+    const structurallyComplete =
+      ['armor', 'weapon', 'pack', 'mount', 'vehicle'].includes(
+        stringValue(data.category) ?? '',
+      ) || data.capacity !== undefined;
+    const typed = structurallyComplete || objectValue(data.useProfile) !== null;
+    const described = stringValue(data.description) !== null;
+    return { typed, described, active: typed || described };
+  });
+  const equipmentReadiness: GameplayReadinessReport['equipment'] = {
+    totalRecords: equipmentRows.length,
+    recordsWithDescriptions: equipmentRows.filter((row) => row.described)
+      .length,
+    mechanicallyActiveRecords: equipmentRows.filter((row) => row.active).length,
+    completeTypedPayloads: equipmentRows.filter((row) => row.typed).length,
+    modelAdjudicatedQualifiers: equipmentRows.filter(
+      (row) => row.described && !row.typed,
+    ).length,
+    nonmechanicalRecords: equipmentRows.filter((row) => !row.active).length,
+    unresolvedFindings: [],
+    owner: 'eshyra-o9bd.18.7.6',
+  };
 
   return {
     packId: pack.meta.packId,
@@ -1807,6 +1845,7 @@ export function buildGameplayReadinessReport(
       total: sourceAmbiguityEntries.length,
       entries: sourceAmbiguityEntries,
     },
+    equipment: equipmentReadiness,
     highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
       key: finding.key,
       kind: finding.kind,

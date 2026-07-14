@@ -1743,15 +1743,11 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   'rule:armor-guidance': {
     status: 'partial',
     missing:
-      'per-armor stats structured; penalty application per roll stays a ruling; missing: AC derivation from equipped armor (base + Dex, medium cap 2, heavy flat, shield +2) — `derivedValues.ts` defers AC/attack bonuses to eshyra-b69j.13 (externally owned clause); per-record payload completeness clause → eshyra-o9bd.18.7.6',
+      'per-armor payloads are complete; penalty application per roll stays a ruling; missing: AC derivation from equipped armor (base + Dex, medium cap 2, heavy flat, shield +2) — `derivedValues.ts` defers AC/attack bonuses to eshyra-b69j.13',
     externalClauses: [
       {
         clause: 'AC derivation from equipped armor',
         bead: 'eshyra-b69j.13',
-      },
-      {
-        clause: 'per-record armor payload completeness',
-        bead: 'eshyra-o9bd.18.7.6',
       },
     ],
   },
@@ -1994,7 +1990,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'remove_item', 'roll'],
     contextRequirement:
-      'one-shot consumption = `remove_item` mutation; supported today',
+      'source-bound equipment useProfile declares consumption; one-shot inventory units use remove_item, finite-use equipment uses F5 item counters',
   },
   'rule:contests': {
     status: 'implemented',
@@ -2300,13 +2296,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement:
-      '1d4 / proficiency-analogy ruling; per-record payload clause → eshyra-o9bd.18.7.6',
-    externalClauses: [
-      {
-        clause: 'per-record payload completeness',
-        bead: 'eshyra-o9bd.18.7.6',
-      },
-    ],
+      '1d4 / proficiency-analogy stays a ruling; every item-specific improvised attack carries its range, attack mode, damage, and consumption payload',
   },
   'rule:innate-spellcasting': {
     status: 'model-adjudicated-supported',
@@ -2658,15 +2648,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'statblock convention; entries structured',
   },
   'rule:special-weapons': {
-    status: 'partial',
-    missing:
-      'generic semantics MODEL; missing per-record payloads (net restraint DC/AC, lance rules) — clause externally owned by eshyra-o9bd.18.7.6',
-    externalClauses: [
-      {
-        clause: 'per-record payloads (net restraint DC/AC, lance rules)',
-        bead: 'eshyra-o9bd.18.7.6',
-      },
+    status: 'model-adjudicated-supported',
+    primitives: [
+      'add_condition',
+      'lookup_rules',
+      'resolve_check',
+      'spend_turn_resource',
     ],
+    contextRequirement:
+      'lance and net carry complete source-bound per-record procedures; target eligibility stays a ruling over F2/F3/F9 primitives',
   },
   'rule:speed': {
     status: 'model-adjudicated-supported',
@@ -2897,13 +2887,7 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement:
-      'property semantics applied per roll over structured tags; per-record payload completeness clause → eshyra-o9bd.18.7.6',
-    externalClauses: [
-      {
-        clause: 'per-record payload completeness',
-        bead: 'eshyra-o9bd.18.7.6',
-      },
-    ],
+      'property semantics applied per roll over closed, parameterized weaponProperties; situational applicability stays a ruling',
   },
   'rule:wizard-your-spellbook': {
     status: 'partial',
@@ -2972,13 +2956,14 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * audit trail, but deterministic resale and downtime-cost transforms remain
  * partial until registered calculation primitives own those numbers. F3,
  * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
- * reviewed stacked census is now 37/109/17/2/10.
+ * Equipment payload closure moved special-weapons partial → supported; the
+ * reviewed stacked census is now 37/110/16/2/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
     implemented: 37,
-    'model-adjudicated-supported': 109,
-    partial: 17,
+    'model-adjudicated-supported': 110,
+    partial: 16,
     unimplemented: 2,
     'design-blocked': 10,
   });

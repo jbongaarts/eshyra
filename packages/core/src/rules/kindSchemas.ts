@@ -4679,6 +4679,205 @@ const ARMOR_DEX_MODIFIER_KINDS: ReadonlySet<string> = new Set([
   'capped',
 ]);
 
+const WEAPON_PROPERTY_KINDS = new Set([
+  'ammunition',
+  'finesse',
+  'heavy',
+  'light',
+  'loading',
+  'reach',
+  'special',
+  'thrown',
+  'two-handed',
+  'versatile',
+]);
+
+const EQUIPMENT_SEMANTIC_KEYS = [
+  'additionalDamage',
+  'against',
+  'ammunitionMaximum',
+  'anchored',
+  'area',
+  'attackDisadvantageWithinFeet',
+  'avoidsSaveAtSpeedFraction',
+  'bypassesCheck',
+  'check',
+  'checkAdvantage',
+  'condition',
+  'creatorClasses',
+  'damage',
+  'damageRequired',
+  'damageType',
+  'dice',
+  'duration',
+  'eligibleCreatureTypes',
+  'eligibleSizes',
+  'eligibleWeaponDamageTypes',
+  'ends',
+  'endsWhenHitPointsRegainedAtLeast',
+  'expenditures',
+  'failure',
+  'failureCondition',
+  'failureDamage',
+  'fuel',
+  'hands',
+  'help',
+  'hitPoints',
+  'ineligible',
+  'ineligibleCreatureTypes',
+  'kind',
+  'light',
+  'materialCostGp',
+  'maximumAttacks',
+  'maximumDistanceFromAnchorFeet',
+  'maximumFallFeet',
+  'maximumPerTurn',
+  'maximumSize',
+  'mode',
+  'objectArmorClass',
+  'outcome',
+  'placement',
+  'proficiency',
+  'qualifier',
+  'rangeFeet',
+  'repeats',
+  'requiredDamageType',
+  'requires',
+  'save',
+  'speedReductionFeet',
+  'spellSlotLevel',
+  'splashRangeFeet',
+  'surface',
+  'target',
+  'targetFuel',
+  'targetHitPoints',
+  'targets',
+  'tetherLengthFeet',
+  'thrownRangeFeet',
+  'timing',
+  'trigger',
+  'triggerDamageType',
+  'triggers',
+] as const;
+
+function validateWeaponProperties(data: Obj, path: string): void {
+  const entries = objArray(data, 'weaponProperties', path);
+  if (entries === undefined)
+    throw new RulesPackError(`${path}.weaponProperties must be an array`);
+  entries.forEach((entry, index) => {
+    const entryPath = `${path}.weaponProperties[${index}]`;
+    const kind = reqStr(entry, 'kind', entryPath);
+    if (!WEAPON_PROPERTY_KINDS.has(kind))
+      throw new RulesPackError(`${entryPath}.kind is unsupported`);
+    reqStr(entry, 'source', entryPath);
+    if (kind === 'ammunition' || kind === 'thrown') {
+      requireOnlyKeys(
+        entry,
+        ['kind', 'normalRangeFeet', 'longRangeFeet', 'source'],
+        entryPath,
+      );
+      reqInt(entry, 'normalRangeFeet', entryPath, 1);
+      reqInt(entry, 'longRangeFeet', entryPath, 1);
+    } else if (kind === 'versatile') {
+      requireOnlyKeys(
+        entry,
+        ['kind', 'alternateDamageDie', 'source'],
+        entryPath,
+      );
+      reqStr(entry, 'alternateDamageDie', entryPath);
+    } else {
+      requireOnlyKeys(entry, ['kind', 'source'], entryPath);
+    }
+  });
+}
+
+function validateEquipmentUseProfile(data: Obj, path: string): void {
+  if (data.useProfile === undefined) return;
+  const profile = reqObj(data, 'useProfile', path);
+  requireOnlyKeys(
+    profile,
+    ['consumption', 'clauses', 'modelAdjudicatedQualifiers'],
+    `${path}.useProfile`,
+  );
+  const consumption = reqObj(profile, 'consumption', `${path}.useProfile`);
+  const kind = reqStr(consumption, 'kind', `${path}.useProfile.consumption`);
+  if (kind === 'not-consumed')
+    requireOnlyKeys(consumption, ['kind'], `${path}.useProfile.consumption`);
+  else if (kind === 'inventory-unit' || kind === 'ammunition') {
+    requireOnlyKeys(
+      consumption,
+      ['kind', 'quantity'],
+      `${path}.useProfile.consumption`,
+    );
+    if (
+      reqInt(consumption, 'quantity', `${path}.useProfile.consumption`, 1) !== 1
+    )
+      throw new RulesPackError(
+        `${path}.useProfile.consumption.quantity must be 1`,
+      );
+  } else if (kind === 'finite-uses') {
+    requireOnlyKeys(
+      consumption,
+      ['kind', 'maximum', 'usesPerActivation', 'reset'],
+      `${path}.useProfile.consumption`,
+    );
+    reqInt(consumption, 'maximum', `${path}.useProfile.consumption`, 1);
+    reqInt(
+      consumption,
+      'usesPerActivation',
+      `${path}.useProfile.consumption`,
+      1,
+    );
+    if (
+      reqStr(consumption, 'reset', `${path}.useProfile.consumption`) !== 'none'
+    )
+      throw new RulesPackError(
+        `${path}.useProfile.consumption.reset must be "none"`,
+      );
+  } else if (kind === 'source-defined') {
+    requireOnlyKeys(
+      consumption,
+      ['kind', 'clause'],
+      `${path}.useProfile.consumption`,
+    );
+    reqStr(consumption, 'clause', `${path}.useProfile.consumption`);
+  } else
+    throw new RulesPackError(
+      `${path}.useProfile.consumption.kind is unsupported`,
+    );
+  const clauses = objArray(profile, 'clauses', `${path}.useProfile`);
+  if (clauses === undefined || clauses.length === 0)
+    throw new RulesPackError(`${path}.useProfile.clauses must be non-empty`);
+  const ids = new Set<string>();
+  clauses.forEach((entry, index) => {
+    const clausePath = `${path}.useProfile.clauses[${index}]`;
+    requireOnlyKeys(
+      entry,
+      ['id', 'sourcePhrase', 'owner', 'semantics'],
+      clausePath,
+    );
+    const id = reqStr(entry, 'id', clausePath);
+    if (ids.has(id)) throw new RulesPackError(`${clausePath}.id is duplicated`);
+    ids.add(id);
+    reqStr(entry, 'sourcePhrase', clausePath);
+    reqEnum(
+      entry,
+      'owner',
+      clausePath,
+      new Set(['F2', 'F3', 'F5', 'F9', 'inventory', 'model']),
+    );
+    const semantics = reqObj(entry, 'semantics', clausePath);
+    requireOnlyKeys(
+      semantics,
+      EQUIPMENT_SEMANTIC_KEYS,
+      `${clausePath}.semantics`,
+    );
+    if (Object.keys(semantics).length === 0)
+      throw new RulesPackError(`${clausePath}.semantics must not be empty`);
+  });
+  optStrArray(profile, 'modelAdjudicatedQualifiers', `${path}.useProfile`);
+}
+
 /**
  * Equipment is otherwise schema-permissive (varied category fields); this
  * validator only enforces the typed pack `contents` when present (eshyra-ngcj.4):
@@ -4726,6 +4925,7 @@ function validateDnd5eEquipment(record: RulesRecord, path: string): void {
         `${path}.data.weaponRange must be "melee" or "ranged"`,
       );
     }
+    validateWeaponProperties(data, `${path}.data`);
   }
   if (data.equipmentGroup !== undefined) {
     if (
@@ -4766,6 +4966,7 @@ function validateDnd5eEquipment(record: RulesRecord, path: string): void {
       }
     }
   }
+  validateEquipmentUseProfile(data, `${path}.data`);
 }
 
 function validateDnd5eCondition(record: RulesRecord, path: string): void {

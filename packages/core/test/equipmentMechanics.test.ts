@@ -1,0 +1,249 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { EQUIPMENT_MECHANICS_SPECS } from '../scripts/importers/dnd5e-srd-5.1/equipmentMechanics.js';
+import {
+  parseWeaponProperties,
+  WeaponPropertyShapeError,
+} from '../scripts/importers/dnd5e-srd-5.1/parseEquipment.js';
+import { validateRecordKindSchema } from '../src/rules/kindSchemas.js';
+import type { RulesRecord } from '../src/rules/types.js';
+
+const ROOT = resolve(import.meta.dirname, '../../..');
+const records = JSON.parse(
+  readFileSync(
+    resolve(
+      ROOT,
+      'packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json',
+    ),
+    'utf8',
+  ),
+) as RulesRecord[];
+const equipment = records.filter((record) => record.kind === 'equipment');
+const byKey = new Map(equipment.map((record) => [record.key, record]));
+const inventory = JSON.parse(
+  readFileSync(
+    resolve(
+      ROOT,
+      'docs/audits/dnd5e-srd-5.1-final/o9bd-18-7-6-equipment-mechanics-inventory.json',
+    ),
+    'utf8',
+  ),
+) as {
+  recordCount: number;
+  mechanicallyActiveRecords: number;
+  curatedProjectionRecords: number;
+  clauseCount: number;
+  records: Array<{
+    recordKey: string;
+    disposition: string;
+    sourceBindings: Array<{ clauseId: string; phrase: string }>;
+  }>;
+};
+
+// Independent reviewed membership: this list is deliberately not derived from
+// EQUIPMENT_MECHANICS_SPECS or generated output.
+const EXPECTED_CURATED_KEYS = [
+  'equipment:acid-vial',
+  'equipment:alchemists-fire-flask',
+  'equipment:antitoxin-vial',
+  'equipment:ball-bearings-bag-of-1-000',
+  'equipment:caltrops-bag-of-20',
+  'equipment:candle',
+  'equipment:chain-10-feet',
+  'equipment:climbers-kit',
+  'equipment:crowbar',
+  'equipment:healers-kit',
+  'equipment:holy-water-flask',
+  'equipment:hunting-trap',
+  'equipment:lamp',
+  'equipment:lance',
+  'equipment:lantern-bullseye',
+  'equipment:lantern-hooded',
+  'equipment:lock',
+  'equipment:manacles',
+  'equipment:net',
+  'equipment:oil-flask',
+  'equipment:poison-basic-vial',
+  'equipment:ram-portable',
+  'equipment:rope-hempen-50-feet',
+  'equipment:rope-silk-50-feet',
+  'equipment:tinderbox',
+  'equipment:torch',
+] as const;
+
+describe('SRD equipment mechanics inventory', () => {
+  it('pins exact corpus and curated membership', () => {
+    expect(equipment).toHaveLength(218);
+    expect(inventory.recordCount).toBe(218);
+    expect(inventory.mechanicallyActiveRecords).toBe(170);
+    expect(inventory.curatedProjectionRecords).toBe(26);
+    expect(inventory.clauseCount).toBe(65);
+    expect(
+      EQUIPMENT_MECHANICS_SPECS.map((spec) => spec.recordKey).sort(),
+    ).toEqual([...EXPECTED_CURATED_KEYS].sort());
+    expect(inventory.records.map((row) => row.recordKey).sort()).toEqual(
+      equipment.map((record) => record.key).sort(),
+    );
+    expect(
+      inventory.records
+        .filter((row) => row.disposition !== 'not mechanical')
+        .every((row) => row.disposition.length > 0),
+    ).toBe(true);
+  });
+
+  it('binds every projected value to retained source evidence', () => {
+    for (const spec of EQUIPMENT_MECHANICS_SPECS) {
+      const record = byKey.get(spec.recordKey);
+      expect(record).toBeDefined();
+      const description = (record?.data as { description: string }).description;
+      for (const clause of spec.clauses)
+        expect(description).toContain(clause.sourcePhrase);
+      const inventoryRow = inventory.records.find(
+        (row) => row.recordKey === spec.recordKey,
+      );
+      expect(
+        inventoryRow?.sourceBindings.map((binding) => binding.clauseId),
+      ).toEqual(spec.clauses.map((clause) => clause.id));
+    }
+  });
+});
+
+describe('closed armor and weapon table semantics', () => {
+  it('reconstructs every armor AC cell', () => {
+    for (const record of equipment.filter(
+      (entry) => (entry.data as { category?: string }).category === 'armor',
+    )) {
+      const data = record.data as {
+        ac: string;
+        armorType: string;
+        armorClass: {
+          base?: number;
+          bonus?: number;
+          dexModifier?: string;
+          dexModifierCap?: number;
+        };
+      };
+      const reconstructed =
+        data.armorType === 'shield'
+          ? `+${data.armorClass.bonus}`
+          : data.armorClass.dexModifier === 'unlimited'
+            ? `${data.armorClass.base} + Dex modifier`
+            : data.armorClass.dexModifier === 'capped'
+              ? `${data.armorClass.base} + Dex modifier (max ${data.armorClass.dexModifierCap})`
+              : `${data.armorClass.base}`;
+      expect(reconstructed).toBe(data.ac);
+    }
+  });
+
+  it('reconstructs every raw weapon property and rejects unknown grammar', () => {
+    for (const record of equipment.filter(
+      (entry) => (entry.data as { category?: string }).category === 'weapon',
+    )) {
+      const data = record.data as {
+        properties: string[];
+        weaponProperties: Array<{ source: string }>;
+      };
+      expect(data.weaponProperties.map((property) => property.source)).toEqual(
+        data.properties,
+      );
+    }
+    expect(() => parseWeaponProperties(['Exploding (range maybe)'])).toThrow(
+      WeaponPropertyShapeError,
+    );
+  });
+
+  it('represents the complete special-weapon membership', () => {
+    const special = equipment.filter((record) =>
+      (
+        (record.data as { weaponProperties?: Array<{ kind: string }> })
+          .weaponProperties ?? []
+      ).some((property) => property.kind === 'special'),
+    );
+    expect(special.map((record) => record.key).sort()).toEqual([
+      'equipment:lance',
+      'equipment:net',
+    ]);
+    expect(
+      (
+        byKey.get('equipment:net')?.data as {
+          useProfile: { clauses: Array<{ id: string }> };
+        }
+      ).useProfile.clauses.map((clause) => clause.id),
+    ).toEqual(['restrain', 'ineffective', 'escape', 'destroy', 'one-attack']);
+  });
+});
+
+describe('equipment use-profile schema', () => {
+  const acid = byKey.get('equipment:acid-vial') as RulesRecord;
+  it('keeps reusable, inventory-unit, source-defined, and finite-use economies distinct', () => {
+    const kind = (key: string) =>
+      (
+        byKey.get(key)?.data as {
+          useProfile: { consumption: { kind: string } };
+        }
+      ).useProfile.consumption.kind;
+    expect(kind('equipment:acid-vial')).toBe('inventory-unit');
+    expect(kind('equipment:healers-kit')).toBe('finite-uses');
+    expect(kind('equipment:net')).toBe('not-consumed');
+    expect(kind('equipment:torch')).toBe('source-defined');
+    expect(
+      (
+        byKey.get('equipment:healers-kit')?.data as {
+          useProfile: { consumption: { maximum: number; reset: string } };
+        }
+      ).useProfile.consumption,
+    ).toMatchObject({ maximum: 10, reset: 'none' });
+  });
+
+  it('rejects unknown fields, incompatible consumption, and empty semantics', () => {
+    const mutate = (
+      fn: (profile: Record<string, unknown>) => void,
+    ): RulesRecord => {
+      const copy = structuredClone(acid) as RulesRecord;
+      fn((copy.data as { useProfile: Record<string, unknown> }).useProfile);
+      return copy;
+    };
+    expect(() =>
+      validateRecordKindSchema(
+        mutate((profile) => {
+          profile.extra = true;
+        }),
+        'record',
+      ),
+    ).toThrow(/unsupported key/);
+    expect(() =>
+      validateRecordKindSchema(
+        mutate((profile) => {
+          profile.consumption = {
+            kind: 'finite-uses',
+            maximum: 10,
+            usesPerActivation: 1,
+            reset: 'daily',
+          };
+        }),
+        'record',
+      ),
+    ).toThrow(/reset must be "none"/);
+    expect(() =>
+      validateRecordKindSchema(
+        mutate((profile) => {
+          const clauses = profile.clauses as Array<{ semantics: object }>;
+          clauses[0].semantics = {};
+        }),
+        'record',
+      ),
+    ).toThrow(/semantics must not be empty/);
+    expect(() =>
+      validateRecordKindSchema(
+        mutate((profile) => {
+          const clauses = profile.clauses as Array<{
+            semantics: Record<string, unknown>;
+          }>;
+          clauses[0].semantics.whatever = 'prose';
+        }),
+        'record',
+      ),
+    ).toThrow(/unsupported key/);
+  });
+});

@@ -9,10 +9,10 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1196,
+  "rowCount": 1258,
   "dispositionCounts": {
-    "complete": 257,
-    "model-adjudicated": 739,
+    "complete": 316,
+    "model-adjudicated": 742,
     "not-mechanical": 192,
     "typed-core-with-prose-qualifier": 2,
     "unsupported": 6
@@ -10716,6 +10716,1217 @@
       "recordKinds": [
         "equipment"
       ],
+      "fieldPath": "data.useProfile.clauses[].id",
+      "representativeValues": [
+        "activation",
+        "delivery",
+        "attack",
+        "damage",
+        "extinguish"
+      ],
+      "population": 65,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].owner",
+      "representativeValues": [
+        "F2",
+        "model",
+        "F9",
+        "F3",
+        "F5"
+      ],
+      "population": 65,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.additionalDamage.damageType",
+      "representativeValues": [
+        "fire"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.against",
+      "representativeValues": [
+        "poison"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.area.shape",
+      "representativeValues": [
+        "square"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.bypassesCheck.ability",
+      "representativeValues": [
+        "wisdom"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.bypassesCheck.skill",
+      "representativeValues": [
+        "medicine"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.check.ability",
+      "representativeValues": [
+        "dexterity",
+        "strength"
+      ],
+      "population": 11,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.check.proficiency",
+      "representativeValues": [
+        "thieves-tools"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.checkAdvantage.ability",
+      "representativeValues": [
+        "strength"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.condition",
+      "representativeValues": [
+        "wielder-not-mounted",
+        "restrained"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.creatorClasses[]",
+      "representativeValues": [
+        "cleric",
+        "paladin"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.damage.damageType",
+      "representativeValues": [
+        "piercing",
+        "fire"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.damageType",
+      "representativeValues": [
+        "acid",
+        "fire",
+        "radiant"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.dice",
+      "representativeValues": [
+        "2d6",
+        "1d4"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.duration",
+      "representativeValues": [
+        "until-freed"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.duration.unit",
+      "representativeValues": [
+        "hour",
+        "minute",
+        "round"
+      ],
+      "population": 8,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.eligibleCreatureTypes[]",
+      "representativeValues": [
+        "fiend",
+        "undead"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.eligibleSizes[]",
+      "representativeValues": [
+        "small",
+        "medium"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.eligibleWeaponDamageTypes[]",
+      "representativeValues": [
+        "slashing",
+        "piercing"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.ends",
+      "representativeValues": [
+        "anchor-undone",
+        "dries"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.expenditures[]",
+      "representativeValues": [
+        "action",
+        "bonus-action",
+        "reaction"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.failure.damage.damageType",
+      "representativeValues": [
+        "piercing"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.failure.damage.dice",
+      "representativeValues": [
+        "1d4"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.failure.stopMoving",
+      "representativeValues": [
+        "current-turn"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.failureCondition",
+      "representativeValues": [
+        "prone"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.failureDamage.damageType",
+      "representativeValues": [
+        "poison"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.failureDamage.dice",
+      "representativeValues": [
+        "1d4"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.fuel.item",
+      "representativeValues": [
+        "oil"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.help.grants",
+      "representativeValues": [
+        "advantage"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.ineligible[]",
+      "representativeValues": [
+        "formless",
+        "huge-or-larger"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.ineligibleCreatureTypes[]",
+      "representativeValues": [
+        "undead",
+        "construct"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.kind",
+      "representativeValues": [
+        "ranged-weapon-attack",
+        "damage",
+        "saving-throw-advantage",
+        "melee-weapon-attack"
+      ],
+      "population": 8,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.light.shape",
+      "representativeValues": [
+        "radius",
+        "cone"
+      ],
+      "population": 6,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.maximumSize",
+      "representativeValues": [
+        "large"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.mode",
+      "representativeValues": [
+        "walking"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.outcome",
+      "representativeValues": [
+        "ends-effect",
+        "broken",
+        "stable",
+        "unlocked",
+        "escaped"
+      ],
+      "population": 9,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.outcome[]",
+      "representativeValues": [
+        "free-creature",
+        "destroy-net"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.placement",
+      "representativeValues": [
+        "pressure-plate"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.proficiency",
+      "representativeValues": [
+        "improvised-weapon"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.qualifier",
+      "representativeValues": [
+        "leverage-can-be-applied"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.requiredDamageType",
+      "representativeValues": [
+        "slashing"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.requires",
+      "representativeValues": [
+        "burning"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.save.ability",
+      "representativeValues": [
+        "dexterity",
+        "constitution"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.surface",
+      "representativeValues": [
+        "level"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.target",
+      "representativeValues": [
+        "door"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.target[]",
+      "representativeValues": [
+        "self",
+        "creature-within-reach"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.targetFuel",
+      "representativeValues": [
+        "abundant-exposed"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.targets[]",
+      "representativeValues": [
+        "creature",
+        "object"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.timing",
+      "representativeValues": [
+        "action"
+      ],
+      "population": 15,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.trigger",
+      "representativeValues": [
+        "hit",
+        "start-of-affected-turn",
+        "failed-escape-check"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.triggerDamageType",
+      "representativeValues": [
+        "fire"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].semantics.triggers[]",
+      "representativeValues": [
+        "enters-area",
+        "ends-turn-in-area"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.clauses[].sourcePhrase",
+      "representativeValues": [
+        "As an action",
+        "splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet",
+        "make a ranged attack against a creature or object, treating the acid as an improvised weapon",
+        "2d6 acid damage",
+        "Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon"
+      ],
+      "population": 65,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "retained source binding or explicitly adjudicated qualifier",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": "equipmentMechanics.ts source binding",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.consumption.clause",
+      "representativeValues": [
+        "spill these tiny metal balls from their pouch",
+        "spread a bag of caltrops",
+        "For 1 hour",
+        "burns for 6 hours on a flask (1 pint) of oil",
+        "burns for 1 hour"
+      ],
+      "population": 7,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.consumption.kind",
+      "representativeValues": [
+        "inventory-unit",
+        "source-defined",
+        "not-consumed",
+        "finite-uses"
+      ],
+      "population": 26,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.consumption.reset",
+      "representativeValues": [
+        "none"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.useProfile.modelAdjudicatedQualifiers[]",
+      "representativeValues": [
+        "The GM may make better locks available at higher prices."
+      ],
+      "population": 1,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "retained source binding or explicitly adjudicated qualifier",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": "equipmentMechanics.ts source binding",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
       "fieldPath": "data.weaponCategory",
       "representativeValues": [
         "martial",
@@ -10730,6 +11941,93 @@
       "typedSchemaOrConsumer": "Dnd5eEquipmentData / StartingEquipmentFilterGrant",
       "retainedProseBoundary": null,
       "owner": "srdEquipmentResolutionAudit.ts and srdStartingEquipmentGrants.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.weaponProperties[]",
+      "representativeValues": [],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.weaponProperties[].alternateDamageDie",
+      "representativeValues": [
+        "1d10",
+        "1d8"
+      ],
+      "population": 6,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.weaponProperties[].kind",
+      "representativeValues": [
+        "versatile",
+        "ammunition",
+        "loading",
+        "light",
+        "heavy"
+      ],
+      "population": 65,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.weaponProperties[].source",
+      "representativeValues": [
+        "Versatile (1d10)",
+        "Ammunition (range 25/100)",
+        "loading",
+        "Light",
+        "Ammunition (range 30/120)"
+      ],
+      "population": 65,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "retained source binding or explicitly adjudicated qualifier",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": "equipmentMechanics.ts source binding",
       "futureWork": false
     },
     {

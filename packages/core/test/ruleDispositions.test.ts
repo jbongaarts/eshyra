@@ -122,15 +122,12 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // concentration to implemented); keep them in lockstep with
     // EXPECTED_COVERAGE_CENSUS.
     expect(report.engineProcedure.implemented).toBe(37);
-    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(109);
-    expect(report.engineProcedure.partial).toHaveLength(17);
+    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(110);
+    expect(report.engineProcedure.partial).toHaveLength(16);
     expect(report.engineProcedure.unimplemented).toHaveLength(2);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
-    // 8 rows carry an externally owned clause (armor-guidance,
-    // casting-a-spell-saving-throws, charges, special-weapons,
-    // improvised-weapons, weapon-properties, spells, telepathy);
-    // armor-guidance carries two, so the flattened list has 9 entries.
-    expect(report.engineProcedure.externalClauses).toHaveLength(9);
+    // Five still-open external clauses remain after equipment payload closure.
+    expect(report.engineProcedure.externalClauses).toHaveLength(5);
     expect(Object.keys(RULE_DISPOSITIONS)).toHaveLength(335);
     expect(Object.keys(ENGINE_PROCEDURE_COVERAGE)).toHaveLength(175);
   });
@@ -147,16 +144,11 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
         (row) => row.key === 'rule:multiclassing',
       )?.designOwner,
     ).toBe('eshyra-2n1t.1');
-    expect(report.engineProcedure.externalClauses).toContainEqual({
-      key: 'rule:improvised-weapons',
-      clause: 'per-record payload completeness',
-      bead: 'eshyra-o9bd.18.7.6',
-    });
-    expect(report.engineProcedure.externalClauses).toContainEqual({
-      key: 'rule:weapon-properties',
-      clause: 'per-record payload completeness',
-      bead: 'eshyra-o9bd.18.7.6',
-    });
+    expect(report.engineProcedure.externalClauses).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ bead: 'eshyra-o9bd.18.7.6' }),
+      ]),
+    );
     // spells' per-item spell-data completeness routes to the (open)
     // magic-item epic — a genuine pending gap, not this engine epic's
     // own F1-F10 backlog.
@@ -182,7 +174,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       report.engineProcedure.externalClauses.filter(
         (row) => row.key === 'rule:armor-guidance',
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
 
   it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {

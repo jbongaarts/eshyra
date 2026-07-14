@@ -345,6 +345,8 @@ export interface EquipmentExtraction {
   readonly damageType?: string;
   /** Weapon properties, e.g. ["Finesse", "light", "thrown (range 20/60)"]. */
   readonly properties?: readonly string[];
+  /** Closed, table-derived weapon-property projections. */
+  readonly weaponProperties?: readonly Record<string, unknown>[];
   /** Weapon proficiency category, from the table's sub-header grouping. */
   readonly weaponCategory?: 'simple' | 'martial';
   /** Weapon engagement range, from the table's sub-header grouping. */
