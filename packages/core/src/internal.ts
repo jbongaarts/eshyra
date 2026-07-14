@@ -1065,6 +1065,8 @@ export type {
   RemoveEffectTargetInput,
   RemoveEffectTargetResult,
   SuppressEffectInput,
+  TurnBoundaryEffectInput,
+  TurnBoundaryEffectSummary,
 } from './state/activeEffects.js';
 export {
   ACTIVE_EFFECT_KINDS,
@@ -1085,6 +1087,7 @@ export {
   EFFECT_SOURCE_KINDS,
   endActiveEffect,
   expireElapsedRoundEffects,
+  formatActiveEffect,
   getCharacterConcentration,
   getConcentrationEffect,
   listActiveEffects,
@@ -1094,6 +1097,7 @@ export {
   removeEffectTarget,
   resolveConcentrationCheck,
   SUPPORTED_EFFECT_ANCHOR_KINDS,
+  settleEffectsAtTurnBoundary,
   suppressEffect,
   unsuppressEffect,
 } from './state/activeEffects.js';

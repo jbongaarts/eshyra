@@ -56,17 +56,23 @@
 // (combatants) already use. Each participant has exactly one
 // `combat_turn_budget` row per combat instance, reset in place by
 // {@link beginTurn}; rounds and turn order are model-narrated (initiative is
-// a ruling), so the round counter only enforces monotonicity.
+// a ruling), so the round counter only enforces monotonicity. `beginTurn` is
+// also the atomic F2/F3 seam: after the new round and budget are durable it
+// asks F3 to settle engine-evaluable deadlines. F2 owns the boundary/budget;
+// F3 owns timer validation, cleanup, and terminal events.
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import type { TurnBoundaryEffectSummary } from './activeEffects.js';
+import { settleEffectsAtTurnBoundary } from './activeEffects.js';
 import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import {
   getActiveCombatInstance,
   listCombatantsForInstance,
 } from './encounterCombatants.js';
 import type { LifeState } from './hpLifecycle.js';
+import { readCompletedTurns } from './turnClock.js';
 
 export type TurnParticipantKind = 'character' | 'combatant';
 
@@ -151,6 +157,9 @@ export interface BeginTurnResult {
   /** True when the participant is surprised: every spend on this turn will
    *  be refused, and its reaction returns only when this turn ends. */
   readonly surprisedRestricted: boolean;
+  readonly turnAvailable: boolean;
+  readonly participantUnavailableReason?: string;
+  readonly boundaryEffects: readonly TurnBoundaryEffectSummary[];
 }
 
 export interface SpendTurnResourceInput extends TurnMutationContext {
@@ -485,16 +494,19 @@ function legendaryProfileFor(
  * its acting-character default) must resolve, and the dead take no turns.
  * Returns the concrete participant plus a display label for results.
  */
-function resolveParticipant(
+interface BoundaryParticipant {
+  readonly participant: TurnParticipant;
+  readonly displayLabel: string;
+  readonly rulesRef: string | undefined;
+  readonly unavailableReason?: string;
+}
+
+function resolveBoundaryParticipant(
   db: Db,
   campaignId: string,
   combatInstanceId: string,
   input: TurnParticipantInput,
-): {
-  participant: TurnParticipant;
-  displayLabel: string;
-  rulesRef: string | undefined;
-} {
+): BoundaryParticipant {
   if (input.kind === 'combatant') {
     if (input.ref === undefined || input.ref.length === 0) {
       throw new ActionEconomyError('a combatant participant needs its ref');
@@ -525,20 +537,17 @@ function resolveParticipant(
           `'${combatInstanceId}'. Valid combatant ids: ${ids || '(none)'}.`,
       );
     }
-    if (combatant.status === 'dead') {
-      throw new ActionEconomyError(
-        `combatant '${input.ref}' is dead and has no place in the turn order`,
-      );
-    }
-    if (combatant.status === 'escaped' || combatant.status === 'inactive') {
-      throw new ActionEconomyError(
-        `combatant '${input.ref}' is ${combatant.status} and no longer participates in combat`,
-      );
-    }
     return {
       participant: { kind: 'combatant', ref: input.ref },
       displayLabel: combatant.display_label,
       rulesRef: combatant.rules_ref,
+      ...(combatant.status === 'dead' ||
+      combatant.status === 'escaped' ||
+      combatant.status === 'inactive'
+        ? {
+            unavailableReason: `combatant '${input.ref}' is ${combatant.status} and has no actionable turn`,
+          }
+        : {}),
     };
   }
 
@@ -549,16 +558,34 @@ function resolveParticipant(
   if (character === undefined) {
     throw new ActionEconomyError(`no character row exists for '${charId}'`);
   }
-  if (character.life_state === 'dead') {
-    throw new ActionEconomyError(
-      `character '${character.name ?? charId}' is dead and has no turn`,
-    );
-  }
   return {
     participant: { kind: 'character', ref: charId },
     displayLabel: character.name ?? charId,
     rulesRef: undefined,
+    ...(character.life_state === 'dead'
+      ? {
+          unavailableReason: `character '${character.name ?? charId}' is dead and has no actionable turn`,
+        }
+      : {}),
   };
+}
+
+function resolveParticipant(
+  db: Db,
+  campaignId: string,
+  combatInstanceId: string,
+  input: TurnParticipantInput,
+): Omit<BoundaryParticipant, 'unavailableReason'> {
+  const boundary = resolveBoundaryParticipant(
+    db,
+    campaignId,
+    combatInstanceId,
+    input,
+  );
+  if (boundary.unavailableReason !== undefined) {
+    throw new ActionEconomyError(boundary.unavailableReason);
+  }
+  return boundary;
 }
 
 function requireActiveInstance(db: Db, campaignId: string) {
@@ -666,15 +693,40 @@ function ensureBudgetRow(
   }
 }
 
+function completeParticipantTurn(
+  db: Db,
+  campaignId: string,
+  combatInstanceId: string,
+  participant: TurnParticipant,
+  ctx: TurnMutationContext,
+): void {
+  db.prepare(
+    `UPDATE combat_turn_budget
+     SET turns_taken = turns_taken + 1, surprised = 0,
+         provenance = ?, session_id = ?, updated_at = ?
+     WHERE campaign_id = ? AND combat_instance_id = ?
+       AND participant_kind = ? AND participant_ref = ?`,
+  ).run(
+    ctx.provenance,
+    ctx.sessionId,
+    ctx.at,
+    campaignId,
+    combatInstanceId,
+    participant.kind,
+    participant.ref,
+  );
+}
+
 export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
   return withTransaction(db, (txnDb) => {
     const instance = requireActiveInstance(txnDb, input.campaignId);
-    const { participant, displayLabel, rulesRef } = resolveParticipant(
+    const boundaryIdentity = resolveBoundaryParticipant(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
       input.participant,
     );
+    const { participant, displayLabel, rulesRef } = boundaryIdentity;
 
     const turn = readInstanceTurnFields(
       txnDb,
@@ -702,24 +754,38 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       turn.active_participant_kind !== null &&
       turn.active_participant_ref !== null
     ) {
-      txnDb
-        .prepare(
-          `UPDATE combat_turn_budget
-           SET turns_taken = turns_taken + 1, surprised = 0,
-               provenance = ?, session_id = ?, updated_at = ?
-           WHERE campaign_id = ? AND combat_instance_id = ?
-             AND participant_kind = ? AND participant_ref = ?`,
-        )
-        .run(
-          input.provenance,
-          input.sessionId,
-          input.at,
-          input.campaignId,
-          instance.combatInstanceId,
-          turn.active_participant_kind,
-          turn.active_participant_ref,
-        );
+      completeParticipantTurn(
+        txnDb,
+        input.campaignId,
+        instance.combatInstanceId,
+        {
+          kind: turn.active_participant_kind,
+          ref: turn.active_participant_ref,
+        },
+        input,
+      );
     }
+
+    // Update the durable boundary marker before any F3 settlement. This makes
+    // round clocks observe the requested round even when cleanup cascades.
+    txnDb
+      .prepare(
+        `UPDATE combat_instance
+         SET round_number = ?, active_participant_kind = ?,
+             active_participant_ref = ?, provenance = ?, session_id = ?,
+             updated_at = ?
+         WHERE campaign_id = ? AND combat_instance_id = ?`,
+      )
+      .run(
+        round,
+        participant.kind,
+        participant.ref,
+        input.provenance,
+        input.sessionId,
+        input.at,
+        input.campaignId,
+        instance.combatInstanceId,
+      );
 
     // Reset the new participant's per-turn budget in place. The reaction
     // count resets at the start of its own turn, and a legendary creature
@@ -776,24 +842,57 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
         instance.combatInstanceId,
       );
 
-    txnDb
-      .prepare(
-        `UPDATE combat_instance
-         SET round_number = ?, active_participant_kind = ?,
-             active_participant_ref = ?, provenance = ?, session_id = ?,
-             updated_at = ?
-         WHERE campaign_id = ? AND combat_instance_id = ?`,
-      )
-      .run(
-        round,
-        participant.kind,
-        participant.ref,
-        input.provenance,
-        input.sessionId,
-        input.at,
+    const enteringTurnOrdinal =
+      readCompletedTurns(
+        txnDb,
         input.campaignId,
         instance.combatInstanceId,
+        participant,
+      ) + 1;
+    const boundaryEffects = settleEffectsAtTurnBoundary(txnDb, {
+      campaignId: input.campaignId,
+      combatInstanceId: instance.combatInstanceId,
+      roundNumber: round,
+      participant,
+      enteringTurnOrdinal,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+
+    const currentBoundaryIdentity = resolveBoundaryParticipant(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      input.participant,
+    );
+    const turnAvailable =
+      currentBoundaryIdentity.unavailableReason === undefined;
+    const participantUnavailableReason =
+      currentBoundaryIdentity.unavailableReason;
+    if (!turnAvailable) {
+      txnDb
+        .prepare(
+          `UPDATE combat_instance
+           SET active_participant_kind = NULL, active_participant_ref = NULL,
+               provenance = ?, session_id = ?, updated_at = ?
+           WHERE campaign_id = ? AND combat_instance_id = ?`,
+        )
+        .run(
+          input.provenance,
+          input.sessionId,
+          input.at,
+          input.campaignId,
+          instance.combatInstanceId,
+        );
+      completeParticipantTurn(
+        txnDb,
+        input.campaignId,
+        instance.combatInstanceId,
+        participant,
+        input,
       );
+    }
 
     const row = readBudgetRow(
       txnDb,
@@ -809,6 +908,11 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       roundNumber: round,
       budget: rowToBudget(row, displayLabel),
       surprisedRestricted: row.surprised === 1,
+      turnAvailable,
+      ...(participantUnavailableReason === undefined
+        ? {}
+        : { participantUnavailableReason }),
+      boundaryEffects,
     };
   });
 }

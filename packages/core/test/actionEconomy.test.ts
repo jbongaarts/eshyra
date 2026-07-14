@@ -16,6 +16,7 @@ import {
   ActionEconomyError,
   assembleContext,
   beginTurn,
+  createActiveEffect,
   createDefaultToolRegistry,
   createSeededRng,
   formatTurnBudget,
@@ -210,7 +211,7 @@ describe('beginTurn', () => {
     ).toThrow(/no combat instance is active/);
   });
 
-  it('rejects dead, escaped, and unknown combatants with valid ids listed', () => {
+  it('processes dead boundaries as unavailable but rejects unknown combatants', () => {
     const { db } = setupCombat();
     updateCombatant(db, {
       campaignId: CAMPAIGN,
@@ -219,13 +220,13 @@ describe('beginTurn', () => {
       ...CTX,
     });
 
-    expect(() =>
-      beginTurn(db, {
-        campaignId: CAMPAIGN,
-        participant: participant(GOBLIN_2),
-        ...CTX,
-      }),
-    ).toThrow(/dead/);
+    const result = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN_2),
+      ...CTX,
+    });
+    expect(result.turnAvailable).toBe(false);
+    expect(result.participantUnavailableReason).toMatch(/dead/);
     expect(() =>
       beginTurn(db, {
         campaignId: CAMPAIGN,
@@ -235,7 +236,7 @@ describe('beginTurn', () => {
     ).toThrow(/Valid combatant ids: .*goblin-1/);
   });
 
-  it('rejects a dead character: the dead have no turn', () => {
+  it('processes a dead character boundary as unavailable', () => {
     const { db } = setupCombat();
     mutateState(db, {
       target: 'character',
@@ -245,9 +246,13 @@ describe('beginTurn', () => {
       ...CTX,
     });
 
-    expect(() =>
-      beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX }),
-    ).toThrow(/dead and has no turn/);
+    const result = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      ...CTX,
+    });
+    expect(result.turnAvailable).toBe(false);
+    expect(result.participantUnavailableReason).toMatch(/dead/);
   });
 });
 
@@ -1013,6 +1018,50 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
       ...CTX,
     });
     expect(spendReaction(db, MARILITH, 'parry').budget.reactionsUsed).toBe(1);
+  });
+
+  it('does not let a pre-first-turn effect anchor create a partial marilith budget row', () => {
+    const { db } = setupLairCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-marilith-clock',
+      kind: 'condition-package',
+      displayName: 'Marilith clock',
+      source: { kind: 'ruling' },
+      targets: [{ kind: 'combatant', ref: MARILITH }],
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'target-turn-start',
+      },
+      ...CTX,
+    });
+    expect(
+      db
+        .prepare(
+          `SELECT 1 FROM combat_turn_budget
+           WHERE campaign_id = ? AND participant_ref = ?`,
+        )
+        .get(CAMPAIGN, MARILITH),
+    ).toBeUndefined();
+
+    const first = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(MARILITH),
+      ...CTX,
+    });
+    expect(first.budget.reactionAllowance).toBe(1);
+    expect(first.budget.reactionRefresh).toBe('every_turn');
+    spendReaction(db, MARILITH, 'parry');
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    expect(
+      spendReaction(db, MARILITH, 'parry again').budget.reactionsUsed,
+    ).toBe(1);
   });
 
   it('hydra Reactive Heads (formula): the validated allowance grant unlocks extra reactions', () => {

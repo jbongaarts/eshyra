@@ -3,7 +3,8 @@
 Bead: `eshyra-2n1t.5` (engine family F3; source:
 `docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md`
 §4). Runtime owner: `packages/core/src/state/activeEffects.ts`; durable schema:
-`packages/core/data/migrations/0010_active_effects.sql`; evidence:
+`packages/core/data/migrations/0010_active_effects.sql` plus
+`0011_active_effect_anchor_evidence.sql`; evidence:
 `packages/core/test/activeEffects.test.ts`.
 
 This document records the reviewed contract. The executable authority is the
@@ -11,6 +12,17 @@ code and its tests; if they drift from this document, fix whichever is wrong at
 the source — do not treat this file as a second compiler input.
 
 ## 1. What F3 is
+
+F2 integrates F3 at the authoritative `begin_turn` boundary. After validation,
+the previous turn is closed, the entering budget is ensured and reset, and the
+requested round and active participant are made durable. F3 then settles round
+deadlines followed by source- and target-turn deadlines through `finalizeEnd`.
+If cleanup removes the entering combatant, the boundary still commits and
+returns `turnAvailable: false` with the participant unavailable reason.
+Boundary identity is separate from availability: a known dead, escaped, or
+inactive participant still establishes its turn-start boundary, while the
+completed boundary clears the active marker and surprise and returns no usable
+turn.
 
 One canonical, deterministic lifecycle for **active effects**: durable game
 state created by a spell, item power, feature, creature trait, hazard, or DM
@@ -95,10 +107,9 @@ lesson). The duration is a discriminated union:
 - `timed` — `amount` (≥1) + `unit` (`round` | `minute` | `hour` | `day`) +
   `anchor_kind`. Anchors are semantically validated, not just enum-checked:
   `spell-cast` requires a spell source, `effect-created` is always available,
-  and `trigger-occurred` / `source-turn-start` / `target-turn-start` are
-  **schema-reserved and refused** until the F2 turn-boundary/trigger
-  integration gives them exact semantics (`eshyra-2n1t.5.1`) — the engine
-  never stamps an anchor it cannot honestly evaluate. At creation the engine
+  `source-turn-start` requires `source.actor`, `target-turn-start` requires
+  exactly one reachable character/combatant target, and `trigger-occurred`
+  requires non-empty semantic `anchorTrigger` evidence. At creation the engine
   stamps `anchor_at` (ISO), `anchor_game_time` (campaign clock snapshot),
   and — for `round`-unit timers, which **require an active combat
   instance** — `anchor_combat_instance_id` + `anchor_round`.
@@ -111,18 +122,28 @@ lesson). The duration is a discriminated union:
 
 Deterministic expiry evaluation:
 
-- **Round-unit timers** are code-evaluated: the deadline is
+- **Ordinary round-unit timers** are code-evaluated: the global deadline is
   `anchor_round + amount` rounds (`minute` = 10 rounds under the SRD 6-second
   round when evaluated in combat is *not* auto-converted — only `round`-unit
-  timers auto-expire). `expireElapsedRoundEffects` ends every effect whose
-  anchoring instance has advanced past its deadline; declaring `expired` on a
-  round timer **before** its deadline is refused.
+  timers auto-expire). `expireElapsedRoundEffects` ends every ordinary timer
+  whose anchoring instance has advanced past its deadline; declaring `expired`
+  on a round timer **before** its deadline is refused. Source/target turn
+  anchors retain `anchor_round` only as combat provenance and use their
+  participant turn ordinal as the deadline.
 - **World-time units** (`minute`/`hour`/`day`): the campaign clock
   (`clock.in_game_time`) is narrative text, so expiry is a declared operation —
   but only a `timed`/`until-trigger` effect can expire, the audit event records
   the declared elapsed reasoning, and the typed timer is preserved for review.
-  Turn-relative and trigger anchors are refused at creation until the F2
-  integration (`eshyra-2n1t.5.1`) can evaluate them exactly.
+  Turn-relative timers use `combat_turn_budget.turns_taken`: the anchor ordinal
+  is completed turns plus one when the anchor participant is currently active,
+  otherwise completed turns; the deadline ordinal is anchor ordinal plus
+  amount. Other participants and global round jumps do not advance that clock.
+  `begin_turn` settles due timers automatically; trigger-occurrence
+  round timers stamp the current round while world-time units retain declared
+  expiry.
+  The same participant-clock validation is used by strict reads, explicit
+  expiry, boundary settlement, combat closure, and integrity auditing; removed
+  durable targets continue to identify their target-turn clock.
 
 ## 4. Status machine
 
@@ -285,7 +306,9 @@ combatant targets and condition projections (`combat-ended`), and detaches
 combatant source-actor pointers (the `created` event keeps the provenance),
 so live effects never point at unreachable combatants or dead clocks
 (character-owned effects survive closure — combat ending does not end
-spells; campaign-actor rebinding is `eshyra-2n1t.5.3`). `inactive` means
+spells; campaign-actor rebinding is `eshyra-2n1t.5.3`). Closure notes use
+global rounds only for ordinary round anchors; source/target turn anchors
+report remaining participant turn-start boundaries. `inactive` means
 removed from play: it cannot start concentrating and transitioning into it
 breaks concentration, which is what lets owned-actor cleanup cascade
 (terminal transitions flip status before cleanup, so cycles terminate).

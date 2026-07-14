@@ -80,7 +80,45 @@ CREATE TABLE active_effect (
   created_at TEXT NOT NULL,
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL, anchor_participant_kind TEXT
+  CHECK (
+    CASE
+      WHEN anchor_kind IN ('source-turn-start', 'target-turn-start') THEN
+        CASE WHEN anchor_participant_kind IS NOT NULL
+                  AND anchor_participant_kind IN ('character', 'combatant')
+                  AND duration_kind = 'timed'
+                  AND duration_unit = 'round'
+             THEN 1 ELSE 0 END
+      ELSE CASE WHEN anchor_participant_kind IS NULL THEN 1 ELSE 0 END
+    END
+  ), anchor_participant_ref TEXT
+  CHECK (
+    CASE
+      WHEN anchor_kind IN ('source-turn-start', 'target-turn-start') THEN
+        CASE WHEN anchor_participant_ref IS NOT NULL
+                  AND length(trim(anchor_participant_ref)) > 0
+             THEN 1 ELSE 0 END
+      ELSE CASE WHEN anchor_participant_ref IS NULL THEN 1 ELSE 0 END
+    END
+  ), anchor_participant_turn_ordinal INTEGER
+  CHECK (
+    CASE
+      WHEN anchor_kind IN ('source-turn-start', 'target-turn-start') THEN
+        CASE WHEN anchor_participant_turn_ordinal IS NOT NULL
+                  AND anchor_participant_turn_ordinal >= 0
+             THEN 1 ELSE 0 END
+      ELSE CASE WHEN anchor_participant_turn_ordinal IS NULL THEN 1 ELSE 0 END
+    END
+  ), anchor_trigger TEXT
+  CHECK (
+    CASE
+      WHEN anchor_kind = 'trigger-occurred' THEN
+        CASE WHEN anchor_trigger IS NOT NULL
+                  AND length(trim(anchor_trigger)) > 0
+             THEN 1 ELSE 0 END
+      ELSE CASE WHEN anchor_trigger IS NULL THEN 1 ELSE 0 END
+    END
+  ),
   PRIMARY KEY (campaign_id, effect_id),
   CHECK (requires_concentration = 0
          OR (concentration_owner_kind IS NOT NULL
