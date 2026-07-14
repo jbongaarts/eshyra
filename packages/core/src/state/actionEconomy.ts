@@ -64,7 +64,7 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
-import type { EffectCleanupSummary } from './activeEffects.js';
+import type { TurnBoundaryEffectSummary } from './activeEffects.js';
 import { settleEffectsAtTurnBoundary } from './activeEffects.js';
 import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import {
@@ -159,15 +159,7 @@ export interface BeginTurnResult {
   readonly surprisedRestricted: boolean;
   readonly turnAvailable: boolean;
   readonly participantUnavailableReason?: string;
-  readonly boundaryEffects: readonly {
-    readonly effectId: string;
-    readonly displayName: string;
-    readonly boundary:
-      | 'round-deadline'
-      | 'source-turn-start'
-      | 'target-turn-start';
-    readonly cleanup: EffectCleanupSummary;
-  }[];
+  readonly boundaryEffects: readonly TurnBoundaryEffectSummary[];
 }
 
 export interface SpendTurnResourceInput extends TurnMutationContext {
@@ -502,16 +494,19 @@ function legendaryProfileFor(
  * its acting-character default) must resolve, and the dead take no turns.
  * Returns the concrete participant plus a display label for results.
  */
-function resolveParticipant(
+interface BoundaryParticipant {
+  readonly participant: TurnParticipant;
+  readonly displayLabel: string;
+  readonly rulesRef: string | undefined;
+  readonly unavailableReason?: string;
+}
+
+function resolveBoundaryParticipant(
   db: Db,
   campaignId: string,
   combatInstanceId: string,
   input: TurnParticipantInput,
-): {
-  participant: TurnParticipant;
-  displayLabel: string;
-  rulesRef: string | undefined;
-} {
+): BoundaryParticipant {
   if (input.kind === 'combatant') {
     if (input.ref === undefined || input.ref.length === 0) {
       throw new ActionEconomyError('a combatant participant needs its ref');
@@ -542,20 +537,17 @@ function resolveParticipant(
           `'${combatInstanceId}'. Valid combatant ids: ${ids || '(none)'}.`,
       );
     }
-    if (combatant.status === 'dead') {
-      throw new ActionEconomyError(
-        `combatant '${input.ref}' is dead and has no place in the turn order`,
-      );
-    }
-    if (combatant.status === 'escaped' || combatant.status === 'inactive') {
-      throw new ActionEconomyError(
-        `combatant '${input.ref}' is ${combatant.status} and no longer participates in combat`,
-      );
-    }
     return {
       participant: { kind: 'combatant', ref: input.ref },
       displayLabel: combatant.display_label,
       rulesRef: combatant.rules_ref,
+      ...(combatant.status === 'dead' ||
+      combatant.status === 'escaped' ||
+      combatant.status === 'inactive'
+        ? {
+            unavailableReason: `combatant '${input.ref}' is ${combatant.status} and has no actionable turn`,
+          }
+        : {}),
     };
   }
 
@@ -566,16 +558,34 @@ function resolveParticipant(
   if (character === undefined) {
     throw new ActionEconomyError(`no character row exists for '${charId}'`);
   }
-  if (character.life_state === 'dead') {
-    throw new ActionEconomyError(
-      `character '${character.name ?? charId}' is dead and has no turn`,
-    );
-  }
   return {
     participant: { kind: 'character', ref: charId },
     displayLabel: character.name ?? charId,
     rulesRef: undefined,
+    ...(character.life_state === 'dead'
+      ? {
+          unavailableReason: `character '${character.name ?? charId}' is dead and has no actionable turn`,
+        }
+      : {}),
   };
+}
+
+function resolveParticipant(
+  db: Db,
+  campaignId: string,
+  combatInstanceId: string,
+  input: TurnParticipantInput,
+): Omit<BoundaryParticipant, 'unavailableReason'> {
+  const boundary = resolveBoundaryParticipant(
+    db,
+    campaignId,
+    combatInstanceId,
+    input,
+  );
+  if (boundary.unavailableReason !== undefined) {
+    throw new ActionEconomyError(boundary.unavailableReason);
+  }
+  return boundary;
 }
 
 function requireActiveInstance(db: Db, campaignId: string) {
@@ -683,15 +693,40 @@ function ensureBudgetRow(
   }
 }
 
+function completeParticipantTurn(
+  db: Db,
+  campaignId: string,
+  combatInstanceId: string,
+  participant: TurnParticipant,
+  ctx: TurnMutationContext,
+): void {
+  db.prepare(
+    `UPDATE combat_turn_budget
+     SET turns_taken = turns_taken + 1, surprised = 0,
+         provenance = ?, session_id = ?, updated_at = ?
+     WHERE campaign_id = ? AND combat_instance_id = ?
+       AND participant_kind = ? AND participant_ref = ?`,
+  ).run(
+    ctx.provenance,
+    ctx.sessionId,
+    ctx.at,
+    campaignId,
+    combatInstanceId,
+    participant.kind,
+    participant.ref,
+  );
+}
+
 export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
   return withTransaction(db, (txnDb) => {
     const instance = requireActiveInstance(txnDb, input.campaignId);
-    const { participant, displayLabel, rulesRef } = resolveParticipant(
+    const boundaryIdentity = resolveBoundaryParticipant(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
       input.participant,
     );
+    const { participant, displayLabel, rulesRef } = boundaryIdentity;
 
     const turn = readInstanceTurnFields(
       txnDb,
@@ -719,23 +754,16 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       turn.active_participant_kind !== null &&
       turn.active_participant_ref !== null
     ) {
-      txnDb
-        .prepare(
-          `UPDATE combat_turn_budget
-           SET turns_taken = turns_taken + 1, surprised = 0,
-               provenance = ?, session_id = ?, updated_at = ?
-           WHERE campaign_id = ? AND combat_instance_id = ?
-             AND participant_kind = ? AND participant_ref = ?`,
-        )
-        .run(
-          input.provenance,
-          input.sessionId,
-          input.at,
-          input.campaignId,
-          instance.combatInstanceId,
-          turn.active_participant_kind,
-          turn.active_participant_ref,
-        );
+      completeParticipantTurn(
+        txnDb,
+        input.campaignId,
+        instance.combatInstanceId,
+        {
+          kind: turn.active_participant_kind,
+          ref: turn.active_participant_ref,
+        },
+        input,
+      );
     }
 
     // Update the durable boundary marker before any F3 settlement. This makes
@@ -832,19 +860,17 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       at: input.at,
     });
 
-    let turnAvailable = true;
-    let participantUnavailableReason: string | undefined;
-    try {
-      resolveParticipant(
-        txnDb,
-        input.campaignId,
-        instance.combatInstanceId,
-        input.participant,
-      );
-    } catch (error) {
-      if (!(error instanceof ActionEconomyError)) throw error;
-      turnAvailable = false;
-      participantUnavailableReason = error.message;
+    const currentBoundaryIdentity = resolveBoundaryParticipant(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      input.participant,
+    );
+    const turnAvailable =
+      currentBoundaryIdentity.unavailableReason === undefined;
+    const participantUnavailableReason =
+      currentBoundaryIdentity.unavailableReason;
+    if (!turnAvailable) {
       txnDb
         .prepare(
           `UPDATE combat_instance
@@ -859,22 +885,13 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
           input.campaignId,
           instance.combatInstanceId,
         );
-      txnDb
-        .prepare(
-          `UPDATE combat_turn_budget SET turns_taken = turns_taken + 1,
-             provenance = ?, session_id = ?, updated_at = ?
-           WHERE campaign_id = ? AND combat_instance_id = ?
-             AND participant_kind = ? AND participant_ref = ?`,
-        )
-        .run(
-          input.provenance,
-          input.sessionId,
-          input.at,
-          input.campaignId,
-          instance.combatInstanceId,
-          participant.kind,
-          participant.ref,
-        );
+      completeParticipantTurn(
+        txnDb,
+        input.campaignId,
+        instance.combatInstanceId,
+        participant,
+        input,
+      );
     }
 
     const row = readBudgetRow(

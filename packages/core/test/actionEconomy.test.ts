@@ -211,7 +211,7 @@ describe('beginTurn', () => {
     ).toThrow(/no combat instance is active/);
   });
 
-  it('rejects dead, escaped, and unknown combatants with valid ids listed', () => {
+  it('processes dead boundaries as unavailable but rejects unknown combatants', () => {
     const { db } = setupCombat();
     updateCombatant(db, {
       campaignId: CAMPAIGN,
@@ -220,13 +220,13 @@ describe('beginTurn', () => {
       ...CTX,
     });
 
-    expect(() =>
-      beginTurn(db, {
-        campaignId: CAMPAIGN,
-        participant: participant(GOBLIN_2),
-        ...CTX,
-      }),
-    ).toThrow(/dead/);
+    const result = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN_2),
+      ...CTX,
+    });
+    expect(result.turnAvailable).toBe(false);
+    expect(result.participantUnavailableReason).toMatch(/dead/);
     expect(() =>
       beginTurn(db, {
         campaignId: CAMPAIGN,
@@ -236,7 +236,7 @@ describe('beginTurn', () => {
     ).toThrow(/Valid combatant ids: .*goblin-1/);
   });
 
-  it('rejects a dead character: the dead have no turn', () => {
+  it('processes a dead character boundary as unavailable', () => {
     const { db } = setupCombat();
     mutateState(db, {
       target: 'character',
@@ -246,9 +246,13 @@ describe('beginTurn', () => {
       ...CTX,
     });
 
-    expect(() =>
-      beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX }),
-    ).toThrow(/dead and has no turn/);
+    const result = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      ...CTX,
+    });
+    expect(result.turnAvailable).toBe(false);
+    expect(result.participantUnavailableReason).toMatch(/dead/);
   });
 });
 

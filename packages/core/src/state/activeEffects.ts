@@ -736,20 +736,8 @@ function effectView(
       `active_effect '${row.effect_id}' has a timed duration missing amount/unit/anchor`,
     );
   }
-  const turnAnchor =
-    row.anchor_kind === 'source-turn-start' ||
-    row.anchor_kind === 'target-turn-start';
-  if (
-    row.duration_kind === 'timed' &&
-    turnAnchor &&
-    (row.anchor_participant_kind === null ||
-      row.anchor_participant_ref === null ||
-      row.anchor_participant_turn_ordinal === null)
-  ) {
-    throw new ActiveEffectError(
-      `active_effect '${row.effect_id}' has an incomplete turn-boundary anchor`,
-    );
-  }
+  const turnAnchor = isParticipantTurnAnchor(row.anchor_kind);
+  if (turnAnchor) requireParticipantTimerDeadline(row, targets);
   if (
     row.duration_kind === 'timed' &&
     !turnAnchor &&
@@ -778,41 +766,6 @@ function effectView(
     throw new ActiveEffectError(
       `active_effect '${row.effect_id}' has trigger evidence on a non-trigger anchor`,
     );
-  }
-  if (row.anchor_kind === 'source-turn-start') {
-    if (
-      row.source_actor_kind === null ||
-      row.source_actor_ref === null ||
-      row.anchor_participant_kind !== row.source_actor_kind ||
-      row.anchor_participant_ref !== row.source_actor_ref
-    ) {
-      throw new ActiveEffectError(
-        `active_effect '${row.effect_id}' has source-turn anchor participant ` +
-          `${row.anchor_participant_kind ?? '(missing)'} '${row.anchor_participant_ref ?? '(missing)'}' ` +
-          'that does not match source actor ' +
-          `${row.source_actor_kind ?? '(missing)'} '${row.source_actor_ref ?? '(missing)'}'`,
-      );
-    }
-  }
-  if (row.anchor_kind === 'target-turn-start') {
-    if (
-      row.anchor_participant_kind === null ||
-      row.anchor_participant_ref === null ||
-      targets.length !== 1 ||
-      targets[0]?.target_kind === 'scope' ||
-      targets[0]?.target_kind !== row.anchor_participant_kind ||
-      targets[0]?.target_ref !== row.anchor_participant_ref
-    ) {
-      const target =
-        targets.length === 1
-          ? `${targets[0]?.target_kind ?? '(missing)'} '${targets[0]?.target_ref ?? '(missing)'}'`
-          : `${targets.length} targets`;
-      throw new ActiveEffectError(
-        `active_effect '${row.effect_id}' has target-turn anchor participant ` +
-          `${row.anchor_participant_kind ?? '(missing)'} '${row.anchor_participant_ref ?? '(missing)'}' ` +
-          `that does not match its sole target ${target}`,
-      );
-    }
   }
 
   return {
@@ -903,6 +856,100 @@ function readTargetRows(
        ORDER BY target_kind, target_ref`,
     )
     .all(campaignId, effectId) as EffectTargetRow[];
+}
+
+export function isParticipantTurnAnchor(
+  anchor: EffectAnchorKind | null,
+): anchor is 'source-turn-start' | 'target-turn-start' {
+  return anchor === 'source-turn-start' || anchor === 'target-turn-start';
+}
+
+export interface ParticipantTimerDeadline {
+  readonly boundary: 'source-turn-start' | 'target-turn-start';
+  readonly participant: EffectParticipant;
+  readonly combatInstanceId: string;
+  readonly anchorOrdinal: number;
+  readonly deadlineOrdinal: number;
+}
+
+/** Validate and derive the one authoritative deadline for a participant-clock
+ * timer. Every mutation path uses this instead of interpreting raw columns. */
+export function requireParticipantTimerDeadline(
+  row: ActiveEffectRow,
+  targets: readonly EffectTargetRow[],
+): ParticipantTimerDeadline {
+  if (!isParticipantTurnAnchor(row.anchor_kind)) {
+    throw new ActiveEffectError(
+      `active_effect '${row.effect_id}' is not a participant-turn timer`,
+    );
+  }
+  if (
+    row.duration_kind !== 'timed' ||
+    row.duration_unit !== 'round' ||
+    !Number.isInteger(row.duration_amount) ||
+    (row.duration_amount as number) < 1
+  ) {
+    throw new ActiveEffectError(
+      `active_effect '${row.effect_id}' participant-turn anchor requires a positive round duration`,
+    );
+  }
+  if (row.anchor_combat_instance_id === null || row.anchor_round === null) {
+    throw new ActiveEffectError(
+      `active_effect '${row.effect_id}' participant-turn anchor is missing combat provenance`,
+    );
+  }
+  if (
+    row.anchor_participant_kind === null ||
+    row.anchor_participant_ref === null ||
+    row.anchor_participant_ref.trim().length === 0 ||
+    !Number.isInteger(row.anchor_participant_turn_ordinal) ||
+    (row.anchor_participant_turn_ordinal as number) < 0
+  ) {
+    throw new ActiveEffectError(
+      `active_effect '${row.effect_id}' has incomplete participant-turn clock evidence`,
+    );
+  }
+  const anchorOrdinal = row.anchor_participant_turn_ordinal as number;
+  const durationAmount = row.duration_amount as number;
+  const participant: EffectParticipant = {
+    kind: row.anchor_participant_kind,
+    ref: row.anchor_participant_ref,
+  };
+  if (row.anchor_kind === 'source-turn-start') {
+    if (
+      row.source_actor_kind === null ||
+      row.source_actor_ref === null ||
+      row.source_actor_kind !== participant.kind ||
+      row.source_actor_ref !== participant.ref
+    ) {
+      throw new ActiveEffectError(
+        `active_effect '${row.effect_id}' has source-turn anchor participant ` +
+          `${participant.kind} '${participant.ref}' that does not match source actor ` +
+          `${row.source_actor_kind ?? '(missing)'} '${row.source_actor_ref ?? '(missing)'}'`,
+      );
+    }
+  } else if (
+    targets.length !== 1 ||
+    targets[0]?.target_kind === 'scope' ||
+    targets[0]?.target_kind !== participant.kind ||
+    targets[0]?.target_ref !== participant.ref
+  ) {
+    const target =
+      targets.length === 1
+        ? `${targets[0]?.target_kind ?? '(missing)'} '${targets[0]?.target_ref ?? '(missing)'}'`
+        : `${targets.length} targets`;
+    throw new ActiveEffectError(
+      `active_effect '${row.effect_id}' has target-turn anchor participant ` +
+        `${participant.kind} '${participant.ref}' that does not match its sole target ${target}`,
+    );
+  }
+  return {
+    boundary: row.anchor_kind,
+    participant,
+    combatInstanceId: row.anchor_combat_instance_id,
+    anchorOrdinal,
+    deadlineOrdinal: anchorOrdinal + durationAmount,
+  };
 }
 
 function readLinkRows(
@@ -1092,6 +1139,57 @@ export function auditActiveEffectIntegrity(
         effectId: row.effect_id,
         issue: e instanceof Error ? e.message : String(e),
       });
+    }
+
+    if (row.status !== 'ended' && isParticipantTurnAnchor(row.anchor_kind)) {
+      try {
+        const deadline = requireParticipantTimerDeadline(row, targets);
+        const instance = db
+          .prepare(
+            `SELECT status FROM combat_instance
+             WHERE campaign_id = ? AND combat_instance_id = ?`,
+          )
+          .get(campaignId, deadline.combatInstanceId) as
+          | { status: string }
+          | undefined;
+        if (instance === undefined || instance.status !== 'active') {
+          issues.push({
+            effectId: row.effect_id,
+            issue: `live participant timer is anchored to ${instance === undefined ? 'missing' : instance.status} combat instance '${deadline.combatInstanceId}'`,
+          });
+        }
+        if (!participantRowExists(db, campaignId, deadline.participant)) {
+          issues.push({
+            effectId: row.effect_id,
+            issue: `participant-turn clock references missing ${deadline.participant.kind} '${deadline.participant.ref}'`,
+          });
+        } else if (deadline.participant.kind === 'combatant') {
+          const combatant = db
+            .prepare(
+              `SELECT combat_instance_id FROM encounter_combatant
+               WHERE campaign_id = ? AND combatant_id = ?`,
+            )
+            .get(campaignId, deadline.participant.ref) as
+            | { combat_instance_id: string }
+            | undefined;
+          if (combatant?.combat_instance_id !== deadline.combatInstanceId) {
+            issues.push({
+              effectId: row.effect_id,
+              issue: `participant-turn clock combatant '${deadline.participant.ref}' belongs to combat instance '${combatant?.combat_instance_id ?? '(missing)'}', not '${deadline.combatInstanceId}'`,
+            });
+          }
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        if (
+          !issues.some(
+            (issue) =>
+              issue.effectId === row.effect_id && issue.issue === message,
+          )
+        ) {
+          issues.push({ effectId: row.effect_id, issue: message });
+        }
+      }
     }
 
     // Event-ledger invariants: contiguous seq from 1; exactly one terminal
@@ -1294,6 +1392,13 @@ export function auditActiveEffectIntegrity(
 
 function requireNonEmptyString(value: unknown, label: string): string {
   if (typeof value !== 'string' || value.length === 0) {
+    throw new ActiveEffectError(`${label} must be a non-empty string`);
+  }
+  return value;
+}
+
+function requireNonBlankString(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
     throw new ActiveEffectError(`${label} must be a non-empty string`);
   }
   return value;
@@ -1699,6 +1804,14 @@ function validateDuration(
           `duration anchor must be one of: ${EFFECT_ANCHOR_KINDS.join(', ')}`,
         );
       }
+      if (
+        duration.anchor !== 'trigger-occurred' &&
+        duration.anchorTrigger !== undefined
+      ) {
+        throw new ActiveEffectError(
+          `anchorTrigger is only valid for 'trigger-occurred' durations`,
+        );
+      }
       if (duration.anchor === 'spell-cast' && sourceKind !== 'spell') {
         throw new ActiveEffectError(
           `anchor 'spell-cast' requires a spell source (got '${sourceKind}'); ` +
@@ -1744,7 +1857,7 @@ function validateDuration(
       }
       const anchorTrigger =
         duration.anchor === 'trigger-occurred'
-          ? requireNonEmptyString(
+          ? requireNonBlankString(
               duration.anchorTrigger,
               "anchor 'trigger-occurred' requires a non-empty anchorTrigger",
             )
@@ -2797,6 +2910,36 @@ function validateDeclaredExpiry(
     }
     return;
   }
+  if (isParticipantTurnAnchor(row.anchor_kind)) {
+    const deadline = requireParticipantTimerDeadline(
+      row,
+      readTargetRows(db, row.campaign_id, row.effect_id),
+    );
+    const instance = db
+      .prepare(
+        `SELECT status FROM combat_instance
+         WHERE campaign_id = ? AND combat_instance_id = ?`,
+      )
+      .get(row.campaign_id, deadline.combatInstanceId) as
+      | { status: string }
+      | undefined;
+    if (instance?.status === 'active') {
+      const currentOrdinal = readAnchorTurnOrdinal(
+        db,
+        row.campaign_id,
+        deadline.combatInstanceId,
+        deadline.participant,
+      );
+      if (currentOrdinal < deadline.deadlineOrdinal) {
+        throw new ActiveEffectError(
+          `effect '${row.effect_id}' runs until ${deadline.participant.kind} ` +
+            `'${deadline.participant.ref}' turn-start ordinal ${deadline.deadlineOrdinal}; ` +
+            `its current ordinal is ${currentOrdinal}, so it has not expired yet`,
+        );
+      }
+    }
+    return;
+  }
   if (row.duration_unit === 'round' && row.anchor_combat_instance_id !== null) {
     const instance = db
       .prepare(
@@ -3309,12 +3452,10 @@ export function refreshEffect(
       row.source_actor_kind === null || row.source_actor_ref === null
         ? undefined
         : { kind: row.source_actor_kind, ref: row.source_actor_ref },
-      readTargetRows(txnDb, input.campaignId, input.effectId)
-        .filter((target) => target.status === 'active')
-        .map((target) => ({
-          kind: target.target_kind,
-          ref: target.target_ref,
-        })),
+      readTargetRows(txnDb, input.campaignId, input.effectId).map((target) => ({
+        kind: target.target_kind,
+        ref: target.target_ref,
+      })),
     );
     // A refreshed duration is grounded the same way a created one is: a
     // spell record's parseable duration binds the refresh too.
@@ -3632,14 +3773,30 @@ export function settleEffectsAtTurnBoundary(
     )
     .all(input.campaignId) as ActiveEffectRow[];
   const settled: TurnBoundaryEffectSummary[] = [];
+  // Validate every participant timer in this combat before any ending can
+  // cascade. A malformed dormant row must abort the whole F2 transition.
+  const participantDeadlines = new Map<string, ParticipantTimerDeadline>();
+  for (const row of rows) {
+    if (
+      isParticipantTurnAnchor(row.anchor_kind) &&
+      row.anchor_combat_instance_id === input.combatInstanceId
+    ) {
+      participantDeadlines.set(
+        row.effect_id,
+        requireParticipantTimerDeadline(
+          row,
+          readTargetRows(db, input.campaignId, row.effect_id),
+        ),
+      );
+    }
+  }
   // Phase 1 is deliberately independent of creation order: every ordinary
   // round deadline wins before participant-turn cleanup can cascade into it.
   const roundRows = rows.filter(
     (row) =>
       row.duration_unit === 'round' &&
       row.anchor_combat_instance_id === input.combatInstanceId &&
-      row.anchor_kind !== 'source-turn-start' &&
-      row.anchor_kind !== 'target-turn-start',
+      !isParticipantTurnAnchor(row.anchor_kind),
   );
   for (const row of roundRows) {
     const deadline = deadlineRound(row);
@@ -3672,36 +3829,25 @@ export function settleEffectsAtTurnBoundary(
   // Phase 2 is restricted to the two supported participant anchors. In
   // particular, an unexpected anchor kind is never interpreted as a target
   // turn anchor merely because participant evidence happens to be present.
-  const participantRows = rows.filter(
-    (row) =>
-      (row.anchor_kind === 'source-turn-start' ||
-        row.anchor_kind === 'target-turn-start') &&
-      row.anchor_participant_kind === input.participant.kind &&
-      row.anchor_participant_ref === input.participant.ref &&
-      row.anchor_participant_turn_ordinal !== null &&
-      row.duration_amount !== null &&
-      input.enteringTurnOrdinal >=
-        row.anchor_participant_turn_ordinal + row.duration_amount,
-  );
+  const participantRows = rows.filter((row) => {
+    const deadline = participantDeadlines.get(row.effect_id);
+    return (
+      deadline !== undefined &&
+      deadline.participant.kind === input.participant.kind &&
+      deadline.participant.ref === input.participant.ref &&
+      input.enteringTurnOrdinal >= deadline.deadlineOrdinal
+    );
+  });
   for (const row of participantRows) {
-    if (
-      (row.anchor_kind !== 'source-turn-start' &&
-        row.anchor_kind !== 'target-turn-start') ||
-      row.anchor_participant_turn_ordinal === null ||
-      row.duration_amount === null
-    ) {
-      continue;
-    }
-    const boundary = row.anchor_kind;
-    const deadlineTurnOrdinal =
-      row.anchor_participant_turn_ordinal + row.duration_amount;
+    const deadline = participantDeadlines.get(row.effect_id);
+    if (deadline === undefined) continue;
     const outcome = finalizeEnd(
       db,
       row,
       {
         reason: 'expired',
-        detail: boundary,
-        note: `${boundary} participant turn ordinal ${input.enteringTurnOrdinal}`,
+        detail: deadline.boundary,
+        note: `${deadline.boundary} participant turn ordinal ${input.enteringTurnOrdinal}`,
       },
       input,
     );
@@ -3710,10 +3856,10 @@ export function settleEffectsAtTurnBoundary(
         effectId: row.effect_id,
         displayName: row.display_name,
         cleanup: outcome.cleanup,
-        boundary,
+        boundary: deadline.boundary,
         boundaryParticipant: input.participant,
         enteringTurnOrdinal: input.enteringTurnOrdinal,
-        deadlineTurnOrdinal,
+        deadlineTurnOrdinal: deadline.deadlineOrdinal,
       });
     }
   }
@@ -3804,7 +3950,23 @@ export function applyCombatClosureToEffects(
   // source, targets, links, or suppression. A committed live effect may
   // never retain a timer whose clock cannot advance.
   const timersExpired: { effectId: string; displayName: string }[] = [];
-  for (const row of liveRowsOrdered()) {
+  const closureRows = liveRowsOrdered();
+  const participantDeadlines = new Map<string, ParticipantTimerDeadline>();
+  for (const row of closureRows) {
+    if (
+      isParticipantTurnAnchor(row.anchor_kind) &&
+      row.anchor_combat_instance_id === combatInstanceId
+    ) {
+      participantDeadlines.set(
+        row.effect_id,
+        requireParticipantTimerDeadline(
+          row,
+          readTargetRows(db, campaignId, row.effect_id),
+        ),
+      );
+    }
+  }
+  for (const row of closureRows) {
     if (
       row.duration_kind !== 'timed' ||
       row.duration_unit !== 'round' ||
@@ -3818,33 +3980,20 @@ export function applyCombatClosureToEffects(
          WHERE campaign_id = ? AND combat_instance_id = ?`,
       )
       .get(campaignId, combatInstanceId) as { round_number: number };
-    const participantAnchor =
-      row.anchor_kind === 'source-turn-start' ||
-      row.anchor_kind === 'target-turn-start';
+    const participantAnchor = isParticipantTurnAnchor(row.anchor_kind);
     let deadline: number | undefined;
     let remaining: number;
     let remainingLabel: string;
     if (participantAnchor) {
-      if (
-        row.anchor_participant_kind === null ||
-        row.anchor_participant_ref === null ||
-        row.anchor_participant_turn_ordinal === null ||
-        row.duration_amount === null
-      ) {
-        throw new ActiveEffectError(
-          `active_effect '${row.effect_id}' has incomplete participant-clock evidence at combat closure`,
-        );
-      }
+      const participantDeadline = participantDeadlines.get(row.effect_id);
+      if (participantDeadline === undefined) continue;
       const currentParticipantOrdinal = readAnchorTurnOrdinal(
         db,
         campaignId,
         combatInstanceId,
-        {
-          kind: row.anchor_participant_kind,
-          ref: row.anchor_participant_ref,
-        },
+        participantDeadline.participant,
       );
-      deadline = row.anchor_participant_turn_ordinal + row.duration_amount;
+      deadline = participantDeadline.deadlineOrdinal;
       remaining = Math.max(0, deadline - currentParticipantOrdinal);
       remainingLabel = 'participant turn-start boundary/boundaries';
     } else {

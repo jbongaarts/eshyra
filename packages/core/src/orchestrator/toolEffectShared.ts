@@ -133,6 +133,15 @@ export function parseEffectDuration(
           'a timed duration requires amount, unit, and anchor',
         );
       }
+      if (
+        record.anchorTrigger !== undefined &&
+        typeof record.anchorTrigger !== 'string'
+      ) {
+        return err(
+          'invalid_args',
+          'anchorTrigger must be a string when supplied',
+        );
+      }
       // Enum membership is re-validated fail-closed by the state layer.
       return {
         kind: 'timed',

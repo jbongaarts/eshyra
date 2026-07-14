@@ -16,7 +16,10 @@ export const beginTurnTool: Tool = {
     'action, free object interaction, movement note) and returns their ' +
     'reaction; implicitly ends the previous turn (clearing its surprise) and ' +
     'automatically settles due F3 round and participant-turn effects. ' +
-    'Call once per participant per turn in initiative order. Pass round when ' +
+    'A known but dead, escaped, or inactive participant still establishes its ' +
+    'boundary and returns turnAvailable:false; skipped initiative boundaries ' +
+    'must still be reported when participant-local timers depend on them. Call ' +
+    'once per participant per turn in initiative order. Pass round when ' +
     'a new combat round starts; it never decreases. args: { combatantId?: ' +
     'string, character?: string, round?: integer }.',
   inputSchema: {

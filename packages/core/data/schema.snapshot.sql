@@ -86,6 +86,8 @@ CREATE TABLE active_effect (
       WHEN anchor_kind IN ('source-turn-start', 'target-turn-start') THEN
         CASE WHEN anchor_participant_kind IS NOT NULL
                   AND anchor_participant_kind IN ('character', 'combatant')
+                  AND duration_kind = 'timed'
+                  AND duration_unit = 'round'
              THEN 1 ELSE 0 END
       ELSE CASE WHEN anchor_participant_kind IS NULL THEN 1 ELSE 0 END
     END

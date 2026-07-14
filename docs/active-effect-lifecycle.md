@@ -19,6 +19,10 @@ requested round and active participant are made durable. F3 then settles round
 deadlines followed by source- and target-turn deadlines through `finalizeEnd`.
 If cleanup removes the entering combatant, the boundary still commits and
 returns `turnAvailable: false` with the participant unavailable reason.
+Boundary identity is separate from availability: a known dead, escaped, or
+inactive participant still establishes its turn-start boundary, while the
+completed boundary clears the active marker and surprise and returns no usable
+turn.
 
 One canonical, deterministic lifecycle for **active effects**: durable game
 state created by a spell, item power, feature, creature trait, hazard, or DM
@@ -137,6 +141,9 @@ Deterministic expiry evaluation:
   `begin_turn` settles due timers automatically; trigger-occurrence
   round timers stamp the current round while world-time units retain declared
   expiry.
+  The same participant-clock validation is used by strict reads, explicit
+  expiry, boundary settlement, combat closure, and integrity auditing; removed
+  durable targets continue to identify their target-turn clock.
 
 ## 4. Status machine
 
