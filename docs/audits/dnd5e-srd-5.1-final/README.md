@@ -142,16 +142,20 @@ The importer **fails closed** if any source structure is unaccounted.
 | Inventory items (typography-derived source structures) | 2258 |
 | → mapped to a record | 1444 |
 | → child-of another record | 462 |
-| → ambiguous (name shared by ≥2 records; resolved) | 187 |
+| → ambiguous ownership (name shared by ≥2 records) | 187 |
 | → taxonomy | 33 |
 | → represented by structured field (`spell.data.classes`) | 78 |
 | → reasoned ignore | 54 |
 | **→ unaccounted** | **0** ✅ |
 | **→ known-gap** | **0** ✅ |
 
-`ambiguous` (187) are legitimately shared names (e.g. each class's "Ability Score
-Improvement" feature, or a `rule:` and `table:` sharing a section title); each is
-resolved to a winner and recorded — not a coverage hole.
+`ambiguous` (187) remains a truthful status for source occurrences whose
+normalized text has multiple candidate records. The coverage report now retains
+the candidates and exact occurrence provenance instead of inventing a winner.
+Its diagnostics separately report 92 duplicate-text groups, 37 explicitly
+resolved groups, 55 suspicious-owner groups, and 75 unresolved-owner groups.
+These are reviewer evidence, not a zero-warning gate; the source-accounting
+gate still requires `unaccounted = 0` and `known-gap = 0`.
 
 ## 7. Source-region ledger summary
 
