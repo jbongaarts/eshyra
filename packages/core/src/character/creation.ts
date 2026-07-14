@@ -61,9 +61,8 @@ export type AbilityScoreName =
 /**
  * How a character's base ability scores were produced. `point_buy` and
  * `standard_array` carry total/value constraints validated here; `manual`
- * (hand-entered) and `rolled` (dice-given or imported) are constraint-free
- * apart from a plausibility bound, but are still recorded distinctly so the
- * draft never treats a rolled 18 as if it had been point-bought.
+ * entries use a plausibility bound, while `rolled` scores must be an exact
+ * assignment from six validated canonical dice results.
  */
 export type AbilityScoreMethod =
   | 'point_buy'
@@ -501,6 +500,12 @@ function validateAbilityScores(
   if (scores.some((score) => !Number.isInteger(score))) {
     errors.push('ability scores must be integers');
     return;
+  }
+  if (
+    draft.abilityScoreMethod !== 'rolled' &&
+    draft.rolledAbilityScores !== undefined
+  ) {
+    errors.push('rolled ability evidence is only valid for the rolled method');
   }
 
   switch (draft.abilityScoreMethod) {

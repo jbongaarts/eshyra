@@ -649,7 +649,8 @@ class Wizard {
       const errors = this.draft.diagnostics.filter(
         (d) =>
           (d.field === 'abilityScores' ||
-            d.field.startsWith('abilityScores.')) &&
+            d.field.startsWith('abilityScores.') ||
+            d.field === 'rolledAbilityScores') &&
           d.severity === 'error',
       );
       const allSet = ABILITY_SCORE_NAMES.every(
@@ -1028,9 +1029,9 @@ class Wizard {
 
   /**
    * Roll six 4d6-drop-lowest values and present them as an assignable pool —
-   * the "let the dice inspire me" moment. The values are advisory: the player
-   * still assigns them with `str <value>` etc. (the `rolled` method accepts any
-   * plausible score), so the dice suggest without dictating.
+   * the "let the dice inspire me" moment. The player chooses which ability gets
+   * each total, but every assigned value must come from this immutable pool by
+   * multiplicity.
    */
   private rollAbilityPool(): void {
     const rolled = rollAbilityScoreSet(this.deps.rng);

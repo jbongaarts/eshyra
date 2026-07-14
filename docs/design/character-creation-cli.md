@@ -215,7 +215,6 @@ The important behavior is not merely putting ability scores earlier. The creator
 
 Example:
 
-```text
 Rolled ability scores use the canonical `4d6dl1` dice expression. All four dice
 and the indexed dropped die are saved as audit evidence before the player
 assigns the six totals; rerolling is explicit.

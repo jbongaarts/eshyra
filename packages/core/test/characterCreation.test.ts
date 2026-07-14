@@ -89,7 +89,7 @@ describe('character creation', () => {
     ).toThrow(CharacterCreationError);
   });
 
-  it('accepts manual/rolled scores free of point-buy and array constraints', () => {
+  it('accepts manual bounds and canonical rolled-pool assignments', () => {
     // A rolled spread that is neither point-buy-legal nor the standard array.
     const rolledAbilityScores = rollAbilityScoreSet(createSeededRng(42));
     const rolledDraft = {
@@ -117,6 +117,29 @@ describe('character creation', () => {
         abilityScores: { ...rolledDraft.abilityScores, strength: 25 },
       }),
     ).toThrow(CharacterCreationError);
+  });
+
+  it('rejects roll evidence on manual and point-buy drafts', () => {
+    const evidence = rollAbilityScoreSet(createSeededRng(42));
+    const forged = [
+      { ...evidence[0], total: evidence[0].total + 1 },
+      ...evidence.slice(1),
+    ];
+
+    for (const [abilityScoreMethod, rolledAbilityScores] of [
+      ['manual', evidence],
+      ['manual', forged],
+      ['point_buy', evidence],
+      ['point_buy', forged],
+    ] as const) {
+      expect(() =>
+        validateCharacterDraft({
+          ...validDraft,
+          abilityScoreMethod,
+          rolledAbilityScores,
+        }),
+      ).toThrow(/only valid for the rolled method/);
+    }
   });
 
   it('builds mutate_state-compatible writes for the canonical character row', () => {

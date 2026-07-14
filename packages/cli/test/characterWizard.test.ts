@@ -411,6 +411,31 @@ describe('character wizard — ability-first flow', () => {
     }
   });
 
+  it('does not advance rolled scores without canonical roll evidence', async () => {
+    const { deps: d, lines } = deps([
+      'Dice',
+      'rolled',
+      'str 12',
+      'dex 12',
+      'con 12',
+      'int 12',
+      'wis 12',
+      'cha 12',
+      'done',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'ability-first',
+      draftId: 'missing-rolls',
+    });
+
+    expect(result.outcome).toBe('quit');
+    expect(lines).toContain(
+      '  ✗ roll six ability scores before assigning them',
+    );
+    expect(text(lines)).not.toContain('Classes that fit your scores');
+  });
+
   it('lets the player choose a poor-fit class after seeing suggestions', async () => {
     // A brawny build is shown Barbarian/Fighter etc., but the player insists on
     // Wizard — the flow must allow it (suggestions are advisory).
