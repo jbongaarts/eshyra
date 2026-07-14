@@ -108,7 +108,7 @@ export function resolveEffectParticipant(
   if (typeof ref !== 'string' || ref.length === 0) {
     return err('invalid_args', `${label}.ref must be a non-empty string`);
   }
-  if (kind === 'combatant') {
+  if (kind === 'combatant' || kind === 'campaign_actor') {
     return { kind, ref };
   }
   try {

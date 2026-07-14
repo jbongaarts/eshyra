@@ -2206,7 +2206,6 @@ function removeProjection(
   }
   if (link.link_kind === 'actor') {
     if (link.target_kind === 'campaign_actor') {
-      if (link.cleanup_on_end === 'release') return 'removed';
       try {
         updateCampaignActor(db, {
           campaignId,
@@ -4303,11 +4302,14 @@ export function applyCombatClosureToEffects(
       | undefined;
     const claims = db
       .prepare(
-        `SELECT campaign_actor_id FROM active_effect_link
+        `SELECT effect_id, campaign_actor_id FROM active_effect_link
        WHERE campaign_id = ? AND link_kind = 'actor' AND target_kind = 'combatant'
          AND target_ref = ? AND status = 'active' AND campaign_actor_id IS NOT NULL`,
       )
-      .all(campaignId, id) as { campaign_actor_id: string }[];
+      .all(campaignId, id) as {
+      effect_id: string;
+      campaign_actor_id: string;
+    }[];
     const durable =
       combatant?.identity_kind === 'campaign_actor'
         ? combatant.identity_ref
@@ -4320,9 +4322,12 @@ export function applyCombatClosureToEffects(
            AND target_ref = ? AND status = 'active'`,
       )
       .get(campaignId, durable) as { effect_id: string } | undefined;
-    if (directOwner !== undefined) {
+    if (
+      directOwner !== undefined &&
+      claims.some((claim) => claim.effect_id !== directOwner.effect_id)
+    ) {
       throw new ActiveEffectError(
-        `campaign actor '${durable}' is already owned by effect '${directOwner.effect_id}'`,
+        `campaign actor '${durable}' is already owned by effect '${directOwner.effect_id}' and cannot be claimed by another effect`,
       );
     }
     if (claims.some((claim) => claim.campaign_actor_id !== durable)) {
