@@ -98,8 +98,8 @@ writes only the two documentation artifacts.
 The 2026-07-14 baseline contains 1,813 D&D records across 16 active kinds and
 7 Pathfinder records, yielding 1,196 grouped string paths after metadata is
 included. The generated disposition census is the authority; the current
-baseline is 149 `complete`, 611 `typed-core-with-prose-qualifier`, 216
-`model-adjudicated`, 214 `not-mechanical`, and 6 `unsupported` rows. Run
+baseline is 257 `complete`, 2 `typed-core-with-prose-qualifier`, 739
+`model-adjudicated`, 192 `not-mechanical`, and 6 `unsupported` rows. Run
 `npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts --check`
 to verify the committed output is current.
 
@@ -133,8 +133,11 @@ complete field-level census.
   values are typed when used by character creation/progression. The original
   class `startingEquipment.text` remains prose evidence; the structured
   `startingEquipment` projection is the consumer-owned contract. Choice
-  `from`, option ids, and references are closed choice/reference data, not
-  generic parsed strings.
+  `from`, option ids, primary abilities, spell-preparation fields, language
+  grant domains, and references are closed choice/reference data, not generic
+  parsed strings. These are complete projections because
+  `rulesPackResolver.ts`, `srdCreationChoices.ts`, and the progression table
+  consumers read them deterministically.
 * Equipment damage, cost, weight, armor fields, and grouping have named fields
   and existing equipment filters. `properties[]`, including `Ammunition (range
   150/600)` and `Versatile (1d10)`, is the notable unsupported residual owned by
@@ -152,10 +155,12 @@ complete field-level census.
 * Table cells are source strings by default. `tableRefs` and table-derived
   semantic projections are typed when lookup, parity, or character progression
   consumes them. A number-looking cell is not itself a typed formula.
-* Rule-record `data.text`, action/trait text, descriptions, and provenance
-  strings (`record.source`, `record.provenance.*`) are canonical source/display
-  evidence. Rule classifications and source-coverage audits may classify their
-  content, but that does not make the prose a deterministic projection.
+* Rule-record `data.text`, action/trait text, and descriptions are canonical
+  source/display evidence. `record.provenance.sourceRef` is different: it is a
+  complete source-corpus identity validated by
+  `assertProvenanceMatchesPackSource`; `locator` and `note` remain provenance
+  evidence. Rule classifications and source-coverage audits may classify prose
+  content, but that does not make it a deterministic projection.
 
 ## Compatibility and schema evolution
 

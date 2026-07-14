@@ -28,6 +28,7 @@ export interface InventoryRow {
   readonly currentAuditReadiness: string;
   readonly disposition: Disposition;
   readonly typedSchemaOrConsumer: string | null;
+  readonly retainedProseBoundary: string | null;
   readonly owner: string | null;
   readonly futureWork: boolean;
 }
@@ -140,6 +141,7 @@ function result(
   typedSchemaOrConsumer: string | null,
   owner: string | null,
   futureWork = false,
+  retainedProseBoundary: string | null = null,
 ): Classification {
   return {
     valueClass,
@@ -148,6 +150,7 @@ function result(
     currentAuditReadiness,
     disposition,
     typedSchemaOrConsumer,
+    retainedProseBoundary,
     owner,
     futureWork,
   };
@@ -265,6 +268,20 @@ const rules: readonly ClassificationRule[] = [
         'normalized-name lookup reports not-found/single/ambiguous results',
         'normalizeRulesRecordName / RulesStackKindIndex.byName',
         'rules-stack indexing and rules lookup',
+      ),
+  },
+  {
+    name: 'record source-corpus identity',
+    matches: exactPath('record.provenance.sourceRef'),
+    classify: () =>
+      result(
+        'identifier-like',
+        'complete',
+        'validateRulesPack `assertProvenanceMatchesPackSource` cross-field invariant',
+        'RecordProvenance.sourceRef must match meta.source.sourceUrl or meta.source.sourceIdentity',
+        'pack validation fails closed when the source identity does not match',
+        'RecordProvenance.sourceRef / RulesPackSource identity',
+        'rules/validate.ts assertProvenanceMatchesPackSource',
       ),
   },
   {
@@ -388,11 +405,15 @@ const rules: readonly ClassificationRule[] = [
           'data.abilityScoreIncreases[].choice.from[]',
           'data.abilityScoreIncreases[].fixed[].ability',
           'data.choices[].from[]',
+          'data.languages[].fixed[]',
+          'data.languages[].from[]',
         )({ fieldPath } as ClassificationContext)) ||
         (kindIs('background')({ recordKinds }) &&
           exactPath(
             'data.choices[].from[]',
             'data.skillProficiencies[]',
+            'data.languages[].fixed[]',
+            'data.languages[].from[]',
           )({
             fieldPath,
           } as ClassificationContext)) ||
@@ -403,7 +424,11 @@ const rules: readonly ClassificationRule[] = [
             'data.toolProficiencies[]',
             'data.savingThrowProficiencies[]',
             'data.toolProficiencyChoices[].from[]',
+            'data.primaryAbilities[]',
+            'data.skillChoices[].from[]',
             'data.spellcastingAbility',
+            'data.spellPreparation.kind',
+            'data.spellPreparation.preparationFormula.ability',
             'data.progression[].advancement[].kind',
             'data.progression[].advancement[].ref',
             'data.progression[].advancement[].targetRefs[]',
@@ -454,18 +479,76 @@ const rules: readonly ClassificationRule[] = [
       ),
   },
   {
-    name: 'existing mechanics projections',
-    matches: ({ fieldPath }) => fieldPath.includes('.mechanics.'),
+    name: 'mechanics duration projection with source qualifier',
+    matches: exactPath(
+      'data.mechanics.duration.kind',
+      'data.mechanics.duration.unit',
+    ),
+    classify: () =>
+      result(
+        'scalar-like',
+        'typed-core-with-prose-qualifier',
+        'deriveSpellMechanics duration projection and spell effect audits',
+        'D&D spell schema validates mechanics.duration and the closed duration vocabulary',
+        'typed duration kind/unit is audited; the original spell duration remains retained prose evidence',
+        'SpellDurationMechanics.kind/unit',
+        'importer mechanicsProjections.ts and dnd5eSrdAuditBundle.test.ts',
+        false,
+        'data.duration',
+      ),
+  },
+  {
+    name: 'mechanics canonical references',
+    matches: ({ fieldPath }) =>
+      /^data\.mechanics\..*(?:ruleRef|classRef|featureRef|creatureRef|resultRef|tableRef|tableRefs\[\]|ambiguityId)$/.test(
+        fieldPath,
+      ),
     classify: ({ fieldPath }) =>
       result(
-        'mixed',
-        'typed-core-with-prose-qualifier',
-        'importer mechanics projections, rules audits, and selected effect resolvers',
-        'kind validator validates the containing domain-specific mechanics projection',
-        `typed core is audited; qualifier at ${fieldPath} remains retained source/entry prose`,
-        'domain-specific mechanics projection; consumers use only the typed core',
-        'importer mechanics projections and existing 18.7.9 engine-domain beads',
-        true,
+        'identifier-like',
+        'complete',
+        fieldPath.endsWith('ambiguityId')
+          ? 'RulesAmbiguity.id availability/transition contract'
+          : 'mechanics projection reference validation and the named effect resolver',
+        'domain-specific mechanics schema validates the reference-bearing field',
+        'reference reachability and mechanics audits validate the declared target',
+        'domain-specific mechanics reference contract',
+        'mechanicsProjections.ts and the owning rules/audit domain',
+      ),
+  },
+  {
+    name: 'mechanics closed scalar contracts',
+    matches: ({ fieldPath }) =>
+      /^data\.(?:mechanics|traits\[\]\.mechanics|actions\[\]\.mechanics|reactions\[\]\.mechanics|legendaryActions\.entries\[\]\.mechanics)\.(?:actionEconomy\.cost|effects\[\]\.(?:kind|mode|cost|ability|frequency|timing|attackType)|effects\[\]\.(?:creation|identity|placement|statBlockBasis)\.kind|effects\[\]\.(?:creation|creation\.options\[\]|creation\.cardinality|creation\.options\[\]\.cardinality|scaling\[\]|scaling\[\]\.options\[\]\.choices\[\]|transitions\[\]\.operation)\.kind|effects\[\]\.(?:creation\.cardinality|creation\.options\[\]\.cardinality|scaling\[\]\.options\[\]\.choices\[\]\.cardinality|transitions\[\]\.operation\.cardinality)\.mode|saves\[\]\.ability|spellcasting\.(?:ability|mode|componentRequirement)|levels\[\]\.effects\[\]\.(?:kind|mode))$/.test(
+        fieldPath,
+      ),
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'mechanicsProjections domain discriminators and kindSchemas closed vocabularies',
+        'domain-specific mechanics schema validates the closed scalar/discriminator',
+        'mechanics audit consumes the typed scalar without model parsing',
+        'domain-specific mechanics discriminator/scalar contract',
+        'mechanicsProjections.ts and rules/kindSchemas.ts',
+      ),
+  },
+  {
+    name: 'mechanics prose qualifiers',
+    matches: ({ fieldPath }) =>
+      fieldPath.includes('.mechanics.') &&
+      /(?:\.note|\.footnote|\.condition|\.constraint|\.target|\.against|\.to|\.from|\.detail|\.context)$/.test(
+        fieldPath,
+      ),
+    classify: () =>
+      result(
+        'compound mechanical text',
+        'model-adjudicated',
+        'model context only; no deterministic consumer owns this qualifier',
+        shapeValidation,
+        'qualifier remains source/entry prose and is not claimed as typed gameplay support',
+        null,
+        null,
       ),
   },
   {
@@ -651,15 +734,15 @@ export function renderInventoryMarkdown(artifact: InventoryArtifact): string {
     '',
     'The generated JSON is the machine-readable inventory. This table keeps the same evidence compact enough for review.',
     '',
-    '| System | Kinds | Field path | Population | Representative values | Class | Disposition | Consumer / schema | Owner / future |',
-    '| --- | --- | --- | ---: | --- | --- | --- | --- | --- |',
+    '| System | Kinds | Field path | Population | Representative values | Class | Disposition | Consumer / schema | Retained prose | Owner / future |',
+    '| --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- |',
   ];
   for (const row of artifact.rows) {
     const values = row.representativeValues
       .map((value) => value.replaceAll('|', '\\|').replaceAll('\n', ' '))
       .join('; ');
     lines.push(
-      `| ${row.system} | ${row.recordKinds.join(', ')} | \`${row.fieldPath}\` | ${row.population} | ${values} | ${row.valueClass} | \`${row.disposition}\` | ${row.typedSchemaOrConsumer ?? row.currentSchemaValidation} | ${row.owner ?? '—'}${row.futureWork ? ' (future work)' : ''} |`,
+      `| ${row.system} | ${row.recordKinds.join(', ')} | \`${row.fieldPath}\` | ${row.population} | ${values} | ${row.valueClass} | \`${row.disposition}\` | ${row.typedSchemaOrConsumer ?? row.currentSchemaValidation} | ${row.retainedProseBoundary ?? '—'} | ${row.owner ?? '—'}${row.futureWork ? ' (future work)' : ''} |`,
     );
   }
   return `${lines.join('\n')}\n`;

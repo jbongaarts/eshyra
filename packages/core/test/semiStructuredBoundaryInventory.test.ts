@@ -64,9 +64,11 @@ describe('semi-structured boundary inventory', () => {
     });
     expect(row(artifact, 'record.provenance.sourceRef', 'spell')).toMatchObject(
       {
-        disposition: 'not-mechanical',
-        deterministicConsumers:
-          expect.not.stringContaining('lookupRulesRecord'),
+        disposition: 'complete',
+        typedSchemaOrConsumer: expect.stringContaining(
+          'RecordProvenance.sourceRef',
+        ),
+        owner: expect.stringContaining('assertProvenanceMatchesPackSource'),
       },
     );
     expect(row(artifact, 'data.choices[].id', 'ancestry')).toMatchObject({
@@ -86,6 +88,22 @@ describe('semi-structured boundary inventory', () => {
       disposition: 'complete',
       deterministicConsumers: expect.stringContaining('srdCreationChoices'),
     });
+    for (const [fieldPath, kind] of [
+      ['data.primaryAbilities[]', 'class'],
+      ['data.skillChoices[].from[]', 'class'],
+      ['data.spellPreparation.kind', 'class'],
+      ['data.spellPreparation.preparationFormula.ability', 'class'],
+      ['data.languages[].fixed[]', 'ancestry'],
+      ['data.languages[].from[]', 'background'],
+    ] as const) {
+      expect(
+        row(artifact, fieldPath, kind),
+        `${kind}/${fieldPath}`,
+      ).toMatchObject({
+        disposition: 'complete',
+        owner: expect.stringContaining('rulesPackResolver'),
+      });
+    }
     expect(
       row(artifact, 'data.progression[].advancement[].ref', 'class'),
     ).toMatchObject({
@@ -133,6 +151,10 @@ describe('semi-structured boundary inventory', () => {
         expect(candidate.currentAuditReadiness, candidate.fieldPath).toMatch(
           /qualifier|prose|retained/i,
         );
+        expect(
+          candidate.retainedProseBoundary,
+          candidate.fieldPath,
+        ).toBeTruthy();
         expect(candidate.owner, candidate.fieldPath).toBeTruthy();
       }
       if (candidate.disposition === 'unsupported') {
