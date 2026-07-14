@@ -3,7 +3,7 @@
 ## Reason for thaw
 
 The source-coverage report reconstructed ambiguity after evaluation, invented
-lexicographic winners for duplicate record names, and reduced repeated source
+implicit winners for duplicate record names, and reduced repeated source
 text to counts. This change adds first-class resolution provenance and
 deterministic duplicate-text, record-collision, suspicious-owner, and
 unresolved-owner diagnostics.

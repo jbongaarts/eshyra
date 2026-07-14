@@ -389,7 +389,7 @@ export function evaluateSourceCoverage(
     // Explicit record mappings outrank the name auto-match: a curated rule
     // is more precise than the name heuristic, which cannot tell duplicate
     // source captions apart (the p5 vs p44 "Draconic Ancestry" tables) and
-    // resolves duplicate record names lexicographically.
+    // leaves duplicate record names as an explicit candidate set.
     for (const rule of rules) {
       if (rule.type === 'record' && rule.match(item)) {
         return {
@@ -646,10 +646,9 @@ export interface SourceCoverageReportEntry {
 }
 
 /**
- * A name that maps to multiple emitted record keys: the auto-match can only
- * resolve to the lexicographically-first key, so the rest are silently
- * shadowed. The reporter surfaces these so reviewers can decide whether each
- * collision needs an explicit `recordRule` disambiguation.
+ * A name that maps to multiple emitted record keys. The reporter preserves all
+ * candidates and every matching source occurrence, including any explicit
+ * source-positioned claims; it never selects an implicit winner.
  */
 export interface AmbiguousNameCollision {
   readonly normalizedName: string;
@@ -725,24 +724,10 @@ export interface SourceCoverageReport {
  * Pure and deterministic — all diagnostic collections are sorted by normalized
  * text, source position, then key.
  *
- * The `ambiguous` section surfaces three classes of name collisions:
- * name auto-matcher:
- *
- *   - `shadowedRecords`: emitted records whose normalized name is shared with
- *     another record. The auto-match resolves to the lexicographically-first
- *     key; the rest are shadowed and can only be claimed by an explicit
- *     `recordRule`. Cross-kind name collisions (e.g. a class and a creature
- *     both named "Druid") appear here.
- *
- *   - `collapsedSourceItems`: groups of source inventory items that share the
- *     same normalized text and all auto-match to the same record key. Each
- *     group shows the count so reviewers can see how many source items are
- *     silently folded into one match (e.g. 12 per-class "Ability Score
- *     Improvement" headings all resolving to one feature key).
- *
- *   - `unresolvedSourceItems`: source headings with multiple candidate record
- *     keys after contextual and curated mappings. These entries carry an
- *     `ambiguous:` status and are excluded from the covered-record count.
+ * The diagnostics preserve complete candidate and occurrence evidence for
+ * duplicate record names and duplicate source text. Ambiguous statuses remain
+ * unresolved; explicit source-positioned rules and contextual ownership are
+ * visible through each occurrence's resolution provenance.
  */
 export function buildSourceCoverageReport(
   entries: readonly SourceCoverageEntry[],
@@ -1327,8 +1312,8 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     (i) => i.section === 'Races' && i.text === 'Lightfoot',
   ),
   // Appendix MM-B NPC stat blocks whose names collide with non-creature
-  // records. Explicit structure/page mappings must outrank the generic
-  // lexicographic name auto-match.
+  // records. Explicit structure/page mappings must outrank a generic
+  // name-only match.
   recordRule(
     'creature:acolyte',
     (i) =>
@@ -1411,9 +1396,9 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   ),
   // The Cleric's "Destroy Undead" table caption (p17) collides by name with
   // the `feature:cleric:destroy-undead` heading; both normalize to "destroy
-  // undead", and the name auto-match would claim the table-caption item for
-  // the lexicographically-first key (the feature). Map the table-caption item
-  // explicitly to the emitted `table:destroy-undead` record (eshyra-4a7.6);
+  // undead", and the name-only match cannot distinguish the table from the
+  // feature. Map the table-caption item explicitly to the emitted
+  // `table:destroy-undead` record (eshyra-4a7.6);
   // the feature HEADING item still auto-matches the feature record.
   recordRule(
     'table:destroy-undead',
@@ -1807,8 +1792,7 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   // "Beyond the Material" and an h≈12 sub-leaf below it. Both emit distinct
   // rule records (parent-qualified keys), but they share the normalized name
   // "outer planes", so the bare name auto-match would collapse BOTH source
-  // headings onto the lexicographically-first key
-  // (`rule:beyond-the-material-outer-planes`). Pin each heading to its
+  // headings onto one implicit owner. Pin each heading to its
   // source-correct record by tier — the same disambiguation used for the
   // Equipment "Weapons" subsection vs. its leaf table caption, and the two
   // "Senses" headings.

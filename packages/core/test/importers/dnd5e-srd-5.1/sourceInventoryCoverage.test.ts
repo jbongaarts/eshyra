@@ -541,7 +541,7 @@ describe('assertSourceCoverage', () => {
 
 describe('ambiguous-match diagnostic', () => {
   it('retains provenance and reports every candidate without a winner', () => {
-    // records has two 'Improved Critical' features; fighter wins lexicographically.
+    // The two same-named features remain an unresolved candidate set.
     const report = buildSourceCoverageReport(
       evaluateSourceCoverage(
         [item({ text: 'Improved Critical' })],
@@ -582,7 +582,7 @@ describe('ambiguous-match diagnostic', () => {
     );
   });
 
-  it('reports collapsed source items when multiple source items auto-match the same key', () => {
+  it('reports duplicate source text when multiple items auto-match the same key', () => {
     const singleRecord = [
       {
         kind: 'feature',
@@ -611,11 +611,11 @@ describe('ambiguous-match diagnostic', () => {
     );
   });
 
-  it('excludes recordRule-resolved entries from collapsed source items', () => {
+  it('classifies recordRule-resolved duplicates as same-owner explicit', () => {
     // An explicit recordRule maps "Lightfoot" -> ancestry:lightfoot-halfling.
     // keyByName has no entry for "lightfoot" (the record name is "Lightfoot
-    // Halfling"), so these entries are not auto-matched and must not appear
-    // in collapsedSourceItems even with two source items.
+    // Halfling"), so these entries are explicitly resolved rather than
+    // classified as text-only automatic collapse.
     const lightfootRecord = {
       kind: 'ancestry',
       key: 'ancestry:lightfoot-halfling',
@@ -641,7 +641,7 @@ describe('ambiguous-match diagnostic', () => {
     expect(report.diagnostics.suspiciousOwnership).toEqual([]);
   });
 
-  it('reports empty ambiguous when all record names are unique and each item matches once', () => {
+  it('reports empty diagnostics when all record names are unique and each item matches once', () => {
     const uniqueRecords = [
       { kind: 'creature', key: 'creature:aboleth', name: 'Aboleth' },
     ];
@@ -659,7 +659,7 @@ describe('ambiguous-match diagnostic', () => {
     });
   });
 
-  it('shadowedRecords is sorted by normalizedName', () => {
+  it('record-name collisions are sorted by normalizedName', () => {
     const multiDupeRecords = [
       { kind: 'feature', key: 'feature:barbarian:rage', name: 'Rage' },
       { kind: 'feature', key: 'feature:monk:rage', name: 'Rage' },

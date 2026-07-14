@@ -809,8 +809,8 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     // The SRD prints the title "Outer Planes" twice on p364 — an h≈13.9
     // subsection under "Beyond the Material" and an h≈12 sub-leaf below it.
     // Each emits its own rule record, and explicit tier-based recordRules pin
-    // each source heading to its source-correct record rather than letting the
-    // bare name auto-match collapse both onto the lexicographically-first key.
+    // each source heading to its source-correct record rather than leaving the
+    // bare name match unable to distinguish the two occurrences.
     const outerPlanes = coverage.entries.filter(
       (e) => e.page === 364 && e.text === 'Outer Planes',
     );
@@ -966,6 +966,43 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
         (entry) => typeof entry.resolution?.kind === 'string',
       ),
     ).toBe(true);
+  });
+
+  it('pins the canonical diagnostic baseline and duplicate category histogram', () => {
+    expect(coverage.diagnostics.recordNameCollisions).toHaveLength(88);
+    expect(coverage.diagnostics.duplicateSourceText).toHaveLength(92);
+    expect(coverage.diagnostics.suspiciousOwnership).toHaveLength(55);
+    expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(75);
+    const categoryCounts = Object.fromEntries(
+      [
+        ...new Set(
+          coverage.diagnostics.duplicateSourceText.map(
+            (group) => group.category,
+          ),
+        ),
+      ]
+        .sort()
+        .map((category) => [
+          category,
+          coverage.diagnostics.duplicateSourceText.filter(
+            (group) => group.category === category,
+          ).length,
+        ]),
+    );
+    expect(categoryCounts).toEqual({
+      'auto-collapsed': 6,
+      'explicitly-disambiguated': 19,
+      'mixed-resolution': 9,
+      'same-owner-explicit': 18,
+      'unresolved-owner': 40,
+    });
+    expect(
+      coverage.diagnostics.duplicateSourceText.filter(
+        (group) =>
+          group.category === 'explicitly-disambiguated' ||
+          group.category === 'same-owner-explicit',
+      ),
+    ).toHaveLength(37);
   });
 
   it('retains all occurrences for unresolved repeated headings', () => {
