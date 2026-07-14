@@ -25,6 +25,7 @@ import {
   createSeededRng,
   endActiveEffect,
   expireElapsedRoundEffects,
+  formatActiveEffect,
   getActiveCharacterId,
   getConcentrationEffect,
   grantTemporaryHp,
@@ -2262,6 +2263,7 @@ describe('anchor semantics', () => {
       anchorRound: 1,
       deadlineRound: 2,
     });
+    expect(formatActiveEffect(effect)).toContain('expires at combat round 2');
   });
 
   it('anchors a source-turn duration at the active turn start boundary', () => {
@@ -2289,9 +2291,12 @@ describe('anchor semantics', () => {
       anchorParticipantTurnOrdinal: 1,
       deadlineParticipantTurnOrdinal: 3,
     });
+    expect(effect.duration.deadlineRound).toBeUndefined();
+    expect(formatActiveEffect(effect)).not.toContain('expires at combat round');
     beginTurn(db, {
       campaignId: CAMPAIGN,
       participant: { kind: 'combatant', ref: GOBLIN_2 },
+      round: 99,
       ...CTX,
     });
     expect(
@@ -2314,6 +2319,10 @@ describe('anchor semantics', () => {
     expect(settled.boundaryEffects.map((entry) => entry.effectId)).toEqual([
       'fx-source-two',
     ]);
+    expect(settled.boundaryEffects[0]).toMatchObject({
+      deadlineTurnOrdinal: 3,
+    });
+    expect(settled.boundaryEffects[0]).not.toHaveProperty('deadlineRound');
   });
 
   it('anchors a target-turn duration at the active target turn start boundary', () => {
@@ -2658,6 +2667,10 @@ describe('anchor semantics', () => {
       'fx-z-round',
       'fx-a-participant',
     ]);
+    expect(result.boundaryEffects[0]).toHaveProperty('deadlineRound', 2);
+    expect(result.boundaryEffects[0]).not.toHaveProperty('deadlineTurnOrdinal');
+    expect(result.boundaryEffects[1]).toHaveProperty('deadlineTurnOrdinal', 1);
+    expect(result.boundaryEffects[1]).not.toHaveProperty('deadlineRound');
     expect(
       listEffectEvents(db, CAMPAIGN, 'fx-z-round').at(-1)?.detail,
     ).toMatchObject({
@@ -2673,6 +2686,111 @@ describe('anchor semantics', () => {
       ]),
     );
     expect(auditActiveEffectIntegrity(db, CAMPAIGN)).toEqual([]);
+  });
+
+  it('rejects durable source-turn evidence that diverges from source.actor', () => {
+    const { db } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-source-binding',
+      kind: 'condition-package',
+      displayName: 'Source binding',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    });
+    expect(auditActiveEffectIntegrity(db, CAMPAIGN)).toEqual([]);
+    db.prepare(
+      `UPDATE active_effect SET anchor_participant_ref = ?
+       WHERE campaign_id = ? AND effect_id = ?`,
+    ).run(GOBLIN_2, CAMPAIGN, 'fx-source-binding');
+    expect(() => listActiveEffects(db, CAMPAIGN)).toThrow(
+      /source-turn anchor participant.*does not match source actor/,
+    );
+    expect(auditActiveEffectIntegrity(db, CAMPAIGN)).toEqual([
+      expect.objectContaining({
+        effectId: 'fx-source-binding',
+        issue: expect.stringMatching(/source-turn anchor participant/),
+      }),
+    ]);
+  });
+
+  it('rejects durable target-turn evidence that diverges from the sole target', () => {
+    const { db } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-target-binding',
+      kind: 'condition-package',
+      displayName: 'Target binding',
+      source: { kind: 'ruling' },
+      targets: [{ kind: 'combatant', ref: GOBLIN_2 }],
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'target-turn-start',
+      },
+      ...CTX,
+    });
+    expect(auditActiveEffectIntegrity(db, CAMPAIGN)).toEqual([]);
+    db.prepare(
+      `UPDATE active_effect SET anchor_participant_ref = ?
+       WHERE campaign_id = ? AND effect_id = ?`,
+    ).run(GOBLIN_1, CAMPAIGN, 'fx-target-binding');
+    expect(() => listActiveEffects(db, CAMPAIGN)).toThrow(
+      /target-turn anchor participant.*does not match its sole target/,
+    );
+    expect(auditActiveEffectIntegrity(db, CAMPAIGN)).toEqual([
+      expect.objectContaining({
+        effectId: 'fx-target-binding',
+        issue: expect.stringMatching(/target-turn anchor participant/),
+      }),
+    ]);
+  });
+
+  it('reports participant-clock boundaries rather than global rounds at combat closure', () => {
+    const { db, combatInstanceId } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-close-participant-clock',
+      kind: 'condition-package',
+      displayName: 'Close participant clock',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    });
+    closeCombatInstance(db, {
+      campaignId: CAMPAIGN,
+      combatInstanceId,
+      status: 'completed',
+      ...CTX,
+    });
+    const ended = listEffectEvents(
+      db,
+      CAMPAIGN,
+      'fx-close-participant-clock',
+    ).find((event) => event.eventKind === 'ended');
+    expect(ended?.detail).toMatchObject({
+      note: expect.stringContaining(
+        'participant turn-start boundary/boundaries remaining',
+      ),
+    });
+    expect(ended?.detail.note).not.toContain('round(s) remaining');
   });
 });
 

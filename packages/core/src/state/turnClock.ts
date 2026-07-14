@@ -61,31 +61,3 @@ export function readAnchorTurnOrdinal(
       : 0)
   );
 }
-
-/** The canonical lazy clock row; budget reset remains F2's responsibility. */
-export function ensureTurnClockRow(
-  db: Db,
-  campaignId: string,
-  combatInstanceId: string,
-  participant: TurnClockParticipant,
-  provenance: string,
-  sessionId: string,
-  at: string,
-): void {
-  db.prepare(
-    `INSERT INTO combat_turn_budget(
-       campaign_id, combat_instance_id, participant_kind, participant_ref,
-       provenance, session_id, updated_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(campaign_id, combat_instance_id, participant_kind,
-                 participant_ref) DO NOTHING`,
-  ).run(
-    campaignId,
-    combatInstanceId,
-    participant.kind,
-    participant.ref,
-    provenance,
-    sessionId,
-    at,
-  );
-}

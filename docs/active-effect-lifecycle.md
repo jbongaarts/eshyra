@@ -118,12 +118,14 @@ lesson). The duration is a discriminated union:
 
 Deterministic expiry evaluation:
 
-- **Round-unit timers** are code-evaluated: the deadline is
+- **Ordinary round-unit timers** are code-evaluated: the global deadline is
   `anchor_round + amount` rounds (`minute` = 10 rounds under the SRD 6-second
   round when evaluated in combat is *not* auto-converted — only `round`-unit
-  timers auto-expire). `expireElapsedRoundEffects` ends every effect whose
-  anchoring instance has advanced past its deadline; declaring `expired` on a
-  round timer **before** its deadline is refused.
+  timers auto-expire). `expireElapsedRoundEffects` ends every ordinary timer
+  whose anchoring instance has advanced past its deadline; declaring `expired`
+  on a round timer **before** its deadline is refused. Source/target turn
+  anchors retain `anchor_round` only as combat provenance and use their
+  participant turn ordinal as the deadline.
 - **World-time units** (`minute`/`hour`/`day`): the campaign clock
   (`clock.in_game_time`) is narrative text, so expiry is a declared operation —
   but only a `timed`/`until-trigger` effect can expire, the audit event records
@@ -297,7 +299,9 @@ combatant targets and condition projections (`combat-ended`), and detaches
 combatant source-actor pointers (the `created` event keeps the provenance),
 so live effects never point at unreachable combatants or dead clocks
 (character-owned effects survive closure — combat ending does not end
-spells; campaign-actor rebinding is `eshyra-2n1t.5.3`). `inactive` means
+spells; campaign-actor rebinding is `eshyra-2n1t.5.3`). Closure notes use
+global rounds only for ordinary round anchors; source/target turn anchors
+report remaining participant turn-start boundaries. `inactive` means
 removed from play: it cannot start concentrating and transitioning into it
 breaks concentration, which is what lets owned-actor cleanup cascade
 (terminal transitions flip status before cleanup, so cycles terminate).

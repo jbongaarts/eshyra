@@ -1087,6 +1087,7 @@ export {
   EFFECT_SOURCE_KINDS,
   endActiveEffect,
   expireElapsedRoundEffects,
+  formatActiveEffect,
   getCharacterConcentration,
   getConcentrationEffect,
   listActiveEffects,

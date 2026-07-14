@@ -16,6 +16,7 @@ import {
   ActionEconomyError,
   assembleContext,
   beginTurn,
+  createActiveEffect,
   createDefaultToolRegistry,
   createSeededRng,
   formatTurnBudget,
@@ -1013,6 +1014,50 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
       ...CTX,
     });
     expect(spendReaction(db, MARILITH, 'parry').budget.reactionsUsed).toBe(1);
+  });
+
+  it('does not let a pre-first-turn effect anchor create a partial marilith budget row', () => {
+    const { db } = setupLairCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-marilith-clock',
+      kind: 'condition-package',
+      displayName: 'Marilith clock',
+      source: { kind: 'ruling' },
+      targets: [{ kind: 'combatant', ref: MARILITH }],
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'target-turn-start',
+      },
+      ...CTX,
+    });
+    expect(
+      db
+        .prepare(
+          `SELECT 1 FROM combat_turn_budget
+           WHERE campaign_id = ? AND participant_ref = ?`,
+        )
+        .get(CAMPAIGN, MARILITH),
+    ).toBeUndefined();
+
+    const first = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(MARILITH),
+      ...CTX,
+    });
+    expect(first.budget.reactionAllowance).toBe(1);
+    expect(first.budget.reactionRefresh).toBe('every_turn');
+    spendReaction(db, MARILITH, 'parry');
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    expect(
+      spendReaction(db, MARILITH, 'parry again').budget.reactionsUsed,
+    ).toBe(1);
   });
 
   it('hydra Reactive Heads (formula): the validated allowance grant unlocks extra reactions', () => {
