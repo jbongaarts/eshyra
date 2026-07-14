@@ -5,12 +5,14 @@ import {
   type CharacterSheet,
   completeCharacterCreation,
   createCampaign,
+  createSeededRng,
   EMBERFALL_HOLLOW,
   getActiveCharacterId,
   importFinalizedCharacter,
   initSchema,
   openDatabase,
   PATHFINDER2E_REMASTER_RULES_PACK,
+  rollAbilityScoreSet,
   UnsupportedCharacterBuildError,
   validateCharacterDraft,
   writeCampaignRulesBinding,
@@ -89,19 +91,21 @@ describe('character creation', () => {
 
   it('accepts manual/rolled scores free of point-buy and array constraints', () => {
     // A rolled spread that is neither point-buy-legal nor the standard array.
+    const rolledAbilityScores = rollAbilityScoreSet(createSeededRng(42));
     const rolledDraft = {
       ...validDraft,
       abilityScoreMethod: 'rolled',
       abilityScores: {
-        strength: 17,
-        dexterity: 16,
-        constitution: 16,
-        intelligence: 9,
-        wisdom: 12,
-        charisma: 11,
+        strength: rolledAbilityScores[0].total,
+        dexterity: rolledAbilityScores[1].total,
+        constitution: rolledAbilityScores[2].total,
+        intelligence: rolledAbilityScores[3].total,
+        wisdom: rolledAbilityScores[4].total,
+        charisma: rolledAbilityScores[5].total,
       },
+      rolledAbilityScores,
       // Fighter d10 + CON +3 = 13.
-      maxHitPoints: 13,
+      maxHitPoints: 10 + Math.floor((rolledAbilityScores[2].total - 10) / 2),
     } as const;
     expect(validateCharacterDraft(rolledDraft).ok).toBe(true);
 

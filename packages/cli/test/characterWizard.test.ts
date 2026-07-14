@@ -389,11 +389,18 @@ describe('character wizard — ability-first flow', () => {
       'quit', // stop (don't need to finish assignment)
     ]);
     await runCharacterWizard(d, { mode: 'ability-first', draftId: 'r' });
-    const rolledLine = lines.find((l) => l.startsWith('Rolled: '));
+    const rolledLine = lines.find((l) => l.startsWith('Rolled pool: '));
     expect(rolledLine).toBeDefined();
+    expect(
+      lines.some((line) =>
+        /^ {2}4d6dl1: \[.*\] → kept \[.*\], dropped die #\d \[\d\] → \d+$/.test(
+          line,
+        ),
+      ),
+    ).toBe(true);
     // Six totals, each a valid 4d6-drop-lowest result (3–18), sorted desc.
     const totals = (rolledLine as string)
-      .slice('Rolled: '.length)
+      .slice('Rolled pool: '.length)
       .split(', ')
       .map((n) => Number.parseInt(n, 10));
     expect(totals).toHaveLength(6);

@@ -26,6 +26,10 @@
  */
 
 import { ABILITY_SCORE_NAMES } from './abilities.js';
+import {
+  summarizePoolAssignment,
+  validateRolledAbilityScoreSet,
+} from './abilityAllocation.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   type CharacterCreationEngine,
@@ -35,7 +39,7 @@ import {
   type RequiredChoice,
   type StartingEquipmentMode,
 } from './characterDraft.js';
-import type { AbilityScoreName } from './creation.js';
+import type { AbilityScoreName, CharacterCreationDraft } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
 import {
   normalizeProficiency,
@@ -123,6 +127,8 @@ export interface CharacterSheet {
   readonly abilityScores: Readonly<
     Record<AbilityScoreName, FinalizedAbilityScore>
   >;
+  /** Immutable canonical F1 rolls; assignment is represented by abilityScores. */
+  readonly rolledAbilityScores?: CharacterCreationDraft['rolledAbilityScores'];
   readonly proficiencyBonus: number;
   readonly maxHitPoints: number;
   readonly savingThrows: Readonly<Record<AbilityScoreName, SavingThrowDerived>>;
@@ -151,6 +157,25 @@ export interface CharacterSheet {
   readonly languages: readonly string[];
   readonly spells: readonly string[];
   readonly metadata: FinalizeMetadata;
+}
+
+/** Validate durable rolled creation evidence and its player-owned assignment. */
+export function validateCharacterSheetRollEvidence(
+  sheet: CharacterSheet,
+): void {
+  if (sheet.rolledAbilityScores === undefined) return;
+  validateRolledAbilityScoreSet(sheet.rolledAbilityScores);
+  const assigned = Object.fromEntries(
+    ABILITY_SCORE_NAMES.map((name) => [name, sheet.abilityScores[name].base]),
+  );
+  if (
+    !summarizePoolAssignment(
+      sheet.rolledAbilityScores.map((roll) => roll.total),
+      assigned,
+    ).complete
+  ) {
+    throw new Error('finalized rolled scores do not match the rolled pool');
+  }
 }
 
 /** Outcome of {@link finalizeCharacterDraft}. */
@@ -371,6 +396,9 @@ function buildFinalizedCharacter(
     ancestry: ancestryRef,
     ...(backgroundRef !== undefined ? { background: backgroundRef } : {}),
     abilityScores,
+    ...(selections.rolledAbilityScores === undefined
+      ? {}
+      : { rolledAbilityScores: selections.rolledAbilityScores }),
     proficiencyBonus: draft.derived.proficiencyBonus,
     maxHitPoints: draft.derived.maxHitPoints as number,
     savingThrows,

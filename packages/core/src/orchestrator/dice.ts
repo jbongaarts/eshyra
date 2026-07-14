@@ -152,29 +152,56 @@ export function rollParsedDice(
   parsed: DiceNotation,
   rng: Rng,
 ): DiceRoll {
-  const { count, faces, modifier, keep } = parsed;
+  const { count, faces } = parsed;
   const rolls: number[] = [];
   for (let i = 0; i < count; i += 1) {
     rolls.push(rng.nextInt(faces) + 1);
   }
 
+  return resolveParsedDiceRoll(notation, parsed, rolls);
+}
+
+/**
+ * Resolve already-generated dice through the canonical F1 selection and
+ * arithmetic path. This is intentionally narrow: callers such as legacy-data
+ * readers may normalize durable raw RNG outcomes without drawing again, while
+ * keep/drop selection remains owned here.
+ */
+export function resolveParsedDiceRoll(
+  notation: string,
+  parsed: DiceNotation,
+  rolls: readonly number[],
+): DiceRoll {
+  const { count, faces, modifier, keep } = parsed;
+  if (rolls.length !== count) {
+    throw new DiceError(
+      'dice evidence count does not match the expected expression',
+    );
+  }
+  for (const value of rolls) {
+    if (!Number.isSafeInteger(value) || value < 1 || value > faces) {
+      throw new DiceError('dice evidence contains an illegal die result');
+    }
+  }
+  const rawRolls = [...rolls];
+
   const keptIndices =
     keep === undefined
-      ? rolls.map((_, index) => index)
-      : selectKeptIndices(rolls, keep);
+      ? rawRolls.map((_, index) => index)
+      : selectKeptIndices(rawRolls, keep);
   const keptIndexSet = new Set(keptIndices);
-  const kept = keptIndices.map((index) => rolls[index]);
-  const droppedIndices = rolls
+  const kept = keptIndices.map((index) => rawRolls[index]);
+  const droppedIndices = rawRolls
     .map((_, index) => index)
     .filter((index) => !keptIndexSet.has(index));
-  const dropped = droppedIndices.map((index) => rolls[index]);
+  const dropped = droppedIndices.map((index) => rawRolls[index]);
 
   const natural = kept.reduce((sum, r) => sum + r, 0);
   return {
     notation,
     count,
     faces,
-    rolls,
+    rolls: rawRolls,
     kept,
     keptIndices,
     dropped,

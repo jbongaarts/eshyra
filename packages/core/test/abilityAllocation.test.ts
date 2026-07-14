@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   createSeededRng,
+  formatRolledAbilityScore,
   getBundledDnd5eCharacterResolver,
+  normalizeLegacyRolledAbilityScore,
   parseAbilityScoreCommand,
+  parseDice,
   recommendClasses,
   rollAbilityScore,
   rollAbilityScoreSet,
   summarizePointBuy,
   summarizePoolAssignment,
   summarizeStandardArray,
+  validateDiceRollEvidence,
+  validateRolledAbilityScoreSet,
 } from '../src/internal.js';
 
 const resolver = getBundledDnd5eCharacterResolver();
@@ -126,10 +131,15 @@ describe('rollAbilityScore / rollAbilityScoreSet', () => {
     const rng = createSeededRng(1);
     for (let i = 0; i < 50; i += 1) {
       const roll = rollAbilityScore(rng);
+      expect(roll.notation).toBe('4d6dl1');
       expect(roll.rolls).toHaveLength(4);
-      expect(roll.dropped).toBe(Math.min(...roll.rolls));
-      const sumAll = roll.rolls.reduce((sum, die) => sum + die, 0);
-      expect(roll.total).toBe(sumAll - roll.dropped);
+      expect(roll.kept).toHaveLength(3);
+      expect(roll.dropped).toHaveLength(1);
+      expect([...roll.keptIndices, ...roll.droppedIndices].sort()).toEqual([
+        0, 1, 2, 3,
+      ]);
+      expect(roll.natural).toBe(roll.total);
+      expect(roll.modifier).toBe(0);
       expect(roll.total).toBeGreaterThanOrEqual(3);
       expect(roll.total).toBeLessThanOrEqual(18);
     }
@@ -142,8 +152,13 @@ describe('rollAbilityScore / rollAbilityScoreSet', () => {
     const rng = { nextInt: () => rolls[index++] - 1 };
     const roll = rollAbilityScore(rng);
     expect(roll.rolls).toEqual([2, 2, 5, 6]);
-    expect(roll.dropped).toBe(2);
+    expect(roll.keptIndices).toEqual([0, 2, 3]);
+    expect(roll.droppedIndices).toEqual([1]);
+    expect(roll.dropped).toEqual([2]);
     expect(roll.total).toBe(13);
+    expect(formatRolledAbilityScore(roll)).toBe(
+      '4d6dl1: [2, 2, 5, 6] → kept [2, 5, 6], dropped die #2 [2] → 13',
+    );
   });
 
   it('rolls a full set of six and is deterministic under a fixed seed', () => {
@@ -151,6 +166,63 @@ describe('rollAbilityScore / rollAbilityScoreSet', () => {
     const b = rollAbilityScoreSet(createSeededRng(42));
     expect(a).toHaveLength(6);
     expect(a).toEqual(b);
+  });
+
+  it('consumes four draws for one score and twenty-four for a set', () => {
+    let draws = 0;
+    const rng = {
+      nextInt: () => {
+        draws += 1;
+        return 0;
+      },
+    };
+    rollAbilityScore(rng);
+    expect(draws).toBe(4);
+    rollAbilityScoreSet(rng);
+    expect(draws).toBe(28);
+  });
+
+  it('validates complete evidence and rejects forged canonical fields', () => {
+    const rolls = rollAbilityScoreSet(createSeededRng(42));
+    expect(() => validateRolledAbilityScoreSet(rolls)).not.toThrow();
+    expect(() =>
+      validateDiceRollEvidence(rolls[0], parseDice('4d6dl1')),
+    ).not.toThrow();
+    expect(() =>
+      validateRolledAbilityScoreSet([
+        { ...rolls[0], total: rolls[0].total + 1 },
+        ...rolls.slice(1),
+      ]),
+    ).toThrow(/totals/);
+    expect(() =>
+      validateRolledAbilityScoreSet([
+        { ...rolls[0], notation: '4d6kh3' },
+        ...rolls.slice(1),
+      ]),
+    ).toThrow(/exactly 4d6dl1/);
+    expect(() =>
+      validateRolledAbilityScoreSet([
+        { ...rolls[0], keptIndices: [0, 0, 2] },
+        ...rolls.slice(1),
+      ]),
+    ).toThrow(/indices/);
+  });
+
+  it('normalizes valid legacy evidence with current indexed tie selection', () => {
+    const normalized = normalizeLegacyRolledAbilityScore({
+      rolls: [2, 2, 5, 6],
+      dropped: 2,
+      total: 13,
+    });
+    expect(normalized.droppedIndices).toEqual([1]);
+    expect(normalized.total).toBe(13);
+    expect(() =>
+      normalizeLegacyRolledAbilityScore({
+        rolls: [2, 2, 5, 6],
+        dropped: 2,
+        total: 14,
+      }),
+    ).toThrow(/inconsistent/);
   });
 });
 

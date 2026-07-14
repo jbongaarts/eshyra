@@ -39,7 +39,10 @@ import {
   CHARACTER_CHRONICLE_RECORD_SCHEMA,
 } from './characterChronicle.js';
 import { CharacterSheetStoreError } from './characterSheetStore.js';
-import type { CharacterSheet } from './finalizeCharacter.js';
+import {
+  type CharacterSheet,
+  validateCharacterSheetRollEvidence,
+} from './finalizeCharacter.js';
 
 /** How a registry revision came to exist (ADR 0012, eshyra-lupf.14.3). */
 export type CharacterRevisionSource = 'register' | 'sync-back' | 'fork';
@@ -204,6 +207,7 @@ function rowToRevision(row: CharacterRevisionRow): CharacterRevision {
   assertSupportedCharacterBuild(sheet, {
     operation: 'character-registry revision load',
   });
+  validateCharacterSheetRollEvidence(sheet);
   if (
     sheet.schemaVersion !== row.schema_version ||
     sheet.system !== row.system ||
@@ -255,6 +259,7 @@ export function createCharacterRegistryStore(
     assertSupportedCharacterBuild(sheet, {
       operation: 'character-registry persistence',
     });
+    validateCharacterSheetRollEvidence(sheet);
     // True upsert (preserve created_at; never delete-then-insert) so the
     // revision history keyed to the registry id is not disturbed by a re-save.
     db.prepare(
@@ -306,6 +311,7 @@ export function createCharacterRegistryStore(
       assertSupportedCharacterBuild(sheet, {
         operation: 'character-registry load',
       });
+      validateCharacterSheetRollEvidence(sheet);
       if (
         sheet.schemaVersion !== row.schema_version ||
         sheet.system !== row.system ||
@@ -337,6 +343,7 @@ export function createCharacterRegistryStore(
       assertSupportedCharacterBuild(sheet, {
         operation: 'character-registry revision persistence',
       });
+      validateCharacterSheetRollEvidence(sheet);
       const id = requireId(globalCharacterId);
       const at = now();
       // Append + head update must be atomic so the head row always mirrors the

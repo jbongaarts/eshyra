@@ -24,6 +24,7 @@ import { join } from 'node:path';
 import {
   assertSupportedCharacterBuild,
   type CharacterDraft,
+  normalizeRolledAbilityScoreSet,
 } from '@eshyra/core';
 
 /** Read/write access to resumable character-creation drafts. */
@@ -63,7 +64,18 @@ export function createFileCharacterDraftStore(
       mkdirSync(dir, { recursive: true });
       const path = join(dir, `${draftFileStem(draft.id)}.json`);
       const tmp = `${path}.${randomBytes(6).toString('hex')}.tmp`;
-      writeFileSync(tmp, `${JSON.stringify(draft, null, 2)}\n`, 'utf8');
+      const rolled = draft.selections.rolledAbilityScores;
+      const persisted =
+        rolled === undefined
+          ? draft
+          : {
+              ...draft,
+              selections: {
+                ...draft.selections,
+                rolledAbilityScores: normalizeRolledAbilityScoreSet(rolled),
+              },
+            };
+      writeFileSync(tmp, `${JSON.stringify(persisted, null, 2)}\n`, 'utf8');
       renameSync(tmp, path);
     },
 

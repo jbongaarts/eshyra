@@ -4,6 +4,7 @@ import {
   createSeededRng,
   finalizeCharacterDraft,
   getDnd5eCharacterCreationEngine,
+  rollAbilityScoreSet,
   rollStartingWealth,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
@@ -44,6 +45,45 @@ function completeDraft(): CharacterDraft {
 }
 
 describe('finalizeCharacterDraft', () => {
+  it('preserves immutable roll evidence through assignment and finalization', () => {
+    let draft = completeDraft();
+    draft = engine.setAbilityScoreMethod(draft, 'rolled');
+    const evidence = rollAbilityScoreSet(createSeededRng(20260714));
+    draft = engine.setRolledAbilityScores(draft, evidence);
+    draft = engine.setAbilityScores(draft, {
+      strength: evidence[0].total,
+      dexterity: evidence[1].total,
+      constitution: evidence[2].total,
+      intelligence: evidence[3].total,
+      wisdom: evidence[4].total,
+      charisma: evidence[5].total,
+    });
+    const before = JSON.stringify(draft.selections.rolledAbilityScores);
+    const preview = engine.toFinalizableDraft(draft);
+    expect(preview.ok).toBe(true);
+    expect(JSON.stringify(draft.selections.rolledAbilityScores)).toBe(before);
+
+    const finalized = finalizeCharacterDraft(draft, META);
+    expect(finalized.ok).toBe(true);
+    if (finalized.ok) {
+      expect(JSON.stringify(finalized.character.rolledAbilityScores)).toBe(
+        before,
+      );
+    }
+
+    const reassigned = engine.setAbilityScores(draft, {
+      strength: evidence[1].total,
+      dexterity: evidence[0].total,
+      constitution: evidence[2].total,
+      intelligence: evidence[3].total,
+      wisdom: evidence[4].total,
+      charisma: evidence[5].total,
+    });
+    expect(JSON.stringify(reassigned.selections.rolledAbilityScores)).toBe(
+      before,
+    );
+  });
+
   it('blocks an empty draft and lists the base missing fields', () => {
     const draft = engine.createDraft({ id: 'x', mode: 'concept-first' });
     const result = finalizeCharacterDraft(draft, META);

@@ -24,6 +24,13 @@
  * injected {@link Rng}. The flows turn these structures into prompts and tables.
  */
 
+import {
+  type DiceRoll,
+  parseDice,
+  resolveParsedDiceRoll,
+  rollDice,
+  validateDiceRollEvidence,
+} from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import {
   ABILITY_FULL_NAMES,
@@ -177,31 +184,15 @@ export function summarizeStandardArray(
 
 // --- Rolled scores -----------------------------------------------------------
 
-/** One 4d6-drop-lowest roll: the four dice, the dropped die, and the kept sum. */
-export interface RolledAbilityScore {
-  /** The four d6 results, in roll order. */
-  readonly rolls: readonly number[];
-  /** The single lowest die that was dropped. */
-  readonly dropped: number;
-  /** Sum of the highest three dice (the resulting base score, 3–18). */
-  readonly total: number;
-}
+export const ABILITY_SCORE_DICE_NOTATION = '4d6dl1';
+const ABILITY_SCORE_DICE = parseDice(ABILITY_SCORE_DICE_NOTATION);
+
+/** Canonical F1 evidence for one 4d6-drop-lowest ability roll. */
+export type RolledAbilityScore = DiceRoll;
 
 /** Roll one ability score as 4d6, dropping the single lowest die. */
 export function rollAbilityScore(rng: Rng): RolledAbilityScore {
-  const rolls = [0, 0, 0, 0].map(() => rng.nextInt(6) + 1);
-  const lowest = Math.min(...rolls);
-  // Drop exactly one instance of the lowest die, even when several dice tie.
-  let dropApplied = false;
-  let total = 0;
-  for (const die of rolls) {
-    if (!dropApplied && die === lowest) {
-      dropApplied = true;
-      continue;
-    }
-    total += die;
-  }
-  return { rolls, dropped: lowest, total };
+  return rollDice(ABILITY_SCORE_DICE_NOTATION, rng);
 }
 
 /**
@@ -211,6 +202,89 @@ export function rollAbilityScore(rng: Rng): RolledAbilityScore {
  */
 export function rollAbilityScoreSet(rng: Rng): readonly RolledAbilityScore[] {
   return ABILITY_SCORE_NAMES.map(() => rollAbilityScore(rng));
+}
+
+/** Validate one caller-supplied or persisted ability roll at a trust boundary. */
+export function validateRolledAbilityScore(roll: RolledAbilityScore): void {
+  if (roll.notation !== ABILITY_SCORE_DICE_NOTATION) {
+    throw new Error(
+      `rolled ability evidence must use exactly ${ABILITY_SCORE_DICE_NOTATION}`,
+    );
+  }
+  validateDiceRollEvidence(roll, ABILITY_SCORE_DICE);
+}
+
+/** Validate the complete immutable six-score pool. */
+export function validateRolledAbilityScoreSet(
+  rolls: readonly RolledAbilityScore[],
+): void {
+  if (!Array.isArray(rolls) || rolls.length !== ABILITY_SCORE_NAMES.length) {
+    throw new Error('rolled ability evidence must contain exactly six rolls');
+  }
+  for (const roll of rolls) validateRolledAbilityScore(roll);
+}
+
+interface LegacyRolledAbilityScore {
+  readonly rolls: readonly number[];
+  readonly dropped: number;
+  readonly total: number;
+}
+
+/** Normalize the former unindexed draft shape without trusting its drop claim. */
+export function normalizeLegacyRolledAbilityScore(
+  legacy: LegacyRolledAbilityScore,
+): RolledAbilityScore {
+  if (
+    !legacy ||
+    !Array.isArray(legacy.rolls) ||
+    legacy.rolls.length !== 4 ||
+    !legacy.rolls.every(
+      (value) => Number.isSafeInteger(value) && value >= 1 && value <= 6,
+    ) ||
+    !Number.isSafeInteger(legacy.total)
+  ) {
+    throw new Error('legacy rolled ability evidence is malformed');
+  }
+  const canonical = resolveParsedDiceRoll(
+    ABILITY_SCORE_DICE_NOTATION,
+    ABILITY_SCORE_DICE,
+    legacy.rolls,
+  );
+  if (canonical.total !== legacy.total) {
+    throw new Error('legacy rolled ability total is inconsistent');
+  }
+  return canonical;
+}
+
+/** Canonicalize a persisted six-roll pool, including the former draft shape. */
+export function normalizeRolledAbilityScoreSet(
+  value: unknown,
+): readonly RolledAbilityScore[] {
+  if (!Array.isArray(value) || value.length !== ABILITY_SCORE_NAMES.length) {
+    throw new Error('rolled ability evidence must contain exactly six rolls');
+  }
+  const normalized = value.map((entry) => {
+    if (typeof entry !== 'object' || entry === null) {
+      throw new Error('rolled ability evidence is malformed');
+    }
+    const record = entry as unknown as Record<string, unknown>;
+    return typeof record.notation === 'string'
+      ? (entry as RolledAbilityScore)
+      : normalizeLegacyRolledAbilityScore(
+          entry as unknown as LegacyRolledAbilityScore,
+        );
+  });
+  validateRolledAbilityScoreSet(normalized);
+  return normalized;
+}
+
+/** Shared character-creation rendering with unambiguous one-based die indices. */
+export function formatRolledAbilityScore(roll: RolledAbilityScore): string {
+  validateRolledAbilityScore(roll);
+  const dropped = roll.droppedIndices
+    .map((index, position) => `#${index + 1} [${roll.dropped[position]}]`)
+    .join(', ');
+  return `${roll.notation}: [${roll.rolls.join(', ')}] → kept [${roll.kept.join(', ')}], dropped die ${dropped} → ${roll.total}`;
 }
 
 // --- Class recommendations ---------------------------------------------------
