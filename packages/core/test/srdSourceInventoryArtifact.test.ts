@@ -46,30 +46,19 @@ interface CoverageEntry {
   readonly text: string;
   readonly section: string | null;
   readonly status: string;
+  readonly resolution: {
+    readonly kind: string;
+    readonly ownerKey?: string;
+    readonly candidateKeys?: readonly string[];
+    readonly normalizedName?: string;
+    readonly field?: string;
+  };
   readonly structuredFieldEvidence?: {
     readonly sourceClass: string;
     readonly spellLevel: number | null;
     readonly memberCount: number;
     readonly spellKeys: readonly string[];
   };
-}
-
-interface AmbiguousNameCollision {
-  readonly normalizedName: string;
-  readonly winnerKey: string;
-  readonly shadowedKeys: readonly string[];
-}
-
-interface CollapsedSourceGroup {
-  readonly text: string;
-  readonly resolvedKey: string;
-  readonly count: number;
-}
-
-interface AmbiguousSourceGroup {
-  readonly text: string;
-  readonly candidateKeys: readonly string[];
-  readonly count: number;
 }
 
 interface CoverageReport {
@@ -83,10 +72,20 @@ interface CoverageReport {
     readonly knownGap: Readonly<Record<string, number>>;
     readonly unaccounted: number;
   };
-  readonly ambiguous: {
-    readonly shadowedRecords: readonly AmbiguousNameCollision[];
-    readonly collapsedSourceItems: readonly CollapsedSourceGroup[];
-    readonly unresolvedSourceItems: readonly AmbiguousSourceGroup[];
+  readonly diagnostics: {
+    readonly recordNameCollisions: readonly {
+      readonly normalizedName: string;
+      readonly candidateKeys: readonly string[];
+      readonly occurrences: readonly unknown[];
+      readonly unresolved: boolean;
+    }[];
+    readonly duplicateSourceText: readonly {
+      readonly normalizedText: string;
+      readonly category: string;
+      readonly occurrences: readonly unknown[];
+    }[];
+    readonly suspiciousOwnership: readonly unknown[];
+    readonly unresolvedOwnership: readonly unknown[];
   };
   readonly entries: readonly CoverageEntry[];
 }
@@ -429,6 +428,14 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
   });
 
   it('source-positions the page-109 Ranger sentinel away from the Circle table', () => {
+    const rangerHeading = entryFor(109, 'Ranger Spells');
+    expect(rangerHeading.resolution).toEqual(
+      expect.objectContaining({
+        kind: 'curated-structured-field',
+        field: 'spell.data.classes',
+      }),
+    );
+    expect(rangerHeading.status).toBe('structured-field:spell.data.classes');
     const region = sourceRegionLedger.entries.find(
       (entry) =>
         entry.pageStart === 109 &&
@@ -802,8 +809,8 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
     // The SRD prints the title "Outer Planes" twice on p364 — an h≈13.9
     // subsection under "Beyond the Material" and an h≈12 sub-leaf below it.
     // Each emits its own rule record, and explicit tier-based recordRules pin
-    // each source heading to its source-correct record rather than letting the
-    // bare name auto-match collapse both onto the lexicographically-first key.
+    // each source heading to its source-correct record rather than leaving the
+    // bare name match unable to distinguish the two occurrences.
     const outerPlanes = coverage.entries.filter(
       (e) => e.page === 364 && e.text === 'Outer Planes',
     );
@@ -948,77 +955,75 @@ describe('committed SRD source-coverage artifacts — known-gap sentinels', () =
 });
 
 describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic (eshyra-xwic)', () => {
-  it('artifact carries an ambiguous section with shadowedRecords and collapsedSourceItems', () => {
-    expect(coverage.ambiguous).toBeDefined();
-    expect(Array.isArray(coverage.ambiguous.shadowedRecords)).toBe(true);
-    expect(Array.isArray(coverage.ambiguous.collapsedSourceItems)).toBe(true);
+  it('artifact carries typed provenance and separate diagnostic collections', () => {
+    expect(coverage.diagnostics).toBeDefined();
+    expect(Array.isArray(coverage.diagnostics.recordNameCollisions)).toBe(true);
+    expect(Array.isArray(coverage.diagnostics.duplicateSourceText)).toBe(true);
+    expect(Array.isArray(coverage.diagnostics.suspiciousOwnership)).toBe(true);
+    expect(Array.isArray(coverage.diagnostics.unresolvedOwnership)).toBe(true);
+    expect(
+      coverage.entries.every(
+        (entry) => typeof entry.resolution?.kind === 'string',
+      ),
+    ).toBe(true);
   });
 
-  it('pins exact ambiguous-match counts so silent drift fails loudly', () => {
-    // When a bead closes a name collision (e.g. by adding an explicit
-    // recordRule that disambiguates a duplicate, or by renaming a record),
-    // these counts should drop and the test should be updated in the same change.
-    // Same-name magic-item/table records add 19 reviewed shadowed-record
-    // diagnostics. Explicit Spell Scroll table accounting removes its former
-    // two-source-item collapse.
-    // eshyra-4a7.6: the new table:destroy-undead shares its name with
-    // feature:cleric:destroy-undead, adding one shadowed-record diagnostic
-    // (81 -> 82). With the table caption now claimed by an explicit recordRule
-    // rather than the auto-match, "Destroy Undead" is no longer a collapsed
-    // two-source-item group (59 -> 58).
-    // eshyra-4a7.10.1 adds parent-qualified racial Alignment/Languages/Speed
-    // records to existing collision groups and creates a new Size collision
-    // group, increasing the group count by one (82 -> 83).
-    // eshyra-4a7.10.4: the sentient-item "Senses" rule adds a new two-record
-    // "senses" collision group (83 -> 84); the sentient-item "Alignment" rule
-    // joins the existing "alignment" collision group without adding a group.
-    // eshyra-4a7.10.5: the Appendix PH-C section repeats the heading "Outer
-    // Planes" at two tiers, so two emitted rule records share the normalized
-    // name "outer planes", adding one shadowed-record group (84 -> 85).
-    // New same-name rule/table pairs for Trade Goods, Lifestyle Expenses, and
-    // Services add three shadowed-record groups.
-    expect(coverage.ambiguous.shadowedRecords).toHaveLength(88);
-    // The explicit p3/p254 Size mappings prevent those two source headings
-    // from collapsing onto one record (58 -> 57). eshyra-4a7.10.4: the explicit
-    // Magic Items / Monsters Senses mappings split the former two-source-item
-    // "Senses" collapse onto their own records (57 -> 56).
-    // eshyra-4a7.10.5: the two same-named "Outer Planes" PH-C source headings
-    // are pinned to their distinct records by explicit tier-based recordRules
-    // (subsection -> rule:beyond-the-material-outer-planes, leaf ->
-    // rule:outer-planes-outer-planes), so neither collapse group forms. The two
-    // emitted records still share the name "outer planes", so the
-    // shadowed-record diagnostic above stays at 85.
-    // eshyra-vzrx explicitly maps the Appendix MM-B Acolyte and Druid
-    // stat-blocks to their creature records, removing the two false
-    // background/class collapse groups (56 -> 54).
-    // eshyra-erf5.1: 15 -> 7. Curated non-record rules now outrank the
-    // bare-name auto-match (see the `record`/`childOf` summary comments
-    // above), so eight of these bare-name collapse groups are no longer
-    // uniform "N source items -> 1 record" groups: the five p78 ability
-    // captions (Strength/Dexterity/Intelligence/Wisdom/Charisma) and
-    // "Two-Weapon Fighting" now split between their curated child-of target
-    // and the real per-topic rule record, and "Tools" / "Poisons" now split
-    // between the table-rows-emitted-as-records ignore and the real rule.
-    expect(coverage.ambiguous.collapsedSourceItems).toHaveLength(7);
-    expect(coverage.ambiguous.unresolvedSourceItems).toHaveLength(75);
-  });
-
-  it('surfaces the 12-way Ability Score Improvement feature collapse (one per class, all map to barbarian key)', () => {
-    const asi = coverage.ambiguous.unresolvedSourceItems.find(
-      (g) => g.text === 'Ability Score Improvement',
+  it('pins the canonical diagnostic baseline and duplicate category histogram', () => {
+    expect(coverage.diagnostics.recordNameCollisions).toHaveLength(88);
+    expect(coverage.diagnostics.duplicateSourceText).toHaveLength(92);
+    expect(coverage.diagnostics.suspiciousOwnership).toHaveLength(55);
+    expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(75);
+    const categoryCounts = Object.fromEntries(
+      [
+        ...new Set(
+          coverage.diagnostics.duplicateSourceText.map(
+            (group) => group.category,
+          ),
+        ),
+      ]
+        .sort()
+        .map((category) => [
+          category,
+          coverage.diagnostics.duplicateSourceText.filter(
+            (group) => group.category === category,
+          ).length,
+        ]),
     );
-    expect(asi).toBeDefined();
-    expect(asi?.text).toBe('Ability Score Improvement');
-    expect(asi?.count).toBe(12);
+    expect(categoryCounts).toEqual({
+      'auto-collapsed': 6,
+      'explicitly-disambiguated': 19,
+      'mixed-resolution': 9,
+      'same-owner-explicit': 18,
+      'unresolved-owner': 40,
+    });
+    expect(
+      coverage.diagnostics.duplicateSourceText.filter(
+        (group) =>
+          group.category === 'explicitly-disambiguated' ||
+          group.category === 'same-owner-explicit',
+      ),
+    ).toHaveLength(37);
+  });
+
+  it('retains all occurrences for unresolved repeated headings', () => {
+    const asi = coverage.diagnostics.duplicateSourceText.find(
+      (g) => g.normalizedText === 'ability score improvement',
+    );
+    expect(asi?.category).toBe('unresolved-owner');
+    expect(asi?.occurrences).toHaveLength(12);
+    expect(coverage.diagnostics.suspiciousOwnership).toContainEqual(asi);
   });
 
   it('surfaces the Acolyte cross-kind collision (background and creature share the same name)', () => {
-    const shadow = coverage.ambiguous.shadowedRecords.find(
+    const shadow = coverage.diagnostics.recordNameCollisions.find(
       (r) => r.normalizedName === 'acolyte',
     );
     expect(shadow).toBeDefined();
-    expect(shadow?.winnerKey).toBe('background:acolyte');
-    expect(shadow?.shadowedKeys).toContain('creature:acolyte');
+    expect(shadow?.candidateKeys).toEqual([
+      'background:acolyte',
+      'creature:acolyte',
+    ]);
+    expect(shadow).not.toHaveProperty('winnerKey');
   });
 
   it('attributes stat-block section headings to their owning records', () => {
@@ -1029,20 +1034,22 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     expect(entryFor(395, 'Actions').status).toBe('child-of:creature:acolyte');
   });
 
-  it('shadowedRecords entries are sorted by normalizedName', () => {
-    const names = coverage.ambiguous.shadowedRecords.map(
-      (r) => r.normalizedName,
+  it('diagnostic entries are sorted by normalized text', () => {
+    const names = coverage.diagnostics.duplicateSourceText.map(
+      (r) => r.normalizedText,
     );
     const sorted = [...names].sort();
     expect(names).toEqual(sorted);
   });
 
-  it('collapsedSourceItems entries are sorted by resolvedKey', () => {
-    const keys = coverage.ambiguous.collapsedSourceItems.map(
-      (g) => g.resolvedKey,
+  it('diagnostic occurrences expose exact source coordinates', () => {
+    const group = coverage.diagnostics.duplicateSourceText.find(
+      (g) => g.normalizedText === 'draconic ancestry',
     );
-    const sorted = [...keys].sort();
-    expect(keys).toEqual(sorted);
+    expect(group?.occurrences.map((o) => `${o.page}:${o.lineIndex}`)).toEqual([
+      '5:67',
+      '44:87',
+    ]);
   });
 });
 
@@ -1111,6 +1118,54 @@ describe('committed SRD source-coverage artifacts — covered-structure sentinel
     expect(sorcerer.structure).toBe('table-caption');
     expect(sorcerer.status).toBe(
       'record:table:draconic-bloodline-draconic-ancestry',
+    );
+    const duplicate = coverage.diagnostics.duplicateSourceText.find(
+      (group) => group.normalizedText === 'draconic ancestry',
+    );
+    expect(duplicate?.category).toBe('explicitly-disambiguated');
+    expect(
+      duplicate?.occurrences.map((entry) => `${entry.page}:${entry.lineIndex}`),
+    ).toEqual(['5:67', '44:87']);
+    expect(coverage.diagnostics.suspiciousOwnership).not.toContainEqual(
+      duplicate,
+    );
+  });
+
+  it('keeps repeated feature headings fully visible without inventing a winner', () => {
+    const duplicate = coverage.diagnostics.duplicateSourceText.find(
+      (group) => group.normalizedText === 'ability score improvement',
+    );
+    expect(duplicate?.category).toBe('unresolved-owner');
+    expect(duplicate?.occurrences).toHaveLength(12);
+    expect(duplicate?.candidateKeys).toHaveLength(12);
+    expect(
+      coverage.diagnostics.recordNameCollisions.find(
+        (group) => group.normalizedName === 'ability score improvement',
+      ),
+    ).toMatchObject({
+      candidateKeys: duplicate?.candidateKeys,
+      unresolved: true,
+    });
+  });
+
+  it('retains child-of and contextual provenance for p78 captions and stat-block headings', () => {
+    expect(entryFor(78, 'Strength').resolution).toEqual(
+      expect.objectContaining({
+        kind: 'curated-child-of',
+        ownerKey: 'rule:skills',
+      }),
+    );
+    expect(entryFor(261, 'Actions').resolution).toEqual(
+      expect.objectContaining({
+        kind: 'contextual-stat-block',
+        ownerKey: 'creature:aboleth',
+      }),
+    );
+    expect(entryFor(261, 'Legendary Actions').resolution).toEqual(
+      expect.objectContaining({
+        kind: 'contextual-stat-block',
+        ownerKey: 'creature:aboleth',
+      }),
     );
   });
 

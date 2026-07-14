@@ -52,6 +52,25 @@ const records = [
 ] as const;
 
 describe('evaluateSourceCoverage — name auto-match', () => {
+  it('records exactly one provenance decision and keeps curated ownership distinct from auto-match', () => {
+    const source = [item({ text: 'Aboleth' })];
+    const automatic = evaluateSourceCoverage(source, records, []);
+    const curated = evaluateSourceCoverage(source, records, [
+      recordRule('creature:aboleth', () => true),
+    ]);
+    expect(automatic[0]?.resolution).toEqual({
+      kind: 'unique-normalized-name',
+      normalizedName: 'aboleth',
+      ownerKey: 'creature:aboleth',
+    });
+    expect(curated[0]?.resolution).toEqual({
+      kind: 'curated-record',
+      ownerKey: 'creature:aboleth',
+    });
+    expect(() => assertSourceCoverage(automatic)).not.toThrow();
+    expect(() => assertSourceCoverage(curated)).not.toThrow();
+  });
+
   it('matches an item to a record by normalized name', () => {
     const entries = evaluateSourceCoverage(
       [item({ text: 'Aboleth', structure: 'stat-block' })],
@@ -521,8 +540,8 @@ describe('assertSourceCoverage', () => {
 });
 
 describe('ambiguous-match diagnostic', () => {
-  it('reports shadowed records when multiple records share a normalized name', () => {
-    // records has two 'Improved Critical' features; fighter wins lexicographically.
+  it('retains provenance and reports every candidate without a winner', () => {
+    // The two same-named features remain an unresolved candidate set.
     const report = buildSourceCoverageReport(
       evaluateSourceCoverage(
         [item({ text: 'Improved Critical' })],
@@ -531,26 +550,39 @@ describe('ambiguous-match diagnostic', () => {
       ),
       records,
     );
-    expect(report.ambiguous.shadowedRecords).toEqual([
-      {
-        normalizedName: 'improved critical',
-        winnerKey: 'feature:fighter:improved-critical',
-        shadowedKeys: ['feature:paladin:improved-critical'],
-      },
-    ]);
-    expect(report.ambiguous.unresolvedSourceItems).toEqual([
-      {
-        text: 'Improved Critical',
-        candidateKeys: [
-          'feature:fighter:improved-critical',
-          'feature:paladin:improved-critical',
-        ],
-        count: 1,
-      },
-    ]);
+    const entries = evaluateSourceCoverage(
+      [item({ text: 'Improved Critical' })],
+      records,
+      [],
+    );
+    expect(entries[0].resolution).toEqual({
+      kind: 'ambiguous-normalized-name',
+      normalizedName: 'improved critical',
+      candidateKeys: [
+        'feature:fighter:improved-critical',
+        'feature:paladin:improved-critical',
+      ],
+    });
+    expect(report.diagnostics.recordNameCollisions[0]).toMatchObject({
+      normalizedName: 'improved critical',
+      candidateKeys: [
+        'feature:fighter:improved-critical',
+        'feature:paladin:improved-critical',
+      ],
+      unresolved: true,
+    });
+    expect(
+      report.diagnostics.recordNameCollisions[0]?.occurrences,
+    ).toHaveLength(1);
+    expect(report.diagnostics.recordNameCollisions[0]).not.toHaveProperty(
+      'winnerKey',
+    );
+    expect(report.diagnostics.unresolvedOwnership[0]?.category).toBe(
+      'unresolved-owner',
+    );
   });
 
-  it('reports collapsed source items when multiple source items auto-match the same key', () => {
+  it('reports duplicate source text when multiple items auto-match the same key', () => {
     const singleRecord = [
       {
         kind: 'feature',
@@ -568,20 +600,22 @@ describe('ambiguous-match diagnostic', () => {
       [],
     );
     const report = buildSourceCoverageReport(entries, singleRecord);
-    expect(report.ambiguous.collapsedSourceItems).toEqual([
-      {
-        text: 'Improved Critical',
-        resolvedKey: 'feature:fighter:improved-critical',
-        count: 3,
-      },
-    ]);
+    expect(report.diagnostics.duplicateSourceText[0]).toMatchObject({
+      normalizedText: 'improved critical',
+      category: 'auto-collapsed',
+      ownerKeys: ['feature:fighter:improved-critical'],
+      reasonCodes: ['auto-collapsed'],
+    });
+    expect(report.diagnostics.suspiciousOwnership[0]?.occurrences).toHaveLength(
+      3,
+    );
   });
 
-  it('excludes recordRule-resolved entries from collapsed source items', () => {
+  it('classifies recordRule-resolved duplicates as same-owner explicit', () => {
     // An explicit recordRule maps "Lightfoot" -> ancestry:lightfoot-halfling.
     // keyByName has no entry for "lightfoot" (the record name is "Lightfoot
-    // Halfling"), so these entries are not auto-matched and must not appear
-    // in collapsedSourceItems even with two source items.
+    // Halfling"), so these entries are explicitly resolved rather than
+    // classified as text-only automatic collapse.
     const lightfootRecord = {
       kind: 'ancestry',
       key: 'ancestry:lightfoot-halfling',
@@ -601,10 +635,13 @@ describe('ambiguous-match diagnostic', () => {
       ],
     );
     const report = buildSourceCoverageReport(entries, [lightfootRecord]);
-    expect(report.ambiguous.collapsedSourceItems).toEqual([]);
+    expect(report.diagnostics.duplicateSourceText[0]?.category).toBe(
+      'same-owner-explicit',
+    );
+    expect(report.diagnostics.suspiciousOwnership).toEqual([]);
   });
 
-  it('reports empty ambiguous when all record names are unique and each item matches once', () => {
+  it('reports empty diagnostics when all record names are unique and each item matches once', () => {
     const uniqueRecords = [
       { kind: 'creature', key: 'creature:aboleth', name: 'Aboleth' },
     ];
@@ -614,14 +651,15 @@ describe('ambiguous-match diagnostic', () => {
       [],
     );
     const report = buildSourceCoverageReport(entries, uniqueRecords);
-    expect(report.ambiguous).toEqual({
-      shadowedRecords: [],
-      collapsedSourceItems: [],
-      unresolvedSourceItems: [],
+    expect(report.diagnostics).toEqual({
+      recordNameCollisions: [],
+      duplicateSourceText: [],
+      suspiciousOwnership: [],
+      unresolvedOwnership: [],
     });
   });
 
-  it('shadowedRecords is sorted by normalizedName', () => {
+  it('record-name collisions are sorted by normalizedName', () => {
     const multiDupeRecords = [
       { kind: 'feature', key: 'feature:barbarian:rage', name: 'Rage' },
       { kind: 'feature', key: 'feature:monk:rage', name: 'Rage' },
@@ -633,11 +671,11 @@ describe('ambiguous-match diagnostic', () => {
       multiDupeRecords,
     );
     expect(
-      report.ambiguous.shadowedRecords.map((r) => r.normalizedName),
+      report.diagnostics.recordNameCollisions.map((r) => r.normalizedName),
     ).toEqual(['critical', 'rage']);
   });
 
-  it('collapsedSourceItems is sorted by resolvedKey', () => {
+  it('duplicate source groups are sorted by normalized text and coordinates', () => {
     const recs = [
       { kind: 'feature', key: 'feature:barbarian:strike', name: 'Strike' },
       { kind: 'feature', key: 'feature:barbarian:rage', name: 'Rage' },
@@ -654,8 +692,8 @@ describe('ambiguous-match diagnostic', () => {
     );
     const report = buildSourceCoverageReport(entries, recs);
     expect(
-      report.ambiguous.collapsedSourceItems.map((g) => g.resolvedKey),
-    ).toEqual(['feature:barbarian:rage', 'feature:barbarian:strike']);
+      report.diagnostics.duplicateSourceText.map((g) => g.normalizedText),
+    ).toEqual(['rage', 'strike']);
   });
 });
 
@@ -716,16 +754,16 @@ describe('coverage report serialization', () => {
       unaccounted: 1,
     });
     // The test records have two 'Improved Critical' features; one is shadowed.
-    expect(report.ambiguous.shadowedRecords).toEqual([
-      {
-        normalizedName: 'improved critical',
-        winnerKey: 'feature:fighter:improved-critical',
-        shadowedKeys: ['feature:paladin:improved-critical'],
-      },
-    ]);
+    expect(report.diagnostics.recordNameCollisions[0]).toMatchObject({
+      normalizedName: 'improved critical',
+      candidateKeys: [
+        'feature:fighter:improved-critical',
+        'feature:paladin:improved-critical',
+      ],
+    });
     // Aboleth is the only auto-matched record item and appears once, so no
     // collapsed source items.
-    expect(report.ambiguous.collapsedSourceItems).toEqual([]);
+    expect(report.diagnostics.duplicateSourceText).toEqual([]);
     expect(report.entries.map((e) => `${e.page}:${e.status}`)).toEqual([
       '105:ignored:spell-list-header',
       '111:ignored:spell-list-header',
@@ -742,6 +780,7 @@ describe('coverage report serialization', () => {
       text: 'Bard Spells',
       section: null,
       status: 'ignored:spell-list-header',
+      resolution: { kind: 'curated-ignore', reason: 'spell-list-header' },
     });
   });
 });

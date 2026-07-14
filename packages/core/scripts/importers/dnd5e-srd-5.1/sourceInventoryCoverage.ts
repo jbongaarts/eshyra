@@ -82,7 +82,40 @@ export interface SpellListCoverageEvidence {
 export interface SourceCoverageEntry {
   readonly item: SourceInventoryItem;
   readonly status: CoverageStatus;
+  readonly resolution: CoverageResolution;
 }
+
+/** The exact decision that produced a coverage status. */
+export type CoverageResolution =
+  | { readonly kind: 'curated-record'; readonly ownerKey: string }
+  | { readonly kind: 'curated-child-of'; readonly ownerKey: string }
+  | {
+      readonly kind: 'curated-structured-field';
+      readonly field: 'spell.data.classes';
+    }
+  | {
+      readonly kind: 'curated-taxonomy';
+      readonly field: 'creature.familyPath';
+      readonly path: readonly string[];
+    }
+  | { readonly kind: 'curated-ignore'; readonly reason: string }
+  | { readonly kind: 'curated-known-gap'; readonly beadId: string }
+  | { readonly kind: 'contextual-stat-block'; readonly ownerKey: string }
+  | {
+      readonly kind: 'unique-normalized-name';
+      readonly normalizedName: string;
+      readonly ownerKey: string;
+    }
+  | {
+      readonly kind: 'ambiguous-normalized-name';
+      readonly normalizedName: string;
+      readonly candidateKeys: readonly string[];
+    }
+  | {
+      readonly kind: 'document-structure-default';
+      readonly reason: 'document-structure';
+    }
+  | { readonly kind: 'unaccounted-default' };
 
 export type CoverageRule =
   | {
@@ -275,6 +308,27 @@ function statusForRule(rule: CoverageRule): CoverageStatus {
   }
 }
 
+function resolutionForRule(rule: CoverageRule): CoverageResolution {
+  switch (rule.type) {
+    case 'ignore':
+      return { kind: 'curated-ignore', reason: rule.reason };
+    case 'known-gap':
+      return { kind: 'curated-known-gap', beadId: rule.beadId };
+    case 'child-of':
+      return { kind: 'curated-child-of', ownerKey: rule.key };
+    case 'taxonomy':
+      return {
+        kind: 'curated-taxonomy',
+        field: 'creature.familyPath',
+        path: rule.path,
+      };
+    case 'record':
+      return { kind: 'curated-record', ownerKey: rule.key };
+    case 'structured-field':
+      return { kind: 'curated-structured-field', field: rule.field };
+  }
+}
+
 function recordHasTaxonomyPath(
   record: CoverageRecordRef,
   expectedPath: readonly string[],
@@ -335,16 +389,24 @@ export function evaluateSourceCoverage(
     // Explicit record mappings outrank the name auto-match: a curated rule
     // is more precise than the name heuristic, which cannot tell duplicate
     // source captions apart (the p5 vs p44 "Draconic Ancestry" tables) and
-    // resolves duplicate record names lexicographically.
+    // leaves duplicate record names as an explicit candidate set.
     for (const rule of rules) {
       if (rule.type === 'record' && rule.match(item)) {
-        return { item, status: statusForRule(rule) };
+        return {
+          item,
+          status: statusForRule(rule),
+          resolution: resolutionForRule(rule),
+        };
       }
     }
     if (item.structure === 'stat-block' && activeStatBlockKey !== undefined) {
       return {
         item,
         status: { kind: 'record', key: activeStatBlockKey },
+        resolution: {
+          kind: 'contextual-stat-block',
+          ownerKey: activeStatBlockKey,
+        },
       };
     }
     if (
@@ -355,6 +417,10 @@ export function evaluateSourceCoverage(
       return {
         item,
         status: { kind: 'child-of', key: activeStatBlockKey },
+        resolution: {
+          kind: 'contextual-stat-block',
+          ownerKey: activeStatBlockKey,
+        },
       };
     }
     // The remaining curated rules (child-of/ignore/taxonomy/known-gap) also
@@ -367,28 +433,57 @@ export function evaluateSourceCoverage(
           rule.type === 'taxonomy' &&
           !records.some((record) => recordHasTaxonomyPath(record, rule.path))
         ) {
-          return { item, status: { kind: 'unaccounted' } };
+          return {
+            item,
+            status: { kind: 'unaccounted' },
+            resolution: { kind: 'unaccounted-default' },
+          };
         }
-        return { item, status: statusForRule(rule) };
+        return {
+          item,
+          status: statusForRule(rule),
+          resolution: resolutionForRule(rule),
+        };
       }
     }
     const matchedKeys = keysByName.get(normalizeName(item.text)) ?? [];
     if (matchedKeys.length === 1) {
-      return { item, status: { kind: 'record', key: matchedKeys[0] } };
+      return {
+        item,
+        status: { kind: 'record', key: matchedKeys[0] },
+        resolution: {
+          kind: 'unique-normalized-name',
+          normalizedName: normalizeName(item.text),
+          ownerKey: matchedKeys[0],
+        },
+      };
     }
     if (matchedKeys.length > 1) {
       return {
         item,
         status: { kind: 'ambiguous', candidateKeys: matchedKeys },
+        resolution: {
+          kind: 'ambiguous-normalized-name',
+          normalizedName: normalizeName(item.text),
+          candidateKeys: matchedKeys,
+        },
       };
     }
     if (item.tier === 'chapter' || item.tier === 'section') {
       return {
         item,
         status: { kind: 'ignored', reason: 'document-structure' },
+        resolution: {
+          kind: 'document-structure-default',
+          reason: 'document-structure',
+        },
       };
     }
-    return { item, status: { kind: 'unaccounted' } };
+    return {
+      item,
+      status: { kind: 'unaccounted' },
+      resolution: { kind: 'unaccounted-default' },
+    };
   });
 
   return entries.sort(
@@ -431,6 +526,61 @@ export function assertSourceCoverage(
     readonly statBlockExceptionReasons?: readonly string[];
   } = {},
 ): void {
+  const invalidProvenance = entries.filter(({ status, resolution }) => {
+    switch (resolution.kind) {
+      case 'curated-record':
+        return status.kind !== 'record' || status.key !== resolution.ownerKey;
+      case 'curated-child-of':
+        return status.kind !== 'child-of' || status.key !== resolution.ownerKey;
+      case 'contextual-stat-block':
+        return !(
+          (status.kind === 'record' || status.kind === 'child-of') &&
+          status.key === resolution.ownerKey
+        );
+      case 'unique-normalized-name':
+        return status.kind !== 'record' || status.key !== resolution.ownerKey;
+      case 'ambiguous-normalized-name':
+        return (
+          status.kind !== 'ambiguous' ||
+          status.candidateKeys.join('|') !== resolution.candidateKeys.join('|')
+        );
+      case 'curated-structured-field':
+        return (
+          status.kind !== 'structured-field' ||
+          status.field !== resolution.field
+        );
+      case 'curated-taxonomy':
+        return (
+          status.kind !== 'taxonomy' ||
+          status.field !== resolution.field ||
+          status.path.join('|') !== resolution.path.join('|')
+        );
+      case 'curated-ignore':
+        return status.kind !== 'ignored' || status.reason !== resolution.reason;
+      case 'curated-known-gap':
+        return (
+          status.kind !== 'known-gap' || status.beadId !== resolution.beadId
+        );
+      case 'document-structure-default':
+        return status.kind !== 'ignored' || status.reason !== resolution.reason;
+      case 'unaccounted-default':
+        return status.kind !== 'unaccounted';
+      default:
+        return true;
+    }
+  });
+  const coordinates = new Set<string>();
+  const duplicateCoordinates = entries.filter(({ item }) => {
+    const key = `${item.page}:${item.lineIndex}`;
+    if (coordinates.has(key)) return true;
+    coordinates.add(key);
+    return false;
+  });
+  if (invalidProvenance.length > 0 || duplicateCoordinates.length > 0) {
+    throw new Error(
+      `SRD source coverage diagnostics are inconsistent: ${invalidProvenance.length} invalid resolutions, ${duplicateCoordinates.length} duplicate source coordinates`,
+    );
+  }
   const unaccounted = entries.filter((e) => e.status.kind === 'unaccounted');
   if (unaccounted.length > 0) {
     throw new SourceInventoryCoverageError(unaccounted);
@@ -491,36 +641,61 @@ export interface SourceCoverageReportEntry {
   readonly text: string;
   readonly section: string | null;
   readonly status: string;
+  readonly resolution: CoverageResolution;
   readonly structuredFieldEvidence?: SpellListCoverageEvidence;
 }
 
 /**
- * A name that maps to multiple emitted record keys: the auto-match can only
- * resolve to the lexicographically-first key, so the rest are silently
- * shadowed. The reporter surfaces these so reviewers can decide whether each
- * collision needs an explicit `recordRule` disambiguation.
+ * A name that maps to multiple emitted record keys. The reporter preserves all
+ * candidates and every matching source occurrence, including any explicit
+ * source-positioned claims; it never selects an implicit winner.
  */
 export interface AmbiguousNameCollision {
   readonly normalizedName: string;
-  readonly winnerKey: string;
-  readonly shadowedKeys: readonly string[];
-}
-
-/**
- * Multiple source inventory items that share the same normalized text and all
- * auto-match to the same record key. The count shows how many source items are
- * collapsed into one auto-match result. Only groups with count > 1 are listed.
- */
-export interface CollapsedSourceGroup {
-  readonly text: string;
-  readonly resolvedKey: string;
-  readonly count: number;
-}
-
-export interface AmbiguousSourceGroup {
-  readonly text: string;
   readonly candidateKeys: readonly string[];
-  readonly count: number;
+  readonly occurrences: readonly SourceCoverageDiagnosticOccurrence[];
+  readonly explicitlyClaimedKeys: readonly string[];
+  readonly unresolved: boolean;
+}
+
+export interface SourceCoverageDiagnosticOccurrence {
+  readonly page: number;
+  readonly lineIndex: number;
+  readonly tier: string | null;
+  readonly structure: string;
+  readonly section: string | null;
+  readonly context: string | null;
+  readonly text: string;
+  readonly status: string;
+  readonly resolution: CoverageResolution;
+  readonly ownerKey?: string;
+  readonly candidateKeys?: readonly string[];
+}
+
+export type DuplicateSourceTextCategory =
+  | 'explicitly-disambiguated'
+  | 'same-owner-explicit'
+  | 'auto-collapsed'
+  | 'mixed-resolution'
+  | 'unresolved-owner'
+  | 'different-auto-owners';
+
+export interface DuplicateSourceTextGroup {
+  readonly normalizedText: string;
+  readonly category: DuplicateSourceTextCategory;
+  readonly occurrences: readonly SourceCoverageDiagnosticOccurrence[];
+  readonly candidateKeys: readonly string[];
+  readonly ownerKeys: readonly string[];
+  readonly reasonCodes: readonly string[];
+}
+
+export interface SuspiciousOwnershipGroup extends DuplicateSourceTextGroup {
+  readonly reasonCodes: readonly (
+    | 'auto-collapsed'
+    | 'different-auto-owners'
+    | 'unresolved-owner'
+    | 'mixed-explicit-and-automatic'
+  )[];
 }
 
 /** JSON shape of the `source-coverage.json` artifact. */
@@ -535,38 +710,24 @@ export interface SourceCoverageReport {
     readonly knownGap: Readonly<Record<string, number>>;
     readonly unaccounted: number;
   };
-  readonly ambiguous: {
-    readonly shadowedRecords: readonly AmbiguousNameCollision[];
-    readonly collapsedSourceItems: readonly CollapsedSourceGroup[];
-    readonly unresolvedSourceItems: readonly AmbiguousSourceGroup[];
+  readonly diagnostics: {
+    readonly recordNameCollisions: readonly AmbiguousNameCollision[];
+    readonly duplicateSourceText: readonly DuplicateSourceTextGroup[];
+    readonly suspiciousOwnership: readonly SuspiciousOwnershipGroup[];
+    readonly unresolvedOwnership: readonly DuplicateSourceTextGroup[];
   };
   readonly entries: readonly SourceCoverageReportEntry[];
 }
 
 /**
- * Build the reviewer-facing coverage report: a roll-up of statuses (per
- * ignore reason and per known-gap bead), an ambiguous-match diagnostic, and
- * every entry in reading order. Pure and deterministic — sub-summary keys are
- * sorted so the emitted JSON is byte-stable for identical input.
+ * Build the reviewer-facing coverage report from the evaluator's provenance.
+ * Pure and deterministic — all diagnostic collections are sorted by normalized
+ * text, source position, then key.
  *
- * The `ambiguous` section surfaces three classes of name collisions:
- * name auto-matcher:
- *
- *   - `shadowedRecords`: emitted records whose normalized name is shared with
- *     another record. The auto-match resolves to the lexicographically-first
- *     key; the rest are shadowed and can only be claimed by an explicit
- *     `recordRule`. Cross-kind name collisions (e.g. a class and a creature
- *     both named "Druid") appear here.
- *
- *   - `collapsedSourceItems`: groups of source inventory items that share the
- *     same normalized text and all auto-match to the same record key. Each
- *     group shows the count so reviewers can see how many source items are
- *     silently folded into one match (e.g. 12 per-class "Ability Score
- *     Improvement" headings all resolving to one feature key).
- *
- *   - `unresolvedSourceItems`: source headings with multiple candidate record
- *     keys after contextual and curated mappings. These entries carry an
- *     `ambiguous:` status and are excluded from the covered-record count.
+ * The diagnostics preserve complete candidate and occurrence evidence for
+ * duplicate record names and duplicate source text. Ambiguous statuses remain
+ * unresolved; explicit source-positioned rules and contextual ownership are
+ * visible through each occurrence's resolution provenance.
  */
 export function buildSourceCoverageReport(
   entries: readonly SourceCoverageEntry[],
@@ -615,8 +776,45 @@ export function buildSourceCoverageReport(
       [...counts.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
     );
 
-  // ---- ambiguous: shadowed records ----
-  // Collect all keys per normalized name, then report names with >1 key.
+  const occurrence = ({
+    item,
+    status,
+    resolution,
+  }: SourceCoverageEntry): SourceCoverageDiagnosticOccurrence => {
+    const ownerKey =
+      status.kind === 'record' || status.kind === 'child-of'
+        ? status.key
+        : undefined;
+    const candidateKeys =
+      status.kind === 'ambiguous' ? status.candidateKeys : undefined;
+    return {
+      page: item.page,
+      lineIndex: item.lineIndex,
+      tier: item.tier,
+      structure: item.structure,
+      section: item.section,
+      context: item.context,
+      text: item.text,
+      status: formatCoverageStatus(status),
+      resolution,
+      ...(ownerKey === undefined ? {} : { ownerKey }),
+      ...(candidateKeys === undefined ? {} : { candidateKeys }),
+    };
+  };
+  const lexical = (a: string, b: string): number =>
+    a < b ? -1 : a > b ? 1 : 0;
+  const occurrenceSort = (
+    a: SourceCoverageDiagnosticOccurrence,
+    b: SourceCoverageDiagnosticOccurrence,
+  ) =>
+    a.page - b.page ||
+    a.lineIndex - b.lineIndex ||
+    lexical(
+      a.ownerKey ?? a.candidateKeys?.join('|') ?? '',
+      b.ownerKey ?? b.candidateKeys?.join('|') ?? '',
+    );
+
+  // ---- record-name collisions ----
   const nameToKeys = new Map<string, string[]>();
   for (const rec of records) {
     const name = normalizeName(rec.name);
@@ -627,70 +825,152 @@ export function buildSourceCoverageReport(
       list.push(rec.key);
     }
   }
-  const shadowedRecords: AmbiguousNameCollision[] = [];
+  const recordNameCollisions: AmbiguousNameCollision[] = [];
   for (const [normalizedName, keys] of [...nameToKeys.entries()].sort(
-    ([a], [b]) => (a < b ? -1 : a > b ? 1 : 0),
+    ([a], [b]) => lexical(a, b),
   )) {
     if (keys.length > 1) {
-      const sortedKeys = [...keys].sort();
-      shadowedRecords.push({
+      const candidateKeys = [...keys].sort();
+      const occurrences = entries
+        .filter(({ item }) => normalizeName(item.text) === normalizedName)
+        .map(occurrence)
+        .sort(occurrenceSort);
+      const explicitlyClaimedKeys = [
+        ...new Set(
+          occurrences.flatMap((o) =>
+            o.resolution.kind === 'curated-record' ||
+            o.resolution.kind === 'curated-child-of'
+              ? [o.resolution.ownerKey]
+              : [],
+          ),
+        ),
+      ].sort();
+      recordNameCollisions.push({
         normalizedName,
-        winnerKey: sortedKeys[0],
-        shadowedKeys: sortedKeys.slice(1),
+        candidateKeys,
+        occurrences,
+        explicitlyClaimedKeys,
+        unresolved: occurrences.some(
+          (o) => o.resolution.kind === 'ambiguous-normalized-name',
+        ),
       });
     }
   }
 
-  // ---- ambiguous: collapsed source items ----
-  // Rebuild keyByName (same logic as evaluateSourceCoverage) to identify
-  // which record entries came from the name auto-match vs an explicit
-  // recordRule (recordRule entries have a key that differs from what the
-  // auto-match would have chosen for that text).
-  const keyByName = new Map<string, string>();
-  for (const rec of records) {
-    const name = normalizeName(rec.name);
-    const existing = keyByName.get(name);
-    if (existing === undefined || rec.key < existing) {
-      keyByName.set(name, rec.key);
-    }
+  // ---- duplicate source text ----
+  const byText = new Map<string, SourceCoverageDiagnosticOccurrence[]>();
+  for (const entry of entries) {
+    const key = normalizeName(entry.item.text);
+    const group = byText.get(key);
+    if (group === undefined) byText.set(key, [occurrence(entry)]);
+    else group.push(occurrence(entry));
   }
-  const autoMatchCounts = new Map<string, { text: string; count: number }>();
-  for (const { item, status } of entries) {
-    if (status.kind !== 'record') continue;
-    const expectedKey = keyByName.get(normalizeName(item.text));
-    if (expectedKey !== status.key) continue; // resolved by a recordRule
-    const existing = autoMatchCounts.get(status.key);
-    if (existing === undefined) {
-      autoMatchCounts.set(status.key, { text: item.text, count: 1 });
+  const duplicateSourceText: DuplicateSourceTextGroup[] = [];
+  for (const [normalizedText, occurrencesUnsorted] of [
+    ...byText.entries(),
+  ].sort(([a], [b]) => lexical(a, b))) {
+    if (occurrencesUnsorted.length < 2) continue;
+    const occurrences = [...occurrencesUnsorted].sort(occurrenceSort);
+    const explicit = occurrences.filter((o) =>
+      o.resolution.kind.startsWith('curated-'),
+    );
+    const automatic = occurrences.filter(
+      (o) => o.resolution.kind === 'unique-normalized-name',
+    );
+    const unresolved = occurrences.some(
+      (o) => o.resolution.kind === 'ambiguous-normalized-name',
+    );
+    const ownerKeys = [
+      ...new Set(
+        occurrences.flatMap((o) =>
+          o.ownerKey === undefined ? [] : [o.ownerKey],
+        ),
+      ),
+    ].sort();
+    const candidateKeys = [
+      ...new Set(occurrences.flatMap((o) => o.candidateKeys ?? [])),
+    ].sort();
+    let category: DuplicateSourceTextCategory;
+    let reasonCodes: DuplicateSourceTextGroup['reasonCodes'];
+    if (unresolved) {
+      category = 'unresolved-owner';
+      reasonCodes = ['unresolved-owner'];
+    } else if (explicit.length === occurrences.length) {
+      category =
+        ownerKeys.length > 1
+          ? 'explicitly-disambiguated'
+          : 'same-owner-explicit';
+      reasonCodes = [category];
+    } else if (
+      automatic.length === occurrences.length &&
+      ownerKeys.length === 1
+    ) {
+      category = 'auto-collapsed';
+      reasonCodes = ['auto-collapsed'];
+    } else if (automatic.length === occurrences.length) {
+      category = 'different-auto-owners';
+      reasonCodes = ['different-auto-owners'];
     } else {
-      existing.count += 1;
+      category = 'mixed-resolution';
+      reasonCodes = ['mixed-explicit-and-automatic'];
     }
-  }
-  const collapsedSourceItems: CollapsedSourceGroup[] = [
-    ...autoMatchCounts.entries(),
-  ]
-    .filter(([, { count }]) => count > 1)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([resolvedKey, { text, count }]) => ({ text, resolvedKey, count }));
-
-  const unresolvedGroups = new Map<string, AmbiguousSourceGroup>();
-  for (const { item, status } of entries) {
-    if (status.kind !== 'ambiguous') continue;
-    const groupKey = `${normalizeName(item.text)}\0${status.candidateKeys.join('\0')}`;
-    const existing = unresolvedGroups.get(groupKey);
-    unresolvedGroups.set(groupKey, {
-      text: existing?.text ?? item.text,
-      candidateKeys: status.candidateKeys,
-      count: (existing?.count ?? 0) + 1,
+    duplicateSourceText.push({
+      normalizedText,
+      category,
+      occurrences,
+      candidateKeys,
+      ownerKeys,
+      reasonCodes,
     });
   }
-  const unresolvedSourceItems = [...unresolvedGroups.values()].sort((a, b) =>
-    a.text < b.text
-      ? -1
-      : a.text > b.text
-        ? 1
-        : a.candidateKeys.join().localeCompare(b.candidateKeys.join()),
+  const suspiciousOwnership = duplicateSourceText
+    .filter(
+      (group) =>
+        group.category === 'auto-collapsed' ||
+        group.category === 'different-auto-owners' ||
+        group.category === 'unresolved-owner' ||
+        group.category === 'mixed-resolution',
+    )
+    .map((group) => ({
+      ...group,
+      reasonCodes: group.reasonCodes as SuspiciousOwnershipGroup['reasonCodes'],
+    }));
+  const unresolvedOwnership = [
+    ...duplicateSourceText.filter(
+      (group) => group.category === 'unresolved-owner',
+    ),
+  ];
+  const duplicateKeys = new Set(
+    unresolvedOwnership.map((group) => group.normalizedText),
   );
+  const standaloneUnresolved = new Map<
+    string,
+    SourceCoverageDiagnosticOccurrence[]
+  >();
+  for (const entry of entries) {
+    if (entry.resolution.kind !== 'ambiguous-normalized-name') continue;
+    const normalizedText = normalizeName(entry.item.text);
+    if (duplicateKeys.has(normalizedText)) continue;
+    const group = standaloneUnresolved.get(normalizedText);
+    if (group === undefined)
+      standaloneUnresolved.set(normalizedText, [occurrence(entry)]);
+    else group.push(occurrence(entry));
+  }
+  for (const [normalizedText, occurrences] of [
+    ...standaloneUnresolved.entries(),
+  ].sort(([a], [b]) => lexical(a, b))) {
+    const candidateKeys = [
+      ...new Set(occurrences.flatMap((o) => o.candidateKeys ?? [])),
+    ].sort();
+    unresolvedOwnership.push({
+      normalizedText,
+      category: 'unresolved-owner',
+      occurrences: occurrences.sort(occurrenceSort),
+      candidateKeys,
+      ownerKeys: [],
+      reasonCodes: ['unresolved-owner'],
+    });
+  }
 
   return {
     summary: {
@@ -703,12 +983,13 @@ export function buildSourceCoverageReport(
       knownGap: sortedCounts(knownGap),
       unaccounted,
     },
-    ambiguous: {
-      shadowedRecords,
-      collapsedSourceItems,
-      unresolvedSourceItems,
+    diagnostics: {
+      recordNameCollisions,
+      duplicateSourceText,
+      suspiciousOwnership,
+      unresolvedOwnership,
     },
-    entries: entries.map(({ item, status }) => ({
+    entries: entries.map(({ item, status, resolution }) => ({
       page: item.page,
       lineIndex: item.lineIndex,
       tier: item.tier,
@@ -716,6 +997,7 @@ export function buildSourceCoverageReport(
       text: item.text,
       section: item.section,
       status: formatCoverageStatus(status),
+      resolution,
       ...(status.kind === 'structured-field'
         ? { structuredFieldEvidence: status.evidence }
         : {}),
@@ -1030,8 +1312,8 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
     (i) => i.section === 'Races' && i.text === 'Lightfoot',
   ),
   // Appendix MM-B NPC stat blocks whose names collide with non-creature
-  // records. Explicit structure/page mappings must outrank the generic
-  // lexicographic name auto-match.
+  // records. Explicit structure/page mappings must outrank a generic
+  // name-only match.
   recordRule(
     'creature:acolyte',
     (i) =>
@@ -1114,9 +1396,9 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   ),
   // The Cleric's "Destroy Undead" table caption (p17) collides by name with
   // the `feature:cleric:destroy-undead` heading; both normalize to "destroy
-  // undead", and the name auto-match would claim the table-caption item for
-  // the lexicographically-first key (the feature). Map the table-caption item
-  // explicitly to the emitted `table:destroy-undead` record (eshyra-4a7.6);
+  // undead", and the name-only match cannot distinguish the table from the
+  // feature. Map the table-caption item explicitly to the emitted
+  // `table:destroy-undead` record (eshyra-4a7.6);
   // the feature HEADING item still auto-matches the feature record.
   recordRule(
     'table:destroy-undead',
@@ -1510,8 +1792,7 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
   // "Beyond the Material" and an h≈12 sub-leaf below it. Both emit distinct
   // rule records (parent-qualified keys), but they share the normalized name
   // "outer planes", so the bare name auto-match would collapse BOTH source
-  // headings onto the lexicographically-first key
-  // (`rule:beyond-the-material-outer-planes`). Pin each heading to its
+  // headings onto one implicit owner. Pin each heading to its
   // source-correct record by tier — the same disambiguation used for the
   // Equipment "Weapons" subsection vs. its leaf table caption, and the two
   // "Senses" headings.

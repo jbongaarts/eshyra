@@ -2476,6 +2476,12 @@ async function main(): Promise<void> {
       knownGap: Record<string, number>;
       unaccounted: number;
     };
+    diagnostics: {
+      duplicateSourceText: { category: string }[];
+      suspiciousOwnership: { category: string }[];
+      unresolvedOwnership: { category: string }[];
+      recordNameCollisions: { normalizedName: string }[];
+    };
     entries: unknown[];
   };
   const knownGapTotal = Object.values(sourceCoverage.summary.knownGap).reduce(
@@ -2483,7 +2489,7 @@ async function main(): Promise<void> {
     0,
   );
   log(
-    `  ${sourceCoverage.entries.length} source structures: ${sourceCoverage.summary.unaccounted} unaccounted, ${sourceCoverage.summary.ambiguous} ambiguous, ${knownGapTotal} known-gap`,
+    `  ${sourceCoverage.entries.length} source structures: ${sourceCoverage.summary.unaccounted} unaccounted, ${sourceCoverage.summary.ambiguous} ambiguous, ${knownGapTotal} known-gap; duplicate text ${sourceCoverage.diagnostics.duplicateSourceText.length}, explicitly resolved ${sourceCoverage.diagnostics.duplicateSourceText.filter((g: { category: string }) => g.category === 'explicitly-disambiguated' || g.category === 'same-owner-explicit').length}, suspicious ownership ${sourceCoverage.diagnostics.suspiciousOwnership.length}, unresolved ownership ${sourceCoverage.diagnostics.unresolvedOwnership.length}`,
   );
   const sourceRegionLedger = JSON.parse(
     readFileSync(join(COMMITTED_PACK_DIR, 'source-region-ledger.json'), 'utf8'),
@@ -2608,6 +2614,18 @@ async function main(): Promise<void> {
       inventoryItems: sourceCoverage.entries.length,
       unaccounted: sourceCoverage.summary.unaccounted,
       ambiguous: sourceCoverage.summary.ambiguous,
+      duplicateSourceText:
+        sourceCoverage.diagnostics.duplicateSourceText.length,
+      explicitlyResolvedDuplicateText:
+        sourceCoverage.diagnostics.duplicateSourceText.filter(
+          (g: { category: string }) =>
+            g.category === 'explicitly-disambiguated' ||
+            g.category === 'same-owner-explicit',
+        ).length,
+      suspiciousOwnership:
+        sourceCoverage.diagnostics.suspiciousOwnership.length,
+      unresolvedOwnership:
+        sourceCoverage.diagnostics.unresolvedOwnership.length,
       knownGapTotal,
       knownGapByBead: sourceCoverage.summary.knownGap,
     },
@@ -2678,7 +2696,7 @@ async function main(): Promise<void> {
     log(`  SRD structure/coverage findings: ${srdAudit.findings.length}`);
   }
   log(
-    `  Source coverage: ${sourceCoverage.entries.length} structures, ${sourceCoverage.summary.unaccounted} unaccounted, ${sourceCoverage.summary.ambiguous} ambiguous, ${knownGapTotal} known-gap`,
+    `  Source coverage: ${sourceCoverage.entries.length} structures, ${sourceCoverage.summary.unaccounted} unaccounted, ${sourceCoverage.summary.ambiguous} ambiguous, ${knownGapTotal} known-gap; duplicate text ${sourceCoverage.diagnostics.duplicateSourceText.length}, explicitly resolved ${sourceCoverage.diagnostics.duplicateSourceText.filter((g: { category: string }) => g.category === 'explicitly-disambiguated' || g.category === 'same-owner-explicit').length}, suspicious ownership ${sourceCoverage.diagnostics.suspiciousOwnership.length}, unresolved ownership ${sourceCoverage.diagnostics.unresolvedOwnership.length}`,
   );
 }
 
