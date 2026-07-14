@@ -108,7 +108,7 @@ export const startEffectTool: Tool = {
           properties: {
             kind: {
               type: 'string',
-              enum: ['character', 'combatant', 'scope'],
+              enum: ['character', 'combatant', 'campaign_actor', 'scope'],
             },
             ref: { type: 'string', minLength: 1 },
           },
@@ -151,6 +151,12 @@ export const startEffectTool: Tool = {
           type: 'object',
           properties: {
             combatantId: { type: 'string', minLength: 1 },
+            campaignActorId: {
+              type: 'string',
+              minLength: 1,
+              description:
+                'Stable durable identity for a persistent owned creature; omit for an instance-only summon.',
+            },
             cleanupOnEnd: CLEANUP_SCHEMA,
             cleanupOnBreak: CLEANUP_SCHEMA,
           },
@@ -200,7 +206,7 @@ export const startEffectTool: Tool = {
       return duration;
     }
     const targets: {
-      kind: 'character' | 'combatant' | 'scope';
+      kind: 'character' | 'combatant' | 'campaign_actor' | 'scope';
       ref: string;
     }[] = [];
     for (const rawTarget of Array.isArray(a.targets) ? a.targets : []) {
@@ -212,7 +218,11 @@ export const startEffectTool: Tool = {
       ) {
         return err('invalid_args', 'each target must be { kind, ref }');
       }
-      if (target.kind === 'character' || target.kind === 'combatant') {
+      if (
+        target.kind === 'character' ||
+        target.kind === 'combatant' ||
+        target.kind === 'campaign_actor'
+      ) {
         const resolved = resolveEffectParticipant(target, ctx, 'target');
         if ('ok' in resolved) {
           return resolved;
@@ -263,6 +273,9 @@ export const startEffectTool: Tool = {
       }
       actors.push({
         combatantId: actor.combatantId,
+        ...(typeof actor.campaignActorId === 'string'
+          ? { campaignActorId: actor.campaignActorId }
+          : {}),
         ...(actor.cleanupOnEnd === 'release'
           ? { cleanupOnEnd: 'release' as const }
           : {}),

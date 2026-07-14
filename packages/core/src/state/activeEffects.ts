@@ -39,7 +39,10 @@ import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import { addCondition, removeCondition } from './domainMutations.js';
 import {
   EncounterCombatantError,
+  ensureCampaignActorFromCombatant,
   getActiveCombatInstance,
+  getCampaignActor,
+  updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
@@ -72,7 +75,10 @@ export const EFFECT_SOURCE_KINDS = [
 ] as const;
 export type EffectSourceKind = (typeof EFFECT_SOURCE_KINDS)[number];
 
-export type EffectParticipantKind = 'character' | 'combatant';
+export type EffectParticipantKind =
+  | 'character'
+  | 'combatant'
+  | 'campaign_actor';
 
 export interface EffectParticipant {
   readonly kind: EffectParticipantKind;
@@ -150,7 +156,11 @@ export const DIRECT_CONCENTRATION_BREAK_CAUSES: readonly ConcentrationBreakCause
 
 export type EffectLinkKind = 'condition' | 'actor' | 'zone' | 'form';
 export type EffectCleanupPolicy = 'remove' | 'release';
-export type EffectTargetKind = 'character' | 'combatant' | 'scope';
+export type EffectTargetKind =
+  | 'character'
+  | 'combatant'
+  | 'campaign_actor'
+  | 'scope';
 
 export interface EffectMutationContext {
   readonly provenance: string;
@@ -174,6 +184,8 @@ export interface EffectConditionProjectionInput {
 export interface EffectActorLinkInput {
   /** Combatant the effect owns (summoned/animated/controlled entity). */
   readonly combatantId: string;
+  /** Explicit durable identity; omitted means instance-only ownership. */
+  readonly campaignActorId?: string;
   readonly cleanupOnEnd?: EffectCleanupPolicy;
   readonly cleanupOnBreak?: EffectCleanupPolicy;
 }
@@ -212,6 +224,7 @@ export interface EffectLinkView {
   readonly linkKind: EffectLinkKind;
   readonly target: EffectParticipant;
   readonly projectionRef: string;
+  readonly campaignActorId?: string;
   readonly cleanupOnEnd: EffectCleanupPolicy;
   readonly cleanupOnBreak: EffectCleanupPolicy;
   readonly status: 'active' | 'removed' | 'released';
@@ -604,6 +617,7 @@ interface EffectLinkRow {
   readonly target_kind: EffectParticipantKind;
   readonly target_ref: string;
   readonly projection_ref: string;
+  readonly campaign_actor_id: string | null;
   readonly cleanup_on_end: EffectCleanupPolicy;
   readonly cleanup_on_break: EffectCleanupPolicy;
   readonly status: 'active' | 'removed' | 'released';
@@ -815,6 +829,9 @@ function effectView(
       linkKind: link.link_kind,
       target: { kind: link.target_kind, ref: link.target_ref },
       projectionRef: link.projection_ref,
+      ...(link.campaign_actor_id === null
+        ? {}
+        : { campaignActorId: link.campaign_actor_id }),
       cleanupOnEnd: link.cleanup_on_end,
       cleanupOnBreak: link.cleanup_on_break,
       status: link.status,
@@ -960,7 +977,7 @@ function readLinkRows(
   return db
     .prepare(
       `SELECT effect_id, link_kind, target_kind, target_ref, projection_ref,
-              cleanup_on_end, cleanup_on_break, status, removed_reason,
+              campaign_actor_id, cleanup_on_end, cleanup_on_break, status, removed_reason,
               removed_at
        FROM active_effect_link
        WHERE campaign_id = ? AND effect_id = ?
@@ -1383,6 +1400,31 @@ export function auditActiveEffectIntegrity(
       }
     }
   }
+  const duplicateActorOwners = db
+    .prepare(
+      `SELECT target_ref, COUNT(*) AS n FROM active_effect_link
+     WHERE campaign_id = ? AND link_kind = 'actor' AND target_kind = 'campaign_actor' AND status = 'active'
+     GROUP BY target_ref HAVING COUNT(*) > 1 ORDER BY target_ref`,
+    )
+    .all(campaignId) as { target_ref: string; n: number }[];
+  for (const owner of duplicateActorOwners) {
+    issues.push({
+      effectId: '(campaign-actor)',
+      issue: `campaign actor '${owner.target_ref}' is owned by ${owner.n} live effects`,
+    });
+  }
+  const stalePersistentLinks = db
+    .prepare(
+      `SELECT effect_id, target_ref FROM active_effect_link
+     WHERE campaign_id = ? AND link_kind = 'actor' AND target_kind = 'combatant' AND status = 'active' AND campaign_actor_id IS NOT NULL`,
+    )
+    .all(campaignId) as { effect_id: string; target_ref: string }[];
+  for (const link of stalePersistentLinks) {
+    issues.push({
+      effectId: link.effect_id,
+      issue: `persistent actor link still points at combatant '${link.target_ref}'`,
+    });
+  }
   return issues;
 }
 
@@ -1452,6 +1494,15 @@ function participantRowExists(
         .get(participant.ref) !== undefined
     );
   }
+  if (participant.kind === 'campaign_actor') {
+    return (
+      db
+        .prepare(
+          'SELECT 1 FROM campaign_actor WHERE campaign_id = ? AND actor_id = ?',
+        )
+        .get(campaignId, participant.ref) !== undefined
+    );
+  }
   return (
     readCombatantParticipant(db, campaignId, participant.ref) !== undefined
   );
@@ -1465,6 +1516,9 @@ function participantReachable(
   participant: { kind: EffectParticipantKind; ref: string },
 ): boolean {
   if (participant.kind === 'character') {
+    return participantRowExists(db, campaignId, participant);
+  }
+  if (participant.kind === 'campaign_actor') {
     return participantRowExists(db, campaignId, participant);
   }
   const row = readCombatantParticipant(db, campaignId, participant.ref);
@@ -1483,15 +1537,27 @@ function requireParticipant(
   label: string,
 ): void {
   requireNonEmptyString(participant.ref, `${label} ref`);
-  if (participant.kind !== 'character' && participant.kind !== 'combatant') {
+  if (
+    participant.kind !== 'character' &&
+    participant.kind !== 'combatant' &&
+    participant.kind !== 'campaign_actor'
+  ) {
     throw new ActiveEffectError(
-      `${label} kind must be 'character' or 'combatant'`,
+      `${label} kind must be 'character', 'combatant', or 'campaign_actor'`,
     );
   }
   if (participant.kind === 'character') {
     if (!participantRowExists(db, campaignId, participant)) {
       throw new ActiveEffectError(
         `${label} references unknown character '${participant.ref}'`,
+      );
+    }
+    return;
+  }
+  if (participant.kind === 'campaign_actor') {
+    if (!participantRowExists(db, campaignId, participant)) {
+      throw new ActiveEffectError(
+        `${label} references unknown campaign actor '${participant.ref}'`,
       );
     }
     return;
@@ -1533,6 +1599,20 @@ function readParticipantConditionIds(
     return (
       JSON.parse(row.conditions_json) as readonly CharacterConditionEntry[]
     ).map((entry) => entry.id);
+  }
+  if (participant.kind === 'campaign_actor') {
+    const row = db
+      .prepare(
+        'SELECT conditions_json FROM campaign_actor WHERE campaign_id = ? AND actor_id = ?',
+      )
+      .get(campaignId, participant.ref) as
+      | { conditions_json: string }
+      | undefined;
+    return row === undefined
+      ? []
+      : (
+          JSON.parse(row.conditions_json) as readonly CharacterConditionEntry[]
+        ).map((entry) => entry.id);
   }
   const row = db
     .prepare(
@@ -1619,6 +1699,11 @@ function requireConcentrationCapableOwner(
   campaignId: string,
   owner: EffectParticipant,
 ): void {
+  if (owner.kind === 'campaign_actor') {
+    throw new ActiveEffectError(
+      'campaign actors cannot own concentration; use a character or combatant',
+    );
+  }
   if (owner.kind === 'character') {
     const row = db
       .prepare('SELECT life_state FROM character WHERE id = ?')
@@ -1848,6 +1933,11 @@ function validateDuration(
         }
       }
       if (anchorParticipant !== undefined) {
+        if (anchorParticipant.kind === 'campaign_actor') {
+          throw new ActiveEffectError(
+            'campaign actors cannot anchor participant-turn timers; use a character or combatant',
+          );
+        }
         requireParticipant(
           db,
           campaignId,
@@ -1888,7 +1978,10 @@ function validateDuration(
               db,
               campaignId,
               instanceId,
-              anchorParticipant,
+              anchorParticipant as {
+                kind: 'character' | 'combatant';
+                ref: string;
+              },
             );
       return {
         kind: 'timed',
@@ -2078,6 +2171,24 @@ function removeProjection(
         throw e;
       }
     }
+    if (link.target_kind === 'campaign_actor') {
+      try {
+        const result = updateCampaignActor(db, {
+          campaignId,
+          actorId: link.target_ref,
+          removeCondition: link.projection_ref,
+          ...ctx,
+        });
+        return result.conditions.every(
+          (condition) => condition.id !== link.projection_ref,
+        )
+          ? 'removed'
+          : 'missing';
+      } catch (e) {
+        if (e instanceof EncounterCombatantError) return 'missing';
+        throw e;
+      }
+    }
     try {
       const result = updateCombatant(db, {
         campaignId,
@@ -2094,6 +2205,20 @@ function removeProjection(
     }
   }
   if (link.link_kind === 'actor') {
+    if (link.target_kind === 'campaign_actor') {
+      try {
+        updateCampaignActor(db, {
+          campaignId,
+          actorId: link.target_ref,
+          status: 'inactive',
+          ...ctx,
+        });
+        return 'removed';
+      } catch (e) {
+        if (e instanceof EncounterCombatantError) return 'missing';
+        throw e;
+      }
+    }
     try {
       updateCombatant(db, {
         campaignId,
@@ -2440,10 +2565,11 @@ export function createActiveEffect(
       if (
         target.kind !== 'character' &&
         target.kind !== 'combatant' &&
+        target.kind !== 'campaign_actor' &&
         target.kind !== 'scope'
       ) {
         throw new ActiveEffectError(
-          "target kind must be 'character', 'combatant', or 'scope'",
+          "target kind must be 'character', 'combatant', 'campaign_actor', or 'scope'",
         );
       }
       const key = `${target.kind}:${target.ref}`;
@@ -2527,6 +2653,7 @@ export function createActiveEffect(
       );
     }
     const seenActors = new Set<string>();
+    const actorDurableIds = new Map<string, string>();
     for (const actor of actors) {
       requireNonEmptyString(actor.combatantId, 'linked actor combatantId');
       if (seenActors.has(actor.combatantId)) {
@@ -2541,6 +2668,60 @@ export function createActiveEffect(
         { kind: 'combatant', ref: actor.combatantId },
         'linked actor',
       );
+      const combatant = txnDb
+        .prepare(
+          `SELECT identity_kind, identity_ref, rules_ref FROM encounter_combatant
+         WHERE campaign_id = ? AND combatant_id = ?`,
+        )
+        .get(input.campaignId, actor.combatantId) as
+        | {
+            identity_kind: string;
+            identity_ref: string | null;
+            rules_ref: string;
+          }
+        | undefined;
+      const durableId =
+        actor.campaignActorId ??
+        (combatant?.identity_kind === 'campaign_actor'
+          ? (combatant.identity_ref ?? undefined)
+          : undefined);
+      if (
+        actor.campaignActorId !== undefined &&
+        combatant?.identity_kind === 'campaign_actor' &&
+        combatant.identity_ref !== actor.campaignActorId
+      ) {
+        throw new ActiveEffectError(
+          `linked actor '${actor.combatantId}' campaign actor identity does not match its projection`,
+        );
+      }
+      if (durableId !== undefined) {
+        actorDurableIds.set(actor.combatantId, durableId);
+        const claimed = txnDb
+          .prepare(
+            `SELECT effect_id FROM active_effect_link WHERE campaign_id = ? AND link_kind = 'actor'
+           AND campaign_actor_id = ? AND status = 'active'`,
+          )
+          .get(input.campaignId, durableId) as
+          | { effect_id: string }
+          | undefined;
+        if (
+          claimed !== undefined &&
+          claimed.effect_id !== input.effectId &&
+          claimed.effect_id !== priorConcentration?.effect_id
+        ) {
+          throw new ActiveEffectError(
+            `campaign actor '${durableId}' is already owned by effect '${claimed.effect_id}'`,
+          );
+        }
+        ensureCampaignActorFromCombatant(txnDb, {
+          campaignId: input.campaignId,
+          combatantId: actor.combatantId,
+          actorId: durableId,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
+      }
       const owner = txnDb
         .prepare(
           `SELECT effect_id FROM active_effect_link
@@ -2662,10 +2843,10 @@ export function createActiveEffect(
     const insertLink = txnDb.prepare(
       `INSERT INTO active_effect_link(
          campaign_id, effect_id, link_kind, target_kind, target_ref,
-         projection_ref, cleanup_on_end, cleanup_on_break, status,
+         projection_ref, campaign_actor_id, cleanup_on_end, cleanup_on_break, status,
          provenance, session_id, updated_at
        )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
     );
 
     for (const projection of conditions) {
@@ -2676,10 +2857,20 @@ export function createActiveEffect(
           at: input.at,
           characterId: projection.target.ref,
         });
-      } else {
+      } else if (projection.target.kind === 'combatant') {
         updateCombatant(txnDb, {
           campaignId: input.campaignId,
           combatantId: projection.target.ref,
+          addCondition: projection.condition,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
+      } else {
+        updateCampaignActor(txnDb, {
+          campaignId: input.campaignId,
+          actorId: projection.target.ref,
+          removeCondition: undefined,
           addCondition: projection.condition,
           provenance: input.provenance,
           sessionId: input.sessionId,
@@ -2710,6 +2901,7 @@ export function createActiveEffect(
         projection.target.kind,
         projection.target.ref,
         projection.condition.id,
+        null,
         projection.cleanupOnEnd ?? 'remove',
         projection.cleanupOnBreak ?? 'remove',
         input.provenance,
@@ -2726,6 +2918,7 @@ export function createActiveEffect(
         'combatant',
         actor.combatantId,
         actor.combatantId,
+        actorDurableIds.get(actor.combatantId) ?? null,
         actor.cleanupOnEnd ?? 'remove',
         actor.cleanupOnBreak ?? 'remove',
         input.provenance,
@@ -2928,7 +3121,10 @@ function validateDeclaredExpiry(
         db,
         row.campaign_id,
         deadline.combatInstanceId,
-        deadline.participant,
+        deadline.participant as {
+          kind: 'character' | 'combatant';
+          ref: string;
+        },
       );
       if (currentOrdinal < deadline.deadlineOrdinal) {
         throw new ActiveEffectError(
@@ -3888,6 +4084,11 @@ export interface CombatClosureEffectReactions {
   /** Live effects whose source actor was a closing combatant: the pointer
    *  was detached (the created event keeps the provenance forever). */
   readonly sourceActorsDetached: number;
+  readonly actorsRebound: number;
+  readonly sourceActorsRebound: number;
+  readonly targetsRebound: number;
+  readonly linksRebound: number;
+  readonly instanceOnlyLinksReleased: number;
 }
 
 /**
@@ -3991,7 +4192,10 @@ export function applyCombatClosureToEffects(
         db,
         campaignId,
         combatInstanceId,
-        participantDeadline.participant,
+        participantDeadline.participant as {
+          kind: 'character' | 'combatant';
+          ref: string;
+        },
       );
       deadline = participantDeadline.deadlineOrdinal;
       remaining = Math.max(0, deadline - currentParticipantOrdinal);
@@ -4039,6 +4243,11 @@ export function applyCombatClosureToEffects(
       targetsRemoved: 0,
       linksCleaned: 0,
       sourceActorsDetached: 0,
+      actorsRebound: 0,
+      sourceActorsRebound: 0,
+      targetsRebound: 0,
+      linksRebound: 0,
+      instanceOnlyLinksReleased: 0,
     };
   }
 
@@ -4077,7 +4286,183 @@ export function applyCombatClosureToEffects(
     }
   }
 
-  // 3 + 4. Detach the instance's combatants from remaining live effects.
+  // 3. Establish durable identities before touching any remaining reference.
+  // A link is the explicit persistence marker; an already campaign-projected
+  // combatant is durable by definition. Claims are checked before references
+  // move so SQLite rollback preserves the entire close on collision.
+  const actorMap = new Map<string, string>();
+  for (const id of [...combatantIds].sort()) {
+    const combatant = db
+      .prepare(
+        `SELECT identity_kind, identity_ref FROM encounter_combatant
+       WHERE campaign_id = ? AND combatant_id = ?`,
+      )
+      .get(campaignId, id) as
+      | { identity_kind: string; identity_ref: string | null }
+      | undefined;
+    const claims = db
+      .prepare(
+        `SELECT effect_id, campaign_actor_id FROM active_effect_link
+       WHERE campaign_id = ? AND link_kind = 'actor' AND target_kind = 'combatant'
+         AND target_ref = ? AND status = 'active' AND campaign_actor_id IS NOT NULL`,
+      )
+      .all(campaignId, id) as {
+      effect_id: string;
+      campaign_actor_id: string;
+    }[];
+    const durable =
+      combatant?.identity_kind === 'campaign_actor'
+        ? combatant.identity_ref
+        : claims[0]?.campaign_actor_id;
+    if (durable === undefined || durable === null) continue;
+    const directOwner = db
+      .prepare(
+        `SELECT effect_id FROM active_effect_link
+         WHERE campaign_id = ? AND link_kind = 'actor' AND target_kind = 'campaign_actor'
+           AND target_ref = ? AND status = 'active'`,
+      )
+      .get(campaignId, durable) as { effect_id: string } | undefined;
+    if (
+      directOwner !== undefined &&
+      claims.some((claim) => claim.effect_id !== directOwner.effect_id)
+    ) {
+      throw new ActiveEffectError(
+        `campaign actor '${durable}' is already owned by effect '${directOwner.effect_id}' and cannot be claimed by another effect`,
+      );
+    }
+    if (claims.some((claim) => claim.campaign_actor_id !== durable)) {
+      throw new ActiveEffectError(
+        `combatant '${id}' has incompatible durable actor claims`,
+      );
+    }
+    const prior = [...actorMap.entries()].find(
+      ([, actorId]) => actorId === durable,
+    );
+    if (prior !== undefined && prior[0] !== id) {
+      throw new ActiveEffectError(
+        `campaign actor '${durable}' is claimed by multiple closing combatants`,
+      );
+    }
+    ensureCampaignActorFromCombatant(db, {
+      campaignId,
+      combatantId: id,
+      actorId: durable,
+      ...ctx,
+    });
+    actorMap.set(id, durable);
+  }
+
+  // Rebind the complete F3 topology. Concentration and participant clocks are
+  // deliberately absent here: they were settled above and remain combatant
+  // only by contract.
+  let actorsRebound = 0;
+  let sourceActorsRebound = 0;
+  let targetsRebound = 0;
+  let linksRebound = 0;
+  const rebindEvidence = new Map<string, Record<string, unknown>>();
+  for (const [combatantId, actorId] of actorMap) {
+    const affected = liveRowsOrdered().filter((row) => row.status !== 'ended');
+    for (const row of affected) {
+      const links = readLinkRows(db, campaignId, row.effect_id).filter(
+        (link) =>
+          link.status === 'active' &&
+          link.target_kind === 'combatant' &&
+          link.target_ref === combatantId,
+      );
+      for (const link of links) {
+        db.prepare(
+          `UPDATE active_effect_link SET target_kind = 'campaign_actor', target_ref = ?,
+             campaign_actor_id = COALESCE(campaign_actor_id, ?), provenance = ?, session_id = ?, updated_at = ?
+           WHERE campaign_id = ? AND effect_id = ? AND link_kind = ? AND target_kind = 'combatant' AND target_ref = ? AND projection_ref = ?`,
+        ).run(
+          actorId,
+          actorId,
+          ctx.provenance,
+          ctx.sessionId,
+          ctx.at,
+          campaignId,
+          row.effect_id,
+          link.link_kind,
+          combatantId,
+          link.projection_ref,
+        );
+        linksRebound += 1;
+        if (link.link_kind === 'actor') actorsRebound += 1;
+        const evidence = rebindEvidence.get(row.effect_id) ?? {
+          combatInstanceId,
+          referencesRebound: [],
+          actorSnapshots: [],
+        };
+        (evidence.referencesRebound as unknown[]).push({
+          kind:
+            link.link_kind === 'condition' ? 'condition-link' : 'actor-link',
+          old: { kind: 'combatant', ref: combatantId },
+          campaignActorId: actorId,
+        });
+        rebindEvidence.set(row.effect_id, evidence);
+      }
+      const target = db
+        .prepare(
+          `SELECT 1 FROM active_effect_target WHERE campaign_id = ? AND effect_id = ? AND target_kind = 'combatant' AND target_ref = ? AND status = 'active'`,
+        )
+        .get(campaignId, row.effect_id, combatantId);
+      if (target !== undefined) {
+        db.prepare(
+          `UPDATE active_effect_target SET target_kind = 'campaign_actor', target_ref = ?, provenance = ?, session_id = ?, updated_at = ?
+           WHERE campaign_id = ? AND effect_id = ? AND target_kind = 'combatant' AND target_ref = ? AND status = 'active'`,
+        ).run(
+          actorId,
+          ctx.provenance,
+          ctx.sessionId,
+          ctx.at,
+          campaignId,
+          row.effect_id,
+          combatantId,
+        );
+        targetsRebound += 1;
+        const evidence = rebindEvidence.get(row.effect_id) ?? {
+          combatInstanceId,
+          referencesRebound: [],
+          actorSnapshots: [],
+        };
+        (evidence.referencesRebound as unknown[]).push({
+          kind: 'target',
+          old: { kind: 'combatant', ref: combatantId },
+          campaignActorId: actorId,
+        });
+        rebindEvidence.set(row.effect_id, evidence);
+      }
+      const source = readEffectRow(db, campaignId, row.effect_id);
+      if (
+        source?.source_actor_kind === 'combatant' &&
+        source.source_actor_ref === combatantId
+      ) {
+        db.prepare(
+          `UPDATE active_effect SET source_actor_kind = 'campaign_actor', source_actor_ref = ?, provenance = ?, session_id = ?, updated_at = ? WHERE campaign_id = ? AND effect_id = ?`,
+        ).run(
+          actorId,
+          ctx.provenance,
+          ctx.sessionId,
+          ctx.at,
+          campaignId,
+          row.effect_id,
+        );
+        sourceActorsRebound += 1;
+        const evidence = rebindEvidence.get(row.effect_id) ?? {
+          combatInstanceId,
+          referencesRebound: [],
+          actorSnapshots: [],
+        };
+        (evidence.referencesRebound as unknown[]).push({
+          kind: 'source-actor',
+          old: { kind: 'combatant', ref: combatantId },
+          campaignActorId: actorId,
+        });
+        rebindEvidence.set(row.effect_id, evidence);
+      }
+    }
+  }
+  // 4 + 5. Detach/remove remaining instance-only references.
   // Actor links are released FIRST: a combatant that is both a target and
   // an owned actor keeps the release disposition (the engine relinquishes
   // ownership; it does not inactivate the entity at combat close), and the
@@ -4242,6 +4627,7 @@ export function applyCombatClosureToEffects(
         'combat-closed',
         {
           combatInstanceId,
+          ...(rebindEvidence.get(row.effect_id) ?? {}),
           cleanup: actions.map((action) => ({
             linkKind: action.linkKind,
             targetKind: action.target.kind,
@@ -4257,11 +4643,44 @@ export function applyCombatClosureToEffects(
       );
     }
   }
+  for (const [effectId, evidence] of rebindEvidence) {
+    if (readEffectRow(db, campaignId, effectId)?.status !== 'ended') {
+      evidence.actorSnapshots = [...new Set(actorMap.values())]
+        .map((actorId) => getCampaignActor(db, campaignId, actorId))
+        .filter(
+          (actor): actor is NonNullable<typeof actor> => actor !== undefined,
+        )
+        .map((actor) => ({
+          actorId: actor.actorId,
+          displayName: actor.displayName,
+          rulesRef: actor.rulesRef,
+          hpCurrent: actor.hpCurrent,
+          hpMax: actor.hpMax,
+          conditions: actor.conditions,
+          status: actor.status,
+          currentLocationId: actor.currentLocationId,
+        }));
+      // Effects with fallback cleanup already received a combined event above.
+      const hasFallback = listEffectEvents(db, campaignId, effectId).some(
+        (event) =>
+          event.eventKind === 'combat-closed' &&
+          event.detail.combatInstanceId === combatInstanceId &&
+          event.detail.referencesRebound !== undefined,
+      );
+      if (!hasFallback)
+        appendEvent(db, campaignId, effectId, 'combat-closed', evidence, ctx);
+    }
+  }
   return {
     timersExpired,
     concentrationBroken,
     targetsRemoved,
     linksCleaned,
     sourceActorsDetached,
+    actorsRebound,
+    sourceActorsRebound,
+    targetsRebound,
+    linksRebound,
+    instanceOnlyLinksReleased: linksCleaned,
   };
 }

@@ -17,14 +17,18 @@ import { ActiveEffectError } from '../state/activeEffects.js';
 import type { ToolContext, ToolResult } from './toolRegistry.js';
 import { err } from './toolRegistry.js';
 
-/** `{ kind, ref }` participant argument (character name/id or combatant id). */
+/** `{ kind, ref }` participant argument, including durable campaign actors. */
 export const EFFECT_PARTICIPANT_SCHEMA: JsonSchema = {
   type: 'object',
   properties: {
-    kind: { type: 'string', enum: ['character', 'combatant'] },
+    kind: {
+      type: 'string',
+      enum: ['character', 'combatant', 'campaign_actor'],
+    },
     ref: {
       type: 'string',
-      description: 'Character id or name, or encounter combatant id.',
+      description:
+        'Character id or name, encounter combatant id, or campaign actor id.',
       minLength: 1,
     },
   },
@@ -91,16 +95,20 @@ export function resolveEffectParticipant(
   }
   const record = raw as Record<string, unknown>;
   const { kind, ref } = record;
-  if (kind !== 'character' && kind !== 'combatant') {
+  if (
+    kind !== 'character' &&
+    kind !== 'combatant' &&
+    kind !== 'campaign_actor'
+  ) {
     return err(
       'invalid_args',
-      `${label}.kind must be 'character' or 'combatant'`,
+      `${label}.kind must be 'character', 'combatant', or 'campaign_actor'`,
     );
   }
   if (typeof ref !== 'string' || ref.length === 0) {
     return err('invalid_args', `${label}.ref must be a non-empty string`);
   }
-  if (kind === 'combatant') {
+  if (kind === 'combatant' || kind === 'campaign_actor') {
     return { kind, ref };
   }
   try {

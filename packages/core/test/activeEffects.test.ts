@@ -27,6 +27,7 @@ import {
   expireElapsedRoundEffects,
   formatActiveEffect,
   getActiveCharacterId,
+  getCampaignActor,
   getConcentrationEffect,
   grantTemporaryHp,
   listActiveEffects,
@@ -3601,6 +3602,183 @@ describe('cascading cleanup topology', () => {
     // The removed projection is gone; the released one persists, unowned.
     expect(characterConditionIds(db, pcId)).toEqual(['cond-released']);
     expectCleanAudit(db);
+  });
+});
+
+describe('campaign-actor persistent lifecycle regressions', () => {
+  function startActorCombat(
+    db: Db,
+    instanceId: string,
+    actorId = 'actor-familiar',
+  ) {
+    return startEncounter(db, {
+      campaignId: CAMPAIGN,
+      combatInstanceId: instanceId,
+      actors: [
+        {
+          actorId,
+          displayName: 'Ash the Familiar',
+          rulesRef: 'creature:wolf',
+          side: 'ally',
+        },
+      ],
+      ...CTX,
+    }).combatants[0];
+  }
+
+  it('closes, reprojects, and closes the same persistently owned actor again', () => {
+    const { db } = setup();
+    const first = startActorCombat(db, 'ci-persistent-1');
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-persistent-owner',
+      kind: 'summoning',
+      displayName: 'Persistent Familiar',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [{ combatantId: first.combatantId }],
+      ...CTX,
+    });
+    closeCombatInstance(db, {
+      campaignId: CAMPAIGN,
+      combatInstanceId: 'ci-persistent-1',
+      status: 'completed',
+      ...CTX,
+    });
+    const second = startActorCombat(db, 'ci-persistent-2');
+    expect(second.identityRef).toBe('actor-familiar');
+    expect(() =>
+      closeCombatInstance(db, {
+        campaignId: CAMPAIGN,
+        combatInstanceId: 'ci-persistent-2',
+        status: 'completed',
+        ...CTX,
+      }),
+    ).not.toThrow();
+    expect(listActiveEffects(db, CAMPAIGN)[0]?.links).toContainEqual(
+      expect.objectContaining({
+        linkKind: 'actor',
+        target: { kind: 'campaign_actor', ref: 'actor-familiar' },
+        status: 'active',
+      }),
+    );
+  });
+
+  it('breaks projection-owned concentration when a campaign actor is incapacitated', () => {
+    const { db } = setup();
+    const combatant = startActorCombat(db, 'ci-condition-reaction');
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-projection-concentration',
+      kind: 'spell-effect',
+      displayName: 'Projection Concentration',
+      source: {
+        kind: 'spell',
+        ref: 'spell:bless',
+        actor: { kind: 'combatant', ref: combatant.combatantId },
+      },
+      concentration: {
+        owner: { kind: 'combatant', ref: combatant.combatantId },
+      },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'minute',
+        anchor: 'spell-cast',
+      },
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-stun-actor',
+      kind: 'condition-package',
+      displayName: 'Stun Actor',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      conditions: [
+        {
+          target: { kind: 'campaign_actor', ref: 'actor-familiar' },
+          condition: { id: 'stunned:fx-stun-actor' },
+        },
+      ],
+      ...CTX,
+    });
+    expect(
+      listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
+        (effect) => effect.effectId === 'fx-projection-concentration',
+      ),
+    ).toMatchObject({
+      status: 'ended',
+      endReason: 'concentration-broken',
+      endDetail: 'incapacitated',
+    });
+    expect(
+      JSON.parse(combatantState(db, combatant.combatantId).conditions_json),
+    ).toContainEqual(expect.objectContaining({ id: 'stunned:fx-stun-actor' }));
+  });
+
+  it('honors break-remove when end cleanup releases a campaign actor', () => {
+    const { db, pcId } = setup();
+    const combatant = startActorCombat(db, 'ci-divergent-cleanup');
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-divergent-cleanup',
+      kind: 'summoning',
+      displayName: 'Divergent Cleanup',
+      source: { kind: 'ruling' },
+      concentration: { owner: pc(pcId) },
+      duration: { kind: 'until-removed' },
+      actors: [
+        {
+          combatantId: combatant.combatantId,
+          cleanupOnEnd: 'release',
+          cleanupOnBreak: 'remove',
+        },
+      ],
+      ...CTX,
+    });
+    closeCombatInstance(db, {
+      campaignId: CAMPAIGN,
+      combatInstanceId: 'ci-divergent-cleanup',
+      status: 'completed',
+      ...CTX,
+    });
+    const second = startActorCombat(db, 'ci-divergent-cleanup-2');
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-actor-own-concentration',
+      kind: 'spell-effect',
+      displayName: 'Actor Concentration',
+      source: {
+        kind: 'spell',
+        ref: 'spell:bless',
+        actor: { kind: 'combatant', ref: second.combatantId },
+      },
+      concentration: { owner: { kind: 'combatant', ref: second.combatantId } },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'minute',
+        anchor: 'spell-cast',
+      },
+      ...CTX,
+    });
+    endActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-divergent-cleanup',
+      reason: 'concentration-broken',
+      detail: 'voluntary',
+      ...CTX,
+    });
+    expect(getCampaignActor(db, CAMPAIGN, 'actor-familiar')?.status).toBe(
+      'inactive',
+    );
+    expect(combatantState(db, second.combatantId).status).toBe('inactive');
+    expect(
+      listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
+        (effect) => effect.effectId === 'fx-actor-own-concentration',
+      ),
+    ).toMatchObject({ status: 'ended', endDetail: 'owner-removed' });
   });
 });
 

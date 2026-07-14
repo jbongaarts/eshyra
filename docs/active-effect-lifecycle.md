@@ -306,7 +306,12 @@ combatant targets and condition projections (`combat-ended`), and detaches
 combatant source-actor pointers (the `created` event keeps the provenance),
 so live effects never point at unreachable combatants or dead clocks
 (character-owned effects survive closure — combat ending does not end
-spells; campaign-actor rebinding is `eshyra-2n1t.5.3`). Closure notes use
+spells. At combat close, an explicitly persistent owned actor (or a combatant
+already projected from a campaign actor) is synchronized to its durable actor
+row and all eligible source, target, condition, and ownership references are
+rebound to `campaign_actor`. Instance-only references retain the fail-closed
+release/remove/detach behavior. Campaign actors never become concentration
+owners or participant-turn anchors. Closure notes use
 global rounds only for ordinary round anchors; source/target turn anchors
 report remaining participant turn-start boundaries. `inactive` means
 removed from play: it cannot start concentrating and transitioning into it

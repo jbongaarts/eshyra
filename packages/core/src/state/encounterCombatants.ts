@@ -184,6 +184,168 @@ export interface UpdateCombatantInput {
   readonly at: string;
 }
 
+export interface CampaignActorMutationInput {
+  readonly campaignId: string;
+  readonly actorId: string;
+  readonly addCondition?: CharacterConditionEntry;
+  readonly removeCondition?: string;
+  readonly status?: ActorStatus;
+  readonly hpCurrent?: number;
+  readonly hpMax?: number;
+  readonly currentLocationId?: string;
+  readonly provenance: string;
+  readonly sessionId: string;
+  readonly at: string;
+}
+
+/** Semantic actor mutation seam. It preserves unrelated durable state and
+ * mirrors changes into the active projection, when one exists. */
+export function updateCampaignActor(
+  db: Db,
+  input: CampaignActorMutationInput,
+): CampaignActor {
+  return withTransaction(db, (txnDb) => {
+    const actor = getCampaignActor(txnDb, input.campaignId, input.actorId);
+    if (actor === undefined) {
+      throw new EncounterCombatantError(
+        `unknown campaign actor '${input.actorId}'`,
+      );
+    }
+    const conditions = [...actor.conditions];
+    if (
+      input.addCondition !== undefined &&
+      !conditions.some((c) => c.id === input.addCondition?.id)
+    ) {
+      conditions.push(input.addCondition);
+    }
+    if (input.removeCondition !== undefined) {
+      conditions.splice(
+        0,
+        conditions.length,
+        ...conditions.filter((c) => c.id !== input.removeCondition),
+      );
+    }
+    upsertCampaignActor(txnDb, {
+      campaignId: input.campaignId,
+      actorId: input.actorId,
+      displayName: actor.displayName,
+      actorKind: actor.actorKind,
+      sourceKind: actor.sourceKind,
+      sourceRef: actor.sourceRef,
+      rulesRef: actor.rulesRef,
+      hpCurrent: input.hpCurrent ?? actor.hpCurrent,
+      hpMax: input.hpMax ?? actor.hpMax,
+      conditions,
+      status: input.status ?? actor.status,
+      currentLocationId: input.currentLocationId ?? actor.currentLocationId,
+      state: actor.state,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+    const projection = txnDb
+      .prepare(
+        `SELECT combatant_id, hp_current FROM encounter_combatant
+         WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
+           AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
+         ORDER BY combatant_id LIMIT 1`,
+      )
+      .get(input.campaignId, input.actorId, input.campaignId) as
+      | { combatant_id: string; hp_current: number }
+      | undefined;
+    if (projection !== undefined) {
+      if (input.hpMax !== undefined) {
+        txnDb
+          .prepare(
+            `UPDATE encounter_combatant SET hp_max = ?, provenance = ?, session_id = ?, updated_at = ?
+             WHERE campaign_id = ? AND combatant_id = ?`,
+          )
+          .run(
+            input.hpMax,
+            input.provenance,
+            input.sessionId,
+            input.at,
+            input.campaignId,
+            projection.combatant_id,
+          );
+      }
+      updateCombatant(txnDb, {
+        campaignId: input.campaignId,
+        combatantId: projection.combatant_id,
+        ...(input.hpCurrent === undefined
+          ? {}
+          : { hpDelta: input.hpCurrent - projection.hp_current }),
+        ...(input.addCondition === undefined
+          ? {}
+          : { addCondition: input.addCondition }),
+        ...(input.removeCondition === undefined
+          ? {}
+          : { removeCondition: input.removeCondition }),
+        ...(input.status === undefined || input.status === 'unknown'
+          ? {}
+          : { status: input.status }),
+        ...(input.currentLocationId === undefined
+          ? {}
+          : { locationId: input.currentLocationId }),
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+      });
+    }
+    const updated = getCampaignActor(txnDb, input.campaignId, input.actorId);
+    if (updated === undefined) {
+      throw new EncounterCombatantError('campaign actor update failed');
+    }
+    return updated;
+  });
+}
+
+export function ensureCampaignActorFromCombatant(
+  db: Db,
+  input: {
+    campaignId: string;
+    combatantId: string;
+    actorId: string;
+    provenance: string;
+    sessionId: string;
+    at: string;
+  },
+): CampaignActor {
+  const combatant = readCombatant(db, input.campaignId, input.combatantId);
+  if (combatant === undefined)
+    throw new EncounterCombatantError(
+      `unknown combatant '${input.combatantId}'`,
+    );
+  const existing = getCampaignActor(db, input.campaignId, input.actorId);
+  if (
+    existing !== undefined &&
+    existing.rulesRef !== undefined &&
+    existing.rulesRef !== combatant.rulesRef
+  ) {
+    throw new EncounterCombatantError(
+      `campaign actor '${input.actorId}' has incompatible rules reference`,
+    );
+  }
+  return upsertCampaignActor(db, {
+    campaignId: input.campaignId,
+    actorId: input.actorId,
+    displayName: existing?.displayName ?? combatant.displayLabel,
+    actorKind: existing?.actorKind ?? 'creature',
+    sourceKind: existing?.sourceKind ?? 'campaign_created',
+    sourceRef: existing?.sourceRef,
+    rulesRef: combatant.rulesRef,
+    hpCurrent: combatant.hpCurrent,
+    hpMax: combatant.hpMax,
+    conditions: combatant.conditions,
+    status: combatant.status,
+    currentLocationId: combatant.locationId,
+    state: existing?.state,
+    provenance: input.provenance,
+    sessionId: input.sessionId,
+    at: input.at,
+  });
+}
+
 export interface UpdateCombatantResult {
   readonly combatant: EncounterCombatant;
   readonly syncedActor: CampaignActor | undefined;

@@ -21,6 +21,7 @@ import {
   startSession,
   ToolRegistry,
   updateClock,
+  upsertCampaignActor,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
 
@@ -821,6 +822,67 @@ describe('active-effect tools (F3, eshyra-2n1t.5)', () => {
     }
     // Exactly the replaced effect's projection was cleaned up.
     expect(conditionIds(c.db)).toEqual(['blessed:fx-2']);
+  });
+
+  it('preserves exact campaign-actor refs through start_effect and remove_effect_target', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    upsertCampaignActor(c.db, {
+      campaignId: c.campaignId,
+      actorId: 'pc-1',
+      displayName: 'Durable PC One',
+      actorKind: 'companion',
+      sourceKind: 'campaign_created',
+      rulesRef: 'creature:wolf',
+      hpCurrent: 11,
+      hpMax: 11,
+      status: 'alive',
+      provenance: 'test',
+      sessionId: c.sessionId,
+      at: c.at,
+    });
+    const started = registry.invoke(
+      'start_effect',
+      {
+        effectId: 'fx-actor-ref',
+        kind: 'curse',
+        displayName: 'Actor Mark',
+        source: {
+          kind: 'ruling',
+          actor: { kind: 'campaign_actor', ref: 'pc-1' },
+        },
+        duration: { kind: 'until-removed' },
+        targets: [{ kind: 'campaign_actor', ref: 'pc-1' }],
+      },
+      c,
+    );
+    expect(started).toMatchObject({
+      ok: true,
+      data: {
+        effect: {
+          source: { actor: { kind: 'campaign_actor', ref: 'pc-1' } },
+          targets: [{ kind: 'campaign_actor', ref: 'pc-1', status: 'active' }],
+        },
+      },
+    });
+    expect(
+      registry.invoke(
+        'remove_effect_target',
+        {
+          effectId: 'fx-actor-ref',
+          target: { kind: 'campaign_actor', ref: 'pc-1' },
+          reason: 'saved',
+        },
+        c,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        effect: {
+          targets: [{ kind: 'campaign_actor', ref: 'pc-1', status: 'removed' }],
+        },
+      },
+    });
   });
 
   it('start_effect rejects schema violations and lifecycle violations distinctly', () => {
