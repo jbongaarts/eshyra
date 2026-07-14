@@ -3,7 +3,8 @@
 Bead: `eshyra-2n1t.5` (engine family F3; source:
 `docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md`
 §4). Runtime owner: `packages/core/src/state/activeEffects.ts`; durable schema:
-`packages/core/data/migrations/0010_active_effects.sql`; evidence:
+`packages/core/data/migrations/0010_active_effects.sql` plus
+`0011_active_effect_anchor_evidence.sql`; evidence:
 `packages/core/test/activeEffects.test.ts`.
 
 This document records the reviewed contract. The executable authority is the
@@ -127,10 +128,11 @@ Deterministic expiry evaluation:
   (`clock.in_game_time`) is narrative text, so expiry is a declared operation —
   but only a `timed`/`until-trigger` effect can expire, the audit event records
   the declared elapsed reasoning, and the typed timer is preserved for review.
-  Turn-relative timers use `combat_turn_budget.turns_taken`: entering ordinal
-  is completed turns + 1 and deadline ordinal is completed turns at anchoring
-  plus amount. Other participants and global round jumps do not advance that
-  clock. `begin_turn` settles due timers automatically; trigger-occurrence
+  Turn-relative timers use `combat_turn_budget.turns_taken`: the anchor ordinal
+  is completed turns plus one when the anchor participant is currently active,
+  otherwise completed turns; the deadline ordinal is anchor ordinal plus
+  amount. Other participants and global round jumps do not advance that clock.
+  `begin_turn` settles due timers automatically; trigger-occurrence
   round timers stamp the current round while world-time units retain declared
   expiry.
 

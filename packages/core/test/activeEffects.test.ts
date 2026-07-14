@@ -2263,6 +2263,417 @@ describe('anchor semantics', () => {
       deadlineRound: 2,
     });
   });
+
+  it('anchors a source-turn duration at the active turn start boundary', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    const effect = createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-source-two',
+      kind: 'condition-package',
+      displayName: 'Source two',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    }).effect;
+    expect(effect.duration).toMatchObject({
+      anchorParticipantTurnOrdinal: 1,
+      deadlineParticipantTurnOrdinal: 3,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    expect(
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: { kind: 'combatant', ref: GOBLIN_1 },
+        ...CTX,
+      }).boundaryEffects,
+    ).toEqual([]);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    const settled = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    expect(settled.boundaryEffects.map((entry) => entry.effectId)).toEqual([
+      'fx-source-two',
+    ]);
+  });
+
+  it('anchors a target-turn duration at the active target turn start boundary', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    const effect = createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-target-two',
+      kind: 'condition-package',
+      displayName: 'Target two',
+      source: { kind: 'ruling' },
+      targets: [{ kind: 'combatant', ref: GOBLIN_2 }],
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'target-turn-start',
+      },
+      ...CTX,
+    }).effect;
+    expect(effect.duration).toMatchObject({
+      anchorParticipantTurnOrdinal: 1,
+      deadlineParticipantTurnOrdinal: 3,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(1);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    expect(
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: { kind: 'combatant', ref: GOBLIN_2 },
+        ...CTX,
+      }).boundaryEffects.map((entry) => entry.effectId),
+    ).toEqual(['fx-target-two']);
+  });
+
+  it('anchors participant-turn effects to completed turns when another participant is active', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    const effect = createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-next-target',
+      kind: 'condition-package',
+      displayName: 'Next target',
+      source: { kind: 'ruling' },
+      targets: [{ kind: 'combatant', ref: GOBLIN_2 }],
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'target-turn-start',
+      },
+      ...CTX,
+    }).effect;
+    expect(effect.duration).toMatchObject({
+      anchorParticipantTurnOrdinal: 0,
+      deadlineParticipantTurnOrdinal: 1,
+    });
+    expect(
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: { kind: 'combatant', ref: GOBLIN_2 },
+        round: 8,
+        ...CTX,
+      }).boundaryEffects.map((entry) => entry.effectId),
+    ).toEqual(['fx-next-target']);
+  });
+
+  it('refreshes participant-turn anchors using the same active-boundary clock', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-turn',
+      kind: 'condition-package',
+      displayName: 'Refresh turn',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    });
+    const refreshed = refreshEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-turn',
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    });
+    expect(refreshed.duration).toMatchObject({
+      anchorParticipantTurnOrdinal: 1,
+      deadlineParticipantTurnOrdinal: 3,
+    });
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      ...CTX,
+    });
+    expect(
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: { kind: 'combatant', ref: GOBLIN_1 },
+        ...CTX,
+      }).boundaryEffects,
+    ).toEqual([]);
+  });
+
+  it('refreshes against completed turns when the anchor participant is not active', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-off-turn',
+      kind: 'condition-package',
+      displayName: 'Refresh off turn',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_2 } },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    });
+    const refreshed = refreshEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-off-turn',
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    });
+    expect(refreshed.duration).toMatchObject({
+      anchorParticipantTurnOrdinal: 0,
+      deadlineParticipantTurnOrdinal: 2,
+    });
+  });
+
+  it('enforces anchor evidence with NULL-safe SQLite checks', () => {
+    const createSource = (db: Db, effectId: string) => {
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: { kind: 'combatant', ref: GOBLIN_1 },
+        ...CTX,
+      });
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId,
+        kind: 'condition-package',
+        displayName: effectId,
+        source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+        duration: {
+          kind: 'timed',
+          amount: 1,
+          unit: 'round',
+          anchor: 'source-turn-start',
+        },
+        ...CTX,
+      });
+    };
+    for (const [field, value] of [
+      ['anchor_participant_kind', null],
+      ['anchor_participant_ref', null],
+      ['anchor_participant_ref', ' '],
+      ['anchor_participant_turn_ordinal', null],
+      ['anchor_participant_turn_ordinal', -1],
+    ] as const) {
+      const { db } = setupCombat();
+      const effectId = `fx-sql-${field}-${String(value)}`;
+      createSource(db, effectId);
+      expect(() =>
+        db
+          .prepare(`UPDATE active_effect SET ${field} = ? WHERE effect_id = ?`)
+          .run(value, effectId),
+      ).toThrow();
+    }
+
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-sql-trigger',
+      kind: 'condition-package',
+      displayName: 'trigger',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'trigger-occurred',
+        anchorTrigger: 'entered',
+      },
+      ...CTX,
+    });
+    for (const value of [null, '', ' '] as const) {
+      expect(() =>
+        db
+          .prepare(
+            'UPDATE active_effect SET anchor_trigger = ? WHERE effect_id = ?',
+          )
+          .run(value, 'fx-sql-trigger'),
+      ).toThrow();
+    }
+
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-sql-ordinary',
+      kind: 'condition-package',
+      displayName: 'ordinary',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE active_effect SET anchor_participant_kind = 'combatant' WHERE effect_id = 'fx-sql-ordinary'",
+        )
+        .run(),
+    ).toThrow();
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE active_effect SET anchor_trigger = 'bad' WHERE effect_id = 'fx-sql-ordinary'",
+        )
+        .run(),
+    ).toThrow();
+  });
+
+  it('settles ordinary round deadlines before participant-turn cascades', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    // This participant effect sorts first by creation time. Its cleanup
+    // removes GOBLIN_1 and would otherwise break the newer round effect's
+    // concentration before the round phase could claim it.
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-a-participant',
+      kind: 'summoning',
+      displayName: 'Participant cascade',
+      source: {
+        kind: 'ruling',
+        actor: { kind: 'combatant', ref: GOBLIN_2 },
+      },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      actors: [
+        {
+          combatantId: GOBLIN_1,
+          cleanupOnEnd: 'remove',
+          cleanupOnBreak: 'remove',
+        },
+      ],
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-z-round',
+      kind: 'spell-effect',
+      displayName: 'Round first',
+      source: { kind: 'ruling' },
+      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      conditions: [
+        {
+          target: { kind: 'combatant', ref: GOBLIN_1 },
+          condition: { id: 'round-first' },
+          cleanupOnEnd: 'remove',
+          cleanupOnBreak: 'release',
+        },
+      ],
+      ...CTX,
+    });
+    const result = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_2 },
+      round: 2,
+      ...CTX,
+    });
+    expect(result.boundaryEffects.map((entry) => entry.effectId)).toEqual([
+      'fx-z-round',
+      'fx-a-participant',
+    ]);
+    expect(
+      listEffectEvents(db, CAMPAIGN, 'fx-z-round').at(-1)?.detail,
+    ).toMatchObject({
+      reason: 'expired',
+      detail: 'round-deadline',
+    });
+    expect(listActiveEffects(db, CAMPAIGN, { includeEnded: true })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          effectId: 'fx-z-round',
+          endReason: 'expired',
+        }),
+      ]),
+    );
+    expect(auditActiveEffectIntegrity(db, CAMPAIGN)).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------

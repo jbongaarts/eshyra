@@ -45,7 +45,7 @@ import {
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import { validateConditionsJson } from './liveStateSchema.js';
 import { MutateStateError } from './mutateState.js';
-import { ensureTurnClockRow, readCompletedTurns } from './turnClock.js';
+import { ensureTurnClockRow, readAnchorTurnOrdinal } from './turnClock.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1732,7 +1732,12 @@ function validateDuration(
       const participantOrdinal =
         anchorParticipant === undefined || instanceId === null
           ? null
-          : readCompletedTurns(db, campaignId, instanceId, anchorParticipant);
+          : readAnchorTurnOrdinal(
+              db,
+              campaignId,
+              instanceId,
+              anchorParticipant,
+            );
       return {
         kind: 'timed',
         amount: duration.amount,
@@ -3588,74 +3593,90 @@ export function settleEffectsAtTurnBoundary(
     )
     .all(input.campaignId) as ActiveEffectRow[];
   const settled: TurnBoundaryEffectSummary[] = [];
-  for (const row of rows) {
-    if (
+  // Phase 1 is deliberately independent of creation order: every ordinary
+  // round deadline wins before participant-turn cleanup can cascade into it.
+  const roundRows = rows.filter(
+    (row) =>
       row.duration_unit === 'round' &&
       row.anchor_combat_instance_id === input.combatInstanceId &&
       row.anchor_kind !== 'source-turn-start' &&
-      row.anchor_kind !== 'target-turn-start'
-    ) {
-      const deadline = deadlineRound(row);
-      if (deadline !== undefined && input.roundNumber >= deadline) {
-        const outcome = finalizeEnd(
-          db,
-          row,
-          {
-            reason: 'expired',
-            note: `round deadline ${deadline} reached (round ${input.roundNumber})`,
-            detail: 'round-deadline',
-          },
-          input,
-        );
-        if (outcome.performed) {
-          settled.push({
-            effectId: row.effect_id,
-            displayName: row.display_name,
-            deadlineRound: deadline,
-            cleanup: outcome.cleanup,
-            boundary: 'round-deadline',
-            boundaryParticipant: input.participant,
-            enteringTurnOrdinal: input.enteringTurnOrdinal,
-          });
-        }
-        continue;
-      }
+      row.anchor_kind !== 'target-turn-start',
+  );
+  for (const row of roundRows) {
+    const deadline = deadlineRound(row);
+    if (deadline === undefined || input.roundNumber < deadline) {
+      continue;
     }
-    if (
+    const outcome = finalizeEnd(
+      db,
+      row,
+      {
+        reason: 'expired',
+        note: `round deadline ${deadline} reached (round ${input.roundNumber})`,
+        detail: 'round-deadline',
+      },
+      input,
+    );
+    if (outcome.performed) {
+      settled.push({
+        effectId: row.effect_id,
+        displayName: row.display_name,
+        deadlineRound: deadline,
+        cleanup: outcome.cleanup,
+        boundary: 'round-deadline',
+        boundaryParticipant: input.participant,
+        enteringTurnOrdinal: input.enteringTurnOrdinal,
+      });
+    }
+  }
+
+  // Phase 2 is restricted to the two supported participant anchors. In
+  // particular, an unexpected anchor kind is never interpreted as a target
+  // turn anchor merely because participant evidence happens to be present.
+  const participantRows = rows.filter(
+    (row) =>
+      (row.anchor_kind === 'source-turn-start' ||
+        row.anchor_kind === 'target-turn-start') &&
       row.anchor_participant_kind === input.participant.kind &&
       row.anchor_participant_ref === input.participant.ref &&
       row.anchor_participant_turn_ordinal !== null &&
       row.duration_amount !== null &&
       input.enteringTurnOrdinal >=
-        row.anchor_participant_turn_ordinal + row.duration_amount
+        row.anchor_participant_turn_ordinal + row.duration_amount,
+  );
+  for (const row of participantRows) {
+    if (
+      (row.anchor_kind !== 'source-turn-start' &&
+        row.anchor_kind !== 'target-turn-start') ||
+      row.anchor_participant_turn_ordinal === null ||
+      row.duration_amount === null
     ) {
-      const boundary =
-        row.anchor_kind === 'source-turn-start'
-          ? 'source-turn-start'
-          : 'target-turn-start';
-      const outcome = finalizeEnd(
-        db,
-        row,
-        {
-          reason: 'expired',
-          detail: boundary,
-          note: `${boundary} participant turn ordinal ${input.enteringTurnOrdinal}`,
-        },
-        input,
-      );
-      if (outcome.performed) {
-        settled.push({
-          effectId: row.effect_id,
-          displayName: row.display_name,
-          deadlineRound: row.anchor_round ?? 0,
-          cleanup: outcome.cleanup,
-          boundary,
-          boundaryParticipant: input.participant,
-          enteringTurnOrdinal: input.enteringTurnOrdinal,
-          deadlineTurnOrdinal:
-            row.anchor_participant_turn_ordinal + row.duration_amount,
-        });
-      }
+      continue;
+    }
+    const boundary = row.anchor_kind;
+    const deadlineTurnOrdinal =
+      row.anchor_participant_turn_ordinal + row.duration_amount;
+    const outcome = finalizeEnd(
+      db,
+      row,
+      {
+        reason: 'expired',
+        detail: boundary,
+        note: `${boundary} participant turn ordinal ${input.enteringTurnOrdinal}`,
+      },
+      input,
+    );
+    if (outcome.performed) {
+      settled.push({
+        effectId: row.effect_id,
+        displayName: row.display_name,
+        deadlineRound: row.anchor_round ?? 0,
+        cleanup: outcome.cleanup,
+        boundary,
+        boundaryParticipant: input.participant,
+        enteringTurnOrdinal: input.enteringTurnOrdinal,
+        deadlineTurnOrdinal,
+      });
     }
   }
   return settled;
