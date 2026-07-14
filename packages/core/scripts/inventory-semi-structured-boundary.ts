@@ -1,47 +1,72 @@
-/**
- * Reproducible inventory for eshyra-o9bd.18.8.8.
- *
- * This reads committed pack/fixture inputs and writes only documentation
- * artifacts. It deliberately does not invoke an importer or mutate pack data.
- */
+/** Reproducible, semantic inventory for eshyra-o9bd.18.8.8. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PATHFINDER2E_REMASTER_RULES_PACK } from '../src/rules/pathfinder2eRemaster.js';
 
-type Disposition =
+export type Disposition =
   | 'complete'
   | 'typed-core-with-prose-qualifier'
   | 'model-adjudicated'
   | 'unsupported'
   | 'not-mechanical';
 
-interface Row {
-  system: string;
-  recordKinds: string[];
-  fieldPath: string;
-  representativeValues: string[];
-  population: number;
-  valueClass:
+export interface InventoryRow {
+  readonly system: string;
+  readonly recordKinds: readonly string[];
+  readonly fieldPath: string;
+  readonly representativeValues: readonly string[];
+  readonly population: number;
+  readonly valueClass:
     | 'source prose'
     | 'identifier-like'
     | 'scalar-like'
     | 'compound mechanical text'
     | 'mixed';
-  currentSchemaValidation: string;
-  deterministicConsumers: string;
-  currentAuditReadiness: string;
-  disposition: Disposition;
-  typedSchemaOrConsumer: string | null;
-  owner: string | null;
-  futureWork: boolean;
+  readonly currentSchemaValidation: string;
+  readonly deterministicConsumers: string;
+  readonly currentAuditReadiness: string;
+  readonly disposition: Disposition;
+  readonly typedSchemaOrConsumer: string | null;
+  readonly owner: string | null;
+  readonly futureWork: boolean;
+}
+
+export interface InventoryArtifact {
+  readonly bead: string;
+  readonly generatedBy: string;
+  readonly inputs: readonly string[];
+  readonly recordCounts: {
+    readonly dnd5eSrd: number;
+    readonly pathfinderFixture: number;
+  };
+  readonly rowCount: number;
+  readonly dispositionCounts: Readonly<Record<Disposition, number>>;
+  readonly rows: readonly InventoryRow[];
 }
 
 interface Seen {
-  kinds: Set<string>;
-  values: Set<string>;
+  readonly kind: string;
+  readonly values: Set<string>;
   population: number;
 }
+
+interface ClassificationContext {
+  readonly system: string;
+  readonly recordKinds: readonly string[];
+  readonly fieldPath: string;
+  readonly representativeValues: readonly string[];
+}
+
+type Classification = Omit<
+  InventoryRow,
+  'system' | 'recordKinds' | 'fieldPath' | 'representativeValues' | 'population'
+>;
+type ClassificationRule = {
+  readonly name: string;
+  readonly matches: (context: ClassificationContext) => boolean;
+  readonly classify: (context: ClassificationContext) => Classification;
+};
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 const dndPath = join(
@@ -70,30 +95,30 @@ function add(
   value: unknown,
 ): void {
   if (typeof value === 'string') {
-    const current = seen.get(`${system}|${path}`) ?? {
-      kinds: new Set<string>(),
+    const key = `${system}|${kind}|${path}`;
+    const current = seen.get(key) ?? {
+      kind,
       values: new Set<string>(),
       population: 0,
     };
-    current.kinds.add(kind);
     current.population += 1;
     if (current.values.size < 5) current.values.add(value);
-    seen.set(`${system}|${path}`, current);
+    seen.set(key, current);
     return;
   }
   if (Array.isArray(value)) {
     if (value.every((item) => typeof item === 'string')) {
-      const current = seen.get(`${system}|${path}[]`) ?? {
-        kinds: new Set<string>(),
+      const key = `${system}|${kind}|${path}[]`;
+      const current = seen.get(key) ?? {
+        kind,
         values: new Set<string>(),
         population: 0,
       };
-      current.kinds.add(kind);
       current.population += 1;
       for (const item of value.slice(0, 5)) {
         if (current.values.size < 5) current.values.add(String(item));
       }
-      seen.set(`${system}|${path}[]`, current);
+      seen.set(key, current);
       return;
     }
     for (const item of value) add(seen, system, kind, `${path}[]`, item);
@@ -106,189 +131,522 @@ function add(
   }
 }
 
-function classify(
-  path: string,
-  system: string,
-): Omit<
-  Row,
-  'system' | 'recordKinds' | 'fieldPath' | 'representativeValues' | 'population'
-> {
-  const unsupportedOwner = /data\.(savingThrows|skills|senses)$/.test(path)
-    ? 'eshyra-o9bd.18.7.9.15 (residual creature mechanics)'
-    : /data\.properties\[\]$/.test(path)
-      ? 'eshyra-o9bd.18.7.6 (equipment semantic payload)'
-      : /data\.(charges|activation|attunementRequirement)$/.test(path)
-        ? 'eshyra-o9bd.18.7.7.1 / 18.7.7 (magic-item state and activation contracts)'
-        : null;
-  if (unsupportedOwner) {
-    return {
-      valueClass: 'compound mechanical text',
-      currentSchemaValidation:
-        'D&D kind validator checks only the current string/array shape; no complete semantic grammar is declared.',
-      deterministicConsumers:
-        'future deterministic creature/equipment/magic-item consumers must not parse this ad hoc',
-      currentAuditReadiness:
-        'source is retained and the gap must remain visible; current readiness does not claim deterministic execution',
-      disposition: 'unsupported',
-      typedSchemaOrConsumer: null,
-      owner: unsupportedOwner,
-      futureWork: true,
-    };
-  }
-  const prose =
-    /(?:^|\.)(?:text|sourceText|description|detail|note|prompt|componentMaterials|prerequisite|trigger|condition|constraint|target|against|to|from|grant|equipment|suggestedCharacteristics)$/i.test(
-      path,
-    );
-  const ref =
-    /(?:Ref|Refs|^data\.key$|\.id$|\.kind$|\.category$|\.type$|\.mode$|\.ability$|\.skill$|\.condition$|\.relation$|\.cost$|\.reset$|\.timing$|\.frequency$|\.actionCost$|\.rarity$|\.damageType$|\.damageDie$|\.weaponRange$|\.armorType$|\.group$)/i.test(
-      path,
-    );
-  const mechanics = path.includes('.mechanics.');
-  if (mechanics) {
-    return {
-      valueClass: prose ? 'compound mechanical text' : 'mixed',
-      currentSchemaValidation:
-        'D&D kind validator validates the containing mechanics object; field contract is domain-specific.',
-      deterministicConsumers:
-        'mechanics projections, rules audits, and selected effect/choice resolvers',
-      currentAuditReadiness:
-        'retained typed projection is audited; unsupported clauses remain visible to readiness/audit layers',
-      disposition: 'typed-core-with-prose-qualifier',
-      typedSchemaOrConsumer:
-        'domain-specific mechanics projection plus retained record/entry text',
-      owner:
-        'existing importer mechanics-projection and 18.7.9 engine-domain beads',
-      futureWork: true,
-    };
-  }
-  if (prose) {
-    return {
-      valueClass:
-        path.includes('trigger') || path.includes('condition')
-          ? 'compound mechanical text'
-          : 'source prose',
-      currentSchemaValidation:
-        'containing kind validator requires a string where applicable; no semantic grammar',
-      deterministicConsumers: 'none; lookup/display/model context only',
-      currentAuditReadiness:
-        'source coverage and rule-disposition audits retain the text; not counted as deterministic support',
-      disposition:
-        path.includes('description') ||
-        path.includes('text') ||
-        path.includes('sourceText')
-          ? 'not-mechanical'
-          : 'model-adjudicated',
-      typedSchemaOrConsumer: null,
-      owner: null,
-      futureWork: false,
-    };
-  }
-  if (ref) {
-    return {
-      valueClass: /ref|id|key/i.test(path) ? 'identifier-like' : 'scalar-like',
-      currentSchemaValidation:
-        'containing D&D/PF kind validator checks the field shape; reference fields are resolved by lookup where consumed',
-      deterministicConsumers: /ref|id|key/i.test(path)
-        ? 'rules-pack lookup/resolver when referenced'
-        : 'record-specific consumers only where registered',
-      currentAuditReadiness:
-        'reference parity/readiness checks apply where a ref is declared; otherwise shape-only',
-      disposition: /ref|id|key/i.test(path) ? 'complete' : 'model-adjudicated',
-      typedSchemaOrConsumer: /ref|id|key/i.test(path)
-        ? 'record-reference key / lookupRulesRecord'
-        : null,
-      owner: /ref|id|key/i.test(path)
-        ? 'rules-pack lookup and owning record domain'
-        : null,
-      futureWork: false,
-    };
-  }
+function result(
+  valueClass: Classification['valueClass'],
+  disposition: Disposition,
+  deterministicConsumers: string,
+  currentSchemaValidation: string,
+  currentAuditReadiness: string,
+  typedSchemaOrConsumer: string | null,
+  owner: string | null,
+  futureWork = false,
+): Classification {
   return {
-    valueClass: system === 'pathfinder2e-remaster' ? 'scalar-like' : 'mixed',
-    currentSchemaValidation:
-      'containing kind validator checks string/array shape; no universal scalar enum is inferred',
-    deterministicConsumers: 'none identified outside the owning record domain',
-    currentAuditReadiness:
-      'shape/readiness only; string syntax is not treated as deterministic support',
-    disposition: 'model-adjudicated',
-    typedSchemaOrConsumer: null,
-    owner: null,
-    futureWork: false,
+    valueClass,
+    currentSchemaValidation,
+    deterministicConsumers,
+    currentAuditReadiness,
+    disposition,
+    typedSchemaOrConsumer,
+    owner,
+    futureWork,
   };
 }
 
-function inventory(
-  system: string,
-  records: readonly Record<string, unknown>[],
-): Row[] {
-  const seen = new Map<string, Seen>();
-  for (const record of records) {
-    const kind = String(record.kind);
-    add(seen, system, kind, 'data', record.data);
-    for (const [key, value] of Object.entries(record)) {
-      if (key !== 'data') add(seen, system, kind, `record.${key}`, value);
-    }
-  }
-  return [...seen.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => {
-      const [, fieldPath] = key.split('|');
-      const base = classify(fieldPath, system);
-      return {
-        system,
-        recordKinds: [...value.kinds].sort(),
-        fieldPath,
-        representativeValues: [...value.values],
-        population: value.population,
-        ...base,
-      };
-    });
+const shapeValidation =
+  'the registered system/kind validator checks the declared string or string-array shape';
+const noDeterministicConsumer =
+  'no deterministic consumer is registered for this field';
+
+function exactPath(
+  ...paths: string[]
+): (context: Pick<ClassificationContext, 'fieldPath'>) => boolean {
+  return ({ fieldPath }) => paths.includes(fieldPath);
 }
 
-const dndRecords = recordsFrom(JSON.parse(readFileSync(dndPath, 'utf8')));
-const rows = [
-  ...inventory('dnd5e-srd', dndRecords),
-  ...inventory(
-    'pathfinder2e-remaster',
-    PATHFINDER2E_REMASTER_RULES_PACK.records as unknown as readonly Record<
-      string,
-      unknown
-    >[],
-  ),
-];
-const artifact = {
-  bead: 'eshyra-o9bd.18.8.8',
-  generatedBy: relative(root, fileURLToPath(import.meta.url)),
-  inputs: [
-    relative(root, dndPath),
-    'packages/core/src/rules/pathfinder2eRemaster.ts',
-  ],
-  recordCounts: {
-    dnd5eSrd: dndRecords.length,
-    pathfinderFixture: PATHFINDER2E_REMASTER_RULES_PACK.records.length,
+function kindIs(
+  ...kinds: string[]
+): (context: Pick<ClassificationContext, 'recordKinds'>) => boolean {
+  return ({ recordKinds }) =>
+    recordKinds.length === kinds.length &&
+    kinds.every((kind) => recordKinds.includes(kind));
+}
+
+function hasKind(
+  ...kinds: string[]
+): (context: Pick<ClassificationContext, 'recordKinds'>) => boolean {
+  return ({ recordKinds }) => kinds.some((kind) => recordKinds.includes(kind));
+}
+
+const rules: readonly ClassificationRule[] = [
+  {
+    name: 'explicit unsupported residuals',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      ((hasKind('creature', 'stat-block')({ recordKinds }) &&
+        exactPath('data.senses')({ fieldPath } as ClassificationContext)) ||
+        (hasKind('creature')({ recordKinds }) &&
+          exactPath(
+            'data.savingThrows',
+            'data.skills',
+          )({
+            fieldPath,
+          } as ClassificationContext)) ||
+        (kindIs('equipment')({ recordKinds }) &&
+          exactPath('data.properties[]')({
+            fieldPath,
+          } as ClassificationContext)) ||
+        (kindIs('magic-item')({ recordKinds }) &&
+          exactPath('data.attunementRequirement')({
+            fieldPath,
+          } as ClassificationContext))),
+    classify: ({ fieldPath }) =>
+      result(
+        'compound mechanical text',
+        'unsupported',
+        'future deterministic domain consumer; callers must not parse this ad hoc',
+        'kind validator checks only the current shape; no complete semantic grammar is declared',
+        'source is retained and readiness must not claim deterministic execution',
+        null,
+        fieldPath === 'data.properties[]'
+          ? 'eshyra-o9bd.18.7.6 (equipment semantic payload)'
+          : fieldPath === 'data.attunementRequirement'
+            ? 'eshyra-o9bd.18.7.7.1 / 18.7.7 (magic-item state and activation contracts)'
+            : 'eshyra-o9bd.18.7.9.15 (residual creature mechanics)',
+        true,
+      ),
   },
-  rowCount: rows.length,
-  dispositionCounts: Object.fromEntries(
+  {
+    name: 'record identity',
+    matches: exactPath('record.key', 'record.kind', 'record.systemId'),
+    classify: ({ fieldPath }) => {
+      if (fieldPath === 'record.key') {
+        return result(
+          'identifier-like',
+          'complete',
+          'rules-stack `byKey` index and `lookupRulesRecord({ ref })`',
+          'RulesRecord.key is required by the baseline record validator',
+          'canonical identity is indexed and ref-resolvable',
+          'RulesRecord.key / RulesStackKindIndex.byKey',
+          'rules-stack indexing and rules lookup',
+        );
+      }
+      if (fieldPath === 'record.kind') {
+        return result(
+          'identifier-like',
+          'complete',
+          'RulesRecordKind discriminator and kind-specific schema dispatch',
+          'RulesRecord.kind is checked against the closed RulesRecordKind union/validator',
+          'kind membership and schema selection are audited',
+          'RulesRecordKind; validateRecordKindSchema',
+          'rules/types.ts and rules/kindSchemas.ts',
+        );
+      }
+      return result(
+        'identifier-like',
+        'complete',
+        'rules-stack system binding and `resolveRulesStack` compatibility',
+        'RulesRecord.systemId is required by the baseline pack model',
+        'system identity is checked while resolving the bound pack',
+        'RulesRecord.systemId / RulesPack.meta.systemId',
+        'rules-stack resolution',
+      );
+    },
+  },
+  {
+    name: 'record normalized name identity',
+    matches: exactPath('record.name'),
+    classify: () =>
+      result(
+        'identifier-like',
+        'complete',
+        'rules-stack `byName` index using `normalizeRulesRecordName`; display identity',
+        'RulesRecord.name is required by the baseline record validator',
+        'normalized-name lookup reports not-found/single/ambiguous results',
+        'normalizeRulesRecordName / RulesStackKindIndex.byName',
+        'rules-stack indexing and rules lookup',
+      ),
+  },
+  {
+    name: 'source and licensing provenance',
+    matches: ({ fieldPath }) =>
+      fieldPath === 'record.source' ||
+      fieldPath.startsWith('record.provenance.') ||
+      fieldPath.startsWith('record.license.'),
+    classify: () =>
+      result(
+        'source prose',
+        'not-mechanical',
+        'provenance/display/licensing consumers only',
+        'RulesRecord source, provenance, and license contracts validate metadata shape',
+        'source coverage and license audits retain this evidence',
+        null,
+        'RulesRecord.source / RecordProvenance / RulesPackLicense',
+      ),
+  },
+  {
+    name: 'canonical record references',
+    matches: exactPath(
+      'data.contents[].ref',
+      'data.equipmentGrants[].ref',
+      'data.startingEquipment.entries[].grants[].ref',
+      'data.startingEquipment.entries[].options[].grants[].ref',
+      'data.features[]',
+      'data.featuresByLevel[].features[]',
+      'data.parentClass',
+      'data.subraceOf',
+      'data.subraces[]',
+      'data.statBlockRefs[]',
+      'data.tableRefs[]',
+      'data.choices[].tableRef',
+      'data.progressionTableRef',
+      'data.spellTableRefs[]',
+      'data.choices[].options[].prerequisites[].ref',
+      'data.choices[].options[].prerequisites[].classRef',
+      'data.choices[].options[].prerequisites[].featureRef',
+    ),
+    classify: ({ fieldPath }) => {
+      const equipment =
+        fieldPath === 'data.contents[].ref' ||
+        fieldPath.includes('grants[].ref');
+      const progression =
+        fieldPath === 'data.features[]' ||
+        fieldPath === 'data.featuresByLevel[].features[]' ||
+        fieldPath.includes('progression');
+      return result(
+        'identifier-like',
+        'complete',
+        equipment
+          ? fieldPath === 'data.contents[].ref'
+            ? 'srdEquipmentPacks equipment-pack content resolution'
+            : 'srdStartingEquipmentGrants starting-equipment resolution'
+          : progression
+            ? 'rulesPackResolver parseClassProgression feature-reference resolution'
+            : fieldPath === 'data.tableRefs[]' ||
+                fieldPath === 'data.choices[].tableRef' ||
+                fieldPath === 'data.progressionTableRef' ||
+                fieldPath === 'data.spellTableRefs[]'
+              ? 'tableRefs reachability audit and advancement/choice table lookup'
+              : 'lookupRulesRecord typed ancestry, spell, feature, or stat-block reference consumer',
+        `${shapeValidation}; reference-bearing field has a domain contract`,
+        'reference reachability/parity audits and the named resolver fail closed',
+        equipment
+          ? fieldPath === 'data.contents[].ref'
+            ? 'EquipmentPackContents.ref / equipment-pack content reference'
+            : 'StartingEquipmentGrant.ref / starting-equipment record reference'
+          : progression
+            ? 'ClassProgression.featureRefs / subclass feature reference'
+            : 'domain-specific RulesRecord reference key',
+        equipment
+          ? 'srdStartingEquipmentGrants.ts and srdEquipmentPacks.ts'
+          : progression
+            ? 'rulesPackResolver.ts'
+            : 'owning domain validator and rules/lookup.ts',
+      );
+    },
+  },
+  {
+    name: 'local choice identities and discriminators',
+    matches: exactPath(
+      'data.choices[].id',
+      'data.choices[].category',
+      'data.choices[].options[].id',
+      'data.choices[].options[].prerequisites[].kind',
+      'data.startingEquipment.entries[].kind',
+      'data.startingEquipment.entries[].grants[].kind',
+      'data.startingEquipment.entries[].grants[].select',
+      'data.startingEquipment.entries[].grants[].weaponCategory',
+      'data.startingEquipment.entries[].grants[].weaponRange',
+      'data.startingEquipment.entries[].options[].grants[].kind',
+      'data.startingEquipment.entries[].options[].grants[].select',
+      'data.startingEquipment.entries[].options[].grants[].weaponCategory',
+      'data.startingEquipment.entries[].options[].grants[].weaponRange',
+    ),
+    classify: ({ fieldPath }) =>
+      result(
+        'identifier-like',
+        'complete',
+        fieldPath.includes('startingEquipment')
+          ? 'srdStartingEquipmentGrants typed grant/filter contract'
+          : 'srdCreationChoices / feature-choice validator local choice contract',
+        'kind-specific schema validates the closed choice/grant discriminator',
+        'choice and equipment-resolution audits validate domain membership',
+        fieldPath.includes('startingEquipment')
+          ? 'StartingEquipmentGrant discriminator / StartingEquipmentFilterSelect'
+          : 'CreationChoice.id / CreationChoiceCategory / FeatureChoiceCategory',
+        fieldPath.includes('startingEquipment')
+          ? 'srdStartingEquipmentGrants.ts and rulesPackResolver.ts'
+          : 'srdCreationChoices.ts and featureChoices.ts',
+      ),
+  },
+  {
+    name: 'creation and progression domains',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      ((kindIs('ancestry')({ recordKinds }) &&
+        exactPath(
+          'data.abilityScoreIncreases[].choice.from[]',
+          'data.abilityScoreIncreases[].fixed[].ability',
+          'data.choices[].from[]',
+        )({ fieldPath } as ClassificationContext)) ||
+        (kindIs('background')({ recordKinds }) &&
+          exactPath(
+            'data.choices[].from[]',
+            'data.skillProficiencies[]',
+          )({
+            fieldPath,
+          } as ClassificationContext)) ||
+        (kindIs('class')({ recordKinds }) &&
+          exactPath(
+            'data.armorProficiencies[]',
+            'data.weaponProficiencies[]',
+            'data.toolProficiencies[]',
+            'data.savingThrowProficiencies[]',
+            'data.toolProficiencyChoices[].from[]',
+            'data.spellcastingAbility',
+            'data.progression[].advancement[].kind',
+            'data.progression[].advancement[].ref',
+            'data.progression[].advancement[].targetRefs[]',
+            'data.progression[].proficiencyBonus',
+          )({ fieldPath } as ClassificationContext)) ||
+        exactPath('data.classes[]')({ fieldPath } as ClassificationContext)),
+    classify: ({ fieldPath }) =>
+      result(
+        'scalar-like',
+        'complete',
+        fieldPath === 'data.classes[]'
+          ? 'rulesPackResolver spell legal-class filtering'
+          : fieldPath.includes('progression')
+            ? 'rulesPackResolver parseClassProgression / advancementTable parsing'
+            : fieldPath.includes('Proficien') ||
+                fieldPath.includes('proficiency')
+              ? 'srdCreationChoices and class-choice/proficiency resolution'
+              : 'rulesPackResolver and srdCreationChoices typed creation-choice domains',
+        'D&D system kind schema plus the named resolver contract validates this field',
+        'character creation/progression audits and resolvers consume the closed domain',
+        'domain-specific creation/progression schema and resolver contract',
+        'rulesPackResolver.ts, srdCreationChoices.ts, and advancementTable.ts',
+      ),
+  },
+  {
+    name: 'equipment filter fields',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('equipment')({ recordKinds }) &&
+      exactPath(
+        'data.category',
+        'data.equipmentGroup',
+        'data.weaponCategory',
+        'data.weaponRange',
+        'data.damageType',
+        'data.armorType',
+        'data.armorClass.dexModifier',
+      )({ fieldPath } as ClassificationContext),
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'srdStartingEquipmentGrants equipment catalog filters and kind schema',
+        'D&D equipment validator checks the field shape and closed filter contract',
+        'equipment-resolution audit verifies every starting-equipment filter resolves',
+        'Dnd5eEquipmentData / StartingEquipmentFilterGrant',
+        'srdEquipmentResolutionAudit.ts and srdStartingEquipmentGrants.ts',
+      ),
+  },
+  {
+    name: 'existing mechanics projections',
+    matches: ({ fieldPath }) => fieldPath.includes('.mechanics.'),
+    classify: ({ fieldPath }) =>
+      result(
+        'mixed',
+        'typed-core-with-prose-qualifier',
+        'importer mechanics projections, rules audits, and selected effect resolvers',
+        'kind validator validates the containing domain-specific mechanics projection',
+        `typed core is audited; qualifier at ${fieldPath} remains retained source/entry prose`,
+        'domain-specific mechanics projection; consumers use only the typed core',
+        'importer mechanics projections and existing 18.7.9 engine-domain beads',
+        true,
+      ),
+  },
+  {
+    name: 'explicit display and flavor fields',
+    matches: exactPath(
+      'data.actions[].name',
+      'data.traits[].name',
+      'data.variants[].name',
+      'data.choices[].options[].name',
+      'data.feature.name',
+      'data.familyPath[]',
+    ),
+    classify: () =>
+      result(
+        'source prose',
+        'not-mechanical',
+        'display and navigation only',
+        shapeValidation,
+        'display/source audits only; no deterministic gameplay claim',
+        null,
+        'record display contract',
+      ),
+  },
+  {
+    name: 'mechanical source prose',
+    matches: ({ fieldPath }) =>
+      exactPath(
+        'data.text',
+        'data.description',
+        'data.actions[].text',
+        'data.reactions[].text',
+        'data.legendaryActions[].text',
+        'data.choices[].options[].text',
+        'data.choices[].sourceText',
+        'data.startingEquipment.text',
+        'data.startingEquipment.entries[].text',
+        'data.startingEquipment.entries[].sourceText',
+        'data.startingEquipment.entries[].options[].text',
+        'data.armorClass.sourceText',
+        'data.abilityScoreIncreases[].sourceText',
+        'data.proficiencyNotes[].text',
+      )({ fieldPath } as ClassificationContext),
+    classify: ({ fieldPath }) =>
+      result(
+        'compound mechanical text',
+        'model-adjudicated',
+        'model context only; any deterministic core must be represented by a separate named projection',
+        shapeValidation,
+        `source text retained as evidence; no deterministic support is claimed for ${fieldPath}`,
+        null,
+        null,
+      ),
+  },
+  {
+    name: 'source prose and unowned strings',
+    matches: ({ fieldPath }) =>
+      fieldPath.startsWith('data.') &&
+      /(?:\.text|\.description|\.sourceText|\.prompt|\.detail|\.note|\.condition|\.constraint|\.target|\.against|\.grant|\.equipment)$/.test(
+        fieldPath,
+      ),
+    classify: () =>
+      result(
+        'source prose',
+        'model-adjudicated',
+        noDeterministicConsumer,
+        shapeValidation,
+        'source coverage retains the clause; readiness does not count it as deterministic support',
+        null,
+        null,
+      ),
+  },
+  {
+    name: 'conservative fallback',
+    matches: () => true,
+    classify: ({ fieldPath }) =>
+      result(
+        'scalar-like',
+        'model-adjudicated',
+        noDeterministicConsumer,
+        shapeValidation,
+        `syntax alone does not establish deterministic authority for ${fieldPath}`,
+        null,
+        null,
+      ),
+  },
+];
+
+export function classifyField(context: ClassificationContext): Classification {
+  const rule = rules.find((candidate) => candidate.matches(context));
+  if (rule === undefined)
+    throw new Error(`no classification rule for ${context.fieldPath}`);
+  return rule.classify(context);
+}
+
+export function buildInventoryArtifact(): InventoryArtifact {
+  const dndRecords = recordsFrom(JSON.parse(readFileSync(dndPath, 'utf8')));
+  const sources = [
+    {
+      system: 'dnd5e-srd',
+      records: dndRecords,
+    },
+    {
+      system: 'pathfinder2e-remaster',
+      records:
+        PATHFINDER2E_REMASTER_RULES_PACK.records as unknown as readonly Record<
+          string,
+          unknown
+        >[],
+    },
+  ];
+  const seen = new Map<string, Seen>();
+  for (const source of sources) {
+    for (const record of source.records) {
+      const kind = String(record.kind);
+      add(seen, source.system, kind, 'data', record.data);
+      for (const [key, value] of Object.entries(record)) {
+        if (key !== 'data')
+          add(seen, source.system, kind, `record.${key}`, value);
+      }
+    }
+  }
+  const rows = [...seen.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => {
+      const [system, recordKind, ...pathParts] = key.split('|');
+      const fieldPath = pathParts.join('|');
+      const representativeValues = [...value.values];
+      const classification = classifyField({
+        system,
+        recordKinds: [recordKind],
+        fieldPath,
+        representativeValues,
+      });
+      return {
+        system,
+        recordKinds: [recordKind],
+        fieldPath,
+        representativeValues,
+        population: value.population,
+        ...classification,
+      } satisfies InventoryRow;
+    });
+  const dispositionCounts = Object.fromEntries(
     [...new Set(rows.map((row) => row.disposition))]
       .sort()
       .map((disposition) => [
         disposition,
         rows.filter((row) => row.disposition === disposition).length,
       ]),
-  ),
-  rows,
-};
+  ) as Record<Disposition, number>;
+  return {
+    bead: 'eshyra-o9bd.18.8.8',
+    generatedBy: relative(root, fileURLToPath(import.meta.url)),
+    inputs: [
+      relative(root, dndPath),
+      'packages/core/src/rules/pathfinder2eRemaster.ts',
+    ],
+    recordCounts: {
+      dnd5eSrd: dndRecords.length,
+      pathfinderFixture: PATHFINDER2E_REMASTER_RULES_PACK.records.length,
+    },
+    rowCount: rows.length,
+    dispositionCounts,
+    rows,
+  };
+}
 
-function markdown(): string {
+export function renderInventoryJson(artifact: InventoryArtifact): string {
+  return `${JSON.stringify(artifact, null, 2)}\n`;
+}
+
+export function renderInventoryMarkdown(artifact: InventoryArtifact): string {
   const lines = [
     '# Semi-structured SRD string inventory',
     '',
-    `Generated by \`${artifact.generatedBy}\`; inputs contain ${dndRecords.length} D&D records and ${PATHFINDER2E_REMASTER_RULES_PACK.records.length} representative Pathfinder records. Rows group identical nested field paths across records; population is occurrences for scalar strings and records containing an array of strings.`,
+    `Generated by \`${artifact.generatedBy}\`; inputs contain ${artifact.recordCounts.dnd5eSrd} D&D records and ${artifact.recordCounts.pathfinderFixture} representative Pathfinder records. Rows group repeated field paths within each record kind; population is occurrences for scalar strings and records containing an array of strings.`,
     '',
-    `Total grouped paths: **${rows.length}**. Dispositions: ${Object.entries(
+    `Total grouped paths: **${artifact.rowCount}**. Dispositions: ${Object.entries(
       artifact.dispositionCounts,
     )
-      .map(([k, v]) => `\`${k}\` ${v}`)
+      .map(([key, value]) => `\`${key}\` ${value}`)
       .join(', ')}.`,
     '',
     'The generated JSON is the machine-readable inventory. This table keeps the same evidence compact enough for review.',
@@ -296,7 +654,7 @@ function markdown(): string {
     '| System | Kinds | Field path | Population | Representative values | Class | Disposition | Consumer / schema | Owner / future |',
     '| --- | --- | --- | ---: | --- | --- | --- | --- | --- |',
   ];
-  for (const row of rows) {
+  for (const row of artifact.rows) {
     const values = row.representativeValues
       .map((value) => value.replaceAll('|', '\\|').replaceAll('\n', ' '))
       .join('; ');
@@ -307,21 +665,37 @@ function markdown(): string {
   return `${lines.join('\n')}\n`;
 }
 
-const jsonOutput = `${JSON.stringify(artifact, null, 2)}\n`;
-const markdownOutput = markdown();
-if (process.argv.includes('--check')) {
-  const actualJson = readFileSync(outputPath, 'utf8');
-  const actualMarkdown = readFileSync(markdownPath, 'utf8');
-  if (actualJson !== jsonOutput || actualMarkdown !== markdownOutput) {
-    throw new Error(
-      'committed semi-structured inventory is stale; regenerate it',
-    );
+export function checkCommittedOutputs(): void {
+  const artifact = buildInventoryArtifact();
+  if (readFileSync(outputPath, 'utf8') !== renderInventoryJson(artifact)) {
+    throw new Error('committed semi-structured JSON inventory is stale');
   }
-  console.log(`inventory is current (${rows.length} rows)`);
-} else {
-  writeFileSync(outputPath, jsonOutput);
-  writeFileSync(markdownPath, markdownOutput);
+  if (
+    readFileSync(markdownPath, 'utf8') !== renderInventoryMarkdown(artifact)
+  ) {
+    throw new Error('committed semi-structured Markdown inventory is stale');
+  }
+}
+
+export function writeCommittedOutputs(): void {
+  const artifact = buildInventoryArtifact();
+  writeFileSync(outputPath, renderInventoryJson(artifact));
+  writeFileSync(markdownPath, renderInventoryMarkdown(artifact));
   console.log(
-    `wrote ${relative(root, outputPath)} and ${relative(root, markdownPath)} (${rows.length} rows)`,
+    `wrote ${relative(root, outputPath)} and ${relative(root, markdownPath)} (${artifact.rowCount} rows)`,
   );
+}
+
+const isCli =
+  process.argv[1] !== undefined &&
+  fileURLToPath(import.meta.url) === process.argv[1];
+if (isCli) {
+  if (process.argv.includes('--check')) {
+    checkCommittedOutputs();
+    console.log(
+      `inventory is current (${buildInventoryArtifact().rowCount} rows)`,
+    );
+  } else {
+    writeCommittedOutputs();
+  }
 }

@@ -1,63 +1,160 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  buildInventoryArtifact,
+  type InventoryRow,
+  renderInventoryJson,
+  renderInventoryMarkdown,
+} from '../scripts/inventory-semi-structured-boundary.js';
 
-const inventory = JSON.parse(
-  readFileSync(
-    join(
-      process.cwd(),
-      'docs/inventories/o9bd-18-8-8-semi-structured-boundary.json',
-    ),
-    'utf8',
-  ),
-) as {
-  recordCounts: { dnd5eSrd: number; pathfinderFixture: number };
-  rows: {
-    fieldPath: string;
-    disposition: string;
-    typedSchemaOrConsumer: string | null;
-    owner: string | null;
-  }[];
-};
+const INVENTORY_DIR = join(process.cwd(), 'docs/inventories');
+const committedJson = readFileSync(
+  join(INVENTORY_DIR, 'o9bd-18-8-8-semi-structured-boundary.json'),
+  'utf8',
+);
+const committedMarkdown = readFileSync(
+  join(INVENTORY_DIR, 'o9bd-18-8-8-semi-structured-boundary.md'),
+  'utf8',
+);
 
-const DISPOSITIONS = new Set([
-  'complete',
-  'typed-core-with-prose-qualifier',
-  'model-adjudicated',
-  'unsupported',
-  'not-mechanical',
-]);
+function row(
+  artifact: ReturnType<typeof buildInventoryArtifact>,
+  fieldPath: string,
+  recordKind: string,
+  system = 'dnd5e-srd',
+): InventoryRow {
+  const found = artifact.rows.find(
+    (candidate) =>
+      candidate.system === system &&
+      candidate.fieldPath === fieldPath &&
+      candidate.recordKinds.includes(recordKind),
+  );
+  if (found === undefined) {
+    throw new Error(
+      `missing inventory row ${system}/${recordKind}/${fieldPath}`,
+    );
+  }
+  return found;
+}
 
 describe('semi-structured boundary inventory', () => {
-  it('covers the active D&D pack and Pathfinder fixture', () => {
-    expect(inventory.recordCounts).toEqual({
+  it('recomputes both committed artifacts through the exported generator', () => {
+    const artifact = buildInventoryArtifact();
+    expect(committedJson).toBe(renderInventoryJson(artifact));
+    expect(committedMarkdown).toBe(renderInventoryMarkdown(artifact));
+    expect(artifact.recordCounts).toEqual({
       dnd5eSrd: 1813,
       pathfinderFixture: 7,
     });
-    expect(inventory.rows.length).toBeGreaterThan(700);
   });
 
-  it('uses only the adopted dispositions and names authority for typed rows', () => {
-    for (const row of inventory.rows) {
-      expect(DISPOSITIONS.has(row.disposition), row.fieldPath).toBe(true);
-      if (
-        row.disposition === 'complete' ||
-        row.disposition === 'typed-core-with-prose-qualifier'
-      ) {
-        expect(row.typedSchemaOrConsumer, row.fieldPath).toBeTruthy();
-      }
-      if (row.disposition === 'unsupported') {
-        expect(row.owner, row.fieldPath).toBeTruthy();
-      }
-    }
+  it('classifies identity, provenance, prose, and real local references semantically', () => {
+    const artifact = buildInventoryArtifact();
+    expect(row(artifact, 'record.key', 'spell')).toMatchObject({
+      disposition: 'complete',
+      typedSchemaOrConsumer: expect.stringContaining(
+        'RulesStackKindIndex.byKey',
+      ),
+      owner: expect.stringContaining('rules lookup'),
+    });
+    expect(row(artifact, 'record.kind', 'spell')).toMatchObject({
+      disposition: 'complete',
+      typedSchemaOrConsumer: expect.stringContaining('RulesRecordKind'),
+    });
+    expect(row(artifact, 'record.provenance.sourceRef', 'spell')).toMatchObject(
+      {
+        disposition: 'not-mechanical',
+        deterministicConsumers:
+          expect.not.stringContaining('lookupRulesRecord'),
+      },
+    );
+    expect(row(artifact, 'data.choices[].id', 'ancestry')).toMatchObject({
+      disposition: 'complete',
+      owner: expect.stringContaining('srdCreationChoices'),
+    });
+    expect(row(artifact, 'data.text', 'rule')).toMatchObject({
+      disposition: 'model-adjudicated',
+      valueClass: 'compound mechanical text',
+    });
+    expect(row(artifact, 'data.actions[].text', 'creature')).toMatchObject({
+      disposition: 'model-adjudicated',
+    });
+    expect(
+      row(artifact, 'data.abilityScoreIncreases[].choice.from[]', 'ancestry'),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining('srdCreationChoices'),
+    });
+    expect(
+      row(artifact, 'data.progression[].advancement[].ref', 'class'),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining('parseClassProgression'),
+    });
+    expect(row(artifact, 'data.contents[].ref', 'equipment')).toMatchObject({
+      disposition: 'complete',
+      typedSchemaOrConsumer: expect.stringContaining(
+        'EquipmentPackContents.ref',
+      ),
+    });
   });
 
-  it('does not introduce a universal raw/parsed catch-all', () => {
-    for (const row of inventory.rows) {
-      expect(row.fieldPath).not.toMatch(/raw|parsed|tokens/i);
-      expect(row.typedSchemaOrConsumer ?? '').not.toMatch(
-        /Record<string, unknown>|raw.*parsed|tokens/i,
+  it('preserves the exact unsupported residual set and structural invariants', () => {
+    const artifact = buildInventoryArtifact();
+    const unsupported = artifact.rows
+      .filter((candidate) => candidate.disposition === 'unsupported')
+      .map(
+        (candidate) =>
+          `${candidate.recordKinds.join(',')}.${candidate.fieldPath}`,
+      )
+      .sort();
+    expect(unsupported).toEqual([
+      'creature.data.savingThrows',
+      'creature.data.senses',
+      'creature.data.skills',
+      'equipment.data.properties[]',
+      'magic-item.data.attunementRequirement',
+      'stat-block.data.senses',
+    ]);
+    for (const candidate of artifact.rows) {
+      if (candidate.disposition === 'complete') {
+        expect(
+          candidate.typedSchemaOrConsumer,
+          candidate.fieldPath,
+        ).toBeTruthy();
+        expect(candidate.owner, candidate.fieldPath).toBeTruthy();
+      }
+      if (candidate.disposition === 'typed-core-with-prose-qualifier') {
+        expect(
+          candidate.typedSchemaOrConsumer,
+          candidate.fieldPath,
+        ).toBeTruthy();
+        expect(candidate.currentAuditReadiness, candidate.fieldPath).toMatch(
+          /qualifier|prose|retained/i,
+        );
+        expect(candidate.owner, candidate.fieldPath).toBeTruthy();
+      }
+      if (candidate.disposition === 'unsupported') {
+        expect(candidate.owner, candidate.fieldPath).toBeTruthy();
+        expect(candidate.futureWork, candidate.fieldPath).toBe(true);
+      }
+      if (candidate.disposition === 'not-mechanical') {
+        expect(
+          candidate.deterministicConsumers,
+          candidate.fieldPath,
+        ).not.toMatch(/mechanic|execution|lookupRulesRecord/i);
+      }
+      if (candidate.disposition === 'model-adjudicated') {
+        expect(
+          candidate.deterministicConsumers,
+          candidate.fieldPath,
+        ).not.toMatch(/deterministic execution/i);
+      }
+      expect(candidate.typedSchemaOrConsumer ?? '').not.toMatch(
+        /raw|parsed|tokens|Record<string, unknown>/i,
       );
+      expect(candidate.fieldPath).not.toMatch(/raw|parsed|tokens/i);
     }
   });
 });
