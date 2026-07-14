@@ -30,7 +30,26 @@ CREATE TABLE active_effect_new (
   CHECK (CASE WHEN anchor_kind IN ('source-turn-start','target-turn-start') THEN CASE WHEN anchor_participant_turn_ordinal IS NOT NULL AND anchor_participant_turn_ordinal >= 0 THEN 1 ELSE 0 END ELSE CASE WHEN anchor_participant_turn_ordinal IS NULL THEN 1 ELSE 0 END END),
   CHECK (CASE WHEN anchor_kind = 'trigger-occurred' THEN CASE WHEN anchor_trigger IS NOT NULL AND length(trim(anchor_trigger)) > 0 THEN 1 ELSE 0 END ELSE CASE WHEN anchor_trigger IS NULL THEN 1 ELSE 0 END END)
 );
-INSERT INTO active_effect_new SELECT * FROM active_effect;
+INSERT INTO active_effect_new(
+  campaign_id, effect_id, kind, display_name, source_kind, source_ref,
+  source_actor_kind, source_actor_ref, requires_concentration,
+  concentration_owner_kind, concentration_owner_ref, duration_kind,
+  duration_amount, duration_unit, anchor_kind, anchor_at, anchor_game_time,
+  anchor_combat_instance_id, anchor_round, anchor_participant_kind,
+  anchor_participant_ref, anchor_participant_turn_ordinal, anchor_trigger,
+  expiry_trigger, dismissible, status, end_reason, end_detail, ended_at,
+  created_at, provenance, session_id, updated_at
+)
+SELECT
+  campaign_id, effect_id, kind, display_name, source_kind, source_ref,
+  source_actor_kind, source_actor_ref, requires_concentration,
+  concentration_owner_kind, concentration_owner_ref, duration_kind,
+  duration_amount, duration_unit, anchor_kind, anchor_at, anchor_game_time,
+  anchor_combat_instance_id, anchor_round, anchor_participant_kind,
+  anchor_participant_ref, anchor_participant_turn_ordinal, anchor_trigger,
+  expiry_trigger, dismissible, status, end_reason, end_detail, ended_at,
+  created_at, provenance, session_id, updated_at
+FROM active_effect;
 DROP TABLE active_effect;
 ALTER TABLE active_effect_new RENAME TO active_effect;
 CREATE UNIQUE INDEX active_effect_one_concentration_per_owner ON active_effect(campaign_id,concentration_owner_kind,concentration_owner_ref) WHERE requires_concentration=1 AND status IN ('active','suppressed');

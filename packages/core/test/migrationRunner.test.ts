@@ -200,6 +200,124 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0012 preserves populated effects from the 0011 column order', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 11)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(11);
+
+    const insert = db.prepare(
+      `INSERT INTO active_effect(
+         campaign_id, effect_id, kind, display_name, source_kind, source_ref,
+         source_actor_kind, source_actor_ref, requires_concentration,
+         concentration_owner_kind, concentration_owner_ref, duration_kind,
+         duration_amount, duration_unit, anchor_kind, anchor_at,
+         anchor_game_time, anchor_combat_instance_id, anchor_round,
+         expiry_trigger, dismissible, status, end_reason, end_detail, ended_at,
+         created_at, provenance, session_id, updated_at,
+         anchor_participant_kind, anchor_participant_ref,
+         anchor_participant_turn_ordinal, anchor_trigger
+       ) VALUES (
+         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+       )`,
+    );
+    insert.run(
+      'campaign-1',
+      'fx-ordinary',
+      'curse',
+      'Ordinary Effect',
+      'ruling',
+      'ruling:ordinary',
+      'character',
+      'pc-1',
+      0,
+      null,
+      null,
+      'until-removed',
+      null,
+      null,
+      null,
+      null,
+      '1492-01-02T03:04:05.000Z',
+      null,
+      null,
+      null,
+      1,
+      'suppressed',
+      null,
+      null,
+      null,
+      '2026-07-14T01:00:00.000Z',
+      'test:migration',
+      'session-old',
+      '2026-07-14T02:00:00.000Z',
+      null,
+      null,
+      null,
+      null,
+    );
+    insert.run(
+      'campaign-1',
+      'fx-turn',
+      'spell-effect',
+      'Turn Effect',
+      'spell',
+      'spell:bless',
+      'character',
+      'pc-1',
+      1,
+      'character',
+      'pc-1',
+      'timed',
+      3,
+      'round',
+      'source-turn-start',
+      '2026-07-14T03:00:00.000Z',
+      '1492-01-02T03:05:00.000Z',
+      'ci-existing',
+      4,
+      null,
+      0,
+      'active',
+      null,
+      null,
+      null,
+      '2026-07-14T03:00:00.000Z',
+      'test:turn-migration',
+      'session-turn',
+      '2026-07-14T03:00:00.000Z',
+      'character',
+      'pc-1',
+      9,
+      null,
+    );
+    const before = db
+      .prepare('SELECT * FROM active_effect ORDER BY effect_id')
+      .all() as Record<string, unknown>[];
+
+    const migration12 = bundled[11];
+    if (migration12 === undefined) throw new Error('missing migration 0012');
+    writeFileSync(
+      join(dir, '0012_campaign_actor_effect_rebinding.sql'),
+      migration12.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([12]);
+    expect(
+      db.prepare('SELECT * FROM active_effect ORDER BY effect_id').all(),
+    ).toEqual(before);
+    db.close();
+  });
+
   it('refuses to start when an applied migration file was edited (checksum drift)', () => {
     const db = openDatabase(':memory:');
     const dir = makeMigrationDir({
