@@ -24,7 +24,10 @@ export const removeEffectTargetTool: Tool = {
       target: {
         type: 'object',
         properties: {
-          kind: { type: 'string', enum: ['character', 'combatant', 'scope'] },
+          kind: {
+            type: 'string',
+            enum: ['character', 'combatant', 'campaign_actor', 'scope'],
+          },
           ref: { type: 'string', minLength: 1 },
         },
         required: ['kind', 'ref'],
@@ -53,7 +56,10 @@ export const removeEffectTargetTool: Tool = {
         'remove_effect_target requires { effectId, target, reason }',
       );
     }
-    let target: { kind: 'character' | 'combatant' | 'scope'; ref: string };
+    let target: {
+      kind: 'character' | 'combatant' | 'campaign_actor' | 'scope';
+      ref: string;
+    };
     if (rawTarget.kind === 'scope') {
       if (typeof rawTarget.ref !== 'string' || rawTarget.ref.length === 0) {
         return err('invalid_args', 'target.ref must be a non-empty string');

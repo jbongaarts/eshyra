@@ -63,7 +63,7 @@ names the outermost reachable surface. All domain transitions run inside
 | --- | --- | --- | --- | --- | --- |
 | combatant rows (create) | `startEncounter` INSERT | TOOL (`start_encounter`) | record-derived statlines | yes | none |
 | combatant HP/status/conditions | `updateCombatant` (sole UPDATE) | TOOL (`update_combatant`) + DOM (F3 cleanup) | one txn: write + actor sync + **incapacitation/`inactive` break** | yes (this PR wraps) | none (this PR) |
-| campaign-actor sync | `upsertCampaignActor` ← `startEncounter`/`updateCombatant` | DOM | derived projection of combatant state | yes | actors are projections, never concentration owners (owner kinds are `character`/`combatant` only) |
+| campaign-actor sync | semantic actor mutation / `upsertCampaignActor` ← `startEncounter`/`updateCombatant`/F3 closure | DOM | durable identity plus active projection | yes | actors are durable identities; F3 may rebind source/target/condition/owned-actor references, never concentration owners or turn anchors |
 | combat-instance close | `closeCombatInstance` (sole status writer) | TOOL (`close_combat_instance`) | **was: no F3 reaction — combatant-scoped effect state became unreachable** | now yes | **fixed by this PR** (§7 policy) |
 | combat round | `beginTurn` UPDATE `combat_instance.round_number` | TOOL (`begin_turn`) | monotonic; F3 round deadlines key off it | yes | expiry sweep integration = `eshyra-2n1t.5.1` |
 
@@ -251,7 +251,9 @@ expose **simple canonical facts**, never lifecycle-owned fields.
      skipped).
   Character-owned effects with no combatant references (e.g. Bless) survive
   closure untouched. Promotion/rebinding of persistent summons to
-  campaign-actor identity is the follow-up `eshyra-2n1t.5.3`.
+  campaign-actor identity is established by an explicit actor-link marker or an
+  existing campaign-actor projection. Eligible surviving references rebind
+  before the instance-only fallback; closure evidence records both paths.
 - **`inactive`** means removed from active play: an inactive combatant
   cannot start concentrating, and a transition into `inactive` breaks its
   concentration (cause `owner-removed`) atomically — including when the
