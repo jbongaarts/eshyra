@@ -61,6 +61,8 @@ import { spendUsageTool } from './toolSpendUsage.js';
 import { stabilizeCharacterTool } from './toolStabilizeCharacter.js';
 import { startEffectTool } from './toolStartEffect.js';
 import { startEncounterTool } from './toolStartEncounter.js';
+import { suppressEffectTool } from './toolSuppressEffect.js';
+import { unsuppressEffectTool } from './toolUnsuppressEffect.js';
 import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
 import { useInspirationTool } from './toolUseInspiration.js';
@@ -89,6 +91,8 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   spendSpellSlotTool,
   startEffectTool,
   endEffectTool,
+  suppressEffectTool,
+  unsuppressEffectTool,
   refreshEffectTool,
   removeEffectTargetTool,
   resolveConcentrationTool,

@@ -250,7 +250,8 @@ typed audit events.
 - `refreshEffect` — re-anchors an active effect's timer (Animate Dead-style
   reassertion), optionally with a new validated duration.
 - `suppressEffect` / `unsuppressEffect` — antimagic-style suppression without
-  end/cleanup (domain ops now; tool exposure rides the S3 ward bead).
+  end/cleanup, exposed to the model as model-facing tools
+  `suppress_effect` and `unsuppress_effect`.
 - `expireElapsedRoundEffects` — deterministic round-deadline sweep.
 
 Read paths: `listActiveEffects` (validated typed views — status, source,
@@ -309,7 +310,11 @@ the historical `mutate_state` wrapper was deleted (audit §5).
 - **S1 summons**: `summoning` kind + `actor` links + `cleanup_on_break =
   'release'` encode the reviewed control/break matrix; per-spell projection
   stays in S1.
-- **S3 wards / transformations / item lifecycles**: `zone`/`form` link kinds
-  are schema-reserved and fail closed with a pointer until those beads land.
+- **S3 wards / transformations / item lifecycles**: suppression tools are
+  available for the future ward runtime, but `zone`/`form` link kinds remain
+  schema-reserved and fail closed until their canonical S3/C1 projection
+  runtimes land. Those runtimes must use F3 link cleanup: `remove` invokes the
+  canonical projection operation in the terminal transaction, while `release`
+  closes ownership and leaves the projection intact.
 - **F6 life state**: one-way reaction hook (see §5); the life-state machine
   stays in `hpLifecycle.ts`.
