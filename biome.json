@@ -57,6 +57,7 @@
       "!**/*.tsbuildinfo",
       "!**/package-lock.json",
       "!**/packages/core/data",
+      "!docs/inventories/*.json",
       "!**/.beads",
       "!**/coverage"
     ]
