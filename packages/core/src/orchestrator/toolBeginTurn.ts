@@ -14,7 +14,8 @@ export const beginTurnTool: Tool = {
     "Begin a combatant or party character's turn in the active combat " +
     "instance. Resets that participant's per-turn budget (action, bonus " +
     'action, free object interaction, movement note) and returns their ' +
-    'reaction; implicitly ends the previous turn (clearing its surprise). ' +
+    'reaction; implicitly ends the previous turn (clearing its surprise) and ' +
+    'automatically settles due F3 round and participant-turn effects. ' +
     'Call once per participant per turn in initiative order. Pass round when ' +
     'a new combat round starts; it never decreases. args: { combatantId?: ' +
     'string, character?: string, round?: integer }.',

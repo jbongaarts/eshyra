@@ -158,7 +158,8 @@ transaction. Reachability: five F3 tools + DOM hooks from `hpLifecycle`,
     snapshot loops (a prior iteration's cascade can end a later row — all
     gate their reports on `performed`) — combat-closure timer settlement,
     combat-closure owner breaks, `expireElapsedRoundEffects`,
-    `breakConcentrationOnLifeEvent` (multi-campaign rows).
+    `breakConcentrationOnLifeEvent` (multi-campaign rows), and F2
+    `begin_turn` boundary settlement.
 
 ## 4. Unsupported topologies (fail-closed at preflight)
 
@@ -166,7 +167,7 @@ transaction. Reachability: five F3 tools + DOM hooks from `hpLifecycle`,
   own concentration owner (it would end itself during creation) — rejected
   before any write.
 - Round-unit timers outside an active combat instance.
-- Turn/trigger anchors (reserved for `eshyra-2n1t.5.1`).
+- End-of-turn anchors and arbitrary event-driven expiry.
 - `spell-cast` anchors on non-spell sources.
 - `zone`/`form` links (reserved for S3/C1 rollout).
 - Combatant participants (owner/target/link/source-actor) outside an active

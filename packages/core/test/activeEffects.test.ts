@@ -1662,21 +1662,18 @@ describe('durations and clocks', () => {
     ).toThrow(/has not expired yet/);
 
     // Round 3: the deadline round arrived — the sweep ends it.
-    beginTurn(db, {
+    const round3 = beginTurn(db, {
       campaignId: CAMPAIGN,
       participant: { kind: 'combatant', ref: GOBLIN_1 },
       round: 3,
       ...CTX,
     });
+    expect(round3.boundaryEffects).toHaveLength(1);
     const expired = expireElapsedRoundEffects(db, {
       campaignId: CAMPAIGN,
       ...CTX,
     });
-    expect(expired).toHaveLength(1);
-    expect(expired[0]).toMatchObject({
-      effectId: 'fx-stagger',
-      deadlineRound: 3,
-    });
+    expect(expired).toHaveLength(0);
     // Idempotent: nothing left to expire.
     expect(
       expireElapsedRoundEffects(db, { campaignId: CAMPAIGN, ...CTX }),
@@ -2162,7 +2159,7 @@ describe('anchor semantics', () => {
     ).toThrow(/requires a spell source/);
   });
 
-  it('refuses the schema-reserved anchors until eshyra-2n1t.5.1 lands', () => {
+  it('requires evidence for turn and trigger anchors', () => {
     const { db } = setup();
     for (const anchor of [
       'trigger-occurred',
@@ -2179,9 +2176,92 @@ describe('anchor semantics', () => {
           duration: { kind: 'timed', amount: 1, unit: 'hour', anchor },
           ...CTX,
         }),
-      ).toThrow(/schema-reserved|eshyra-2n1t\.5\.1/);
+      ).toThrow(
+        /requires (a non-empty anchorTrigger|source\.actor|exactly one)/,
+      );
     }
     expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
+  });
+
+  it('settles source and target turn anchors only at the participant boundary', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-source-turn',
+      kind: 'condition-package',
+      displayName: 'Source ward',
+      source: { kind: 'ruling', actor: { kind: 'combatant', ref: GOBLIN_1 } },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'source-turn-start',
+      },
+      ...CTX,
+    });
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-target-turn',
+      kind: 'condition-package',
+      displayName: 'Target ward',
+      source: { kind: 'ruling' },
+      targets: [{ kind: 'combatant', ref: GOBLIN_2 }],
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'target-turn-start',
+      },
+      ...CTX,
+    });
+    expect(
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: { kind: 'combatant', ref: GOBLIN_2 },
+        ...CTX,
+      }).boundaryEffects.map((effect) => effect.effectId),
+    ).toEqual(['fx-target-turn']);
+    expect(
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: { kind: 'combatant', ref: GOBLIN_1 },
+        ...CTX,
+      }).boundaryEffects.map((effect) => effect.effectId),
+    ).toEqual(['fx-source-turn']);
+  });
+
+  it('stores trigger-occurrence evidence and stamps its round clock', () => {
+    const { db } = setupCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: { kind: 'combatant', ref: GOBLIN_1 },
+      ...CTX,
+    });
+    const effect = createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-trigger-anchor',
+      kind: 'condition-package',
+      displayName: 'Ward trigger',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'trigger-occurred',
+        anchorTrigger: 'creature-entered-ward',
+      },
+      ...CTX,
+    }).effect;
+    expect(effect.duration).toMatchObject({
+      anchorTrigger: 'creature-entered-ward',
+      anchorRound: 1,
+      deadlineRound: 2,
+    });
   });
 });
 
@@ -3677,7 +3757,7 @@ describe('stale-snapshot terminalization', () => {
       campaignId: CAMPAIGN,
       ...CTX,
     });
-    expect(expired.map((entry) => entry.effectId)).toEqual(['fx-a']);
+    expect(expired.map((entry) => entry.effectId)).toEqual([]);
     assertFirstReasonWon(db);
   });
 

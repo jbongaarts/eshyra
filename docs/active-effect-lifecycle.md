@@ -12,6 +12,13 @@ the source — do not treat this file as a second compiler input.
 
 ## 1. What F3 is
 
+F2 integrates F3 at the authoritative `begin_turn` boundary. After validation,
+the previous turn is closed, the entering budget is ensured and reset, and the
+requested round and active participant are made durable. F3 then settles round
+deadlines followed by source- and target-turn deadlines through `finalizeEnd`.
+If cleanup removes the entering combatant, the boundary still commits and
+returns `turnAvailable: false` with the participant unavailable reason.
+
 One canonical, deterministic lifecycle for **active effects**: durable game
 state created by a spell, item power, feature, creature trait, hazard, or DM
 ruling that persists across turns and must later be ended — and, when it ends,
@@ -95,10 +102,9 @@ lesson). The duration is a discriminated union:
 - `timed` — `amount` (≥1) + `unit` (`round` | `minute` | `hour` | `day`) +
   `anchor_kind`. Anchors are semantically validated, not just enum-checked:
   `spell-cast` requires a spell source, `effect-created` is always available,
-  and `trigger-occurred` / `source-turn-start` / `target-turn-start` are
-  **schema-reserved and refused** until the F2 turn-boundary/trigger
-  integration gives them exact semantics (`eshyra-2n1t.5.1`) — the engine
-  never stamps an anchor it cannot honestly evaluate. At creation the engine
+  `source-turn-start` requires `source.actor`, `target-turn-start` requires
+  exactly one reachable character/combatant target, and `trigger-occurred`
+  requires non-empty semantic `anchorTrigger` evidence. At creation the engine
   stamps `anchor_at` (ISO), `anchor_game_time` (campaign clock snapshot),
   and — for `round`-unit timers, which **require an active combat
   instance** — `anchor_combat_instance_id` + `anchor_round`.
@@ -121,8 +127,12 @@ Deterministic expiry evaluation:
   (`clock.in_game_time`) is narrative text, so expiry is a declared operation —
   but only a `timed`/`until-trigger` effect can expire, the audit event records
   the declared elapsed reasoning, and the typed timer is preserved for review.
-  Turn-relative and trigger anchors are refused at creation until the F2
-  integration (`eshyra-2n1t.5.1`) can evaluate them exactly.
+  Turn-relative timers use `combat_turn_budget.turns_taken`: entering ordinal
+  is completed turns + 1 and deadline ordinal is completed turns at anchoring
+  plus amount. Other participants and global round jumps do not advance that
+  clock. `begin_turn` settles due timers automatically; trigger-occurrence
+  round timers stamp the current round while world-time units retain declared
+  expiry.
 
 ## 4. Status machine
 

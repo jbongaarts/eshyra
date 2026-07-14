@@ -80,7 +80,29 @@ CREATE TABLE active_effect (
   created_at TEXT NOT NULL,
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL, anchor_participant_kind TEXT
+  CHECK (
+    (anchor_kind IN ('source-turn-start', 'target-turn-start')
+      AND anchor_participant_kind IN ('character', 'combatant'))
+    OR (anchor_kind NOT IN ('source-turn-start', 'target-turn-start')
+      AND anchor_participant_kind IS NULL)
+  ), anchor_participant_ref TEXT
+  CHECK (
+    (anchor_kind IN ('source-turn-start', 'target-turn-start')
+      AND anchor_participant_ref IS NOT NULL)
+    OR (anchor_kind NOT IN ('source-turn-start', 'target-turn-start')
+      AND anchor_participant_ref IS NULL)
+  ), anchor_participant_turn_ordinal INTEGER
+  CHECK (
+    (anchor_kind IN ('source-turn-start', 'target-turn-start')
+      AND anchor_participant_turn_ordinal >= 0)
+    OR (anchor_kind NOT IN ('source-turn-start', 'target-turn-start')
+      AND anchor_participant_turn_ordinal IS NULL)
+  ), anchor_trigger TEXT
+  CHECK (
+    (anchor_kind = 'trigger-occurred' AND length(trim(anchor_trigger)) > 0)
+    OR (anchor_kind <> 'trigger-occurred' AND anchor_trigger IS NULL)
+  ),
   PRIMARY KEY (campaign_id, effect_id),
   CHECK (requires_concentration = 0
          OR (concentration_owner_kind IS NOT NULL

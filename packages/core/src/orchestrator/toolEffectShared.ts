@@ -50,11 +50,21 @@ export const EFFECT_DURATION_SCHEMA: JsonSchema = {
     unit: { type: 'string', enum: ['round', 'minute', 'hour', 'day'] },
     anchor: {
       type: 'string',
-      enum: ['spell-cast', 'effect-created'],
+      enum: [
+        'spell-cast',
+        'effect-created',
+        'trigger-occurred',
+        'source-turn-start',
+        'target-turn-start',
+      ],
       description:
-        'What the timer counts from. "spell-cast" requires a spell source; ' +
-        'turn-relative and trigger anchors are reserved until the F2 ' +
-        'turn-boundary integration lands.',
+        'What the timer counts from. Turn-relative anchors require round ' +
+        'units; trigger-occurred requires anchorTrigger evidence.',
+    },
+    anchorTrigger: {
+      type: 'string',
+      description: 'Required semantic event evidence for trigger-occurred.',
+      minLength: 1,
     },
     trigger: {
       type: 'string',
@@ -134,6 +144,9 @@ export function parseEffectDuration(
           | 'trigger-occurred'
           | 'source-turn-start'
           | 'target-turn-start',
+        ...(typeof record.anchorTrigger === 'string'
+          ? { anchorTrigger: record.anchorTrigger }
+          : {}),
       };
     case 'until-dismissed':
       return { kind: 'until-dismissed' };
