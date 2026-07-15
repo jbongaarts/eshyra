@@ -91,6 +91,11 @@ export function deriveTraceFields(
     'spend_currency',
     'convert_currency',
     'update_clock',
+    'advance_time',
+    'complete_short_rest',
+    'complete_long_rest',
+    'spend_rest_hit_die',
+    'finish_short_rest_recovery',
     'set_plot_flag',
     'set_world_fact',
   ]);

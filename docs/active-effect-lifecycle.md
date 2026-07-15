@@ -4,7 +4,8 @@ Bead: `eshyra-2n1t.5` (engine family F3; source:
 `docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md`
 §4). Runtime owner: `packages/core/src/state/activeEffects.ts`; durable schema:
 `packages/core/data/migrations/0010_active_effects.sql` plus
-`0011_active_effect_anchor_evidence.sql`; evidence:
+`0011_active_effect_anchor_evidence.sql` and the elapsed-world columns in
+`0013_rest_engine.sql`; evidence:
 `packages/core/test/activeEffects.test.ts`.
 
 This document records the reviewed contract. The executable authority is the
@@ -130,10 +131,16 @@ Deterministic expiry evaluation:
   on a round timer **before** its deadline is refused. Source/target turn
   anchors retain `anchor_round` only as combat provenance and use their
   participant turn ordinal as the deadline.
-- **World-time units** (`minute`/`hour`/`day`): the campaign clock
-  (`clock.in_game_time`) is narrative text, so expiry is a declared operation —
-  but only a `timed`/`until-trigger` effect can expire, the audit event records
-  the declared elapsed reasoning, and the typed timer is preserved for review.
+- **World-time units** (`minute`/`hour`/`day`): the monotonic
+  `clock.elapsed_minutes` is authoritative; `clock.in_game_time` remains
+  narrative display text and is never parsed. Creation and refresh persist an
+  anchor and exact safe-integer deadline (`anchor + amount × unit multiplier`),
+  and live rows with missing or inconsistent evidence fail closed. The single
+  `advanceWorldTime` operation expires due effects at or beyond the deadline;
+  explicit `expired` endings before that boundary are rejected. A missing clock
+  is an error, not an implicit zero. Migration-13 historical ended world timers
+  may retain null elapsed evidence as a legacy terminal record; live timers and
+  ended rows with partial evidence remain fail-closed.
   Turn-relative timers use `combat_turn_budget.turns_taken`: the anchor ordinal
   is completed turns plus one when the anchor participant is currently active,
   otherwise completed turns; the deadline ordinal is anchor ordinal plus
@@ -274,6 +281,14 @@ typed audit events.
   end/cleanup, exposed to the model as model-facing tools
   `suppress_effect` and `unsuppress_effect`.
 - `expireElapsedRoundEffects` — deterministic round-deadline sweep.
+- `expireElapsedWorldEffects` — deterministic minute/hour/day sweep against
+  the campaign's monotonic `clock.elapsed_minutes`. Creation and refresh both
+  persist the elapsed anchor and calculated deadline. Advancing world time
+  first validates the due-effect cleanup, then advances the clock and ends
+  every due effect through `finalizeEnd`; cleanup failure rolls the clock and
+  cleanup back atomically. An explicit `expired` end is accepted only at or
+  after the durable deadline, including the exact boundary. Narrative
+  `in_game_time` labels never participate in this arithmetic.
 
 Read paths: `listActiveEffects` (validated typed views — status, source,
 targets, links, deadline description — consumed by the context assembler so
@@ -282,6 +297,24 @@ the DM can distinguish active/suppressed/ended without prose),
 `validateActiveEffectDurableState` (load-time integrity: concentration
 owner presence, timer completeness, ended-with-active-links, dangling
 link/target references, duplicate concentration).
+
+Database mutations may be nested. `withTransaction` always delegates to
+better-sqlite3's transaction wrapper, so an inner operation uses a savepoint:
+an inner failure can be caught and rolled back while the outer mutation
+continues, whereas an uncaught inner failure rolls back the complete outer
+transaction.
+
+Short-rest Hit Die recovery is a bounded decision window. It opens only after
+the rest's time advancement and all rest hooks commit within the transaction.
+The window remains available across model turns while the world clock is still
+at that rest's end and no combat is active. Any later elapsed-time advancement
+or combat start closes all open windows; explicit recovery completion closes
+only the named participant's window.
+
+`clock.in_game_time_elapsed_minutes` records when the narrative label was last
+explicitly synchronized. Elapsed-time advancement without a replacement label
+marks the label stale; `update_clock` changes the synchronization minute only
+when it sets a new label, not when it changes location.
 
 ## 7. Determinism & replay
 

@@ -36,6 +36,7 @@ const CATEGORY_LABELS: Record<RollCategory, string> = {
   initiative: 'Initiative',
   saving_throw: 'Saving throw',
   death_save: 'Death save',
+  hit_die: 'Hit Die',
   ability_check: 'Ability check',
   other: 'Other',
 };
@@ -142,6 +143,35 @@ function readRollEntry(
     visibility: data.visibility,
     category,
     detail,
+  };
+}
+
+function readRestHitDieEntry(
+  data: Record<string, unknown>,
+): PlayerVisibleRollEntry | undefined {
+  const base = readRollEntry(data);
+  if (
+    base === undefined ||
+    typeof data.constitutionModifier !== 'number' ||
+    typeof data.naturalDieResult !== 'number' ||
+    typeof data.calculatedHealing !== 'number' ||
+    typeof data.recoverableHealing !== 'number' ||
+    typeof data.hpRestored !== 'number'
+  )
+    return undefined;
+  const modifier = data.constitutionModifier;
+  const natural = data.naturalDieResult;
+  const clamp = data.calculatedHealing < 0 ? ' (minimum 0 clamp)' : '';
+  const cap =
+    data.hpRestored < data.recoverableHealing
+      ? ` (HP maximum cap: ${data.hpRestored} actually restored)`
+      : '';
+  return {
+    ...base,
+    label: CATEGORY_LABELS.hit_die,
+    detail:
+      `${data.dice} = ${natural} natural ${modifier >= 0 ? '+' : '-'} ${Math.abs(modifier)} CON ` +
+      `→ ${data.recoverableHealing} recoverable${clamp}, ${data.hpRestored} HP actually restored${cap}`,
   };
 }
 
@@ -264,6 +294,7 @@ const ENTRY_READERS: Record<
   resolve_check: readResolveCheckEntry,
   resolve_contest: readResolveContestEntry,
   resolve_damage: readResolveDamageEntry,
+  spend_rest_hit_die: readRestHitDieEntry,
 };
 
 function stripTrailingModelRollLedger(narration: string): string {

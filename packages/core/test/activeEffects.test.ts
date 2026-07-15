@@ -13,6 +13,7 @@ import type { AdventureModule, Db } from '../src/internal.js';
 import {
   addCondition,
   adjustHp,
+  advanceWorldTime,
   applyCombatClosureToEffects,
   auditActiveEffectIntegrity,
   beginTurn,
@@ -219,6 +220,122 @@ describe('parseSpellDurationText', () => {
       concentration: false,
       form: { kind: 'unparsed' },
     });
+  });
+});
+
+describe('elapsed-world sweep validation boundary', () => {
+  it.each([
+    [
+      'null anchor',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET anchor_elapsed_minutes=NULL WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /anchor\/deadline/,
+    ],
+    [
+      'null deadline',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET deadline_elapsed_minutes=NULL WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /anchor\/deadline/,
+    ],
+    [
+      'inconsistent arithmetic',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET deadline_elapsed_minutes=61 WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /inconsistent/,
+    ],
+    [
+      'unsafe arithmetic',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET anchor_elapsed_minutes=1, duration_amount=9007199254740991, deadline_elapsed_minutes=9007199254740992 WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /malformed|inconsistent|safe/,
+    ],
+  ])('rejects %s before changing the clock', (_name, corrupt, expected) => {
+    const db = freshDbWithSession();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-corrupt',
+      kind: 'condition-package',
+      displayName: 'Corrupt timer',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    corrupt(db);
+    expect(() =>
+      advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 1, ...CTX }),
+    ).toThrow(expected);
+    expect(
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get(),
+    ).toEqual({ elapsed_minutes: 0 });
+    db.close();
+  });
+
+  it('rejects elapsed evidence on round and non-timed live effects during advancement', () => {
+    const { db, combatInstanceId } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-corrupt-round',
+      kind: 'condition-package',
+      displayName: 'Corrupt round',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=0, deadline_elapsed_minutes=1 WHERE effect_id=?',
+    ).run('fx-corrupt-round');
+    expect(() =>
+      advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 1, ...CTX }),
+    ).toThrow(/non-world timer/);
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=NULL, deadline_elapsed_minutes=NULL WHERE effect_id=?',
+    ).run('fx-corrupt-round');
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-corrupt-nontimed',
+      kind: 'condition-package',
+      displayName: 'Corrupt non-timer',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      ...CTX,
+    });
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=0, deadline_elapsed_minutes=1 WHERE effect_id=?',
+    ).run('fx-corrupt-nontimed');
+    expect(() =>
+      advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 1, ...CTX }),
+    ).toThrow(/non-world timer/);
+    expect(
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get(),
+    ).toEqual({ elapsed_minutes: 0 });
+    expect(combatInstanceId).toBeTruthy();
+    db.close();
   });
 });
 
@@ -1712,7 +1829,16 @@ describe('durations and clocks', () => {
       },
       ...CTX,
     });
-    // World-time expiry is declared (the campaign clock is narrative).
+    // Early world-time expiry is rejected against the monotonic deadline.
+    expect(() =>
+      endActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-hourly',
+        reason: 'expired',
+        ...CTX,
+      }),
+    ).toThrow(/has not expired yet/);
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 60, ...CTX });
     expect(
       endActiveEffect(db, {
         campaignId: CAMPAIGN,
@@ -1749,6 +1875,16 @@ describe('durations and clocks', () => {
       at: LATER,
     });
     expect(refreshed.duration.anchorAt).toBe(LATER);
+    const timer = db
+      .prepare(
+        'SELECT anchor_elapsed_minutes, deadline_elapsed_minutes FROM active_effect WHERE campaign_id=? AND effect_id=?',
+      )
+      .get(CAMPAIGN, 'fx-bless') as {
+      anchor_elapsed_minutes: number | null;
+      deadline_elapsed_minutes: number | null;
+    };
+    expect(timer.anchor_elapsed_minutes).toBe(0);
+    expect(timer.deadline_elapsed_minutes).toBe(1);
     const events = listEffectEvents(db, CAMPAIGN, 'fx-bless');
     expect(events.at(-1)?.eventKind).toBe('refreshed');
     expect(events.at(-1)?.detail).toMatchObject({
@@ -1794,6 +1930,46 @@ describe('durations and clocks', () => {
     expect(() =>
       refreshEffect(db, { campaignId: CAMPAIGN, effectId: 'fx-bless', ...CTX }),
     ).toThrow(/creates a new effect/);
+
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-world-timer',
+      kind: 'condition-package',
+      displayName: 'Refresh timer',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 30, ...CTX });
+    refreshEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-world-timer',
+      ...CTX,
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT anchor_elapsed_minutes, deadline_elapsed_minutes FROM active_effect WHERE effect_id=?',
+        )
+        .get('fx-refresh-world-timer'),
+    ).toEqual({ anchor_elapsed_minutes: 30, deadline_elapsed_minutes: 90 });
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 30, ...CTX });
+    expect(
+      listActiveEffects(db, CAMPAIGN).some(
+        (effect) => effect.effectId === 'fx-refresh-world-timer',
+      ),
+    ).toBe(true);
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 30, ...CTX });
+    expect(
+      listActiveEffects(db, CAMPAIGN).some(
+        (effect) => effect.effectId === 'fx-refresh-world-timer',
+      ),
+    ).toBe(false);
   });
 });
 

@@ -292,6 +292,16 @@ export function updateClock(
 
   if (input.inGameTime !== undefined) {
     mutations.push({ ...base, field: 'in_game_time', value: input.inGameTime });
+    const elapsed = db
+      .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
+      .get() as { elapsed_minutes: number } | undefined;
+    if (elapsed === undefined)
+      throw new MutateStateError('campaign clock is missing');
+    mutations.push({
+      ...base,
+      field: 'in_game_time_elapsed_minutes',
+      value: elapsed.elapsed_minutes,
+    });
   }
   if (input.locationId !== undefined) {
     mutations.push({

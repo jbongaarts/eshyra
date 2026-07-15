@@ -2,6 +2,12 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  advanceWorldTime,
+  auditActiveEffectIntegrity,
+  endActiveEffect,
+  listActiveEffects,
+} from '../src/internal.js';
 import type { Db } from '../src/persistence/db.js';
 import { openDatabase } from '../src/persistence/db.js';
 import {
@@ -189,13 +195,135 @@ describe('prepareDatabaseForMigrations', () => {
   });
 });
 
+describe('migration 0013 elapsed-world transition', () => {
+  it('backfills a version-12 world timer from elapsed minute zero', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'eshyra-pre0013-'));
+    for (const migration of discoverMigrations()) {
+      if (migration.version > 12) continue;
+      writeFileSync(
+        join(
+          dir,
+          `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+        ),
+        migration.sql,
+      );
+    }
+    const db = openDatabase(':memory:');
+    migrateDatabase(db, { now: NOW, dir });
+    db.prepare(
+      `INSERT INTO active_effect(
+        campaign_id, effect_id, kind, display_name, source_kind,
+        duration_kind, duration_amount, duration_unit, anchor_kind, anchor_at,
+        status, created_at, provenance, session_id, updated_at
+      ) VALUES (?, ?, 'condition-package', ?, 'ruling', 'timed', 1, 'hour',
+        'effect-created', ?, 'active', ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'fx-legacy-hour',
+      'Legacy hour',
+      NOW(),
+      NOW(),
+      'test:migration',
+      'session-1',
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO active_effect_event(
+        campaign_id, effect_id, seq, event_kind, detail_json,
+        occurred_at, provenance, session_id
+      ) VALUES (?, ?, 1, 'created', '{}', ?, ?, ?),
+               (?, ?, 2, 'ended', '{}', ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'fx-legacy-ended-hour',
+      NOW(),
+      'test:migration',
+      'session-1',
+      'campaign-1',
+      'fx-legacy-ended-hour',
+      NOW(),
+      'test:migration',
+      'session-1',
+    );
+    db.prepare(
+      `INSERT INTO active_effect(
+        campaign_id, effect_id, kind, display_name, source_kind,
+        duration_kind, duration_amount, duration_unit, anchor_kind, anchor_at,
+        status, end_reason, ended_at, created_at, provenance, session_id, updated_at
+      ) VALUES (?, ?, 'condition-package', ?, 'ruling', 'timed', 1, 'hour',
+        'effect-created', ?, 'ended', 'dismissed', ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'fx-legacy-ended-hour',
+      'Legacy ended hour',
+      NOW(),
+      NOW(),
+      NOW(),
+      'test:migration',
+      'session-1',
+      NOW(),
+    );
+    expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([13]);
+    expect(
+      db
+        .prepare(
+          'SELECT anchor_elapsed_minutes, deadline_elapsed_minutes FROM active_effect WHERE effect_id=?',
+        )
+        .get('fx-legacy-hour'),
+    ).toEqual({ anchor_elapsed_minutes: 0, deadline_elapsed_minutes: 60 });
+    expect(
+      listActiveEffects(db, 'campaign-1', { includeEnded: true }).some(
+        (effect) => effect.effectId === 'fx-legacy-ended-hour',
+      ),
+    ).toBe(true);
+    expect(auditActiveEffectIntegrity(db, 'campaign-1')).toEqual([]);
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=0 WHERE effect_id=?',
+    ).run('fx-legacy-ended-hour');
+    expect(auditActiveEffectIntegrity(db, 'campaign-1')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ effectId: 'fx-legacy-ended-hour' }),
+      ]),
+    );
+    expect(() =>
+      endActiveEffect(db, {
+        campaignId: 'campaign-1',
+        effectId: 'fx-legacy-hour',
+        reason: 'expired',
+        provenance: 'test',
+        sessionId: 'session-1',
+        at: NOW(),
+      }),
+    ).toThrow(/has not expired yet/);
+    advanceWorldTime(db, {
+      campaignId: 'campaign-1',
+      minutes: 60,
+      provenance: 'test',
+      sessionId: 'session-1',
+      at: NOW(),
+    });
+    expect(
+      endActiveEffect(db, {
+        campaignId: 'campaign-1',
+        effectId: 'fx-legacy-hour',
+        reason: 'expired',
+        provenance: 'test',
+        sessionId: 'session-1',
+        at: NOW(),
+      }).effect.endReason,
+    ).toBe('expired');
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+});
+
 describe('migrateDatabase (end to end)', () => {
   it('applies all migrations to an empty database from zero', () => {
     const db = openDatabase(':memory:');
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('empty');
     expect(result.migrations.applied).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
     ]);
     expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
       [1, 'initial'],
@@ -210,6 +338,7 @@ describe('migrateDatabase (end to end)', () => {
       [10, 'active_effects'],
       [11, 'active_effect_anchor_evidence'],
       [12, 'campaign_actor_effect_rebinding'],
+      [13, 'rest_engine'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -227,7 +356,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.adoptedFromVersion).toBe(15);
     // 0001 is adopted (already applied); the post-baseline migrations apply.
     expect(result.migrations.applied).toEqual([
-      2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+      2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
     ]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     expect(
@@ -235,9 +364,9 @@ describe('migrateDatabase (end to end)', () => {
         .slice(-3)
         .map((r) => [r.version, r.name]),
     ).toEqual([
-      [10, 'active_effects'],
       [11, 'active_effect_anchor_evidence'],
       [12, 'campaign_actor_effect_rebinding'],
+      [13, 'rest_engine'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -296,7 +425,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
 
     const result = migrateDatabase(db, { now: NOW });
 
-    expect(result.migrations.applied).toEqual([5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(result.migrations.applied).toEqual([5, 6, 7, 8, 9, 10, 11, 12, 13]);
     const row = db
       .prepare(
         `SELECT life_state, death_save_successes, death_save_failures

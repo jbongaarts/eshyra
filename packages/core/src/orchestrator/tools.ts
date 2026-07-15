@@ -49,6 +49,13 @@ import { resolveCheckTool } from './toolResolveCheck.js';
 import { resolveConcentrationTool } from './toolResolveConcentration.js';
 import { resolveContestTool } from './toolResolveContest.js';
 import { resolveDamageTool } from './toolResolveDamage.js';
+import {
+  advanceTimeTool,
+  completeLongRestTool,
+  completeShortRestTool,
+  finishShortRestRecoveryTool,
+  spendRestHitDieTool,
+} from './toolRest.js';
 import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
@@ -109,6 +116,11 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   giveItemTool,
   removeItemTool,
   updateClockTool,
+  advanceTimeTool,
+  completeShortRestTool,
+  completeLongRestTool,
+  spendRestHitDieTool,
+  finishShortRestRecoveryTool,
   setPlotFlagTool,
   setWorldFactTool,
   recordWorldFactTool,

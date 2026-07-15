@@ -20,7 +20,9 @@ CREATE TABLE "active_effect" (
   anchor_participant_ref TEXT, anchor_participant_turn_ordinal INTEGER, anchor_trigger TEXT, expiry_trigger TEXT,
   dismissible INTEGER NOT NULL DEFAULT 0 CHECK (dismissible IN (0,1)), status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suppressed','ended')),
   end_reason TEXT CHECK (end_reason IS NULL OR end_reason IN ('expired','dismissed','concentration-broken','dispelled','replaced','source-removed','ruled')),
-  end_detail TEXT, ended_at TEXT, created_at TEXT NOT NULL, provenance TEXT NOT NULL, session_id TEXT NOT NULL, updated_at TEXT NOT NULL,
+  end_detail TEXT, ended_at TEXT, created_at TEXT NOT NULL, provenance TEXT NOT NULL, session_id TEXT NOT NULL, updated_at TEXT NOT NULL, anchor_elapsed_minutes INTEGER
+  CHECK (anchor_elapsed_minutes IS NULL OR anchor_elapsed_minutes >= 0), deadline_elapsed_minutes INTEGER
+  CHECK (deadline_elapsed_minutes IS NULL OR deadline_elapsed_minutes >= anchor_elapsed_minutes),
   PRIMARY KEY (campaign_id,effect_id),
   CHECK (requires_concentration = 0 OR (concentration_owner_kind IS NOT NULL AND concentration_owner_ref IS NOT NULL)),
   CHECK (requires_concentration = 1 OR (concentration_owner_kind IS NULL AND concentration_owner_ref IS NULL)),
@@ -274,6 +276,16 @@ CREATE TABLE character (
     CHECK (death_save_failures BETWEEN 0 AND 3), inspiration INTEGER NOT NULL DEFAULT 0
     CHECK (inspiration IN (0, 1)));
 
+CREATE TABLE character_hit_dice (
+  character_id TEXT PRIMARY KEY REFERENCES character(id),
+  die_faces INTEGER NOT NULL CHECK (die_faces IN (6, 8, 10, 12)),
+  dice_maximum INTEGER NOT NULL CHECK (dice_maximum >= 1),
+  dice_used INTEGER NOT NULL DEFAULT 0 CHECK (dice_used BETWEEN 0 AND dice_maximum),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE character_sheet (
   character_id TEXT PRIMARY KEY,
   schema_version INTEGER NOT NULL,
@@ -315,7 +327,9 @@ CREATE TABLE clock (
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL
-);
+, elapsed_minutes INTEGER NOT NULL DEFAULT 0
+  CHECK (elapsed_minutes >= 0), in_game_time_elapsed_minutes INTEGER NOT NULL DEFAULT 0
+  CHECK (in_game_time_elapsed_minutes >= 0));
 
 CREATE TABLE combat_instance (
   campaign_id TEXT NOT NULL,
@@ -537,6 +551,36 @@ CREATE TABLE progression_event (
   session_id TEXT NOT NULL
 );
 
+CREATE TABLE rest_event (
+  campaign_id TEXT NOT NULL,
+  rest_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('short', 'long')),
+  start_elapsed_minutes INTEGER NOT NULL CHECK (start_elapsed_minutes >= 0),
+  end_elapsed_minutes INTEGER NOT NULL CHECK (end_elapsed_minutes >= start_elapsed_minutes),
+  declared_duration_minutes INTEGER NOT NULL CHECK (declared_duration_minutes >= 0),
+  qualification_json TEXT NOT NULL,
+  narrative_label TEXT,
+  status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed', 'failed')),
+  benefits_json TEXT NOT NULL DEFAULT '{}',
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, rest_id)
+);
+
+CREATE TABLE rest_participant (
+  campaign_id TEXT NOT NULL,
+  rest_id TEXT NOT NULL,
+  character_id TEXT NOT NULL REFERENCES character(id),
+  start_hp INTEGER NOT NULL CHECK (start_hp >= 0),
+  start_life_state TEXT NOT NULL,
+  short_recovery_open INTEGER NOT NULL DEFAULT 0 CHECK (short_recovery_open IN (0,1)),
+  benefit_json TEXT NOT NULL DEFAULT '{}',
+  PRIMARY KEY (campaign_id, rest_id, character_id),
+  FOREIGN KEY (campaign_id, rest_id) REFERENCES rest_event(campaign_id, rest_id)
+);
+
 CREATE TABLE scene (
   campaign_id TEXT NOT NULL,
   session_id TEXT NOT NULL,
@@ -676,3 +720,5 @@ CREATE INDEX idx_character_wallet_event_character
 
 CREATE INDEX idx_progression_event_character
   ON progression_event (character_id, occurred_at, id);
+
+CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
