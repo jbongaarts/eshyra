@@ -66561,7 +66561,57 @@
       "category": "gear",
       "cost": "25 gp",
       "weight": "1 lb.",
-      "description": "Acid. As an action, you can splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet, shattering it on impact. In either case, make a ranged attack against a creature or object, treating the acid as an improvised weapon. On a hit, the target takes 2d6 acid damage."
+      "description": "Acid. As an action, you can splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet, shattering it on impact. In either case, make a ranged attack against a creature or object, treating the acid as an improvised weapon. On a hit, the target takes 2d6 acid damage.",
+      "useProfile": {
+        "consumption": {
+          "kind": "inventory-unit",
+          "quantity": 1
+        },
+        "consumptionSourcePhrase": "splash the contents of this vial",
+        "clauses": [
+          {
+            "id": "activation",
+            "sourcePhrase": "As an action",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action"
+            }
+          },
+          {
+            "id": "delivery",
+            "sourcePhrase": "splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet",
+            "owner": "model",
+            "semantics": {
+              "splashRangeFeet": 5,
+              "thrownRangeFeet": 20,
+              "targets": [
+                "creature",
+                "object"
+              ]
+            }
+          },
+          {
+            "id": "attack",
+            "sourcePhrase": "make a ranged attack against a creature or object, treating the acid as an improvised weapon",
+            "owner": "F9",
+            "semantics": {
+              "kind": "ranged-weapon-attack",
+              "proficiency": "improvised-weapon"
+            }
+          },
+          {
+            "id": "damage",
+            "sourcePhrase": "2d6 acid damage",
+            "owner": "F9",
+            "semantics": {
+              "kind": "damage",
+              "dice": "2d6",
+              "damageType": "acid",
+              "trigger": "hit"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 66, 69",
     "license": {
@@ -66594,7 +66644,59 @@
       "category": "gear",
       "cost": "50 gp",
       "weight": "1 lb.",
-      "description": "Alchemist’s Fire. This sticky, adhesive fluid ignites when exposed to air. As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon. On a hit, the target takes 1d4 fire damage at the start of each of its turns. A creature can end this damage by using its action to make a DC 10 Dexterity check to extinguish the flames."
+      "description": "Alchemist’s Fire. This sticky, adhesive fluid ignites when exposed to air. As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon. On a hit, the target takes 1d4 fire damage at the start of each of its turns. A creature can end this damage by using its action to make a DC 10 Dexterity check to extinguish the flames.",
+      "useProfile": {
+        "consumption": {
+          "kind": "inventory-unit",
+          "quantity": 1
+        },
+        "consumptionSourcePhrase": "throw this flask up to 20 feet, shattering it on impact",
+        "clauses": [
+          {
+            "id": "activation",
+            "sourcePhrase": "As an action",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action"
+            }
+          },
+          {
+            "id": "attack",
+            "sourcePhrase": "As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
+            "owner": "F9",
+            "semantics": {
+              "kind": "ranged-weapon-attack",
+              "rangeFeet": 20,
+              "proficiency": "improvised-weapon"
+            }
+          },
+          {
+            "id": "damage",
+            "sourcePhrase": "1d4 fire damage at the start of each of its turns",
+            "owner": "F9",
+            "semantics": {
+              "kind": "damage",
+              "dice": "1d4",
+              "damageType": "fire",
+              "trigger": "start-of-affected-turn",
+              "repeats": true
+            }
+          },
+          {
+            "id": "extinguish",
+            "sourcePhrase": "using its action to make a DC 10 Dexterity check to extinguish the flames",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "check": {
+                "ability": "dexterity",
+                "dc": 10
+              },
+              "outcome": "ends-effect"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 66, 69",
     "license": {
@@ -66694,7 +66796,33 @@
     "data": {
       "category": "gear",
       "cost": "50 gp",
-      "description": "Antitoxin. A creature that drinks this vial of liquid gains advantage on saving throws against poison for 1 hour. It confers no benefit to undead or constructs."
+      "description": "Antitoxin. A creature that drinks this vial of liquid gains advantage on saving throws against poison for 1 hour. It confers no benefit to undead or constructs.",
+      "useProfile": {
+        "consumption": {
+          "kind": "inventory-unit",
+          "quantity": 1
+        },
+        "consumptionSourcePhrase": "drinks this vial of liquid",
+        "clauses": [
+          {
+            "id": "benefit",
+            "sourcePhrase": "gains advantage on saving throws against poison for 1 hour",
+            "owner": "F3",
+            "semantics": {
+              "kind": "saving-throw-advantage",
+              "against": "poison",
+              "duration": {
+                "value": 1,
+                "unit": "hour"
+              },
+              "ineligibleCreatureTypes": [
+                "undead",
+                "construct"
+              ]
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 66, 69",
     "license": {
@@ -66827,7 +66955,49 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "2 lb.",
-      "description": "Ball Bearings. As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side. A creature moving across the covered area must succeed on a DC 10 Dexterity saving throw or fall prone. A creature moving through the area at half speed doesn’t need to make the save."
+      "description": "Ball Bearings. As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side. A creature moving across the covered area must succeed on a DC 10 Dexterity saving throw or fall prone. A creature moving through the area at half speed doesn’t need to make the save.",
+      "useProfile": {
+        "consumption": {
+          "kind": "source-defined",
+          "clause": "spill these tiny metal balls from their pouch"
+        },
+        "consumptionSourcePhrase": "spill these tiny metal balls from their pouch",
+        "clauses": [
+          {
+            "id": "placement",
+            "sourcePhrase": "As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "area": {
+                "shape": "square",
+                "sideFeet": 10
+              },
+              "surface": "level"
+            }
+          },
+          {
+            "id": "save",
+            "sourcePhrase": "DC 10 Dexterity saving throw or fall prone",
+            "owner": "F3",
+            "semantics": {
+              "save": {
+                "ability": "dexterity",
+                "dc": 10
+              },
+              "failureCondition": "prone"
+            }
+          },
+          {
+            "id": "avoidance",
+            "sourcePhrase": "moving through the area at half speed doesn’t need to make the save",
+            "owner": "model",
+            "semantics": {
+              "avoidsSaveAtSpeedFraction": 0.5
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -66929,6 +67099,13 @@
       "damageType": "slashing",
       "properties": [
         "Versatile (1d10)"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "versatile",
+          "alternateDamageDie": "1d10",
+          "source": "Versatile (1d10)"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -67092,7 +67269,22 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "5 lb.",
-      "description": "Block and Tackle. A set of pulleys with a cable threaded through them and a hook to attach to objects, a block and tackle allows you to hoist up to four times the weight you can normally lift."
+      "description": "Block and Tackle. A set of pulleys with a cable threaded through them and a hook to attach to objects, a block and tackle allows you to hoist up to four times the weight you can normally lift.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "lifting-multiplier",
+            "sourcePhrase": "allows you to hoist up to four times the weight you can normally lift",
+            "owner": "F9",
+            "semantics": {
+              "liftingCapacityMultiplier": 4
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -67129,6 +67321,18 @@
       "properties": [
         "Ammunition (range 25/100)",
         "loading"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "ammunition",
+          "normalRangeFeet": 25,
+          "longRangeFeet": 100,
+          "source": "Ammunition (range 25/100)"
+        },
+        {
+          "kind": "loading",
+          "source": "loading"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "ranged",
@@ -67510,7 +67714,64 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "2 lb.",
-      "description": "Caltrops. As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side. Any creature that enters the area must succeed on a DC 15 Dexterity saving throw or stop moving this turn and take 1 piercing damage. Taking this damage reduces the creature’s walking speed by 10 feet until the creature regains at least 1 hit point. A creature moving through the area at half speed doesn’t need to make the save."
+      "description": "Caltrops. As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side. Any creature that enters the area must succeed on a DC 15 Dexterity saving throw or stop moving this turn and take 1 piercing damage. Taking this damage reduces the creature’s walking speed by 10 feet until the creature regains at least 1 hit point. A creature moving through the area at half speed doesn’t need to make the save.",
+      "useProfile": {
+        "consumption": {
+          "kind": "source-defined",
+          "clause": "spread a bag of caltrops"
+        },
+        "consumptionSourcePhrase": "spread a bag of caltrops",
+        "clauses": [
+          {
+            "id": "placement",
+            "sourcePhrase": "As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "area": {
+                "shape": "square",
+                "sideFeet": 5
+              }
+            }
+          },
+          {
+            "id": "save-damage",
+            "sourcePhrase": "DC 15 Dexterity saving throw or stop moving this turn and take 1 piercing damage",
+            "owner": "F9",
+            "semantics": {
+              "save": {
+                "ability": "dexterity",
+                "dc": 15
+              },
+              "failure": {
+                "stopMoving": "current-turn",
+                "damage": {
+                  "flat": 1,
+                  "damageType": "piercing"
+                }
+              }
+            }
+          },
+          {
+            "id": "speed",
+            "sourcePhrase": "reduces the creature’s walking speed by 10 feet until the creature regains at least 1 hit point",
+            "owner": "F3",
+            "semantics": {
+              "speedReductionFeet": 10,
+              "mode": "walking",
+              "endsWhenHitPointsRegainedAtLeast": 1
+            }
+          },
+          {
+            "id": "avoidance",
+            "sourcePhrase": "moving through the area at half speed doesn’t need to make the save",
+            "owner": "model",
+            "semantics": {
+              "avoidsSaveAtSpeedFraction": 0.5
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -67575,7 +67836,32 @@
     "data": {
       "category": "gear",
       "cost": "1 cp",
-      "description": "Candle. For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet."
+      "description": "Candle. For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet.",
+      "useProfile": {
+        "consumption": {
+          "kind": "source-defined",
+          "clause": "For 1 hour"
+        },
+        "consumptionSourcePhrase": "For 1 hour",
+        "clauses": [
+          {
+            "id": "light",
+            "sourcePhrase": "For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet",
+            "owner": "F3",
+            "semantics": {
+              "duration": {
+                "value": 1,
+                "unit": "hour"
+              },
+              "light": {
+                "shape": "radius",
+                "brightFeet": 5,
+                "dimAdditionalFeet": 5
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -67740,7 +68026,25 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "1 lb.",
-      "description": "Case, Crossbow Bolt. This wooden case can hold up to twenty crossbow bolts."
+      "description": "Case, Crossbow Bolt. This wooden case can hold up to twenty crossbow bolts.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "capacity",
+            "sourcePhrase": "can hold up to twenty crossbow bolts",
+            "owner": "inventory",
+            "semantics": {
+              "capacity": {
+                "item": "crossbow-bolt",
+                "maximum": 20
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -67773,7 +68077,33 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "1 lb.",
-      "description": "Case, Map or Scroll. This cylindrical leather case can hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment."
+      "description": "Case, Map or Scroll. This cylindrical leather case can hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "capacity",
+            "sourcePhrase": "can hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment",
+            "owner": "inventory",
+            "semantics": {
+              "capacity": {
+                "alternatives": [
+                  {
+                    "item": "paper-sheet",
+                    "maximum": 10
+                  },
+                  {
+                    "item": "parchment-sheet",
+                    "maximum": 5
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -67806,7 +68136,34 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "10 lb.",
-      "description": "Chain. A chain has 10 hit points. It can be burst with a successful DC 20 Strength check."
+      "description": "Chain. A chain has 10 hit points. It can be burst with a successful DC 20 Strength check.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "durability",
+            "sourcePhrase": "A chain has 10 hit points",
+            "owner": "F9",
+            "semantics": {
+              "hitPoints": 10
+            }
+          },
+          {
+            "id": "burst",
+            "sourcePhrase": "burst with a successful DC 20 Strength check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "strength",
+                "dc": 20
+              },
+              "outcome": "broken"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -68017,7 +68374,25 @@
       "category": "gear",
       "cost": "25 gp",
       "weight": "12 lb.",
-      "description": "Climber’s Kit. A climber’s kit includes special pitons, boot tips, gloves, and a harness. You can use the climber’s kit as an action to anchor yourself; when you do, you can’t fall more than 25 feet from the point where you anchored yourself, and you can’t climb more than 25 feet away from that point without undoing the anchor."
+      "description": "Climber’s Kit. A climber’s kit includes special pitons, boot tips, gloves, and a harness. You can use the climber’s kit as an action to anchor yourself; when you do, you can’t fall more than 25 feet from the point where you anchored yourself, and you can’t climb more than 25 feet away from that point without undoing the anchor.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "anchor",
+            "sourcePhrase": "use the climber’s kit as an action to anchor yourself; when you do, you can’t fall more than 25 feet from the point where you anchored yourself, and you can’t climb more than 25 feet away from that point without undoing the anchor",
+            "owner": "model",
+            "semantics": {
+              "timing": "action",
+              "maximumFallFeet": 25,
+              "maximumDistanceFromAnchorFeet": 25,
+              "ends": "anchor-undone"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -68181,6 +68556,12 @@
       "damageType": "bludgeoning",
       "properties": [
         "Light"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "light",
+          "source": "Light"
+        }
       ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
@@ -68356,6 +68737,22 @@
         "light",
         "loading"
       ],
+      "weaponProperties": [
+        {
+          "kind": "ammunition",
+          "normalRangeFeet": 30,
+          "longRangeFeet": 120,
+          "source": "Ammunition (range 30/120)"
+        },
+        {
+          "kind": "light",
+          "source": "light"
+        },
+        {
+          "kind": "loading",
+          "source": "loading"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "ranged",
       "weight": "3 lb."
@@ -68398,6 +68795,26 @@
         "loading",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "ammunition",
+          "normalRangeFeet": 100,
+          "longRangeFeet": 400,
+          "source": "Ammunition (range 100/400)"
+        },
+        {
+          "kind": "heavy",
+          "source": "heavy"
+        },
+        {
+          "kind": "loading",
+          "source": "loading"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "ranged",
       "weight": "18 lb."
@@ -68439,6 +68856,22 @@
         "loading",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "ammunition",
+          "normalRangeFeet": 80,
+          "longRangeFeet": 320,
+          "source": "Ammunition (range 80/320)"
+        },
+        {
+          "kind": "loading",
+          "source": "loading"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "simple",
       "weaponRange": "ranged",
       "weight": "5 lb."
@@ -68474,7 +68907,25 @@
       "category": "gear",
       "cost": "2 gp",
       "weight": "5 lb.",
-      "description": "Crowbar. Using a crowbar grants advantage to Strength checks where the crowbar’s leverage can be applied."
+      "description": "Crowbar. Using a crowbar grants advantage to Strength checks where the crowbar’s leverage can be applied.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "leverage",
+            "sourcePhrase": "grants advantage to Strength checks where the crowbar’s leverage can be applied",
+            "owner": "F9",
+            "semantics": {
+              "checkAdvantage": {
+                "ability": "strength"
+              },
+              "qualifier": "leverage-can-be-applied"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -68547,6 +68998,22 @@
         "light",
         "thrown (range 20/60)"
       ],
+      "weaponProperties": [
+        {
+          "kind": "finesse",
+          "source": "Finesse"
+        },
+        {
+          "kind": "light",
+          "source": "light"
+        },
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 20,
+          "longRangeFeet": 60,
+          "source": "thrown (range 20/60)"
+        }
+      ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
       "weight": "1 lb."
@@ -68586,6 +69053,18 @@
       "properties": [
         "Finesse",
         "thrown (range 20/60)"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "finesse",
+          "source": "Finesse"
+        },
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 20,
+          "longRangeFeet": 60,
+          "source": "thrown (range 20/60)"
+        }
       ],
       "weaponCategory": "simple",
       "weaponRange": "ranged",
@@ -69235,6 +69714,7 @@
       "damageDie": "1d8",
       "damageType": "bludgeoning",
       "properties": [],
+      "weaponProperties": [],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "2 lb."
@@ -69408,6 +69888,20 @@
         "reach",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "heavy",
+          "source": "Heavy"
+        },
+        {
+          "kind": "reach",
+          "source": "reach"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "6 lb."
@@ -69514,6 +70008,16 @@
         "Heavy",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "heavy",
+          "source": "Heavy"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "7 lb."
@@ -69552,6 +70056,12 @@
       "damageType": "bludgeoning",
       "properties": [
         "Two-handed"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "two-handed",
+          "source": "Two-handed"
+        }
       ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
@@ -69593,6 +70103,16 @@
         "Heavy",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "heavy",
+          "source": "Heavy"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "6 lb."
@@ -69633,6 +70153,20 @@
         "Heavy",
         "reach",
         "two-handed"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "heavy",
+          "source": "Heavy"
+        },
+        {
+          "kind": "reach",
+          "source": "reach"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -69779,6 +70313,18 @@
         "Light",
         "thrown (range 20/60)"
       ],
+      "weaponProperties": [
+        {
+          "kind": "light",
+          "source": "Light"
+        },
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 20,
+          "longRangeFeet": 60,
+          "source": "thrown (range 20/60)"
+        }
+      ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
       "weight": "2 lb."
@@ -69814,7 +70360,32 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "3 lb.",
-      "description": "Healer’s Kit. This kit is a leather pouch containing bandages, salves, and splints. The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check."
+      "description": "Healer’s Kit. This kit is a leather pouch containing bandages, salves, and splints. The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check.",
+      "useProfile": {
+        "consumption": {
+          "kind": "finite-uses",
+          "maximum": 10,
+          "usesPerActivation": 1,
+          "reset": "none"
+        },
+        "consumptionSourcePhrase": "The kit has ten uses",
+        "clauses": [
+          {
+            "id": "stabilize",
+            "sourcePhrase": "The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check",
+            "owner": "F5",
+            "semantics": {
+              "timing": "action",
+              "targetHitPoints": 0,
+              "outcome": "stable",
+              "bypassesCheck": {
+                "ability": "wisdom",
+                "skill": "medicine"
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -69921,7 +70492,66 @@
       "category": "gear",
       "cost": "25 gp",
       "weight": "1 lb.",
-      "description": "Holy Water. As an action, you can splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon. If the target is a fiend or undead, it takes 2d6 radiant damage. A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot."
+      "description": "Holy Water. As an action, you can splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon. If the target is a fiend or undead, it takes 2d6 radiant damage. A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot.",
+      "useProfile": {
+        "consumption": {
+          "kind": "inventory-unit",
+          "quantity": 1
+        },
+        "consumptionSourcePhrase": "splash the contents of this flask",
+        "clauses": [
+          {
+            "id": "activation",
+            "sourcePhrase": "As an action",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action"
+            }
+          },
+          {
+            "id": "attack",
+            "sourcePhrase": "splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon",
+            "owner": "F9",
+            "semantics": {
+              "kind": "ranged-weapon-attack",
+              "splashRangeFeet": 5,
+              "thrownRangeFeet": 20,
+              "proficiency": "improvised-weapon"
+            }
+          },
+          {
+            "id": "damage",
+            "sourcePhrase": "If the target is a fiend or undead, it takes 2d6 radiant damage",
+            "owner": "F9",
+            "semantics": {
+              "kind": "damage",
+              "dice": "2d6",
+              "damageType": "radiant",
+              "eligibleCreatureTypes": [
+                "fiend",
+                "undead"
+              ]
+            }
+          },
+          {
+            "id": "creation",
+            "sourcePhrase": "A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot",
+            "owner": "model",
+            "semantics": {
+              "duration": {
+                "value": 1,
+                "unit": "hour"
+              },
+              "materialCostGp": 25,
+              "spellSlotLevel": 1,
+              "creatorClasses": [
+                "cleric",
+                "paladin"
+              ]
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -70086,7 +70716,78 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "25 lb.",
-      "description": "Hunting Trap. When you use your action to set it, this trap forms a saw-toothed steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet long). A creature can use its action to make a DC 13 Strength check, freeing itself or another creature within its reach on a success. Each failed check deals 1 piercing damage to the trapped creature."
+      "description": "Hunting Trap. When you use your action to set it, this trap forms a saw-toothed steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet long). A creature can use its action to make a DC 13 Strength check, freeing itself or another creature within its reach on a success. Each failed check deals 1 piercing damage to the trapped creature.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "placement",
+            "sourcePhrase": "use your action to set it",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "placement": "pressure-plate",
+              "anchored": true
+            }
+          },
+          {
+            "id": "trigger",
+            "sourcePhrase": "DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving",
+            "owner": "F9",
+            "semantics": {
+              "save": {
+                "ability": "dexterity",
+                "dc": 13
+              },
+              "failure": {
+                "damage": {
+                  "dice": "1d4",
+                  "damageType": "piercing"
+                },
+                "stopMoving": true
+              }
+            }
+          },
+          {
+            "id": "tether",
+            "sourcePhrase": "movement is limited by the length of the chain (typically 3 feet long)",
+            "owner": "model",
+            "semantics": {
+              "tetherLengthFeet": 3
+            }
+          },
+          {
+            "id": "escape",
+            "sourcePhrase": "use its action to make a DC 13 Strength check, freeing itself or another creature within its reach on a success",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "check": {
+                "ability": "strength",
+                "dc": 13
+              },
+              "target": [
+                "self",
+                "creature-within-reach"
+              ]
+            }
+          },
+          {
+            "id": "failed-escape",
+            "sourcePhrase": "Each failed check deals 1 piercing damage",
+            "owner": "F9",
+            "semantics": {
+              "damage": {
+                "flat": 1,
+                "damageType": "piercing"
+              },
+              "trigger": "failed-escape-check"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -70184,6 +70885,14 @@
       "damageType": "piercing",
       "properties": [
         "Thrown (range 30/120)"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 30,
+          "longRangeFeet": 120,
+          "source": "Thrown (range 30/120)"
+        }
       ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
@@ -70351,7 +71060,33 @@
       "category": "gear",
       "cost": "5 sp",
       "weight": "1 lb.",
-      "description": "Lamp. A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
+      "description": "Lamp. A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil.",
+      "useProfile": {
+        "consumption": {
+          "kind": "source-defined",
+          "clause": "burns for 6 hours on a flask (1 pint) of oil"
+        },
+        "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
+        "clauses": [
+          {
+            "id": "light",
+            "sourcePhrase": "casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+            "owner": "F3",
+            "semantics": {
+              "light": {
+                "shape": "radius",
+                "brightFeet": 15,
+                "dimAdditionalFeet": 30
+              },
+              "fuel": {
+                "item": "oil",
+                "pints": 1,
+                "durationHours": 6
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -70389,10 +71124,44 @@
         "Reach",
         "special"
       ],
+      "weaponProperties": [
+        {
+          "kind": "reach",
+          "source": "Reach"
+        },
+        {
+          "kind": "special",
+          "source": "special"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "6 lb.",
-      "description": "Lance. You have disadvantage when you use a lance to attack a target within 5 feet of you. Also, a lance requires two hands to wield when you aren’t mounted."
+      "description": "Lance. You have disadvantage when you use a lance to attack a target within 5 feet of you. Also, a lance requires two hands to wield when you aren’t mounted.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "close-disadvantage",
+            "sourcePhrase": "disadvantage when you use a lance to attack a target within 5 feet of you",
+            "owner": "F9",
+            "semantics": {
+              "attackDisadvantageWithinFeet": 5
+            }
+          },
+          {
+            "id": "unmounted-hands",
+            "sourcePhrase": "requires two hands to wield when you aren’t mounted",
+            "owner": "model",
+            "semantics": {
+              "hands": 2,
+              "condition": "wielder-not-mounted"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 65, 66",
     "license": {
@@ -70425,7 +71194,33 @@
       "category": "gear",
       "cost": "10 gp",
       "weight": "2 lb.",
-      "description": "Lantern, Bullseye. A bullseye lantern casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
+      "description": "Lantern, Bullseye. A bullseye lantern casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil.",
+      "useProfile": {
+        "consumption": {
+          "kind": "source-defined",
+          "clause": "burns for 6 hours on a flask (1 pint) of oil"
+        },
+        "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
+        "clauses": [
+          {
+            "id": "light",
+            "sourcePhrase": "casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+            "owner": "F3",
+            "semantics": {
+              "light": {
+                "shape": "cone",
+                "brightFeet": 60,
+                "dimAdditionalFeet": 60
+              },
+              "fuel": {
+                "item": "oil",
+                "pints": 1,
+                "durationHours": 6
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -70458,7 +71253,46 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "2 lb.",
-      "description": "Lantern, Hooded. A hooded lantern casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil. As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius."
+      "description": "Lantern, Hooded. A hooded lantern casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil. As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius.",
+      "useProfile": {
+        "consumption": {
+          "kind": "source-defined",
+          "clause": "burns for 6 hours on a flask (1 pint) of oil"
+        },
+        "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
+        "clauses": [
+          {
+            "id": "light",
+            "sourcePhrase": "casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+            "owner": "F3",
+            "semantics": {
+              "light": {
+                "shape": "radius",
+                "brightFeet": 30,
+                "dimAdditionalFeet": 30
+              },
+              "fuel": {
+                "item": "oil",
+                "pints": 1,
+                "durationHours": 6
+              }
+            }
+          },
+          {
+            "id": "hood",
+            "sourcePhrase": "As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "light": {
+                "shape": "radius",
+                "dimFeet": 5,
+                "brightFeet": 0
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -70570,6 +71404,18 @@
         "Light",
         "thrown (range 20/60)"
       ],
+      "weaponProperties": [
+        {
+          "kind": "light",
+          "source": "Light"
+        },
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 20,
+          "longRangeFeet": 60,
+          "source": "thrown (range 20/60)"
+        }
+      ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
       "weight": "2 lb."
@@ -70605,7 +71451,30 @@
       "category": "gear",
       "cost": "10 gp",
       "weight": "1 lb.",
-      "description": "Lock. A key is provided with the lock. Without the key, a creature proficient with thieves’ tools can pick this lock with a successful DC 15 Dexterity check. Your GM may decide that better locks are available for higher prices."
+      "description": "Lock. A key is provided with the lock. Without the key, a creature proficient with thieves’ tools can pick this lock with a successful DC 15 Dexterity check. Your GM may decide that better locks are available for higher prices.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "pick",
+            "sourcePhrase": "creature proficient with thieves’ tools can pick this lock with a successful DC 15 Dexterity check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "dexterity",
+                "dc": 15,
+                "proficiency": "thieves-tools"
+              },
+              "outcome": "unlocked"
+            }
+          }
+        ],
+        "modelAdjudicatedQualifiers": [
+          "Your GM may decide that better locks are available for higher prices."
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -70643,6 +71512,22 @@
         "Ammunition (range 150/600)",
         "heavy",
         "two-handed"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "ammunition",
+          "normalRangeFeet": 150,
+          "longRangeFeet": 600,
+          "source": "Ammunition (range 150/600)"
+        },
+        {
+          "kind": "heavy",
+          "source": "heavy"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "ranged",
@@ -70714,6 +71599,13 @@
       "damageType": "slashing",
       "properties": [
         "Versatile (1d10)"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "versatile",
+          "alternateDamageDie": "1d10",
+          "source": "Versatile (1d10)"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -70820,6 +71712,7 @@
       "damageDie": "1d6",
       "damageType": "bludgeoning",
       "properties": [],
+      "weaponProperties": [],
       "weaponCategory": "simple",
       "weaponRange": "melee",
       "weight": "4 lb."
@@ -70854,7 +71747,44 @@
     "data": {
       "category": "gear",
       "cost": "100 gp",
-      "description": "Magnifying Glass. This lens allows a closer look at small objects. It is also useful as a substitute for flint and steel when starting fires. Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite. A magnifying glass grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed."
+      "description": "Magnifying Glass. This lens allows a closer look at small objects. It is also useful as a substitute for flint and steel when starting fires. Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite. A magnifying glass grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "ignite-fire",
+            "sourcePhrase": "Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite",
+            "owner": "model",
+            "semantics": {
+              "duration": {
+                "value": 5,
+                "unit": "minute"
+              },
+              "requirements": [
+                "sunlight-equivalent-light",
+                "tinder"
+              ],
+              "outcome": "fire-ignites"
+            }
+          },
+          {
+            "id": "inspection-advantage",
+            "sourcePhrase": "grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed",
+            "owner": "F9",
+            "semantics": {
+              "checkAdvantage": {
+                "purposes": [
+                  "appraise",
+                  "inspect"
+                ]
+              },
+              "targetQualifier": "small-or-highly-detailed-item"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -70887,7 +71817,70 @@
       "category": "gear",
       "cost": "2 gp",
       "weight": "6 lb.",
-      "description": "Manacles. These metal restraints can bind a Small or Medium creature. Escaping the manacles requires a successful DC 20 Dexterity check. Breaking them requires a successful DC 20 Strength check. Each set of manacles comes with one key. Without the key, a creature proficient with thieves’ tools can pick the manacles’ lock with a successful DC 15 Dexterity check. Manacles have 15 hit points."
+      "description": "Manacles. These metal restraints can bind a Small or Medium creature. Escaping the manacles requires a successful DC 20 Dexterity check. Breaking them requires a successful DC 20 Strength check. Each set of manacles comes with one key. Without the key, a creature proficient with thieves’ tools can pick the manacles’ lock with a successful DC 15 Dexterity check. Manacles have 15 hit points.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "eligibility",
+            "sourcePhrase": "can bind a Small or Medium creature",
+            "owner": "model",
+            "semantics": {
+              "eligibleSizes": [
+                "small",
+                "medium"
+              ]
+            }
+          },
+          {
+            "id": "escape",
+            "sourcePhrase": "Escaping the manacles requires a successful DC 20 Dexterity check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "dexterity",
+                "dc": 20
+              },
+              "outcome": "escaped"
+            }
+          },
+          {
+            "id": "break",
+            "sourcePhrase": "Breaking them requires a successful DC 20 Strength check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "strength",
+                "dc": 20
+              },
+              "outcome": "broken"
+            }
+          },
+          {
+            "id": "pick",
+            "sourcePhrase": "proficient with thieves’ tools can pick the manacles’ lock with a successful DC 15 Dexterity check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "dexterity",
+                "dc": 15,
+                "proficiency": "thieves-tools"
+              },
+              "outcome": "unlocked"
+            }
+          },
+          {
+            "id": "durability",
+            "sourcePhrase": "Manacles have 15 hit points",
+            "owner": "F9",
+            "semantics": {
+              "hitPoints": 15
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -70992,6 +71985,16 @@
         "Heavy",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "heavy",
+          "source": "Heavy"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "10 lb."
@@ -71094,6 +72097,7 @@
       "damageDie": "1d8",
       "damageType": "piercing",
       "properties": [],
+      "weaponProperties": [],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "4 lb."
@@ -71165,10 +72169,94 @@
         "Special",
         "thrown (range 5/15)"
       ],
+      "weaponProperties": [
+        {
+          "kind": "special",
+          "source": "Special"
+        },
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 5,
+          "longRangeFeet": 15,
+          "source": "thrown (range 5/15)"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "ranged",
       "weight": "3 lb.",
-      "description": "Net. A Large or smaller creature hit by a net is restrained until it is freed. A net has no effect on creatures that are formless, or creatures that are Huge or larger. A creature can use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success. Dealing 5 slashing damage to the net (AC 10) also frees the creature without harming it, ending the effect and destroying the net. When you use an action, bonus action, or reaction to attack with a net, you can make only one attack regardless of the number of attacks you can normally make."
+      "description": "Net. A Large or smaller creature hit by a net is restrained until it is freed. A net has no effect on creatures that are formless, or creatures that are Huge or larger. A creature can use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success. Dealing 5 slashing damage to the net (AC 10) also frees the creature without harming it, ending the effect and destroying the net. When you use an action, bonus action, or reaction to attack with a net, you can make only one attack regardless of the number of attacks you can normally make.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "restrain",
+            "sourcePhrase": "A Large or smaller creature hit by a net is restrained until it is freed",
+            "owner": "F3",
+            "semantics": {
+              "condition": "restrained",
+              "maximumSize": "large",
+              "trigger": "hit",
+              "duration": "until-freed"
+            }
+          },
+          {
+            "id": "ineffective",
+            "sourcePhrase": "no effect on creatures that are formless, or creatures that are Huge or larger",
+            "owner": "model",
+            "semantics": {
+              "ineligible": [
+                "formless",
+                "huge-or-larger"
+              ]
+            }
+          },
+          {
+            "id": "escape",
+            "sourcePhrase": "use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "check": {
+                "ability": "strength",
+                "dc": 10
+              },
+              "target": [
+                "self",
+                "creature-within-reach"
+              ]
+            }
+          },
+          {
+            "id": "destroy",
+            "sourcePhrase": "Dealing 5 slashing damage to the net (AC 10) also frees the creature without harming it, ending the effect and destroying the net",
+            "owner": "F9",
+            "semantics": {
+              "objectArmorClass": 10,
+              "damageRequired": 5,
+              "requiredDamageType": "slashing",
+              "outcome": [
+                "free-creature",
+                "destroy-net"
+              ]
+            }
+          },
+          {
+            "id": "one-attack",
+            "sourcePhrase": "you can make only one attack regardless of the number of attacks you can normally make",
+            "owner": "F2",
+            "semantics": {
+              "maximumAttacks": 1,
+              "expenditures": [
+                "action",
+                "bonus-action",
+                "reaction"
+              ]
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 65, 66",
     "license": {
@@ -71201,7 +72289,75 @@
       "category": "gear",
       "cost": "1 sp",
       "weight": "1 lb.",
-      "description": "Oil. Oil usually comes in a clay flask that holds 1 pint. As an action, you can splash the oil in this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. Make a ranged attack against a target creature or object, treating the oil as an improvised weapon. On a hit, the target is covered in oil. If the target takes any fire damage before the oil dries (after 1 minute), the target takes an additional 5 fire damage from the burning oil. You can also pour a flask of oil on the ground to cover a 5-foot-square area, provided that the surface is level. If lit, the oil burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area. A creature can take this damage only once per turn."
+      "description": "Oil. Oil usually comes in a clay flask that holds 1 pint. As an action, you can splash the oil in this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. Make a ranged attack against a target creature or object, treating the oil as an improvised weapon. On a hit, the target is covered in oil. If the target takes any fire damage before the oil dries (after 1 minute), the target takes an additional 5 fire damage from the burning oil. You can also pour a flask of oil on the ground to cover a 5-foot-square area, provided that the surface is level. If lit, the oil burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area. A creature can take this damage only once per turn.",
+      "useProfile": {
+        "consumption": {
+          "kind": "inventory-unit",
+          "quantity": 1
+        },
+        "consumptionSourcePhrase": "Oil usually comes in a clay flask that holds 1 pint",
+        "clauses": [
+          {
+            "id": "attack",
+            "sourcePhrase": "throw it up to 20 feet, shattering it on impact. Make a ranged attack against a target creature or object, treating the oil as an improvised weapon",
+            "owner": "F9",
+            "semantics": {
+              "timing": "action",
+              "splashRangeFeet": 5,
+              "thrownRangeFeet": 20,
+              "proficiency": "improvised-weapon"
+            }
+          },
+          {
+            "id": "coating",
+            "sourcePhrase": "If the target takes any fire damage before the oil dries (after 1 minute), the target takes an additional 5 fire damage",
+            "owner": "F9",
+            "semantics": {
+              "duration": {
+                "value": 1,
+                "unit": "minute"
+              },
+              "triggerDamageType": "fire",
+              "additionalDamage": {
+                "flat": 5,
+                "damageType": "fire"
+              }
+            }
+          },
+          {
+            "id": "area",
+            "sourcePhrase": "cover a 5-foot-square area, provided that the surface is level",
+            "owner": "model",
+            "semantics": {
+              "area": {
+                "shape": "square",
+                "sideFeet": 5
+              },
+              "surface": "level"
+            }
+          },
+          {
+            "id": "burning-area",
+            "sourcePhrase": "burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area",
+            "owner": "F9",
+            "semantics": {
+              "duration": {
+                "value": 2,
+                "unit": "round"
+              },
+              "damage": {
+                "flat": 5,
+                "damageType": "fire"
+              },
+              "triggers": [
+                "enters-area",
+                "ends-turn-in-area"
+              ],
+              "maximumPerTurn": 1
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -71507,6 +72663,20 @@
         "reach",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "heavy",
+          "source": "Heavy"
+        },
+        {
+          "kind": "reach",
+          "source": "reach"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "18 lb."
@@ -71647,7 +72817,63 @@
     "data": {
       "category": "gear",
       "cost": "100 gp",
-      "description": "Poison, Basic. You can use the poison in this vial to coat one slashing or piercing weapon or up to three pieces of ammunition. Applying the poison takes an action. A creature hit by the poisoned weapon or ammunition must make a DC 10 Constitution saving throw or take 1d4 poison damage. Once applied, the poison retains potency for 1 minute before drying."
+      "description": "Poison, Basic. You can use the poison in this vial to coat one slashing or piercing weapon or up to three pieces of ammunition. Applying the poison takes an action. A creature hit by the poisoned weapon or ammunition must make a DC 10 Constitution saving throw or take 1d4 poison damage. Once applied, the poison retains potency for 1 minute before drying.",
+      "useProfile": {
+        "consumption": {
+          "kind": "inventory-unit",
+          "quantity": 1
+        },
+        "consumptionSourcePhrase": "poison in this vial",
+        "clauses": [
+          {
+            "id": "application",
+            "sourcePhrase": "coat one slashing or piercing weapon or up to three pieces of ammunition",
+            "owner": "model",
+            "semantics": {
+              "eligibleWeaponDamageTypes": [
+                "slashing",
+                "piercing"
+              ],
+              "ammunitionMaximum": 3
+            }
+          },
+          {
+            "id": "activation",
+            "sourcePhrase": "Applying the poison takes an action",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action"
+            }
+          },
+          {
+            "id": "save-damage",
+            "sourcePhrase": "DC 10 Constitution saving throw or take 1d4 poison damage",
+            "owner": "F9",
+            "semantics": {
+              "save": {
+                "ability": "constitution",
+                "dc": 10
+              },
+              "failureDamage": {
+                "dice": "1d4",
+                "damageType": "poison"
+              }
+            }
+          },
+          {
+            "id": "duration",
+            "sourcePhrase": "retains potency for 1 minute before drying",
+            "owner": "F3",
+            "semantics": {
+              "duration": {
+                "value": 1,
+                "unit": "minute"
+              },
+              "ends": "dries"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -71996,6 +73222,13 @@
       "properties": [
         "Versatile (1d8)"
       ],
+      "weaponProperties": [
+        {
+          "kind": "versatile",
+          "alternateDamageDie": "1d8",
+          "source": "Versatile (1d8)"
+        }
+      ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
       "weight": "4 lb."
@@ -72031,7 +73264,25 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "1 lb.",
-      "description": "Quiver. A quiver can hold up to 20 arrows."
+      "description": "Quiver. A quiver can hold up to 20 arrows.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "capacity",
+            "sourcePhrase": "A quiver can hold up to 20 arrows",
+            "owner": "inventory",
+            "semantics": {
+              "capacity": {
+                "item": "arrow",
+                "maximum": 20
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -72064,7 +73315,30 @@
       "category": "gear",
       "cost": "4 gp",
       "weight": "35 lb.",
-      "description": "Ram, Portable. You can use a portable ram to break down doors. When doing so, you gain a +4 bonus on the Strength check. One other character can help you use the ram, giving you advantage on this check."
+      "description": "Ram, Portable. You can use a portable ram to break down doors. When doing so, you gain a +4 bonus on the Strength check. One other character can help you use the ram, giving you advantage on this check.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "break-door",
+            "sourcePhrase": "gain a +4 bonus on the Strength check. One other character can help you use the ram, giving you advantage on this check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "strength",
+                "modifier": 4
+              },
+              "help": {
+                "maximumHelpers": 1,
+                "grants": "advantage"
+              },
+              "target": "door"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -72100,6 +73374,12 @@
       "damageType": "piercing",
       "properties": [
         "Finesse"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "finesse",
+          "source": "Finesse"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -72309,7 +73589,34 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "10 lb.",
-      "description": "Rope. Rope, whether made of hemp or silk, has 2 hit points and can be burst with a DC 17 Strength check."
+      "description": "Rope. Rope, whether made of hemp or silk, has 2 hit points and can be burst with a DC 17 Strength check.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "durability",
+            "sourcePhrase": "has 2 hit points",
+            "owner": "F9",
+            "semantics": {
+              "hitPoints": 2
+            }
+          },
+          {
+            "id": "burst",
+            "sourcePhrase": "burst with a DC 17 Strength check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "strength",
+                "dc": 17
+              },
+              "outcome": "broken"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -72342,7 +73649,34 @@
       "category": "gear",
       "cost": "10 gp",
       "weight": "5 lb.",
-      "description": "Rope. Rope, whether made of hemp or silk, has 2 hit points and can be burst with a DC 17 Strength check."
+      "description": "Rope. Rope, whether made of hemp or silk, has 2 hit points and can be burst with a DC 17 Strength check.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "durability",
+            "sourcePhrase": "has 2 hit points",
+            "owner": "F9",
+            "semantics": {
+              "hitPoints": 2
+            }
+          },
+          {
+            "id": "burst",
+            "sourcePhrase": "burst with a DC 17 Strength check",
+            "owner": "F9",
+            "semantics": {
+              "check": {
+                "ability": "strength",
+                "dc": 17
+              },
+              "outcome": "broken"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -72673,7 +74007,25 @@
       "category": "gear",
       "cost": "5 gp",
       "weight": "3 lb.",
-      "description": "Scale, Merchant’s. A scale includes a small balance, pans, and a suitable assortment of weights up to 2 pounds. With it, you can measure the exact weight of small objects, such as raw precious metals or trade goods, to help determine their worth."
+      "description": "Scale, Merchant’s. A scale includes a small balance, pans, and a suitable assortment of weights up to 2 pounds. With it, you can measure the exact weight of small objects, such as raw precious metals or trade goods, to help determine their worth.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "weight-capacity",
+            "sourcePhrase": "weights up to 2 pounds",
+            "owner": "model",
+            "semantics": {
+              "measurableWeightMaximumPounds": 2
+            }
+          }
+        ],
+        "modelAdjudicatedQualifiers": [
+          "to help determine their worth"
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -72778,6 +74130,16 @@
       "properties": [
         "Finesse",
         "light"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "finesse",
+          "source": "Finesse"
+        },
+        {
+          "kind": "light",
+          "source": "light"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -72922,6 +74284,18 @@
         "Ammunition (range 80/320)",
         "two-handed"
       ],
+      "weaponProperties": [
+        {
+          "kind": "ammunition",
+          "normalRangeFeet": 80,
+          "longRangeFeet": 320,
+          "source": "Ammunition (range 80/320)"
+        },
+        {
+          "kind": "two-handed",
+          "source": "two-handed"
+        }
+      ],
       "weaponCategory": "simple",
       "weaponRange": "ranged",
       "weight": "2 lb."
@@ -72961,6 +74335,16 @@
       "properties": [
         "Finesse",
         "light"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "finesse",
+          "source": "Finesse"
+        },
+        {
+          "kind": "light",
+          "source": "light"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -73032,6 +74416,12 @@
       "damageType": "slashing",
       "properties": [
         "Light"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "light",
+          "source": "Light"
+        }
       ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
@@ -73165,6 +74555,14 @@
       "damageType": "bludgeoning",
       "properties": [
         "Ammunition (range 30/120)"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "ammunition",
+          "normalRangeFeet": 30,
+          "longRangeFeet": 120,
+          "source": "Ammunition (range 30/120)"
+        }
       ],
       "weaponCategory": "simple",
       "weaponRange": "ranged"
@@ -73302,6 +74700,19 @@
         "Thrown (range 20/60)",
         "versatile (1d8)"
       ],
+      "weaponProperties": [
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 20,
+          "longRangeFeet": 60,
+          "source": "Thrown (range 20/60)"
+        },
+        {
+          "kind": "versatile",
+          "alternateDamageDie": "1d8",
+          "source": "versatile (1d8)"
+        }
+      ],
       "weaponCategory": "simple",
       "weaponRange": "melee",
       "weight": "3 lb."
@@ -73337,7 +74748,25 @@
       "category": "gear",
       "cost": "50 gp",
       "weight": "3 lb.",
-      "description": "Spellbook. Essential for wizards, a spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells."
+      "description": "Spellbook. Essential for wizards, a spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "capacity",
+            "sourcePhrase": "100 blank vellum pages suitable for recording spells",
+            "owner": "inventory",
+            "semantics": {
+              "capacity": {
+                "item": "recorded-spell-page",
+                "maximum": 100
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -73476,7 +74905,22 @@
       "category": "gear",
       "cost": "1,000 gp",
       "weight": "1 lb.",
-      "description": "Spyglass. Objects viewed through a spyglass are magnified to twice their size."
+      "description": "Spyglass. Objects viewed through a spyglass are magnified to twice their size.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "magnification",
+            "sourcePhrase": "magnified to twice their size",
+            "owner": "model",
+            "semantics": {
+              "magnificationMultiplier": 2
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -73614,7 +75058,22 @@
       "category": "gear",
       "cost": "2 gp",
       "weight": "20 lb.",
-      "description": "Tent. A simple and portable canvas shelter, a tent sleeps two."
+      "description": "Tent. A simple and portable canvas shelter, a tent sleeps two.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "capacity",
+            "sourcePhrase": "a tent sleeps two",
+            "owner": "model",
+            "semantics": {
+              "creatureCapacity": 2
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -73680,7 +75139,34 @@
       "category": "gear",
       "cost": "5 sp",
       "weight": "1 lb.",
-      "description": "Tinderbox. This small container holds flint, fire steel, and tinder (usually dry cloth soaked in light oil) used to kindle a fire. Using it to light a torch—or anything else with abundant, exposed fuel—takes an action. Lighting any other fire takes 1 minute."
+      "description": "Tinderbox. This small container holds flint, fire steel, and tinder (usually dry cloth soaked in light oil) used to kindle a fire. Using it to light a torch—or anything else with abundant, exposed fuel—takes an action. Lighting any other fire takes 1 minute.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "exposed-fuel",
+            "sourcePhrase": "light a torch—or anything else with abundant, exposed fuel—takes an action",
+            "owner": "F2",
+            "semantics": {
+              "timing": "action",
+              "targetFuel": "abundant-exposed"
+            }
+          },
+          {
+            "id": "other-fire",
+            "sourcePhrase": "Lighting any other fire takes 1 minute",
+            "owner": "model",
+            "semantics": {
+              "duration": {
+                "value": 1,
+                "unit": "minute"
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -73747,7 +75233,45 @@
       "category": "gear",
       "cost": "1 cp",
       "weight": "1 lb.",
-      "description": "Torch. A torch burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet. If you make a melee attack with a burning torch and hit, it deals 1 fire damage."
+      "description": "Torch. A torch burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet. If you make a melee attack with a burning torch and hit, it deals 1 fire damage.",
+      "useProfile": {
+        "consumption": {
+          "kind": "source-defined",
+          "clause": "burns for 1 hour"
+        },
+        "consumptionSourcePhrase": "burns for 1 hour",
+        "clauses": [
+          {
+            "id": "light",
+            "sourcePhrase": "burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet",
+            "owner": "F3",
+            "semantics": {
+              "duration": {
+                "value": 1,
+                "unit": "hour"
+              },
+              "light": {
+                "shape": "radius",
+                "brightFeet": 20,
+                "dimAdditionalFeet": 20
+              }
+            }
+          },
+          {
+            "id": "attack",
+            "sourcePhrase": "make a melee attack with a burning torch and hit, it deals 1 fire damage",
+            "owner": "F9",
+            "semantics": {
+              "kind": "melee-weapon-attack",
+              "damage": {
+                "flat": 1,
+                "damageType": "fire"
+              },
+              "requires": "burning"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -73817,6 +75341,19 @@
       "properties": [
         "Thrown (range 20/60)",
         "versatile (1d8)"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "thrown",
+          "normalRangeFeet": 20,
+          "longRangeFeet": 60,
+          "source": "Thrown (range 20/60)"
+        },
+        {
+          "kind": "versatile",
+          "alternateDamageDie": "1d8",
+          "source": "versatile (1d8)"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -73987,6 +75524,7 @@
       "damageDie": "1d8",
       "damageType": "piercing",
       "properties": [],
+      "weaponProperties": [],
       "weaponCategory": "martial",
       "weaponRange": "melee",
       "weight": "2 lb."
@@ -74025,6 +75563,13 @@
       "damageType": "bludgeoning",
       "properties": [
         "Versatile (1d10)"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "versatile",
+          "alternateDamageDie": "1d10",
+          "source": "Versatile (1d10)"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
@@ -74229,6 +75774,16 @@
       "properties": [
         "Finesse",
         "reach"
+      ],
+      "weaponProperties": [
+        {
+          "kind": "finesse",
+          "source": "Finesse"
+        },
+        {
+          "kind": "reach",
+          "source": "reach"
+        }
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",

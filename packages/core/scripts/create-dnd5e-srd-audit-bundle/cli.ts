@@ -71,6 +71,7 @@ import {
   srdChoiceProseHasFindings,
   srdPlayabilityHasFindings,
 } from '../../src/internal.js';
+import { EQUIPMENT_MECHANICS_REVIEW } from '../importers/dnd5e-srd-5.1/equipmentMechanicsReview.js';
 import {
   EXPECTED_SRD_5_1_ANCESTRY_NAMES,
   EXPECTED_SRD_5_1_CREATURE_NAMES,
@@ -965,6 +966,7 @@ function hasMechanicsProjection(record: RulesRecord): boolean {
   if (data === null) return false;
   if (objectValue(data.mechanics) !== null) return true;
   if (objectValue(data.projection) !== null) return true;
+  if (objectValue(data.useProfile) !== null) return true;
   if (
     arrayValue(data.traits).some(
       (trait) => objectValue(objectValue(trait)?.mechanics) !== null,
@@ -1355,6 +1357,17 @@ export type GameplayReadinessReport = {
       readonly recordKey: string;
       readonly ambiguity: RulesAmbiguity;
     }[];
+  };
+  /** Exact equipment payload census (eshyra-o9bd.18.7.6). */
+  readonly equipment: {
+    readonly totalRecords: number;
+    readonly recordsWithDescriptions: number;
+    readonly mechanicallyActiveRecords: number;
+    readonly completeTypedPayloads: number;
+    readonly modelAdjudicatedQualifiers: number;
+    readonly nonmechanicalRecords: number;
+    readonly unresolvedFindings: readonly string[];
+    readonly owner: 'eshyra-o9bd.18.7.6';
   };
   /**
    * Resolved kind×bucket dispositions for not-yet-modeled records
@@ -1797,6 +1810,47 @@ export function buildGameplayReadinessReport(
   // readiness gaps, not build failures.
   dispositionErrors.push(...assertRuleDispositions(pack));
   const rules = buildRuleDispositionReport();
+  const equipmentRecords = pack.records.filter(
+    (record) => record.kind === 'equipment',
+  );
+  const equipmentFindings: string[] = [];
+  const equipmentRows = equipmentRecords.map((record) => {
+    const data = dataObject(record) ?? {};
+    const review = EQUIPMENT_MECHANICS_REVIEW.get(record.key);
+    if (review === undefined) {
+      equipmentFindings.push(`${record.key}: no reviewed disposition`);
+      return { typed: false, described: false, active: true, model: false };
+    }
+    if (
+      review.disposition === 'requires projection in this bead' &&
+      objectValue(data.useProfile) === null
+    )
+      equipmentFindings.push(`${record.key}: reviewed projection is missing`);
+    const typed =
+      review.disposition === 'already complete' ||
+      review.disposition === 'requires projection in this bead';
+    const described = stringValue(data.description) !== null;
+    return {
+      typed,
+      described,
+      active: review.disposition !== 'not mechanical',
+      model: review.disposition === 'model-adjudicated qualifier',
+    };
+  });
+  for (const key of EQUIPMENT_MECHANICS_REVIEW.keys())
+    if (!equipmentRecords.some((record) => record.key === key))
+      equipmentFindings.push(`${key}: reviewed record disappeared`);
+  const equipmentReadiness: GameplayReadinessReport['equipment'] = {
+    totalRecords: equipmentRows.length,
+    recordsWithDescriptions: equipmentRows.filter((row) => row.described)
+      .length,
+    mechanicallyActiveRecords: equipmentRows.filter((row) => row.active).length,
+    completeTypedPayloads: equipmentRows.filter((row) => row.typed).length,
+    modelAdjudicatedQualifiers: equipmentRows.filter((row) => row.model).length,
+    nonmechanicalRecords: equipmentRows.filter((row) => !row.active).length,
+    unresolvedFindings: equipmentFindings,
+    owner: 'eshyra-o9bd.18.7.6',
+  };
 
   return {
     packId: pack.meta.packId,
@@ -1807,6 +1861,7 @@ export function buildGameplayReadinessReport(
       total: sourceAmbiguityEntries.length,
       entries: sourceAmbiguityEntries,
     },
+    equipment: equipmentReadiness,
     highImpactExamples: choiceProseFindings.slice(0, 10).map((finding) => ({
       key: finding.key,
       kind: finding.kind,

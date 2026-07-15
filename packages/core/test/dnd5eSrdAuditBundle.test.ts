@@ -58,6 +58,19 @@ function pack(records: readonly RulesRecord[]): RulesPack {
 }
 
 describe('D&D SRD audit bundle gameplay-readiness report', () => {
+  it('reports the exact equipment mechanics census', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    expect(report.equipment).toEqual({
+      totalRecords: 218,
+      recordsWithDescriptions: 109,
+      mechanicallyActiveRecords: 174,
+      completeTypedPayloads: 117,
+      modelAdjudicatedQualifiers: 4,
+      nonmechanicalRecords: 44,
+      unresolvedFindings: [],
+      owner: 'eshyra-o9bd.18.7.6',
+    });
+  });
   it('counts condition effects and exhaustion levels as partial structure, not prose-only', () => {
     const report = buildGameplayReadinessReport(
       pack([

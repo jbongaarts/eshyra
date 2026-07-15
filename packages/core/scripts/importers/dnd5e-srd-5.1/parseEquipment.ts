@@ -424,6 +424,51 @@ function splitProperties(tail: string): string[] {
     .filter((p) => p.length > 0);
 }
 
+export class WeaponPropertyShapeError extends Error {
+  constructor(public readonly property: string) {
+    super(
+      `Unsupported SRD weapon property ${JSON.stringify(property)}; refusing an open-string deterministic projection.`,
+    );
+    this.name = 'WeaponPropertyShapeError';
+  }
+}
+
+const SIMPLE_WEAPON_PROPERTIES = new Set([
+  'finesse',
+  'heavy',
+  'light',
+  'loading',
+  'reach',
+  'special',
+  'two-handed',
+]);
+
+/** Parse the closed grammar printed by every row of the SRD Weapons table. */
+export function parseWeaponProperties(
+  properties: readonly string[],
+): readonly Record<string, unknown>[] {
+  return properties.map((source) => {
+    const normalized = source.toLowerCase();
+    if (SIMPLE_WEAPON_PROPERTIES.has(normalized)) {
+      return { kind: normalized, source };
+    }
+    const range = /^(ammunition|thrown) \(range (\d+)\/(\d+)\)$/i.exec(source);
+    if (range !== null) {
+      return {
+        kind: range[1].toLowerCase(),
+        normalRangeFeet: Number(range[2]),
+        longRangeFeet: Number(range[3]),
+        source,
+      };
+    }
+    const versatile = /^versatile \((\d+d\d+)\)$/i.exec(source);
+    if (versatile !== null) {
+      return { kind: 'versatile', alternateDamageDie: versatile[1], source };
+    }
+    throw new WeaponPropertyShapeError(source);
+  });
+}
+
 interface ArmorLeft {
   readonly name: string;
   readonly cost: string;
@@ -594,6 +639,7 @@ function collectWeapons(flat: readonly FlatLine[]): EquipmentExtraction[] {
       ...(row.damageDie === undefined ? {} : { damageDie: row.damageDie }),
       ...(row.damageType === undefined ? {} : { damageType: row.damageType }),
       properties: [...tail.properties],
+      weaponProperties: parseWeaponProperties(tail.properties),
       ...(tail.weight === undefined ? {} : { weight: tail.weight }),
       sourcePage: row.page,
     };

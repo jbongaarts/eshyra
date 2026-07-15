@@ -34,6 +34,7 @@ import {
   enrichSkillsRule,
 } from './creationFacts.js';
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
+import { equipmentMechanicsFor } from './equipmentMechanics.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
 import { deriveMagicItemMechanics } from './magicItemPassiveEffects.js';
@@ -1206,6 +1207,7 @@ function buildEquipmentData(
       data.damageType = item.damageType;
     }
     data.properties = [...(item.properties ?? [])];
+    data.weaponProperties = [...(item.weaponProperties ?? [])];
     // Simple/martial proficiency category and melee/ranged engagement range,
     // from the Weapons table's sub-header grouping (eshyra-erf5.3.1) — needed
     // for deterministic class-proficiency and starting-equipment filters.
@@ -1256,6 +1258,8 @@ function buildEquipmentData(
   if (item.description !== undefined) {
     data.description = item.description;
   }
+  const mechanics = equipmentMechanicsFor(item, equipmentKey(item.name));
+  if (mechanics !== undefined) data.useProfile = mechanics;
   // Typed pack contents (eshyra-ngcj.4): equipment packs gain a deterministic
   // `contents` list beside the verbatim `description`, so inventory tooling can
   // expand a granted pack into item grants.
