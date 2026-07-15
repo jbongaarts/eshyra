@@ -676,7 +676,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'equipment',
     field: 'useProfile',
-    missingCount: 192,
+    missingCount: 189,
     totalInKind: 218,
   },
   // eshyra-erf5.3.1: only the 37 weapon records carry weaponCategory/Range.

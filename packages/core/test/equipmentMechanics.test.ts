@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { EQUIPMENT_MECHANICS_SPECS } from '../scripts/importers/dnd5e-srd-5.1/equipmentMechanics.js';
+import {
+  EQUIPMENT_MECHANICS_SPECS,
+  equipmentMechanicsFor,
+} from '../scripts/importers/dnd5e-srd-5.1/equipmentMechanics.js';
+import { EQUIPMENT_MECHANICS_REVIEW } from '../scripts/importers/dnd5e-srd-5.1/equipmentMechanicsReview.js';
 import {
   parseWeaponProperties,
   WeaponPropertyShapeError,
@@ -48,6 +52,7 @@ const EXPECTED_CURATED_KEYS = [
   'equipment:alchemists-fire-flask',
   'equipment:antitoxin-vial',
   'equipment:ball-bearings-bag-of-1-000',
+  'equipment:block-and-tackle',
   'equipment:caltrops-bag-of-20',
   'equipment:candle',
   'equipment:chain-10-feet',
@@ -61,10 +66,12 @@ const EXPECTED_CURATED_KEYS = [
   'equipment:lantern-bullseye',
   'equipment:lantern-hooded',
   'equipment:lock',
+  'equipment:magnifying-glass',
   'equipment:manacles',
   'equipment:net',
   'equipment:oil-flask',
   'equipment:poison-basic-vial',
+  'equipment:quiver',
   'equipment:ram-portable',
   'equipment:rope-hempen-50-feet',
   'equipment:rope-silk-50-feet',
@@ -76,13 +83,16 @@ describe('SRD equipment mechanics inventory', () => {
   it('pins exact corpus and curated membership', () => {
     expect(equipment).toHaveLength(218);
     expect(inventory.recordCount).toBe(218);
-    expect(inventory.mechanicallyActiveRecords).toBe(170);
-    expect(inventory.curatedProjectionRecords).toBe(26);
-    expect(inventory.clauseCount).toBe(65);
+    expect(inventory.mechanicallyActiveRecords).toBe(174);
+    expect(inventory.curatedProjectionRecords).toBe(29);
+    expect(inventory.clauseCount).toBe(69);
     expect(
       EQUIPMENT_MECHANICS_SPECS.map((spec) => spec.recordKey).sort(),
     ).toEqual([...EXPECTED_CURATED_KEYS].sort());
     expect(inventory.records.map((row) => row.recordKey).sort()).toEqual(
+      equipment.map((record) => record.key).sort(),
+    );
+    expect([...EQUIPMENT_MECHANICS_REVIEW.keys()].sort()).toEqual(
       equipment.map((record) => record.key).sort(),
     );
     expect(
@@ -102,10 +112,48 @@ describe('SRD equipment mechanics inventory', () => {
       const inventoryRow = inventory.records.find(
         (row) => row.recordKey === spec.recordKey,
       );
+      const expectedBindingIds = [
+        ...spec.clauses.map((clause) => clause.id),
+        ...(spec.consumptionSourcePhrase ? ['consumption'] : []),
+        ...(spec.modelAdjudicatedQualifiers ?? []).map(() => 'model-qualifier'),
+      ];
       expect(
         inventoryRow?.sourceBindings.map((binding) => binding.clauseId),
-      ).toEqual(spec.clauses.map((clause) => clause.id));
+      ).toEqual(expectedBindingIds);
     }
+  });
+
+  it('fails closed when consumption, creator, or fuel evidence drifts', () => {
+    const drift = (key: string, from: string, to: string) => {
+      const record = byKey.get(key) as RulesRecord;
+      const spec = EQUIPMENT_MECHANICS_SPECS.find(
+        (candidate) => candidate.recordKey === key,
+      );
+      expect(spec).toBeDefined();
+      const data = record.data as {
+        category: string;
+        description: string;
+      };
+      expect(data.description).toContain(from);
+      expect(() =>
+        equipmentMechanicsFor(
+          {
+            name: record.name,
+            category: data.category,
+            sourcePage: spec?.pages[0] ?? 0,
+            descriptionSourcePage: spec?.pages.at(-1),
+            description: data.description.replace(from, to),
+          },
+          key,
+        ),
+      ).toThrow(/source phrase drifted/i);
+    };
+
+    drift('equipment:healers-kit', 'ten uses', 'eleven uses');
+    drift('equipment:holy-water-flask', 'A cleric or paladin', 'A cleric');
+    drift('equipment:lamp', '6 hours', '5 hours');
+    drift('equipment:lantern-bullseye', '6 hours', '5 hours');
+    drift('equipment:lantern-hooded', '6 hours', '5 hours');
   });
 });
 

@@ -4703,6 +4703,7 @@ const EQUIPMENT_SEMANTIC_KEYS = [
   'bypassesCheck',
   'check',
   'checkAdvantage',
+  'capacity',
   'condition',
   'creatorClasses',
   'damage',
@@ -4727,6 +4728,7 @@ const EQUIPMENT_SEMANTIC_KEYS = [
   'ineligibleCreatureTypes',
   'kind',
   'light',
+  'liftingCapacityMultiplier',
   'materialCostGp',
   'maximumAttacks',
   'maximumDistanceFromAnchorFeet',
@@ -4742,6 +4744,7 @@ const EQUIPMENT_SEMANTIC_KEYS = [
   'rangeFeet',
   'repeats',
   'requiredDamageType',
+  'requirements',
   'requires',
   'save',
   'speedReductionFeet',
@@ -4751,6 +4754,7 @@ const EQUIPMENT_SEMANTIC_KEYS = [
   'target',
   'targetFuel',
   'targetHitPoints',
+  'targetQualifier',
   'targets',
   'tetherLengthFeet',
   'thrownRangeFeet',
@@ -4796,7 +4800,12 @@ function validateEquipmentUseProfile(data: Obj, path: string): void {
   const profile = reqObj(data, 'useProfile', path);
   requireOnlyKeys(
     profile,
-    ['consumption', 'clauses', 'modelAdjudicatedQualifiers'],
+    [
+      'consumption',
+      'consumptionSourcePhrase',
+      'clauses',
+      'modelAdjudicatedQualifiers',
+    ],
     `${path}.useProfile`,
   );
   const consumption = reqObj(profile, 'consumption', `${path}.useProfile`);
@@ -4844,6 +4853,12 @@ function validateEquipmentUseProfile(data: Obj, path: string): void {
   } else
     throw new RulesPackError(
       `${path}.useProfile.consumption.kind is unsupported`,
+    );
+  if (kind !== 'not-consumed')
+    reqStr(profile, 'consumptionSourcePhrase', `${path}.useProfile`);
+  else if (profile.consumptionSourcePhrase !== undefined)
+    throw new RulesPackError(
+      `${path}.useProfile.consumptionSourcePhrase is only valid for consumed/source-defined equipment`,
     );
   const clauses = objArray(profile, 'clauses', `${path}.useProfile`);
   if (clauses === undefined || clauses.length === 0)

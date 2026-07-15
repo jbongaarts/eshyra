@@ -63,10 +63,10 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
     expect(report.equipment).toEqual({
       totalRecords: 218,
       recordsWithDescriptions: 109,
-      mechanicallyActiveRecords: 170,
-      completeTypedPayloads: 108,
-      modelAdjudicatedQualifiers: 62,
-      nonmechanicalRecords: 48,
+      mechanicallyActiveRecords: 174,
+      completeTypedPayloads: 111,
+      modelAdjudicatedQualifiers: 59,
+      nonmechanicalRecords: 44,
       unresolvedFindings: [],
       owner: 'eshyra-o9bd.18.7.6',
     });

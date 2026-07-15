@@ -66567,6 +66567,7 @@
           "kind": "inventory-unit",
           "quantity": 1
         },
+        "consumptionSourcePhrase": "splash the contents of this vial",
         "clauses": [
           {
             "id": "activation",
@@ -66649,6 +66650,7 @@
           "kind": "inventory-unit",
           "quantity": 1
         },
+        "consumptionSourcePhrase": "throw this flask up to 20 feet, shattering it on impact",
         "clauses": [
           {
             "id": "activation",
@@ -66660,7 +66662,7 @@
           },
           {
             "id": "attack",
-            "sourcePhrase": "Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
+            "sourcePhrase": "As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
             "owner": "F9",
             "semantics": {
               "kind": "ranged-weapon-attack",
@@ -66800,6 +66802,7 @@
           "kind": "inventory-unit",
           "quantity": 1
         },
+        "consumptionSourcePhrase": "drinks this vial of liquid",
         "clauses": [
           {
             "id": "benefit",
@@ -66958,6 +66961,7 @@
           "kind": "source-defined",
           "clause": "spill these tiny metal balls from their pouch"
         },
+        "consumptionSourcePhrase": "spill these tiny metal balls from their pouch",
         "clauses": [
           {
             "id": "placement",
@@ -67265,7 +67269,22 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "5 lb.",
-      "description": "Block and Tackle. A set of pulleys with a cable threaded through them and a hook to attach to objects, a block and tackle allows you to hoist up to four times the weight you can normally lift."
+      "description": "Block and Tackle. A set of pulleys with a cable threaded through them and a hook to attach to objects, a block and tackle allows you to hoist up to four times the weight you can normally lift.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "lifting-multiplier",
+            "sourcePhrase": "allows you to hoist up to four times the weight you can normally lift",
+            "owner": "F9",
+            "semantics": {
+              "liftingCapacityMultiplier": 4
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 67, 69",
     "license": {
@@ -67701,6 +67720,7 @@
           "kind": "source-defined",
           "clause": "spread a bag of caltrops"
         },
+        "consumptionSourcePhrase": "spread a bag of caltrops",
         "clauses": [
           {
             "id": "placement",
@@ -67822,6 +67842,7 @@
           "kind": "source-defined",
           "clause": "For 1 hour"
         },
+        "consumptionSourcePhrase": "For 1 hour",
         "clauses": [
           {
             "id": "light",
@@ -70303,10 +70324,11 @@
           "usesPerActivation": 1,
           "reset": "none"
         },
+        "consumptionSourcePhrase": "The kit has ten uses",
         "clauses": [
           {
             "id": "stabilize",
-            "sourcePhrase": "As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check",
+            "sourcePhrase": "The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check",
             "owner": "F5",
             "semantics": {
               "timing": "action",
@@ -70432,6 +70454,7 @@
           "kind": "inventory-unit",
           "quantity": 1
         },
+        "consumptionSourcePhrase": "splash the contents of this flask",
         "clauses": [
           {
             "id": "activation",
@@ -70443,7 +70466,7 @@
           },
           {
             "id": "attack",
-            "sourcePhrase": "make a ranged attack against a target creature, treating the holy water as an improvised weapon",
+            "sourcePhrase": "splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon",
             "owner": "F9",
             "semantics": {
               "kind": "ranged-weapon-attack",
@@ -70468,7 +70491,7 @@
           },
           {
             "id": "creation",
-            "sourcePhrase": "ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot",
+            "sourcePhrase": "A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot",
             "owner": "model",
             "semantics": {
               "duration": {
@@ -70999,10 +71022,11 @@
           "kind": "source-defined",
           "clause": "burns for 6 hours on a flask (1 pint) of oil"
         },
+        "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
         "clauses": [
           {
             "id": "light",
-            "sourcePhrase": "casts bright light in a 15-foot radius and dim light for an additional 30 feet",
+            "sourcePhrase": "casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
             "owner": "F3",
             "semantics": {
               "light": {
@@ -71132,10 +71156,11 @@
           "kind": "source-defined",
           "clause": "burns for 6 hours on a flask (1 pint) of oil"
         },
+        "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
         "clauses": [
           {
             "id": "light",
-            "sourcePhrase": "casts bright light in a 60-foot cone and dim light for an additional 60 feet",
+            "sourcePhrase": "casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
             "owner": "F3",
             "semantics": {
               "light": {
@@ -71190,10 +71215,11 @@
           "kind": "source-defined",
           "clause": "burns for 6 hours on a flask (1 pint) of oil"
         },
+        "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
         "clauses": [
           {
             "id": "light",
-            "sourcePhrase": "casts bright light in a 30-foot radius and dim light for an additional 30 feet",
+            "sourcePhrase": "casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
             "owner": "F3",
             "semantics": {
               "light": {
@@ -71402,7 +71428,7 @@
           }
         ],
         "modelAdjudicatedQualifiers": [
-          "The GM may make better locks available at higher prices."
+          "Your GM may decide that better locks are available for higher prices."
         ]
       }
     },
@@ -71677,7 +71703,44 @@
     "data": {
       "category": "gear",
       "cost": "100 gp",
-      "description": "Magnifying Glass. This lens allows a closer look at small objects. It is also useful as a substitute for flint and steel when starting fires. Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite. A magnifying glass grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed."
+      "description": "Magnifying Glass. This lens allows a closer look at small objects. It is also useful as a substitute for flint and steel when starting fires. Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite. A magnifying glass grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "ignite-fire",
+            "sourcePhrase": "Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite",
+            "owner": "model",
+            "semantics": {
+              "duration": {
+                "value": 5,
+                "unit": "minute"
+              },
+              "requirements": [
+                "sunlight-equivalent-light",
+                "tinder"
+              ],
+              "outcome": "fire-ignites"
+            }
+          },
+          {
+            "id": "inspection-advantage",
+            "sourcePhrase": "grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed",
+            "owner": "F9",
+            "semantics": {
+              "checkAdvantage": {
+                "purposes": [
+                  "appraise",
+                  "inspect"
+                ]
+              },
+              "targetQualifier": "small-or-highly-detailed-item"
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -72188,6 +72251,7 @@
           "kind": "inventory-unit",
           "quantity": 1
         },
+        "consumptionSourcePhrase": "Oil usually comes in a clay flask that holds 1 pint",
         "clauses": [
           {
             "id": "attack",
@@ -72715,6 +72779,7 @@
           "kind": "inventory-unit",
           "quantity": 1
         },
+        "consumptionSourcePhrase": "poison in this vial",
         "clauses": [
           {
             "id": "application",
@@ -73155,7 +73220,25 @@
       "category": "gear",
       "cost": "1 gp",
       "weight": "1 lb.",
-      "description": "Quiver. A quiver can hold up to 20 arrows."
+      "description": "Quiver. A quiver can hold up to 20 arrows.",
+      "useProfile": {
+        "consumption": {
+          "kind": "not-consumed"
+        },
+        "clauses": [
+          {
+            "id": "capacity",
+            "sourcePhrase": "A quiver can hold up to 20 arrows",
+            "owner": "inventory",
+            "semantics": {
+              "capacity": {
+                "item": "arrow",
+                "maximum": 20
+              }
+            }
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 pp. 68, 69",
     "license": {
@@ -75046,6 +75129,7 @@
           "kind": "source-defined",
           "clause": "burns for 1 hour"
         },
+        "consumptionSourcePhrase": "burns for 1 hour",
         "clauses": [
           {
             "id": "light",

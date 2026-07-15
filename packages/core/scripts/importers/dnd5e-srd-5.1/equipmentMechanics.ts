@@ -24,6 +24,8 @@ export interface EquipmentMechanicsSpec {
   readonly pages: readonly number[];
   readonly clauses: readonly EquipmentClause[];
   readonly consumption: EquipmentConsumption;
+  /** Exact description evidence for the consumption declaration. */
+  readonly consumptionSourcePhrase?: string;
   readonly modelAdjudicatedQualifiers?: readonly string[];
 }
 
@@ -45,6 +47,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:acid-vial',
     pages: [66, 69],
     consumption: { kind: 'inventory-unit', quantity: 1 },
+    consumptionSourcePhrase: 'splash the contents of this vial',
     clauses: [
       clause('activation', 'As an action', 'F2', { timing: 'action' }),
       clause(
@@ -75,11 +78,13 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:alchemists-fire-flask',
     pages: [66, 69],
     consumption: { kind: 'inventory-unit', quantity: 1 },
+    consumptionSourcePhrase:
+      'throw this flask up to 20 feet, shattering it on impact',
     clauses: [
       clause('activation', 'As an action', 'F2', { timing: 'action' }),
       clause(
         'attack',
-        "Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
+        "As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
         'F9',
         {
           kind: 'ranged-weapon-attack',
@@ -115,6 +120,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:antitoxin-vial',
     pages: [66, 69],
     consumption: { kind: 'inventory-unit', quantity: 1 },
+    consumptionSourcePhrase: 'drinks this vial of liquid',
     clauses: [
       clause(
         'benefit',
@@ -136,6 +142,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
       kind: 'source-defined',
       clause: 'spill these tiny metal balls from their pouch',
     },
+    consumptionSourcePhrase: 'spill these tiny metal balls from their pouch',
     clauses: [
       clause(
         'placement',
@@ -163,6 +170,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:caltrops-bag-of-20',
     pages: [67, 69],
     consumption: { kind: 'source-defined', clause: 'spread a bag of caltrops' },
+    consumptionSourcePhrase: 'spread a bag of caltrops',
     clauses: [
       clause(
         'placement',
@@ -209,10 +217,11 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
       usesPerActivation: 1,
       reset: 'none',
     },
+    consumptionSourcePhrase: 'The kit has ten uses',
     clauses: [
       clause(
         'stabilize',
-        'As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check',
+        'The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check',
         'F5',
         {
           timing: 'action',
@@ -276,11 +285,12 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:holy-water-flask',
     pages: [67, 69],
     consumption: { kind: 'inventory-unit', quantity: 1 },
+    consumptionSourcePhrase: 'splash the contents of this flask',
     clauses: [
       clause('activation', 'As an action', 'F2', { timing: 'action' }),
       clause(
         'attack',
-        'make a ranged attack against a target creature, treating the holy water as an improvised weapon',
+        'splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon',
         'F9',
         {
           kind: 'ranged-weapon-attack',
@@ -302,7 +312,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
       ),
       clause(
         'creation',
-        'ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot',
+        'A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot',
         'model',
         {
           duration: { value: 1, unit: 'hour' },
@@ -390,6 +400,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:poison-basic-vial',
     pages: [68, 69],
     consumption: { kind: 'inventory-unit', quantity: 1 },
+    consumptionSourcePhrase: 'poison in this vial',
     clauses: [
       clause(
         'application',
@@ -422,6 +433,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:torch',
     pages: [68, 69],
     consumption: { kind: 'source-defined', clause: 'burns for 1 hour' },
+    consumptionSourcePhrase: 'burns for 1 hour',
     clauses: [
       clause(
         'light',
@@ -448,6 +460,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     recordKey: 'equipment:candle',
     pages: [67, 69],
     consumption: { kind: 'source-defined', clause: 'For 1 hour' },
+    consumptionSourcePhrase: 'For 1 hour',
     clauses: [
       clause(
         'light',
@@ -457,6 +470,19 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
           duration: { value: 1, unit: 'hour' },
           light: { shape: 'radius', brightFeet: 5, dimAdditionalFeet: 5 },
         },
+      ),
+    ],
+  },
+  {
+    recordKey: 'equipment:block-and-tackle',
+    pages: [67, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause(
+        'lifting-multiplier',
+        'allows you to hoist up to four times the weight you can normally lift',
+        'F9',
+        { liftingCapacityMultiplier: 4 },
       ),
     ],
   },
@@ -515,10 +541,11 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
       kind: 'source-defined',
       clause: 'burns for 6 hours on a flask (1 pint) of oil',
     },
+    consumptionSourcePhrase: 'burns for 6 hours on a flask (1 pint) of oil',
     clauses: [
       clause(
         'light',
-        'casts bright light in a 15-foot radius and dim light for an additional 30 feet',
+        'casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil',
         'F3',
         {
           light: { shape: 'radius', brightFeet: 15, dimAdditionalFeet: 30 },
@@ -534,10 +561,11 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
       kind: 'source-defined',
       clause: 'burns for 6 hours on a flask (1 pint) of oil',
     },
+    consumptionSourcePhrase: 'burns for 6 hours on a flask (1 pint) of oil',
     clauses: [
       clause(
         'light',
-        'casts bright light in a 60-foot cone and dim light for an additional 60 feet',
+        'casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil',
         'F3',
         {
           light: { shape: 'cone', brightFeet: 60, dimAdditionalFeet: 60 },
@@ -553,10 +581,11 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
       kind: 'source-defined',
       clause: 'burns for 6 hours on a flask (1 pint) of oil',
     },
+    consumptionSourcePhrase: 'burns for 6 hours on a flask (1 pint) of oil',
     clauses: [
       clause(
         'light',
-        'casts bright light in a 30-foot radius and dim light for an additional 30 feet',
+        'casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil',
         'F3',
         {
           light: { shape: 'radius', brightFeet: 30, dimAdditionalFeet: 30 },
@@ -590,7 +619,7 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
       ),
     ],
     modelAdjudicatedQualifiers: [
-      'The GM may make better locks available at higher prices.',
+      'Your GM may decide that better locks are available for higher prices.',
     ],
   },
   {
@@ -628,9 +657,37 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     ],
   },
   {
+    recordKey: 'equipment:magnifying-glass',
+    pages: [68, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause(
+        'ignite-fire',
+        'Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite',
+        'model',
+        {
+          duration: { value: 5, unit: 'minute' },
+          requirements: ['sunlight-equivalent-light', 'tinder'],
+          outcome: 'fire-ignites',
+        },
+      ),
+      clause(
+        'inspection-advantage',
+        'grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed',
+        'F9',
+        {
+          checkAdvantage: { purposes: ['appraise', 'inspect'] },
+          targetQualifier: 'small-or-highly-detailed-item',
+        },
+      ),
+    ],
+  },
+  {
     recordKey: 'equipment:oil-flask',
     pages: [68, 69],
     consumption: { kind: 'inventory-unit', quantity: 1 },
+    consumptionSourcePhrase:
+      'Oil usually comes in a clay flask that holds 1 pint',
     clauses: [
       clause(
         'attack',
@@ -687,6 +744,16 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
           target: 'door',
         },
       ),
+    ],
+  },
+  {
+    recordKey: 'equipment:quiver',
+    pages: [68, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause('capacity', 'A quiver can hold up to 20 arrows', 'inventory', {
+        capacity: { item: 'arrow', maximum: 20 },
+      }),
     ],
   },
   ...(
@@ -757,14 +824,32 @@ export function equipmentMechanicsFor(
     throw new Error(
       `${recordKey}: reviewed mechanics source description disappeared`,
     );
+  if (spec.consumption.kind !== 'not-consumed') {
+    if (
+      spec.consumptionSourcePhrase === undefined ||
+      !item.description.includes(spec.consumptionSourcePhrase)
+    )
+      throw new Error(
+        `${recordKey}#consumption: bound source phrase drifted: ${JSON.stringify(spec.consumptionSourcePhrase)}`,
+      );
+  }
   for (const entry of spec.clauses) {
     if (!item.description.includes(entry.sourcePhrase))
       throw new Error(
         `${recordKey}#${entry.id}: bound source phrase drifted: ${JSON.stringify(entry.sourcePhrase)}`,
       );
   }
+  for (const qualifier of spec.modelAdjudicatedQualifiers ?? []) {
+    if (!item.description.includes(qualifier))
+      throw new Error(
+        `${recordKey}#model-qualifier: bound source phrase drifted: ${JSON.stringify(qualifier)}`,
+      );
+  }
   return {
     consumption: spec.consumption,
+    ...(spec.consumptionSourcePhrase === undefined
+      ? {}
+      : { consumptionSourcePhrase: spec.consumptionSourcePhrase }),
     clauses: spec.clauses.map(({ id, sourcePhrase, owner, semantics }) => ({
       id,
       sourcePhrase,

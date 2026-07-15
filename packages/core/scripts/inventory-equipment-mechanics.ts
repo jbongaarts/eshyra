@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { EQUIPMENT_MECHANICS_SPECS } from './importers/dnd5e-srd-5.1/equipmentMechanics.js';
+import { EQUIPMENT_MECHANICS_REVIEW } from './importers/dnd5e-srd-5.1/equipmentMechanicsReview.js';
 
 const ROOT = resolve(import.meta.dirname, '../../..');
 const RECORDS = resolve(
@@ -35,32 +36,29 @@ const specs = new Map(
 for (const key of specs.keys())
   if (!equipment.some((record) => record.key === key))
     throw new Error(`reviewed equipment record disappeared: ${key}`);
-
-const structuredCategories = new Set([
-  'armor',
-  'weapon',
-  'pack',
-  'mount',
-  'vehicle',
-]);
+const actualKeys = new Set(equipment.map((record) => record.key));
+for (const key of EQUIPMENT_MECHANICS_REVIEW.keys())
+  if (!actualKeys.has(key))
+    throw new Error(`reviewed equipment record disappeared: ${key}`);
+for (const key of actualKeys)
+  if (!EQUIPMENT_MECHANICS_REVIEW.has(key))
+    throw new Error(`equipment record lacks reviewed disposition: ${key}`);
+for (const key of specs.keys())
+  if (
+    EQUIPMENT_MECHANICS_REVIEW.get(key)?.disposition !==
+    'requires projection in this bead'
+  )
+    throw new Error(
+      `${key}: curated spec has no matching reviewed disposition`,
+    );
 const rows = equipment.map((record) => {
   const spec = specs.get(record.key);
+  const review = EQUIPMENT_MECHANICS_REVIEW.get(record.key);
+  if (review === undefined)
+    throw new Error(`${record.key}: unreviewed equipment`);
   const hasDescription = typeof record.data.description === 'string';
-  const alreadyComplete =
-    structuredCategories.has(String(record.data.category)) ||
-    record.data.capacity !== undefined;
-  const disposition =
-    spec !== undefined
-      ? 'requires projection in this bead'
-      : alreadyComplete
-        ? 'already complete'
-        : hasDescription
-          ? 'model-adjudicated qualifier'
-          : 'not mechanical';
   const tableDerivedFacts = Object.fromEntries(
-    Object.entries(record.data).filter(
-      ([key]) => !['description', 'useProfile'].includes(key),
-    ),
+    Object.entries(record.data).filter(([key]) => key !== 'description'),
   );
   return {
     recordKey: record.key,
@@ -80,20 +78,46 @@ const rows = equipment.map((record) => {
     requiredDeterministicRepresentation:
       spec !== undefined
         ? ['data.useProfile']
-        : alreadyComplete
+        : review.disposition === 'already complete'
           ? ['table-derived fields']
-          : [],
-    disposition,
+          : review.disposition === 'externally owned runtime behavior'
+            ? ['inventory quantity and remove_item']
+            : [],
+    disposition: review.disposition,
+    rationale: review.rationale,
     engineToolOwners:
       spec === undefined
-        ? []
-        : [...new Set(spec.clauses.map((clause) => clause.owner))],
+        ? review.owners
+        : [
+            ...new Set([
+              ...review.owners,
+              ...spec.clauses.map((clause) => clause.owner),
+            ]),
+          ],
     sourceBindings:
-      spec?.clauses.map((clause) => ({
-        clauseId: clause.id,
-        phrase: clause.sourcePhrase,
-        pages: spec.pages,
-      })) ?? [],
+      spec === undefined
+        ? []
+        : [
+            ...spec.clauses.map((clause) => ({
+              clauseId: clause.id,
+              phrase: clause.sourcePhrase,
+              pages: spec.pages,
+            })),
+            ...(spec.consumptionSourcePhrase === undefined
+              ? []
+              : [
+                  {
+                    clauseId: 'consumption',
+                    phrase: spec.consumptionSourcePhrase,
+                    pages: spec.pages,
+                  },
+                ]),
+            ...(spec.modelAdjudicatedQualifiers ?? []).map((phrase) => ({
+              clauseId: 'model-qualifier',
+              phrase,
+              pages: spec.pages,
+            })),
+          ],
   };
 });
 const dispositionCounts = Object.fromEntries(

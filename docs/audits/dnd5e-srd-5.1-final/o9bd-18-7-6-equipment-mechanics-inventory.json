@@ -3,14 +3,15 @@
   "generatedBy": "packages/core/scripts/inventory-equipment-mechanics.ts",
   "recordCount": 218,
   "recordsWithDescriptions": 109,
-  "mechanicallyActiveRecords": 170,
-  "curatedProjectionRecords": 26,
-  "clauseCount": 65,
+  "mechanicallyActiveRecords": 174,
+  "curatedProjectionRecords": 29,
+  "clauseCount": 69,
   "dispositionCounts": {
     "already complete": 82,
-    "model-adjudicated qualifier": 62,
-    "not mechanical": 48,
-    "requires projection in this bead": 26
+    "externally owned runtime behavior": 4,
+    "model-adjudicated qualifier": 59,
+    "not mechanical": 44,
+    "requires projection in this bead": 29
   },
   "records": [
     {
@@ -33,6 +34,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -49,7 +51,54 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "25 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "inventory-unit",
+            "quantity": 1
+          },
+          "consumptionSourcePhrase": "splash the contents of this vial",
+          "clauses": [
+            {
+              "id": "activation",
+              "sourcePhrase": "As an action",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action"
+              }
+            },
+            {
+              "id": "delivery",
+              "sourcePhrase": "splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet",
+              "owner": "model",
+              "semantics": {
+                "splashRangeFeet": 5,
+                "thrownRangeFeet": 20,
+                "targets": ["creature", "object"]
+              }
+            },
+            {
+              "id": "attack",
+              "sourcePhrase": "make a ranged attack against a creature or object, treating the acid as an improvised weapon",
+              "owner": "F9",
+              "semantics": {
+                "kind": "ranged-weapon-attack",
+                "proficiency": "improvised-weapon"
+              }
+            },
+            {
+              "id": "damage",
+              "sourcePhrase": "2d6 acid damage",
+              "owner": "F9",
+              "semantics": {
+                "kind": "damage",
+                "dice": "2d6",
+                "damageType": "acid",
+                "trigger": "hit"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Acid. As an action, you can splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet, shattering it on impact. In either case, make a ranged attack against a creature or object, treating the acid as an improvised weapon. On a hit, the target takes 2d6 acid damage."
@@ -60,10 +109,16 @@
         "attack",
         "damage"
       ],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F2", "model", "F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F2", "model", "F9"],
       "sourceBindings": [
         {
           "clauseId": "activation",
@@ -84,6 +139,11 @@
           "clauseId": "damage",
           "phrase": "2d6 acid damage",
           "pages": [66, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "splash the contents of this vial",
+          "pages": [66, 69]
         }
       ]
     },
@@ -100,7 +160,59 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "50 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "inventory-unit",
+            "quantity": 1
+          },
+          "consumptionSourcePhrase": "throw this flask up to 20 feet, shattering it on impact",
+          "clauses": [
+            {
+              "id": "activation",
+              "sourcePhrase": "As an action",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action"
+              }
+            },
+            {
+              "id": "attack",
+              "sourcePhrase": "As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
+              "owner": "F9",
+              "semantics": {
+                "kind": "ranged-weapon-attack",
+                "rangeFeet": 20,
+                "proficiency": "improvised-weapon"
+              }
+            },
+            {
+              "id": "damage",
+              "sourcePhrase": "1d4 fire damage at the start of each of its turns",
+              "owner": "F9",
+              "semantics": {
+                "kind": "damage",
+                "dice": "1d4",
+                "damageType": "fire",
+                "trigger": "start-of-affected-turn",
+                "repeats": true
+              }
+            },
+            {
+              "id": "extinguish",
+              "sourcePhrase": "using its action to make a DC 10 Dexterity check to extinguish the flames",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "check": {
+                  "ability": "dexterity",
+                  "dc": 10
+                },
+                "outcome": "ends-effect"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Alchemist’s Fire. This sticky, adhesive fluid ignites when exposed to air. As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon. On a hit, the target takes 1d4 fire damage at the start of each of its turns. A creature can end this damage by using its action to make a DC 10 Dexterity check to extinguish the flames."
@@ -111,10 +223,16 @@
         "damage",
         "extinguish"
       ],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F2", "F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F2", "F9"],
       "sourceBindings": [
         {
           "clauseId": "activation",
@@ -123,7 +241,7 @@
         },
         {
           "clauseId": "attack",
-          "phrase": "Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
+          "phrase": "As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon",
           "pages": [66, 69]
         },
         {
@@ -134,6 +252,11 @@
         {
           "clauseId": "extinguish",
           "phrase": "using its action to make a DC 10 Dexterity check to extinguish the flames",
+          "pages": [66, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "throw this flask up to 20 feet, shattering it on impact",
           "pages": [66, 69]
         }
       ]
@@ -166,7 +289,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -197,7 +321,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -212,20 +337,49 @@
       "source": "SRD 5.1 pp. 66, 69",
       "tableDerivedFacts": {
         "category": "gear",
-        "cost": "50 gp"
+        "cost": "50 gp",
+        "useProfile": {
+          "consumption": {
+            "kind": "inventory-unit",
+            "quantity": 1
+          },
+          "consumptionSourcePhrase": "drinks this vial of liquid",
+          "clauses": [
+            {
+              "id": "benefit",
+              "sourcePhrase": "gains advantage on saving throws against poison for 1 hour",
+              "owner": "F3",
+              "semantics": {
+                "kind": "saving-throw-advantage",
+                "against": "poison",
+                "duration": {
+                  "value": 1,
+                  "unit": "hour"
+                },
+                "ineligibleCreatureTypes": ["undead", "construct"]
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Antitoxin. A creature that drinks this vial of liquid gains advantage on saving throws against poison for 1 hour. It confers no benefit to undead or constructs."
       ],
       "mechanicallySignificantClauseIds": ["benefit"],
-      "currentTypedRepresentation": ["category", "cost"],
+      "currentTypedRepresentation": ["category", "cost", "useProfile"],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F3"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F3"],
       "sourceBindings": [
         {
           "clauseId": "benefit",
           "phrase": "gains advantage on saving throws against poison for 1 hour",
+          "pages": [66, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "drinks this vial of liquid",
           "pages": [66, 69]
         }
       ]
@@ -248,9 +402,12 @@
       "sourceDescriptionClauses": [],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "not mechanical",
-      "engineToolOwners": [],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Ammunition bundle identity and quantity are table-derived; per-shot decrement uses the canonical inventory mutation selected by the DM.",
+      "engineToolOwners": ["inventory", "remove_item"],
       "sourceBindings": []
     },
     {
@@ -276,7 +433,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -307,7 +465,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -323,16 +482,64 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 gp",
-        "weight": "2 lb."
+        "weight": "2 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "source-defined",
+            "clause": "spill these tiny metal balls from their pouch"
+          },
+          "consumptionSourcePhrase": "spill these tiny metal balls from their pouch",
+          "clauses": [
+            {
+              "id": "placement",
+              "sourcePhrase": "As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "area": {
+                  "shape": "square",
+                  "sideFeet": 10
+                },
+                "surface": "level"
+              }
+            },
+            {
+              "id": "save",
+              "sourcePhrase": "DC 10 Dexterity saving throw or fall prone",
+              "owner": "F3",
+              "semantics": {
+                "save": {
+                  "ability": "dexterity",
+                  "dc": 10
+                },
+                "failureCondition": "prone"
+              }
+            },
+            {
+              "id": "avoidance",
+              "sourcePhrase": "moving through the area at half speed doesn’t need to make the save",
+              "owner": "model",
+              "semantics": {
+                "avoidsSaveAtSpeedFraction": 0.5
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Ball Bearings. As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side. A creature moving across the covered area must succeed on a DC 10 Dexterity saving throw or fall prone. A creature moving through the area at half speed doesn’t need to make the save."
       ],
       "mechanicallySignificantClauseIds": ["placement", "save", "avoidance"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F2", "F3", "model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F2", "F3", "model"],
       "sourceBindings": [
         {
           "clauseId": "placement",
@@ -347,6 +554,11 @@
         {
           "clauseId": "avoidance",
           "phrase": "moving through the area at half speed doesn’t need to make the save",
+          "pages": [67, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "spill these tiny metal balls from their pouch",
           "pages": [67, 69]
         }
       ]
@@ -372,7 +584,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -396,7 +609,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -441,7 +655,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -464,6 +679,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -486,6 +702,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -509,6 +726,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -532,6 +750,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -548,17 +767,44 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 gp",
-        "weight": "5 lb."
+        "weight": "5 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "lifting-multiplier",
+              "sourcePhrase": "allows you to hoist up to four times the weight you can normally lift",
+              "owner": "F9",
+              "semantics": {
+                "liftingCapacityMultiplier": 4
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Block and Tackle. A set of pulleys with a cable threaded through them and a hook to attach to objects, a block and tackle allows you to hoist up to four times the weight you can normally lift."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["lifting-multiplier"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9"],
+      "sourceBindings": [
+        {
+          "clauseId": "lifting-multiplier",
+          "phrase": "allows you to hoist up to four times the weight you can normally lift",
+          "pages": [67, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:blowgun",
@@ -607,7 +853,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -628,9 +875,12 @@
       "sourceDescriptionClauses": [],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "not mechanical",
-      "engineToolOwners": [],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Ammunition bundle identity and quantity are table-derived; per-shot decrement uses the canonical inventory mutation selected by the DM.",
+      "engineToolOwners": ["inventory", "remove_item"],
       "sourceBindings": []
     },
     {
@@ -655,7 +905,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -679,7 +930,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -720,7 +972,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -751,7 +1004,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -775,7 +1029,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -872,7 +1127,8 @@
       "currentTypedRepresentation": ["category", "cost", "contents"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -903,7 +1159,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -919,7 +1176,64 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 gp",
-        "weight": "2 lb."
+        "weight": "2 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "source-defined",
+            "clause": "spread a bag of caltrops"
+          },
+          "consumptionSourcePhrase": "spread a bag of caltrops",
+          "clauses": [
+            {
+              "id": "placement",
+              "sourcePhrase": "As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "area": {
+                  "shape": "square",
+                  "sideFeet": 5
+                }
+              }
+            },
+            {
+              "id": "save-damage",
+              "sourcePhrase": "DC 15 Dexterity saving throw or stop moving this turn and take 1 piercing damage",
+              "owner": "F9",
+              "semantics": {
+                "save": {
+                  "ability": "dexterity",
+                  "dc": 15
+                },
+                "failure": {
+                  "stopMoving": "current-turn",
+                  "damage": {
+                    "flat": 1,
+                    "damageType": "piercing"
+                  }
+                }
+              }
+            },
+            {
+              "id": "speed",
+              "sourcePhrase": "reduces the creature’s walking speed by 10 feet until the creature regains at least 1 hit point",
+              "owner": "F3",
+              "semantics": {
+                "speedReductionFeet": 10,
+                "mode": "walking",
+                "endsWhenHitPointsRegainedAtLeast": 1
+              }
+            },
+            {
+              "id": "avoidance",
+              "sourcePhrase": "moving through the area at half speed doesn’t need to make the save",
+              "owner": "model",
+              "semantics": {
+                "avoidsSaveAtSpeedFraction": 0.5
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Caltrops. As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side. Any creature that enters the area must succeed on a DC 15 Dexterity saving throw or stop moving this turn and take 1 piercing damage. Taking this damage reduces the creature’s walking speed by 10 feet until the creature regains at least 1 hit point. A creature moving through the area at half speed doesn’t need to make the save."
@@ -930,10 +1244,16 @@
         "speed",
         "avoidance"
       ],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F2", "F9", "F3", "model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F2", "F9", "F3", "model"],
       "sourceBindings": [
         {
           "clauseId": "placement",
@@ -953,6 +1273,11 @@
         {
           "clauseId": "avoidance",
           "phrase": "moving through the area at half speed doesn’t need to make the save",
+          "pages": [67, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "spread a bag of caltrops",
           "pages": [67, 69]
         }
       ]
@@ -983,7 +1308,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -998,20 +1324,51 @@
       "source": "SRD 5.1 pp. 67, 69",
       "tableDerivedFacts": {
         "category": "gear",
-        "cost": "1 cp"
+        "cost": "1 cp",
+        "useProfile": {
+          "consumption": {
+            "kind": "source-defined",
+            "clause": "For 1 hour"
+          },
+          "consumptionSourcePhrase": "For 1 hour",
+          "clauses": [
+            {
+              "id": "light",
+              "sourcePhrase": "For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet",
+              "owner": "F3",
+              "semantics": {
+                "duration": {
+                  "value": 1,
+                  "unit": "hour"
+                },
+                "light": {
+                  "shape": "radius",
+                  "brightFeet": 5,
+                  "dimAdditionalFeet": 5
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Candle. For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet."
       ],
       "mechanicallySignificantClauseIds": ["light"],
-      "currentTypedRepresentation": ["category", "cost"],
+      "currentTypedRepresentation": ["category", "cost", "useProfile"],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F3"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F3"],
       "sourceBindings": [
         {
           "clauseId": "light",
           "phrase": "For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet",
+          "pages": [67, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "For 1 hour",
           "pages": [67, 69]
         }
       ]
@@ -1044,7 +1401,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1067,6 +1425,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1090,6 +1449,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1121,7 +1481,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1146,7 +1507,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1171,7 +1533,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1187,16 +1550,49 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "5 gp",
-        "weight": "10 lb."
+        "weight": "10 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "durability",
+              "sourcePhrase": "A chain has 10 hit points",
+              "owner": "F9",
+              "semantics": {
+                "hitPoints": 10
+              }
+            },
+            {
+              "id": "burst",
+              "sourcePhrase": "burst with a successful DC 20 Strength check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "strength",
+                  "dc": 20
+                },
+                "outcome": "broken"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Chain. A chain has 10 hit points. It can be burst with a successful DC 20 Strength check."
       ],
       "mechanicallySignificantClauseIds": ["durability", "burst"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9"],
       "sourceBindings": [
         {
           "clauseId": "durability",
@@ -1249,7 +1645,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1290,7 +1687,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1312,6 +1710,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1335,6 +1734,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1359,7 +1759,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1375,16 +1776,40 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "25 gp",
-        "weight": "12 lb."
+        "weight": "12 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "anchor",
+              "sourcePhrase": "use the climber’s kit as an action to anchor yourself; when you do, you can’t fall more than 25 feet from the point where you anchored yourself, and you can’t climb more than 25 feet away from that point without undoing the anchor",
+              "owner": "model",
+              "semantics": {
+                "timing": "action",
+                "maximumFallFeet": 25,
+                "maximumDistanceFromAnchorFeet": 25,
+                "ends": "anchor-undone"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Climber’s Kit. A climber’s kit includes special pitons, boot tips, gloves, and a harness. You can use the climber’s kit as an action to anchor yourself; when you do, you can’t fall more than 25 feet from the point where you anchored yourself, and you can’t climb more than 25 feet away from that point without undoing the anchor."
       ],
       "mechanicallySignificantClauseIds": ["anchor"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "model"],
       "sourceBindings": [
         {
           "clauseId": "anchor",
@@ -1413,6 +1838,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1436,6 +1862,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1459,6 +1886,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1482,6 +1910,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -1526,7 +1955,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1557,7 +1987,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1582,7 +2013,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1613,7 +2045,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1634,9 +2067,12 @@
       "sourceDescriptionClauses": [],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "not mechanical",
-      "engineToolOwners": [],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Ammunition bundle identity and quantity are table-derived; per-shot decrement uses the canonical inventory mutation selected by the DM.",
+      "engineToolOwners": ["inventory", "remove_item"],
       "sourceBindings": []
     },
     {
@@ -1690,7 +2126,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1753,7 +2190,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1807,7 +2245,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1823,16 +2262,40 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "2 gp",
-        "weight": "5 lb."
+        "weight": "5 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "leverage",
+              "sourcePhrase": "grants advantage to Strength checks where the crowbar’s leverage can be applied",
+              "owner": "F9",
+              "semantics": {
+                "checkAdvantage": {
+                  "ability": "strength"
+                },
+                "qualifier": "leverage-can-be-applied"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Crowbar. Using a crowbar grants advantage to Strength checks where the crowbar’s leverage can be applied."
       ],
       "mechanicallySignificantClauseIds": ["leverage"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9"],
       "sourceBindings": [
         {
           "clauseId": "leverage",
@@ -1869,7 +2332,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -1923,7 +2387,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1973,7 +2438,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -1998,7 +2464,8 @@
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2079,7 +2546,8 @@
       "currentTypedRepresentation": ["category", "cost", "contents"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2104,7 +2572,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2133,7 +2602,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2164,7 +2634,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2195,7 +2666,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2267,7 +2739,8 @@
       "currentTypedRepresentation": ["category", "cost", "contents"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2296,7 +2769,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2321,7 +2795,8 @@
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2382,7 +2857,8 @@
       "currentTypedRepresentation": ["category", "cost", "contents"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2449,7 +2925,8 @@
       "currentTypedRepresentation": ["category", "cost", "contents"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2472,6 +2949,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -2497,7 +2975,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2536,7 +3015,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2560,7 +3040,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2591,7 +3072,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2616,7 +3098,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2639,7 +3122,8 @@
       "currentTypedRepresentation": ["category", "cost", "speed"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2691,7 +3175,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2722,7 +3207,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -2745,6 +3231,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -2793,7 +3280,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2837,7 +3325,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2885,7 +3374,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2937,7 +3427,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -2978,7 +3469,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3001,6 +3493,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -3024,6 +3517,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -3074,7 +3568,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3090,20 +3585,56 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "5 gp",
-        "weight": "3 lb."
+        "weight": "3 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "finite-uses",
+            "maximum": 10,
+            "usesPerActivation": 1,
+            "reset": "none"
+          },
+          "consumptionSourcePhrase": "The kit has ten uses",
+          "clauses": [
+            {
+              "id": "stabilize",
+              "sourcePhrase": "The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check",
+              "owner": "F5",
+              "semantics": {
+                "timing": "action",
+                "targetHitPoints": 0,
+                "outcome": "stable",
+                "bypassesCheck": {
+                  "ability": "wisdom",
+                  "skill": "medicine"
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Healer’s Kit. This kit is a leather pouch containing bandages, salves, and splints. The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check."
       ],
       "mechanicallySignificantClauseIds": ["stabilize"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F5"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F5"],
       "sourceBindings": [
         {
           "clauseId": "stabilize",
-          "phrase": "As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check",
+          "phrase": "The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check",
+          "pages": [67, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "The kit has ten uses",
           "pages": [67, 69]
         }
       ]
@@ -3130,7 +3661,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -3171,7 +3703,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3187,7 +3720,60 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "25 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "inventory-unit",
+            "quantity": 1
+          },
+          "consumptionSourcePhrase": "splash the contents of this flask",
+          "clauses": [
+            {
+              "id": "activation",
+              "sourcePhrase": "As an action",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action"
+              }
+            },
+            {
+              "id": "attack",
+              "sourcePhrase": "splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon",
+              "owner": "F9",
+              "semantics": {
+                "kind": "ranged-weapon-attack",
+                "splashRangeFeet": 5,
+                "thrownRangeFeet": 20,
+                "proficiency": "improvised-weapon"
+              }
+            },
+            {
+              "id": "damage",
+              "sourcePhrase": "If the target is a fiend or undead, it takes 2d6 radiant damage",
+              "owner": "F9",
+              "semantics": {
+                "kind": "damage",
+                "dice": "2d6",
+                "damageType": "radiant",
+                "eligibleCreatureTypes": ["fiend", "undead"]
+              }
+            },
+            {
+              "id": "creation",
+              "sourcePhrase": "A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot",
+              "owner": "model",
+              "semantics": {
+                "duration": {
+                  "value": 1,
+                  "unit": "hour"
+                },
+                "materialCostGp": 25,
+                "spellSlotLevel": 1,
+                "creatorClasses": ["cleric", "paladin"]
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Holy Water. As an action, you can splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon. If the target is a fiend or undead, it takes 2d6 radiant damage. A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot."
@@ -3198,10 +3784,16 @@
         "damage",
         "creation"
       ],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F2", "F9", "model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F2", "F9", "model"],
       "sourceBindings": [
         {
           "clauseId": "activation",
@@ -3210,7 +3802,7 @@
         },
         {
           "clauseId": "attack",
-          "phrase": "make a ranged attack against a target creature, treating the holy water as an improvised weapon",
+          "phrase": "splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon",
           "pages": [67, 69]
         },
         {
@@ -3220,7 +3812,12 @@
         },
         {
           "clauseId": "creation",
-          "phrase": "ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot",
+          "phrase": "A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot",
+          "pages": [67, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "splash the contents of this flask",
           "pages": [67, 69]
         }
       ]
@@ -3253,7 +3850,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -3282,7 +3880,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3311,7 +3910,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3334,6 +3934,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -3350,7 +3951,75 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "5 gp",
-        "weight": "25 lb."
+        "weight": "25 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "placement",
+              "sourcePhrase": "use your action to set it",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "placement": "pressure-plate",
+                "anchored": true
+              }
+            },
+            {
+              "id": "trigger",
+              "sourcePhrase": "DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving",
+              "owner": "F9",
+              "semantics": {
+                "save": {
+                  "ability": "dexterity",
+                  "dc": 13
+                },
+                "failure": {
+                  "damage": {
+                    "dice": "1d4",
+                    "damageType": "piercing"
+                  },
+                  "stopMoving": true
+                }
+              }
+            },
+            {
+              "id": "tether",
+              "sourcePhrase": "movement is limited by the length of the chain (typically 3 feet long)",
+              "owner": "model",
+              "semantics": {
+                "tetherLengthFeet": 3
+              }
+            },
+            {
+              "id": "escape",
+              "sourcePhrase": "use its action to make a DC 13 Strength check, freeing itself or another creature within its reach on a success",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "check": {
+                  "ability": "strength",
+                  "dc": 13
+                },
+                "target": ["self", "creature-within-reach"]
+              }
+            },
+            {
+              "id": "failed-escape",
+              "sourcePhrase": "Each failed check deals 1 piercing damage",
+              "owner": "F9",
+              "semantics": {
+                "damage": {
+                  "flat": 1,
+                  "damageType": "piercing"
+                },
+                "trigger": "failed-escape-check"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Hunting Trap. When you use your action to set it, this trap forms a saw-toothed steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet long). A creature can use its action to make a DC 13 Strength check, freeing itself or another creature within its reach on a success. Each failed check deals 1 piercing damage to the trapped creature."
@@ -3362,10 +4031,16 @@
         "escape",
         "failed-escape"
       ],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F2", "F9", "model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F2", "F9", "model"],
       "sourceBindings": [
         {
           "clauseId": "placement",
@@ -3413,6 +4088,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -3435,6 +4111,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -3481,7 +4158,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3512,7 +4190,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -3536,7 +4215,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3559,7 +4239,8 @@
       "currentTypedRepresentation": ["category", "cost", "speed"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3582,6 +4263,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -3598,20 +4280,57 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "5 sp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "source-defined",
+            "clause": "burns for 6 hours on a flask (1 pint) of oil"
+          },
+          "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
+          "clauses": [
+            {
+              "id": "light",
+              "sourcePhrase": "casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+              "owner": "F3",
+              "semantics": {
+                "light": {
+                  "shape": "radius",
+                  "brightFeet": 15,
+                  "dimAdditionalFeet": 30
+                },
+                "fuel": {
+                  "item": "oil",
+                  "pints": 1,
+                  "durationHours": 6
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Lamp. A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
       ],
       "mechanicallySignificantClauseIds": ["light"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F3"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F3"],
       "sourceBindings": [
         {
           "clauseId": "light",
-          "phrase": "casts bright light in a 15-foot radius and dim light for an additional 30 feet",
+          "phrase": "casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "burns for 6 hours on a flask (1 pint) of oil",
           "pages": [68, 69]
         }
       ]
@@ -3644,7 +4363,31 @@
         ],
         "weaponCategory": "martial",
         "weaponRange": "melee",
-        "weight": "6 lb."
+        "weight": "6 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "close-disadvantage",
+              "sourcePhrase": "disadvantage when you use a lance to attack a target within 5 feet of you",
+              "owner": "F9",
+              "semantics": {
+                "attackDisadvantageWithinFeet": 5
+              }
+            },
+            {
+              "id": "unmounted-hands",
+              "sourcePhrase": "requires two hands to wield when you aren’t mounted",
+              "owner": "model",
+              "semantics": {
+                "hands": 2,
+                "condition": "wielder-not-mounted"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Lance. You have disadvantage when you use a lance to attack a target within 5 feet of you. Also, a lance requires two hands to wield when you aren’t mounted."
@@ -3662,11 +4405,13 @@
         "weaponProperties",
         "weaponCategory",
         "weaponRange",
-        "weight"
+        "weight",
+        "useProfile"
       ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9", "model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9", "model"],
       "sourceBindings": [
         {
           "clauseId": "close-disadvantage",
@@ -3693,20 +4438,57 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "10 gp",
-        "weight": "2 lb."
+        "weight": "2 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "source-defined",
+            "clause": "burns for 6 hours on a flask (1 pint) of oil"
+          },
+          "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
+          "clauses": [
+            {
+              "id": "light",
+              "sourcePhrase": "casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+              "owner": "F3",
+              "semantics": {
+                "light": {
+                  "shape": "cone",
+                  "brightFeet": 60,
+                  "dimAdditionalFeet": 60
+                },
+                "fuel": {
+                  "item": "oil",
+                  "pints": 1,
+                  "durationHours": 6
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Lantern, Bullseye. A bullseye lantern casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
       ],
       "mechanicallySignificantClauseIds": ["light"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F3"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F3"],
       "sourceBindings": [
         {
           "clauseId": "light",
-          "phrase": "casts bright light in a 60-foot cone and dim light for an additional 60 feet",
+          "phrase": "casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "burns for 6 hours on a flask (1 pint) of oil",
           "pages": [68, 69]
         }
       ]
@@ -3724,25 +4506,75 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "5 gp",
-        "weight": "2 lb."
+        "weight": "2 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "source-defined",
+            "clause": "burns for 6 hours on a flask (1 pint) of oil"
+          },
+          "consumptionSourcePhrase": "burns for 6 hours on a flask (1 pint) of oil",
+          "clauses": [
+            {
+              "id": "light",
+              "sourcePhrase": "casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
+              "owner": "F3",
+              "semantics": {
+                "light": {
+                  "shape": "radius",
+                  "brightFeet": 30,
+                  "dimAdditionalFeet": 30
+                },
+                "fuel": {
+                  "item": "oil",
+                  "pints": 1,
+                  "durationHours": 6
+                }
+              }
+            },
+            {
+              "id": "hood",
+              "sourcePhrase": "As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "light": {
+                  "shape": "radius",
+                  "dimFeet": 5,
+                  "brightFeet": 0
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Lantern, Hooded. A hooded lantern casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil. As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius."
       ],
       "mechanicallySignificantClauseIds": ["light", "hood"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F3", "F2"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F3", "F2"],
       "sourceBindings": [
         {
           "clauseId": "light",
-          "phrase": "casts bright light in a 30-foot radius and dim light for an additional 30 feet",
+          "phrase": "casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil",
           "pages": [68, 69]
         },
         {
           "clauseId": "hood",
           "phrase": "As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "burns for 6 hours on a flask (1 pint) of oil",
           "pages": [68, 69]
         }
       ]
@@ -3784,7 +4616,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3815,7 +4648,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -3865,7 +4699,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3881,20 +4716,54 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "10 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "pick",
+              "sourcePhrase": "creature proficient with thieves’ tools can pick this lock with a successful DC 15 Dexterity check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "dexterity",
+                  "dc": 15,
+                  "proficiency": "thieves-tools"
+                },
+                "outcome": "unlocked"
+              }
+            }
+          ],
+          "modelAdjudicatedQualifiers": [
+            "Your GM may decide that better locks are available for higher prices."
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Lock. A key is provided with the lock. Without the key, a creature proficient with thieves’ tools can pick this lock with a successful DC 15 Dexterity check. Your GM may decide that better locks are available for higher prices."
       ],
       "mechanicallySignificantClauseIds": ["pick"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9"],
       "sourceBindings": [
         {
           "clauseId": "pick",
           "phrase": "creature proficient with thieves’ tools can pick this lock with a successful DC 15 Dexterity check",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "model-qualifier",
+          "phrase": "Your GM may decide that better locks are available for higher prices.",
           "pages": [68, 69]
         }
       ]
@@ -3950,7 +4819,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -3973,7 +4843,8 @@
       "currentTypedRepresentation": ["category", "cost", "speed"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4018,7 +4889,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4049,7 +4921,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4080,7 +4953,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4119,7 +4993,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4134,17 +5009,63 @@
       "source": "SRD 5.1 pp. 68, 69",
       "tableDerivedFacts": {
         "category": "gear",
-        "cost": "100 gp"
+        "cost": "100 gp",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "ignite-fire",
+              "sourcePhrase": "Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite",
+              "owner": "model",
+              "semantics": {
+                "duration": {
+                  "value": 5,
+                  "unit": "minute"
+                },
+                "requirements": ["sunlight-equivalent-light", "tinder"],
+                "outcome": "fire-ignites"
+              }
+            },
+            {
+              "id": "inspection-advantage",
+              "sourcePhrase": "grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed",
+              "owner": "F9",
+              "semantics": {
+                "checkAdvantage": {
+                  "purposes": ["appraise", "inspect"]
+                },
+                "targetQualifier": "small-or-highly-detailed-item"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Magnifying Glass. This lens allows a closer look at small objects. It is also useful as a substitute for flint and steel when starting fires. Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite. A magnifying glass grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": [
+        "ignite-fire",
+        "inspection-advantage"
+      ],
+      "currentTypedRepresentation": ["category", "cost", "useProfile"],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "model", "F9"],
+      "sourceBindings": [
+        {
+          "clauseId": "ignite-fire",
+          "phrase": "Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "inspection-advantage",
+          "phrase": "grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed",
+          "pages": [68, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:manacles",
@@ -4159,7 +5080,67 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "2 gp",
-        "weight": "6 lb."
+        "weight": "6 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "eligibility",
+              "sourcePhrase": "can bind a Small or Medium creature",
+              "owner": "model",
+              "semantics": {
+                "eligibleSizes": ["small", "medium"]
+              }
+            },
+            {
+              "id": "escape",
+              "sourcePhrase": "Escaping the manacles requires a successful DC 20 Dexterity check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "dexterity",
+                  "dc": 20
+                },
+                "outcome": "escaped"
+              }
+            },
+            {
+              "id": "break",
+              "sourcePhrase": "Breaking them requires a successful DC 20 Strength check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "strength",
+                  "dc": 20
+                },
+                "outcome": "broken"
+              }
+            },
+            {
+              "id": "pick",
+              "sourcePhrase": "proficient with thieves’ tools can pick the manacles’ lock with a successful DC 15 Dexterity check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "dexterity",
+                  "dc": 15,
+                  "proficiency": "thieves-tools"
+                },
+                "outcome": "unlocked"
+              }
+            },
+            {
+              "id": "durability",
+              "sourcePhrase": "Manacles have 15 hit points",
+              "owner": "F9",
+              "semantics": {
+                "hitPoints": 15
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Manacles. These metal restraints can bind a Small or Medium creature. Escaping the manacles requires a successful DC 20 Dexterity check. Breaking them requires a successful DC 20 Strength check. Each set of manacles comes with one key. Without the key, a creature proficient with thieves’ tools can pick the manacles’ lock with a successful DC 15 Dexterity check. Manacles have 15 hit points."
@@ -4171,10 +5152,16 @@
         "pick",
         "durability"
       ],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["model", "F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "model", "F9"],
       "sourceBindings": [
         {
           "clauseId": "eligibility",
@@ -4231,7 +5218,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4260,7 +5248,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4308,7 +5297,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4333,7 +5323,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4356,6 +5347,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -4395,7 +5387,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4420,7 +5413,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4451,7 +5445,66 @@
         ],
         "weaponCategory": "martial",
         "weaponRange": "ranged",
-        "weight": "3 lb."
+        "weight": "3 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "restrain",
+              "sourcePhrase": "A Large or smaller creature hit by a net is restrained until it is freed",
+              "owner": "F3",
+              "semantics": {
+                "condition": "restrained",
+                "maximumSize": "large",
+                "trigger": "hit",
+                "duration": "until-freed"
+              }
+            },
+            {
+              "id": "ineffective",
+              "sourcePhrase": "no effect on creatures that are formless, or creatures that are Huge or larger",
+              "owner": "model",
+              "semantics": {
+                "ineligible": ["formless", "huge-or-larger"]
+              }
+            },
+            {
+              "id": "escape",
+              "sourcePhrase": "use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "check": {
+                  "ability": "strength",
+                  "dc": 10
+                },
+                "target": ["self", "creature-within-reach"]
+              }
+            },
+            {
+              "id": "destroy",
+              "sourcePhrase": "Dealing 5 slashing damage to the net (AC 10) also frees the creature without harming it, ending the effect and destroying the net",
+              "owner": "F9",
+              "semantics": {
+                "objectArmorClass": 10,
+                "damageRequired": 5,
+                "requiredDamageType": "slashing",
+                "outcome": ["free-creature", "destroy-net"]
+              }
+            },
+            {
+              "id": "one-attack",
+              "sourcePhrase": "you can make only one attack regardless of the number of attacks you can normally make",
+              "owner": "F2",
+              "semantics": {
+                "maximumAttacks": 1,
+                "expenditures": ["action", "bonus-action", "reaction"]
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Net. A Large or smaller creature hit by a net is restrained until it is freed. A net has no effect on creatures that are formless, or creatures that are Huge or larger. A creature can use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success. Dealing 5 slashing damage to the net (AC 10) also frees the creature without harming it, ending the effect and destroying the net. When you use an action, bonus action, or reaction to attack with a net, you can make only one attack regardless of the number of attacks you can normally make."
@@ -4470,11 +5523,13 @@
         "weaponProperties",
         "weaponCategory",
         "weaponRange",
-        "weight"
+        "weight",
+        "useProfile"
       ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F3", "model", "F2", "F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F3", "model", "F2", "F9"],
       "sourceBindings": [
         {
           "clauseId": "restrain",
@@ -4516,7 +5571,72 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 sp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "inventory-unit",
+            "quantity": 1
+          },
+          "consumptionSourcePhrase": "Oil usually comes in a clay flask that holds 1 pint",
+          "clauses": [
+            {
+              "id": "attack",
+              "sourcePhrase": "throw it up to 20 feet, shattering it on impact. Make a ranged attack against a target creature or object, treating the oil as an improvised weapon",
+              "owner": "F9",
+              "semantics": {
+                "timing": "action",
+                "splashRangeFeet": 5,
+                "thrownRangeFeet": 20,
+                "proficiency": "improvised-weapon"
+              }
+            },
+            {
+              "id": "coating",
+              "sourcePhrase": "If the target takes any fire damage before the oil dries (after 1 minute), the target takes an additional 5 fire damage",
+              "owner": "F9",
+              "semantics": {
+                "duration": {
+                  "value": 1,
+                  "unit": "minute"
+                },
+                "triggerDamageType": "fire",
+                "additionalDamage": {
+                  "flat": 5,
+                  "damageType": "fire"
+                }
+              }
+            },
+            {
+              "id": "area",
+              "sourcePhrase": "cover a 5-foot-square area, provided that the surface is level",
+              "owner": "model",
+              "semantics": {
+                "area": {
+                  "shape": "square",
+                  "sideFeet": 5
+                },
+                "surface": "level"
+              }
+            },
+            {
+              "id": "burning-area",
+              "sourcePhrase": "burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area",
+              "owner": "F9",
+              "semantics": {
+                "duration": {
+                  "value": 2,
+                  "unit": "round"
+                },
+                "damage": {
+                  "flat": 5,
+                  "damageType": "fire"
+                },
+                "triggers": ["enters-area", "ends-turn-in-area"],
+                "maximumPerTurn": 1
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Oil. Oil usually comes in a clay flask that holds 1 pint. As an action, you can splash the oil in this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. Make a ranged attack against a target creature or object, treating the oil as an improvised weapon. On a hit, the target is covered in oil. If the target takes any fire damage before the oil dries (after 1 minute), the target takes an additional 5 fire damage from the burning oil. You can also pour a flask of oil on the ground to cover a 5-foot-square area, provided that the surface is level. If lit, the oil burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area. A creature can take this damage only once per turn."
@@ -4527,10 +5647,16 @@
         "area",
         "burning-area"
       ],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9", "model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9", "model"],
       "sourceBindings": [
         {
           "clauseId": "attack",
@@ -4550,6 +5676,11 @@
         {
           "clauseId": "burning-area",
           "phrase": "burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "Oil usually comes in a clay flask that holds 1 pint",
           "pages": [68, 69]
         }
       ]
@@ -4582,7 +5713,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4622,7 +5754,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4653,7 +5786,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4684,7 +5818,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4706,6 +5841,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -4728,6 +5864,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -4750,6 +5887,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -4773,6 +5911,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -4825,7 +5964,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4848,6 +5988,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -4890,7 +6031,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -4915,7 +6057,8 @@
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -4930,7 +6073,60 @@
       "source": "SRD 5.1 pp. 68, 69",
       "tableDerivedFacts": {
         "category": "gear",
-        "cost": "100 gp"
+        "cost": "100 gp",
+        "useProfile": {
+          "consumption": {
+            "kind": "inventory-unit",
+            "quantity": 1
+          },
+          "consumptionSourcePhrase": "poison in this vial",
+          "clauses": [
+            {
+              "id": "application",
+              "sourcePhrase": "coat one slashing or piercing weapon or up to three pieces of ammunition",
+              "owner": "model",
+              "semantics": {
+                "eligibleWeaponDamageTypes": ["slashing", "piercing"],
+                "ammunitionMaximum": 3
+              }
+            },
+            {
+              "id": "activation",
+              "sourcePhrase": "Applying the poison takes an action",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action"
+              }
+            },
+            {
+              "id": "save-damage",
+              "sourcePhrase": "DC 10 Constitution saving throw or take 1d4 poison damage",
+              "owner": "F9",
+              "semantics": {
+                "save": {
+                  "ability": "constitution",
+                  "dc": 10
+                },
+                "failureDamage": {
+                  "dice": "1d4",
+                  "damageType": "poison"
+                }
+              }
+            },
+            {
+              "id": "duration",
+              "sourcePhrase": "retains potency for 1 minute before drying",
+              "owner": "F3",
+              "semantics": {
+                "duration": {
+                  "value": 1,
+                  "unit": "minute"
+                },
+                "ends": "dries"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Poison, Basic. You can use the poison in this vial to coat one slashing or piercing weapon or up to three pieces of ammunition. Applying the poison takes an action. A creature hit by the poisoned weapon or ammunition must make a DC 10 Constitution saving throw or take 1d4 poison damage. Once applied, the poison retains potency for 1 minute before drying."
@@ -4941,10 +6137,11 @@
         "save-damage",
         "duration"
       ],
-      "currentTypedRepresentation": ["category", "cost"],
+      "currentTypedRepresentation": ["category", "cost", "useProfile"],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["model", "F2", "F9", "F3"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "model", "F2", "F9", "F3"],
       "sourceBindings": [
         {
           "clauseId": "application",
@@ -4964,6 +6161,11 @@
         {
           "clauseId": "duration",
           "phrase": "retains potency for 1 minute before drying",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "poison in this vial",
           "pages": [68, 69]
         }
       ]
@@ -4990,7 +6192,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -5013,6 +6216,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5042,7 +6246,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5066,7 +6271,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5091,7 +6297,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -5122,7 +6329,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -5148,7 +6356,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5220,7 +6429,8 @@
       "currentTypedRepresentation": ["category", "cost", "contents"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5265,7 +6475,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5281,17 +6492,47 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "capacity",
+              "sourcePhrase": "A quiver can hold up to 20 arrows",
+              "owner": "inventory",
+              "semantics": {
+                "capacity": {
+                  "item": "arrow",
+                  "maximum": 20
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Quiver. A quiver can hold up to 20 arrows."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["capacity"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "inventory"],
+      "sourceBindings": [
+        {
+          "clauseId": "capacity",
+          "phrase": "A quiver can hold up to 20 arrows",
+          "pages": [68, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:ram-portable",
@@ -5306,16 +6547,45 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "4 gp",
-        "weight": "35 lb."
+        "weight": "35 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "break-door",
+              "sourcePhrase": "gain a +4 bonus on the Strength check. One other character can help you use the ram, giving you advantage on this check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "strength",
+                  "modifier": 4
+                },
+                "help": {
+                  "maximumHelpers": 1,
+                  "grants": "advantage"
+                },
+                "target": "door"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Ram, Portable. You can use a portable ram to break down doors. When doing so, you gain a +4 bonus on the Strength check. One other character can help you use the ram, giving you advantage on this check."
       ],
       "mechanicallySignificantClauseIds": ["break-door"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9"],
       "sourceBindings": [
         {
           "clauseId": "break-door",
@@ -5365,7 +6635,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5390,7 +6661,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -5421,7 +6693,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -5461,7 +6734,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5484,6 +6758,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5515,7 +6790,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -5531,16 +6807,49 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 gp",
-        "weight": "10 lb."
+        "weight": "10 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "durability",
+              "sourcePhrase": "has 2 hit points",
+              "owner": "F9",
+              "semantics": {
+                "hitPoints": 2
+              }
+            },
+            {
+              "id": "burst",
+              "sourcePhrase": "burst with a DC 17 Strength check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "strength",
+                  "dc": 17
+                },
+                "outcome": "broken"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Rope. Rope, whether made of hemp or silk, has 2 hit points and can be burst with a DC 17 Strength check."
       ],
       "mechanicallySignificantClauseIds": ["durability", "burst"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9"],
       "sourceBindings": [
         {
           "clauseId": "durability",
@@ -5567,16 +6876,49 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "10 gp",
-        "weight": "5 lb."
+        "weight": "5 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "durability",
+              "sourcePhrase": "has 2 hit points",
+              "owner": "F9",
+              "semantics": {
+                "hitPoints": 2
+              }
+            },
+            {
+              "id": "burst",
+              "sourcePhrase": "burst with a DC 17 Strength check",
+              "owner": "F9",
+              "semantics": {
+                "check": {
+                  "ability": "strength",
+                  "dc": 17
+                },
+                "outcome": "broken"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Rope. Rope, whether made of hemp or silk, has 2 hit points and can be burst with a DC 17 Strength check."
       ],
       "mechanicallySignificantClauseIds": ["durability", "burst"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F9"],
       "sourceBindings": [
         {
           "clauseId": "durability",
@@ -5610,7 +6952,8 @@
       "currentTypedRepresentation": ["category", "cost", "speed"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5634,7 +6977,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5657,6 +7001,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5680,6 +7025,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5703,6 +7049,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5726,6 +7073,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5749,6 +7097,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5772,7 +7121,8 @@
       "currentTypedRepresentation": ["category", "cost", "speed"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5813,7 +7163,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5838,7 +7189,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -5898,7 +7250,8 @@
       "currentTypedRepresentation": ["category", "cost", "contents"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5946,7 +7299,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -5968,6 +7322,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -5999,7 +7354,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6036,7 +7392,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6086,7 +7443,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6134,7 +7492,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6157,6 +7516,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -6201,7 +7561,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6223,6 +7584,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -6245,6 +7607,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -6268,6 +7631,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -6312,7 +7676,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6333,9 +7698,12 @@
       "sourceDescriptionClauses": [],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "not mechanical",
-      "engineToolOwners": [],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Ammunition bundle identity and quantity are table-derived; per-shot decrement uses the canonical inventory mutation selected by the DM.",
+      "engineToolOwners": ["inventory", "remove_item"],
       "sourceBindings": []
     },
     {
@@ -6366,7 +7734,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6388,6 +7757,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -6439,7 +7809,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6464,7 +7835,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6487,6 +7859,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -6529,7 +7902,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6554,7 +7928,8 @@
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6579,7 +7954,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6601,6 +7977,7 @@
       "currentTypedRepresentation": ["category", "cost"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -6632,7 +8009,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6672,7 +8050,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6697,7 +8076,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6722,7 +8102,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6738,16 +8119,49 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "5 sp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "exposed-fuel",
+              "sourcePhrase": "light a torch—or anything else with abundant, exposed fuel—takes an action",
+              "owner": "F2",
+              "semantics": {
+                "timing": "action",
+                "targetFuel": "abundant-exposed"
+              }
+            },
+            {
+              "id": "other-fire",
+              "sourcePhrase": "Lighting any other fire takes 1 minute",
+              "owner": "model",
+              "semantics": {
+                "duration": {
+                  "value": 1,
+                  "unit": "minute"
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Tinderbox. This small container holds flint, fire steel, and tinder (usually dry cloth soaked in light oil) used to kindle a fire. Using it to light a torch—or anything else with abundant, exposed fuel—takes an action. Lighting any other fire takes 1 minute."
       ],
       "mechanicallySignificantClauseIds": ["exposed-fuel", "other-fire"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F2", "model"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F2", "model"],
       "sourceBindings": [
         {
           "clauseId": "exposed-fuel",
@@ -6789,7 +8203,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6805,16 +8220,60 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 cp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "source-defined",
+            "clause": "burns for 1 hour"
+          },
+          "consumptionSourcePhrase": "burns for 1 hour",
+          "clauses": [
+            {
+              "id": "light",
+              "sourcePhrase": "burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet",
+              "owner": "F3",
+              "semantics": {
+                "duration": {
+                  "value": 1,
+                  "unit": "hour"
+                },
+                "light": {
+                  "shape": "radius",
+                  "brightFeet": 20,
+                  "dimAdditionalFeet": 20
+                }
+              }
+            },
+            {
+              "id": "attack",
+              "sourcePhrase": "make a melee attack with a burning torch and hit, it deals 1 fire damage",
+              "owner": "F9",
+              "semantics": {
+                "kind": "melee-weapon-attack",
+                "damage": {
+                  "flat": 1,
+                  "damageType": "fire"
+                },
+                "requires": "burning"
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Torch. A torch burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet. If you make a melee attack with a burning torch and hit, it deals 1 fire damage."
       ],
       "mechanicallySignificantClauseIds": ["light", "attack"],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
       "requiredDeterministicRepresentation": ["data.useProfile"],
       "disposition": "requires projection in this bead",
-      "engineToolOwners": ["F3", "F9"],
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "F3", "F9"],
       "sourceBindings": [
         {
           "clauseId": "light",
@@ -6824,6 +8283,11 @@
         {
           "clauseId": "attack",
           "phrase": "make a melee attack with a burning torch and hit, it deals 1 fire damage",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "consumption",
+          "phrase": "burns for 1 hour",
           "pages": [68, 69]
         }
       ]
@@ -6850,7 +8314,8 @@
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6901,7 +8366,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6924,7 +8390,8 @@
       "currentTypedRepresentation": ["category", "cost", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -6955,7 +8422,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -6978,6 +8446,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -7009,7 +8478,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -7048,7 +8518,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -7093,7 +8564,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -7122,7 +8594,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -7145,7 +8618,8 @@
       "currentTypedRepresentation": ["category", "cost", "speed"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -7169,7 +8643,8 @@
       "currentTypedRepresentation": ["category", "cost", "weight", "capacity"],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -7200,7 +8675,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -7223,6 +8699,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "not mechanical",
+      "rationale": "Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.",
       "engineToolOwners": [],
       "sourceBindings": []
     },
@@ -7271,7 +8748,8 @@
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
-      "engineToolOwners": [],
+      "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
+      "engineToolOwners": ["equipment-schema"],
       "sourceBindings": []
     },
     {
@@ -7302,7 +8780,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -7333,7 +8812,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
     {
@@ -7364,7 +8844,8 @@
       ],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "engineToolOwners": [],
+      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "engineToolOwners": ["DM"],
       "sourceBindings": []
     }
   ]

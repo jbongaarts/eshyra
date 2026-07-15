@@ -122,12 +122,13 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // concentration to implemented); keep them in lockstep with
     // EXPECTED_COVERAGE_CENSUS.
     expect(report.engineProcedure.implemented).toBe(37);
-    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(110);
-    expect(report.engineProcedure.partial).toHaveLength(16);
+    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(108);
+    expect(report.engineProcedure.partial).toHaveLength(18);
     expect(report.engineProcedure.unimplemented).toHaveLength(2);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
-    // Five still-open external clauses remain after equipment payload closure.
-    expect(report.engineProcedure.externalClauses).toHaveLength(5);
+    // Five pre-existing external clauses plus two runtime-execution clauses
+    // remain after equipment payload closure.
+    expect(report.engineProcedure.externalClauses).toHaveLength(7);
     expect(Object.keys(RULE_DISPOSITIONS)).toHaveLength(335);
     expect(Object.keys(ENGINE_PROCEDURE_COVERAGE)).toHaveLength(175);
   });
@@ -144,9 +145,16 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
         (row) => row.key === 'rule:multiclassing',
       )?.designOwner,
     ).toBe('eshyra-2n1t.1');
-    expect(report.engineProcedure.externalClauses).not.toEqual(
+    expect(report.engineProcedure.externalClauses).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ bead: 'eshyra-o9bd.18.7.6' }),
+        expect.objectContaining({
+          key: 'rule:special-weapons',
+          bead: 'eshyra-o9bd.18.7.8.3',
+        }),
+        expect.objectContaining({
+          key: 'rule:weapon-properties',
+          bead: 'eshyra-o9bd.18.7.8.3',
+        }),
       ]),
     );
     // spells' per-item spell-data completeness routes to the (open)

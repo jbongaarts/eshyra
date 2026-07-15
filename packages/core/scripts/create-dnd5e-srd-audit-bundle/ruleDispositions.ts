@@ -2648,15 +2648,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'statblock convention; entries structured',
   },
   'rule:special-weapons': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'lookup_rules',
-      'resolve_check',
-      'spend_turn_resource',
+    status: 'partial',
+    missing:
+      'per-record lance/net payloads are complete; runtime scenario evidence is still missing for net escape/removal, object damage/destruction, and one-attack enforcement',
+    externalClauses: [
+      {
+        clause: 'complete special-weapon runtime execution path',
+        bead: 'eshyra-o9bd.18.7.8.3',
+      },
     ],
-    contextRequirement:
-      'lance and net carry complete source-bound per-record procedures; target eligibility stays a ruling over F2/F3/F9 primitives',
   },
   'rule:speed': {
     status: 'model-adjudicated-supported',
@@ -2884,10 +2884,15 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'PB gating per roll over structured proficiencies',
   },
   'rule:weapon-properties': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'property semantics applied per roll over closed, parameterized weaponProperties; situational applicability stays a ruling',
+    status: 'partial',
+    missing:
+      'closed parameterized weaponProperties are complete; runtime scenario evidence remains missing for ammunition decrement, loading, and attack-count restrictions',
+    externalClauses: [
+      {
+        clause: 'generic weapon-property runtime procedures',
+        bead: 'eshyra-o9bd.18.7.8.3',
+      },
+    ],
   },
   'rule:wizard-your-spellbook': {
     status: 'partial',
@@ -2956,14 +2961,15 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * audit trail, but deterministic resale and downtime-cost transforms remain
  * partial until registered calculation primitives own those numbers. F3,
  * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
- * Equipment payload closure moved special-weapons partial → supported; the
- * reviewed stacked census is now 37/110/16/2/10.
+ * Equipment payload closure keeps special-weapon and generic weapon-property
+ * execution partial pending scenario evidence; the reviewed stacked census is
+ * now 37/108/18/2/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
     implemented: 37,
-    'model-adjudicated-supported': 110,
-    partial: 16,
+    'model-adjudicated-supported': 108,
+    partial: 18,
     unimplemented: 2,
     'design-blocked': 10,
   });
