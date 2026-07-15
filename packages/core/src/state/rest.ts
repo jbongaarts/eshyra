@@ -556,6 +556,7 @@ export function spendRestHitDie(db: Db, input: SpendHitDieInput): unknown {
       modifier: roll.modifier,
       total: roll.total,
       rollEvidence: roll,
+      naturalHealing: roll.natural + modifier,
       constitutionModifier: modifier,
       constitutionSource: 'canonical character sheet',
       rawHealing: raw,

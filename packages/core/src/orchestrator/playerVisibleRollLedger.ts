@@ -146,6 +146,29 @@ function readRollEntry(
   };
 }
 
+function readRestHitDieEntry(
+  data: Record<string, unknown>,
+): PlayerVisibleRollEntry | undefined {
+  const base = readRollEntry(data);
+  if (
+    base === undefined ||
+    typeof data.constitutionModifier !== 'number' ||
+    typeof data.naturalHealing !== 'number' ||
+    typeof data.rawHealing !== 'number'
+  )
+    return undefined;
+  const modifier = data.constitutionModifier;
+  const natural = data.naturalHealing - modifier;
+  const clamp = data.naturalHealing < 0 ? ' (minimum 0 clamp)' : '';
+  return {
+    ...base,
+    label: CATEGORY_LABELS.hit_die,
+    detail:
+      `${data.dice} = ${natural} natural ${modifier >= 0 ? '+' : '-'} ${Math.abs(modifier)} CON ` +
+      `→ ${data.naturalHealing} recovery, actual ${data.rawHealing}${clamp}`,
+  };
+}
+
 function readResolveCheckEntry(
   data: Record<string, unknown>,
 ): PlayerVisibleRollEntry | undefined {
@@ -265,7 +288,7 @@ const ENTRY_READERS: Record<
   resolve_check: readResolveCheckEntry,
   resolve_contest: readResolveContestEntry,
   resolve_damage: readResolveDamageEntry,
-  spend_rest_hit_die: readRollEntry,
+  spend_rest_hit_die: readRestHitDieEntry,
 };
 
 function stripTrailingModelRollLedger(narration: string): string {

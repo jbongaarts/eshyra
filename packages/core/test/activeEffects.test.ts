@@ -1814,6 +1814,46 @@ describe('durations and clocks', () => {
     expect(() =>
       refreshEffect(db, { campaignId: CAMPAIGN, effectId: 'fx-bless', ...CTX }),
     ).toThrow(/creates a new effect/);
+
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-world-timer',
+      kind: 'condition-package',
+      displayName: 'Refresh timer',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 30, ...CTX });
+    refreshEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-refresh-world-timer',
+      ...CTX,
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT anchor_elapsed_minutes, deadline_elapsed_minutes FROM active_effect WHERE effect_id=?',
+        )
+        .get('fx-refresh-world-timer'),
+    ).toEqual({ anchor_elapsed_minutes: 30, deadline_elapsed_minutes: 90 });
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 30, ...CTX });
+    expect(
+      listActiveEffects(db, CAMPAIGN).some(
+        (effect) => effect.effectId === 'fx-refresh-world-timer',
+      ),
+    ).toBe(true);
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 30, ...CTX });
+    expect(
+      listActiveEffects(db, CAMPAIGN).some(
+        (effect) => effect.effectId === 'fx-refresh-world-timer',
+      ),
+    ).toBe(false);
   });
 });
 

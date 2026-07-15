@@ -83,6 +83,9 @@ describe('player-visible roll ledger', () => {
             dropped: [],
             modifier: 2,
             total: 9,
+            constitutionModifier: 2,
+            naturalHealing: 9,
+            rawHealing: 9,
           },
         },
         mutates: true,
@@ -91,8 +94,9 @@ describe('player-visible roll ledger', () => {
     ]);
     expect(entries[0]).toMatchObject({
       category: 'hit_die',
-      detail: expect.stringContaining('1d10 = 9'),
+      detail: expect.stringContaining('1d10 = 7 natural'),
     });
+    expect(entries[0]?.detail).toContain('+ 2 CON');
   });
 
   it('renders player-visible attack and damage rolls from metadata', () => {
