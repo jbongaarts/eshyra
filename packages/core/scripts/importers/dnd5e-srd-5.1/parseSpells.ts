@@ -285,6 +285,8 @@ function parseComponents(value: string): {
 const HIGHER_LEVELS_MARKER = 'At Higher Levels.';
 const CANTRIP_UPGRADE_MARKER = 'Cantrip Upgrade.';
 
+import type { SpellScalingSourceKind } from './types.js';
+
 function joinDescription(lines: readonly string[]): string {
   // Re-flow wrapped lines: collapse intra-paragraph newlines to spaces, keep
   // blank lines as paragraph separators. The SRD body wraps lines mid-sentence,
@@ -312,13 +314,25 @@ function joinDescription(lines: readonly string[]): string {
 function splitHigherLevels(description: string): {
   core: string;
   higherLevels?: string;
+  scalingSourceKind?: SpellScalingSourceKind;
+  scalingSourceText?: string;
 } {
   for (const marker of [HIGHER_LEVELS_MARKER, CANTRIP_UPGRADE_MARKER]) {
     const idx = description.indexOf(marker);
     if (idx !== -1) {
       const core = description.slice(0, idx).trim();
       const higher = description.slice(idx + marker.length).trim();
-      return higher.length === 0 ? { core } : { core, higherLevels: higher };
+      return higher.length === 0
+        ? { core }
+        : {
+            core,
+            higherLevels: higher,
+            scalingSourceKind:
+              marker === HIGHER_LEVELS_MARKER
+                ? 'higher-slot'
+                : 'character-level',
+            scalingSourceText: higher,
+          };
     }
   }
   return { core: description };
@@ -429,7 +443,14 @@ export function parseSpells(pages: readonly PageText[]): SpellExtraction[] {
     }
 
     const description = joinDescription(metadata.descriptionLines);
-    const { core, higherLevels } = splitHigherLevels(description);
+    const { core, higherLevels, scalingSourceKind, scalingSourceText } =
+      splitHigherLevels(description);
+    const cantripClause =
+      marker.level === 0
+        ? /(?:This spell['’]s|The spell['’]s) damage increases by [^.]+\./i.exec(
+            description,
+          )?.[0]
+        : undefined;
 
     out.push({
       name: entry.name,
@@ -445,6 +466,13 @@ export function parseSpells(pages: readonly PageText[]): SpellExtraction[] {
       duration: metadata.duration,
       description: core,
       ...(higherLevels === undefined ? {} : { higherLevels }),
+      ...(scalingSourceKind === undefined ? {} : { scalingSourceKind }),
+      ...(scalingSourceText === undefined && cantripClause === undefined
+        ? {}
+        : {
+            scalingSourceText: scalingSourceText ?? cantripClause,
+            scalingSourceKind: scalingSourceKind ?? 'character-level',
+          }),
       sourcePage: flat[entry.markerIdx].page,
     });
   }

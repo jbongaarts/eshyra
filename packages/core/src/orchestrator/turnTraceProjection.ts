@@ -134,6 +134,12 @@ export function deriveTraceFields(
       damage: okData('resolve_damage'),
       calcs: okData('calc'),
       rulesLookups: okData('lookup_rules'),
+      spellScaling: okData('resolve_spell_upcast').concat(
+        okData('spend_spell_slot').map((entry) => {
+          const value = entry as Record<string, unknown>;
+          return (value.upcast ?? null) as TraceJsonValue;
+        }),
+      ),
     },
     acceptedStateDelta,
     rejectedCandidates,

@@ -76,9 +76,15 @@ export interface SpellExtraction {
   readonly duration: string;
   readonly description: string;
   readonly higherLevels?: string;
+  /** Closed source classification for the retained scaling clause. */
+  readonly scalingSourceKind?: SpellScalingSourceKind;
+  /** Exact source clause used by the typed projection, when present. */
+  readonly scalingSourceText?: string;
   /** 1-based page in the source PDF where the spell entry begins. */
   readonly sourcePage: number;
 }
+
+export type SpellScalingSourceKind = 'higher-slot' | 'character-level';
 
 export type SpellCasterClass =
   | 'Bard'

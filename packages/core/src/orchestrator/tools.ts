@@ -56,6 +56,7 @@ import {
   finishShortRestRecoveryTool,
   spendRestHitDieTool,
 } from './toolRest.js';
+import { resolveSpellUpcastTool } from './toolResolveSpellUpcast.js';
 import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
@@ -80,6 +81,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   resolveCheckTool,
   resolveContestTool,
   resolveDamageTool,
+  resolveSpellUpcastTool,
   calcTool,
   markSceneTool,
   lookupRulesTool,

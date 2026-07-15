@@ -25,6 +25,29 @@ export function lookupCampaignRecord(
     [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK].find(
       (candidate) => candidate.meta.packId === binding.base.packId,
     ) ?? getBundledDnd5eSrdPack();
-  const result = lookupRulesRecord(resolveRulesStack({ base }), { kind, ref });
+  const stack = resolveRulesStack({ base });
+  const result = ref.includes(':')
+    ? lookupRulesRecord(stack, { kind, ref })
+    : lookupRulesRecord(stack, { kind, name: ref });
+  return result.ok ? result.record : undefined;
+}
+
+/** Strict binding lookup for model-facing tools: an unsupported/missing active
+ * base must not silently fall back to D&D and produce the wrong spell. */
+export function lookupStrictCampaignRecord(
+  db: Db,
+  kind: RulesRecordKind,
+  ref: string,
+): RulesRecord | undefined {
+  const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
+  const base = [
+    getBundledDnd5eSrdPack(),
+    PATHFINDER2E_REMASTER_RULES_PACK,
+  ].find((candidate) => candidate.meta.packId === binding.base.packId);
+  if (base === undefined) return undefined;
+  const stack = resolveRulesStack({ base });
+  const result = ref.includes(':')
+    ? lookupRulesRecord(stack, { kind, ref })
+    : lookupRulesRecord(stack, { kind, name: ref });
   return result.ok ? result.record : undefined;
 }

@@ -506,6 +506,36 @@ const rules: readonly ClassificationRule[] = [
     },
   },
   {
+    name: 'spell upcast source boundary',
+    matches: ({ system, recordKinds, fieldPath }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('spell')({ recordKinds }) &&
+      (fieldPath === 'data.scalingSourceKind' ||
+        fieldPath === 'data.scalingSourceText' ||
+        fieldPath.startsWith('data.upcast')),
+    classify: ({ fieldPath }) => {
+      const retained =
+        fieldPath === 'data.scalingSourceText' ||
+        fieldPath === 'data.upcast.sourcePhrase' ||
+        fieldPath === 'data.upcast.qualifier';
+      return result(
+        retained ? 'source prose' : 'scalar-like',
+        fieldPath === 'data.upcast.qualifier'
+          ? 'typed-core-with-prose-qualifier'
+          : retained && fieldPath === 'data.scalingSourceText'
+            ? 'not-mechanical'
+            : 'complete',
+        'spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast',
+        'closed source-kind/upcast schema validation rejects drift and unsupported operations',
+        'spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence',
+        'SpellUpcastSpec / SpellUpcastOperation',
+        'parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts',
+        false,
+        'data.higherLevels',
+      );
+    },
+  },
+  {
     name: 'mechanics duration projection with source qualifier',
     matches: exactPath(
       'data.mechanics.duration.kind',

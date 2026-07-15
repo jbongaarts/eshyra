@@ -79,6 +79,7 @@ import type {
   TableExtraction,
   TrapExtraction,
 } from './types.js';
+import { compileSpellUpcast } from './upcast.js';
 
 const SYSTEM_ID = 'dnd5e-srd';
 const PACK_ID = 'rules:dnd5e-srd-5.1';
@@ -272,6 +273,19 @@ function buildSpellData(
     description: spell.description,
     mechanics: deriveSpellMechanics(spell),
   };
+  // Legacy/unit fixtures supplied a retained higherLevels string before the
+  // explicit source marker existed. Preserve those fixtures as the only
+  // conservative inference possible here; real PDF extraction always stamps
+  // the marker in parseSpells.ts.
+  const scalingSourceKind =
+    spell.scalingSourceKind ??
+    (spell.higherLevels === undefined
+      ? undefined
+      : spell.level === 0
+        ? 'character-level'
+        : 'higher-slot');
+  const upcast = compileSpellUpcast({ ...spell, scalingSourceKind });
+  if (upcast !== undefined) base.upcast = upcast;
   if (spell.componentMaterials !== undefined) {
     base.componentMaterials = spell.componentMaterials;
   }
@@ -280,6 +294,12 @@ function buildSpellData(
   }
   if (spell.higherLevels !== undefined) {
     base.higherLevels = spell.higherLevels;
+  }
+  if (scalingSourceKind !== undefined) {
+    base.scalingSourceKind = scalingSourceKind;
+  }
+  if (spell.scalingSourceText !== undefined) {
+    base.scalingSourceText = spell.scalingSourceText;
   }
   return base;
 }

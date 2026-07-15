@@ -105478,8 +105478,29 @@
           "sourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "acid-arrow:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd.",
+        "sourcePage": 114,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "acid arrow:damage-choice"
+            },
+            "dice": "1d4",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "powdered rhubarb leaf and an adder’s stomach",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 114",
     "license": {
@@ -105547,7 +105568,9 @@
             "17": "4d6"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "This spell’s damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6)."
     },
     "source": "SRD 5.1 p. 114",
     "license": {
@@ -105611,8 +105634,29 @@
           "sourceText": "When you cast this spell using a spell slot of 3rd level or higher, a target’s hit points increase by an additional 5 for each slot level above 2nd."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "aid:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, a target’s hit points increase by an additional 5 for each slot level above 2nd.",
+        "sourcePage": 114,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "aid:effect"
+            },
+            "amount": 5,
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a tiny strip of white cloth",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, a target’s hit points increase by an additional 5 for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, a target’s hit points increase by an additional 5 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, a target’s hit points increase by an additional 5 for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 114",
     "license": {
@@ -105824,8 +105868,28 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "animal-friendship:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
+        "sourcePage": 115,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "animal friendship:effect"
+            },
+            "atSlotLevel": 2,
+            "value": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a morsel of food",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
     },
     "source": "SRD 5.1 p. 115",
     "license": {
@@ -105894,9 +105958,30 @@
           "sourceText": "If you cast this spell using a spell slot of 3nd level or higher, the duration of the spell increases by 48 hours for each slot level above 2nd."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "animal-messenger:higher-slot",
+        "sourcePhrase": "If you cast this spell using a spell slot of 3nd level or higher, the duration of the spell increases by 48 hours for each slot level above 2nd.",
+        "sourcePage": 115,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "animal messenger:effect"
+            },
+            "amount": 48,
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a morsel of food",
       "ritual": true,
-      "higherLevels": "If you cast this spell using a spell slot of 3nd level or higher, the duration of the spell increases by 48 hours for each slot level above 2nd."
+      "higherLevels": "If you cast this spell using a spell slot of 3nd level or higher, the duration of the spell increases by 48 hours for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "If you cast this spell using a spell slot of 3nd level or higher, the duration of the spell increases by 48 hours for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 115",
     "license": {
@@ -106128,8 +106213,19 @@
           "sourceText": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "animate-dead:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones.",
+        "sourcePage": 115,
+        "operations": [],
+        "qualifier": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones.",
+        "disposition": "existing-s1-typed-scaling"
+      },
       "componentMaterials": "a drop of blood, a piece of flesh, and a pinch of bone dust",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones."
     },
     "source": "SRD 5.1 pp. 115, 116",
     "license": {
@@ -106341,7 +106437,18 @@
           "sourceText": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "animate-objects:higher-slot",
+        "sourcePhrase": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
+        "sourcePage": 116,
+        "operations": [],
+        "qualifier": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
+        "disposition": "existing-s1-typed-scaling"
+      },
       "higherLevels": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
       "tableRefs": [
         "table:animated-object-statistics"
       ]
@@ -106682,8 +106789,49 @@
           "sourceText": "When you cast this spell using a spell slot of 6th level or higher, the damage from the clenched fist option increases by 2d8 and the damage from the grasping hand increases by 2d6 for each slot level above 5th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "arcane-hand:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the damage from the clenched fist option increases by 2d8 and the damage from the grasping hand increases by 2d6 for each slot level above 5th.",
+        "sourcePage": 118,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "arcane hand:damage-choice"
+            },
+            "dice": "2d8",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          },
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "arcane hand:component-1"
+            },
+            "dice": "2d8",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          },
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "arcane hand:component-2"
+            },
+            "dice": "2d6",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "an eggshell and a snakeskin glove",
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage from the clenched fist option increases by 2d8 and the damage from the grasping hand increases by 2d6 for each slot level above 5th."
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage from the clenched fist option increases by 2d8 and the damage from the grasping hand increases by 2d6 for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the damage from the clenched fist option increases by 2d8 and the damage from the grasping hand increases by 2d6 for each slot level above 5th."
     },
     "source": "SRD 5.1 p. 118",
     "license": {
@@ -107118,8 +107266,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "bane:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+        "sourcePage": 120,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bane:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a drop of blood",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 120",
     "license": {
@@ -107196,8 +107365,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "banishment:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th.",
+        "sourcePage": 120,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "banishment:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "an item distasteful to the target",
-      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th."
+      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th."
     },
     "source": "SRD 5.1 pp. 120, 121",
     "license": {
@@ -107404,7 +107594,63 @@
           "sourceText": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration."
         }
       },
-      "higherLevels": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "bestow-curse:higher-slot",
+        "sourcePhrase": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.",
+        "sourcePage": 121,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bestow curse:effect"
+            },
+            "atSlotLevel": 4,
+            "value": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes."
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bestow curse:effect"
+            },
+            "atSlotLevel": 5,
+            "value": "If you use a spell slot of 5th level or higher, the duration is 8 hours."
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bestow curse:effect"
+            },
+            "atSlotLevel": 7,
+            "value": "If you use a spell slot of 7th level or higher, the duration is 24 hours."
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bestow curse:effect"
+            },
+            "atSlotLevel": 9,
+            "value": "If you use a 9th level spell slot, the spell lasts until it is dispelled."
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bestow curse:effect"
+            },
+            "atSlotLevel": 5,
+            "value": "Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration."
     },
     "source": "SRD 5.1 p. 121",
     "license": {
@@ -107617,8 +107863,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "bless:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+        "sourcePage": 122,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bless:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a sprinkling of holy water",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 122",
     "license": {
@@ -107691,7 +107958,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "blight:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.",
+        "sourcePage": 122,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "necrotic",
+              "semanticId": "blight:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th."
     },
     "source": "SRD 5.1 p. 122",
     "license": {
@@ -107767,7 +108056,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "blindness-deafness:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+        "sourcePage": 122,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "blindness/deafness:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 122",
     "license": {
@@ -107968,7 +108278,29 @@
           "sourceText": "When you cast this spell using a spell slot of 3rd level or higher, the extra damage increases by 1d6 for each slot level above 2nd."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the extra damage increases by 1d6 for each slot level above 2nd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "branding-smite:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the extra damage increases by 1d6 for each slot level above 2nd.",
+        "sourcePage": 123,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "radiant",
+              "semanticId": "branding smite:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the extra damage increases by 1d6 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the extra damage increases by 1d6 for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 123",
     "license": {
@@ -108045,7 +108377,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "burning-hands:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+        "sourcePage": 123,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "burning hands:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 123",
     "license": {
@@ -108114,7 +108468,29 @@
           "sourceText": "When you cast this spell using a spell slot of 4th or higher level, the damage increases by 1d10 for each slot level above 3rd."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 4th or higher level, the damage increases by 1d10 for each slot level above 3rd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "call-lightning:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th or higher level, the damage increases by 1d10 for each slot level above 3rd.",
+        "sourcePage": 123,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "lightning",
+              "semanticId": "call lightning:damage"
+            },
+            "dice": "1d10",
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 4th or higher level, the damage increases by 1d10 for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th or higher level, the damage increases by 1d10 for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 123",
     "license": {
@@ -108250,8 +108626,29 @@
           "sourceText": "When you cast this spell using a spell slot of 7th level or higher, one additional bolt leaps from the first target to another target for each slot level above 6th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "chain-lightning:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, one additional bolt leaps from the first target to another target for each slot level above 6th.",
+        "sourcePage": 124,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "chain lightning:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a bit of fur; a piece of amber, glass, or a crystal rod; and three silver pins",
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, one additional bolt leaps from the first target to another target for each slot level above 6th."
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, one additional bolt leaps from the first target to another target for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, one additional bolt leaps from the first target to another target for each slot level above 6th."
     },
     "source": "SRD 5.1 p. 124",
     "license": {
@@ -108325,7 +108722,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "charm-person:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.",
+        "sourcePage": 124,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "charm person:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them."
     },
     "source": "SRD 5.1 p. 124",
     "license": {
@@ -108399,7 +108817,9 @@
             "17": "4d8"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "This spell’s damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."
     },
     "source": "SRD 5.1 p. 124",
     "license": {
@@ -108472,8 +108892,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "circle-of-death:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 2d6 for each slot level above 6th.",
+        "sourcePage": 124,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "necrotic",
+              "semanticId": "circle of death:damage"
+            },
+            "dice": "2d6",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "the powder of a crushed black pearl worth at least 500 gp",
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 2d6 for each slot level above 6th."
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 2d6 for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 2d6 for each slot level above 6th."
     },
     "source": "SRD 5.1 p. 124",
     "license": {
@@ -108675,7 +109117,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "cloudkill:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th.",
+        "sourcePage": 125,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "poison",
+              "semanticId": "cloudkill:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th."
     },
     "source": "SRD 5.1 p. 125",
     "license": {
@@ -108748,8 +109212,29 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d10 for each slot level above 1st."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "color-spray:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d10 for each slot level above 1st.",
+        "sourcePage": 125,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "color spray:damage"
+            },
+            "dice": "2d10",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a pinch of powder or sand that is colored red, yellow, and blue",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d10 for each slot level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d10 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d10 for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 125",
     "license": {
@@ -108815,7 +109300,28 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "command:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.",
+        "sourcePage": 125,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "command:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them."
     },
     "source": "SRD 5.1 pp. 125, 126",
     "license": {
@@ -109142,8 +109648,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "cone-of-cold:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th.",
+        "sourcePage": 127,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "cold",
+              "semanticId": "cone of cold:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a small crystal or glass cone",
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th."
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th."
     },
     "source": "SRD 5.1 p. 127",
     "license": {
@@ -109209,8 +109737,29 @@
           "sourceText": "When you cast this spell using a spell slot of 5th level or higher, the radius of the sphere increases by 5 feet for each slot level above 4th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "confusion:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 5th level or higher, the radius of the sphere increases by 5 feet for each slot level above 4th.",
+        "sourcePage": 127,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "confusion:effect"
+            },
+            "amount": 5,
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "three nut shells",
       "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the radius of the sphere increases by 5 feet for each slot level above 4th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 5th level or higher, the radius of the sphere increases by 5 feet for each slot level above 4th.",
       "tableRefs": [
         "table:confusion-behavior"
       ]
@@ -109418,7 +109967,18 @@
           "sourceText": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot."
         }
       },
-      "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "conjure-animals:higher-slot",
+        "sourcePhrase": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot.",
+        "sourcePage": 127,
+        "operations": [],
+        "qualifier": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot.",
+        "disposition": "existing-s1-typed-scaling"
+      },
+      "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot."
     },
     "source": "SRD 5.1 p. 127",
     "license": {
@@ -109569,7 +110129,18 @@
           "sourceText": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower."
         }
       },
-      "higherLevels": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "conjure-celestial:higher-slot",
+        "sourcePhrase": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
+        "sourcePage": 127,
+        "operations": [],
+        "qualifier": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
+        "disposition": "existing-s1-typed-scaling"
+      },
+      "higherLevels": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower."
     },
     "source": "SRD 5.1 pp. 127, 128",
     "license": {
@@ -109804,8 +110375,19 @@
           "sourceText": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "conjure-elemental:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th.",
+        "sourcePage": 128,
+        "operations": [],
+        "qualifier": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th.",
+        "disposition": "existing-s1-typed-scaling"
+      },
       "componentMaterials": "burning incense for air, soft clay for earth, sulfur and phosphorus for fire, or water and sand for water",
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th."
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th."
     },
     "source": "SRD 5.1 p. 128",
     "license": {
@@ -110054,7 +110636,18 @@
           "sourceText": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "conjure-fey:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th.",
+        "sourcePage": 128,
+        "operations": [],
+        "qualifier": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th.",
+        "disposition": "existing-s1-typed-scaling"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th."
     },
     "source": "SRD 5.1 p. 128",
     "license": {
@@ -110252,7 +110845,18 @@
           "sourceText": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot."
         }
       },
-      "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "conjure-minor-elementals:higher-slot",
+        "sourcePhrase": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
+        "sourcePage": 128,
+        "operations": [],
+        "qualifier": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
+        "disposition": "existing-s1-typed-scaling"
+      },
+      "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot."
     },
     "source": "SRD 5.1 pp. 128, 129",
     "license": {
@@ -110451,8 +111055,19 @@
           "sourceText": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "conjure-woodland-beings:higher-slot",
+        "sourcePhrase": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
+        "sourcePage": 129,
+        "operations": [],
+        "qualifier": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
+        "disposition": "existing-s1-typed-scaling"
+      },
       "componentMaterials": "one holly berry per creature summoned",
-      "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot."
+      "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot."
     },
     "source": "SRD 5.1 p. 129",
     "license": {
@@ -110973,7 +111588,27 @@
           "sourceText": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "counterspell:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
+        "sourcePage": 131,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "counterspell:effect"
+            },
+            "atSlotLevel": 4,
+            "value": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
     },
     "source": "SRD 5.1 p. 131",
     "license": {
@@ -111104,8 +111739,29 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, you create or destroy 10 additional gallons of water, or the size of the cube increases by 5 feet, for each slot level above 1st."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "create-or-destroy-water:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you create or destroy 10 additional gallons of water, or the size of the cube increases by 5 feet, for each slot level above 1st.",
+        "sourcePage": 132,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "create or destroy water:effect"
+            },
+            "count": 10,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a drop of water if creating water or a few grains of sand if destroying it",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you create or destroy 10 additional gallons of water, or the size of the cube increases by 5 feet, for each slot level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you create or destroy 10 additional gallons of water, or the size of the cube increases by 5 feet, for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you create or destroy 10 additional gallons of water, or the size of the cube increases by 5 feet, for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 132",
     "license": {
@@ -111386,8 +112042,19 @@
           "sourceText": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "create-undead:higher-slot",
+        "sourcePhrase": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies.",
+        "sourcePage": 132,
+        "operations": [],
+        "qualifier": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies.",
+        "disposition": "existing-s1-typed-scaling"
+      },
       "componentMaterials": "one clay pot filled with grave dirt, one clay pot filled with brackish water, and one 150 gp black onyx stone for each corpse",
-      "higherLevels": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies."
+      "higherLevels": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies."
     },
     "source": "SRD 5.1 p. 132",
     "license": {
@@ -111442,8 +112109,29 @@
           "sourceText": "When you cast this spell using a spell slot of 6th level or higher, the cube increases by 5 feet for each slot level above 5th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "creation:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the cube increases by 5 feet for each slot level above 5th.",
+        "sourcePage": 132,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "creation:effect"
+            },
+            "amount": 5,
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a tiny piece of matter of the same type of the item you plan to create",
       "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the cube increases by 5 feet for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the cube increases by 5 feet for each slot level above 5th.",
       "tableRefs": [
         "table:creation-material-duration"
       ]
@@ -111515,7 +112203,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d8 for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "cure-wounds:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d8 for each slot level above 1st.",
+        "sourcePage": 132,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "healing",
+              "semanticId": "cure wounds:healing"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d8 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d8 for each slot level above 1st."
     },
     "source": "SRD 5.1 pp. 132, 133",
     "license": {
@@ -111905,8 +112614,30 @@
           "sourceText": "When you cast this spell using a spell slot of 8th level or higher, the base damage increases by 1d6 for each slot level above 7th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "delayed-blast-fireball:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 8th level or higher, the base damage increases by 1d6 for each slot level above 7th.",
+        "sourcePage": 133,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "delayed blast fireball:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 7,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a tiny ball of bat guano and sulfur",
-      "higherLevels": "When you cast this spell using a spell slot of 8th level or higher, the base damage increases by 1d6 for each slot level above 7th."
+      "higherLevels": "When you cast this spell using a spell slot of 8th level or higher, the base damage increases by 1d6 for each slot level above 7th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 8th level or higher, the base damage increases by 1d6 for each slot level above 7th."
     },
     "source": "SRD 5.1 pp. 133, 134",
     "license": {
@@ -112412,8 +113143,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "disintegrate:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 3d6 for each slot level above 6th.",
+        "sourcePage": 135,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "force",
+              "semanticId": "disintegrate:damage"
+            },
+            "dice": "3d6",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a lodestone and a pinch of dust",
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 3d6 for each slot level above 6th."
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 3d6 for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 3d6 for each slot level above 6th."
     },
     "source": "SRD 5.1 pp. 135, 136",
     "license": {
@@ -112550,7 +113303,27 @@
           "sourceText": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "dispel-magic:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used.",
+        "sourcePage": 136,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dispel magic:effect"
+            },
+            "atSlotLevel": 4,
+            "value": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used."
     },
     "source": "SRD 5.1 p. 136",
     "license": {
@@ -112817,7 +113590,27 @@
           "sourceText": "When you cast this spell with a 5th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 6th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 7th level or higher, the duration is concentration, up to 8 hours."
         }
       },
-      "higherLevels": "When you cast this spell with a 5th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 6th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 7th level or higher, the duration is concentration, up to 8 hours."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "dominate-beast:higher-slot",
+        "sourcePhrase": "When you cast this spell with a 5th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 6th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 7th level or higher, the duration is concentration, up to 8 hours.",
+        "sourcePage": 137,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dominate beast:effect"
+            },
+            "atSlotLevel": 5,
+            "value": "concentration, up to 10 minutes"
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell with a 5th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 6th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 7th level or higher, the duration is concentration, up to 8 hours.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell with a 5th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 6th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 7th level or higher, the duration is concentration, up to 8 hours."
     },
     "source": "SRD 5.1 p. 137",
     "license": {
@@ -112896,7 +113689,27 @@
           "sourceText": "When you cast this spell with a 9th-level spell slot, the duration is concentration, up to 8 hours."
         }
       },
-      "higherLevels": "When you cast this spell with a 9th-level spell slot, the duration is concentration, up to 8 hours."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "dominate-monster:higher-slot",
+        "sourcePhrase": "When you cast this spell with a 9th-level spell slot, the duration is concentration, up to 8 hours.",
+        "sourcePage": 137,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dominate monster:effect"
+            },
+            "atSlotLevel": 9,
+            "value": "concentration, up to 8 hours"
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell with a 9th-level spell slot, the duration is concentration, up to 8 hours.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell with a 9th-level spell slot, the duration is concentration, up to 8 hours."
     },
     "source": "SRD 5.1 pp. 137, 138",
     "license": {
@@ -112974,7 +113787,27 @@
           "sourceText": "When you cast this spell using a 6th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 7th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 8th level or higher, the duration is concentration, up to 8 hours."
         }
       },
-      "higherLevels": "When you cast this spell using a 6th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 7th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 8th level or higher, the duration is concentration, up to 8 hours."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "dominate-person:higher-slot",
+        "sourcePhrase": "When you cast this spell using a 6th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 7th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 8th level or higher, the duration is concentration, up to 8 hours.",
+        "sourcePage": 138,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dominate person:effect"
+            },
+            "atSlotLevel": 6,
+            "value": "concentration, up to 10 minutes"
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a 6th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 7th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 8th level or higher, the duration is concentration, up to 8 hours.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a 6th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 7th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 8th level or higher, the duration is concentration, up to 8 hours."
     },
     "source": "SRD 5.1 p. 138",
     "license": {
@@ -113331,8 +114164,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "enhance-ability:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+        "sourcePage": 139,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "enhance ability:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "fur or a feather from a beast",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 139",
     "license": {
@@ -113631,7 +114485,28 @@
           "sourceText": "When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "etherealness:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell.",
+        "sourcePage": 140,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "etherealness:effect"
+            },
+            "count": 3,
+            "startSlotLevel": 7,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell."
     },
     "source": "SRD 5.1 pp. 140, 141",
     "license": {
@@ -114019,8 +114894,29 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "false-life:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st.",
+        "sourcePage": 142,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "false life:effect"
+            },
+            "count": 5,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a small amount of alcohol or distilled spirits",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 142",
     "license": {
@@ -115026,7 +115922,9 @@
             "17": "4d10"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10)."
     },
     "source": "SRD 5.1 p. 144",
     "license": {
@@ -115224,8 +116122,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "fireball:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+        "sourcePage": 144,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "fireball:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a tiny ball of bat guano and sulfur",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 144",
     "license": {
@@ -115297,8 +116217,39 @@
           "sourceText": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "flame-blade:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.",
+        "sourcePage": 145,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "flame blade:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 2,
+            "everySlotLevels": 2
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "flame blade:effect"
+            },
+            "atSlotLevel": 4,
+            "value": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "leaf of sumac",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd."
     },
     "source": "SRD 5.1 p. 145",
     "license": {
@@ -115368,8 +116319,29 @@
           "sourceText": "When you cast this spell using a spell slot of 6th level or higher, the fire damage or the radiant damage (your choice) increases by 1d6 for each slot level above 5th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "flame-strike:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the fire damage or the radiant damage (your choice) increases by 1d6 for each slot level above 5th.",
+        "sourcePage": 145,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "flame strike:damage-choice"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "pinch of sulfur",
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the fire damage or the radiant damage (your choice) increases by 1d6 for each slot level above 5th."
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the fire damage or the radiant damage (your choice) increases by 1d6 for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the fire damage or the radiant damage (your choice) increases by 1d6 for each slot level above 5th."
     },
     "source": "SRD 5.1 p. 145",
     "license": {
@@ -115453,8 +116425,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "flaming-sphere:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d6 for each slot level above 2nd.",
+        "sourcePage": 145,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "flaming sphere:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a bit of tallow, a pinch of brimstone, and a dusting of powdered iron",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d6 for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d6 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d6 for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 145",
     "license": {
@@ -115662,8 +116656,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "fly:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, you can target one additional creature for each slot level above 3rd.",
+        "sourcePage": 146,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "fly:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a wing feather from any bird",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, you can target one additional creature for each slot level above 3rd."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, you can target one additional creature for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, you can target one additional creature for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 146",
     "license": {
@@ -115729,7 +116744,28 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, the radius of the fog increases by 20 feet for each slot level above 1st."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the radius of the fog increases by 20 feet for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "fog-cloud:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the radius of the fog increases by 20 feet for each slot level above 1st.",
+        "sourcePage": 146,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "fog cloud:effect"
+            },
+            "amount": 20,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the radius of the fog increases by 20 feet for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the radius of the fog increases by 20 feet for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 146",
     "license": {
@@ -116069,8 +117105,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "freezing-sphere:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 1d6 for each slot level above 6th.",
+        "sourcePage": 147,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "cold",
+              "semanticId": "freezing sphere:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a small crystal sphere",
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 1d6 for each slot level above 6th."
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 1d6 for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, the damage increases by 1d6 for each slot level above 6th."
     },
     "source": "SRD 5.1 pp. 147, 148",
     "license": {
@@ -116292,7 +117350,36 @@
           "sourceText": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "geas:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
+        "sourcePage": 148,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "geas:effect"
+            },
+            "atSlotLevel": 7,
+            "value": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year."
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "geas:effect"
+            },
+            "atSlotLevel": 9,
+            "value": "When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above."
     },
     "source": "SRD 5.1 p. 148",
     "license": {
@@ -116668,8 +117755,29 @@
           "sourceText": "When you cast this spell using a spell slot of 7th level or higher, the barrier blocks spells of one level higher for each slot level above 6th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "globe-of-invulnerability:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the barrier blocks spells of one level higher for each slot level above 6th.",
+        "sourcePage": 149,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "globe of invulnerability:effect"
+            },
+            "amount": 1,
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a glass or crystal bead that shatters when the spell ends",
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the barrier blocks spells of one level higher for each slot level above 6th."
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the barrier blocks spells of one level higher for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, the barrier blocks spells of one level higher for each slot level above 6th."
     },
     "source": "SRD 5.1 p. 149",
     "license": {
@@ -116751,8 +117859,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "glyph-of-warding:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
+        "sourcePage": 149,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "thunder",
+              "semanticId": "glyph of warding:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "incense and powdered diamond worth at least 200 gp, which the spell consumes",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding."
     },
     "source": "SRD 5.1 pp. 149, 150",
     "license": {
@@ -117255,7 +118385,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "guiding-bolt:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+        "sourcePage": 151,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "radiant",
+              "semanticId": "guiding bolt:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st."
     },
     "source": "SRD 5.1 pp. 151, 152",
     "license": {
@@ -117657,7 +118809,28 @@
           "sourceText": "When you cast this spell using a spell slot of 7th level or higher, the amount of healing increases by 10 for each slot level above 6th."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the amount of healing increases by 10 for each slot level above 6th."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "heal:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the amount of healing increases by 10 for each slot level above 6th.",
+        "sourcePage": 153,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "healing",
+              "semanticId": "heal:healing"
+            },
+            "amount": 10,
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the amount of healing increases by 10 for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, the amount of healing increases by 10 for each slot level above 6th."
     },
     "source": "SRD 5.1 p. 153",
     "license": {
@@ -117723,7 +118896,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d4 for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "healing-word:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d4 for each slot level above 1st.",
+        "sourcePage": 153,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "healing",
+              "semanticId": "healing word:healing"
+            },
+            "dice": "1d4",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d4 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d4 for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 153",
     "license": {
@@ -117806,8 +119000,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "heat-metal:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd.",
+        "sourcePage": 153,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "heat metal:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a piece of iron and a flame",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd."
     },
     "source": "SRD 5.1 pp. 153, 154",
     "license": {
@@ -117877,7 +119093,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "hellish-rebuke:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+        "sourcePage": 154,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "hellish rebuke:damage"
+            },
+            "dice": "1d10",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 154",
     "license": {
@@ -118009,7 +119247,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "heroism:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+        "sourcePage": 154,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "heroism:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 154",
     "license": {
@@ -118177,8 +119436,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "hold-monster:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, you can target one additional creature for each slot level above 5th. The creatures must be within 30 feet of each other when you target them.",
+        "sourcePage": 154,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "hold monster:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a small, straight piece of iron",
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, you can target one additional creature for each slot level above 5th. The creatures must be within 30 feet of each other when you target them."
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, you can target one additional creature for each slot level above 5th. The creatures must be within 30 feet of each other when you target them.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, you can target one additional creature for each slot level above 5th. The creatures must be within 30 feet of each other when you target them."
     },
     "source": "SRD 5.1 p. 154",
     "license": {
@@ -118263,8 +119543,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "hold-person:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+        "sourcePage": 154,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "hold person:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a small, straight piece of iron",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them."
     },
     "source": "SRD 5.1 pp. 154, 155",
     "license": {
@@ -118407,7 +119708,36 @@
           "sourceText": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "hunter-s-mark:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.",
+        "sourcePage": 155,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "hunter’s mark:effect"
+            },
+            "atSlotLevel": 3,
+            "value": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours."
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "hunter’s mark:effect"
+            },
+            "atSlotLevel": 5,
+            "value": "When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours."
     },
     "source": "SRD 5.1 p. 155",
     "license": {
@@ -118551,8 +119881,29 @@
           "sourceText": "When you cast this spell using a spell slot of 5th level or higher, the bludgeoning damage increases by 1d8 for each slot level above 4th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "ice-storm:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 5th level or higher, the bludgeoning damage increases by 1d8 for each slot level above 4th.",
+        "sourcePage": 155,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "ice storm:damage-choice"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a pinch of dust and a few drops of water",
-      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the bludgeoning damage increases by 1d8 for each slot level above 4th."
+      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the bludgeoning damage increases by 1d8 for each slot level above 4th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 5th level or higher, the bludgeoning damage increases by 1d8 for each slot level above 4th."
     },
     "source": "SRD 5.1 p. 155",
     "license": {
@@ -118859,7 +120210,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "inflict-wounds:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+        "sourcePage": 157,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "necrotic",
+              "semanticId": "inflict wounds:damage"
+            },
+            "dice": "1d10",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 157",
     "license": {
@@ -118942,8 +120315,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "insect-plague:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d10 for each slot level above 5th.",
+        "sourcePage": 157,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "piercing",
+              "semanticId": "insect plague:damage"
+            },
+            "dice": "1d10",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a few grains of sugar, some kernels of grain, and a smear of fat",
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d10 for each slot level above 5th."
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d10 for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d10 for each slot level above 5th."
     },
     "source": "SRD 5.1 p. 157",
     "license": {
@@ -119072,8 +120467,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "invisibility:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+        "sourcePage": 157,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "invisibility:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "an eyelash encased in gum arabic",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
     },
     "source": "SRD 5.1 pp. 157, 158",
     "license": {
@@ -119595,8 +121011,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "lightning-bolt:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+        "sourcePage": 159,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "lightning",
+              "semanticId": "lightning bolt:damage"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a bit of fur and a rod of amber, crystal, or glass",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 159",
     "license": {
@@ -119860,8 +121298,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "longstrider:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+        "sourcePage": 160,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "longstrider:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a pinch of dirt",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 160",
     "license": {
@@ -120074,8 +121533,29 @@
           "sourceText": "When you cast this spell using a spell slot of 4th level or higher, the duration increases by 1 hour for each slot level above 3rd."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "magic-circle:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the duration increases by 1 hour for each slot level above 3rd.",
+        "sourcePage": 160,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "magic circle:effect"
+            },
+            "amount": 1,
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "holy water or powdered silver and iron worth at least 100 gp, which the spell consumes",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the duration increases by 1 hour for each slot level above 3rd."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the duration increases by 1 hour for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the duration increases by 1 hour for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 160",
     "license": {
@@ -120191,7 +121671,28 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, the spell creates one more dart for each slot level above 1st."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the spell creates one more dart for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "magic-missile:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the spell creates one more dart for each slot level above 1st.",
+        "sourcePage": 161,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "magic missile:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the spell creates one more dart for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the spell creates one more dart for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 161",
     "license": {
@@ -120315,7 +121816,36 @@
           "sourceText": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2. When you use a spell slot of 6th level or higher, the bonus increases to +3."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2. When you use a spell slot of 6th level or higher, the bonus increases to +3."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "magic-weapon:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2. When you use a spell slot of 6th level or higher, the bonus increases to +3.",
+        "sourcePage": 161,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "magic weapon:effect"
+            },
+            "atSlotLevel": 4,
+            "value": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2."
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "magic weapon:effect"
+            },
+            "atSlotLevel": 6,
+            "value": "When you use a spell slot of 6th level or higher, the bonus increases to +3."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2. When you use a spell slot of 6th level or higher, the bonus increases to +3.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2. When you use a spell slot of 6th level or higher, the bonus increases to +3."
     },
     "source": "SRD 5.1 pp. 161, 162",
     "license": {
@@ -120445,8 +121975,28 @@
           "sourceText": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "major-image:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
+        "sourcePage": 162,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "major image:effect"
+            },
+            "atSlotLevel": 6,
+            "value": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a bit of fleece",
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
     },
     "source": "SRD 5.1 p. 162",
     "license": {
@@ -120513,7 +122063,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the healing increases by 1d8 for each slot level above 5th."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "mass-cure-wounds:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the healing increases by 1d8 for each slot level above 5th.",
+        "sourcePage": 162,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "healing",
+              "semanticId": "mass cure wounds:healing"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 5,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the healing increases by 1d8 for each slot level above 5th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 6th level or higher, the healing increases by 1d8 for each slot level above 5th."
     },
     "source": "SRD 5.1 p. 162",
     "license": {
@@ -120636,7 +122207,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the healing increases by 1d4 for each slot level above 3rd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "mass-healing-word:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the healing increases by 1d4 for each slot level above 3rd.",
+        "sourcePage": 163,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "healing",
+              "semanticId": "mass healing word:healing"
+            },
+            "dice": "1d4",
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the healing increases by 1d4 for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the healing increases by 1d4 for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 163",
     "license": {
@@ -120705,8 +122297,28 @@
           "sourceText": "When you cast this spell using a 7th-level spell slot, the duration is 10 days. When you use an 8th-level spell slot, the duration is 30 days. When you use a 9th-level spell slot, the duration is a year and a day."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "mass-suggestion:higher-slot",
+        "sourcePhrase": "When you cast this spell using a 7th-level spell slot, the duration is 10 days. When you use an 8th-level spell slot, the duration is 30 days. When you use a 9th-level spell slot, the duration is a year and a day.",
+        "sourcePage": 163,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "mass suggestion:effect"
+            },
+            "atSlotLevel": 7,
+            "value": "10 days"
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a snake’s tongue and either a bit of honeycomb or a drop of sweet oil",
-      "higherLevels": "When you cast this spell using a 7th-level spell slot, the duration is 10 days. When you use an 8th-level spell slot, the duration is 30 days. When you use a 9th-level spell slot, the duration is a year and a day."
+      "higherLevels": "When you cast this spell using a 7th-level spell slot, the duration is 10 days. When you use an 8th-level spell slot, the duration is 30 days. When you use a 9th-level spell slot, the duration is a year and a day.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a 7th-level spell slot, the duration is 10 days. When you use an 8th-level spell slot, the duration is 30 days. When you use a 9th-level spell slot, the duration is a year and a day."
     },
     "source": "SRD 5.1 p. 163",
     "license": {
@@ -121511,7 +123123,27 @@
           "sourceText": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level)."
         }
       },
-      "higherLevels": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level)."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "modify-memory:higher-slot",
+        "sourcePhrase": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level).",
+        "sourcePage": 166,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "modify memory:effect"
+            },
+            "atSlotLevel": 6,
+            "value": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level)."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level).",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level)."
     },
     "source": "SRD 5.1 p. 166",
     "license": {
@@ -121586,8 +123218,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "moonbeam:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d10 for each slot level above 2nd.",
+        "sourcePage": 166,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "radiant",
+              "semanticId": "moonbeam:damage"
+            },
+            "dice": "1d10",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "several seeds of any moonseed plant and a piece of opalescent feldspar",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d10 for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d10 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d10 for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 166",
     "license": {
@@ -121910,7 +123564,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d10 for each slot level above 4th."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "phantasmal-killer:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d10 for each slot level above 4th.",
+        "sourcePage": 167,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "psychic",
+              "semanticId": "phantasmal killer:damage"
+            },
+            "dice": "1d10",
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d10 for each slot level above 4th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d10 for each slot level above 4th."
     },
     "source": "SRD 5.1 p. 167",
     "license": {
@@ -122220,8 +123896,28 @@
           "sourceText": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "planar-binding:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot.",
+        "sourcePage": 168,
+        "operations": [
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "planar binding:effect"
+            },
+            "atSlotLevel": 9,
+            "value": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a jewel worth at least 1,000 gp, which the spell consumes",
-      "higherLevels": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot."
+      "higherLevels": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot."
     },
     "source": "SRD 5.1 p. 168",
     "license": {
@@ -122408,7 +124104,9 @@
             "17": "4d12"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "This spell's damage increases by 1d12 when you reach 5th level (2d12), 11th level (3d12), and 17th level (4d12)."
     },
     "source": "SRD 5.1 p. 169",
     "license": {
@@ -122660,7 +124358,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d8 for each slot level above 2nd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "prayer-of-healing:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d8 for each slot level above 2nd.",
+        "sourcePage": 170,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "healing",
+              "semanticId": "prayer of healing:healing"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d8 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d8 for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 170",
     "license": {
@@ -122995,8 +124714,29 @@
           "sourceText": "When you cast this spell using a spell slot of 5th level or higher, you can increase the size of the cube by 100 feet for each slot level beyond 4th. Thus you could protect a cube that can be up to 200 feet on one side by using a spell slot of 5th level."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "private-sanctum:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 5th level or higher, you can increase the size of the cube by 100 feet for each slot level beyond 4th. Thus you could protect a cube that can be up to 200 feet on one side by using a spell slot of 5th level.",
+        "sourcePage": 171,
+        "operations": [
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "private sanctum:effect"
+            },
+            "amount": 100,
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a thin sheet of lead, a piece of opaque glass, a wad of cotton or cloth, and powdered chrysolite",
-      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, you can increase the size of the cube by 100 feet for each slot level beyond 4th. Thus you could protect a cube that can be up to 200 feet on one side by using a spell slot of 5th level."
+      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, you can increase the size of the cube by 100 feet for each slot level beyond 4th. Thus you could protect a cube that can be up to 200 feet on one side by using a spell slot of 5th level.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 5th level or higher, you can increase the size of the cube by 100 feet for each slot level beyond 4th. Thus you could protect a cube that can be up to 200 feet on one side by using a spell slot of 5th level."
     },
     "source": "SRD 5.1 pp. 171, 172",
     "license": {
@@ -123068,7 +124808,9 @@
             "17": "4d8"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "This spell’s damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."
     },
     "source": "SRD 5.1 p. 172",
     "license": {
@@ -123656,7 +125398,9 @@
             "17": "4d8"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "The spell’s damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."
     },
     "source": "SRD 5.1 p. 174",
     "license": {
@@ -124269,7 +126013,9 @@
             "17": "4d8"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "The spell’s damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."
     },
     "source": "SRD 5.1 p. 176",
     "license": {
@@ -124387,7 +126133,28 @@
           "sourceText": "When you cast this spell using a spell slot of 3rd level or higher, you create one additional ray for each slot level above 2nd."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you create one additional ray for each slot level above 2nd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "scorching-ray:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, you create one additional ray for each slot level above 2nd.",
+        "sourcePage": 176,
+        "operations": [
+          {
+            "kind": "count-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "scorching ray:effect"
+            },
+            "count": 1,
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you create one additional ray for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, you create one additional ray for each slot level above 2nd."
     },
     "source": "SRD 5.1 p. 176",
     "license": {
@@ -124906,8 +126673,30 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "shatter:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd.",
+        "sourcePage": 178,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "thunder",
+              "semanticId": "shatter:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a chip of mica",
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd."
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for each slot level above 2nd."
     },
     "source": "SRD 5.1 pp. 178, 179",
     "license": {
@@ -125178,7 +126967,9 @@
             "17": "4d8"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "The spell’s damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."
     },
     "source": "SRD 5.1 p. 179",
     "license": {
@@ -125553,8 +127344,29 @@
           "sourceText": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d8 for each slot level above 1st."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "sleep:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d8 for each slot level above 1st.",
+        "sourcePage": 180,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "sleep:damage"
+            },
+            "dice": "2d8",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a pinch of fine sand, rose petals, or a cricket",
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d8 for each slot level above 1st."
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d8 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d8 for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 180",
     "license": {
@@ -126172,8 +127984,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "spirit-guardians:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd.",
+        "sourcePage": 182,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "spirit guardians:damage-choice"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a holy symbol",
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd."
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 182",
     "license": {
@@ -126235,7 +128068,38 @@
           "sourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd."
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "spiritual-weapon:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd.",
+        "sourcePage": 182,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "force",
+              "semanticId": "spiritual weapon:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 2,
+            "everySlotLevels": 2
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "spiritual weapon:effect"
+            },
+            "atSlotLevel": 3,
+            "value": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd."
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd."
     },
     "source": "SRD 5.1 p. 182",
     "license": {
@@ -127238,7 +129102,29 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d8 for each slot level above 1st."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "thunderwave:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d8 for each slot level above 1st.",
+        "sourcePage": 187,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "thunder",
+              "semanticId": "thunderwave:damage"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d8 for each slot level above 1st.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d8 for each slot level above 1st."
     },
     "source": "SRD 5.1 p. 187",
     "license": {
@@ -127942,7 +129828,28 @@
           }
         }
       },
-      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "vampiric-touch:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+        "sourcePage": 189,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "vampiric touch:damage-choice"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 3,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
+      "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
     },
     "source": "SRD 5.1 p. 189",
     "license": {
@@ -128016,7 +129923,9 @@
             "17": "4d4"
           }
         }
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "This spell's damage increases by 1d4 when you reach 5th level (2d4), 11th level (3d4), and 17th level (4d4)."
     },
     "source": "SRD 5.1 pp. 189, 190",
     "license": {
@@ -128097,8 +130006,29 @@
           }
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "wall-of-fire:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.",
+        "sourcePage": 190,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "wall of fire:damage-choice"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a small piece of phosphorus",
-      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th."
+      "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th."
     },
     "source": "SRD 5.1 p. 190",
     "license": {
@@ -128233,8 +130163,39 @@
           "sourceText": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "wall-of-ice:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
+        "sourcePage": 190,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "wall of ice:component-1"
+            },
+            "dice": "2d6",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          },
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "wall of ice:component-2"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a small piece of quartz",
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th."
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th."
     },
     "source": "SRD 5.1 p. 190",
     "license": {
@@ -128370,8 +130331,29 @@
           "sourceText": "When you cast this spell using a spell slot of 7th level or higher, both types of damage increase by 1d8 for each slot level above 6th."
         }
       },
+      "upcast": {
+        "sourceKind": "higher-slot",
+        "clauseId": "wall-of-thorns:higher-slot",
+        "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, both types of damage increase by 1d8 for each slot level above 6th.",
+        "sourcePage": 191,
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "semanticId": "wall of thorns:damage-choice"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
+      },
       "componentMaterials": "a handful of thorns",
-      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, both types of damage increase by 1d8 for each slot level above 6th."
+      "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, both types of damage increase by 1d8 for each slot level above 6th.",
+      "scalingSourceKind": "higher-slot",
+      "scalingSourceText": "When you cast this spell using a spell slot of 7th level or higher, both types of damage increase by 1d8 for each slot level above 6th."
     },
     "source": "SRD 5.1 p. 191",
     "license": {

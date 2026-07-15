@@ -229,7 +229,7 @@ describe('spend_spell_slot tool', () => {
 
     const tooLow = registry.invoke(
       'spend_spell_slot',
-      { spell: 'Fireball', slotLevel: 1 },
+      { spellRef: 'spell:fireball', slotLevel: 1 },
       context,
     );
     expect(tooLow).toMatchObject({
@@ -239,16 +239,27 @@ describe('spend_spell_slot tool', () => {
     });
     const legal = registry.invoke(
       'spend_spell_slot',
-      { spell: 'Fireball', slotLevel: 3 },
+      { spellRef: 'spell:fireball', slotLevel: 3 },
       context,
     );
     expect(legal).toMatchObject({
       ok: true,
       data: {
         spent: true,
+        spellRef: 'spell:fireball',
+        baseSpellLevel: 3,
+        selectedSlotLevel: 3,
         counter: { spellLevel: 3, slotsUsed: 1 },
       },
     });
+    const resolved = registry.invoke(
+      'resolve_spell_upcast',
+      { spellRef: 'spell:fireball', slotLevel: 3 },
+      context,
+    );
+    expect(legal.ok && resolved.ok ? legal.data.upcast : undefined).toEqual(
+      resolved.ok ? resolved.data : undefined,
+    );
     db.close();
   });
 });

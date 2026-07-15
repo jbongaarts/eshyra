@@ -767,6 +767,14 @@ export {
   SceneError,
 } from './orchestrator/scene.js';
 export type {
+  SpellUpcastAdjustment,
+  SpellUpcastResolution,
+} from './orchestrator/spellUpcast.js';
+export {
+  resolveSpellUpcast,
+  SpellUpcastError,
+} from './orchestrator/spellUpcast.js';
+export type {
   ToolRequest,
   ToolRequestSource,
 } from './orchestrator/toolRequest.js';

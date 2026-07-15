@@ -1,5 +1,6 @@
-import { getBundledDnd5eCharacterResolver } from '../character/rulesPackResolver.js';
+import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
 import { SpellSlotError, spendSpellSlot } from '../state/spellSlots.js';
+import { resolveSpellUpcast, SpellUpcastError } from './spellUpcast.js';
 import type { Tool } from './toolRegistry.js';
 import {
   asRecord,
@@ -23,11 +24,11 @@ export const spendSpellSlotTool: Tool = {
   inputSchema: {
     type: 'object',
     properties: {
-      spell: {
+      spellRef: {
         type: 'string',
         minLength: 1,
         description:
-          'Spell name or canonical rules reference; its base level is resolved from the active rules pack.',
+          'Canonical spell reference; its base level is resolved from the active rules pack.',
       },
       slotLevel: {
         type: 'integer',
@@ -37,37 +38,63 @@ export const spendSpellSlotTool: Tool = {
       },
       character: CHARACTER_TARGET_SCHEMA,
     },
-    required: ['spell'],
+    required: ['spellRef'],
     additionalProperties: false,
   },
   run(args, ctx) {
     const a = asRecord(args);
-    if (a === undefined || typeof a.spell !== 'string') {
-      return err('invalid_args', 'spend_spell_slot requires { spell }');
+    if (a === undefined) {
+      return err('invalid_args', 'spend_spell_slot requires { spellRef }');
     }
+    const spellRef = a.spellRef;
+    if (typeof spellRef !== 'string')
+      return err('invalid_args', 'spend_spell_slot requires { spellRef }');
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) return target;
-    const spell = getBundledDnd5eCharacterResolver().resolveSpell(a.spell);
-    if (!spell.ok) {
-      return err('invalid_spell', spell.message);
-    }
-    try {
-      return ok(
-        spendSpellSlot(ctx.db, {
-          spellLevel: spell.record.level,
-          ...(typeof a.slotLevel === 'number'
-            ? { slotLevel: a.slotLevel }
-            : {}),
-          ...(target.id === undefined ? {} : { characterId: target.id }),
-          provenance: `model:${ctx.turnId}`,
-          sessionId: ctx.sessionId,
-          at: ctx.at,
-        }),
+    const spell = lookupStrictCampaignRecord(ctx.db, 'spell', spellRef);
+    if (spell === undefined)
+      return err(
+        'invalid_spell',
+        `spell reference '${spellRef}' does not resolve in the campaign rules binding`,
       );
+    try {
+      const level =
+        typeof spell.data === 'object' &&
+        spell.data !== null &&
+        !Array.isArray(spell.data)
+          ? (spell.data as Record<string, unknown>).level
+          : undefined;
+      if (typeof level !== 'number')
+        return err(
+          'invalid_spell',
+          'resolved spell record has no valid base level',
+        );
+      const spent = spendSpellSlot(ctx.db, {
+        spellLevel: level,
+        ...(typeof a.slotLevel === 'number' ? { slotLevel: a.slotLevel } : {}),
+        ...(target.id === undefined ? {} : { characterId: target.id }),
+        provenance: `model:${ctx.turnId}`,
+        sessionId: ctx.sessionId,
+        at: ctx.at,
+      });
+      const upcast =
+        level === 0
+          ? null
+          : resolveSpellUpcast(spell, spent.counter.spellLevel);
+      return ok({
+        spellRef: spell.key,
+        baseSpellLevel: level,
+        selectedSlotLevel: spent.counter.spellLevel,
+        pool: spent.counter.pool,
+        ...spent,
+        upcast,
+      });
     } catch (e) {
       if (e instanceof SpellSlotError) {
         return err('spell_slot_error', e.message);
       }
+      if (e instanceof SpellUpcastError)
+        return err('spell_upcast_error', e.message);
       throw e;
     }
   },

@@ -4430,7 +4430,109 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
   // description (eshyra-o4j7). The prose remains source-preserving; tableRefs
   // provides direct navigation to the separately emitted table records.
   optStrArray(data, 'tableRefs', `${path}.data`);
+  const sourceKind = data.scalingSourceKind;
+  if (
+    sourceKind !== undefined &&
+    sourceKind !== 'higher-slot' &&
+    sourceKind !== 'character-level'
+  ) {
+    throw new RulesPackError(
+      `${path}.data.scalingSourceKind must be higher-slot or character-level`,
+    );
+  }
+  optStr(data, 'scalingSourceText', `${path}.data`);
+  if (data.higherLevels !== undefined) {
+    reqStr(data, 'higherLevels', `${path}.data`);
+    if (sourceKind === undefined) {
+      throw new RulesPackError(
+        `${path}.data.higherLevels requires scalingSourceKind`,
+      );
+    }
+  }
+  if (sourceKind === 'character-level' && data.level !== 0) {
+    throw new RulesPackError(
+      `${path}.data.character-level scaling is only valid for cantrips`,
+    );
+  }
   optMechanics(data, 'mechanics', `${path}.data`);
+  const upcast = data.upcast;
+  if (upcast !== undefined) {
+    const upcastObj = reqObj(data, 'upcast', `${path}.data`);
+    const upcastPath = `${path}.data.upcast`;
+    if (sourceKind !== 'higher-slot' || data.level === 0) {
+      throw new RulesPackError(
+        `${upcastPath} is only valid for leveled higher-slot spells`,
+      );
+    }
+    if (reqStr(upcastObj, 'sourceKind', upcastPath) !== 'higher-slot') {
+      throw new RulesPackError(`${upcastPath}.sourceKind must be higher-slot`);
+    }
+    reqStr(upcastObj, 'clauseId', upcastPath);
+    reqStr(upcastObj, 'sourcePhrase', upcastPath);
+    reqInt(upcastObj, 'sourcePage', upcastPath, 1);
+    const disposition = reqStr(upcastObj, 'disposition', upcastPath);
+    if (
+      ![
+        'complete-typed-upcast',
+        'existing-s1-typed-scaling',
+        'typed-core-with-model-qualifier',
+      ].includes(disposition)
+    ) {
+      throw new RulesPackError(
+        `${upcastPath}.disposition is not a closed upcast disposition`,
+      );
+    }
+    optStr(upcastObj, 'qualifier', upcastPath);
+    const operations = upcastObj.operations;
+    if (!Array.isArray(operations))
+      throw new RulesPackError(`${upcastPath}.operations must be an array`);
+    const operationKeys = new Set<string>();
+    operations.forEach((raw, i) => {
+      const operation = reqObj(
+        { value: raw },
+        'value',
+        `${upcastPath}.operations[${i}`,
+      );
+      const operationPath = `${upcastPath}.operations[${i}]`;
+      const operationKind = reqStr(operation, 'kind', operationPath);
+      if (
+        ![
+          'dice-per-slot',
+          'flat-per-slot',
+          'count-per-slot',
+          'threshold',
+        ].includes(operationKind)
+      ) {
+        throw new RulesPackError(
+          `${operationPath}.kind is not a closed upcast operation`,
+        );
+      }
+      const subject = reqObj(operation, 'subject', operationPath);
+      reqStr(subject, 'kind', `${operationPath}.subject`);
+      reqStr(subject, 'semanticId', `${operationPath}.subject`);
+      const key = JSON.stringify(operation);
+      if (operationKeys.has(key))
+        throw new RulesPackError(`${operationPath} duplicates an operation`);
+      operationKeys.add(key);
+      if (operationKind === 'threshold') {
+        reqInt(operation, 'atSlotLevel', operationPath, 1);
+        reqStr(operation, 'value', operationPath);
+      } else {
+        reqInt(operation, 'startSlotLevel', operationPath, 1);
+        reqInt(operation, 'everySlotLevels', operationPath, 1);
+        if (operationKind === 'dice-per-slot')
+          reqStr(operation, 'dice', operationPath);
+        else if (operationKind === 'flat-per-slot')
+          reqInt(operation, 'amount', operationPath, 1);
+        else reqInt(operation, 'count', operationPath, 1);
+      }
+    });
+  }
+  if (sourceKind === 'higher-slot' && upcast === undefined) {
+    throw new RulesPackError(
+      `${path}.data.higher-slot scaling requires a typed upcast payload`,
+    );
+  }
 }
 
 /**
