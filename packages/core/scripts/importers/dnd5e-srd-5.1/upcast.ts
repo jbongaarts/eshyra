@@ -6,6 +6,8 @@ export type UpcastSubject =
   | {
       readonly kind: 'damage';
       readonly damageType?: string;
+      readonly damageTypes?: readonly string[];
+      readonly selection?: 'choose-one';
       readonly semanticId: string;
       readonly property: 'damage-dice';
     }
@@ -102,13 +104,31 @@ function subject(
   text = spell.description,
   semanticId?: string,
 ): UpcastSubject {
-  const types = [...spell.description.matchAll(DAMAGE_TYPES)].map((m) =>
-    m[1].toLowerCase(),
-  );
+  const localTypes = [
+    ...new Set(
+      [...text.matchAll(DAMAGE_TYPES)].map((match) => match[1].toLowerCase()),
+    ),
+  ];
+  const descriptionTypes = [
+    ...new Set(
+      [...spell.description.matchAll(DAMAGE_TYPES)].map((match) =>
+        match[1].toLowerCase(),
+      ),
+    ),
+  ];
+  const types = localTypes.length > 0 ? localTypes : descriptionTypes;
   if (kind === 'damage') {
     return {
       kind,
       ...(types.length === 1 ? { damageType: types[0] } : {}),
+      ...(types.length > 1
+        ? {
+            damageTypes: types,
+            ...(/\bor\b|your choice/i.test(text)
+              ? { selection: 'choose-one' as const }
+              : {}),
+          }
+        : {}),
       semanticId:
         semanticId ??
         (types.length > 1
@@ -167,6 +187,29 @@ function addPerSlotOperations(
 ): UpcastOperation[] {
   const operations: UpcastOperation[] = [];
   const seen = new Set<string>();
+  const parentheticalComponents = [
+    ...text.matchAll(
+      /damage \(both ([a-z-]+) and ([a-z-]+)\) increases by (\d+d\d+) for (?:each|every) slot level(?:s)? above (\d+)/gi,
+    ),
+  ];
+  for (const match of parentheticalComponents) {
+    for (const component of [match[1], match[2]]) {
+      const operation: UpcastOperation = {
+        kind: 'dice-per-slot',
+        subject: subject(
+          spell,
+          'damage',
+          match[0],
+          `${spell.name.toLowerCase()}:${component.toLowerCase()}-damage`,
+        ),
+        dice: match[3],
+        startSlotLevel: Number(match[4]),
+        everySlotLevels: 1,
+      };
+      seen.add(JSON.stringify(operation));
+      operations.push(operation);
+    }
+  }
   const dice = [
     ...text.matchAll(
       /(?:increase|increases) by (\d+d\d+)(?:\s+\w+)* for (?:each|every) (?:two )?slot level(?:s)? above (\d+)/gi,
@@ -180,6 +223,16 @@ function addPerSlotOperations(
       sentenceStart,
       sentenceEnd === -1 ? text.length : sentenceEnd + 1,
     );
+    if (
+      parentheticalComponents.some(
+        (component) =>
+          component.index !== undefined &&
+          match.index !== undefined &&
+          match.index >= component.index &&
+          match.index < component.index + component[0].length,
+      )
+    )
+      continue;
     if (
       [
         ...sentence.matchAll(
@@ -395,11 +448,24 @@ export function compileSpellUpcast(
   const isS1 = S1_SUMMONS.has(
     spell.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
   );
+  const malformedAnimalFriendship =
+    'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.';
+  const operationText =
+    spellKey === 'spell:animal-friendship' &&
+    spell.sourcePage === 115 &&
+    spell.higherLevels === malformedAnimalFriendship
+      ? 'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.'
+      : spell.higherLevels;
+  if (/\bbeast t level above\b/i.test(operationText)) {
+    throw new Error(
+      `malformed Animal Friendship higher-level source in ${spell.name}`,
+    );
+  }
   const operations = isS1
     ? []
     : [
-        ...addPerSlotOperations(spell, spell.higherLevels),
-        ...thresholdOperations(spell, spell.higherLevels),
+        ...addPerSlotOperations(spell, operationText),
+        ...thresholdOperations(spell, operationText),
       ];
   const hasUnqualifiedOperation = operations.some(
     (operation) =>
@@ -407,7 +473,7 @@ export function compileSpellUpcast(
       operation.subject.property === 'other-quantity',
   );
   const qualifier =
-    operations.length === 0 || hasUnqualifiedOperation
+    !isS1 && (operations.length === 0 || hasUnqualifiedOperation)
       ? spell.higherLevels
       : undefined;
   return {

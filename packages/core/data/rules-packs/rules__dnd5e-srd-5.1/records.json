@@ -105488,7 +105488,20 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "acid arrow:damage-choice",
+              "damageType": "acid",
+              "semanticId": "acid arrow:initial-damage",
+              "property": "damage-dice"
+            },
+            "dice": "1d4",
+            "startSlotLevel": 2,
+            "everySlotLevels": 1
+          },
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "acid",
+              "semanticId": "acid arrow:later-damage",
               "property": "damage-dice"
             },
             "dice": "1d4",
@@ -105877,14 +105890,15 @@
         "sourcePage": 115,
         "operations": [
           {
-            "kind": "threshold",
+            "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
               "semanticId": "animal friendship:effect",
               "property": "creature-count"
             },
-            "atSlotLevel": 2,
-            "value": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
+            "count": 1,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -106223,7 +106237,6 @@
         "sourcePhrase": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones.",
         "sourcePage": 115,
         "operations": [],
-        "qualifier": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones.",
         "disposition": "existing-s1-typed-scaling"
       },
       "componentMaterials": "a drop of blood, a piece of flesh, and a pinch of bone dust",
@@ -106447,7 +106460,6 @@
         "sourcePhrase": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
         "sourcePage": 116,
         "operations": [],
-        "qualifier": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
         "disposition": "existing-s1-typed-scaling"
       },
       "higherLevels": "If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
@@ -106803,6 +106815,11 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
+              "damageTypes": [
+                "force",
+                "bludgeoning"
+              ],
+              "selection": "choose-one",
               "semanticId": "arcane hand:clenched-fist",
               "property": "damage-dice"
             },
@@ -106814,6 +106831,11 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
+              "damageTypes": [
+                "force",
+                "bludgeoning"
+              ],
+              "selection": "choose-one",
               "semanticId": "arcane hand:grasping-hand",
               "property": "damage-dice"
             },
@@ -109991,7 +110013,6 @@
         "sourcePhrase": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot.",
         "sourcePage": 127,
         "operations": [],
-        "qualifier": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot.",
         "disposition": "existing-s1-typed-scaling"
       },
       "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 5th-level slot, three times as many with a 7th-level slot, and four times as many with a 9th-level slot.",
@@ -110153,7 +110174,6 @@
         "sourcePhrase": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
         "sourcePage": 127,
         "operations": [],
-        "qualifier": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
         "disposition": "existing-s1-typed-scaling"
       },
       "higherLevels": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
@@ -110399,7 +110419,6 @@
         "sourcePhrase": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th.",
         "sourcePage": 128,
         "operations": [],
-        "qualifier": "When you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th.",
         "disposition": "existing-s1-typed-scaling"
       },
       "componentMaterials": "burning incense for air, soft clay for earth, sulfur and phosphorus for fire, or water and sand for water",
@@ -110660,7 +110679,6 @@
         "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th.",
         "sourcePage": 128,
         "operations": [],
-        "qualifier": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th.",
         "disposition": "existing-s1-typed-scaling"
       },
       "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the challenge rating increases by 1 for each slot level above 6th.",
@@ -110869,7 +110887,6 @@
         "sourcePhrase": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
         "sourcePage": 128,
         "operations": [],
-        "qualifier": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
         "disposition": "existing-s1-typed-scaling"
       },
       "higherLevels": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
@@ -111079,7 +111096,6 @@
         "sourcePhrase": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
         "sourcePage": 129,
         "operations": [],
-        "qualifier": "When you cast this spell using certain higher-level spell slots, you choose one of the summoning options above, and more creatures appear: twice as many with a 6th-level slot and three times as many with an 8th-level slot.",
         "disposition": "existing-s1-typed-scaling"
       },
       "componentMaterials": "one holly berry per creature summoned",
@@ -112069,7 +112085,6 @@
         "sourcePhrase": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies.",
         "sourcePage": 132,
         "operations": [],
-        "qualifier": "When you cast this spell using a 7th-level spell slot, you can animate or reassert control over four ghouls. When you cast this spell using an 8th-level spell slot, you can animate or reassert control over five ghouls or two ghasts or wights. When you cast this spell using a 9th-level spell slot, you can animate or reassert control over six ghouls, three ghasts or wights, or two mummies.",
         "disposition": "existing-s1-typed-scaling"
       },
       "componentMaterials": "one clay pot filled with grave dirt, one clay pot filled with brackish water, and one 150 gp black onyx stone for each corpse",
@@ -116367,6 +116382,11 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
+              "damageTypes": [
+                "fire",
+                "radiant"
+              ],
+              "selection": "choose-one",
               "semanticId": "flame strike:damage-choice",
               "property": "damage-dice"
             },
@@ -119951,7 +119971,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "ice storm:damage-choice",
+              "damageType": "bludgeoning",
+              "semanticId": "ice storm:damage",
               "property": "damage-dice"
             },
             "dice": "1d8",
@@ -128078,6 +128099,11 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
+              "damageTypes": [
+                "radiant",
+                "necrotic"
+              ],
+              "selection": "choose-one",
               "semanticId": "spirit guardians:damage-choice",
               "property": "damage-dice"
             },
@@ -129927,7 +129953,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "vampiric touch:damage-choice",
+              "damageType": "necrotic",
+              "semanticId": "vampiric touch:damage",
               "property": "damage-dice"
             },
             "dice": "1d6",
@@ -130106,7 +130133,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "wall of fire:damage-choice",
+              "damageType": "fire",
+              "semanticId": "wall of fire:damage",
               "property": "damage-dice"
             },
             "dice": "1d8",
@@ -130412,6 +130440,11 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
+              "damageTypes": [
+                "piercing",
+                "slashing"
+              ],
+              "selection": "choose-one",
               "semanticId": "wall of thorns:damage-choice",
               "property": "damage-dice"
             },

@@ -3,6 +3,7 @@ import {
   EXPECTED_CHARACTER_LEVEL_SPELL_KEYS,
   EXPECTED_HIGHER_SLOT_SPELL_KEYS,
 } from '../scripts/importers/dnd5e-srd-5.1/spellUpcastInventory.js';
+import { compileSpellUpcast } from '../scripts/importers/dnd5e-srd-5.1/upcast.js';
 import {
   getBundledDnd5eSrdPack,
   resolveSpellUpcast,
@@ -62,19 +63,180 @@ describe('source-bound spell upcast resolver', () => {
   });
 
   it('reuses S1 summoning scaling rather than emitting a second generic operation', () => {
-    expect(
-      resolveSpellUpcast(spell('spell:conjure-animals'), 3).adjustments,
-    ).toEqual([]);
+    expect(resolveSpellUpcast(spell('spell:conjure-animals'), 3)).toMatchObject(
+      {
+        hasHigherSlotBenefit: false,
+        adjustments: [],
+      },
+    );
+    expect(resolveSpellUpcast(spell('spell:conjure-animals'), 4)).toMatchObject(
+      {
+        hasHigherSlotBenefit: false,
+        adjustments: [],
+      },
+    );
+    expect(resolveSpellUpcast(spell('spell:conjure-animals'), 5)).toMatchObject(
+      {
+        hasHigherSlotBenefit: true,
+        adjustments: [{ threshold: 5, multiplier: 2 }],
+      },
+    );
     const result = resolveSpellUpcast(spell('spell:conjure-animals'), 7);
+    expect(result.qualifier).toBeUndefined();
     expect(result.adjustments).toEqual([
       {
         kind: 'summoning',
         subject: { kind: 'summoning', semanticId: 'creation-menu-counts' },
         sourceOperation: 's1',
         scalingKind: 'slot-multipliers',
+        appliesTo: 'creation-menu-counts',
         threshold: 7,
         multiplier: 3,
       },
+    ]);
+  });
+
+  it('retains S1 creation and control-reassertion scopes and option semantics', () => {
+    expect(
+      resolveSpellUpcast(spell('spell:animate-dead'), 4).adjustments,
+    ).toEqual([
+      {
+        kind: 'summoning',
+        subject: { kind: 'summoning', semanticId: 'summoning-cardinality' },
+        sourceOperation: 's1',
+        scalingKind: 'per-slot-cardinality',
+        appliesTo: ['creation', 'control-reassertion'],
+        amount: 2,
+      },
+    ]);
+    expect(
+      resolveSpellUpcast(spell('spell:create-undead'), 8).adjustments,
+    ).toEqual([
+      {
+        kind: 'summoning',
+        subject: { kind: 'summoning', semanticId: 'summoning-option-menu' },
+        sourceOperation: 's1',
+        scalingKind: 'slot-option-menu',
+        appliesTo: ['creation', 'control-reassertion'],
+        selection: 'choose-one',
+        threshold: 8,
+        choices: [
+          {
+            creatureRefs: ['creature:ghoul'],
+            cardinality: { mode: 'maximum', count: 5 },
+          },
+          {
+            creatureRefs: ['creature:ghast', 'creature:wight'],
+            cardinality: { mode: 'maximum', count: 2 },
+            composition: {
+              kind: 'source-ambiguity',
+              ambiguityId: 'ambiguity:create-undead-ghast-wight-composition',
+            },
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('corrects and resolves Animal Friendship per-slot cardinality exactly', () => {
+    const animalFriendship = spell('spell:animal-friendship');
+    expect(
+      (animalFriendship.data as Record<string, unknown>).higherLevels,
+    ).toBe(
+      'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
+    );
+    expect(resolveSpellUpcast(animalFriendship, 1).adjustments).toEqual([]);
+    for (const [slotLevel, amount] of [
+      [2, 1],
+      [3, 2],
+      [9, 8],
+    ] as const) {
+      expect(
+        resolveSpellUpcast(animalFriendship, slotLevel).adjustments,
+      ).toEqual([
+        {
+          kind: 'count',
+          subject: {
+            kind: 'effect',
+            semanticId: 'animal friendship:effect',
+            property: 'creature-count',
+          },
+          amount,
+          sourceOperation: 0,
+        },
+      ]);
+    }
+    expect(() =>
+      compileSpellUpcast({
+        name: 'Animal Friendships',
+        level: 1,
+        school: 'enchantment',
+        ritual: false,
+        castingTime: '1 action',
+        range: '30 feet',
+        components: ['V', 'S', 'M'],
+        duration: '24 hours',
+        description: 'Source fixture.',
+        higherLevels:
+          'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
+        scalingSourceKind: 'higher-slot',
+        scalingSourceText:
+          'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
+        sourcePage: 115,
+      }),
+    ).toThrow(/malformed Animal Friendship/);
+  });
+
+  it('binds independently scaled same-type damage components and local damage types', () => {
+    expect(resolveSpellUpcast(spell('spell:acid-arrow'), 3)).toEqual({
+      spellRef: 'spell:acid-arrow',
+      spellName: 'Acid Arrow',
+      baseSpellLevel: 2,
+      selectedSlotLevel: 3,
+      levelsAboveBase: 1,
+      hasHigherSlotBenefit: true,
+      clauseIds: ['acid-arrow:higher-slot'],
+      adjustments: [
+        {
+          kind: 'dice',
+          subject: {
+            kind: 'damage',
+            damageType: 'acid',
+            semanticId: 'acid arrow:initial-damage',
+            property: 'damage-dice',
+          },
+          addedDice: '1d4',
+          sourceOperation: 0,
+        },
+        {
+          kind: 'dice',
+          subject: {
+            kind: 'damage',
+            damageType: 'acid',
+            semanticId: 'acid arrow:later-damage',
+            property: 'damage-dice',
+          },
+          addedDice: '1d4',
+          sourceOperation: 1,
+        },
+      ],
+    });
+    expect(resolveSpellUpcast(spell('spell:ice-storm'), 5).adjustments).toEqual(
+      [
+        expect.objectContaining({
+          subject: expect.objectContaining({ damageType: 'bludgeoning' }),
+        }),
+      ],
+    );
+    expect(
+      resolveSpellUpcast(spell('spell:flame-strike'), 6).adjustments,
+    ).toEqual([
+      expect.objectContaining({
+        subject: expect.objectContaining({
+          damageTypes: ['fire', 'radiant'],
+          selection: 'choose-one',
+        }),
+      }),
     ]);
   });
 

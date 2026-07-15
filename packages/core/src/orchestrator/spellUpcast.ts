@@ -10,6 +10,12 @@ export interface SpellUpcastAdjustment {
   readonly threshold?: number;
   readonly scalingKind?: string;
   readonly multiplier?: number;
+  readonly appliesTo?:
+    | 'creation-menu-counts'
+    | 'creation-candidate'
+    | readonly ('creation' | 'control-reassertion')[];
+  readonly selection?: 'choose-one';
+  readonly choices?: readonly Record<string, unknown>[];
   readonly sourceOperation: number | 's1';
 }
 
@@ -52,12 +58,29 @@ function finiteProduct(left: number, right: number): number {
   return value;
 }
 
+function s1AppliesTo(
+  value: unknown,
+): NonNullable<SpellUpcastAdjustment['appliesTo']> {
+  if (value === 'creation-menu-counts' || value === 'creation-candidate')
+    return value;
+  if (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every(
+      (entry) => entry === 'creation' || entry === 'control-reassertion',
+    )
+  )
+    return [...value] as readonly ('creation' | 'control-reassertion')[];
+  throw new SpellUpcastError('malformed S1 scaling application scope');
+}
+
 function resolveS1Scaling(
   scaling: Obj,
   slotLevel: number,
   sourceOperation: 's1',
 ): SpellUpcastAdjustment | undefined {
   const kind = scaling.kind;
+  const appliesTo = s1AppliesTo(scaling.appliesTo);
   if (kind === 'slot-multipliers') {
     const multipliers = obj(scaling.multipliers);
     const applicable = Object.keys(multipliers)
@@ -75,6 +98,7 @@ function resolveS1Scaling(
       subject: { kind: 'summoning', semanticId: 'creation-menu-counts' },
       sourceOperation,
       scalingKind: kind,
+      appliesTo,
       threshold: applicable,
       multiplier,
     };
@@ -89,9 +113,10 @@ function resolveS1Scaling(
     if (slotLevel <= baseSlotLevel) return undefined;
     return {
       kind: 'summoning',
-      subject: { kind: 'summoning', semanticId: 'creation-cardinality' },
+      subject: { kind: 'summoning', semanticId: 'summoning-cardinality' },
       sourceOperation,
       scalingKind: kind,
+      appliesTo,
       amount: finiteProduct(additional, slotLevel - baseSlotLevel),
     };
   }
@@ -101,9 +126,10 @@ function resolveS1Scaling(
       return undefined;
     return {
       kind: 'summoning',
-      subject: { kind: 'summoning', semanticId: 'creation-challenge-cap' },
+      subject: { kind: 'summoning', semanticId: 'summoning-challenge-cap' },
       sourceOperation,
       scalingKind: kind,
+      appliesTo,
       threshold,
       value: scaling.maximumChallenge,
     };
@@ -118,9 +144,10 @@ function resolveS1Scaling(
     if (slotLevel <= baseSlotLevel) return undefined;
     return {
       kind: 'summoning',
-      subject: { kind: 'summoning', semanticId: 'creation-challenge-cap' },
+      subject: { kind: 'summoning', semanticId: 'summoning-challenge-cap' },
       sourceOperation,
       scalingKind: kind,
+      appliesTo,
       amount: finiteProduct(increase, slotLevel - baseSlotLevel),
     };
   }
@@ -140,13 +167,18 @@ function resolveS1Scaling(
     if (applicable === undefined) return undefined;
     if (!Array.isArray(applicable.choices))
       throw new SpellUpcastError('malformed S1 option choices');
+    if (scaling.selection !== 'choose-one')
+      throw new SpellUpcastError('malformed S1 option selection');
+    const choices = applicable.choices.map((choice) => obj(choice));
     return {
       kind: 'summoning',
-      subject: { kind: 'summoning', semanticId: 'creation-option-menu' },
+      subject: { kind: 'summoning', semanticId: 'summoning-option-menu' },
       sourceOperation,
       scalingKind: kind,
+      appliesTo,
+      selection: 'choose-one',
       threshold: integer(applicable.slotLevel, 'S1 option threshold', 1),
-      value: JSON.stringify(applicable.choices),
+      choices,
     };
   }
   throw new SpellUpcastError(`unsupported S1 scaling kind ${String(kind)}`);
@@ -277,6 +309,35 @@ export function resolveSpellUpcast(
         `operation ${index} has an unsupported semantic property`,
       );
     }
+    if (subjectKind === 'damage') {
+      const damageType = subjectObject.damageType;
+      const damageTypes = subjectObject.damageTypes;
+      if (
+        damageType !== undefined &&
+        (typeof damageType !== 'string' || damageType.length === 0)
+      )
+        throw new SpellUpcastError(
+          `operation ${index} has invalid damage type`,
+        );
+      if (damageTypes !== undefined) {
+        if (
+          !Array.isArray(damageTypes) ||
+          damageTypes.length < 2 ||
+          damageTypes.some(
+            (type) => typeof type !== 'string' || type.length === 0,
+          ) ||
+          new Set(damageTypes).size !== damageTypes.length ||
+          subjectObject.selection !== 'choose-one'
+        )
+          throw new SpellUpcastError(
+            `operation ${index} has invalid damage type selection`,
+          );
+      }
+      if (damageType !== undefined && damageTypes !== undefined)
+        throw new SpellUpcastError(
+          `operation ${index} has contradictory damage types`,
+        );
+    }
     if (kind === 'threshold') {
       const threshold = integer(
         operation.atSlotLevel,
@@ -372,8 +433,7 @@ export function resolveSpellUpcast(
   );
   return {
     ...result,
-    hasHigherSlotBenefit:
-      resolvedAdjustments.length > 0 || typeof upcast.qualifier === 'string',
+    hasHigherSlotBenefit: resolvedAdjustments.length > 0,
     clauseIds: [upcast.clauseId],
     adjustments: resolvedAdjustments,
     ...(typeof upcast.qualifier === 'string'

@@ -4536,6 +4536,38 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
           `${subjectPath}.property is not a closed semantic property for ${subjectKind}`,
         );
       }
+      if (subjectKind === 'damage') {
+        const damageType = subject.damageType;
+        const damageTypes = subject.damageTypes;
+        if (
+          damageType !== undefined &&
+          (typeof damageType !== 'string' || damageType.length === 0)
+        ) {
+          throw new RulesPackError(
+            `${subjectPath}.damageType must be a string`,
+          );
+        }
+        if (damageTypes !== undefined) {
+          if (
+            !Array.isArray(damageTypes) ||
+            damageTypes.length < 2 ||
+            damageTypes.some(
+              (type) => typeof type !== 'string' || type.length === 0,
+            ) ||
+            new Set(damageTypes).size !== damageTypes.length ||
+            subject.selection !== 'choose-one'
+          ) {
+            throw new RulesPackError(
+              `${subjectPath}.damageTypes must be unique and use choose-one selection`,
+            );
+          }
+        }
+        if (damageType !== undefined && damageTypes !== undefined) {
+          throw new RulesPackError(
+            `${subjectPath} cannot declare both damageType and damageTypes`,
+          );
+        }
+      }
       const key = JSON.stringify(operation);
       if (operationKeys.has(key))
         throw new RulesPackError(`${operationPath} duplicates an operation`);
