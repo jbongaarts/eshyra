@@ -288,7 +288,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -327,7 +327,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -478,7 +478,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -1024,7 +1024,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -1186,7 +1186,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -1435,7 +1435,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -1522,7 +1522,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2101,7 +2101,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2134,7 +2134,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2173,7 +2173,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2467,7 +2467,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2606,7 +2606,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2721,7 +2721,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2790,7 +2790,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2829,7 +2829,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -2965,7 +2965,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -3249,7 +3249,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -3282,7 +3282,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -3398,7 +3398,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -3859,7 +3859,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -4055,7 +4055,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -4402,7 +4402,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -4867,7 +4867,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -5147,7 +5147,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -5186,7 +5186,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -5458,7 +5458,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -5660,7 +5660,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -5967,7 +5967,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -6047,7 +6047,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -6086,7 +6086,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -6332,7 +6332,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -6474,7 +6474,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -6586,7 +6586,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "canonical magic-item:potion-of-healing implementation"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "The ordinary-table duplicate is canonically owned by magic-item:potion-of-healing and the pending M1/C2/S consumable-healing work in eshyra-o9bd.18.7.7.4.",
@@ -6623,7 +6623,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -6994,7 +6994,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -7098,7 +7098,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -7701,7 +7701,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8088,7 +8088,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8318,7 +8318,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8432,7 +8432,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8558,7 +8558,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8666,7 +8666,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8784,7 +8784,7 @@
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8899,7 +8899,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -8962,7 +8962,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -9166,7 +9166,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -9278,7 +9278,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -9317,7 +9317,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
@@ -9356,7 +9356,7 @@
         "equipmentGroup"
       ],
       "requiredDeterministicRepresentation": [
-        "inventory quantity and remove_item"
+        "applicable canonical tool/focus rule-owned procedure"
       ],
       "disposition": "externally owned runtime behavior",
       "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",

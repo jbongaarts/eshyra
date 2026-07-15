@@ -76,13 +76,7 @@ const rows = equipment.map((record) => {
       spec?.clauses.map((clause) => clause.id) ?? [],
     currentTypedRepresentation: Object.keys(tableDerivedFacts),
     requiredDeterministicRepresentation:
-      spec !== undefined
-        ? ['data.useProfile']
-        : review.disposition === 'already complete'
-          ? ['table-derived fields']
-          : review.disposition === 'externally owned runtime behavior'
-            ? ['inventory quantity and remove_item']
-            : [],
+      review.requiredDeterministicRepresentation,
     disposition: review.disposition,
     rationale: review.rationale,
     engineToolOwners:

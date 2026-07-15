@@ -41,6 +41,7 @@ const inventory = JSON.parse(
   records: Array<{
     recordKey: string;
     disposition: string;
+    requiredDeterministicRepresentation: string[];
     sourceBindings: Array<{ clauseId: string; phrase: string }>;
   }>;
 };
@@ -192,6 +193,25 @@ describe('SRD equipment mechanics inventory', () => {
       disposition: 'externally owned runtime behavior',
       owners: ['magic-item:potion-of-healing', 'eshyra-o9bd.18.7.7.4'],
     });
+  });
+
+  it('pins owner-specific requirements for every external category', () => {
+    const required = (key: string) =>
+      inventory.records.find((row) => row.recordKey === key)
+        ?.requiredDeterministicRepresentation;
+
+    expect(required('equipment:arrows-20')).toEqual([
+      'inventory quantity and remove_item',
+    ]);
+    expect(required('equipment:potion-of-healing')).toEqual([
+      'canonical magic-item:potion-of-healing implementation',
+    ]);
+    expect(required('equipment:alchemists-supplies')).toEqual([
+      'applicable canonical tool/focus rule-owned procedure',
+    ]);
+    expect(required('equipment:amulet')).toEqual([
+      'applicable canonical tool/focus rule-owned procedure',
+    ]);
   });
 });
 

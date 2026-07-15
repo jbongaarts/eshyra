@@ -9,6 +9,7 @@ export interface EquipmentReview {
   readonly disposition: EquipmentReviewDisposition;
   readonly rationale: string;
   readonly owners: readonly string[];
+  readonly requiredDeterministicRepresentation: readonly string[];
 }
 
 const COMPLETE = [
@@ -261,6 +262,7 @@ const entries: Array<readonly [string, EquipmentReview]> = [
           rationale:
             'Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.',
           owners: ['equipment-schema'],
+          requiredDeterministicRepresentation: ['table-derived fields'],
         },
       ] as const,
   ),
@@ -273,6 +275,7 @@ const entries: Array<readonly [string, EquipmentReview]> = [
           rationale:
             'Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.',
           owners: ['equipment-use-profile'],
+          requiredDeterministicRepresentation: ['data.useProfile'],
         },
       ] as const,
   ),
@@ -286,6 +289,7 @@ const entries: Array<readonly [string, EquipmentReview]> = [
               rationale:
                 'Reviewed description only identifies narrative contents or suitability; it supplies no closed capacity, timing, modifier, dice, or finite-use procedure.',
               owners: ['DM'],
+              requiredDeterministicRepresentation: [],
             }
           : {
               disposition: 'externally owned runtime behavior' as const,
@@ -296,6 +300,9 @@ const entries: Array<readonly [string, EquipmentReview]> = [
                 'rule:proficiency-bonus',
                 'rule:material-m',
                 'rule:spellcasting',
+              ],
+              requiredDeterministicRepresentation: [
+                'applicable canonical tool/focus rule-owned procedure',
               ],
             },
       ] as const,
@@ -314,6 +321,10 @@ const entries: Array<readonly [string, EquipmentReview]> = [
             key === 'equipment:potion-of-healing'
               ? ['magic-item:potion-of-healing', 'eshyra-o9bd.18.7.7.4']
               : ['inventory', 'remove_item'],
+          requiredDeterministicRepresentation:
+            key === 'equipment:potion-of-healing'
+              ? ['canonical magic-item:potion-of-healing implementation']
+              : ['inventory quantity and remove_item'],
         },
       ] as const,
   ),
@@ -326,6 +337,7 @@ const entries: Array<readonly [string, EquipmentReview]> = [
           rationale:
             'Reviewed row supplies purchase/display identity only; no source description or closed per-item gameplay procedure is present.',
           owners: [],
+          requiredDeterministicRepresentation: [],
         },
       ] as const,
   ),
