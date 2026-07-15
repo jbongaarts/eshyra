@@ -209,6 +209,36 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     ],
   },
   {
+    recordKey: 'equipment:case-crossbow-bolt',
+    pages: [67, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause('capacity', 'can hold up to twenty crossbow bolts', 'inventory', {
+        capacity: { item: 'crossbow-bolt', maximum: 20 },
+      }),
+    ],
+  },
+  {
+    recordKey: 'equipment:case-map-or-scroll',
+    pages: [67, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause(
+        'capacity',
+        'can hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment',
+        'inventory',
+        {
+          capacity: {
+            alternatives: [
+              { item: 'paper-sheet', maximum: 10 },
+              { item: 'parchment-sheet', maximum: 5 },
+            ],
+          },
+        },
+      ),
+    ],
+  },
+  {
     recordKey: 'equipment:healers-kit',
     pages: [67, 69],
     consumption: {
@@ -753,6 +783,52 @@ export const EQUIPMENT_MECHANICS_SPECS: readonly EquipmentMechanicsSpec[] = [
     clauses: [
       clause('capacity', 'A quiver can hold up to 20 arrows', 'inventory', {
         capacity: { item: 'arrow', maximum: 20 },
+      }),
+    ],
+  },
+  {
+    recordKey: 'equipment:scale-merchants',
+    pages: [68, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause('weight-capacity', 'weights up to 2 pounds', 'model', {
+        measurableWeightMaximumPounds: 2,
+      }),
+    ],
+    modelAdjudicatedQualifiers: ['to help determine their worth'],
+  },
+  {
+    recordKey: 'equipment:spellbook',
+    pages: [68, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause(
+        'capacity',
+        '100 blank vellum pages suitable for recording spells',
+        'inventory',
+        {
+          capacity: { item: 'recorded-spell-page', maximum: 100 },
+        },
+      ),
+    ],
+  },
+  {
+    recordKey: 'equipment:spyglass',
+    pages: [68, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause('magnification', 'magnified to twice their size', 'model', {
+        magnificationMultiplier: 2,
+      }),
+    ],
+  },
+  {
+    recordKey: 'equipment:tent-two-person',
+    pages: [68, 69],
+    consumption: { kind: 'not-consumed' },
+    clauses: [
+      clause('capacity', 'a tent sleeps two', 'model', {
+        creatureCapacity: 2,
       }),
     ],
   },

@@ -55,6 +55,8 @@ const EXPECTED_CURATED_KEYS = [
   'equipment:block-and-tackle',
   'equipment:caltrops-bag-of-20',
   'equipment:candle',
+  'equipment:case-crossbow-bolt',
+  'equipment:case-map-or-scroll',
   'equipment:chain-10-feet',
   'equipment:climbers-kit',
   'equipment:crowbar',
@@ -75,6 +77,10 @@ const EXPECTED_CURATED_KEYS = [
   'equipment:ram-portable',
   'equipment:rope-hempen-50-feet',
   'equipment:rope-silk-50-feet',
+  'equipment:scale-merchants',
+  'equipment:spellbook',
+  'equipment:spyglass',
+  'equipment:tent-two-person',
   'equipment:tinderbox',
   'equipment:torch',
 ] as const;
@@ -84,8 +90,8 @@ describe('SRD equipment mechanics inventory', () => {
     expect(equipment).toHaveLength(218);
     expect(inventory.recordCount).toBe(218);
     expect(inventory.mechanicallyActiveRecords).toBe(174);
-    expect(inventory.curatedProjectionRecords).toBe(29);
-    expect(inventory.clauseCount).toBe(69);
+    expect(inventory.curatedProjectionRecords).toBe(35);
+    expect(inventory.clauseCount).toBe(75);
     expect(
       EQUIPMENT_MECHANICS_SPECS.map((spec) => spec.recordKey).sort(),
     ).toEqual([...EXPECTED_CURATED_KEYS].sort());
@@ -154,6 +160,38 @@ describe('SRD equipment mechanics inventory', () => {
     drift('equipment:lamp', '6 hours', '5 hours');
     drift('equipment:lantern-bullseye', '6 hours', '5 hours');
     drift('equipment:lantern-hooded', '6 hours', '5 hours');
+  });
+
+  it('pins the re-reviewed closed capacities and external potion owner', () => {
+    const semantics = (key: string) =>
+      (
+        byKey.get(key)?.data as {
+          useProfile: { clauses: Array<{ semantics: unknown }> };
+        }
+      ).useProfile.clauses.map((entry) => entry.semantics);
+
+    expect(semantics('equipment:case-crossbow-bolt')).toEqual([
+      { capacity: { item: 'crossbow-bolt', maximum: 20 } },
+    ]);
+    expect(semantics('equipment:case-map-or-scroll')).toEqual([
+      {
+        capacity: {
+          alternatives: [
+            { item: 'paper-sheet', maximum: 10 },
+            { item: 'parchment-sheet', maximum: 5 },
+          ],
+        },
+      },
+    ]);
+    expect(semantics('equipment:spellbook')).toEqual([
+      { capacity: { item: 'recorded-spell-page', maximum: 100 } },
+    ]);
+    expect(
+      EQUIPMENT_MECHANICS_REVIEW.get('equipment:potion-of-healing'),
+    ).toMatchObject({
+      disposition: 'externally owned runtime behavior',
+      owners: ['magic-item:potion-of-healing', 'eshyra-o9bd.18.7.7.4'],
+    });
   });
 });
 

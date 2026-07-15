@@ -4,14 +4,14 @@
   "recordCount": 218,
   "recordsWithDescriptions": 109,
   "mechanicallyActiveRecords": 174,
-  "curatedProjectionRecords": 29,
-  "clauseCount": 69,
+  "curatedProjectionRecords": 35,
+  "clauseCount": 75,
   "dispositionCounts": {
     "already complete": 82,
-    "externally owned runtime behavior": 4,
-    "model-adjudicated qualifier": 59,
+    "externally owned runtime behavior": 53,
+    "model-adjudicated qualifier": 4,
     "not mechanical": 44,
-    "requires projection in this bead": 29
+    "requires projection in this bead": 35
   },
   "records": [
     {
@@ -287,10 +287,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -319,10 +326,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -463,10 +477,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -905,7 +926,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "rationale": "Reviewed description only identifies narrative contents or suitability; it supplies no closed capacity, timing, modifier, dice, or finite-use procedure.",
       "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
@@ -1002,10 +1023,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -1157,10 +1185,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -1399,10 +1434,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -1479,10 +1521,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -1498,18 +1547,47 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "capacity",
+              "sourcePhrase": "can hold up to twenty crossbow bolts",
+              "owner": "inventory",
+              "semantics": {
+                "capacity": {
+                  "item": "crossbow-bolt",
+                  "maximum": 20
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Case, Crossbow Bolt. This wooden case can hold up to twenty crossbow bolts."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["capacity"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "inventory"],
+      "sourceBindings": [
+        {
+          "clauseId": "capacity",
+          "phrase": "can hold up to twenty crossbow bolts",
+          "pages": [67, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:case-map-or-scroll",
@@ -1524,18 +1602,55 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "capacity",
+              "sourcePhrase": "can hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment",
+              "owner": "inventory",
+              "semantics": {
+                "capacity": {
+                  "alternatives": [
+                    {
+                      "item": "paper-sheet",
+                      "maximum": 10
+                    },
+                    {
+                      "item": "parchment-sheet",
+                      "maximum": 5
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Case, Map or Scroll. This cylindrical leather case can hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["capacity"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "inventory"],
+      "sourceBindings": [
+        {
+          "clauseId": "capacity",
+          "phrase": "can hold up to ten rolled-up sheets of paper or five rolled-up sheets of parchment",
+          "pages": [67, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:chain-10-feet",
@@ -1985,10 +2100,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2011,10 +2133,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2043,10 +2172,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2330,10 +2466,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2462,10 +2605,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2570,10 +2720,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2632,10 +2789,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2664,10 +2828,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2793,10 +2964,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -2975,7 +3153,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "rationale": "Reviewed description only identifies narrative contents or suitability; it supplies no closed capacity, timing, modifier, dice, or finite-use procedure.",
       "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
@@ -3070,10 +3248,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -3096,10 +3281,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -3205,10 +3397,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -3659,10 +3858,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -3848,10 +4054,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -4188,10 +4401,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -4646,10 +4866,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -4919,10 +5146,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -4951,10 +5185,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -5216,10 +5457,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -5323,7 +5571,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "rationale": "Reviewed description only identifies narrative contents or suitability; it supplies no closed capacity, timing, modifier, dice, or finite-use procedure.",
       "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
@@ -5411,10 +5659,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -5711,10 +5966,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -5784,10 +6046,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -5816,10 +6085,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -6055,10 +6331,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -6190,10 +6473,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -6295,10 +6585,15 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "The ordinary-table duplicate is canonically owned by magic-item:potion-of-healing and the pending M1/C2/S consumable-healing work in eshyra-o9bd.18.7.7.4.",
+      "engineToolOwners": [
+        "magic-item:potion-of-healing",
+        "eshyra-o9bd.18.7.7.4"
+      ],
       "sourceBindings": []
     },
     {
@@ -6327,10 +6622,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -6661,7 +6963,7 @@
       "currentTypedRepresentation": ["category", "cost", "weight"],
       "requiredDeterministicRepresentation": [],
       "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
+      "rationale": "Reviewed description only identifies narrative contents or suitability; it supplies no closed capacity, timing, modifier, dice, or finite-use procedure.",
       "engineToolOwners": ["DM"],
       "sourceBindings": []
     },
@@ -6691,10 +6993,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -6788,10 +7097,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -7180,18 +7496,50 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "5 gp",
-        "weight": "3 lb."
+        "weight": "3 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "weight-capacity",
+              "sourcePhrase": "weights up to 2 pounds",
+              "owner": "model",
+              "semantics": {
+                "measurableWeightMaximumPounds": 2
+              }
+            }
+          ],
+          "modelAdjudicatedQualifiers": ["to help determine their worth"]
+        }
       },
       "sourceDescriptionClauses": [
         "Scale, Merchant’s. A scale includes a small balance, pans, and a suitable assortment of weights up to 2 pounds. With it, you can measure the exact weight of small objects, such as raw precious metals or trade goods, to help determine their worth."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["weight-capacity"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "model"],
+      "sourceBindings": [
+        {
+          "clauseId": "weight-capacity",
+          "phrase": "weights up to 2 pounds",
+          "pages": [68, 69]
+        },
+        {
+          "clauseId": "model-qualifier",
+          "phrase": "to help determine their worth",
+          "pages": [68, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:scholars-pack",
@@ -7352,10 +7700,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -7732,10 +8087,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -7826,18 +8188,47 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "50 gp",
-        "weight": "3 lb."
+        "weight": "3 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "capacity",
+              "sourcePhrase": "100 blank vellum pages suitable for recording spells",
+              "owner": "inventory",
+              "semantics": {
+                "capacity": {
+                  "item": "recorded-spell-page",
+                  "maximum": 100
+                }
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Spellbook. Essential for wizards, a spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["capacity"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "inventory"],
+      "sourceBindings": [
+        {
+          "clauseId": "capacity",
+          "phrase": "100 blank vellum pages suitable for recording spells",
+          "pages": [68, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:spikes-iron-10",
@@ -7926,10 +8317,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -7945,18 +8343,44 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "1,000 gp",
-        "weight": "1 lb."
+        "weight": "1 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "magnification",
+              "sourcePhrase": "magnified to twice their size",
+              "owner": "model",
+              "semantics": {
+                "magnificationMultiplier": 2
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Spyglass. Objects viewed through a spyglass are magnified to twice their size."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["magnification"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "model"],
+      "sourceBindings": [
+        {
+          "clauseId": "magnification",
+          "phrase": "magnified to twice their size",
+          "pages": [68, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:stabling-per-day",
@@ -8007,10 +8431,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8067,18 +8498,44 @@
       "tableDerivedFacts": {
         "category": "gear",
         "cost": "2 gp",
-        "weight": "20 lb."
+        "weight": "20 lb.",
+        "useProfile": {
+          "consumption": {
+            "kind": "not-consumed"
+          },
+          "clauses": [
+            {
+              "id": "capacity",
+              "sourcePhrase": "a tent sleeps two",
+              "owner": "model",
+              "semantics": {
+                "creatureCapacity": 2
+              }
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [
         "Tent. A simple and portable canvas shelter, a tent sleeps two."
       ],
-      "mechanicallySignificantClauseIds": [],
-      "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
-      "sourceBindings": []
+      "mechanicallySignificantClauseIds": ["capacity"],
+      "currentTypedRepresentation": [
+        "category",
+        "cost",
+        "weight",
+        "useProfile"
+      ],
+      "requiredDeterministicRepresentation": ["data.useProfile"],
+      "disposition": "requires projection in this bead",
+      "rationale": "Reviewed source description contains immutable numeric or procedural equipment semantics emitted by the curated specification.",
+      "engineToolOwners": ["equipment-use-profile", "model"],
+      "sourceBindings": [
+        {
+          "clauseId": "capacity",
+          "phrase": "a tent sleeps two",
+          "pages": [68, 69]
+        }
+      ]
     },
     {
       "recordKey": "equipment:thieves-tools",
@@ -8100,10 +8557,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "weight"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8201,10 +8665,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8312,10 +8783,17 @@
       ],
       "mechanicallySignificantClauseIds": [],
       "currentTypedRepresentation": ["category", "cost", "equipmentGroup"],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8420,10 +8898,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8476,10 +8961,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8673,10 +9165,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8778,10 +9277,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8810,10 +9316,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     },
     {
@@ -8842,10 +9355,17 @@
         "weight",
         "equipmentGroup"
       ],
-      "requiredDeterministicRepresentation": [],
-      "disposition": "model-adjudicated qualifier",
-      "rationale": "Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.",
-      "engineToolOwners": ["DM"],
+      "requiredDeterministicRepresentation": [
+        "inventory quantity and remove_item"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.",
+      "engineToolOwners": [
+        "rule:skills",
+        "rule:proficiency-bonus",
+        "rule:material-m",
+        "rule:spellcasting"
+      ],
       "sourceBindings": []
     }
   ]

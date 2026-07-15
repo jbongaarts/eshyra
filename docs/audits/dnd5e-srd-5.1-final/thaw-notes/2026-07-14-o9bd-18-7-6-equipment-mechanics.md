@@ -19,15 +19,15 @@ profiles without adding a parallel runtime engine.
 The source PDF is unchanged (SHA-256
 `2504d2a0abb0a4d491a939be4f17910a2dde0312570ab8d208080225ccf0a1f0`).
 The pack remains 1,813 records, including exactly 218 equipment records.
-No records were added or removed. Exactly 64 equipment records change: all 37
-weapons gain closed `weaponProperties`; 29 reviewed records gain `useProfile`
+No records were added or removed. Exactly 70 equipment records change: all 37
+weapons gain closed `weaponProperties`; 35 reviewed records gain `useProfile`
 (lance and net are in both sets). No non-equipment, spell, or magic-item record
 changes.
 
 The committed inventory covers all 218 records through an explicit reviewed
-registry: 174 mechanically active, 44 nonmechanical, 29 curated projection
-records, and 69 source-bound clauses. The registry records 82 already-complete,
-59 model-adjudicated, and 4 externally owned records and fails closed on an
+registry: 174 mechanically active, 44 nonmechanical, 35 curated projection
+records, and 75 source-bound clauses. The registry records 82 already-complete,
+4 model-adjudicated, and 53 externally owned records and fails closed on an
 unknown, removed, or unreviewed key. New
 contracts are the closed weapon-property union, equipment-use clauses, and the
 five-way consumption union (reusable, inventory unit, ammunition, finite uses,

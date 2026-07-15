@@ -9,9 +9,9 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1263,
+  "rowCount": 1264,
   "dispositionCounts": {
-    "complete": 321,
+    "complete": 322,
     "model-adjudicated": 742,
     "not-mechanical": 192,
     "typed-core-with-prose-qualifier": 2,
@@ -10724,7 +10724,7 @@
         "damage",
         "extinguish"
       ],
-      "population": 69,
+      "population": 75,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
       "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
@@ -10746,9 +10746,9 @@
         "model",
         "F9",
         "F3",
-        "F5"
+        "inventory"
       ],
-      "population": 69,
+      "population": 75,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
       "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
@@ -10864,11 +10864,34 @@
       "recordKinds": [
         "equipment"
       ],
+      "fieldPath": "data.useProfile.clauses[].semantics.capacity.alternatives[].item",
+      "representativeValues": [
+        "paper-sheet",
+        "parchment-sheet"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
+      "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
+      "currentAuditReadiness": "equipment inventory, source-drift, schema, and readiness gates",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "EquipmentUseProfile / WeaponProperty",
+      "retainedProseBoundary": null,
+      "owner": "parseEquipment.ts, equipmentMechanics.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
       "fieldPath": "data.useProfile.clauses[].semantics.capacity.item",
       "representativeValues": [
-        "arrow"
+        "crossbow-bolt",
+        "arrow",
+        "recorded-spell-page"
       ],
-      "population": 1,
+      "population": 3,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
       "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
@@ -11906,7 +11929,7 @@
         "2d6 acid damage",
         "As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon"
       ],
-      "population": 69,
+      "population": 75,
       "valueClass": "source prose",
       "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
       "deterministicConsumers": "retained source binding or explicitly adjudicated qualifier",
@@ -11953,7 +11976,7 @@
         "not-consumed",
         "finite-uses"
       ],
-      "population": 29,
+      "population": 35,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
       "deterministicConsumers": "equipment use-profile and closed weapon-property consumers",
@@ -12015,9 +12038,10 @@
       ],
       "fieldPath": "data.useProfile.modelAdjudicatedQualifiers[]",
       "representativeValues": [
-        "Your GM may decide that better locks are available for higher prices."
+        "Your GM may decide that better locks are available for higher prices.",
+        "to help determine their worth"
       ],
-      "population": 1,
+      "population": 2,
       "valueClass": "source prose",
       "currentSchemaValidation": "D&D equipment schema validates the closed projection vocabulary",
       "deterministicConsumers": "retained source binding or explicitly adjudicated qualifier",

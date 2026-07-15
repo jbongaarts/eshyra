@@ -104,6 +104,8 @@ const PROJECTED = [
   'equipment:block-and-tackle',
   'equipment:caltrops-bag-of-20',
   'equipment:candle',
+  'equipment:case-crossbow-bolt',
+  'equipment:case-map-or-scroll',
   'equipment:chain-10-feet',
   'equipment:climbers-kit',
   'equipment:crowbar',
@@ -124,6 +126,10 @@ const PROJECTED = [
   'equipment:ram-portable',
   'equipment:rope-hempen-50-feet',
   'equipment:rope-silk-50-feet',
+  'equipment:scale-merchants',
+  'equipment:spellbook',
+  'equipment:spyglass',
+  'equipment:tent-two-person',
   'equipment:tinderbox',
   'equipment:torch',
 ] as const;
@@ -137,8 +143,6 @@ const MODEL = [
   'equipment:calligraphers-supplies',
   'equipment:carpenters-tools',
   'equipment:cartographers-tools',
-  'equipment:case-crossbow-bolt',
-  'equipment:case-map-or-scroll',
   'equipment:cobblers-tools',
   'equipment:component-pouch',
   'equipment:cooks-utensils',
@@ -166,19 +170,14 @@ const MODEL = [
   'equipment:pan-flute',
   'equipment:playing-card-set',
   'equipment:poisoners-kit',
-  'equipment:potion-of-healing',
   'equipment:potters-tools',
   'equipment:rations-1-day',
   'equipment:reliquary',
   'equipment:rod',
-  'equipment:scale-merchants',
   'equipment:shawm',
   'equipment:smiths-tools',
-  'equipment:spellbook',
   'equipment:sprig-of-mistletoe',
-  'equipment:spyglass',
   'equipment:staff',
-  'equipment:tent-two-person',
   'equipment:thieves-tools',
   'equipment:tinkers-tools',
   'equipment:totem',
@@ -194,6 +193,7 @@ const EXTERNAL = [
   'equipment:arrows-20',
   'equipment:blowgun-needles-50',
   'equipment:crossbow-bolts-20',
+  'equipment:potion-of-healing',
   'equipment:sling-bullets-20',
 ] as const;
 
@@ -244,6 +244,13 @@ const NONMECHANICAL = [
   'equipment:whetstone',
 ] as const;
 
+const QUALITATIVE_MODEL_KEYS = new Set<string>([
+  'equipment:book',
+  'equipment:fishing-tackle',
+  'equipment:mess-kit',
+  'equipment:rations-1-day',
+]);
+
 const entries: Array<readonly [string, EquipmentReview]> = [
   ...COMPLETE.map(
     (key) =>
@@ -273,12 +280,24 @@ const entries: Array<readonly [string, EquipmentReview]> = [
     (key) =>
       [
         key,
-        {
-          disposition: 'model-adjudicated qualifier',
-          rationale:
-            'Reviewed description is tool/focus/display guidance or contextual use whose complete meaning is intentionally adjudicated; no omitted closed numeric procedure remains.',
-          owners: ['DM'],
-        },
+        QUALITATIVE_MODEL_KEYS.has(key)
+          ? {
+              disposition: 'model-adjudicated qualifier' as const,
+              rationale:
+                'Reviewed description only identifies narrative contents or suitability; it supplies no closed capacity, timing, modifier, dice, or finite-use procedure.',
+              owners: ['DM'],
+            }
+          : {
+              disposition: 'externally owned runtime behavior' as const,
+              rationale:
+                'Reviewed tool/focus eligibility and proficiency procedure is owned by canonical rule:skills, rule:proficiency-bonus, rule:material-m, and rule:spellcasting semantics; this record retains the item-specific grouping and source wording.',
+              owners: [
+                'rule:skills',
+                'rule:proficiency-bonus',
+                'rule:material-m',
+                'rule:spellcasting',
+              ],
+            },
       ] as const,
   ),
   ...EXTERNAL.map(
@@ -288,8 +307,13 @@ const entries: Array<readonly [string, EquipmentReview]> = [
         {
           disposition: 'externally owned runtime behavior',
           rationale:
-            'Ammunition bundle identity and quantity are table-derived; per-shot decrement uses the canonical inventory mutation selected by the DM.',
-          owners: ['inventory', 'remove_item'],
+            key === 'equipment:potion-of-healing'
+              ? 'The ordinary-table duplicate is canonically owned by magic-item:potion-of-healing and the pending M1/C2/S consumable-healing work in eshyra-o9bd.18.7.7.4.'
+              : 'Ammunition bundle identity and quantity are table-derived; per-shot decrement uses the canonical inventory mutation selected by the DM.',
+          owners:
+            key === 'equipment:potion-of-healing'
+              ? ['magic-item:potion-of-healing', 'eshyra-o9bd.18.7.7.4']
+              : ['inventory', 'remove_item'],
         },
       ] as const,
   ),
