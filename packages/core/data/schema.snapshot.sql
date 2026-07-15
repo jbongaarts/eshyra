@@ -328,7 +328,8 @@ CREATE TABLE clock (
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL
 , elapsed_minutes INTEGER NOT NULL DEFAULT 0
-  CHECK (elapsed_minutes >= 0));
+  CHECK (elapsed_minutes >= 0), in_game_time_elapsed_minutes INTEGER NOT NULL DEFAULT 0
+  CHECK (in_game_time_elapsed_minutes >= 0));
 
 CREATE TABLE combat_instance (
   campaign_id TEXT NOT NULL,
@@ -558,6 +559,7 @@ CREATE TABLE rest_event (
   end_elapsed_minutes INTEGER NOT NULL CHECK (end_elapsed_minutes >= start_elapsed_minutes),
   declared_duration_minutes INTEGER NOT NULL CHECK (declared_duration_minutes >= 0),
   qualification_json TEXT NOT NULL,
+  narrative_label TEXT,
   status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed', 'failed')),
   benefits_json TEXT NOT NULL DEFAULT '{}',
   provenance TEXT NOT NULL,

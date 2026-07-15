@@ -703,6 +703,12 @@ function validateElapsedWorldRow(row: ActiveEffectRow): void {
       row.duration_unit === 'day');
   if (world) {
     if (
+      row.status === 'ended' &&
+      row.anchor_elapsed_minutes === null &&
+      row.deadline_elapsed_minutes === null
+    )
+      return;
+    if (
       !Number.isSafeInteger(row.duration_amount) ||
       (row.duration_amount as number) < 1
     )
@@ -4026,12 +4032,20 @@ export function expireElapsedWorldEffects(
       );
     const rows = txnDb
       .prepare(
-        `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id=? AND status IN ('active','suppressed') AND deadline_elapsed_minutes IS NOT NULL AND deadline_elapsed_minutes <= ? ORDER BY deadline_elapsed_minutes, created_at, effect_id`,
+        `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id=? AND status IN ('active','suppressed') ORDER BY COALESCE(deadline_elapsed_minutes, 9223372036854775807), created_at, effect_id`,
       )
-      .all(input.campaignId, input.elapsedMinutes) as ActiveEffectRow[];
+      .all(input.campaignId) as ActiveEffectRow[];
     const expired: ExpiredWorldEffectSummary[] = [];
     for (const row of rows) {
       validateElapsedWorldRow(row);
+      const world =
+        row.duration_kind === 'timed' &&
+        (row.duration_unit === 'minute' ||
+          row.duration_unit === 'hour' ||
+          row.duration_unit === 'day');
+      if (!world) continue;
+      if ((row.deadline_elapsed_minutes as number) > input.elapsedMinutes)
+        continue;
       const outcome = finalizeEnd(
         txnDb,
         row,

@@ -223,6 +223,122 @@ describe('parseSpellDurationText', () => {
   });
 });
 
+describe('elapsed-world sweep validation boundary', () => {
+  it.each([
+    [
+      'null anchor',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET anchor_elapsed_minutes=NULL WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /anchor\/deadline/,
+    ],
+    [
+      'null deadline',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET deadline_elapsed_minutes=NULL WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /anchor\/deadline/,
+    ],
+    [
+      'inconsistent arithmetic',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET deadline_elapsed_minutes=61 WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /inconsistent/,
+    ],
+    [
+      'unsafe arithmetic',
+      (db: Db) =>
+        db
+          .prepare(
+            'UPDATE active_effect SET anchor_elapsed_minutes=1, duration_amount=9007199254740991, deadline_elapsed_minutes=9007199254740992 WHERE effect_id=?',
+          )
+          .run('fx-corrupt'),
+      /malformed|inconsistent|safe/,
+    ],
+  ])('rejects %s before changing the clock', (_name, corrupt, expected) => {
+    const db = freshDbWithSession();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-corrupt',
+      kind: 'condition-package',
+      displayName: 'Corrupt timer',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    corrupt(db);
+    expect(() =>
+      advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 1, ...CTX }),
+    ).toThrow(expected);
+    expect(
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get(),
+    ).toEqual({ elapsed_minutes: 0 });
+    db.close();
+  });
+
+  it('rejects elapsed evidence on round and non-timed live effects during advancement', () => {
+    const { db, combatInstanceId } = setupCombat();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-corrupt-round',
+      kind: 'condition-package',
+      displayName: 'Corrupt round',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'round',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=0, deadline_elapsed_minutes=1 WHERE effect_id=?',
+    ).run('fx-corrupt-round');
+    expect(() =>
+      advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 1, ...CTX }),
+    ).toThrow(/non-world timer/);
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=NULL, deadline_elapsed_minutes=NULL WHERE effect_id=?',
+    ).run('fx-corrupt-round');
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-corrupt-nontimed',
+      kind: 'condition-package',
+      displayName: 'Corrupt non-timer',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      ...CTX,
+    });
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=0, deadline_elapsed_minutes=1 WHERE effect_id=?',
+    ).run('fx-corrupt-nontimed');
+    expect(() =>
+      advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 1, ...CTX }),
+    ).toThrow(/non-world timer/);
+    expect(
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get(),
+    ).toEqual({ elapsed_minutes: 0 });
+    expect(combatInstanceId).toBeTruthy();
+    db.close();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // createActiveEffect: grounding, licensing, validation-before-mutation
 // ---------------------------------------------------------------------------

@@ -1280,6 +1280,7 @@ export {
 } from './state/progression.js';
 export type {
   AdvanceWorldTimeInput,
+  ClosedShortRestRecovery,
   CompleteRestInput,
   HitDicePool,
   LongRestQualification,
@@ -1292,6 +1293,7 @@ export type {
 } from './state/rest.js';
 export {
   advanceWorldTime,
+  closeOpenShortRestRecoveryWindows,
   completeLongRest,
   completeShortRest,
   finishShortRestRecovery,

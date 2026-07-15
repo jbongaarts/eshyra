@@ -138,7 +138,9 @@ Deterministic expiry evaluation:
   and live rows with missing or inconsistent evidence fail closed. The single
   `advanceWorldTime` operation expires due effects at or beyond the deadline;
   explicit `expired` endings before that boundary are rejected. A missing clock
-  is an error, not an implicit zero.
+  is an error, not an implicit zero. Migration-13 historical ended world timers
+  may retain null elapsed evidence as a legacy terminal record; live timers and
+  ended rows with partial evidence remain fail-closed.
   Turn-relative timers use `combat_turn_budget.turns_taken`: the anchor ordinal
   is completed turns plus one when the anchor participant is currently active,
   otherwise completed turns; the deadline ordinal is anchor ordinal plus
@@ -301,6 +303,18 @@ better-sqlite3's transaction wrapper, so an inner operation uses a savepoint:
 an inner failure can be caught and rolled back while the outer mutation
 continues, whereas an uncaught inner failure rolls back the complete outer
 transaction.
+
+Short-rest Hit Die recovery is a bounded decision window. It opens only after
+the rest's time advancement and all rest hooks commit within the transaction.
+The window remains available across model turns while the world clock is still
+at that rest's end and no combat is active. Any later elapsed-time advancement
+or combat start closes all open windows; explicit recovery completion closes
+only the named participant's window.
+
+`clock.in_game_time_elapsed_minutes` records when the narrative label was last
+explicitly synchronized. Elapsed-time advancement without a replacement label
+marks the label stale; `update_clock` changes the synchronization minute only
+when it sets a new label, not when it changes location.
 
 ## 7. Determinism & replay
 

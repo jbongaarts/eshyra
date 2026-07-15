@@ -152,6 +152,7 @@ const CLOCK_FIELDS: Record<string, FieldDescriptor> = {
   in_game_time: { kind: 'text', nullable: false },
   current_location_id: { kind: 'text', nullable: true },
   elapsed_minutes: { kind: 'integer', min: 0 },
+  in_game_time_elapsed_minutes: { kind: 'integer', min: 0 },
 };
 
 export class MutateStateError extends Error {

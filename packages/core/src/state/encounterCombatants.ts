@@ -21,6 +21,7 @@ import {
   breakCombatantConcentration,
 } from './activeEffects.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
+import { closeOpenShortRestRecoveryWindows } from './rest.js';
 
 export type CombatInstanceStatus =
   | 'active'
@@ -834,6 +835,14 @@ export function startEncounter(
   db: Db,
   input: StartEncounterInput,
 ): StartEncounterResult {
+  return withTransaction(db, (txnDb) => startEncounterInTxn(txnDb, input));
+}
+
+function startEncounterInTxn(
+  db: Db,
+  input: StartEncounterInput,
+): StartEncounterResult {
+  closeOpenShortRestRecoveryWindows(db, input.campaignId);
   requireNoActiveInstance(db, input.campaignId);
   const source = findEncounterInActiveRun(db, input);
   const combatInstanceId =

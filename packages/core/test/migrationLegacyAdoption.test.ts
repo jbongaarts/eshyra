@@ -2,7 +2,12 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { advanceWorldTime, endActiveEffect } from '../src/internal.js';
+import {
+  advanceWorldTime,
+  auditActiveEffectIntegrity,
+  endActiveEffect,
+  listActiveEffects,
+} from '../src/internal.js';
 import type { Db } from '../src/persistence/db.js';
 import { openDatabase } from '../src/persistence/db.js';
 import {
@@ -222,6 +227,42 @@ describe('migration 0013 elapsed-world transition', () => {
       'session-1',
       NOW(),
     );
+    db.prepare(
+      `INSERT INTO active_effect_event(
+        campaign_id, effect_id, seq, event_kind, detail_json,
+        occurred_at, provenance, session_id
+      ) VALUES (?, ?, 1, 'created', '{}', ?, ?, ?),
+               (?, ?, 2, 'ended', '{}', ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'fx-legacy-ended-hour',
+      NOW(),
+      'test:migration',
+      'session-1',
+      'campaign-1',
+      'fx-legacy-ended-hour',
+      NOW(),
+      'test:migration',
+      'session-1',
+    );
+    db.prepare(
+      `INSERT INTO active_effect(
+        campaign_id, effect_id, kind, display_name, source_kind,
+        duration_kind, duration_amount, duration_unit, anchor_kind, anchor_at,
+        status, end_reason, ended_at, created_at, provenance, session_id, updated_at
+      ) VALUES (?, ?, 'condition-package', ?, 'ruling', 'timed', 1, 'hour',
+        'effect-created', ?, 'ended', 'dismissed', ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'fx-legacy-ended-hour',
+      'Legacy ended hour',
+      NOW(),
+      NOW(),
+      NOW(),
+      'test:migration',
+      'session-1',
+      NOW(),
+    );
     expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([13]);
     expect(
       db
@@ -230,6 +271,20 @@ describe('migration 0013 elapsed-world transition', () => {
         )
         .get('fx-legacy-hour'),
     ).toEqual({ anchor_elapsed_minutes: 0, deadline_elapsed_minutes: 60 });
+    expect(
+      listActiveEffects(db, 'campaign-1', { includeEnded: true }).some(
+        (effect) => effect.effectId === 'fx-legacy-ended-hour',
+      ),
+    ).toBe(true);
+    expect(auditActiveEffectIntegrity(db, 'campaign-1')).toEqual([]);
+    db.prepare(
+      'UPDATE active_effect SET anchor_elapsed_minutes=0 WHERE effect_id=?',
+    ).run('fx-legacy-ended-hour');
+    expect(auditActiveEffectIntegrity(db, 'campaign-1')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ effectId: 'fx-legacy-ended-hour' }),
+      ]),
+    );
     expect(() =>
       endActiveEffect(db, {
         campaignId: 'campaign-1',

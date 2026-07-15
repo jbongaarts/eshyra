@@ -5,6 +5,7 @@ import {
   advanceWorldTime,
   completeLongRest,
   completeShortRest,
+  createActiveEffect,
   createDefaultToolRegistry,
   createSeededRng,
   createSqliteCharacterSheetStore,
@@ -17,8 +18,15 @@ import {
   spendRestHitDie,
   spendSpellSlot,
   spendUsage,
+  startEncounter,
   syncSpellSlots,
+  updateClock,
 } from '../src/internal.js';
+import {
+  assembleContext,
+  readStateSnapshot,
+  renderContextMessage,
+} from '../src/orchestrator/contextAssembler.js';
 import { playerVisibleRollEntries } from '../src/orchestrator/playerVisibleRollLedger.js';
 import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
 import {
@@ -123,6 +131,138 @@ function setupCharacters(): ReturnType<typeof freshDbWithSession> {
 }
 
 describe('F7 rest qualification boundary', () => {
+  it('keeps short-rest recovery open only until time or combat transitions', () => {
+    const db = setupCharacters();
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'window-short',
+      participants: ['pc-1', 'pc-2'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT character_id, short_recovery_open FROM rest_participant WHERE rest_id=? ORDER BY character_id',
+        )
+        .all('window-short'),
+    ).toEqual([
+      { character_id: 'pc-1', short_recovery_open: 1 },
+      { character_id: 'pc-2', short_recovery_open: 1 },
+    ]);
+    spendRestHitDie(db, {
+      ...CTX,
+      restId: 'window-short',
+      characterId: 'pc-1',
+      rng: createSeededRng(1),
+    });
+    finishShortRestRecovery(db, CTX.campaignId, 'window-short', 'pc-1', CTX);
+    expect(() =>
+      spendRestHitDie(db, {
+        ...CTX,
+        restId: 'window-short',
+        characterId: 'pc-1',
+        rng: createSeededRng(1),
+      }),
+    ).toThrow(/closed/);
+    expect(() =>
+      spendRestHitDie(db, {
+        ...CTX,
+        restId: 'window-short',
+        characterId: 'pc-2',
+        rng: createSeededRng(1),
+      }),
+    ).not.toThrow();
+    db.close();
+  });
+
+  it('closes all older recovery windows on world-time advancement', () => {
+    const db = setupCharacters();
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'window-timeout',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    const result = advanceWorldTime(db, { ...CTX, minutes: 1 });
+    expect(result.closedRecoveryWindows).toEqual([
+      { restId: 'window-timeout', characterId: 'pc-1' },
+    ]);
+    expect(() =>
+      spendRestHitDie(db, {
+        ...CTX,
+        restId: 'window-timeout',
+        characterId: 'pc-1',
+        rng: createSeededRng(1),
+      }),
+    ).toThrow(/closed/);
+    db.close();
+  });
+
+  it('closes recovery before combat becomes active', () => {
+    const db = setupCharacters();
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'window-combat',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    startEncounter(db, {
+      campaignId: CTX.campaignId,
+      combatInstanceId: 'combat-window',
+      provenance: CTX.provenance,
+      sessionId: CTX.sessionId,
+      at: CTX.at,
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT short_recovery_open FROM rest_participant WHERE rest_id=? AND character_id=?',
+        )
+        .get('window-combat', 'pc-1'),
+    ).toEqual({ short_recovery_open: 0 });
+    expect(() =>
+      spendRestHitDie(db, {
+        ...CTX,
+        restId: 'window-combat',
+        characterId: 'pc-1',
+        rng: createSeededRng(1),
+      }),
+    ).toThrow(/closed/);
+    db.close();
+  });
+
+  it('derives durable label freshness for advancement and update_clock', () => {
+    const db = setupCharacters();
+    const stale = advanceWorldTime(db, { ...CTX, minutes: 1 });
+    expect(stale.narrativeLabelStale).toBe(true);
+    expect(
+      renderContextMessage(
+        assembleContext({
+          db,
+          campaignId: CTX.campaignId,
+          sessionId: CTX.sessionId,
+          playerInput: '',
+          actingCharacterId: 'pc-1',
+        }),
+      ),
+    ).toContain('narrative label unchanged/stale');
+    updateClock(db, { locationId: 'tavern' }, CTX);
+    expect(
+      readStateSnapshot(db, 'pc-1', CTX.campaignId).clock.narrativeLabelStale,
+    ).toBe(true);
+    updateClock(db, { inGameTime: 'Day 1, noon' }, CTX);
+    expect(
+      readStateSnapshot(db, 'pc-1', CTX.campaignId).clock.narrativeLabelStale,
+    ).toBe(false);
+    const relabeled = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      inGameTimeLabel: 'Day 1, afternoon',
+    });
+    expect(relabeled.narrativeLabelStale).toBe(false);
+    db.close();
+  });
+
   it('renders the real one-die Hit Die tool result with canonical Constitution', () => {
     const db = setupCharacters();
     completeShortRest(db, {
@@ -156,6 +296,91 @@ describe('F7 rest qualification boundary', () => {
     const entries = playerVisibleRollEntries([call]);
     expect(entries[0]?.detail).toContain('+ 2 CON');
     expect(entries[0]?.detail).toContain('recoverable');
+    db.close();
+  });
+
+  it('renders real Hit Die clamp and maximum-HP cap evidence', () => {
+    const db = setupCharacters();
+    const base = sheet('class:warlock');
+    const negative = {
+      ...base,
+      abilityScores: {
+        ...base.abilityScores,
+        constitution: { base: 8, final: 8, modifier: -2 },
+      },
+    } as CharacterSheet;
+    createSqliteCharacterSheetStore(db).save('pc-1', negative);
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'ledger-clamp',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    const clampResult = createDefaultToolRegistry()
+      .get('spend_rest_hit_die')
+      ?.run(
+        { restId: 'ledger-clamp' },
+        {
+          db,
+          rng: { nextInt: () => 0 },
+          campaignId: CTX.campaignId,
+          sessionId: CTX.sessionId,
+          turnId: 'ledger-clamp-turn',
+          at: CTX.at,
+          actingCharacterId: 'pc-1',
+        },
+      );
+    const clampEntry = playerVisibleRollEntries([
+      {
+        tool: 'spend_rest_hit_die',
+        args: { restId: 'ledger-clamp' },
+        result: clampResult,
+        mutates: true,
+        source: 'native',
+      } as ExecutedToolCall,
+    ])[0];
+    expect(clampEntry?.detail).toContain('minimum 0 clamp');
+
+    const capDb = setupCharacters();
+    mutateState(capDb, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_current',
+      op: 'set',
+      value: 19,
+      ...CTX,
+    });
+    completeShortRest(capDb, {
+      ...CTX,
+      restId: 'ledger-cap',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    const capResult = createDefaultToolRegistry()
+      .get('spend_rest_hit_die')
+      ?.run(
+        { restId: 'ledger-cap' },
+        {
+          db: capDb,
+          rng: { nextInt: () => 7 },
+          campaignId: CTX.campaignId,
+          sessionId: CTX.sessionId,
+          turnId: 'ledger-cap-turn',
+          at: CTX.at,
+          actingCharacterId: 'pc-1',
+        },
+      );
+    const capEntry = playerVisibleRollEntries([
+      {
+        tool: 'spend_rest_hit_die',
+        args: { restId: 'ledger-cap' },
+        result: capResult,
+        mutates: true,
+        source: 'native',
+      } as ExecutedToolCall,
+    ])[0];
+    expect(capEntry?.detail).toContain('HP maximum cap');
+    capDb.close();
     db.close();
   });
 
@@ -248,6 +473,134 @@ describe('F7 rest qualification boundary', () => {
         rng: createSeededRng(1),
       }),
     ).toThrow(/closed/);
+    db.close();
+  });
+
+  it('returns elapsed-world effects expired during a short rest', () => {
+    const db = setupCharacters();
+    createActiveEffect(db, {
+      campaignId: CTX.campaignId,
+      effectId: 'rest-expiring-effect',
+      kind: 'condition-package',
+      displayName: 'Rest expiring effect',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    const result = completeShortRest(db, {
+      ...CTX,
+      restId: 'rest-expiry-result',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    }) as {
+      expiredEffects: Array<{
+        effectId: string;
+        deadlineElapsedMinutes: number;
+      }>;
+    };
+    expect(result.expiredEffects).toEqual([
+      expect.objectContaining({
+        effectId: 'rest-expiring-effect',
+        deadlineElapsedMinutes: 60,
+      }),
+    ]);
+    db.close();
+  });
+
+  it('rolls back clock, effect cleanup, rest state, resources, and conditions on a late failure', () => {
+    const db = setupCharacters();
+    syncSpellSlots(db, { ...CTX, characterId: 'pc-1' });
+    spendSpellSlot(db, { ...CTX, characterId: 'pc-1', spellLevel: 1 });
+    spendUsage(db, {
+      ...CTX,
+      owner: { kind: 'character', ref: 'pc-1' },
+      ability: 'Second Wind',
+      declared: { maxUses: 1, reset: 'short_rest' },
+    });
+    addCondition(
+      db,
+      { id: 'exhaustion', level: 2 },
+      { ...CTX, characterId: 'pc-1' },
+    );
+    grantTemporaryHp(db, 5, { ...CTX, characterId: 'pc-1' });
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'rollback-short',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    spendRestHitDie(db, {
+      ...CTX,
+      restId: 'rollback-short',
+      characterId: 'pc-1',
+      rng: createSeededRng(1),
+    });
+    finishShortRestRecovery(db, CTX.campaignId, 'rollback-short', 'pc-1', CTX);
+    createActiveEffect(db, {
+      campaignId: CTX.campaignId,
+      effectId: 'rollback-effect',
+      kind: 'condition-package',
+      displayName: 'Rollback effect',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 8,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      targets: [{ kind: 'character', ref: 'pc-1' }],
+      ...CTX,
+    });
+    db.prepare(
+      'UPDATE character SET conditions_json=\'[{"id":"exhaustion","level":0}]\' WHERE id=\'pc-1\'',
+    ).run();
+    const snapshot = (table: string, where = '') =>
+      db.prepare(`SELECT * FROM ${table} ${where}`).all();
+    const before = {
+      clock: snapshot('clock'),
+      effects: snapshot('active_effect'),
+      targets: snapshot('active_effect_target'),
+      links: snapshot('active_effect_link'),
+      events: snapshot('active_effect_event'),
+      rests: snapshot('rest_event'),
+      participants: snapshot('rest_participant'),
+      character: snapshot('character', "WHERE id='pc-1'"),
+      slots: snapshot('character_spell_slot'),
+      usage: snapshot('entity_usage_counter'),
+      hitDice: snapshot('character_hit_dice'),
+    };
+    expect(() =>
+      completeLongRest(db, {
+        ...CTX,
+        restId: 'rollback-long',
+        participants: ['pc-1'],
+        qualification: {
+          durationMinutes: 480,
+          sleepMinutes: 360,
+          lightActivityMinutes: 0,
+          strenuousInterruptionMinutes: 0,
+          foodAndDrink: true,
+        },
+      }),
+    ).toThrow(/malformed exhaustion/);
+    expect({
+      clock: snapshot('clock'),
+      effects: snapshot('active_effect'),
+      targets: snapshot('active_effect_target'),
+      links: snapshot('active_effect_link'),
+      events: snapshot('active_effect_event'),
+      rests: snapshot('rest_event'),
+      participants: snapshot('rest_participant'),
+      character: snapshot('character', "WHERE id='pc-1'"),
+      slots: snapshot('character_spell_slot'),
+      usage: snapshot('entity_usage_counter'),
+      hitDice: snapshot('character_hit_dice'),
+    }).toEqual(before);
     db.close();
   });
 
@@ -372,6 +725,189 @@ describe('F7 rest qualification boundary', () => {
         },
       }),
     ).not.toThrow();
+    db.close();
+  });
+
+  it('compares long-rest benefits at 1,439 and 1,440 elapsed minutes', () => {
+    const db = setupCharacters();
+    const qualification = {
+      durationMinutes: 480,
+      sleepMinutes: 360,
+      lightActivityMinutes: 0,
+      strenuousInterruptionMinutes: 0,
+      foodAndDrink: false,
+    };
+    completeLongRest(db, {
+      ...CTX,
+      restId: 'benefit-a',
+      participants: ['pc-1'],
+      qualification,
+    });
+    advanceWorldTime(db, { ...CTX, minutes: 959 });
+    expect(() =>
+      completeLongRest(db, {
+        ...CTX,
+        restId: 'benefit-too-soon',
+        participants: ['pc-1'],
+        qualification,
+      }),
+    ).toThrow(/within 24/);
+    advanceWorldTime(db, { ...CTX, minutes: 1 });
+    expect(() =>
+      completeLongRest(db, {
+        ...CTX,
+        restId: 'benefit-exact',
+        participants: ['pc-1'],
+        qualification,
+      }),
+    ).not.toThrow();
+    db.close();
+
+    const scoped = setupCharacters();
+    completeLongRest(scoped, {
+      ...CTX,
+      restId: 'benefit-scoped-a',
+      participants: ['pc-1'],
+      qualification,
+    });
+    advanceWorldTime(scoped, { ...CTX, minutes: 959 });
+    expect(() =>
+      completeLongRest(scoped, {
+        ...CTX,
+        restId: 'benefit-scoped-both',
+        participants: ['pc-1', 'pc-2'],
+        qualification,
+      }),
+    ).toThrow(/within 24/);
+    expect(() =>
+      completeLongRest(scoped, {
+        ...CTX,
+        restId: 'benefit-scoped-only-b',
+        participants: ['pc-2'],
+        qualification,
+      }),
+    ).not.toThrow();
+    scoped.close();
+  });
+
+  it('makes the rest narrative label part of immutable rest-id delivery', () => {
+    const db = setupCharacters();
+    const qualification = { durationMinutes: 60, strenuousActivity: false };
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'label-same',
+      participants: ['pc-1'],
+      qualification,
+      inGameTimeLabel: 'Day 1, noon',
+    });
+    expect(() =>
+      completeShortRest(db, {
+        ...CTX,
+        restId: 'label-same',
+        participants: ['pc-1'],
+        qualification,
+        inGameTimeLabel: 'Day 1, noon',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      completeShortRest(db, {
+        ...CTX,
+        restId: 'label-same',
+        participants: ['pc-1'],
+        qualification,
+        inGameTimeLabel: 'Day 1, afternoon',
+      }),
+    ).toThrow(/reuse/);
+    const omitted = setupCharacters();
+    completeShortRest(omitted, {
+      ...CTX,
+      restId: 'label-omitted',
+      participants: ['pc-1'],
+      qualification,
+    });
+    expect(() =>
+      completeShortRest(omitted, {
+        ...CTX,
+        restId: 'label-omitted',
+        participants: ['pc-1'],
+        qualification,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      completeShortRest(omitted, {
+        ...CTX,
+        restId: 'label-omitted',
+        participants: ['pc-1'],
+        qualification,
+        inGameTimeLabel: 'Day 1, noon',
+      }),
+    ).toThrow(/reuse/);
+    omitted.close();
+    db.close();
+  });
+
+  it('reports final Hit Dice after a level-four long-rest restoration', () => {
+    const db = setupCharacters();
+    const store = createSqliteCharacterSheetStore(db);
+    store.save('pc-1', sheet('class:warlock', 4));
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'level',
+      op: 'set',
+      value: 4,
+      ...CTX,
+    });
+    const pool = readHitDice(db, 'pc-1', CTX);
+    db.prepare(
+      'UPDATE character_hit_dice SET dice_used=4 WHERE character_id=?',
+    ).run('pc-1');
+    const result = completeLongRest(db, {
+      ...CTX,
+      restId: 'level-four-long',
+      participants: ['pc-1'],
+      qualification: {
+        durationMinutes: 480,
+        sleepMinutes: 360,
+        lightActivityMinutes: 0,
+        strenuousInterruptionMinutes: 0,
+        foodAndDrink: false,
+      },
+    }) as { recovery?: unknown; hitDiceRestored: Record<string, unknown> };
+    expect(pool.diceMaximum).toBe(4);
+    expect(readHitDice(db, 'pc-1', CTX).diceRemaining).toBe(2);
+    expect(result.hitDiceRestored['pc-1']).toMatchObject({
+      restored: 2,
+      remainingHitDice: 2,
+    });
+    expect(result.recovery).toEqual({});
+    db.close();
+  });
+
+  it('does not reduce exhaustion when a long rest lacks food and drink', () => {
+    const db = setupCharacters();
+    addCondition(
+      db,
+      { id: 'exhaustion', level: 2 },
+      { ...CTX, characterId: 'pc-1' },
+    );
+    completeLongRest(db, {
+      ...CTX,
+      restId: 'no-food-long',
+      participants: ['pc-1'],
+      qualification: {
+        durationMinutes: 480,
+        sleepMinutes: 360,
+        lightActivityMinutes: 0,
+        strenuousInterruptionMinutes: 0,
+        foodAndDrink: false,
+      },
+    });
+    expect(
+      db.prepare("SELECT conditions_json FROM character WHERE id='pc-1'").get(),
+    ).toEqual({
+      conditions_json: '[{"id":"exhaustion","level":2}]',
+    });
     db.close();
   });
 

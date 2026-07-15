@@ -1,6 +1,8 @@
 -- F7: structured world time, hit dice, and durable rest events.
 ALTER TABLE clock ADD COLUMN elapsed_minutes INTEGER NOT NULL DEFAULT 0
   CHECK (elapsed_minutes >= 0);
+ALTER TABLE clock ADD COLUMN in_game_time_elapsed_minutes INTEGER NOT NULL DEFAULT 0
+  CHECK (in_game_time_elapsed_minutes >= 0);
 
 ALTER TABLE active_effect ADD COLUMN anchor_elapsed_minutes INTEGER
   CHECK (anchor_elapsed_minutes IS NULL OR anchor_elapsed_minutes >= 0);
@@ -41,6 +43,7 @@ CREATE TABLE rest_event (
   end_elapsed_minutes INTEGER NOT NULL CHECK (end_elapsed_minutes >= start_elapsed_minutes),
   declared_duration_minutes INTEGER NOT NULL CHECK (declared_duration_minutes >= 0),
   qualification_json TEXT NOT NULL,
+  narrative_label TEXT,
   status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed', 'failed')),
   benefits_json TEXT NOT NULL DEFAULT '{}',
   provenance TEXT NOT NULL,

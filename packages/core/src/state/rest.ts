@@ -11,6 +11,7 @@ import {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,
 } from '../rules/binding.js';
+import type { ExpiredWorldEffectSummary } from './activeEffects.js';
 import { expireElapsedWorldEffects } from './activeEffects.js';
 import { adjustHp, expireTemporaryHp, type LifeState } from './hpLifecycle.js';
 import { mutateState } from './mutateState.js';
@@ -33,7 +34,12 @@ export interface WorldClock {
   elapsedMinutes: number;
   inGameTime?: string;
   narrativeLabelStale: boolean;
-  expiredEffects: readonly unknown[];
+  expiredEffects: readonly ExpiredWorldEffectSummary[];
+  closedRecoveryWindows: readonly ClosedShortRestRecovery[];
+}
+export interface ClosedShortRestRecovery {
+  restId: string;
+  characterId: string;
 }
 export interface OpenShortRestRecovery {
   restId: string;
@@ -94,15 +100,53 @@ function int(value: unknown, label: string, min = 0): number {
 interface ClockState {
   elapsedMinutes: number;
   inGameTime?: string;
+  labelElapsedMinutes: number;
 }
 function clock(db: Db): ClockState {
   const row = db
-    .prepare('SELECT elapsed_minutes, in_game_time FROM clock WHERE id = 1')
-    .get() as { elapsed_minutes?: number; in_game_time: string } | undefined;
+    .prepare(
+      'SELECT elapsed_minutes, in_game_time, in_game_time_elapsed_minutes FROM clock WHERE id = 1',
+    )
+    .get() as
+    | {
+        elapsed_minutes?: number;
+        in_game_time: string;
+        in_game_time_elapsed_minutes?: number;
+      }
+    | undefined;
   if (!row) throw new RestError('campaign clock is missing');
   const elapsedMinutes = row.elapsed_minutes ?? 0;
   int(elapsedMinutes, 'clock elapsed_minutes');
-  return { elapsedMinutes, inGameTime: row.in_game_time || undefined };
+  const labelElapsedMinutes = row.in_game_time_elapsed_minutes ?? 0;
+  int(labelElapsedMinutes, 'clock in_game_time_elapsed_minutes');
+  return {
+    elapsedMinutes,
+    inGameTime: row.in_game_time || undefined,
+    labelElapsedMinutes,
+  };
+}
+
+function closeOpenShortRestRecoveries(
+  db: Db,
+  campaignId: string,
+): ClosedShortRestRecovery[] {
+  const rows = db
+    .prepare(
+      'SELECT rest_id AS restId, character_id AS characterId FROM rest_participant WHERE campaign_id=? AND short_recovery_open=1 ORDER BY rest_id, character_id',
+    )
+    .all(campaignId) as ClosedShortRestRecovery[];
+  if (rows.length > 0)
+    db.prepare(
+      'UPDATE rest_participant SET short_recovery_open=0 WHERE campaign_id=? AND short_recovery_open=1',
+    ).run(campaignId);
+  return rows;
+}
+
+export function closeOpenShortRestRecoveryWindows(
+  db: Db,
+  campaignId: string,
+): readonly ClosedShortRestRecovery[] {
+  return closeOpenShortRestRecoveries(db, campaignId);
 }
 
 /** The only operation that advances the structured world timeline. */
@@ -116,6 +160,10 @@ export function advanceWorldTime(
     const next = before.elapsedMinutes + minutes;
     if (!Number.isSafeInteger(next))
       throw new RestError('world clock would exceed safe integer range');
+    const closedRecoveryWindows = closeOpenShortRestRecoveries(
+      txn,
+      input.campaignId,
+    );
     mutateState(txn, {
       target: 'clock',
       field: 'elapsed_minutes',
@@ -131,6 +179,14 @@ export function advanceWorldTime(
         value: input.inGameTimeLabel,
         ...input,
       });
+    if (input.inGameTimeLabel !== undefined)
+      mutateState(txn, {
+        target: 'clock',
+        field: 'in_game_time_elapsed_minutes',
+        op: 'set',
+        value: next,
+        ...input,
+      });
     const expiredEffects = expireElapsedWorldEffects(txn, {
       campaignId: input.campaignId,
       elapsedMinutes: next,
@@ -142,8 +198,12 @@ export function advanceWorldTime(
       previousElapsedMinutes: before.elapsedMinutes,
       elapsedMinutes: next,
       inGameTime: input.inGameTimeLabel ?? before.inGameTime,
-      narrativeLabelStale: input.inGameTimeLabel === undefined,
+      narrativeLabelStale:
+        (input.inGameTimeLabel === undefined
+          ? before.labelElapsedMinutes
+          : next) !== next,
       expiredEffects,
+      closedRecoveryWindows,
     };
   });
 }
@@ -425,12 +485,13 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
     validateQualification(kind, normalizedQualification);
     const existing = txn
       .prepare(
-        'SELECT kind, qualification_json, status, end_elapsed_minutes FROM rest_event WHERE campaign_id = ? AND rest_id = ?',
+        'SELECT kind, qualification_json, narrative_label, status, end_elapsed_minutes FROM rest_event WHERE campaign_id = ? AND rest_id = ?',
       )
       .get(input.campaignId, input.restId) as
       | {
           kind: RestKind;
           qualification_json: string;
+          narrative_label: string | null;
           status: string;
           end_elapsed_minutes: number;
         }
@@ -440,6 +501,9 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         existing.kind !== kind ||
         existing.qualification_json !==
           qualificationJson(normalizedQualification) ||
+        (existing.narrative_label === null
+          ? input.inGameTimeLabel !== undefined
+          : existing.narrative_label !== input.inGameTimeLabel) ||
         existing.status !== 'completed'
       )
         throw new RestError('conflicting or incomplete rest-id reuse');
@@ -489,7 +553,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
     }
     txn
       .prepare(
-        `INSERT INTO rest_event(campaign_id, rest_id, kind, start_elapsed_minutes, end_elapsed_minutes, declared_duration_minutes, qualification_json, status, provenance, session_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'in_progress', ?, ?, ?, ?)`,
+        `INSERT INTO rest_event(campaign_id, rest_id, kind, start_elapsed_minutes, end_elapsed_minutes, declared_duration_minutes, qualification_json, narrative_label, status, provenance, session_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'in_progress', ?, ?, ?, ?)`,
       )
       .run(
         input.campaignId,
@@ -499,6 +563,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         end,
         normalizedQualification.durationMinutes,
         qualificationJson(normalizedQualification),
+        input.inGameTimeLabel ?? null,
         input.provenance,
         input.sessionId,
         input.at,
@@ -507,22 +572,9 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
     for (const s of states)
       txn
         .prepare(
-          'UPDATE rest_participant SET short_recovery_open=0 WHERE campaign_id=? AND character_id=? AND short_recovery_open=1',
-        )
-        .run(input.campaignId, s.id);
-    for (const s of states)
-      txn
-        .prepare(
           'INSERT INTO rest_participant(campaign_id, rest_id, character_id, start_hp, start_life_state, short_recovery_open) VALUES (?, ?, ?, ?, ?, ?)',
         )
-        .run(
-          input.campaignId,
-          input.restId,
-          s.id,
-          s.hp,
-          s.life,
-          kind === 'short' ? 1 : 0,
-        );
+        .run(input.campaignId, input.restId, s.id, s.hp, s.life, 0);
     const time = advanceWorldTime(txn, {
       ...input,
       minutes: normalizedQualification.durationMinutes,
@@ -543,16 +595,19 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
       expiredEffects: time.expiredEffects,
       previousElapsedMinutes: time.previousElapsedMinutes,
       elapsedMinutes: time.elapsedMinutes,
+      inGameTime: time.inGameTime,
       narrativeLabelStale: time.narrativeLabelStale,
+      closedRecoveryWindows: time.closedRecoveryWindows,
     };
     for (const s of states) {
       const pool = resolvePool(txn, s.id, input);
-      benefits.recovery[s.id] = {
-        characterId: s.id,
-        remainingHitDice: pool.diceRemaining,
-        hitDieFaces: pool.dieFaces,
-        recoveryOpen: kind === 'short',
-      };
+      if (kind === 'short')
+        benefits.recovery[s.id] = {
+          characterId: s.id,
+          remainingHitDice: pool.diceRemaining,
+          hitDieFaces: pool.dieFaces,
+          recoveryOpen: true,
+        };
       if (kind === 'long') {
         const healed = adjustHp(txn, s.max - s.hp, {
           ...input,
@@ -566,9 +621,14 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
             'UPDATE character_hit_dice SET dice_used = dice_used - ?, provenance = ?, session_id = ?, updated_at = ? WHERE character_id = ?',
           )
           .run(restored, input.provenance, input.sessionId, input.at, s.id);
+        const finalPool = resolvePool(txn, s.id, input);
         benefits.hpRestored[s.id] = healed.newHp - s.hp;
         benefits.temporaryHpRemoved[s.id] = temp.previousTempHp;
-        benefits.hitDiceRestored[s.id] = restored;
+        benefits.hitDiceRestored[s.id] = {
+          restored,
+          remainingHitDice: finalPool.diceRemaining,
+          diceMaximum: finalPool.diceMaximum,
+        };
         benefits.slotsRestored[s.id] = restoreSpellSlots(txn, {
           ...input,
           characterId: s.id,
@@ -605,6 +665,12 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         }).reset;
       }
     }
+    if (kind === 'short')
+      txn
+        .prepare(
+          'UPDATE rest_participant SET short_recovery_open=1 WHERE campaign_id=? AND rest_id=?',
+        )
+        .run(input.campaignId, input.restId);
     txn
       .prepare(
         "UPDATE rest_event SET status='completed', benefits_json=?, updated_at=? WHERE campaign_id=? AND rest_id=?",
@@ -624,12 +690,27 @@ export function spendRestHitDie(db: Db, input: SpendHitDieInput): unknown {
   return withTransaction(db, (txn) => {
     const row = txn
       .prepare(
-        "SELECT 1 FROM rest_event r JOIN rest_participant p USING(campaign_id, rest_id) WHERE r.campaign_id=? AND r.rest_id=? AND r.kind='short' AND r.status='completed' AND p.character_id=? AND p.short_recovery_open=1",
+        "SELECT r.end_elapsed_minutes FROM rest_event r JOIN rest_participant p USING(campaign_id, rest_id) WHERE r.campaign_id=? AND r.rest_id=? AND r.kind='short' AND r.status='completed' AND p.character_id=? AND p.short_recovery_open=1",
       )
       .get(input.campaignId, input.restId, input.characterId);
     if (!row)
       throw new RestError(
         'short-rest recovery window is closed or character was not a participant',
+      );
+    const activeCombat = txn
+      .prepare(
+        "SELECT 1 FROM combat_instance WHERE campaign_id=? AND status='active' LIMIT 1",
+      )
+      .get(input.campaignId);
+    if (activeCombat)
+      throw new RestError('cannot spend Hit Dice during combat');
+    const now = clock(txn);
+    if (
+      now.elapsedMinutes !==
+      (row as { end_elapsed_minutes: number }).end_elapsed_minutes
+    )
+      throw new RestError(
+        'short-rest recovery window expired when world time advanced',
       );
     const pool = resolvePool(txn, input.characterId, input);
     if (pool.diceRemaining < 1) throw new RestError('no Hit Dice remain');

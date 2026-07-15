@@ -275,6 +275,7 @@ interface ClockRow {
   in_game_time: string;
   current_location_id: string | null;
   elapsed_minutes: number;
+  in_game_time_elapsed_minutes: number;
 }
 
 interface KeyedJsonRow {
@@ -313,7 +314,7 @@ export function readStateSnapshot(
 
   const clock = db
     .prepare(
-      'SELECT in_game_time, current_location_id, elapsed_minutes FROM clock WHERE id = 1',
+      'SELECT in_game_time, current_location_id, elapsed_minutes, in_game_time_elapsed_minutes FROM clock WHERE id = 1',
     )
     .get() as ClockRow;
 
@@ -404,7 +405,8 @@ export function readStateSnapshot(
       inGameTime: clock.in_game_time,
       currentLocationId: clock.current_location_id ?? undefined,
       elapsedMinutes: clock.elapsed_minutes,
-      narrativeLabelStale: false,
+      narrativeLabelStale:
+        clock.in_game_time_elapsed_minutes !== clock.elapsed_minutes,
     },
   };
 }
