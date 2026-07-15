@@ -588,6 +588,8 @@ interface ActiveEffectRow {
   readonly anchor_kind: EffectAnchorKind | null;
   readonly anchor_at: string | null;
   readonly anchor_game_time: string | null;
+  readonly anchor_elapsed_minutes: number | null;
+  readonly deadline_elapsed_minutes: number | null;
   readonly anchor_combat_instance_id: string | null;
   readonly anchor_round: number | null;
   readonly anchor_participant_kind: EffectParticipantKind | null;
@@ -634,6 +636,7 @@ const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
   requires_concentration, concentration_owner_kind, concentration_owner_ref,
   duration_kind, duration_amount, duration_unit, anchor_kind, anchor_at,
   anchor_game_time, anchor_combat_instance_id, anchor_round,
+  anchor_elapsed_minutes, deadline_elapsed_minutes,
   anchor_participant_kind, anchor_participant_ref,
   anchor_participant_turn_ordinal, anchor_trigger, expiry_trigger,
   dismissible, status, end_reason, end_detail, ended_at, created_at`;
@@ -2557,6 +2560,24 @@ export function createActiveEffect(
       }
     }
 
+    const worldClock = txnDb
+      .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
+      .get() as { elapsed_minutes?: number } | undefined;
+    const worldAnchor =
+      duration.kind === 'timed' && duration.unit !== 'round'
+        ? (worldClock?.elapsed_minutes ?? 0)
+        : null;
+    const worldDeadline =
+      worldAnchor === null || duration.kind !== 'timed'
+        ? null
+        : worldAnchor +
+          (duration.amount as number) *
+            (duration.unit === 'minute'
+              ? 1
+              : duration.unit === 'hour'
+                ? 60
+                : 1440);
+
     // Targets.
     const targets = input.targets ?? [];
     const seenTargets = new Set<string>();
@@ -2779,13 +2800,14 @@ export function createActiveEffect(
            requires_concentration, concentration_owner_kind,
            concentration_owner_ref, duration_kind, duration_amount,
            duration_unit, anchor_kind, anchor_at, anchor_game_time,
+           anchor_elapsed_minutes, deadline_elapsed_minutes,
            anchor_combat_instance_id, anchor_round,
            anchor_participant_kind, anchor_participant_ref,
            anchor_participant_turn_ordinal, anchor_trigger, expiry_trigger,
            dismissible, status, created_at, provenance, session_id,
            updated_at
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
       )
       .run(
@@ -2806,6 +2828,8 @@ export function createActiveEffect(
         duration.anchorKind,
         duration.anchorAt,
         duration.anchorGameTime,
+        worldAnchor,
+        worldDeadline,
         duration.anchorCombatInstanceId,
         duration.anchorRound,
         duration.anchorParticipantKind,
@@ -3881,6 +3905,40 @@ export interface ExpiredEffectSummary {
   readonly displayName: string;
   readonly deadlineRound: number;
   readonly cleanup: EffectCleanupSummary;
+}
+
+/** Expire minute/hour/day effects against the monotonic campaign timeline. */
+export function expireElapsedWorldEffects(
+  db: Db,
+  input: EffectMutationContext & { campaignId: string; elapsedMinutes: number },
+): ExpiredEffectSummary[] {
+  return withTransaction(db, (txnDb) => {
+    const rows = txnDb
+      .prepare(
+        `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id=? AND status IN ('active','suppressed') AND deadline_elapsed_minutes IS NOT NULL AND deadline_elapsed_minutes <= ? ORDER BY deadline_elapsed_minutes, created_at, effect_id`,
+      )
+      .all(input.campaignId, input.elapsedMinutes) as ActiveEffectRow[];
+    const expired: ExpiredEffectSummary[] = [];
+    for (const row of rows) {
+      const outcome = finalizeEnd(
+        txnDb,
+        row,
+        {
+          reason: 'expired',
+          note: `world-time deadline ${row.deadline_elapsed_minutes} reached`,
+        },
+        input,
+      );
+      if (outcome.performed)
+        expired.push({
+          effectId: row.effect_id,
+          displayName: row.display_name,
+          deadlineRound: 0,
+          cleanup: outcome.cleanup,
+        });
+    }
+    return expired;
+  });
 }
 
 /**

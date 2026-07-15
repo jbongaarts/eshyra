@@ -1093,6 +1093,7 @@ export {
   EFFECT_SOURCE_KINDS,
   endActiveEffect,
   expireElapsedRoundEffects,
+  expireElapsedWorldEffects,
   formatActiveEffect,
   getCharacterConcentration,
   getConcentrationEffect,
@@ -1276,6 +1277,24 @@ export {
   recordProgressionEvent,
   writeCampaignProgressionPolicy,
 } from './state/progression.js';
+export type {
+  AdvanceWorldTimeInput,
+  CompleteRestInput,
+  HitDicePool,
+  RestContext,
+  RestQualification,
+  SpendHitDieInput,
+  WorldClock,
+} from './state/rest.js';
+export {
+  advanceWorldTime,
+  completeLongRest,
+  completeShortRest,
+  finishShortRestRecovery,
+  RestError,
+  readHitDice,
+  spendRestHitDie,
+} from './state/rest.js';
 // Single-class Spellcasting and Pact Magic slot pools (F4).
 export type {
   RestoreSpellSlotsInput,

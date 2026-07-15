@@ -10,6 +10,10 @@ export function openDatabase(path: string): Db {
 }
 
 export function withTransaction<T>(db: Db, fn: (db: Db) => T): T {
+  // Domain operations compose inside a larger atomic operation (notably F7
+  // rest). better-sqlite3 does not permit nested BEGIN statements; reuse the
+  // ambient transaction when one is already active.
+  if (db.inTransaction) return fn(db);
   const txn = db.transaction(fn);
   return txn(db);
 }

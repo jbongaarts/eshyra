@@ -36,6 +36,7 @@ const CATEGORY_LABELS: Record<RollCategory, string> = {
   initiative: 'Initiative',
   saving_throw: 'Saving throw',
   death_save: 'Death save',
+  hit_die: 'Hit Die',
   ability_check: 'Ability check',
   other: 'Other',
 };

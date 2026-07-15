@@ -11,6 +11,7 @@ export const ROLL_CATEGORIES = [
   'initiative',
   'saving_throw',
   'death_save',
+  'hit_die',
   'ability_check',
   'other',
 ] as const;
