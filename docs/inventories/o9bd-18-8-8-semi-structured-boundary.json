@@ -9,9 +9,9 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1283,
+  "rowCount": 1284,
   "dispositionCounts": {
-    "complete": 339,
+    "complete": 340,
     "model-adjudicated": 742,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 3,
@@ -22276,7 +22276,8 @@
         "dice-per-slot",
         "flat-per-slot",
         "count-per-slot",
-        "threshold"
+        "threshold",
+        "selected-slot-value"
       ],
       "population": 105,
       "valueClass": "scalar-like",
@@ -22297,6 +22298,26 @@
       "fieldPath": "data.upcast.operations[].subject.application",
       "representativeValues": [
         "all-components"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
+      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
+      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].subject.cardinalityMode",
+      "representativeValues": [
+        "maximum-total"
       ],
       "population": 1,
       "valueClass": "scalar-like",

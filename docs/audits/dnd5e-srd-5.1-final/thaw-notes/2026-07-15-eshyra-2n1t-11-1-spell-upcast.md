@@ -19,6 +19,11 @@ Reviewed clause-level coverage pins complete multi-threshold schedules and
 independent branches. Qualifiers carry a minimum applicable slot, damage
 subjects distinguish choices from all-component transforms, and affected-HP
 pool dice remain separate from damage and flat healing points.
+Every reviewed projection is keyed by its exact spell, source page, and
+verbatim extracted clause, including the PDF text layer's split hyphen in
+Planar Binding. Etherealness preserves maximum-total cardinality and caster
+inclusion, Dispel Magic resolves its automatic spell-level threshold directly
+from the selected slot, and False Life emits flat temporary-hit-point scaling.
 
 Generated scope:
 
@@ -34,4 +39,4 @@ boundary inventory, and the canonical importer verification.
 
 Updated frozen `records.json` SHA-256:
 
-`c4e86f48a056c5dc3f07f4607198d72c9e8a4516fb0e403af849416de64edc5f`
+`5a6cbcf8ad35f96e2d2e4c70fa1c01309c819d0bf92b2ba41a2085ce9fc73e67`

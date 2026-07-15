@@ -27,6 +27,8 @@ export type UpcastSubject =
       readonly semanticId: string;
       readonly selection?: 'choose-one';
       readonly choiceGroup?: string;
+      readonly cardinalityMode?: 'maximum-total';
+      readonly includesCaster?: true;
       readonly property:
         | 'duration-hours'
         | 'hit-points'
@@ -41,6 +43,7 @@ export type UpcastSubject =
         | 'radius-feet'
         | 'bonus'
         | 'memory-age'
+        | 'temporary-hit-points'
         | 'other-quantity';
     };
 
@@ -71,6 +74,12 @@ export type UpcastOperation =
       readonly subject: UpcastSubject;
       readonly atSlotLevel: number;
       readonly value: string;
+    }
+  | {
+      readonly kind: 'selected-slot-value';
+      readonly subject: UpcastSubject;
+      readonly minSlotLevel: number;
+      readonly value: 'selected-slot-level';
     };
 
 export interface SpellUpcastSpec {
@@ -93,6 +102,71 @@ interface ReviewedProjection {
   readonly operations: readonly UpcastOperation[];
   readonly qualifier?: SpellUpcastSpec['qualifier'];
 }
+
+const REVIEWED_SOURCE_BINDINGS: Readonly<
+  Record<string, { readonly page: number; readonly text: string }>
+> = {
+  'dominate-beast': {
+    page: 137,
+    text: 'When you cast this spell with a 5th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 6th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 7th level or higher, the duration is concentration, up to 8 hours.',
+  },
+  'dominate-person': {
+    page: 138,
+    text: 'When you cast this spell using a 6th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 7th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 8th level or higher, the duration is concentration, up to 8 hours.',
+  },
+  'mass-suggestion': {
+    page: 163,
+    text: 'When you cast this spell using a 7th-level spell slot, the duration is 10 days. When you use an 8th-level spell slot, the duration is 30 days. When you use a 9th-level spell slot, the duration is a year and a day.',
+  },
+  'planar-binding': {
+    page: 168,
+    text: 'When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th- level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot.',
+  },
+  'modify-memory': {
+    page: 166,
+    text: 'If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level).',
+  },
+  'bestow-curse': {
+    page: 121,
+    text: 'If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.',
+  },
+  geas: {
+    page: 148,
+    text: 'When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.',
+  },
+  'hunters-mark': {
+    page: 155,
+    text: 'When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.',
+  },
+  'magic-weapon': {
+    page: 161,
+    text: 'When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2. When you use a spell slot of 6th level or higher, the bonus increases to +3.',
+  },
+  'create-or-destroy-water': {
+    page: 132,
+    text: 'When you cast this spell using a spell slot of 2nd level or higher, you create or destroy 10 additional gallons of water, or the size of the cube increases by 5 feet, for each slot level above 1st.',
+  },
+  'glyph-of-warding': {
+    page: 149,
+    text: 'When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.',
+  },
+  'wall-of-ice': {
+    page: 190,
+    text: 'When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.',
+  },
+  etherealness: {
+    page: 140,
+    text: 'When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell.',
+  },
+  'dispel-magic': {
+    page: 136,
+    text: 'When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used.',
+  },
+  'false-life': {
+    page: 142,
+    text: 'When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st.',
+  },
+};
 
 const SCHEDULE_VALUES: Readonly<
   Record<string, readonly { readonly slot: number; readonly value: string }[]>
@@ -149,6 +223,13 @@ function reviewedProjection(
   spellSlug: string,
   text: string,
 ): ReviewedProjection | undefined {
+  const binding = REVIEWED_SOURCE_BINDINGS[spellSlug];
+  if (binding === undefined) return undefined;
+  if (spell.sourcePage !== binding.page || text !== binding.text) {
+    throw new Error(
+      `reviewed upcast source drift for spell:${spellSlug}: expected p.${binding.page} ${JSON.stringify(binding.text)}, got p.${spell.sourcePage} ${JSON.stringify(text)}`,
+    );
+  }
   const schedule = SCHEDULE_VALUES[spellSlug];
   if (schedule !== undefined) {
     const property =
@@ -257,7 +338,59 @@ function reviewedProjection(
       ],
     };
   }
-  return undefined;
+  if (spellSlug === 'etherealness') {
+    return {
+      operations: [
+        {
+          kind: 'count-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: 'etherealness:willing-creature-maximum',
+            property: 'creature-count',
+            cardinalityMode: 'maximum-total',
+            includesCaster: true,
+          },
+          count: 3,
+          startSlotLevel: 7,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'dispel-magic') {
+    return {
+      operations: [
+        {
+          kind: 'selected-slot-value',
+          subject: {
+            kind: 'effect',
+            semanticId: 'dispel magic:automatic-spell-level-threshold',
+            property: 'spell-level-threshold',
+          },
+          minSlotLevel: 4,
+          value: 'selected-slot-level',
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'false-life') {
+    return {
+      operations: [
+        {
+          kind: 'flat-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: 'false life:temporary-hit-points',
+            property: 'temporary-hit-points',
+          },
+          amount: 5,
+          startSlotLevel: 1,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  throw new Error(`reviewed upcast projection missing for spell:${spellSlug}`);
 }
 
 const REVIEWED_CLAUSE_COVERAGE: Readonly<
@@ -275,6 +408,9 @@ const REVIEWED_CLAUSE_COVERAGE: Readonly<
   'create-or-destroy-water': { operationCount: 2, qualifier: false },
   'glyph-of-warding': { operationCount: 1, qualifier: true },
   'wall-of-ice': { operationCount: 2, qualifier: false },
+  etherealness: { operationCount: 1, qualifier: false },
+  'dispel-magic': { operationCount: 1, qualifier: false },
+  'false-life': { operationCount: 1, qualifier: false },
 };
 
 const S1_SUMMONS = new Set([

@@ -17,6 +17,26 @@ function spell(ref: string) {
   return record;
 }
 
+function compileRecordWithClause(ref: string, higherLevels: string) {
+  const record = spell(ref);
+  const data = record.data as Record<string, unknown>;
+  return compileSpellUpcast({
+    name: record.name,
+    level: data.level as number,
+    school: data.school as string,
+    ritual: data.ritual === true,
+    castingTime: data.castingTime as string,
+    range: data.range as string,
+    components: data.components as readonly string[],
+    duration: data.duration as string,
+    description: data.description as string,
+    higherLevels,
+    scalingSourceKind: 'higher-slot',
+    scalingSourceText: higherLevels,
+    sourcePage: Number(/p(?:p)?\.\s*(\d+)/i.exec(record.source)?.[1]),
+  });
+}
+
 describe('source-bound spell upcast resolver', () => {
   it('resolves dice-per-slot scaling exactly without rolling', () => {
     expect(resolveSpellUpcast(spell('spell:fireball'), 5)).toMatchObject({
@@ -403,6 +423,110 @@ describe('source-bound spell upcast resolver', () => {
       qualifier:
         'If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.',
     });
+  });
+
+  it('fails closed when any reviewed projection source tuple drifts', () => {
+    const reviewed = [
+      'spell:dominate-beast',
+      'spell:dominate-person',
+      'spell:mass-suggestion',
+      'spell:planar-binding',
+      'spell:modify-memory',
+      'spell:bestow-curse',
+      'spell:geas',
+      'spell:hunters-mark',
+      'spell:magic-weapon',
+      'spell:create-or-destroy-water',
+      'spell:glyph-of-warding',
+      'spell:wall-of-ice',
+      'spell:etherealness',
+      'spell:dispel-magic',
+      'spell:false-life',
+    ];
+    for (const ref of reviewed) {
+      const raw = (spell(ref).data as Record<string, unknown>)
+        .higherLevels as string;
+      expect(
+        () => compileRecordWithClause(ref, `${raw} Source drift.`),
+        ref,
+      ).toThrow(/reviewed upcast source drift/);
+    }
+  });
+
+  it('resolves Etherealness as a maximum total that includes the caster', () => {
+    expect(resolveSpellUpcast(spell('spell:etherealness'), 7)).toMatchObject({
+      hasHigherSlotBenefit: false,
+      adjustments: [],
+    });
+    for (const [slotLevel, amount] of [
+      [8, 3],
+      [9, 6],
+    ] as const) {
+      expect(
+        resolveSpellUpcast(spell('spell:etherealness'), slotLevel).adjustments,
+      ).toEqual([
+        {
+          kind: 'count',
+          subject: {
+            kind: 'effect',
+            semanticId: 'etherealness:willing-creature-maximum',
+            property: 'creature-count',
+            cardinalityMode: 'maximum-total',
+            includesCaster: true,
+          },
+          amount,
+          sourceOperation: 0,
+        },
+      ]);
+    }
+  });
+
+  it('resolves Dispel Magic automatic ending to the selected slot level', () => {
+    expect(
+      resolveSpellUpcast(spell('spell:dispel-magic'), 3).adjustments,
+    ).toEqual([]);
+    for (const slotLevel of [4, 5, 9]) {
+      expect(
+        resolveSpellUpcast(spell('spell:dispel-magic'), slotLevel).adjustments,
+      ).toEqual([
+        {
+          kind: 'slot-value',
+          subject: {
+            kind: 'effect',
+            semanticId: 'dispel magic:automatic-spell-level-threshold',
+            property: 'spell-level-threshold',
+          },
+          amount: slotLevel,
+          sourceOperation: 0,
+        },
+      ]);
+    }
+  });
+
+  it('resolves False Life as a flat temporary-hit-point increase', () => {
+    expect(
+      resolveSpellUpcast(spell('spell:false-life'), 1).adjustments,
+    ).toEqual([]);
+    for (const [slotLevel, amount] of [
+      [2, 5],
+      [4, 15],
+      [9, 40],
+    ] as const) {
+      expect(
+        resolveSpellUpcast(spell('spell:false-life'), slotLevel).adjustments,
+      ).toEqual([
+        {
+          kind: 'flat',
+          subject: {
+            kind: 'effect',
+            semanticId: 'false life:temporary-hit-points',
+            property: 'temporary-hit-points',
+          },
+          amount,
+          sourceOperation: 0,
+        },
+      ]);
+    }
   });
 
   it('compiles both Wall of Ice damage components without qualifier leakage', () => {

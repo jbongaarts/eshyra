@@ -2,7 +2,13 @@ import type { RulesRecord } from '../rules/types.js';
 import { parseDice } from './dice.js';
 
 export interface SpellUpcastAdjustment {
-  readonly kind: 'dice' | 'flat' | 'count' | 'threshold' | 'summoning';
+  readonly kind:
+    | 'dice'
+    | 'flat'
+    | 'count'
+    | 'threshold'
+    | 'slot-value'
+    | 'summoning';
   readonly subject: unknown;
   readonly addedDice?: string;
   readonly amount?: number;
@@ -267,6 +273,7 @@ export function resolveSpellUpcast(
         'flat-per-slot',
         'count-per-slot',
         'threshold',
+        'selected-slot-value',
       ].includes(String(kind))
     ) {
       throw new SpellUpcastError(`unsupported upcast operation ${index}`);
@@ -299,6 +306,7 @@ export function resolveSpellUpcast(
         'radius-feet',
         'bonus',
         'memory-age',
+        'temporary-hit-points',
         'other-quantity',
       ],
     };
@@ -345,6 +353,34 @@ export function resolveSpellUpcast(
         throw new SpellUpcastError(
           `operation ${index} has contradictory damage types`,
         );
+    }
+    if (
+      subjectObject.cardinalityMode !== undefined &&
+      (subjectObject.cardinalityMode !== 'maximum-total' ||
+        subjectObject.includesCaster !== true)
+    ) {
+      throw new SpellUpcastError(
+        `operation ${index} has invalid cardinality semantics`,
+      );
+    }
+    if (kind === 'selected-slot-value') {
+      const minSlotLevel = integer(
+        operation.minSlotLevel,
+        `operation ${index} minimum slot`,
+        1,
+      );
+      if (operation.value !== 'selected-slot-level')
+        throw new SpellUpcastError(
+          `operation ${index} has invalid selected-slot value`,
+        );
+      if (slotLevel >= minSlotLevel)
+        adjustments.push({
+          kind: 'slot-value',
+          subject,
+          amount: slotLevel,
+          sourceOperation: index,
+        });
+      return;
     }
     if (kind === 'threshold') {
       const threshold = integer(

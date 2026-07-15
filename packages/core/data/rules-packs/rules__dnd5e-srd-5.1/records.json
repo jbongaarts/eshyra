@@ -113349,14 +113349,14 @@
         "sourcePage": 136,
         "operations": [
           {
-            "kind": "threshold",
+            "kind": "selected-slot-value",
             "subject": {
               "kind": "effect",
-              "semanticId": "dispel magic:effect",
-              "property": "target-count"
+              "semanticId": "dispel magic:automatic-spell-level-threshold",
+              "property": "spell-level-threshold"
             },
-            "atSlotLevel": 4,
-            "value": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used."
+            "minSlotLevel": 4,
+            "value": "selected-slot-level"
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -114581,8 +114581,10 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "etherealness:effect",
-              "property": "creature-count"
+              "semanticId": "etherealness:willing-creature-maximum",
+              "property": "creature-count",
+              "cardinalityMode": "maximum-total",
+              "includesCaster": true
             },
             "count": 3,
             "startSlotLevel": 7,
@@ -114988,13 +114990,13 @@
         "sourcePage": 142,
         "operations": [
           {
-            "kind": "count-per-slot",
+            "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "false life:effect",
-              "property": "hit-points"
+              "semanticId": "false life:temporary-hit-points",
+              "property": "temporary-hit-points"
             },
-            "count": 5,
+            "amount": 5,
             "startSlotLevel": 1,
             "everySlotLevels": 1
           }

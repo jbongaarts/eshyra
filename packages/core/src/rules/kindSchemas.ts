@@ -4505,6 +4505,7 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
           'flat-per-slot',
           'count-per-slot',
           'threshold',
+          'selected-slot-value',
         ].includes(operationKind)
       ) {
         throw new RulesPackError(
@@ -4534,6 +4535,7 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
           'radius-feet',
           'bonus',
           'memory-age',
+          'temporary-hit-points',
           'other-quantity',
         ],
       };
@@ -4580,6 +4582,15 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
           );
         }
       }
+      if (
+        subject.cardinalityMode !== undefined &&
+        (subject.cardinalityMode !== 'maximum-total' ||
+          subject.includesCaster !== true)
+      ) {
+        throw new RulesPackError(
+          `${subjectPath} has invalid cardinality semantics`,
+        );
+      }
       const key = JSON.stringify(operation);
       if (operationKeys.has(key))
         throw new RulesPackError(`${operationPath} duplicates an operation`);
@@ -4587,6 +4598,12 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
       if (operationKind === 'threshold') {
         reqInt(operation, 'atSlotLevel', operationPath, 1);
         reqStr(operation, 'value', operationPath);
+      } else if (operationKind === 'selected-slot-value') {
+        reqInt(operation, 'minSlotLevel', operationPath, 1);
+        if (reqStr(operation, 'value', operationPath) !== 'selected-slot-level')
+          throw new RulesPackError(
+            `${operationPath}.value must be selected-slot-level`,
+          );
       } else {
         reqInt(operation, 'startSlotLevel', operationPath, 1);
         reqInt(operation, 'everySlotLevels', operationPath, 1);
