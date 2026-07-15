@@ -19,6 +19,8 @@ import {
   spendUsage,
   syncSpellSlots,
 } from '../src/internal.js';
+import { playerVisibleRollEntries } from '../src/orchestrator/playerVisibleRollLedger.js';
+import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_SESSION_ID,
@@ -121,6 +123,42 @@ function setupCharacters(): ReturnType<typeof freshDbWithSession> {
 }
 
 describe('F7 rest qualification boundary', () => {
+  it('renders the real one-die Hit Die tool result with canonical Constitution', () => {
+    const db = setupCharacters();
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'ledger-short',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    const result = createDefaultToolRegistry()
+      .get('spend_rest_hit_die')
+      ?.run(
+        { restId: 'ledger-short' },
+        {
+          db,
+          rng: createSeededRng(2),
+          campaignId: CTX.campaignId,
+          sessionId: CTX.sessionId,
+          turnId: 'ledger-turn',
+          at: CTX.at,
+          actingCharacterId: 'pc-1',
+        },
+      );
+    expect(result?.ok).toBe(true);
+    const call = {
+      tool: 'spend_rest_hit_die',
+      args: { restId: 'ledger-short' },
+      result,
+      mutates: true,
+      source: 'native',
+    } as ExecutedToolCall;
+    const entries = playerVisibleRollEntries([call]);
+    expect(entries[0]?.detail).toContain('+ 2 CON');
+    expect(entries[0]?.detail).toContain('recoverable');
+    db.close();
+  });
+
   it('short rest scopes time, Pact Magic, usages, and recovery to participants', () => {
     const db = setupCharacters();
     syncSpellSlots(db, { ...CTX, characterId: 'pc-1' });
@@ -147,11 +185,7 @@ describe('F7 rest qualification boundary', () => {
       participants: ['pc-1'],
       qualification: {
         durationMinutes: 60,
-        sleepMinutes: 0,
-        lightActivityMinutes: 0,
-        strenuousInterruptionMinutes: 0,
         strenuousActivity: false,
-        foodAndDrink: false,
       },
     });
     expect(
@@ -204,7 +238,7 @@ describe('F7 rest qualification boundary', () => {
       hitDiceRemaining: 1,
       constitutionModifier: 2,
     });
-    finishShortRestRecovery(db, CTX.campaignId, 'short-group', CTX);
+    finishShortRestRecovery(db, CTX.campaignId, 'short-group', 'pc-1', CTX);
     expect(() =>
       spendRestHitDie(db, {
         ...CTX,
@@ -235,11 +269,7 @@ describe('F7 rest qualification boundary', () => {
       participants: ['pc-1'],
       qualification: {
         durationMinutes: 60,
-        sleepMinutes: 0,
-        lightActivityMinutes: 0,
-        strenuousInterruptionMinutes: 0,
         strenuousActivity: false,
-        foodAndDrink: false,
       },
     });
     spendRestHitDie(db, {
@@ -249,7 +279,13 @@ describe('F7 rest qualification boundary', () => {
       characterId: 'pc-1',
       rng: createSeededRng(2),
     });
-    finishShortRestRecovery(db, CTX.campaignId, 'short-before-long', CTX);
+    finishShortRestRecovery(
+      db,
+      CTX.campaignId,
+      'short-before-long',
+      'pc-1',
+      CTX,
+    );
     completeLongRest(db, {
       ...CTX,
       restId: 'long-1',
@@ -259,7 +295,6 @@ describe('F7 rest qualification boundary', () => {
         sleepMinutes: 360,
         lightActivityMinutes: 120,
         strenuousInterruptionMinutes: 0,
-        strenuousActivity: false,
         foodAndDrink: true,
       },
     });
@@ -283,11 +318,7 @@ describe('F7 rest qualification boundary', () => {
     const db = setupCharacters();
     const qualification = {
       durationMinutes: 60,
-      sleepMinutes: 0,
-      lightActivityMinutes: 0,
-      strenuousInterruptionMinutes: 0,
       strenuousActivity: false,
-      foodAndDrink: false,
     };
     completeShortRest(db, {
       ...CTX,
@@ -300,11 +331,7 @@ describe('F7 rest qualification boundary', () => {
       restId: 'retry-short',
       participants: ['pc-1'],
       qualification: {
-        foodAndDrink: false,
         strenuousActivity: false,
-        strenuousInterruptionMinutes: 0,
-        lightActivityMinutes: 0,
-        sleepMinutes: 0,
         durationMinutes: 60,
       },
     });
@@ -327,7 +354,6 @@ describe('F7 rest qualification boundary', () => {
         sleepMinutes: 360,
         lightActivityMinutes: 0,
         strenuousInterruptionMinutes: 0,
-        strenuousActivity: false,
         foodAndDrink: false,
       },
     });
@@ -342,7 +368,6 @@ describe('F7 rest qualification boundary', () => {
           sleepMinutes: 360,
           lightActivityMinutes: 0,
           strenuousInterruptionMinutes: 0,
-          strenuousActivity: false,
           foodAndDrink: false,
         },
       }),
@@ -396,7 +421,6 @@ describe('F7 rest qualification boundary', () => {
           sleepMinutes: 360,
           lightActivityMinutes: 0,
           strenuousInterruptionMinutes: 0,
-          strenuousActivity: false,
           foodAndDrink: true,
         },
       }),
@@ -421,7 +445,6 @@ describe('F7 rest qualification boundary', () => {
         'foodAndDrink',
         'lightActivityMinutes',
         'sleepMinutes',
-        'strenuousActivity',
         'strenuousInterruptionMinutes',
       ].sort(),
     );

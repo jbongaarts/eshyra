@@ -246,6 +246,8 @@ export interface EffectDurationView {
   readonly deadlineParticipantTurnOrdinal?: number;
   /** Round the effect expires at (round-unit timers): anchor + amount. */
   readonly deadlineRound?: number;
+  /** Elapsed world minute deadline for minute/hour/day timers. */
+  readonly deadlineElapsedMinutes?: number;
   readonly trigger?: string;
   readonly anchorTrigger?: string;
 }
@@ -671,13 +673,75 @@ function elapsedWorldDeadline(
   const row = db
     .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
     .get() as { elapsed_minutes?: number } | undefined;
-  const anchor = row?.elapsed_minutes ?? 0;
+  if (row === undefined)
+    throw new ActiveEffectError('campaign clock is missing');
+  const anchor = row.elapsed_minutes;
+  if (!Number.isSafeInteger(anchor) || (anchor as number) < 0)
+    throw new ActiveEffectError('campaign clock elapsed_minutes is malformed');
+  const safeAnchor = anchor as number;
   const multiplier =
     duration.unit === 'minute' ? 1 : duration.unit === 'hour' ? 60 : 1440;
+  const amount = duration.amount;
+  if (!Number.isSafeInteger(amount) || (amount as number) < 1)
+    throw new ActiveEffectError('elapsed-world duration amount is malformed');
+  const delta = (amount as number) * multiplier;
+  if (!Number.isSafeInteger(delta) || !Number.isSafeInteger(safeAnchor + delta))
+    throw new ActiveEffectError(
+      'elapsed-world deadline exceeds safe integer range',
+    );
   return {
-    anchor,
-    deadline: anchor + (duration.amount as number) * multiplier,
+    anchor: safeAnchor,
+    deadline: safeAnchor + delta,
   };
+}
+
+function validateElapsedWorldRow(row: ActiveEffectRow): void {
+  const world =
+    row.duration_kind === 'timed' &&
+    (row.duration_unit === 'minute' ||
+      row.duration_unit === 'hour' ||
+      row.duration_unit === 'day');
+  if (world) {
+    if (
+      !Number.isSafeInteger(row.duration_amount) ||
+      (row.duration_amount as number) < 1
+    )
+      throw new ActiveEffectError(
+        `active_effect '${row.effect_id}' has malformed elapsed-world duration`,
+      );
+    if (
+      !Number.isSafeInteger(row.anchor_elapsed_minutes) ||
+      (row.anchor_elapsed_minutes as number) < 0 ||
+      !Number.isSafeInteger(row.deadline_elapsed_minutes) ||
+      (row.deadline_elapsed_minutes as number) < 0
+    )
+      throw new ActiveEffectError(
+        `active_effect '${row.effect_id}' has malformed elapsed-world anchor/deadline`,
+      );
+    const multiplier =
+      row.duration_unit === 'minute'
+        ? 1
+        : row.duration_unit === 'hour'
+          ? 60
+          : 1440;
+    const expected =
+      (row.anchor_elapsed_minutes as number) +
+      (row.duration_amount as number) * multiplier;
+    if (
+      !Number.isSafeInteger(expected) ||
+      expected !== row.deadline_elapsed_minutes
+    )
+      throw new ActiveEffectError(
+        `active_effect '${row.effect_id}' has inconsistent elapsed-world deadline`,
+      );
+  } else if (
+    row.anchor_elapsed_minutes !== null ||
+    row.deadline_elapsed_minutes !== null
+  ) {
+    throw new ActiveEffectError(
+      `active_effect '${row.effect_id}' has elapsed-world evidence on a non-world timer`,
+    );
+  }
 }
 
 function durationView(row: ActiveEffectRow): EffectDurationView {
@@ -719,6 +783,9 @@ function durationView(row: ActiveEffectRow): EffectDurationView {
     ...(deadlineRound(row) === undefined
       ? {}
       : { deadlineRound: deadlineRound(row) }),
+    ...(row.deadline_elapsed_minutes === null
+      ? {}
+      : { deadlineElapsedMinutes: row.deadline_elapsed_minutes }),
     ...(row.expiry_trigger === null ? {} : { trigger: row.expiry_trigger }),
   };
 }
@@ -739,6 +806,7 @@ function effectView(
       `active_effect '${row.effect_id}' requires concentration but names no owner`,
     );
   }
+  validateElapsedWorldRow(row);
   if (row.status === 'ended') {
     if (row.end_reason === null || row.ended_at === null) {
       throw new ActiveEffectError(
@@ -3109,6 +3177,8 @@ function validateDeclaredExpiry(
   row: ActiveEffectRow,
   trigger: string | undefined,
 ): void {
+  if (row.status === 'active' || row.status === 'suppressed')
+    validateElapsedWorldRow(row);
   if (
     row.duration_kind === 'until-dismissed' ||
     row.duration_kind === 'until-removed'
@@ -3185,7 +3255,12 @@ function validateDeclaredExpiry(
       );
     }
   }
-  if (row.duration_unit !== null && row.duration_unit !== 'round') {
+  if (
+    row.duration_kind === 'timed' &&
+    (row.duration_unit === 'minute' ||
+      row.duration_unit === 'hour' ||
+      row.duration_unit === 'day')
+  ) {
     if (row.deadline_elapsed_minutes === null) {
       throw new ActiveEffectError(
         `effect '${row.effect_id}' has no durable elapsed-world deadline`,
@@ -3194,10 +3269,12 @@ function validateDeclaredExpiry(
     const current = db
       .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
       .get() as { elapsed_minutes?: number } | undefined;
-    if ((current?.elapsed_minutes ?? 0) < row.deadline_elapsed_minutes) {
+    if (current === undefined || !Number.isSafeInteger(current.elapsed_minutes))
+      throw new ActiveEffectError('campaign clock is missing or malformed');
+    if ((current.elapsed_minutes as number) < row.deadline_elapsed_minutes) {
       throw new ActiveEffectError(
         `effect '${row.effect_id}' runs until elapsed minute ${row.deadline_elapsed_minutes}; ` +
-          `the current clock is ${current?.elapsed_minutes ?? 0}, so it has not expired yet`,
+          `the current clock is ${current.elapsed_minutes}, so it has not expired yet`,
       );
     }
   }
@@ -3924,7 +4001,13 @@ export function formatActiveEffect(effect: ActiveEffectView): string {
   return parts.join(' — ');
 }
 
-export interface ExpiredEffectSummary {
+export interface ExpiredWorldEffectSummary {
+  readonly effectId: string;
+  readonly displayName: string;
+  readonly deadlineElapsedMinutes: number;
+  readonly cleanup: EffectCleanupSummary;
+}
+export interface ExpiredRoundEffectSummary {
   readonly effectId: string;
   readonly displayName: string;
   readonly deadlineRound: number;
@@ -3935,15 +4018,20 @@ export interface ExpiredEffectSummary {
 export function expireElapsedWorldEffects(
   db: Db,
   input: EffectMutationContext & { campaignId: string; elapsedMinutes: number },
-): ExpiredEffectSummary[] {
+): ExpiredWorldEffectSummary[] {
   return withTransaction(db, (txnDb) => {
+    if (!Number.isSafeInteger(input.elapsedMinutes) || input.elapsedMinutes < 0)
+      throw new ActiveEffectError(
+        'elapsed world time must be a nonnegative safe integer',
+      );
     const rows = txnDb
       .prepare(
         `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id=? AND status IN ('active','suppressed') AND deadline_elapsed_minutes IS NOT NULL AND deadline_elapsed_minutes <= ? ORDER BY deadline_elapsed_minutes, created_at, effect_id`,
       )
       .all(input.campaignId, input.elapsedMinutes) as ActiveEffectRow[];
-    const expired: ExpiredEffectSummary[] = [];
+    const expired: ExpiredWorldEffectSummary[] = [];
     for (const row of rows) {
+      validateElapsedWorldRow(row);
       const outcome = finalizeEnd(
         txnDb,
         row,
@@ -3957,7 +4045,7 @@ export function expireElapsedWorldEffects(
         expired.push({
           effectId: row.effect_id,
           displayName: row.display_name,
-          deadlineRound: 0,
+          deadlineElapsedMinutes: row.deadline_elapsed_minutes as number,
           cleanup: outcome.cleanup,
         });
     }
@@ -3973,7 +4061,7 @@ export function expireElapsedWorldEffects(
 export function expireElapsedRoundEffects(
   db: Db,
   input: ExpireElapsedRoundEffectsInput,
-): ExpiredEffectSummary[] {
+): ExpiredRoundEffectSummary[] {
   return withTransaction(db, (txnDb) => {
     const rows = txnDb
       .prepare(
@@ -3983,7 +4071,7 @@ export function expireElapsedRoundEffects(
          ORDER BY created_at, effect_id`,
       )
       .all(input.campaignId) as ActiveEffectRow[];
-    const expired: ExpiredEffectSummary[] = [];
+    const expired: ExpiredRoundEffectSummary[] = [];
     for (const row of rows) {
       const deadline = deadlineRound(row);
       if (

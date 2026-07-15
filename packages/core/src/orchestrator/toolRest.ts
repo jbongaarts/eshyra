@@ -8,28 +8,41 @@ import {
 import type { Tool } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
 
-const qualification = {
+const shortQualification = {
+  type: 'object',
+  properties: {
+    durationMinutes: { type: 'integer', minimum: 0 },
+    strenuousActivity: { type: 'boolean' },
+  },
+  required: ['durationMinutes'],
+  additionalProperties: false,
+} as const;
+const longQualification = {
   type: 'object',
   properties: {
     durationMinutes: { type: 'integer', minimum: 0 },
     sleepMinutes: { type: 'integer', minimum: 0 },
     lightActivityMinutes: { type: 'integer', minimum: 0 },
     strenuousInterruptionMinutes: { type: 'integer', minimum: 0 },
-    strenuousActivity: { type: 'boolean' },
     foodAndDrink: { type: 'boolean' },
   },
-  required: ['durationMinutes'],
+  required: [
+    'durationMinutes',
+    'sleepMinutes',
+    'lightActivityMinutes',
+    'strenuousInterruptionMinutes',
+    'foodAndDrink',
+  ],
   additionalProperties: false,
 } as const;
-const base = {
-  campaignId: { type: 'string', minLength: 1 },
+const participantRestProperties = {
   restId: { type: 'string', minLength: 1 },
   participants: {
     type: 'array',
     items: { type: 'string', minLength: 1 },
     minItems: 1,
   },
-  qualification,
+  in_game_time_label: { type: 'string' },
 } as const;
 function args(a: Record<string, unknown> | undefined) {
   if (
@@ -94,7 +107,11 @@ function restTool(name: string, kind: 'short' | 'long'): Tool {
         : 'Complete one group long rest after code validation: at least 8 hours, and no more than once per 24 in-game hours. Dawn is not a long rest.',
     inputSchema: {
       type: 'object',
-      properties: base,
+      properties: {
+        ...participantRestProperties,
+        qualification:
+          kind === 'short' ? shortQualification : longQualification,
+      },
       required: ['restId', 'participants', 'qualification'],
       additionalProperties: false,
     },
@@ -111,6 +128,10 @@ function restTool(name: string, kind: 'short' | 'long'): Tool {
           restId: a.restId as string,
           participants: a.participants as string[],
           qualification: a.qualification as never,
+          inGameTimeLabel:
+            typeof a.in_game_time_label === 'string'
+              ? a.in_game_time_label
+              : undefined,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
@@ -172,7 +193,10 @@ export const finishShortRestRecoveryTool: Tool = {
     'Close a short-rest Hit Die recovery window so further Hit Die spending is rejected.',
   inputSchema: {
     type: 'object',
-    properties: { restId: { type: 'string' } },
+    properties: {
+      restId: { type: 'string', minLength: 1 },
+      character: { type: 'string', minLength: 1 },
+    },
     required: ['restId'],
     additionalProperties: false,
   },
@@ -181,12 +205,21 @@ export const finishShortRestRecoveryTool: Tool = {
     if (!a || typeof a.restId !== 'string')
       return err('invalid_args', 'finish_short_rest_recovery requires restId');
     try {
-      finishShortRestRecovery(ctx.db, ctx.campaignId, a.restId, {
+      const characterId =
+        typeof a.character === 'string'
+          ? a.character
+          : (ctx.actingCharacterId ?? '');
+      if (characterId.trim().length === 0)
+        return err(
+          'invalid_target',
+          'finish_short_rest_recovery requires an acting character or character',
+        );
+      finishShortRestRecovery(ctx.db, ctx.campaignId, a.restId, characterId, {
         provenance: `model:${ctx.turnId}`,
         sessionId: ctx.sessionId,
         at: ctx.at,
       });
-      return ok({ restId: a.restId, closed: true });
+      return ok({ restId: a.restId, characterId, closed: true });
     } catch (e) {
       return err('rest_error', e instanceof Error ? e.message : String(e));
     }

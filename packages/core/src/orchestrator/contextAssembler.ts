@@ -58,6 +58,10 @@ import {
 } from '../state/liveStateSchema.js';
 import type { PartyMember } from '../state/party.js';
 import { listParty } from '../state/party.js';
+import {
+  type OpenShortRestRecovery,
+  readOpenShortRestRecovery,
+} from '../state/rest.js';
 import { readSpellSlots, type SpellSlotCounter } from '../state/spellSlots.js';
 import {
   formatUsageCounter,
@@ -172,6 +176,8 @@ export interface InventoryItem {
 export interface ClockSnapshot {
   inGameTime: string;
   currentLocationId: string | undefined;
+  elapsedMinutes: number;
+  narrativeLabelStale: boolean;
 }
 
 export interface StateSnapshot {
@@ -196,6 +202,7 @@ export interface StateSnapshot {
   campaignActors: CampaignActor[];
   plotFlags: Record<string, unknown>;
   clock: ClockSnapshot;
+  openShortRestRecovery: OpenShortRestRecovery | undefined;
 }
 
 export interface RecentSceneEvidence {
@@ -267,6 +274,7 @@ interface InventoryRow {
 interface ClockRow {
   in_game_time: string;
   current_location_id: string | null;
+  elapsed_minutes: number;
 }
 
 interface KeyedJsonRow {
@@ -304,7 +312,9 @@ export function readStateSnapshot(
     .all(charId) as InventoryRow[];
 
   const clock = db
-    .prepare('SELECT in_game_time, current_location_id FROM clock WHERE id = 1')
+    .prepare(
+      'SELECT in_game_time, current_location_id, elapsed_minutes FROM clock WHERE id = 1',
+    )
     .get() as ClockRow;
 
   const plotFlagRows = db
@@ -386,9 +396,15 @@ export function readStateSnapshot(
     campaignActors:
       campaignId === undefined ? [] : listCampaignActors(db, campaignId),
     plotFlags,
+    openShortRestRecovery:
+      campaignId === undefined
+        ? undefined
+        : readOpenShortRestRecovery(db, campaignId, charId),
     clock: {
       inGameTime: clock.in_game_time,
       currentLocationId: clock.current_location_id ?? undefined,
+      elapsedMinutes: clock.elapsed_minutes,
+      narrativeLabelStale: false,
     },
   };
 }
@@ -591,6 +607,12 @@ function renderState(state: StateSnapshot): string {
       c.className ?? '?'
     }, level ${c.level}, ${formatHpStatus(c)}`,
   ];
+  if (state.openShortRestRecovery !== undefined) {
+    const recovery = state.openShortRestRecovery;
+    lines.push(
+      `Short-rest Hit Die recovery open: rest ${recovery.restId}, character ${recovery.characterId}, ${recovery.remainingHitDice} Hit Dice remaining (d${recovery.hitDieFaces}), HP ${recovery.hpCurrent}/${recovery.hpMax}; spend with spend_rest_hit_die or close with finish_short_rest_recovery.`,
+    );
+  }
   if (c.conditions.length > 0) {
     lines.push(`Conditions: ${JSON.stringify(c.conditions)}`);
   }
@@ -756,7 +778,7 @@ function renderState(state: StateSnapshot): string {
     lines.push(`Plot flags: ${JSON.stringify(state.plotFlags)}`);
   }
   lines.push(
-    `Clock: ${state.clock.inGameTime || '(unset)'}${
+    `Clock: ${state.clock.inGameTime || '(unset)'} [elapsed ${state.clock.elapsedMinutes} minutes${state.clock.narrativeLabelStale ? '; narrative label unchanged/stale' : ''}]${
       state.clock.currentLocationId ? ` @ ${state.clock.currentLocationId}` : ''
     }`,
   );

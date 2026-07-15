@@ -1,9 +1,16 @@
 import { assertSupportedCharacterBuild } from '../character/characterBuild.js';
-import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
+import {
+  assertSheetMatchesPack,
+  createSqliteCharacterSheetStore,
+} from '../character/characterSheetStore.js';
 import { getBundledDnd5eCharacterResolver } from '../character/rulesPackResolver.js';
 import { type DiceRoll, rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import { type Db, withTransaction } from '../persistence/db.js';
+import {
+  DEFAULT_DND5E_SRD_BINDING,
+  readCampaignRulesBinding,
+} from '../rules/binding.js';
 import { expireElapsedWorldEffects } from './activeEffects.js';
 import { adjustHp, expireTemporaryHp, type LifeState } from './hpLifecycle.js';
 import { mutateState } from './mutateState.js';
@@ -22,24 +29,39 @@ export interface AdvanceWorldTimeInput extends RestContext {
   inGameTimeLabel?: string;
 }
 export interface WorldClock {
+  previousElapsedMinutes: number;
   elapsedMinutes: number;
   inGameTime?: string;
+  narrativeLabelStale: boolean;
+  expiredEffects: readonly unknown[];
+}
+export interface OpenShortRestRecovery {
+  restId: string;
+  characterId: string;
+  remainingHitDice: number;
+  hitDieFaces: number;
+  hpCurrent: number;
+  hpMax: number;
 }
 
-export interface RestQualification {
+export interface ShortRestQualification {
+  readonly durationMinutes: number;
+  readonly strenuousActivity: boolean;
+}
+export interface LongRestQualification {
   readonly durationMinutes: number;
   readonly sleepMinutes: number;
   readonly lightActivityMinutes: number;
   readonly strenuousInterruptionMinutes: number;
-  readonly strenuousActivity: boolean;
   readonly foodAndDrink: boolean;
 }
+export type RestQualification = ShortRestQualification | LongRestQualification;
 export interface CompleteRestInput extends RestContext {
   campaignId: string;
   restId: string;
   participants: readonly string[];
-  qualification: RestQualification;
-  rng?: Rng;
+  qualification: unknown;
+  inGameTimeLabel?: string;
 }
 export interface HitDicePool {
   characterId: string;
@@ -69,7 +91,11 @@ function int(value: unknown, label: string, min = 0): number {
     throw new RestError(`${label} must be a nonnegative safe integer`);
   return value as number;
 }
-function clock(db: Db): WorldClock {
+interface ClockState {
+  elapsedMinutes: number;
+  inGameTime?: string;
+}
+function clock(db: Db): ClockState {
   const row = db
     .prepare('SELECT elapsed_minutes, in_game_time FROM clock WHERE id = 1')
     .get() as { elapsed_minutes?: number; in_game_time: string } | undefined;
@@ -105,7 +131,7 @@ export function advanceWorldTime(
         value: input.inGameTimeLabel,
         ...input,
       });
-    expireElapsedWorldEffects(txn, {
+    const expiredEffects = expireElapsedWorldEffects(txn, {
       campaignId: input.campaignId,
       elapsedMinutes: next,
       provenance: input.provenance,
@@ -113,8 +139,11 @@ export function advanceWorldTime(
       at: input.at,
     });
     return {
+      previousElapsedMinutes: before.elapsedMinutes,
       elapsedMinutes: next,
       inGameTime: input.inGameTimeLabel ?? before.inGameTime,
+      narrativeLabelStale: input.inGameTimeLabel === undefined,
+      expiredEffects,
     };
   });
 }
@@ -129,6 +158,10 @@ function resolvePool(
     throw new RestError(`no canonical character sheet for '${characterId}'`);
   const resolver = getBundledDnd5eCharacterResolver();
   assertSupportedCharacterBuild(sheet, { operation: 'Hit Dice', resolver });
+  assertSheetMatchesPack(
+    sheet,
+    readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING,
+  );
   const live = db
     .prepare('SELECT level FROM character WHERE id = ?')
     .get(characterId) as { level: number } | undefined;
@@ -187,58 +220,110 @@ export function readHitDice(
   return withTransaction(db, (txn) => resolvePool(txn, characterId, ctx));
 }
 
+export function readOpenShortRestRecovery(
+  db: Db,
+  campaignId: string,
+  characterId: string,
+): OpenShortRestRecovery | undefined {
+  const row = db
+    .prepare(
+      `SELECT p.rest_id, p.character_id, h.dice_maximum, h.dice_used,
+              h.die_faces, c.hp_current, c.hp_max
+       FROM rest_participant p
+       JOIN rest_event r USING(campaign_id, rest_id)
+       JOIN character c ON c.id = p.character_id
+       LEFT JOIN character_hit_dice h ON h.character_id = p.character_id
+       WHERE p.campaign_id=? AND p.character_id=? AND p.short_recovery_open=1
+         AND r.kind='short' AND r.status='completed'
+       ORDER BY r.end_elapsed_minutes DESC, p.rest_id DESC LIMIT 1`,
+    )
+    .get(campaignId, characterId) as
+    | {
+        rest_id: string;
+        character_id: string;
+        dice_maximum: number | null;
+        dice_used: number | null;
+        die_faces: number | null;
+        hp_current: number;
+        hp_max: number;
+      }
+    | undefined;
+  if (!row || row.dice_maximum === null || row.die_faces === null)
+    return undefined;
+  return {
+    restId: row.rest_id,
+    characterId: row.character_id,
+    remainingHitDice: row.dice_maximum - (row.dice_used ?? 0),
+    hitDieFaces: row.die_faces,
+    hpCurrent: row.hp_current,
+    hpMax: row.hp_max,
+  };
+}
+
 function participants(ids: readonly string[]): string[] {
-  const unique = [...new Set(ids)];
   if (
-    unique.length === 0 ||
-    unique.some((id) => typeof id !== 'string' || id.length === 0)
+    ids.length === 0 ||
+    ids.some((id) => typeof id !== 'string' || id.trim().length === 0)
   )
     throw new RestError('participants must be a non-empty unique list');
-  return unique.sort();
+  if (new Set(ids).size !== ids.length)
+    throw new RestError('participants must not contain duplicates');
+  return [...ids].sort();
 }
-const QUALIFICATION_KEYS = new Set([
-  'durationMinutes',
-  'sleepMinutes',
-  'lightActivityMinutes',
-  'strenuousInterruptionMinutes',
-  'strenuousActivity',
-  'foodAndDrink',
-]);
-
-function normalizeQualification(value: unknown): RestQualification {
+function rawQualification(value: unknown): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     throw new RestError('qualification must be an object');
-  const raw = value as Record<string, unknown>;
+  return value as Record<string, unknown>;
+}
+function normalizeShortQualification(value: unknown): ShortRestQualification {
+  const raw = rawQualification(value);
   for (const key of Object.keys(raw))
-    if (!QUALIFICATION_KEYS.has(key))
-      throw new RestError(`unknown qualification property '${key}'`);
+    if (!['durationMinutes', 'strenuousActivity'].includes(key))
+      throw new RestError(`unknown short-rest qualification property '${key}'`);
   const numberField = (key: string, required: boolean): number => {
     const value = raw[key];
     if (value === undefined && !required) return 0;
     return int(value, `qualification.${key}`);
   };
   const boolField = (key: string): boolean => {
+    if (!(key in raw)) return false;
     const value = raw[key];
-    if (value === undefined) return false;
     if (typeof value !== 'boolean')
       throw new RestError(`qualification.${key} must be boolean`);
     return value;
   };
   return {
     durationMinutes: numberField('durationMinutes', true),
-    sleepMinutes: numberField('sleepMinutes', false),
-    lightActivityMinutes: numberField('lightActivityMinutes', false),
-    strenuousInterruptionMinutes: numberField(
-      'strenuousInterruptionMinutes',
-      false,
-    ),
     strenuousActivity: boolField('strenuousActivity'),
-    foodAndDrink: boolField('foodAndDrink'),
+  };
+}
+function normalizeLongQualification(value: unknown): LongRestQualification {
+  const raw = rawQualification(value);
+  const keys = [
+    'durationMinutes',
+    'sleepMinutes',
+    'lightActivityMinutes',
+    'strenuousInterruptionMinutes',
+    'foodAndDrink',
+  ];
+  for (const key of Object.keys(raw))
+    if (!keys.includes(key))
+      throw new RestError(`unknown long-rest qualification property '${key}'`);
+  const numberField = (key: string): number =>
+    int(raw[key], `qualification.${key}`);
+  if (typeof raw.foodAndDrink !== 'boolean')
+    throw new RestError('qualification.foodAndDrink must be boolean');
+  return {
+    durationMinutes: numberField('durationMinutes'),
+    sleepMinutes: numberField('sleepMinutes'),
+    lightActivityMinutes: numberField('lightActivityMinutes'),
+    strenuousInterruptionMinutes: numberField('strenuousInterruptionMinutes'),
+    foodAndDrink: raw.foodAndDrink,
   };
 }
 
 function qualificationJson(q: RestQualification): string {
-  return JSON.stringify(normalizeQualification(q));
+  return JSON.stringify(q);
 }
 function readLife(
   db: Db,
@@ -305,25 +390,38 @@ function applyExhaustion(
 function validateQualification(kind: RestKind, q: RestQualification): void {
   int(q.durationMinutes, 'durationMinutes');
   if (kind === 'short') {
-    if (q.durationMinutes < 60 || q.strenuousActivity)
+    if (
+      q.durationMinutes < 60 ||
+      (q as ShortRestQualification).strenuousActivity
+    )
       throw new RestError(
         'short rest requires 60 minutes without strenuous activity',
       );
     return;
   }
+  const long = q as LongRestQualification;
   if (
-    q.durationMinutes < 480 ||
-    q.sleepMinutes < 360 ||
-    q.lightActivityMinutes > 120 ||
-    q.strenuousInterruptionMinutes >= 60
+    long.durationMinutes < 480 ||
+    long.sleepMinutes < 360 ||
+    long.lightActivityMinutes > 120 ||
+    long.strenuousInterruptionMinutes >= 60 ||
+    long.sleepMinutes +
+      long.lightActivityMinutes +
+      long.strenuousInterruptionMinutes >
+      long.durationMinutes
   )
     throw new RestError('long rest qualification failed');
 }
 
 function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
   return withTransaction(db, (txn) => {
+    if (typeof input.restId !== 'string' || input.restId.trim().length === 0)
+      throw new RestError('restId must be a nonblank string');
     const ids = participants(input.participants);
-    const normalizedQualification = normalizeQualification(input.qualification);
+    const normalizedQualification =
+      kind === 'short'
+        ? normalizeShortQualification(input.qualification)
+        : normalizeLongQualification(input.qualification);
     validateQualification(kind, normalizedQualification);
     const existing = txn
       .prepare(
@@ -369,7 +467,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
     if (activeCombat)
       throw new RestError('cannot complete a rest while combat is active');
     const start = clock(txn);
-    const end = start.elapsedMinutes + input.qualification.durationMinutes;
+    const end = start.elapsedMinutes + normalizedQualification.durationMinutes;
     const states = ids.map((id) => ({ id, ...readLife(txn, id) }));
     for (const state of states) {
       resolvePool(txn, state.id, input);
@@ -383,7 +481,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         .prepare(
           `SELECT 1 FROM rest_participant p JOIN rest_event r USING(campaign_id, rest_id) WHERE p.character_id IN (${ids.map(() => '?').join(',')}) AND r.kind='long' AND r.status='completed' AND r.end_elapsed_minutes > ? AND r.end_elapsed_minutes <= ? LIMIT 1`,
         )
-        .get(...ids, start.elapsedMinutes - 1440, start.elapsedMinutes);
+        .get(...ids, end - 1440, end);
       if (recent)
         throw new RestError(
           'a participant already benefited from a long rest within 24 in-game hours',
@@ -425,7 +523,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           s.life,
           kind === 'short' ? 1 : 0,
         );
-    advanceWorldTime(txn, {
+    const time = advanceWorldTime(txn, {
       ...input,
       minutes: normalizedQualification.durationMinutes,
     });
@@ -441,15 +539,26 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
       slotsRestored: {} as Record<string, unknown>,
       usageReset: {} as Record<string, unknown>,
       exhaustion: {} as Record<string, unknown>,
+      recovery: {} as Record<string, unknown>,
+      expiredEffects: time.expiredEffects,
+      previousElapsedMinutes: time.previousElapsedMinutes,
+      elapsedMinutes: time.elapsedMinutes,
+      narrativeLabelStale: time.narrativeLabelStale,
     };
     for (const s of states) {
+      const pool = resolvePool(txn, s.id, input);
+      benefits.recovery[s.id] = {
+        characterId: s.id,
+        remainingHitDice: pool.diceRemaining,
+        hitDieFaces: pool.dieFaces,
+        recoveryOpen: kind === 'short',
+      };
       if (kind === 'long') {
         const healed = adjustHp(txn, s.max - s.hp, {
           ...input,
           characterId: s.id,
         });
         const temp = expireTemporaryHp(txn, { ...input, characterId: s.id });
-        const pool = resolvePool(txn, s.id, input);
         const restore = Math.max(1, Math.floor(pool.diceMaximum / 2));
         const restored = Math.min(restore, pool.diceUsed);
         txn
@@ -474,7 +583,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         benefits.exhaustion[s.id] = applyExhaustion(
           txn,
           s.id,
-          normalizedQualification.foodAndDrink,
+          (normalizedQualification as LongRestQualification).foodAndDrink,
           input,
         );
         txn
@@ -531,8 +640,9 @@ export function spendRestHitDie(db: Db, input: SpendHitDieInput): unknown {
     const modifier =
       createSqliteCharacterSheetStore(txn).load(input.characterId)
         ?.abilityScores.constitution.modifier ?? 0;
-    const raw = Math.max(0, roll.natural + modifier);
-    const healed = adjustHp(txn, raw, {
+    const calculatedHealing = roll.natural + modifier;
+    const recoverableHealing = Math.max(0, calculatedHealing);
+    const healed = adjustHp(txn, recoverableHealing, {
       ...input,
       characterId: input.characterId,
     });
@@ -556,10 +666,11 @@ export function spendRestHitDie(db: Db, input: SpendHitDieInput): unknown {
       modifier: roll.modifier,
       total: roll.total,
       rollEvidence: roll,
-      naturalHealing: roll.natural + modifier,
+      naturalDieResult: roll.natural,
       constitutionModifier: modifier,
       constitutionSource: 'canonical character sheet',
-      rawHealing: raw,
+      calculatedHealing,
+      recoverableHealing,
       hpRestored: healed.newHp - state.hp,
       hpBefore: state.hp,
       hpAfter: healed.newHp,
@@ -571,14 +682,15 @@ export function finishShortRestRecovery(
   db: Db,
   campaignId: string,
   restId: string,
+  characterId: string,
   _ctx: RestContext,
 ): void {
   withTransaction(db, (txn) => {
     const r = txn
       .prepare(
-        'UPDATE rest_participant SET short_recovery_open=0 WHERE campaign_id=? AND rest_id=? AND short_recovery_open=1',
+        'UPDATE rest_participant SET short_recovery_open=0 WHERE campaign_id=? AND rest_id=? AND character_id=? AND short_recovery_open=1',
       )
-      .run(campaignId, restId);
+      .run(campaignId, restId, characterId);
     if (r.changes === 0)
       throw new RestError('no open short-rest recovery window');
   });

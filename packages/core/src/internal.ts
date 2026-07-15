@@ -1066,7 +1066,8 @@ export type {
   EffectTargetView,
   EndActiveEffectInput,
   EndActiveEffectResult,
-  ExpiredEffectSummary,
+  ExpiredRoundEffectSummary,
+  ExpiredWorldEffectSummary,
   RefreshEffectInput,
   RemoveEffectTargetInput,
   RemoveEffectTargetResult,
@@ -1281,8 +1282,11 @@ export type {
   AdvanceWorldTimeInput,
   CompleteRestInput,
   HitDicePool,
+  LongRestQualification,
+  OpenShortRestRecovery,
   RestContext,
   RestQualification,
+  ShortRestQualification,
   SpendHitDieInput,
   WorldClock,
 } from './state/rest.js';
@@ -1293,6 +1297,7 @@ export {
   finishShortRestRecovery,
   RestError,
   readHitDice,
+  readOpenShortRestRecovery,
   spendRestHitDie,
 } from './state/rest.js';
 // Single-class Spellcasting and Pact Magic slot pools (F4).

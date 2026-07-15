@@ -131,10 +131,14 @@ Deterministic expiry evaluation:
   on a round timer **before** its deadline is refused. Source/target turn
   anchors retain `anchor_round` only as combat provenance and use their
   participant turn ordinal as the deadline.
-- **World-time units** (`minute`/`hour`/`day`): the campaign clock
-  (`clock.in_game_time`) is narrative text, so expiry is a declared operation —
-  but only a `timed`/`until-trigger` effect can expire, the audit event records
-  the declared elapsed reasoning, and the typed timer is preserved for review.
+- **World-time units** (`minute`/`hour`/`day`): the monotonic
+  `clock.elapsed_minutes` is authoritative; `clock.in_game_time` remains
+  narrative display text and is never parsed. Creation and refresh persist an
+  anchor and exact safe-integer deadline (`anchor + amount × unit multiplier`),
+  and live rows with missing or inconsistent evidence fail closed. The single
+  `advanceWorldTime` operation expires due effects at or beyond the deadline;
+  explicit `expired` endings before that boundary are rejected. A missing clock
+  is an error, not an implicit zero.
   Turn-relative timers use `combat_turn_budget.turns_taken`: the anchor ordinal
   is completed turns plus one when the anchor participant is currently active,
   otherwise completed turns; the deadline ordinal is anchor ordinal plus
@@ -291,6 +295,12 @@ the DM can distinguish active/suppressed/ended without prose),
 `validateActiveEffectDurableState` (load-time integrity: concentration
 owner presence, timer completeness, ended-with-active-links, dangling
 link/target references, duplicate concentration).
+
+Database mutations may be nested. `withTransaction` always delegates to
+better-sqlite3's transaction wrapper, so an inner operation uses a savepoint:
+an inner failure can be caught and rolled back while the outer mutation
+continues, whereas an uncaught inner failure rolls back the complete outer
+transaction.
 
 ## 7. Determinism & replay
 

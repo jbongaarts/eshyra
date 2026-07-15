@@ -153,19 +153,25 @@ function readRestHitDieEntry(
   if (
     base === undefined ||
     typeof data.constitutionModifier !== 'number' ||
-    typeof data.naturalHealing !== 'number' ||
-    typeof data.rawHealing !== 'number'
+    typeof data.naturalDieResult !== 'number' ||
+    typeof data.calculatedHealing !== 'number' ||
+    typeof data.recoverableHealing !== 'number' ||
+    typeof data.hpRestored !== 'number'
   )
     return undefined;
   const modifier = data.constitutionModifier;
-  const natural = data.naturalHealing - modifier;
-  const clamp = data.naturalHealing < 0 ? ' (minimum 0 clamp)' : '';
+  const natural = data.naturalDieResult;
+  const clamp = data.calculatedHealing < 0 ? ' (minimum 0 clamp)' : '';
+  const cap =
+    data.hpRestored < data.recoverableHealing
+      ? ` (HP maximum cap: ${data.hpRestored} actually restored)`
+      : '';
   return {
     ...base,
     label: CATEGORY_LABELS.hit_die,
     detail:
       `${data.dice} = ${natural} natural ${modifier >= 0 ? '+' : '-'} ${Math.abs(modifier)} CON ` +
-      `→ ${data.naturalHealing} recovery, actual ${data.rawHealing}${clamp}`,
+      `→ ${data.recoverableHealing} recoverable${clamp}, ${data.hpRestored} HP actually restored${cap}`,
   };
 }
 
