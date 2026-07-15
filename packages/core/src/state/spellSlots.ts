@@ -52,6 +52,12 @@ export interface SpendSpellSlotInput extends SpellSlotMutationContext {
    * resulting scaling transform.
    */
   readonly slotLevel?: number;
+  /**
+   * Validate the selected slot while the spend transaction is still open.
+   * Model-facing callers never provide this; the orchestrator uses it to
+   * resolve source-bound spell scaling before the counter is incremented.
+   */
+  readonly beforeSpend?: (selectedSlotLevel: number) => void;
 }
 
 export interface SpendSpellSlotResult {
@@ -202,6 +208,7 @@ export function spendSpellSlot(
         `no available level ${requested} or higher spell slot for a level ${input.spellLevel} spell`,
       );
     }
+    input.beforeSpend?.(selected.spell_level);
     txnDb
       .prepare(
         `UPDATE character_spell_slot

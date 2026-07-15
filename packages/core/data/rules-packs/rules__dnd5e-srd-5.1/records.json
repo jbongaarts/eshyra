@@ -105488,7 +105488,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "acid arrow:damage-choice"
+              "semanticId": "acid arrow:damage-choice",
+              "property": "damage-dice"
             },
             "dice": "1d4",
             "startSlotLevel": 2,
@@ -105644,7 +105645,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "aid:effect"
+              "semanticId": "aid:effect",
+              "property": "hit-points"
             },
             "amount": 5,
             "startSlotLevel": 2,
@@ -105878,7 +105880,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "animal friendship:effect"
+              "semanticId": "animal friendship:effect",
+              "property": "creature-count"
             },
             "atSlotLevel": 2,
             "value": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
@@ -105968,7 +105971,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "animal messenger:effect"
+              "semanticId": "animal messenger:effect",
+              "property": "duration-hours"
             },
             "amount": 48,
             "startSlotLevel": 2,
@@ -106799,7 +106803,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "arcane hand:damage-choice"
+              "semanticId": "arcane hand:clenched-fist",
+              "property": "damage-dice"
             },
             "dice": "2d8",
             "startSlotLevel": 5,
@@ -106809,17 +106814,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "arcane hand:component-1"
-            },
-            "dice": "2d8",
-            "startSlotLevel": 5,
-            "everySlotLevels": 1
-          },
-          {
-            "kind": "dice-per-slot",
-            "subject": {
-              "kind": "damage",
-              "semanticId": "arcane hand:component-2"
+              "semanticId": "arcane hand:grasping-hand",
+              "property": "damage-dice"
             },
             "dice": "2d6",
             "startSlotLevel": 5,
@@ -107276,7 +107272,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "bane:effect"
+              "semanticId": "bane:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -107375,7 +107372,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "banishment:effect"
+              "semanticId": "banishment:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 4,
@@ -107604,7 +107602,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "bestow curse:effect"
+              "semanticId": "bestow curse:effect",
+              "property": "duration"
             },
             "atSlotLevel": 4,
             "value": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes."
@@ -107613,7 +107612,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "bestow curse:effect"
+              "semanticId": "bestow curse:effect",
+              "property": "duration-hours"
             },
             "atSlotLevel": 5,
             "value": "If you use a spell slot of 5th level or higher, the duration is 8 hours."
@@ -107622,7 +107622,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "bestow curse:effect"
+              "semanticId": "bestow curse:effect",
+              "property": "duration-hours"
             },
             "atSlotLevel": 7,
             "value": "If you use a spell slot of 7th level or higher, the duration is 24 hours."
@@ -107631,7 +107632,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "bestow curse:effect"
+              "semanticId": "bestow curse:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 9,
             "value": "If you use a 9th level spell slot, the spell lasts until it is dispelled."
@@ -107640,13 +107642,15 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "bestow curse:effect"
+              "semanticId": "bestow curse:effect",
+              "property": "duration"
             },
             "atSlotLevel": 5,
             "value": "Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration."
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "higherLevels": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.",
       "scalingSourceKind": "higher-slot",
@@ -107873,7 +107877,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "bless:effect"
+              "semanticId": "bless:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -107969,7 +107974,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "necrotic",
-              "semanticId": "blight:damage"
+              "semanticId": "blight:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 4,
@@ -108066,7 +108072,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "blindness/deafness:effect"
+              "semanticId": "blindness/deafness:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 2,
@@ -108289,7 +108296,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "radiant",
-              "semanticId": "branding smite:damage"
+              "semanticId": "branding smite:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 2,
@@ -108388,7 +108396,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "burning hands:damage"
+              "semanticId": "burning hands:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 1,
@@ -108479,7 +108488,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "lightning",
-              "semanticId": "call lightning:damage"
+              "semanticId": "call lightning:damage",
+              "property": "damage-dice"
             },
             "dice": "1d10",
             "startSlotLevel": 3,
@@ -108636,7 +108646,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "chain lightning:effect"
+              "semanticId": "chain lightning:effect",
+              "property": "target-count"
             },
             "count": 1,
             "startSlotLevel": 6,
@@ -108732,7 +108743,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "charm person:effect"
+              "semanticId": "charm person:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -108903,7 +108915,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "necrotic",
-              "semanticId": "circle of death:damage"
+              "semanticId": "circle of death:damage",
+              "property": "damage-dice"
             },
             "dice": "2d6",
             "startSlotLevel": 6,
@@ -109128,7 +109141,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "poison",
-              "semanticId": "cloudkill:damage"
+              "semanticId": "cloudkill:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 5,
@@ -109222,7 +109236,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "color spray:damage"
+              "semanticId": "color spray:damage",
+              "property": "damage-dice"
             },
             "dice": "2d10",
             "startSlotLevel": 1,
@@ -109310,7 +109325,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "command:effect"
+              "semanticId": "command:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -109659,7 +109675,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "cold",
-              "semanticId": "cone of cold:damage"
+              "semanticId": "cone of cold:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 5,
@@ -109747,7 +109764,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "confusion:effect"
+              "semanticId": "confusion:effect",
+              "property": "radius-feet"
             },
             "amount": 5,
             "startSlotLevel": 4,
@@ -111598,13 +111616,15 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "counterspell:effect"
+              "semanticId": "counterspell:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 4,
             "value": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
       "scalingSourceKind": "higher-slot",
@@ -111749,7 +111769,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "create or destroy water:effect"
+              "semanticId": "create or destroy water:effect",
+              "property": "volume-gallons"
             },
             "count": 10,
             "startSlotLevel": 1,
@@ -112119,7 +112140,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "creation:effect"
+              "semanticId": "creation:effect",
+              "property": "cube-size-feet"
             },
             "amount": 5,
             "startSlotLevel": 5,
@@ -112213,7 +112235,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "healing",
-              "semanticId": "cure wounds:healing"
+              "semanticId": "cure wounds:healing",
+              "property": "healing-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 1,
@@ -112625,7 +112648,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "delayed blast fireball:damage"
+              "semanticId": "delayed blast fireball:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 7,
@@ -113154,7 +113178,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "force",
-              "semanticId": "disintegrate:damage"
+              "semanticId": "disintegrate:damage",
+              "property": "damage-dice"
             },
             "dice": "3d6",
             "startSlotLevel": 6,
@@ -113313,7 +113338,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "dispel magic:effect"
+              "semanticId": "dispel magic:effect",
+              "property": "target-count"
             },
             "atSlotLevel": 4,
             "value": "When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell’s level is equal to or less than the level of the spell slot you used."
@@ -113600,7 +113626,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "dominate beast:effect"
+              "semanticId": "dominate beast:effect",
+              "property": "duration-hours"
             },
             "atSlotLevel": 5,
             "value": "concentration, up to 10 minutes"
@@ -113699,7 +113726,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "dominate monster:effect"
+              "semanticId": "dominate monster:effect",
+              "property": "duration-hours"
             },
             "atSlotLevel": 9,
             "value": "concentration, up to 8 hours"
@@ -113797,7 +113825,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "dominate person:effect"
+              "semanticId": "dominate person:effect",
+              "property": "duration-hours"
             },
             "atSlotLevel": 6,
             "value": "concentration, up to 10 minutes"
@@ -114051,7 +114080,9 @@
             "type": "force"
           }
         ]
-      }
+      },
+      "scalingSourceKind": "character-level",
+      "scalingSourceText": "The spell creates more than one beam when you reach higher levels: two beams at 5th level, three beams at 11th level, and four beams at 17th level."
     },
     "source": "SRD 5.1 p. 139",
     "license": {
@@ -114174,7 +114205,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "enhance ability:effect"
+              "semanticId": "enhance ability:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 2,
@@ -114495,7 +114527,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "etherealness:effect"
+              "semanticId": "etherealness:effect",
+              "property": "creature-count"
             },
             "count": 3,
             "startSlotLevel": 7,
@@ -114904,7 +114937,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "false life:effect"
+              "semanticId": "false life:effect",
+              "property": "hit-points"
             },
             "count": 5,
             "startSlotLevel": 1,
@@ -116133,7 +116167,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "fireball:damage"
+              "semanticId": "fireball:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 3,
@@ -116228,7 +116263,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "flame blade:damage"
+              "semanticId": "flame blade:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 2,
@@ -116238,13 +116274,15 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "flame blade:effect"
+              "semanticId": "flame blade:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 4,
             "value": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd."
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "componentMaterials": "leaf of sumac",
       "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.",
@@ -116329,7 +116367,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "flame strike:damage-choice"
+              "semanticId": "flame strike:damage-choice",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 5,
@@ -116436,7 +116475,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "flaming sphere:damage"
+              "semanticId": "flaming sphere:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 2,
@@ -116666,7 +116706,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "fly:effect"
+              "semanticId": "fly:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 3,
@@ -116754,7 +116795,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "fog cloud:effect"
+              "semanticId": "fog cloud:effect",
+              "property": "radius-feet"
             },
             "amount": 20,
             "startSlotLevel": 1,
@@ -117116,7 +117158,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "cold",
-              "semanticId": "freezing sphere:damage"
+              "semanticId": "freezing sphere:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 6,
@@ -117360,7 +117403,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "geas:effect"
+              "semanticId": "geas:effect",
+              "property": "duration"
             },
             "atSlotLevel": 7,
             "value": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year."
@@ -117369,13 +117413,15 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "geas:effect"
+              "semanticId": "geas:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 9,
             "value": "When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above."
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "higherLevels": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
       "scalingSourceKind": "higher-slot",
@@ -117765,7 +117811,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "globe of invulnerability:effect"
+              "semanticId": "globe of invulnerability:effect",
+              "property": "spell-level-threshold"
             },
             "amount": 1,
             "startSlotLevel": 6,
@@ -117870,7 +117917,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "thunder",
-              "semanticId": "glyph of warding:damage"
+              "semanticId": "glyph of warding:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 3,
@@ -118396,7 +118444,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "radiant",
-              "semanticId": "guiding bolt:damage"
+              "semanticId": "guiding bolt:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 1,
@@ -118819,7 +118868,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "healing",
-              "semanticId": "heal:healing"
+              "semanticId": "heal:healing",
+              "property": "healing-dice"
             },
             "amount": 10,
             "startSlotLevel": 6,
@@ -118906,7 +118956,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "healing",
-              "semanticId": "healing word:healing"
+              "semanticId": "healing word:healing",
+              "property": "healing-dice"
             },
             "dice": "1d4",
             "startSlotLevel": 1,
@@ -119011,7 +119062,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "heat metal:damage"
+              "semanticId": "heat metal:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 2,
@@ -119104,7 +119156,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "hellish rebuke:damage"
+              "semanticId": "hellish rebuke:damage",
+              "property": "damage-dice"
             },
             "dice": "1d10",
             "startSlotLevel": 1,
@@ -119257,7 +119310,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "heroism:effect"
+              "semanticId": "heroism:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -119446,7 +119500,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "hold monster:effect"
+              "semanticId": "hold monster:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 5,
@@ -119553,14 +119608,16 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "hold person:effect"
+              "semanticId": "hold person:effect",
+              "property": "other-quantity"
             },
             "count": 1,
             "startSlotLevel": 2,
             "everySlotLevels": 1
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "componentMaterials": "a small, straight piece of iron",
       "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
@@ -119718,7 +119775,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "hunter’s mark:effect"
+              "semanticId": "hunter’s mark:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 3,
             "value": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours."
@@ -119727,13 +119785,15 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "hunter’s mark:effect"
+              "semanticId": "hunter’s mark:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 5,
             "value": "When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours."
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "higherLevels": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.",
       "scalingSourceKind": "higher-slot",
@@ -119891,7 +119951,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "ice storm:damage-choice"
+              "semanticId": "ice storm:damage-choice",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 4,
@@ -120221,7 +120282,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "necrotic",
-              "semanticId": "inflict wounds:damage"
+              "semanticId": "inflict wounds:damage",
+              "property": "damage-dice"
             },
             "dice": "1d10",
             "startSlotLevel": 1,
@@ -120326,7 +120388,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "piercing",
-              "semanticId": "insect plague:damage"
+              "semanticId": "insect plague:damage",
+              "property": "damage-dice"
             },
             "dice": "1d10",
             "startSlotLevel": 5,
@@ -120477,7 +120540,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "invisibility:effect"
+              "semanticId": "invisibility:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 2,
@@ -121022,7 +121086,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "lightning",
-              "semanticId": "lightning bolt:damage"
+              "semanticId": "lightning bolt:damage",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 3,
@@ -121308,7 +121373,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "longstrider:effect"
+              "semanticId": "longstrider:effect",
+              "property": "creature-count"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -121543,7 +121609,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic circle:effect"
+              "semanticId": "magic circle:effect",
+              "property": "duration-hours"
             },
             "amount": 1,
             "startSlotLevel": 3,
@@ -121681,7 +121748,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic missile:effect"
+              "semanticId": "magic missile:effect",
+              "property": "projectile-count"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -121826,7 +121894,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic weapon:effect"
+              "semanticId": "magic weapon:effect",
+              "property": "bonus"
             },
             "atSlotLevel": 4,
             "value": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2."
@@ -121835,7 +121904,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic weapon:effect"
+              "semanticId": "magic weapon:effect",
+              "property": "bonus"
             },
             "atSlotLevel": 6,
             "value": "When you use a spell slot of 6th level or higher, the bonus increases to +3."
@@ -121985,13 +122055,15 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "major image:effect"
+              "semanticId": "major image:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 6,
             "value": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "componentMaterials": "a bit of fleece",
       "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
@@ -122073,7 +122145,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "healing",
-              "semanticId": "mass cure wounds:healing"
+              "semanticId": "mass cure wounds:healing",
+              "property": "healing-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 5,
@@ -122217,7 +122290,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "healing",
-              "semanticId": "mass healing word:healing"
+              "semanticId": "mass healing word:healing",
+              "property": "healing-dice"
             },
             "dice": "1d4",
             "startSlotLevel": 3,
@@ -122307,7 +122381,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "mass suggestion:effect"
+              "semanticId": "mass suggestion:effect",
+              "property": "duration"
             },
             "atSlotLevel": 7,
             "value": "10 days"
@@ -123133,7 +123208,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "modify memory:effect"
+              "semanticId": "modify memory:effect",
+              "property": "target-count"
             },
             "atSlotLevel": 6,
             "value": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level)."
@@ -123229,7 +123305,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "radiant",
-              "semanticId": "moonbeam:damage"
+              "semanticId": "moonbeam:damage",
+              "property": "damage-dice"
             },
             "dice": "1d10",
             "startSlotLevel": 2,
@@ -123575,7 +123652,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "psychic",
-              "semanticId": "phantasmal killer:damage"
+              "semanticId": "phantasmal killer:damage",
+              "property": "damage-dice"
             },
             "dice": "1d10",
             "startSlotLevel": 4,
@@ -123906,7 +123984,8 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "planar binding:effect"
+              "semanticId": "planar binding:effect",
+              "property": "duration"
             },
             "atSlotLevel": 9,
             "value": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot."
@@ -124368,7 +124447,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "healing",
-              "semanticId": "prayer of healing:healing"
+              "semanticId": "prayer of healing:healing",
+              "property": "healing-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 2,
@@ -124724,7 +124804,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "private sanctum:effect"
+              "semanticId": "private sanctum:effect",
+              "property": "cube-size-feet"
             },
             "amount": 100,
             "startSlotLevel": 4,
@@ -126143,7 +126224,8 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "scorching ray:effect"
+              "semanticId": "scorching ray:effect",
+              "property": "projectile-count"
             },
             "count": 1,
             "startSlotLevel": 2,
@@ -126684,7 +126766,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "thunder",
-              "semanticId": "shatter:damage"
+              "semanticId": "shatter:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 2,
@@ -127354,7 +127437,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "sleep:damage"
+              "semanticId": "sleep:damage",
+              "property": "damage-dice"
             },
             "dice": "2d8",
             "startSlotLevel": 1,
@@ -127994,7 +128078,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "spirit guardians:damage-choice"
+              "semanticId": "spirit guardians:damage-choice",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 3,
@@ -128079,7 +128164,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "force",
-              "semanticId": "spiritual weapon:damage"
+              "semanticId": "spiritual weapon:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 2,
@@ -128089,13 +128175,15 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "spiritual weapon:effect"
+              "semanticId": "spiritual weapon:effect",
+              "property": "other-quantity"
             },
             "atSlotLevel": 3,
             "value": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd."
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd.",
       "scalingSourceKind": "higher-slot",
@@ -129113,7 +129201,8 @@
             "subject": {
               "kind": "damage",
               "damageType": "thunder",
-              "semanticId": "thunderwave:damage"
+              "semanticId": "thunderwave:damage",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 1,
@@ -129838,7 +129927,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "vampiric touch:damage-choice"
+              "semanticId": "vampiric touch:damage-choice",
+              "property": "damage-dice"
             },
             "dice": "1d6",
             "startSlotLevel": 3,
@@ -130016,7 +130106,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "wall of fire:damage-choice"
+              "semanticId": "wall of fire:damage-choice",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 4,
@@ -130168,29 +130259,9 @@
         "clauseId": "wall-of-ice:higher-slot",
         "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
         "sourcePage": 190,
-        "operations": [
-          {
-            "kind": "dice-per-slot",
-            "subject": {
-              "kind": "damage",
-              "semanticId": "wall of ice:component-1"
-            },
-            "dice": "2d6",
-            "startSlotLevel": 6,
-            "everySlotLevels": 1
-          },
-          {
-            "kind": "dice-per-slot",
-            "subject": {
-              "kind": "damage",
-              "semanticId": "wall of ice:component-2"
-            },
-            "dice": "1d6",
-            "startSlotLevel": 6,
-            "everySlotLevels": 1
-          }
-        ],
-        "disposition": "complete-typed-upcast"
+        "operations": [],
+        "qualifier": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
+        "disposition": "typed-core-with-model-qualifier"
       },
       "componentMaterials": "a small piece of quartz",
       "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
@@ -130341,7 +130412,8 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "semanticId": "wall of thorns:damage-choice"
+              "semanticId": "wall of thorns:damage-choice",
+              "property": "damage-dice"
             },
             "dice": "1d8",
             "startSlotLevel": 6,

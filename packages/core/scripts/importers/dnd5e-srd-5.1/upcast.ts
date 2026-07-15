@@ -7,9 +7,31 @@ export type UpcastSubject =
       readonly kind: 'damage';
       readonly damageType?: string;
       readonly semanticId: string;
+      readonly property: 'damage-dice';
     }
-  | { readonly kind: 'healing'; readonly semanticId: string }
-  | { readonly kind: 'effect'; readonly semanticId: string };
+  | {
+      readonly kind: 'healing';
+      readonly semanticId: string;
+      readonly property: 'healing-dice';
+    }
+  | {
+      readonly kind: 'effect';
+      readonly semanticId: string;
+      readonly property:
+        | 'duration-hours'
+        | 'hit-points'
+        | 'target-count'
+        | 'projectile-count'
+        | 'creature-count'
+        | 'object-count'
+        | 'volume-gallons'
+        | 'cube-size-feet'
+        | 'spell-level-threshold'
+        | 'duration'
+        | 'radius-feet'
+        | 'bonus'
+        | 'other-quantity';
+    };
 
 export type UpcastOperation =
   | {
@@ -77,6 +99,8 @@ const DAMAGE_TYPES =
 function subject(
   spell: SpellExtraction,
   kind: UpcastSubject['kind'],
+  text = spell.description,
+  semanticId?: string,
 ): UpcastSubject {
   const types = [...spell.description.matchAll(DAMAGE_TYPES)].map((m) =>
     m[1].toLowerCase(),
@@ -86,12 +110,50 @@ function subject(
       kind,
       ...(types.length === 1 ? { damageType: types[0] } : {}),
       semanticId:
-        types.length > 1
+        semanticId ??
+        (types.length > 1
           ? `${spell.name.toLowerCase()}:damage-choice`
-          : `${spell.name.toLowerCase()}:damage`,
+          : `${spell.name.toLowerCase()}:damage`),
+      property: 'damage-dice',
     };
   }
-  return { kind, semanticId: `${spell.name.toLowerCase()}:${kind}` };
+  if (kind === 'healing') {
+    return {
+      kind,
+      semanticId: semanticId ?? `${spell.name.toLowerCase()}:healing`,
+      property: 'healing-dice',
+    };
+  }
+  const property = /duration.*hours?/i.test(text)
+    ? 'duration-hours'
+    : /duration/i.test(text)
+      ? 'duration'
+      : /hit points?/i.test(text)
+        ? 'hit-points'
+        : /radius.*(?:feet|foot)/i.test(text)
+          ? 'radius-feet'
+          : /bonus/i.test(text)
+            ? 'bonus'
+            : /gallons?/i.test(text)
+              ? 'volume-gallons'
+              : /cube.*(?:feet|foot)|size.*(?:feet|foot)/i.test(text)
+                ? 'cube-size-feet'
+                : /level higher/i.test(text)
+                  ? 'spell-level-threshold'
+                  : /darts?|rays?|beams?/i.test(text)
+                    ? 'projectile-count'
+                    : /targets?/i.test(text)
+                      ? 'target-count'
+                      : /creatures?|beasts?/i.test(text)
+                        ? 'creature-count'
+                        : /objects?/i.test(text)
+                          ? 'object-count'
+                          : 'other-quantity';
+  return {
+    kind,
+    semanticId: semanticId ?? `${spell.name.toLowerCase()}:effect`,
+    property,
+  };
 }
 
 function levelAbove(text: string): number | undefined {
@@ -111,13 +173,28 @@ function addPerSlotOperations(
     ),
   ];
   for (const match of dice) {
+    const matchIndex = match.index ?? 0;
+    const sentenceStart = text.lastIndexOf('.', matchIndex) + 1;
+    const sentenceEnd = text.indexOf('.', matchIndex);
+    const sentence = text.slice(
+      sentenceStart,
+      sentenceEnd === -1 ? text.length : sentenceEnd + 1,
+    );
+    if (
+      [
+        ...sentence.matchAll(
+          /damage from the ([a-z ]+?)(?: option)? increases by (\d+d\d+)/gi,
+        ),
+      ].length > 1
+    )
+      continue;
     const d = match[1];
     if (!DICE.test(d))
       throw new Error(`invalid upcast dice ${d} in ${spell.name}`);
     const isHealing = /healing/i.test(text);
     const operation: UpcastOperation = {
       kind: 'dice-per-slot',
-      subject: subject(spell, isHealing ? 'healing' : 'damage'),
+      subject: subject(spell, isHealing ? 'healing' : 'damage', text),
       dice: d,
       startSlotLevel: Number(match[2]),
       everySlotLevels: /every two slot levels/i.test(match[0]) ? 2 : 1,
@@ -133,7 +210,7 @@ function addPerSlotOperations(
   for (const match of rolledAdditional) {
     const operation: UpcastOperation = {
       kind: 'dice-per-slot',
-      subject: subject(spell, 'damage'),
+      subject: subject(spell, 'damage', text),
       dice: match[1],
       startSlotLevel: Number(match[2]),
       everySlotLevels: 1,
@@ -165,7 +242,11 @@ function addPerSlotOperations(
   for (const match of flat) {
     const operation: UpcastOperation = {
       kind: 'flat-per-slot',
-      subject: subject(spell, /healing/i.test(text) ? 'healing' : 'effect'),
+      subject: subject(
+        spell,
+        /healing/i.test(text) ? 'healing' : 'effect',
+        text,
+      ),
       amount: wordsForFlat[match[1].toLowerCase()] ?? Number(match[1]),
       startSlotLevel: Number(match[2]),
       everySlotLevels: 1,
@@ -192,7 +273,7 @@ function addPerSlotOperations(
   for (const match of counts) {
     const operation: UpcastOperation = {
       kind: 'count-per-slot',
-      subject: subject(spell, 'effect'),
+      subject: subject(spell, 'effect', match[0]),
       count: words[match[1].toLowerCase()] ?? Number(match[1]),
       startSlotLevel: Number(match[2]),
       everySlotLevels: 1,
@@ -204,7 +285,7 @@ function addPerSlotOperations(
   )) {
     const operation: UpcastOperation = {
       kind: 'count-per-slot',
-      subject: subject(spell, 'effect'),
+      subject: subject(spell, 'effect', match[0]),
       count: words[match[1].toLowerCase()] ?? Number(match[1]),
       startSlotLevel: Number(match[2]),
       everySlotLevels: 1,
@@ -218,18 +299,24 @@ function addPerSlotOperations(
     if (!/for each slot level above/i.test(sentence)) continue;
     const levels = levelAbove(sentence);
     if (levels === undefined) continue;
-    const sentenceDice = [...sentence.matchAll(/\b(\d+d\d+)\b/gi)].map(
-      (m) => m[1],
-    );
-    if (sentenceDice.length < 2) continue;
-    sentenceDice.forEach((dice, index) => {
+    const components = [
+      ...sentence.matchAll(
+        /damage from the ([a-z ]+?)(?: option)? increases by (\d+d\d+)/gi,
+      ),
+    ];
+    if (components.length < 2) continue;
+    components.forEach((component) => {
       const operation: UpcastOperation = {
         kind: 'dice-per-slot',
         subject: {
-          ...subject(spell, /healing/i.test(sentence) ? 'healing' : 'damage'),
-          semanticId: `${spell.name.toLowerCase()}:component-${index + 1}`,
+          ...subject(
+            spell,
+            /healing/i.test(sentence) ? 'healing' : 'damage',
+            sentence,
+            `${spell.name.toLowerCase()}:${component[1].trim().toLowerCase().replace(/\s+/g, '-')}`,
+          ),
         },
-        dice,
+        dice: component[2],
         startSlotLevel: levels,
         everySlotLevels: /every two slot levels/i.test(sentence) ? 2 : 1,
       };
@@ -249,7 +336,7 @@ function thresholdOperations(
   )) {
     operations.push({
       kind: 'threshold',
-      subject: subject(spell, 'effect'),
+      subject: subject(spell, 'effect', text),
       atSlotLevel: Number(match[1]),
       value: match[2].trim(),
     });
@@ -270,7 +357,7 @@ function thresholdOperations(
         if (level >= 1 && level <= 9)
           operations.push({
             kind: 'threshold',
-            subject: subject(spell, 'effect'),
+            subject: subject(spell, 'effect', sentence),
             atSlotLevel: level,
             value: sentence.trim(),
           });
@@ -314,7 +401,15 @@ export function compileSpellUpcast(
         ...addPerSlotOperations(spell, spell.higherLevels),
         ...thresholdOperations(spell, spell.higherLevels),
       ];
-  const qualifier = operations.length === 0 ? spell.higherLevels : undefined;
+  const hasUnqualifiedOperation = operations.some(
+    (operation) =>
+      operation.subject.kind === 'effect' &&
+      operation.subject.property === 'other-quantity',
+  );
+  const qualifier =
+    operations.length === 0 || hasUnqualifiedOperation
+      ? spell.higherLevels
+      : undefined;
   return {
     sourceKind: 'higher-slot',
     clauseId,

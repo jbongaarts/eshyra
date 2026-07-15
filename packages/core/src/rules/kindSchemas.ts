@@ -4508,8 +4508,34 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
         );
       }
       const subject = reqObj(operation, 'subject', operationPath);
-      reqStr(subject, 'kind', `${operationPath}.subject`);
-      reqStr(subject, 'semanticId', `${operationPath}.subject`);
+      const subjectPath = `${operationPath}.subject`;
+      const subjectKind = reqStr(subject, 'kind', subjectPath);
+      reqStr(subject, 'semanticId', subjectPath);
+      const subjectProperty = reqStr(subject, 'property', subjectPath);
+      const allowedProperties: Record<string, readonly string[]> = {
+        damage: ['damage-dice'],
+        healing: ['healing-dice'],
+        effect: [
+          'duration-hours',
+          'hit-points',
+          'target-count',
+          'projectile-count',
+          'creature-count',
+          'object-count',
+          'volume-gallons',
+          'cube-size-feet',
+          'spell-level-threshold',
+          'duration',
+          'radius-feet',
+          'bonus',
+          'other-quantity',
+        ],
+      };
+      if (!allowedProperties[subjectKind]?.includes(subjectProperty)) {
+        throw new RulesPackError(
+          `${subjectPath}.property is not a closed semantic property for ${subjectKind}`,
+        );
+      }
       const key = JSON.stringify(operation);
       if (operationKeys.has(key))
         throw new RulesPackError(`${operationPath} duplicates an operation`);

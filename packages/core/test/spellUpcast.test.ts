@@ -38,7 +38,17 @@ describe('source-bound spell upcast resolver', () => {
     ).toMatchObject({ kind: 'flat', amount: 10 });
     expect(
       resolveSpellUpcast(spell('spell:magic-missile'), 3).adjustments[0],
-    ).toMatchObject({ kind: 'count', amount: 2 });
+    ).toMatchObject({
+      kind: 'count',
+      amount: 2,
+      subject: { property: 'projectile-count' },
+    });
+    expect(
+      resolveSpellUpcast(spell('spell:aid'), 4).adjustments[0],
+    ).toMatchObject({ subject: { property: 'hit-points' } });
+    expect(
+      resolveSpellUpcast(spell('spell:animal-messenger'), 3).adjustments[0],
+    ).toMatchObject({ subject: { property: 'duration-hours' }, amount: 48 });
   });
 
   it('returns no adjustment at base level and permits a non-scaling spell', () => {
@@ -52,14 +62,40 @@ describe('source-bound spell upcast resolver', () => {
   });
 
   it('reuses S1 summoning scaling rather than emitting a second generic operation', () => {
+    expect(
+      resolveSpellUpcast(spell('spell:conjure-animals'), 3).adjustments,
+    ).toEqual([]);
     const result = resolveSpellUpcast(spell('spell:conjure-animals'), 7);
     expect(result.adjustments).toEqual([
       {
         kind: 'summoning',
-        subject: 'summoning',
+        subject: { kind: 'summoning', semanticId: 'creation-menu-counts' },
         sourceOperation: 's1',
-        value: expect.any(String),
+        scalingKind: 'slot-multipliers',
+        threshold: 7,
+        multiplier: 3,
       },
+    ]);
+  });
+
+  it('keeps Arcane Hand component damage independent without a duplicate generic dice operation', () => {
+    expect(
+      resolveSpellUpcast(spell('spell:arcane-hand'), 6).adjustments,
+    ).toMatchObject([
+      expect.objectContaining({
+        kind: 'dice',
+        addedDice: '2d8',
+        subject: expect.objectContaining({
+          semanticId: 'arcane hand:clenched-fist',
+        }),
+      }),
+      expect.objectContaining({
+        kind: 'dice',
+        addedDice: '2d6',
+        subject: expect.objectContaining({
+          semanticId: 'arcane hand:grasping-hand',
+        }),
+      }),
     ]);
   });
 
@@ -109,6 +145,12 @@ describe('source-bound spell upcast resolver', () => {
           (record.data as Record<string, unknown>).upcast === undefined,
       ),
     ).toBe(true);
+    const eldritchBlast = spell('spell:eldritch-blast');
+    expect(eldritchBlast.data).toMatchObject({
+      scalingSourceKind: 'character-level',
+      scalingSourceText:
+        'The spell creates more than one beam when you reach higher levels: two beams at 5th level, three beams at 11th level, and four beams at 17th level.',
+    });
     expect(
       higher.every(
         (record) =>

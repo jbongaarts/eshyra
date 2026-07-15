@@ -69,6 +69,7 @@ export const spendSpellSlotTool: Tool = {
           'invalid_spell',
           'resolved spell record has no valid base level',
         );
+      let upcast: ReturnType<typeof resolveSpellUpcast> | null = null;
       const spent = spendSpellSlot(ctx.db, {
         spellLevel: level,
         ...(typeof a.slotLevel === 'number' ? { slotLevel: a.slotLevel } : {}),
@@ -76,11 +77,12 @@ export const spendSpellSlotTool: Tool = {
         provenance: `model:${ctx.turnId}`,
         sessionId: ctx.sessionId,
         at: ctx.at,
+        beforeSpend: (selectedSlotLevel) => {
+          if (level !== 0) {
+            upcast = resolveSpellUpcast(spell, selectedSlotLevel);
+          }
+        },
       });
-      const upcast =
-        level === 0
-          ? null
-          : resolveSpellUpcast(spell, spent.counter.spellLevel);
       return ok({
         spellRef: spell.key,
         baseSpellLevel: level,

@@ -140,6 +140,21 @@ describe('spell-slot economy — ordinary Spellcasting', () => {
     db.close();
   });
 
+  it('does not commit a slot when pre-increment upcast validation fails', () => {
+    const db = setup('class:wizard', 5);
+    expect(() =>
+      spendSpellSlot(db, {
+        spellLevel: 3,
+        ...CTX,
+        beforeSpend: () => {
+          throw new SpellSlotError('upcast validation failed');
+        },
+      }),
+    ).toThrow('upcast validation failed');
+    expect(readSpellSlots(db)).toEqual([]);
+    db.close();
+  });
+
   it('treats cantrips as at will and does not create a counter for them', () => {
     const db = setup('class:wizard', 1);
 

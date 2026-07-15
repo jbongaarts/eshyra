@@ -447,9 +447,12 @@ export function parseSpells(pages: readonly PageText[]): SpellExtraction[] {
       splitHigherLevels(description);
     const cantripClause =
       marker.level === 0
-        ? /(?:This spell['’]s|The spell['’]s) damage increases by [^.]+\./i.exec(
+        ? (/(?:This spell['’]s|The spell['’]s) damage increases by [^.]+\./i.exec(
             description,
-          )?.[0]
+          )?.[0] ??
+          /The spell creates more than one beam when you reach higher levels:[^.]+\./i.exec(
+            description,
+          )?.[0])
         : undefined;
 
     out.push({

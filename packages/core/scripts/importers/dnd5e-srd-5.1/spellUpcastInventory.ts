@@ -98,6 +98,7 @@ export const EXPECTED_HIGHER_SLOT_SPELL_KEYS = [
 export const EXPECTED_CHARACTER_LEVEL_SPELL_KEYS = [
   'spell:acid-splash',
   'spell:chill-touch',
+  'spell:eldritch-blast',
   'spell:fire-bolt',
   'spell:poison-spray',
   'spell:produce-flame',

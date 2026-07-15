@@ -829,13 +829,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'spell',
     field: 'scalingSourceKind',
-    missingCount: 218,
+    missingCount: 217,
     totalInKind: 319,
   },
   {
     kind: 'spell',
     field: 'scalingSourceText',
-    missingCount: 218,
+    missingCount: 217,
     totalInKind: 319,
   },
   // Seven spells own the nine embedded spell-description tables (eshyra-o4j7);
