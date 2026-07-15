@@ -8,7 +8,19 @@ import {
 import type { Tool } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
 
-const qualification = { type: 'object', additionalProperties: true } as const;
+const qualification = {
+  type: 'object',
+  properties: {
+    durationMinutes: { type: 'integer', minimum: 0 },
+    sleepMinutes: { type: 'integer', minimum: 0 },
+    lightActivityMinutes: { type: 'integer', minimum: 0 },
+    strenuousInterruptionMinutes: { type: 'integer', minimum: 0 },
+    strenuousActivity: { type: 'boolean' },
+    foodAndDrink: { type: 'boolean' },
+  },
+  required: ['durationMinutes'],
+  additionalProperties: false,
+} as const;
 const base = {
   campaignId: { type: 'string', minLength: 1 },
   restId: { type: 'string', minLength: 1 },

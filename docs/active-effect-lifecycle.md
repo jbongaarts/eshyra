@@ -4,7 +4,8 @@ Bead: `eshyra-2n1t.5` (engine family F3; source:
 `docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md`
 §4). Runtime owner: `packages/core/src/state/activeEffects.ts`; durable schema:
 `packages/core/data/migrations/0010_active_effects.sql` plus
-`0011_active_effect_anchor_evidence.sql`; evidence:
+`0011_active_effect_anchor_evidence.sql` and the elapsed-world columns in
+`0013_rest_engine.sql`; evidence:
 `packages/core/test/activeEffects.test.ts`.
 
 This document records the reviewed contract. The executable authority is the
@@ -274,6 +275,14 @@ typed audit events.
   end/cleanup, exposed to the model as model-facing tools
   `suppress_effect` and `unsuppress_effect`.
 - `expireElapsedRoundEffects` — deterministic round-deadline sweep.
+- `expireElapsedWorldEffects` — deterministic minute/hour/day sweep against
+  the campaign's monotonic `clock.elapsed_minutes`. Creation and refresh both
+  persist the elapsed anchor and calculated deadline. Advancing world time
+  first validates the due-effect cleanup, then advances the clock and ends
+  every due effect through `finalizeEnd`; cleanup failure rolls the clock and
+  cleanup back atomically. An explicit `expired` end is accepted only at or
+  after the durable deadline, including the exact boundary. Narrative
+  `in_game_time` labels never participate in this arithmetic.
 
 Read paths: `listActiveEffects` (validated typed views — status, source,
 targets, links, deadline description — consumed by the context assembler so

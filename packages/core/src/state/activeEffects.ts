@@ -662,6 +662,24 @@ function deadlineRound(row: ActiveEffectRow): number | undefined {
   return row.anchor_round + row.duration_amount;
 }
 
+function elapsedWorldDeadline(
+  db: Db,
+  duration: ValidatedDuration,
+): { anchor: number | null; deadline: number | null } {
+  if (duration.kind !== 'timed' || duration.unit === 'round')
+    return { anchor: null, deadline: null };
+  const row = db
+    .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
+    .get() as { elapsed_minutes?: number } | undefined;
+  const anchor = row?.elapsed_minutes ?? 0;
+  const multiplier =
+    duration.unit === 'minute' ? 1 : duration.unit === 'hour' ? 60 : 1440;
+  return {
+    anchor,
+    deadline: anchor + (duration.amount as number) * multiplier,
+  };
+}
+
 function durationView(row: ActiveEffectRow): EffectDurationView {
   return {
     kind: row.duration_kind,
@@ -2560,23 +2578,8 @@ export function createActiveEffect(
       }
     }
 
-    const worldClock = txnDb
-      .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
-      .get() as { elapsed_minutes?: number } | undefined;
-    const worldAnchor =
-      duration.kind === 'timed' && duration.unit !== 'round'
-        ? (worldClock?.elapsed_minutes ?? 0)
-        : null;
-    const worldDeadline =
-      worldAnchor === null || duration.kind !== 'timed'
-        ? null
-        : worldAnchor +
-          (duration.amount as number) *
-            (duration.unit === 'minute'
-              ? 1
-              : duration.unit === 'hour'
-                ? 60
-                : 1440);
+    const { anchor: worldAnchor, deadline: worldDeadline } =
+      elapsedWorldDeadline(txnDb, duration);
 
     // Targets.
     const targets = input.targets ?? [];
@@ -3182,6 +3185,22 @@ function validateDeclaredExpiry(
       );
     }
   }
+  if (row.duration_unit !== null && row.duration_unit !== 'round') {
+    if (row.deadline_elapsed_minutes === null) {
+      throw new ActiveEffectError(
+        `effect '${row.effect_id}' has no durable elapsed-world deadline`,
+      );
+    }
+    const current = db
+      .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
+      .get() as { elapsed_minutes?: number } | undefined;
+    if ((current?.elapsed_minutes ?? 0) < row.deadline_elapsed_minutes) {
+      throw new ActiveEffectError(
+        `effect '${row.effect_id}' runs until elapsed minute ${row.deadline_elapsed_minutes}; ` +
+          `the current clock is ${current?.elapsed_minutes ?? 0}, so it has not expired yet`,
+      );
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -3703,12 +3722,15 @@ export function refreshEffect(
       }
     }
 
+    const { anchor: worldAnchor, deadline: worldDeadline } =
+      elapsedWorldDeadline(txnDb, duration);
     const previous = durationView(row);
     txnDb
       .prepare(
         `UPDATE active_effect
          SET duration_kind = ?, duration_amount = ?, duration_unit = ?,
              anchor_kind = ?, anchor_at = ?, anchor_game_time = ?,
+             anchor_elapsed_minutes = ?, deadline_elapsed_minutes = ?,
              anchor_combat_instance_id = ?, anchor_round = ?,
              anchor_participant_kind = ?, anchor_participant_ref = ?,
              anchor_participant_turn_ordinal = ?, anchor_trigger = ?,
@@ -3723,6 +3745,8 @@ export function refreshEffect(
         duration.anchorKind,
         duration.anchorAt,
         duration.anchorGameTime,
+        worldAnchor,
+        worldDeadline,
         duration.anchorCombatInstanceId,
         duration.anchorRound,
         duration.anchorParticipantKind,

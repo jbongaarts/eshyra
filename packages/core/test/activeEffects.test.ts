@@ -13,6 +13,7 @@ import type { AdventureModule, Db } from '../src/internal.js';
 import {
   addCondition,
   adjustHp,
+  advanceWorldTime,
   applyCombatClosureToEffects,
   auditActiveEffectIntegrity,
   beginTurn,
@@ -1712,7 +1713,16 @@ describe('durations and clocks', () => {
       },
       ...CTX,
     });
-    // World-time expiry is declared (the campaign clock is narrative).
+    // Early world-time expiry is rejected against the monotonic deadline.
+    expect(() =>
+      endActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-hourly',
+        reason: 'expired',
+        ...CTX,
+      }),
+    ).toThrow(/has not expired yet/);
+    advanceWorldTime(db, { campaignId: CAMPAIGN, minutes: 60, ...CTX });
     expect(
       endActiveEffect(db, {
         campaignId: CAMPAIGN,
@@ -1749,6 +1759,16 @@ describe('durations and clocks', () => {
       at: LATER,
     });
     expect(refreshed.duration.anchorAt).toBe(LATER);
+    const timer = db
+      .prepare(
+        'SELECT anchor_elapsed_minutes, deadline_elapsed_minutes FROM active_effect WHERE campaign_id=? AND effect_id=?',
+      )
+      .get(CAMPAIGN, 'fx-bless') as {
+      anchor_elapsed_minutes: number | null;
+      deadline_elapsed_minutes: number | null;
+    };
+    expect(timer.anchor_elapsed_minutes).toBe(0);
+    expect(timer.deadline_elapsed_minutes).toBe(1);
     const events = listEffectEvents(db, CAMPAIGN, 'fx-bless');
     expect(events.at(-1)?.eventKind).toBe('refreshed');
     expect(events.at(-1)?.detail).toMatchObject({

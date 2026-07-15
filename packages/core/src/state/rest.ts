@@ -28,12 +28,11 @@ export interface WorldClock {
 
 export interface RestQualification {
   readonly durationMinutes: number;
-  readonly strenuousActivity?: boolean;
-  readonly sleepMinutes?: number;
-  readonly lightActivityMinutes?: number;
-  readonly strenuousInterruptionMinutes?: number;
-  readonly foodAndDrink?: boolean;
-  readonly activeCombat?: boolean;
+  readonly sleepMinutes: number;
+  readonly lightActivityMinutes: number;
+  readonly strenuousInterruptionMinutes: number;
+  readonly strenuousActivity: boolean;
+  readonly foodAndDrink: boolean;
 }
 export interface CompleteRestInput extends RestContext {
   campaignId: string;
@@ -197,8 +196,49 @@ function participants(ids: readonly string[]): string[] {
     throw new RestError('participants must be a non-empty unique list');
   return unique.sort();
 }
+const QUALIFICATION_KEYS = new Set([
+  'durationMinutes',
+  'sleepMinutes',
+  'lightActivityMinutes',
+  'strenuousInterruptionMinutes',
+  'strenuousActivity',
+  'foodAndDrink',
+]);
+
+function normalizeQualification(value: unknown): RestQualification {
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    throw new RestError('qualification must be an object');
+  const raw = value as Record<string, unknown>;
+  for (const key of Object.keys(raw))
+    if (!QUALIFICATION_KEYS.has(key))
+      throw new RestError(`unknown qualification property '${key}'`);
+  const numberField = (key: string, required: boolean): number => {
+    const value = raw[key];
+    if (value === undefined && !required) return 0;
+    return int(value, `qualification.${key}`);
+  };
+  const boolField = (key: string): boolean => {
+    const value = raw[key];
+    if (value === undefined) return false;
+    if (typeof value !== 'boolean')
+      throw new RestError(`qualification.${key} must be boolean`);
+    return value;
+  };
+  return {
+    durationMinutes: numberField('durationMinutes', true),
+    sleepMinutes: numberField('sleepMinutes', false),
+    lightActivityMinutes: numberField('lightActivityMinutes', false),
+    strenuousInterruptionMinutes: numberField(
+      'strenuousInterruptionMinutes',
+      false,
+    ),
+    strenuousActivity: boolField('strenuousActivity'),
+    foodAndDrink: boolField('foodAndDrink'),
+  };
+}
+
 function qualificationJson(q: RestQualification): string {
-  return JSON.stringify(q);
+  return JSON.stringify(normalizeQualification(q));
 }
 function readLife(
   db: Db,
@@ -264,10 +304,8 @@ function applyExhaustion(
 
 function validateQualification(kind: RestKind, q: RestQualification): void {
   int(q.durationMinutes, 'durationMinutes');
-  if (q.activeCombat === true)
-    throw new RestError('a rest cannot complete during active combat');
   if (kind === 'short') {
-    if (q.durationMinutes < 60 || q.strenuousActivity === true)
+    if (q.durationMinutes < 60 || q.strenuousActivity)
       throw new RestError(
         'short rest requires 60 minutes without strenuous activity',
       );
@@ -275,9 +313,9 @@ function validateQualification(kind: RestKind, q: RestQualification): void {
   }
   if (
     q.durationMinutes < 480 ||
-    (q.sleepMinutes ?? 0) < 360 ||
-    (q.lightActivityMinutes ?? 0) > 120 ||
-    (q.strenuousInterruptionMinutes ?? 0) >= 60
+    q.sleepMinutes < 360 ||
+    q.lightActivityMinutes > 120 ||
+    q.strenuousInterruptionMinutes >= 60
   )
     throw new RestError('long rest qualification failed');
 }
@@ -285,7 +323,8 @@ function validateQualification(kind: RestKind, q: RestQualification): void {
 function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
   return withTransaction(db, (txn) => {
     const ids = participants(input.participants);
-    validateQualification(kind, input.qualification);
+    const normalizedQualification = normalizeQualification(input.qualification);
+    validateQualification(kind, normalizedQualification);
     const existing = txn
       .prepare(
         'SELECT kind, qualification_json, status, end_elapsed_minutes FROM rest_event WHERE campaign_id = ? AND rest_id = ?',
@@ -302,7 +341,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
       if (
         existing.kind !== kind ||
         existing.qualification_json !==
-          qualificationJson(input.qualification) ||
+          qualificationJson(normalizedQualification) ||
         existing.status !== 'completed'
       )
         throw new RestError('conflicting or incomplete rest-id reuse');
@@ -322,6 +361,13 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         );
       return priorBenefits;
     }
+    const activeCombat = txn
+      .prepare(
+        "SELECT 1 FROM combat_instance WHERE campaign_id=? AND status='active' LIMIT 1",
+      )
+      .get(input.campaignId);
+    if (activeCombat)
+      throw new RestError('cannot complete a rest while combat is active');
     const start = clock(txn);
     const end = start.elapsedMinutes + input.qualification.durationMinutes;
     const states = ids.map((id) => ({ id, ...readLife(txn, id) }));
@@ -353,8 +399,8 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         kind,
         start.elapsedMinutes,
         end,
-        input.qualification.durationMinutes,
-        qualificationJson(input.qualification),
+        normalizedQualification.durationMinutes,
+        qualificationJson(normalizedQualification),
         input.provenance,
         input.sessionId,
         input.at,
@@ -381,7 +427,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         );
     advanceWorldTime(txn, {
       ...input,
-      minutes: input.qualification.durationMinutes,
+      minutes: normalizedQualification.durationMinutes,
     });
     const benefits = {
       kind,
@@ -428,7 +474,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
         benefits.exhaustion[s.id] = applyExhaustion(
           txn,
           s.id,
-          input.qualification.foodAndDrink === true,
+          normalizedQualification.foodAndDrink,
           input,
         );
         txn
@@ -498,7 +544,18 @@ export function spendRestHitDie(db: Db, input: SpendHitDieInput): unknown {
     return {
       restId: input.restId,
       characterId: input.characterId,
-      dice: roll,
+      visibility: 'player_visible',
+      category: 'hit_die',
+      reason: `Hit Die recovery during short rest ${input.restId}`,
+      dice: roll.notation,
+      rolls: roll.rolls,
+      kept: roll.kept,
+      keptIndices: roll.keptIndices,
+      dropped: roll.dropped,
+      droppedIndices: roll.droppedIndices,
+      modifier: roll.modifier,
+      total: roll.total,
+      rollEvidence: roll,
       constitutionModifier: modifier,
       constitutionSource: 'canonical character sheet',
       rawHealing: raw,

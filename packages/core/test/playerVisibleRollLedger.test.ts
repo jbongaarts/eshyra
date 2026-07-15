@@ -66,6 +66,35 @@ const visible = (
   });
 
 describe('player-visible roll ledger', () => {
+  it('renders one-at-a-time Hit Die recovery before the next choice', () => {
+    const entries = playerVisibleRollEntries([
+      {
+        tool: 'spend_rest_hit_die',
+        args: { restId: 'rest-1' },
+        result: {
+          ok: true,
+          data: {
+            visibility: 'player_visible',
+            category: 'hit_die',
+            reason: 'Hit Die recovery during short rest rest-1',
+            dice: '1d10',
+            rolls: [7],
+            kept: [7],
+            dropped: [],
+            modifier: 2,
+            total: 9,
+          },
+        },
+        mutates: true,
+        source: 'native',
+      },
+    ]);
+    expect(entries[0]).toMatchObject({
+      category: 'hit_die',
+      detail: expect.stringContaining('1d10 = 9'),
+    });
+  });
+
   it('renders player-visible attack and damage rolls from metadata', () => {
     const ledger = renderPlayerVisibleRollLedger(
       playerVisibleRollEntries([

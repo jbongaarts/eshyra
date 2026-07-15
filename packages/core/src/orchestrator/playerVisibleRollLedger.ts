@@ -265,6 +265,7 @@ const ENTRY_READERS: Record<
   resolve_check: readResolveCheckEntry,
   resolve_contest: readResolveContestEntry,
   resolve_damage: readResolveDamageEntry,
+  spend_rest_hit_die: readRollEntry,
 };
 
 function stripTrailingModelRollLedger(narration: string): string {
