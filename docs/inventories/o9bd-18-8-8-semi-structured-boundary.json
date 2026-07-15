@@ -9,9 +9,9 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1281,
+  "rowCount": 1283,
   "dispositionCounts": {
-    "complete": 337,
+    "complete": 339,
     "model-adjudicated": 742,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 3,
@@ -22231,7 +22231,7 @@
       ],
       "fieldPath": "data.upcast.operations[]",
       "representativeValues": [],
-      "population": 10,
+      "population": 9,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22255,7 +22255,7 @@
         "1d8",
         "1d6"
       ],
-      "population": 42,
+      "population": 44,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22278,7 +22278,47 @@
         "count-per-slot",
         "threshold"
       ],
-      "population": 93,
+      "population": 105,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
+      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
+      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].subject.application",
+      "representativeValues": [
+        "all-components"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
+      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
+      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].subject.choiceGroup",
+      "representativeValues": [
+        "create-or-destroy-water:scaled-mode"
+      ],
+      "population": 2,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22297,12 +22337,12 @@
       "fieldPath": "data.upcast.operations[].subject.damageType",
       "representativeValues": [
         "acid",
+        "force",
+        "bludgeoning",
         "necrotic",
-        "radiant",
-        "fire",
-        "lightning"
+        "radiant"
       ],
-      "population": 30,
+      "population": 33,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22320,13 +22360,13 @@
       ],
       "fieldPath": "data.upcast.operations[].subject.damageTypes[]",
       "representativeValues": [
-        "force",
-        "bludgeoning",
         "fire",
         "radiant",
-        "necrotic"
+        "acid",
+        "cold",
+        "lightning"
       ],
-      "population": 5,
+      "population": 4,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22346,9 +22386,10 @@
       "representativeValues": [
         "damage",
         "effect",
+        "affected-hit-points",
         "healing"
       ],
-      "population": 93,
+      "population": 105,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22372,7 +22413,7 @@
         "duration-hours",
         "duration"
       ],
-      "population": 93,
+      "population": 105,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22390,7 +22431,8 @@
       ],
       "fieldPath": "data.upcast.operations[].subject.selection",
       "representativeValues": [
-        "choose-one"
+        "choose-one",
+        "source-determined"
       ],
       "population": 5,
       "valueClass": "scalar-like",
@@ -22416,7 +22458,7 @@
         "animal friendship:effect",
         "animal messenger:effect"
       ],
-      "population": 93,
+      "population": 105,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22434,13 +22476,13 @@
       ],
       "fieldPath": "data.upcast.operations[].value",
       "representativeValues": [
-        "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes.",
-        "If you use a spell slot of 5th level or higher, the duration is 8 hours.",
-        "If you use a spell slot of 7th level or higher, the duration is 24 hours.",
-        "If you use a 9th level spell slot, the spell lasts until it is dispelled.",
-        "Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration."
+        "concentration, up to 10 minutes",
+        "8 hours, no concentration",
+        "24 hours, no concentration",
+        "until dispelled, no concentration",
+        "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
       ],
-      "population": 22,
+      "population": 31,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
@@ -22456,15 +22498,14 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.qualifier",
+      "fieldPath": "data.upcast.qualifier.text",
       "representativeValues": [
-        "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.",
         "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
-        "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.",
-        "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
-        "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them."
+        "If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
+        "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+        "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
       ],
-      "population": 9,
+      "population": 4,
       "valueClass": "source prose",
       "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
       "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",

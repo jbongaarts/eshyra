@@ -15,6 +15,10 @@ verbatim and matched by an exact spell/page/text override whose deterministic
 projection restores the source-backed “for each slot level” count. Damage
 subjects use clause-local unique types and source-named components, while S1
 results retain their creation/control scope and selection semantics.
+Reviewed clause-level coverage pins complete multi-threshold schedules and
+independent branches. Qualifiers carry a minimum applicable slot, damage
+subjects distinguish choices from all-component transforms, and affected-HP
+pool dice remain separate from damage and flat healing points.
 
 Generated scope:
 
@@ -30,4 +34,4 @@ boundary inventory, and the canonical importer verification.
 
 Updated frozen `records.json` SHA-256:
 
-`f299835c6e36a7d8fa3fa98b652e587218b7d9c64ea8afd5df410e3282b30bed`
+`c4e86f48a056c5dc3f07f4607198d72c9e8a4516fb0e403af849416de64edc5f`

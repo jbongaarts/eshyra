@@ -4482,7 +4482,11 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
         `${upcastPath}.disposition is not a closed upcast disposition`,
       );
     }
-    optStr(upcastObj, 'qualifier', upcastPath);
+    if (upcastObj.qualifier !== undefined) {
+      const qualifier = reqObj(upcastObj, 'qualifier', upcastPath);
+      reqStr(qualifier, 'text', `${upcastPath}.qualifier`);
+      reqInt(qualifier, 'minSlotLevel', `${upcastPath}.qualifier`, 1);
+    }
     const operations = upcastObj.operations;
     if (!Array.isArray(operations))
       throw new RulesPackError(`${upcastPath}.operations must be an array`);
@@ -4514,7 +4518,8 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
       const subjectProperty = reqStr(subject, 'property', subjectPath);
       const allowedProperties: Record<string, readonly string[]> = {
         damage: ['damage-dice'],
-        healing: ['healing-dice'],
+        healing: ['healing-dice', 'healing-points'],
+        'affected-hit-points': ['affected-hit-point-pool-dice'],
         effect: [
           'duration-hours',
           'hit-points',
@@ -4528,6 +4533,7 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
           'duration',
           'radius-feet',
           'bonus',
+          'memory-age',
           'other-quantity',
         ],
       };
@@ -4555,10 +4561,16 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
               (type) => typeof type !== 'string' || type.length === 0,
             ) ||
             new Set(damageTypes).size !== damageTypes.length ||
-            subject.selection !== 'choose-one'
+            !(
+              subject.selection === 'choose-one' ||
+              subject.selection === 'source-determined' ||
+              subject.application === 'all-components'
+            ) ||
+            (subject.selection !== undefined &&
+              subject.application !== undefined)
           ) {
             throw new RulesPackError(
-              `${subjectPath}.damageTypes must be unique and use choose-one selection`,
+              `${subjectPath}.damageTypes must be unique and use one closed application mode`,
             );
           }
         }

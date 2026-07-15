@@ -7,18 +7,26 @@ export type UpcastSubject =
       readonly kind: 'damage';
       readonly damageType?: string;
       readonly damageTypes?: readonly string[];
-      readonly selection?: 'choose-one';
+      readonly selection?: 'choose-one' | 'source-determined';
+      readonly application?: 'all-components';
       readonly semanticId: string;
       readonly property: 'damage-dice';
     }
   | {
       readonly kind: 'healing';
       readonly semanticId: string;
-      readonly property: 'healing-dice';
+      readonly property: 'healing-dice' | 'healing-points';
+    }
+  | {
+      readonly kind: 'affected-hit-points';
+      readonly semanticId: string;
+      readonly property: 'affected-hit-point-pool-dice';
     }
   | {
       readonly kind: 'effect';
       readonly semanticId: string;
+      readonly selection?: 'choose-one';
+      readonly choiceGroup?: string;
       readonly property:
         | 'duration-hours'
         | 'hit-points'
@@ -32,6 +40,7 @@ export type UpcastSubject =
         | 'duration'
         | 'radius-feet'
         | 'bonus'
+        | 'memory-age'
         | 'other-quantity';
     };
 
@@ -70,12 +79,203 @@ export interface SpellUpcastSpec {
   readonly sourcePhrase: string;
   readonly sourcePage: number;
   readonly operations: readonly UpcastOperation[];
-  readonly qualifier?: string;
+  readonly qualifier?: {
+    readonly text: string;
+    readonly minSlotLevel: number;
+  };
   readonly disposition:
     | 'complete-typed-upcast'
     | 'existing-s1-typed-scaling'
     | 'typed-core-with-model-qualifier';
 }
+
+interface ReviewedProjection {
+  readonly operations: readonly UpcastOperation[];
+  readonly qualifier?: SpellUpcastSpec['qualifier'];
+}
+
+const SCHEDULE_VALUES: Readonly<
+  Record<string, readonly { readonly slot: number; readonly value: string }[]>
+> = {
+  'dominate-beast': [
+    { slot: 5, value: 'concentration, up to 10 minutes' },
+    { slot: 6, value: 'concentration, up to 1 hour' },
+    { slot: 7, value: 'concentration, up to 8 hours' },
+  ],
+  'dominate-person': [
+    { slot: 6, value: 'concentration, up to 10 minutes' },
+    { slot: 7, value: 'concentration, up to 1 hour' },
+    { slot: 8, value: 'concentration, up to 8 hours' },
+  ],
+  'mass-suggestion': [
+    { slot: 7, value: '10 days' },
+    { slot: 8, value: '30 days' },
+    { slot: 9, value: 'a year and a day' },
+  ],
+  'planar-binding': [
+    { slot: 6, value: '10 days' },
+    { slot: 7, value: '30 days' },
+    { slot: 8, value: '180 days' },
+    { slot: 9, value: 'a year and a day' },
+  ],
+  'modify-memory': [
+    { slot: 6, value: 'up to 7 days ago' },
+    { slot: 7, value: 'up to 30 days ago' },
+    { slot: 8, value: 'up to 1 year ago' },
+    { slot: 9, value: 'any time in the creature’s past' },
+  ],
+  'bestow-curse': [
+    { slot: 4, value: 'concentration, up to 10 minutes' },
+    { slot: 5, value: '8 hours, no concentration' },
+    { slot: 7, value: '24 hours, no concentration' },
+    { slot: 9, value: 'until dispelled, no concentration' },
+  ],
+  geas: [
+    { slot: 7, value: '1 year' },
+    { slot: 9, value: 'until ended by an allowed spell' },
+  ],
+  'hunters-mark': [
+    { slot: 3, value: 'concentration, up to 8 hours' },
+    { slot: 5, value: 'concentration, up to 24 hours' },
+  ],
+  'magic-weapon': [
+    { slot: 4, value: '+2' },
+    { slot: 6, value: '+3' },
+  ],
+};
+
+function reviewedProjection(
+  spell: SpellExtraction,
+  spellSlug: string,
+  text: string,
+): ReviewedProjection | undefined {
+  const schedule = SCHEDULE_VALUES[spellSlug];
+  if (schedule !== undefined) {
+    const property =
+      spellSlug === 'modify-memory'
+        ? 'memory-age'
+        : spellSlug === 'magic-weapon'
+          ? 'bonus'
+          : 'duration';
+    return {
+      operations: schedule.map(({ slot, value }) => ({
+        kind: 'threshold',
+        subject: {
+          kind: 'effect',
+          semanticId: `${spell.name.toLowerCase()}:${property}-schedule`,
+          property,
+        },
+        atSlotLevel: slot,
+        value,
+      })),
+    };
+  }
+  if (spellSlug === 'create-or-destroy-water') {
+    const choice = {
+      selection: 'choose-one' as const,
+      choiceGroup: 'create-or-destroy-water:scaled-mode',
+    };
+    return {
+      operations: [
+        {
+          kind: 'count-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: 'create or destroy water:volume',
+            property: 'volume-gallons',
+            ...choice,
+          },
+          count: 10,
+          startSlotLevel: 1,
+          everySlotLevels: 1,
+        },
+        {
+          kind: 'flat-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: 'create or destroy water:cube-size',
+            property: 'cube-size-feet',
+            ...choice,
+          },
+          amount: 5,
+          startSlotLevel: 1,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'glyph-of-warding') {
+    return {
+      operations: [
+        {
+          kind: 'dice-per-slot',
+          subject: {
+            kind: 'damage',
+            damageTypes: ['acid', 'cold', 'fire', 'lightning', 'thunder'],
+            selection: 'choose-one',
+            semanticId: 'glyph of warding:explosive-runes-damage',
+            property: 'damage-dice',
+          },
+          dice: '1d8',
+          startSlotLevel: 3,
+          everySlotLevels: 1,
+        },
+      ],
+      qualifier: {
+        text: 'If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.',
+        minSlotLevel: 4,
+      },
+    };
+  }
+  if (spellSlug === 'wall-of-ice') {
+    return {
+      operations: [
+        {
+          kind: 'dice-per-slot',
+          subject: componentDamageSubject(
+            spell,
+            text,
+            'wall of ice:appearing-wall-damage',
+            'cold',
+          ),
+          dice: '2d6',
+          startSlotLevel: 6,
+          everySlotLevels: 1,
+        },
+        {
+          kind: 'dice-per-slot',
+          subject: componentDamageSubject(
+            spell,
+            text,
+            'wall of ice:frigid-air-damage',
+            'cold',
+          ),
+          dice: '1d6',
+          startSlotLevel: 6,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  return undefined;
+}
+
+const REVIEWED_CLAUSE_COVERAGE: Readonly<
+  Record<
+    string,
+    { readonly operationCount: number; readonly qualifier: boolean }
+  >
+> = {
+  ...Object.fromEntries(
+    Object.entries(SCHEDULE_VALUES).map(([key, schedule]) => [
+      key,
+      { operationCount: schedule.length, qualifier: false },
+    ]),
+  ),
+  'create-or-destroy-water': { operationCount: 2, qualifier: false },
+  'glyph-of-warding': { operationCount: 1, qualifier: true },
+  'wall-of-ice': { operationCount: 2, qualifier: false },
+};
 
 const S1_SUMMONS = new Set([
   'conjure-animals',
@@ -98,11 +298,19 @@ const DICE = /^(?:\d+)d(?:\d+)$/;
 const DAMAGE_TYPES =
   /\b(acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder) damage\b/gi;
 
+function spellSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[’']/g, '')
+    .replace(/[^a-z0-9]+/g, '-');
+}
+
 function subject(
   spell: SpellExtraction,
   kind: UpcastSubject['kind'],
   text = spell.description,
   semanticId?: string,
+  numericKind: 'dice' | 'flat' = 'dice',
 ): UpcastSubject {
   const localTypes = [
     ...new Set(
@@ -124,9 +332,13 @@ function subject(
       ...(types.length > 1
         ? {
             damageTypes: types,
-            ...(/\bor\b|your choice/i.test(text)
+            ...(/(?:acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder) damage\s+or\s+(?:the\s+)?(?:acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder) damage|your choice/i.test(
+              text,
+            )
               ? { selection: 'choose-one' as const }
-              : {}),
+              : /both types|both .*damage/i.test(text)
+                ? { application: 'all-components' as const }
+                : { selection: 'source-determined' as const }),
           }
         : {}),
       semanticId:
@@ -141,7 +353,15 @@ function subject(
     return {
       kind,
       semanticId: semanticId ?? `${spell.name.toLowerCase()}:healing`,
-      property: 'healing-dice',
+      property: numericKind === 'flat' ? 'healing-points' : 'healing-dice',
+    };
+  }
+  if (kind === 'affected-hit-points') {
+    return {
+      kind,
+      semanticId:
+        semanticId ?? `${spell.name.toLowerCase()}:affected-hit-point-pool`,
+      property: 'affected-hit-point-pool-dice',
     };
   }
   const property = /duration.*hours?/i.test(text)
@@ -179,6 +399,23 @@ function subject(
 function levelAbove(text: string): number | undefined {
   const match = /above (\d+)(?:st|nd|rd|th)/i.exec(text);
   return match === null ? undefined : Number(match[1]);
+}
+
+function componentDamageSubject(
+  spell: SpellExtraction,
+  text: string,
+  semanticId: string,
+  damageType?: string,
+): UpcastSubject {
+  if (damageType !== undefined) {
+    return {
+      kind: 'damage',
+      damageType,
+      semanticId,
+      property: 'damage-dice',
+    };
+  }
+  return subject(spell, 'damage', text, semanticId);
 }
 
 function addPerSlotOperations(
@@ -261,9 +498,14 @@ function addPerSlotOperations(
     ),
   ];
   for (const match of rolledAdditional) {
+    const affectedHitPointPool = /color spray|sleep/i.test(spell.name);
     const operation: UpcastOperation = {
       kind: 'dice-per-slot',
-      subject: subject(spell, 'damage', text),
+      subject: subject(
+        spell,
+        affectedHitPointPool ? 'affected-hit-points' : 'damage',
+        text,
+      ),
       dice: match[1],
       startSlotLevel: Number(match[2]),
       everySlotLevels: 1,
@@ -299,6 +541,8 @@ function addPerSlotOperations(
         spell,
         /healing/i.test(text) ? 'healing' : 'effect',
         text,
+        undefined,
+        'flat',
       ),
       amount: wordsForFlat[match[1].toLowerCase()] ?? Number(match[1]),
       startSlotLevel: Number(match[2]),
@@ -359,16 +603,23 @@ function addPerSlotOperations(
     ];
     if (components.length < 2) continue;
     components.forEach((component) => {
+      const componentName = component[1].trim().toLowerCase();
+      const arcaneHandType =
+        spell.name === 'Arcane Hand'
+          ? componentName === 'clenched fist'
+            ? 'force'
+            : componentName === 'grasping hand'
+              ? 'bludgeoning'
+              : undefined
+          : undefined;
       const operation: UpcastOperation = {
         kind: 'dice-per-slot',
-        subject: {
-          ...subject(
-            spell,
-            /healing/i.test(sentence) ? 'healing' : 'damage',
-            sentence,
-            `${spell.name.toLowerCase()}:${component[1].trim().toLowerCase().replace(/\s+/g, '-')}`,
-          ),
-        },
+        subject: componentDamageSubject(
+          spell,
+          sentence,
+          `${spell.name.toLowerCase()}:${componentName.replace(/\s+/g, '-')}`,
+          arcaneHandType,
+        ),
         dice: component[2],
         startSlotLevel: levels,
         everySlotLevels: /every two slot levels/i.test(sentence) ? 2 : 1,
@@ -383,36 +634,28 @@ function thresholdOperations(
   spell: SpellExtraction,
   text: string,
 ): UpcastOperation[] {
+  if (/for (?:each|every)(?: two)? slot levels?/i.test(text)) return [];
   const operations: UpcastOperation[] = [];
-  for (const match of text.matchAll(
-    /(?:using|with) (?:a )?(\d+)(?:st|nd|rd|th)[- ]level spell slot[^.]*?duration (?:is |increases to |is )([^.]+)/gi,
-  )) {
-    operations.push({
-      kind: 'threshold',
-      subject: subject(spell, 'effect', text),
-      atSlotLevel: Number(match[1]),
-      value: match[2].trim(),
-    });
-  }
-  if (
-    operations.length === 0 &&
-    /spell slot/i.test(text) &&
-    !/(?:for each|for every) slot level/i.test(text)
-  ) {
+  if (/spell slot/i.test(text)) {
     for (const sentence of text.split(/(?<=\.)\s+/)) {
-      const levels = [
-        ...sentence.matchAll(
-          /(?:slot|slots) (?:of |at |used for )?(\d+)(?:st|nd|rd|th)?/gi,
-        ),
-        ...sentence.matchAll(/(\d+)(?:st|nd|rd|th)[- ]level spell slot/gi),
-      ].map((m) => Number(m[1]));
+      const levels = new Set(
+        [
+          ...sentence.matchAll(
+            /(?:slot|slots) (?:of |at |used for )?(\d+)(?:st|nd|rd|th)?/gi,
+          ),
+          ...sentence.matchAll(/(\d+)(?:st|nd|rd|th)[- ]level spell slot/gi),
+        ].map((match) => Number(match[1])),
+      );
+      const duration = /duration (?:is |increases to )([^.]+)/i.exec(
+        sentence,
+      )?.[1];
       for (const level of levels) {
         if (level >= 1 && level <= 9)
           operations.push({
             kind: 'threshold',
             subject: subject(spell, 'effect', sentence),
             atSlotLevel: level,
-            value: sentence.trim(),
+            value: duration?.trim() ?? sentence.trim(),
           });
       }
     }
@@ -430,7 +673,7 @@ export function compileSpellUpcast(
     spell.higherLevels === undefined
   )
     return undefined;
-  const spellKey = `spell:${spell.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  const spellKey = `spell:${spellSlug(spell.name)}`;
   const expectedPage = EXPECTED_HIGHER_SLOT_SOURCE_PAGES[spellKey];
   // Small parser fixtures intentionally renumber their synthetic pages; the
   // full SRD source (pages > 20) is the compiler's source-drift gate.
@@ -444,10 +687,8 @@ export function compileSpellUpcast(
       `source page drift for ${spellKey}: expected ${expectedPage}, got ${spell.sourcePage}`,
     );
   }
-  const clauseId = `${spell.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}:higher-slot`;
-  const isS1 = S1_SUMMONS.has(
-    spell.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-  );
+  const clauseId = `${spellSlug(spell.name)}:higher-slot`;
+  const isS1 = S1_SUMMONS.has(spellSlug(spell.name));
   const malformedAnimalFriendship =
     'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.';
   const operationText =
@@ -461,21 +702,39 @@ export function compileSpellUpcast(
       `malformed Animal Friendship higher-level source in ${spell.name}`,
     );
   }
+  const reviewed = isS1
+    ? undefined
+    : reviewedProjection(spell, spellKey.slice('spell:'.length), operationText);
   const operations = isS1
     ? []
-    : [
+    : (reviewed?.operations ?? [
         ...addPerSlotOperations(spell, operationText),
         ...thresholdOperations(spell, operationText),
-      ];
+      ]);
   const hasUnqualifiedOperation = operations.some(
     (operation) =>
       operation.subject.kind === 'effect' &&
       operation.subject.property === 'other-quantity',
   );
+  const firstHigherSlot =
+    Number(
+      /(?:slot(?: of)? |a )(\d+)(?:st|nd|rd|th)[- ]level/i.exec(
+        spell.higherLevels,
+      )?.[1],
+    ) || spell.level + 1;
   const qualifier =
-    !isS1 && (operations.length === 0 || hasUnqualifiedOperation)
-      ? spell.higherLevels
-      : undefined;
+    reviewed?.qualifier ??
+    (!isS1 && (operations.length === 0 || hasUnqualifiedOperation)
+      ? { text: spell.higherLevels, minSlotLevel: firstHigherSlot }
+      : undefined);
+  const coverage = REVIEWED_CLAUSE_COVERAGE[spellKey.slice('spell:'.length)];
+  if (
+    coverage !== undefined &&
+    (operations.length !== coverage.operationCount ||
+      (qualifier !== undefined) !== coverage.qualifier)
+  ) {
+    throw new Error(`reviewed upcast coverage drift for ${spellKey}`);
+  }
   return {
     sourceKind: 'higher-slot',
     clauseId,

@@ -517,10 +517,10 @@ const rules: readonly ClassificationRule[] = [
       const retained =
         fieldPath === 'data.scalingSourceText' ||
         fieldPath === 'data.upcast.sourcePhrase' ||
-        fieldPath === 'data.upcast.qualifier';
+        fieldPath === 'data.upcast.qualifier.text';
       return result(
         retained ? 'source prose' : 'scalar-like',
-        fieldPath === 'data.upcast.qualifier'
+        fieldPath === 'data.upcast.qualifier.text'
           ? 'typed-core-with-prose-qualifier'
           : retained && fieldPath === 'data.scalingSourceText'
             ? 'not-mechanical'

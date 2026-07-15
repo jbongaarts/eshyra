@@ -283,7 +283,8 @@ export function resolveSpellUpcast(
     const subjectProperty = subjectObject.property;
     const allowedProperties: Record<string, readonly string[]> = {
       damage: ['damage-dice'],
-      healing: ['healing-dice'],
+      healing: ['healing-dice', 'healing-points'],
+      'affected-hit-points': ['affected-hit-point-pool-dice'],
       effect: [
         'duration-hours',
         'hit-points',
@@ -297,6 +298,7 @@ export function resolveSpellUpcast(
         'duration',
         'radius-feet',
         'bonus',
+        'memory-age',
         'other-quantity',
       ],
     };
@@ -327,7 +329,13 @@ export function resolveSpellUpcast(
             (type) => typeof type !== 'string' || type.length === 0,
           ) ||
           new Set(damageTypes).size !== damageTypes.length ||
-          subjectObject.selection !== 'choose-one'
+          !(
+            subjectObject.selection === 'choose-one' ||
+            subjectObject.selection === 'source-determined' ||
+            subjectObject.application === 'all-components'
+          ) ||
+          (subjectObject.selection !== undefined &&
+            subjectObject.application !== undefined)
         )
           throw new SpellUpcastError(
             `operation ${index} has invalid damage type selection`,
@@ -418,7 +426,7 @@ export function resolveSpellUpcast(
   const winningThreshold = new Map<string, number>();
   for (const adjustment of adjustments) {
     if (adjustment.kind === 'threshold' && adjustment.threshold !== undefined) {
-      const key = JSON.stringify(adjustment.subject);
+      const key = String(obj(adjustment.subject).semanticId);
       winningThreshold.set(
         key,
         Math.max(winningThreshold.get(key) ?? 0, adjustment.threshold),
@@ -429,16 +437,36 @@ export function resolveSpellUpcast(
     (adjustment) =>
       adjustment.kind !== 'threshold' ||
       adjustment.threshold ===
-        winningThreshold.get(JSON.stringify(adjustment.subject)),
+        winningThreshold.get(String(obj(adjustment.subject).semanticId)),
   );
+  const qualifier =
+    upcast.qualifier === undefined ? undefined : obj(upcast.qualifier);
+  const qualifierText = qualifier?.text;
+  const qualifierMinSlotLevel =
+    qualifier === undefined
+      ? undefined
+      : integer(qualifier.minSlotLevel, 'qualifier minimum slot level', 1);
+  if (
+    qualifier !== undefined &&
+    (typeof qualifierText !== 'string' || qualifierText.length === 0)
+  ) {
+    throw new SpellUpcastError('malformed upcast qualifier');
+  }
+  const applicableQualifier: string | undefined =
+    qualifierMinSlotLevel !== undefined &&
+    slotLevel >= qualifierMinSlotLevel &&
+    typeof qualifierText === 'string'
+      ? qualifierText
+      : undefined;
   return {
     ...result,
-    hasHigherSlotBenefit: resolvedAdjustments.length > 0,
+    hasHigherSlotBenefit:
+      resolvedAdjustments.length > 0 || applicableQualifier !== undefined,
     clauseIds: [upcast.clauseId],
     adjustments: resolvedAdjustments,
-    ...(typeof upcast.qualifier === 'string'
-      ? { qualifier: upcast.qualifier }
-      : {}),
+    ...(applicableQualifier === undefined
+      ? {}
+      : { qualifier: applicableQualifier }),
   };
 }
 

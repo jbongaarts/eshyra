@@ -106815,11 +106815,7 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "damageTypes": [
-                "force",
-                "bludgeoning"
-              ],
-              "selection": "choose-one",
+              "damageType": "force",
               "semanticId": "arcane hand:clenched-fist",
               "property": "damage-dice"
             },
@@ -106831,11 +106827,7 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "damageTypes": [
-                "force",
-                "bludgeoning"
-              ],
-              "selection": "choose-one",
+              "damageType": "bludgeoning",
               "semanticId": "arcane hand:grasping-hand",
               "property": "damage-dice"
             },
@@ -107624,55 +107616,44 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "bestow curse:effect",
+              "semanticId": "bestow curse:duration-schedule",
               "property": "duration"
             },
             "atSlotLevel": 4,
-            "value": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes."
+            "value": "concentration, up to 10 minutes"
           },
           {
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "bestow curse:effect",
-              "property": "duration-hours"
-            },
-            "atSlotLevel": 5,
-            "value": "If you use a spell slot of 5th level or higher, the duration is 8 hours."
-          },
-          {
-            "kind": "threshold",
-            "subject": {
-              "kind": "effect",
-              "semanticId": "bestow curse:effect",
-              "property": "duration-hours"
-            },
-            "atSlotLevel": 7,
-            "value": "If you use a spell slot of 7th level or higher, the duration is 24 hours."
-          },
-          {
-            "kind": "threshold",
-            "subject": {
-              "kind": "effect",
-              "semanticId": "bestow curse:effect",
-              "property": "other-quantity"
-            },
-            "atSlotLevel": 9,
-            "value": "If you use a 9th level spell slot, the spell lasts until it is dispelled."
-          },
-          {
-            "kind": "threshold",
-            "subject": {
-              "kind": "effect",
-              "semanticId": "bestow curse:effect",
+              "semanticId": "bestow curse:duration-schedule",
               "property": "duration"
             },
             "atSlotLevel": 5,
-            "value": "Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration."
+            "value": "8 hours, no concentration"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bestow curse:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 7,
+            "value": "24 hours, no concentration"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "bestow curse:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 9,
+            "value": "until dispelled, no concentration"
           }
         ],
-        "qualifier": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.",
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "higherLevels": "If you cast this spell using a spell slot of 4th level or higher, the duration is concentration, up to 10 minutes. If you use a spell slot of 5th level or higher, the duration is 8 hours. If you use a spell slot of 7th level or higher, the duration is 24 hours. If you use a 9th level spell slot, the spell lasts until it is dispelled. Using a spell slot of 5th level or higher grants a duration that doesn’t require concentration.",
       "scalingSourceKind": "higher-slot",
@@ -109257,9 +109238,9 @@
           {
             "kind": "dice-per-slot",
             "subject": {
-              "kind": "damage",
-              "semanticId": "color spray:damage",
-              "property": "damage-dice"
+              "kind": "affected-hit-points",
+              "semanticId": "color spray:affected-hit-point-pool",
+              "property": "affected-hit-point-pool-dice"
             },
             "dice": "2d10",
             "startSlotLevel": 1,
@@ -111639,7 +111620,10 @@
             "value": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
           }
         ],
-        "qualifier": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
+        "qualifier": {
+          "text": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
+          "minSlotLevel": 4
+        },
         "disposition": "typed-core-with-model-qualifier"
       },
       "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
@@ -111785,10 +111769,25 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "create or destroy water:effect",
-              "property": "volume-gallons"
+              "semanticId": "create or destroy water:volume",
+              "property": "volume-gallons",
+              "selection": "choose-one",
+              "choiceGroup": "create-or-destroy-water:scaled-mode"
             },
             "count": 10,
+            "startSlotLevel": 1,
+            "everySlotLevels": 1
+          },
+          {
+            "kind": "flat-per-slot",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "create or destroy water:cube-size",
+              "property": "cube-size-feet",
+              "selection": "choose-one",
+              "choiceGroup": "create-or-destroy-water:scaled-mode"
+            },
+            "amount": 5,
             "startSlotLevel": 1,
             "everySlotLevels": 1
           }
@@ -113641,11 +113640,31 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "dominate beast:effect",
-              "property": "duration-hours"
+              "semanticId": "dominate beast:duration-schedule",
+              "property": "duration"
             },
             "atSlotLevel": 5,
             "value": "concentration, up to 10 minutes"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dominate beast:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 6,
+            "value": "concentration, up to 1 hour"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dominate beast:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 7,
+            "value": "concentration, up to 8 hours"
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -113840,11 +113859,31 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "dominate person:effect",
-              "property": "duration-hours"
+              "semanticId": "dominate person:duration-schedule",
+              "property": "duration"
             },
             "atSlotLevel": 6,
             "value": "concentration, up to 10 minutes"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dominate person:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 7,
+            "value": "concentration, up to 1 hour"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "dominate person:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 8,
+            "value": "concentration, up to 8 hours"
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -116284,20 +116323,9 @@
             "dice": "1d6",
             "startSlotLevel": 2,
             "everySlotLevels": 2
-          },
-          {
-            "kind": "threshold",
-            "subject": {
-              "kind": "effect",
-              "semanticId": "flame blade:effect",
-              "property": "other-quantity"
-            },
-            "atSlotLevel": 4,
-            "value": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd."
           }
         ],
-        "qualifier": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.",
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "componentMaterials": "leaf of sumac",
       "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.",
@@ -117423,25 +117451,24 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "geas:effect",
+              "semanticId": "geas:duration-schedule",
               "property": "duration"
             },
             "atSlotLevel": 7,
-            "value": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year."
+            "value": "1 year"
           },
           {
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "geas:effect",
-              "property": "other-quantity"
+              "semanticId": "geas:duration-schedule",
+              "property": "duration"
             },
             "atSlotLevel": 9,
-            "value": "When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above."
+            "value": "until ended by an allowed spell"
           }
         ],
-        "qualifier": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "higherLevels": "When you cast this spell using a spell slot of 7th or 8th level, the duration is 1 year. When you cast this spell using a spell slot of 9th level, the spell lasts until it is ended by one of the spells mentioned above.",
       "scalingSourceKind": "higher-slot",
@@ -117936,8 +117963,15 @@
             "kind": "dice-per-slot",
             "subject": {
               "kind": "damage",
-              "damageType": "thunder",
-              "semanticId": "glyph of warding:damage",
+              "damageTypes": [
+                "acid",
+                "cold",
+                "fire",
+                "lightning",
+                "thunder"
+              ],
+              "selection": "choose-one",
+              "semanticId": "glyph of warding:explosive-runes-damage",
               "property": "damage-dice"
             },
             "dice": "1d8",
@@ -117945,7 +117979,11 @@
             "everySlotLevels": 1
           }
         ],
-        "disposition": "complete-typed-upcast"
+        "qualifier": {
+          "text": "If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
+          "minSlotLevel": 4
+        },
+        "disposition": "typed-core-with-model-qualifier"
       },
       "componentMaterials": "incense and powdered diamond worth at least 200 gp, which the spell consumes",
       "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
@@ -118889,7 +118927,7 @@
             "subject": {
               "kind": "healing",
               "semanticId": "heal:healing",
-              "property": "healing-dice"
+              "property": "healing-points"
             },
             "amount": 10,
             "startSlotLevel": 6,
@@ -119636,7 +119674,10 @@
             "everySlotLevels": 1
           }
         ],
-        "qualifier": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+        "qualifier": {
+          "text": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+          "minSlotLevel": 3
+        },
         "disposition": "typed-core-with-model-qualifier"
       },
       "componentMaterials": "a small, straight piece of iron",
@@ -119787,7 +119828,7 @@
       },
       "upcast": {
         "sourceKind": "higher-slot",
-        "clauseId": "hunter-s-mark:higher-slot",
+        "clauseId": "hunters-mark:higher-slot",
         "sourcePhrase": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.",
         "sourcePage": 155,
         "operations": [
@@ -119795,25 +119836,24 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "hunter’s mark:effect",
-              "property": "other-quantity"
+              "semanticId": "hunter’s mark:duration-schedule",
+              "property": "duration"
             },
             "atSlotLevel": 3,
-            "value": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours."
+            "value": "concentration, up to 8 hours"
           },
           {
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "hunter’s mark:effect",
-              "property": "other-quantity"
+              "semanticId": "hunter’s mark:duration-schedule",
+              "property": "duration"
             },
             "atSlotLevel": 5,
-            "value": "When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours."
+            "value": "concentration, up to 24 hours"
           }
         ],
-        "qualifier": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.",
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "higherLevels": "When you cast this spell using a spell slot of 3rd or 4th level, you can maintain your concentration on the spell for up to 8 hours. When you use a spell slot of 5th level or higher, you can maintain your concentration on the spell for up to 24 hours.",
       "scalingSourceKind": "higher-slot",
@@ -121915,21 +121955,21 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic weapon:effect",
+              "semanticId": "magic weapon:bonus-schedule",
               "property": "bonus"
             },
             "atSlotLevel": 4,
-            "value": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2."
+            "value": "+2"
           },
           {
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic weapon:effect",
+              "semanticId": "magic weapon:bonus-schedule",
               "property": "bonus"
             },
             "atSlotLevel": 6,
-            "value": "When you use a spell slot of 6th level or higher, the bonus increases to +3."
+            "value": "+3"
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -122083,7 +122123,10 @@
             "value": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
           }
         ],
-        "qualifier": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
+        "qualifier": {
+          "text": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
+          "minSlotLevel": 6
+        },
         "disposition": "typed-core-with-model-qualifier"
       },
       "componentMaterials": "a bit of fleece",
@@ -122402,11 +122445,31 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "mass suggestion:effect",
+              "semanticId": "mass suggestion:duration-schedule",
               "property": "duration"
             },
             "atSlotLevel": 7,
             "value": "10 days"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "mass suggestion:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 8,
+            "value": "30 days"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "mass suggestion:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 9,
+            "value": "a year and a day"
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -123229,11 +123292,41 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "modify memory:effect",
-              "property": "target-count"
+              "semanticId": "modify memory:memory-age-schedule",
+              "property": "memory-age"
             },
             "atSlotLevel": 6,
-            "value": "If you cast this spell using a spell slot of 6th level or higher, you can alter the target’s memories of an event that took place up to 7 days ago (6th level), 30 days ago (7th level), 1 year ago (8th level), or any time in the creature’s past (9th level)."
+            "value": "up to 7 days ago"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "modify memory:memory-age-schedule",
+              "property": "memory-age"
+            },
+            "atSlotLevel": 7,
+            "value": "up to 30 days ago"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "modify memory:memory-age-schedule",
+              "property": "memory-age"
+            },
+            "atSlotLevel": 8,
+            "value": "up to 1 year ago"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "modify memory:memory-age-schedule",
+              "property": "memory-age"
+            },
+            "atSlotLevel": 9,
+            "value": "any time in the creature’s past"
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -124005,11 +124098,41 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "planar binding:effect",
+              "semanticId": "planar binding:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 6,
+            "value": "10 days"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "planar binding:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 7,
+            "value": "30 days"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "planar binding:duration-schedule",
+              "property": "duration"
+            },
+            "atSlotLevel": 8,
+            "value": "180 days"
+          },
+          {
+            "kind": "threshold",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "planar binding:duration-schedule",
               "property": "duration"
             },
             "atSlotLevel": 9,
-            "value": "When you cast this spell using a spell slot of a higher level, the duration increases to 10 days with a 6th-level slot, to 30 days with a 7th-level slot, to 180 days with an 8th-level slot, and to a year and a day with a 9th-level spell slot."
+            "value": "a year and a day"
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -127457,9 +127580,9 @@
           {
             "kind": "dice-per-slot",
             "subject": {
-              "kind": "damage",
-              "semanticId": "sleep:damage",
-              "property": "damage-dice"
+              "kind": "affected-hit-points",
+              "semanticId": "sleep:affected-hit-point-pool",
+              "property": "affected-hit-point-pool-dice"
             },
             "dice": "2d8",
             "startSlotLevel": 1,
@@ -128103,7 +128226,7 @@
                 "radiant",
                 "necrotic"
               ],
-              "selection": "choose-one",
+              "selection": "source-determined",
               "semanticId": "spirit guardians:damage-choice",
               "property": "damage-dice"
             },
@@ -128196,20 +128319,9 @@
             "dice": "1d8",
             "startSlotLevel": 2,
             "everySlotLevels": 2
-          },
-          {
-            "kind": "threshold",
-            "subject": {
-              "kind": "effect",
-              "semanticId": "spiritual weapon:effect",
-              "property": "other-quantity"
-            },
-            "atSlotLevel": 3,
-            "value": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd."
           }
         ],
-        "qualifier": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd.",
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d8 for every two slot levels above 2nd.",
       "scalingSourceKind": "higher-slot",
@@ -130287,9 +130399,33 @@
         "clauseId": "wall-of-ice:higher-slot",
         "sourcePhrase": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
         "sourcePage": 190,
-        "operations": [],
-        "qualifier": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
-        "disposition": "typed-core-with-model-qualifier"
+        "operations": [
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "cold",
+              "semanticId": "wall of ice:appearing-wall-damage",
+              "property": "damage-dice"
+            },
+            "dice": "2d6",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          },
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "cold",
+              "semanticId": "wall of ice:frigid-air-damage",
+              "property": "damage-dice"
+            },
+            "dice": "1d6",
+            "startSlotLevel": 6,
+            "everySlotLevels": 1
+          }
+        ],
+        "disposition": "complete-typed-upcast"
       },
       "componentMaterials": "a small piece of quartz",
       "higherLevels": "When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.",
@@ -130444,7 +130580,7 @@
                 "piercing",
                 "slashing"
               ],
-              "selection": "choose-one",
+              "application": "all-components",
               "semanticId": "wall of thorns:damage-choice",
               "property": "damage-dice"
             },
