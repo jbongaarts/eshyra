@@ -14,6 +14,7 @@ import {
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
   initSchema,
+  normalizeLegacyRolledAbilityScore,
   openDatabase,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
@@ -74,6 +75,32 @@ describe('character sheet store', () => {
     const sheet = makeSheet();
     store.save('pc-1', sheet);
     expect(store.load('pc-1')).toEqual(sheet);
+  });
+
+  it('round-trips canonical creation rolls byte-identically and rejects forgery', () => {
+    const store = createSqliteCharacterSheetStore(db, () => 'now');
+    const rolledAbilityScores = Array.from({ length: 6 }, () =>
+      normalizeLegacyRolledAbilityScore({
+        rolls: [1, 3, 3, 4],
+        dropped: 1,
+        total: 10,
+      }),
+    );
+    const sheet = makeSheet({ rolledAbilityScores });
+    store.save('pc-1', sheet);
+    expect(JSON.stringify(store.load('pc-1')?.rolledAbilityScores)).toBe(
+      JSON.stringify(rolledAbilityScores),
+    );
+
+    expect(() =>
+      store.save('forged', {
+        ...sheet,
+        rolledAbilityScores: [
+          { ...rolledAbilityScores[0], total: 11 },
+          ...rolledAbilityScores.slice(1),
+        ],
+      }),
+    ).toThrow(/totals/);
   });
 
   it('persists the binding columns out of the document', () => {

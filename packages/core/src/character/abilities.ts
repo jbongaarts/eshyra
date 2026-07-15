@@ -110,7 +110,7 @@ export function pointBuyCost(score: number): number | undefined {
   return POINT_BUY_COSTS.get(score);
 }
 
-/** True when a `manual`/`rolled` base score is an integer within plausible bounds. */
+/** True when a free-entry base score is an integer within plausible bounds. */
 export function isPlausibleFreeEntryScore(score: number): boolean {
   return (
     Number.isInteger(score) &&

@@ -389,11 +389,18 @@ describe('character wizard — ability-first flow', () => {
       'quit', // stop (don't need to finish assignment)
     ]);
     await runCharacterWizard(d, { mode: 'ability-first', draftId: 'r' });
-    const rolledLine = lines.find((l) => l.startsWith('Rolled: '));
+    const rolledLine = lines.find((l) => l.startsWith('Rolled pool: '));
     expect(rolledLine).toBeDefined();
+    expect(
+      lines.some((line) =>
+        /^ {2}4d6dl1: \[.*\] → kept \[.*\], dropped die #\d \[\d\] → \d+$/.test(
+          line,
+        ),
+      ),
+    ).toBe(true);
     // Six totals, each a valid 4d6-drop-lowest result (3–18), sorted desc.
     const totals = (rolledLine as string)
-      .slice('Rolled: '.length)
+      .slice('Rolled pool: '.length)
       .split(', ')
       .map((n) => Number.parseInt(n, 10));
     expect(totals).toHaveLength(6);
@@ -402,6 +409,31 @@ describe('character wizard — ability-first flow', () => {
       expect(t).toBeGreaterThanOrEqual(3);
       expect(t).toBeLessThanOrEqual(18);
     }
+  });
+
+  it('does not advance rolled scores without canonical roll evidence', async () => {
+    const { deps: d, lines } = deps([
+      'Dice',
+      'rolled',
+      'str 12',
+      'dex 12',
+      'con 12',
+      'int 12',
+      'wis 12',
+      'cha 12',
+      'done',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'ability-first',
+      draftId: 'missing-rolls',
+    });
+
+    expect(result.outcome).toBe('quit');
+    expect(lines).toContain(
+      '  ✗ roll six ability scores before assigning them',
+    );
+    expect(text(lines)).not.toContain('Classes that fit your scores');
   });
 
   it('lets the player choose a poor-fit class after seeing suggestions', async () => {

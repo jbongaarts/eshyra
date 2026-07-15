@@ -16,6 +16,8 @@ comparisons, formulas).
 ```
 dice.ts        F1 — grammar + one canonical roll result (rolled/kept/dropped/
                natural/modifier/total). Pure; RNG-injected.
+character      Character creation is a non-tool consumer: it rolls `4d6dl1`
+               through dice.ts and durably keeps the complete indexed evidence.
 resolution.ts  F9 — d20 resolution (checks/saves/attacks/contests) and damage
                composition over dice.ts results. Pure; RNG-injected.
 calc.ts        F9 — fail-closed registry of named non-roll formulas. Pure.
@@ -59,6 +61,18 @@ Grammar (case-insensitive, whitespace tolerated):
 - `natural` — sum of kept dice, before any modifier. For a single-die d20
   roll this is the natural die (nat 1/20 detection).
 - `modifier`, `total` — `total = natural + modifier`, always.
+
+### Character creation
+
+Rolled D&D ability generation calls the shared library directly with
+`4d6dl1`; it is not a model-facing combat roll and does not pass through the
+`roll` tool or player-visible roll ledger. Each of the six results durably
+stores all four raw dice, kept and dropped values, their indices, the keep/drop
+clause, and natural/modified totals. The player assigns the resulting totals to
+abilities afterward, with duplicate values consumed by multiplicity. Revisiting,
+previewing, assigning, saving, resuming, and finalizing reuse the immutable
+evidence. Only an explicit reroll replaces it. Character creation has no
+separate keep/drop algorithm or tie policy.
 
 ## F9 — resolution primitives
 

@@ -116,6 +116,10 @@ export type {
   RolledAbilityScore,
 } from './character/abilityAllocation.js';
 export {
+  ABILITY_SCORE_DICE_NOTATION,
+  formatRolledAbilityScore,
+  normalizeLegacyRolledAbilityScore,
+  normalizeRolledAbilityScoreSet,
   parseAbilityScoreCommand,
   recommendClasses,
   rollAbilityScore,
@@ -123,6 +127,8 @@ export {
   summarizePointBuy,
   summarizePoolAssignment,
   summarizeStandardArray,
+  validateRolledAbilityScore,
+  validateRolledAbilityScoreSet,
 } from './character/abilityAllocation.js';
 // Attach a registry character into a campaign for play (ADR 0012).
 export {

@@ -34,6 +34,11 @@ import {
   pointBuyCost,
   STANDARD_ARRAY,
 } from './abilities.js';
+import {
+  normalizeRolledAbilityScoreSet,
+  type RolledAbilityScore,
+  summarizePoolAssignment,
+} from './abilityAllocation.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
 import type {
   AbilityScoreMethod,
@@ -130,6 +135,8 @@ export interface Dnd5eDraftSelections {
   readonly background?: string;
   readonly abilityScoreMethod?: AbilityScoreMethod;
   readonly baseAbilityScores?: Partial<Record<AbilityScoreName, number>>;
+  /** Immutable canonical F1 evidence for the rolled score pool. */
+  readonly rolledAbilityScores?: readonly RolledAbilityScore[];
   readonly spells?: readonly string[];
   /**
    * Selected options for the structured level-1 mechanical choices (skills,
@@ -236,6 +243,10 @@ export interface CharacterCreationEngine {
   setAbilityScores(
     draft: CharacterDraft,
     scores: Partial<Record<AbilityScoreName, number>>,
+  ): CharacterDraft;
+  setRolledAbilityScores(
+    draft: CharacterDraft,
+    rolls: readonly RolledAbilityScore[] | undefined,
   ): CharacterDraft;
   setSpells(
     draft: CharacterDraft,
@@ -378,10 +389,27 @@ export function createCharacterCreationEngine(
         value: rawMode,
       });
     }
-    const selections = {
+    let selections = {
       ...draft.selections,
       startingEquipmentMode: parsedMode ?? 'packages',
     };
+    if (selections.rolledAbilityScores !== undefined) {
+      try {
+        selections = {
+          ...selections,
+          rolledAbilityScores: normalizeRolledAbilityScoreSet(
+            selections.rolledAbilityScores,
+          ),
+        };
+      } catch (error) {
+        diagnostics.push({
+          field: 'rolledAbilityScores',
+          severity: 'error',
+          message: `rolled ability evidence is invalid: ${(error as Error).message}`,
+        });
+        selections = { ...selections, rolledAbilityScores: undefined };
+      }
+    }
 
     const classRecord = resolveClass(selections.className);
     if (selections.className !== undefined && classRecord === undefined) {
@@ -730,6 +758,36 @@ export function createCharacterCreationEngine(
           message: 'standard-array scores must be 15, 14, 13, 12, 10, and 8',
         });
       }
+      return;
+    }
+
+    if (method === 'rolled') {
+      const rolls = selections.rolledAbilityScores;
+      if (rolls === undefined) {
+        diagnostics.push({
+          field: 'rolledAbilityScores',
+          severity: 'error',
+          message: 'roll six ability scores before assigning them',
+        });
+        return;
+      }
+      try {
+        const canonical = normalizeRolledAbilityScoreSet(rolls);
+        const assignment = summarizePoolAssignment(
+          canonical.map((roll) => roll.total),
+          base,
+        );
+        if (!assignment.complete) {
+          diagnostics.push({
+            field: 'abilityScores',
+            severity: 'error',
+            message: 'rolled scores must use the rolled pool by multiplicity',
+            value: base,
+          });
+        }
+      } catch {
+        // The evidence-specific diagnostic was emitted during recompute.
+      }
     }
   }
 
@@ -919,6 +977,10 @@ export function createCharacterCreationEngine(
       abilityScoreMethod: draft.selections
         .abilityScoreMethod as AbilityScoreMethod,
       abilityScores: abilityScores as AbilityScores,
+      ...(draft.selections.abilityScoreMethod !== 'rolled' ||
+      draft.selections.rolledAbilityScores === undefined
+        ? {}
+        : { rolledAbilityScores: draft.selections.rolledAbilityScores }),
       maxHitPoints: draft.derived.maxHitPoints as number,
       spells: [...(draft.selections.spells ?? [])],
     };
@@ -1002,7 +1064,10 @@ export function createCharacterCreationEngine(
     },
 
     setAbilityScoreMethod(draft, method): CharacterDraft {
-      return withSelections(draft, { abilityScoreMethod: method });
+      return withSelections(draft, {
+        abilityScoreMethod: method,
+        ...(method === 'rolled' ? {} : { rolledAbilityScores: undefined }),
+      });
     },
 
     setAbilityScore(draft, ability, value): CharacterDraft {
@@ -1017,6 +1082,15 @@ export function createCharacterCreationEngine(
 
     setAbilityScores(draft, scores): CharacterDraft {
       return withSelections(draft, { baseAbilityScores: { ...scores } });
+    },
+
+    setRolledAbilityScores(draft, rolls): CharacterDraft {
+      const canonical =
+        rolls === undefined ? undefined : normalizeRolledAbilityScoreSet(rolls);
+      return withSelections(draft, {
+        rolledAbilityScores: canonical,
+        baseAbilityScores: {},
+      });
     },
 
     setSpells(draft, spells): CharacterDraft {

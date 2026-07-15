@@ -35,6 +35,7 @@ import {
   type CharacterDraft,
   DND5E_SRD_CHARACTER_RECIPE,
   enumerateLevel1RequiredChoices,
+  formatRolledAbilityScore,
   parseAbilityScoreCommand,
   type Rng,
   type RulesPackCharacterResolver,
@@ -648,7 +649,8 @@ class Wizard {
       const errors = this.draft.diagnostics.filter(
         (d) =>
           (d.field === 'abilityScores' ||
-            d.field.startsWith('abilityScores.')) &&
+            d.field.startsWith('abilityScores.') ||
+            d.field === 'rolledAbilityScores') &&
           d.severity === 'error',
       );
       const allSet = ABILITY_SCORE_NAMES.every(
@@ -1027,14 +1029,19 @@ class Wizard {
 
   /**
    * Roll six 4d6-drop-lowest values and present them as an assignable pool —
-   * the "let the dice inspire me" moment. The values are advisory: the player
-   * still assigns them with `str <value>` etc. (the `rolled` method accepts any
-   * plausible score), so the dice suggest without dictating.
+   * the "let the dice inspire me" moment. The player chooses which ability gets
+   * each total, but every assigned value must come from this immutable pool by
+   * multiplicity.
    */
   private rollAbilityPool(): void {
     const rolled = rollAbilityScoreSet(this.deps.rng);
+    this.draft = this.deps.engine.setRolledAbilityScores(this.draft, rolled);
+    this.dirty = true;
+    for (const roll of rolled) {
+      this.write(`  ${formatRolledAbilityScore(roll)}`);
+    }
     const totals = rolled.map((r) => r.total).sort((a, b) => b - a);
-    this.write(`Rolled: ${totals.join(', ')}`);
+    this.write(`Rolled pool: ${totals.join(', ')}`);
     this.write('Assign them with `str 15`, `dex 14`, … (highest first shown).');
   }
 
@@ -1052,6 +1059,13 @@ class Wizard {
     if (method === 'standard_array') {
       const summary = summarizeStandardArray(scores);
       return `${cells}   [unplaced: ${summary.remainingValues.join(', ') || 'none'}]`;
+    }
+    if (method === 'rolled') {
+      const rolls = this.draft.selections.rolledAbilityScores;
+      if (rolls !== undefined) {
+        const totals = rolls.map((roll) => roll.total).sort((a, b) => b - a);
+        return `${cells}   [rolled pool: ${totals.join(', ')}]`;
+      }
     }
     return cells;
   }

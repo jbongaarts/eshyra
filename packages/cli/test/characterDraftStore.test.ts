@@ -2,7 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  createSeededRng,
   getDnd5eCharacterCreationEngine,
+  rollAbilityScoreSet,
   UnsupportedCharacterBuildError,
 } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -46,6 +48,58 @@ describe('file character draft store', () => {
     expect(loaded?.identity.name).toBe('Mira');
     expect(loaded?.selections.className).toBe('Wizard');
     expect(loaded?.creationMode).toBe('concept-first');
+  });
+
+  it('round-trips all six canonical rolled-score evidence objects', () => {
+    const store = createFileCharacterDraftStore(tempDir());
+    let draft = engine.createDraft({ id: 'roller', mode: 'ability-first' });
+    draft = engine.setAbilityScoreMethod(draft, 'rolled');
+    const evidence = rollAbilityScoreSet(createSeededRng(42));
+    draft = engine.setRolledAbilityScores(draft, evidence);
+    store.save(draft);
+
+    const loaded = engine.recomputeDraft(store.load('roller') as typeof draft);
+    expect(loaded.selections.rolledAbilityScores).toEqual(evidence);
+    expect(JSON.stringify(loaded.selections.rolledAbilityScores)).toBe(
+      JSON.stringify(evidence),
+    );
+  });
+
+  it('normalizes valid legacy rolls and diagnoses malformed legacy evidence', () => {
+    const draft = engine.createDraft({ id: 'legacy', mode: 'ability-first' });
+    const legacy = Array.from({ length: 6 }, () => ({
+      rolls: [2, 2, 5, 6],
+      dropped: 2,
+      total: 13,
+    }));
+    const normalized = engine.recomputeDraft({
+      ...draft,
+      selections: {
+        ...draft.selections,
+        abilityScoreMethod: 'rolled',
+        rolledAbilityScores: legacy,
+      },
+    } as unknown as typeof draft);
+    expect(
+      normalized.selections.rolledAbilityScores?.[0].droppedIndices,
+    ).toEqual([1]);
+
+    const malformed = engine.recomputeDraft({
+      ...draft,
+      selections: {
+        ...draft.selections,
+        abilityScoreMethod: 'rolled',
+        rolledAbilityScores: [{ rolls: [0], dropped: 0, total: 0 }],
+      },
+    } as unknown as typeof draft);
+    expect(malformed.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'rolledAbilityScores',
+          severity: 'error',
+        }),
+      ]),
+    );
   });
 
   it('returns undefined for an unknown draft id', () => {

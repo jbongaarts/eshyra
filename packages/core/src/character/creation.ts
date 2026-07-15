@@ -22,6 +22,11 @@ import {
   pointBuyCost,
   STANDARD_ARRAY,
 } from './abilities.js';
+import {
+  type RolledAbilityScore,
+  summarizePoolAssignment,
+  validateRolledAbilityScoreSet,
+} from './abilityAllocation.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
 import type {
@@ -56,9 +61,8 @@ export type AbilityScoreName =
 /**
  * How a character's base ability scores were produced. `point_buy` and
  * `standard_array` carry total/value constraints validated here; `manual`
- * (hand-entered) and `rolled` (dice-given or imported) are constraint-free
- * apart from a plausibility bound, but are still recorded distinctly so the
- * draft never treats a rolled 18 as if it had been point-bought.
+ * entries use a plausibility bound, while `rolled` scores must be an exact
+ * assignment from six validated canonical dice results.
  */
 export type AbilityScoreMethod =
   | 'point_buy'
@@ -75,6 +79,7 @@ export interface CharacterCreationDraft {
   readonly level: number;
   readonly abilityScoreMethod: AbilityScoreMethod;
   readonly abilityScores: AbilityScores;
+  readonly rolledAbilityScores?: readonly RolledAbilityScore[];
   readonly maxHitPoints: number;
   readonly spells: readonly string[];
 }
@@ -85,6 +90,7 @@ export interface CreatedCharacter {
   readonly className: string;
   readonly level: number;
   readonly abilityScores: AbilityScores;
+  readonly rolledAbilityScores?: readonly RolledAbilityScore[];
   readonly maxHitPoints: number;
   readonly spells: readonly string[];
 }
@@ -165,6 +171,9 @@ export function validateCharacterDraft(
       className: characterClass.name,
       level: draft.level,
       abilityScores: draft.abilityScores,
+      ...(draft.rolledAbilityScores === undefined
+        ? {}
+        : { rolledAbilityScores: draft.rolledAbilityScores }),
       maxHitPoints: draft.maxHitPoints,
       spells: [...draft.spells],
     },
@@ -492,6 +501,12 @@ function validateAbilityScores(
     errors.push('ability scores must be integers');
     return;
   }
+  if (
+    draft.abilityScoreMethod !== 'rolled' &&
+    draft.rolledAbilityScores !== undefined
+  ) {
+    errors.push('rolled ability evidence is only valid for the rolled method');
+  }
 
   switch (draft.abilityScoreMethod) {
     case 'point_buy':
@@ -500,8 +515,29 @@ function validateAbilityScores(
     case 'standard_array':
       validateStandardArray(scores, errors);
       return;
+    case 'rolled':
+      if (draft.rolledAbilityScores === undefined) {
+        errors.push('rolled ability evidence must contain exactly six rolls');
+        return;
+      }
+      try {
+        validateRolledAbilityScoreSet(draft.rolledAbilityScores);
+        if (
+          !summarizePoolAssignment(
+            draft.rolledAbilityScores.map((roll) => roll.total),
+            draft.abilityScores,
+          ).complete
+        ) {
+          errors.push('rolled scores must use the rolled pool by multiplicity');
+        }
+      } catch (error) {
+        errors.push(
+          `invalid rolled ability evidence: ${(error as Error).message}`,
+        );
+      }
+      return;
     default:
-      // `manual` / `rolled`: no total constraint, only a plausibility bound.
+      // Manual entry has no total constraint, only a plausibility bound.
       validateFreeEntry(scores, errors);
   }
 }
