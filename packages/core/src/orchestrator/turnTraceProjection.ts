@@ -65,43 +65,23 @@ export function deriveTraceFields(
         call.result.ok ? (call.result.data as TraceJsonValue) : null,
       );
 
-  const STATE_TOOLS = new Set([
-    'adjust_hp',
-    'record_death_save',
-    'stabilize_character',
-    'grant_temporary_hp',
-    'start_encounter',
-    'update_combatant',
-    'close_combat_instance',
-    'begin_turn',
-    'spend_turn_resource',
-    'set_surprised',
-    'spend_usage',
-    'restore_usage',
-    'reset_usage',
-    'attune_item',
-    'end_attunement',
-    'award_inspiration',
-    'use_inspiration',
-    'add_condition',
-    'remove_condition',
-    'give_item',
-    'remove_item',
-    'gain_currency',
-    'spend_currency',
-    'convert_currency',
-    'update_clock',
-    'advance_time',
-    'complete_short_rest',
-    'complete_long_rest',
-    'spend_rest_hit_die',
-    'finish_short_rest_recovery',
-    'set_plot_flag',
-    'set_world_fact',
-  ]);
   const acceptedStateDelta = toolCalls
-    .filter((call) => STATE_TOOLS.has(call.tool) && call.result.ok)
-    .map(argsOf);
+    .filter((call) => {
+      if (!call.mutates || !call.result.ok) return false;
+      if (call.tool !== 'spend_spell_slot') return true;
+      const data = call.result.data as Record<string, unknown>;
+      return data.spent === true;
+    })
+    .map((call): TraceJsonValue => {
+      if (call.tool !== 'spend_spell_slot' || !call.result.ok) {
+        return argsOf(call);
+      }
+      return {
+        tool: call.tool,
+        args: argsOf(call),
+        result: call.result.data as TraceJsonValue,
+      };
+    });
 
   const rejectedCandidates = toolCalls
     .filter((call) => !call.result.ok)
@@ -135,10 +115,12 @@ export function deriveTraceFields(
       calcs: okData('calc'),
       rulesLookups: okData('lookup_rules'),
       spellScaling: okData('resolve_spell_upcast').concat(
-        okData('spend_spell_slot').map((entry) => {
-          const value = entry as Record<string, unknown>;
-          return (value.upcast ?? null) as TraceJsonValue;
-        }),
+        okData('spend_spell_slot')
+          .map((entry) => (entry as Record<string, unknown>).upcast)
+          .filter(
+            (upcast): upcast is TraceJsonValue =>
+              upcast !== null && upcast !== undefined,
+          ),
       ),
     },
     acceptedStateDelta,

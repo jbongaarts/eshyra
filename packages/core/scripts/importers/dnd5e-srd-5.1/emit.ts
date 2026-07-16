@@ -236,10 +236,11 @@ function equipmentProvenance(item: EquipmentExtraction): RecordProvenance {
 export function spellExtractionsToRecords(
   spells: readonly SpellExtraction[],
   classes: ReadonlyMap<string, readonly SpellCasterClass[]>,
+  options: { readonly allowSyntheticSourceBindings?: true } = {},
 ): RulesRecord[] {
   const out: RulesRecord[] = spells.map((spell) => {
     const classList = classes.get(spell.name) ?? [];
-    const data = buildSpellData(spell, classList);
+    const data = buildSpellData(spell, classList, options);
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'spell',
@@ -261,6 +262,7 @@ export function spellExtractionsToRecords(
 function buildSpellData(
   spell: SpellExtraction,
   classes: readonly SpellCasterClass[],
+  options: { readonly allowSyntheticSourceBindings?: true },
 ): Record<string, unknown> {
   const base: Record<string, unknown> = {
     level: spell.level,
@@ -284,7 +286,12 @@ function buildSpellData(
       : spell.level === 0
         ? 'character-level'
         : 'higher-slot');
-  const upcast = compileSpellUpcast({ ...spell, scalingSourceKind });
+  const upcast = compileSpellUpcast(
+    { ...spell, scalingSourceKind },
+    options.allowSyntheticSourceBindings === true
+      ? { allowSyntheticSourceBinding: true }
+      : {},
+  );
   if (upcast !== undefined) base.upcast = upcast;
   if (spell.componentMaterials !== undefined) {
     base.componentMaterials = spell.componentMaterials;
@@ -298,8 +305,9 @@ function buildSpellData(
   if (scalingSourceKind !== undefined) {
     base.scalingSourceKind = scalingSourceKind;
   }
-  if (spell.scalingSourceText !== undefined) {
-    base.scalingSourceText = spell.scalingSourceText;
+  const scalingSourceText = spell.scalingSourceText ?? spell.higherLevels;
+  if (scalingSourceText !== undefined && scalingSourceKind !== undefined) {
+    base.scalingSourceText = scalingSourceText;
   }
   return base;
 }
@@ -1524,6 +1532,8 @@ export interface BuildPackInput {
   readonly ancestries?: readonly AncestryExtraction[];
   readonly backgrounds?: readonly BackgroundExtraction[];
   readonly sourceHash: string;
+  /** Explicit test-fixture escape hatch; canonical compiler calls stay strict. */
+  readonly allowSyntheticSpellSourceBindings?: true;
 }
 
 export function buildPack(input: BuildPackInput): RulesPack {
@@ -1544,7 +1554,15 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // background mechanics projections only keep a captured spell name when it
   // resolves to a real emitted spell, never raw regex residue.
   const resolveSpellGrant = buildSpellGrantResolver(input.spells);
-  const baseSpellRecords = spellExtractionsToRecords(input.spells, classByName);
+  const baseSpellRecords = spellExtractionsToRecords(
+    input.spells,
+    classByName,
+    {
+      ...(input.allowSyntheticSpellSourceBindings === true
+        ? { allowSyntheticSourceBindings: true as const }
+        : {}),
+    },
+  );
   const creatureRecords = creatureExtractionsToRecords(
     input.creatures ?? [],
     resolveSpellGrant,

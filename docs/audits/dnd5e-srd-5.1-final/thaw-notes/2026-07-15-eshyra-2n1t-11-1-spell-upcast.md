@@ -19,11 +19,21 @@ Reviewed clause-level coverage pins complete multi-threshold schedules and
 independent branches. Qualifiers carry a minimum applicable slot, damage
 subjects distinguish choices from all-component transforms, and affected-HP
 pool dice remain separate from damage and flat healing points.
-Every reviewed projection is keyed by its exact spell, source page, and
-verbatim extracted clause, including the PDF text layer's split hyphen in
-Planar Binding. Etherealness preserves maximum-total cardinality and caster
-inclusion, Dispel Magic resolves its automatic spell-level threshold directly
-from the selected slot, and False Life emits flat temporary-hit-point scaling.
+All 92 clauses are independently pinned by canonical spell key, exact source
+page, and verbatim-source SHA-256. A second independent oracle pins the complete
+typed projection plus every legal-slot resolver result for every clause.
+Etherealness and the four 30-foot multi-target spells retain their targeting
+constraints; Counterspell and Dispel Magic resolve their automatic spell-level
+threshold directly from the selected slot; Glyph of Warding carries an
+exclusive typed branch; and False Life emits flat temporary-hit-point scaling.
+Resolved adjustments carry stable semantic source-operation IDs rather than
+array offsets, together with the exact clause/page/phrase provenance tuple.
+
+The schema validator and runtime share one closed parser, including operation /
+subject compatibility and S1 fail-closed checks. Both model-facing tools resolve
+the exact campaign base and ordered add-ons by system, pack, and version. The
+slot tool retains legacy `{ spell }` replay compatibility while canonicalizing
+new calls to `spellRef`.
 
 Generated scope:
 
@@ -39,4 +49,4 @@ boundary inventory, and the canonical importer verification.
 
 Updated frozen `records.json` SHA-256:
 
-`5a6cbcf8ad35f96e2d2e4c70fa1c01309c819d0bf92b2ba41a2085ce9fc73e67`
+`af4b7dafdefe9e5bd4f99ab4306a72bb82ee090028525d38999931c7cb32a204`

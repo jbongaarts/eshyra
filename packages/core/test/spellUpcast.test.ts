@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   EXPECTED_CHARACTER_LEVEL_SPELL_KEYS,
+  EXPECTED_HIGHER_SLOT_SOURCE_SHA256,
   EXPECTED_HIGHER_SLOT_SPELL_KEYS,
 } from '../scripts/importers/dnd5e-srd-5.1/spellUpcastInventory.js';
 import { compileSpellUpcast } from '../scripts/importers/dnd5e-srd-5.1/upcast.js';
 import {
   getBundledDnd5eSrdPack,
+  parseSpellUpcastSpec,
   resolveSpellUpcast,
   SpellUpcastError,
+  validateRecordKindSchema,
 } from '../src/internal.js';
 
 const pack = getBundledDnd5eSrdPack();
@@ -17,7 +20,11 @@ function spell(ref: string) {
   return record;
 }
 
-function compileRecordWithClause(ref: string, higherLevels: string) {
+function compileRecordWithClause(
+  ref: string,
+  higherLevels: string,
+  sourcePage?: number,
+) {
   const record = spell(ref);
   const data = record.data as Record<string, unknown>;
   return compileSpellUpcast({
@@ -33,9 +40,23 @@ function compileRecordWithClause(ref: string, higherLevels: string) {
     higherLevels,
     scalingSourceKind: 'higher-slot',
     scalingSourceText: higherLevels,
-    sourcePage: Number(/p(?:p)?\.\s*(\d+)/i.exec(record.source)?.[1]),
+    sourcePage:
+      sourcePage ?? Number(/p(?:p)?\.\s*(\d+)/i.exec(record.source)?.[1]),
   });
 }
+
+const duration = (
+  amount: number,
+  unit: 'minute' | 'hour' | 'day' | 'year',
+  concentration: boolean,
+  upTo = false,
+) => ({
+  kind: 'duration' as const,
+  amount,
+  unit,
+  concentration,
+  ...(upTo ? { upTo: true as const } : {}),
+});
 
 describe('source-bound spell upcast resolver', () => {
   it('resolves dice-per-slot scaling exactly without rolling', () => {
@@ -46,7 +67,22 @@ describe('source-bound spell upcast resolver', () => {
       levelsAboveBase: 2,
       hasHigherSlotBenefit: true,
       clauseIds: ['fireball:higher-slot'],
-      adjustments: [{ kind: 'dice', addedDice: '2d6', sourceOperation: 0 }],
+      sourceBindings: [
+        {
+          clauseId: 'fireball:higher-slot',
+          sourcePage: 144,
+          sourcePhrase:
+            'When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.',
+          operationIds: ['fireball:damage:dice-per-slot'],
+        },
+      ],
+      adjustments: [
+        {
+          kind: 'dice',
+          addedDice: '2d6',
+          sourceOperationId: 'fireball:damage:dice-per-slot',
+        },
+      ],
     });
   });
 
@@ -66,7 +102,9 @@ describe('source-bound spell upcast resolver', () => {
     });
     expect(
       resolveSpellUpcast(spell('spell:aid'), 4).adjustments[0],
-    ).toMatchObject({ subject: { property: 'hit-points' } });
+    ).toMatchObject({
+      subject: { property: 'current-and-maximum-hit-points' },
+    });
     expect(
       resolveSpellUpcast(spell('spell:animal-messenger'), 3).adjustments[0],
     ).toMatchObject({ subject: { property: 'duration-hours' }, amount: 48 });
@@ -80,6 +118,12 @@ describe('source-bound spell upcast resolver', () => {
       hasHigherSlotBenefit: false,
       adjustments: [],
     });
+  });
+
+  it('replays to byte-identical source-bound evidence', () => {
+    const first = resolveSpellUpcast(spell('spell:wall-of-ice'), 9);
+    const replay = resolveSpellUpcast(spell('spell:wall-of-ice'), 9);
+    expect(JSON.stringify(replay)).toBe(JSON.stringify(first));
   });
 
   it('reuses S1 summoning scaling rather than emitting a second generic operation', () => {
@@ -107,7 +151,7 @@ describe('source-bound spell upcast resolver', () => {
       {
         kind: 'summoning',
         subject: { kind: 'summoning', semanticId: 'creation-menu-counts' },
-        sourceOperation: 's1',
+        sourceOperationId: 's1:creation-menu-counts:slot-multipliers',
         scalingKind: 'slot-multipliers',
         appliesTo: 'creation-menu-counts',
         threshold: 7,
@@ -123,7 +167,8 @@ describe('source-bound spell upcast resolver', () => {
       {
         kind: 'summoning',
         subject: { kind: 'summoning', semanticId: 'summoning-cardinality' },
-        sourceOperation: 's1',
+        sourceOperationId:
+          's1:summoning-cardinality:per-slot-cardinality:base-3',
         scalingKind: 'per-slot-cardinality',
         appliesTo: ['creation', 'control-reassertion'],
         amount: 2,
@@ -135,7 +180,7 @@ describe('source-bound spell upcast resolver', () => {
       {
         kind: 'summoning',
         subject: { kind: 'summoning', semanticId: 'summoning-option-menu' },
-        sourceOperation: 's1',
+        sourceOperationId: 's1:summoning-option-menu:slot-option-menu',
         scalingKind: 'slot-option-menu',
         appliesTo: ['creation', 'control-reassertion'],
         selection: 'choose-one',
@@ -178,11 +223,13 @@ describe('source-bound spell upcast resolver', () => {
           kind: 'count',
           subject: {
             kind: 'effect',
-            semanticId: 'animal friendship:effect',
+            semanticId: 'animal friendship:additional-beast',
             property: 'creature-count',
+            creatureType: 'beast',
           },
           amount,
-          sourceOperation: 0,
+          sourceOperationId:
+            'animal friendship:additional-beast:count-per-slot',
         },
       ]);
     }
@@ -204,7 +251,7 @@ describe('source-bound spell upcast resolver', () => {
           'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
         sourcePage: 115,
       }),
-    ).toThrow(/malformed Animal Friendship/);
+    ).toThrow(/unreviewed higher-slot source clause/);
   });
 
   it('binds independently scaled same-type damage components and local damage types', () => {
@@ -216,6 +263,18 @@ describe('source-bound spell upcast resolver', () => {
       levelsAboveBase: 1,
       hasHigherSlotBenefit: true,
       clauseIds: ['acid-arrow:higher-slot'],
+      sourceBindings: [
+        {
+          clauseId: 'acid-arrow:higher-slot',
+          sourcePage: 114,
+          sourcePhrase:
+            'When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd.',
+          operationIds: [
+            'acid arrow:initial-damage:dice-per-slot',
+            'acid arrow:later-damage:dice-per-slot',
+          ],
+        },
+      ],
       adjustments: [
         {
           kind: 'dice',
@@ -226,7 +285,7 @@ describe('source-bound spell upcast resolver', () => {
             property: 'damage-dice',
           },
           addedDice: '1d4',
-          sourceOperation: 0,
+          sourceOperationId: 'acid arrow:initial-damage:dice-per-slot',
         },
         {
           kind: 'dice',
@@ -237,7 +296,7 @@ describe('source-bound spell upcast resolver', () => {
             property: 'damage-dice',
           },
           addedDice: '1d4',
-          sourceOperation: 1,
+          sourceOperationId: 'acid arrow:later-damage:dice-per-slot',
         },
       ],
     });
@@ -289,60 +348,97 @@ describe('source-bound spell upcast resolver', () => {
         'spell:dominate-beast',
         4,
         {
-          5: 'concentration, up to 10 minutes',
-          6: 'concentration, up to 1 hour',
-          7: 'concentration, up to 8 hours',
+          5: duration(10, 'minute', true, true),
+          6: duration(1, 'hour', true, true),
+          7: duration(8, 'hour', true, true),
         },
       ],
       [
         'spell:dominate-person',
         5,
         {
-          6: 'concentration, up to 10 minutes',
-          7: 'concentration, up to 1 hour',
-          8: 'concentration, up to 8 hours',
+          6: duration(10, 'minute', true, true),
+          7: duration(1, 'hour', true, true),
+          8: duration(8, 'hour', true, true),
         },
       ],
       [
         'spell:mass-suggestion',
         6,
-        { 7: '10 days', 8: '30 days', 9: 'a year and a day' },
+        {
+          7: duration(10, 'day', false),
+          8: duration(30, 'day', false),
+          9: {
+            ...duration(1, 'year', false),
+            additionalDays: 1,
+          },
+        },
       ],
       [
         'spell:planar-binding',
         5,
-        { 6: '10 days', 7: '30 days', 8: '180 days', 9: 'a year and a day' },
+        {
+          6: duration(10, 'day', false),
+          7: duration(30, 'day', false),
+          8: duration(180, 'day', false),
+          9: {
+            ...duration(1, 'year', false),
+            additionalDays: 1,
+          },
+        },
       ],
       [
         'spell:modify-memory',
         5,
         {
-          6: 'up to 7 days ago',
-          7: 'up to 30 days ago',
-          8: 'up to 1 year ago',
-          9: 'any time in the creature’s past',
+          6: { kind: 'memory-age', amount: 7, unit: 'day' },
+          7: { kind: 'memory-age', amount: 30, unit: 'day' },
+          8: { kind: 'memory-age', amount: 1, unit: 'year' },
+          9: { kind: 'memory-age', unrestricted: true },
         },
       ],
       [
         'spell:bestow-curse',
         3,
         {
-          4: 'concentration, up to 10 minutes',
-          5: '8 hours, no concentration',
-          7: '24 hours, no concentration',
-          9: 'until dispelled, no concentration',
+          4: duration(10, 'minute', true, true),
+          5: duration(8, 'hour', false),
+          7: duration(24, 'hour', false),
+          9: {
+            kind: 'duration',
+            ending: 'until-dispelled',
+            concentration: false,
+          },
         },
       ],
-      ['spell:geas', 5, { 7: '1 year', 9: 'until ended by an allowed spell' }],
+      [
+        'spell:geas',
+        5,
+        {
+          7: duration(1, 'year', false),
+          9: {
+            kind: 'duration',
+            ending: 'until-ended-by-allowed-spell',
+            concentration: false,
+          },
+        },
+      ],
       [
         'spell:hunters-mark',
         1,
         {
-          3: 'concentration, up to 8 hours',
-          5: 'concentration, up to 24 hours',
+          3: duration(8, 'hour', true, true),
+          5: duration(24, 'hour', true, true),
         },
       ],
-      ['spell:magic-weapon', 2, { 4: '+2', 6: '+3' }],
+      [
+        'spell:magic-weapon',
+        2,
+        {
+          4: { kind: 'bonus', amount: 2 },
+          6: { kind: 'bonus', amount: 3 },
+        },
+      ],
     ] as const;
     for (const [ref, base, thresholds] of schedules) {
       for (let slot = base; slot <= 9; slot += 1) {
@@ -396,21 +492,25 @@ describe('source-bound spell upcast resolver', () => {
       resolveSpellUpcast(spell('spell:create-or-destroy-water'), 3).adjustments,
     ).toEqual([
       expect.objectContaining({
-        kind: 'count',
+        kind: 'flat',
         amount: 20,
+        choice: {
+          groupId: 'create-or-destroy-water:scaled-mode',
+          optionId: 'water-volume',
+        },
         subject: expect.objectContaining({
           property: 'volume-gallons',
-          selection: 'choose-one',
-          choiceGroup: 'create-or-destroy-water:scaled-mode',
         }),
       }),
       expect.objectContaining({
         kind: 'flat',
         amount: 10,
+        choice: {
+          groupId: 'create-or-destroy-water:scaled-mode',
+          optionId: 'cube-size',
+        },
         subject: expect.objectContaining({
           property: 'cube-size-feet',
-          selection: 'choose-one',
-          choiceGroup: 'create-or-destroy-water:scaled-mode',
         }),
       }),
     ]);
@@ -419,37 +519,30 @@ describe('source-bound spell upcast resolver', () => {
     const glyphUpcast = resolveSpellUpcast(spell('spell:glyph-of-warding'), 4);
     expect(glyphUpcast).toMatchObject({
       hasHigherSlotBenefit: true,
-      adjustments: [expect.objectContaining({ addedDice: '1d8' })],
-      qualifier:
-        'If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.',
+      adjustments: [
+        expect.objectContaining({ addedDice: '1d8' }),
+        expect.objectContaining({ kind: 'slot-value', amount: 4 }),
+      ],
     });
+    expect(glyphUpcast.qualifier).toBeUndefined();
   });
 
   it('fails closed when any reviewed projection source tuple drifts', () => {
-    const reviewed = [
-      'spell:dominate-beast',
-      'spell:dominate-person',
-      'spell:mass-suggestion',
-      'spell:planar-binding',
-      'spell:modify-memory',
-      'spell:bestow-curse',
-      'spell:geas',
-      'spell:hunters-mark',
-      'spell:magic-weapon',
-      'spell:create-or-destroy-water',
-      'spell:glyph-of-warding',
-      'spell:wall-of-ice',
-      'spell:etherealness',
-      'spell:dispel-magic',
-      'spell:false-life',
-    ];
-    for (const ref of reviewed) {
+    expect(Object.keys(EXPECTED_HIGHER_SLOT_SOURCE_SHA256)).toEqual(
+      EXPECTED_HIGHER_SLOT_SPELL_KEYS,
+    );
+    for (const ref of EXPECTED_HIGHER_SLOT_SPELL_KEYS) {
       const raw = (spell(ref).data as Record<string, unknown>)
         .higherLevels as string;
       expect(
         () => compileRecordWithClause(ref, `${raw} Source drift.`),
         ref,
-      ).toThrow(/reviewed upcast source drift/);
+      ).toThrow(/source phrase drift/);
+      const page = Number(/p(?:p)?\.\s*(\d+)/i.exec(spell(ref).source)?.[1]);
+      expect(
+        () => compileRecordWithClause(ref, raw, page + 100),
+        `${ref} page`,
+      ).toThrow(/source page drift/);
     }
   });
 
@@ -473,9 +566,12 @@ describe('source-bound spell upcast resolver', () => {
             property: 'creature-count',
             cardinalityMode: 'maximum-total',
             includesCaster: true,
+            willingTargets: true,
+            allTargetsWithinFeetOfCaster: 10,
           },
           amount,
-          sourceOperation: 0,
+          sourceOperationId:
+            'etherealness:willing-creature-maximum:count-per-slot',
         },
       ]);
     }
@@ -497,10 +593,123 @@ describe('source-bound spell upcast resolver', () => {
             property: 'spell-level-threshold',
           },
           amount: slotLevel,
-          sourceOperation: 0,
+          sourceOperationId:
+            'dispel magic:automatic-spell-level-threshold:selected-slot-value:min-4',
         },
       ]);
     }
+  });
+
+  it('types Counterspell and both exclusive Glyph of Warding branches', () => {
+    expect(
+      resolveSpellUpcast(spell('spell:counterspell'), 3).adjustments,
+    ).toEqual([]);
+    for (const slotLevel of [4, 5, 9]) {
+      expect(
+        resolveSpellUpcast(spell('spell:counterspell'), slotLevel).adjustments,
+      ).toEqual([
+        {
+          kind: 'slot-value',
+          subject: {
+            kind: 'effect',
+            semanticId: 'counterspell:automatic-spell-level-threshold',
+            property: 'spell-level-threshold',
+          },
+          amount: slotLevel,
+          sourceOperationId:
+            'counterspell:automatic-spell-level-threshold:selected-slot-value:min-4',
+        },
+      ]);
+    }
+    const glyph = resolveSpellUpcast(spell('spell:glyph-of-warding'), 5);
+    expect(glyph.qualifier).toBeUndefined();
+    expect(glyph.adjustments).toEqual([
+      expect.objectContaining({
+        kind: 'dice',
+        addedDice: '2d8',
+        choice: {
+          groupId: 'glyph-of-warding:mode',
+          optionId: 'explosive-runes',
+        },
+      }),
+      {
+        kind: 'slot-value',
+        subject: {
+          kind: 'effect',
+          semanticId: 'glyph of warding:stored-spell-level-threshold',
+          property: 'spell-level-threshold',
+        },
+        amount: 5,
+        sourceOperationId:
+          'glyph of warding:stored-spell-level-threshold:selected-slot-value:min-4:choice:glyph-of-warding:mode:spell-glyph',
+        choice: {
+          groupId: 'glyph-of-warding:mode',
+          optionId: 'spell-glyph',
+        },
+      },
+    ]);
+  });
+
+  it('binds paired HP, scalar volume, target geometry, and Wall of Fire components', () => {
+    expect(
+      resolveSpellUpcast(spell('spell:aid'), 4).adjustments[0],
+    ).toMatchObject({
+      kind: 'flat',
+      amount: 10,
+      subject: { property: 'current-and-maximum-hit-points' },
+    });
+    expect(
+      resolveSpellUpcast(spell('spell:create-or-destroy-water'), 3)
+        .adjustments[0],
+    ).toMatchObject({
+      kind: 'flat',
+      amount: 20,
+      subject: { property: 'volume-gallons' },
+    });
+    for (const ref of [
+      'spell:charm-person',
+      'spell:command',
+      'spell:hold-monster',
+      'spell:hold-person',
+    ]) {
+      const record = spell(ref);
+      const level = (record.data as Record<string, unknown>).level as number;
+      expect(
+        resolveSpellUpcast(record, level + 1).adjustments[0],
+      ).toMatchObject({
+        subject: { maximumSeparationFeet: 30 },
+      });
+    }
+    expect(
+      resolveSpellUpcast(spell('spell:hold-person'), 3).adjustments[0],
+    ).toMatchObject({ subject: { creatureType: 'humanoid' } });
+    expect(
+      resolveSpellUpcast(spell('spell:chain-lightning'), 9).adjustments[0],
+    ).toMatchObject({
+      kind: 'count',
+      amount: 3,
+      subject: {
+        property: 'projectile-count',
+        projectileOrigin: 'first-target',
+        projectileDestination: 'different-target',
+      },
+    });
+    expect(
+      resolveSpellUpcast(spell('spell:wall-of-fire'), 5).adjustments,
+    ).toEqual([
+      expect.objectContaining({
+        addedDice: '1d8',
+        subject: expect.objectContaining({
+          semanticId: 'wall of fire:appearing-wall-damage',
+        }),
+      }),
+      expect.objectContaining({
+        addedDice: '1d8',
+        subject: expect.objectContaining({
+          semanticId: 'wall of fire:hot-side-or-entry-damage',
+        }),
+      }),
+    ]);
   });
 
   it('resolves False Life as a flat temporary-hit-point increase', () => {
@@ -523,7 +732,7 @@ describe('source-bound spell upcast resolver', () => {
             property: 'temporary-hit-points',
           },
           amount,
-          sourceOperation: 0,
+          sourceOperationId: 'false life:temporary-hit-points:flat-per-slot',
         },
       ]);
     }
@@ -606,13 +815,168 @@ describe('source-bound spell upcast resolver', () => {
     const drifted = structuredClone(spell('spell:fireball'));
     (drifted.data as Record<string, unknown>).higherLevels = 'drift';
     expect(() => resolveSpellUpcast(drifted, 4)).toThrow(
-      /source phrase drifted/,
+      /source phrase must equal/,
     );
     const pageDrift = structuredClone(spell('spell:fireball'));
     const data = pageDrift.data as Record<string, unknown>;
     (data.upcast as Record<string, unknown>).sourcePage = 999;
     expect(() => resolveSpellUpcast(pageDrift, 4)).toThrow(
-      /source page drifted/,
+      /must equal record provenance page/,
+    );
+    const missingPage = structuredClone(spell('spell:fireball'));
+    (missingPage as { source: string }).source = 'SRD 5.1';
+    expect(() => resolveSpellUpcast(missingPage, 4)).toThrow(
+      /requires a source-page locator/,
+    );
+  });
+
+  it('uses one closed parser for schema/runtime adversarial payloads', () => {
+    const parse = (mutate: (data: Record<string, unknown>) => void) => {
+      const record = structuredClone(spell('spell:fireball'));
+      const data = record.data as Record<string, unknown>;
+      mutate(data);
+      return () =>
+        parseSpellUpcastSpec({
+          recordKey: record.key,
+          data,
+          provenancePage: 144,
+        });
+    };
+    const upcast = (data: Record<string, unknown>) =>
+      data.upcast as Record<string, unknown>;
+    const operation = (data: Record<string, unknown>) =>
+      (upcast(data).operations as Record<string, unknown>[])[0];
+    const subject = (data: Record<string, unknown>) =>
+      operation(data).subject as Record<string, unknown>;
+
+    expect(
+      parse((data) => {
+        upcast(data).unexpected = true;
+      }),
+    ).toThrow(/unsupported key/);
+    const schemaRecord = structuredClone(spell('spell:fireball'));
+    const schemaData = schemaRecord.data as Record<string, unknown>;
+    (
+      (
+        (schemaData.upcast as Record<string, unknown>).operations as Record<
+          string,
+          unknown
+        >[]
+      )[0] as Record<string, unknown>
+    ).unexpected = true;
+    expect(() => validateRecordKindSchema(schemaRecord, 'record')).toThrow(
+      /unsupported key/,
+    );
+    expect(
+      parse((data) => {
+        operation(data).unexpected = true;
+      }),
+    ).toThrow(/unsupported key/);
+    expect(
+      parse((data) => {
+        subject(data).unexpected = true;
+      }),
+    ).toThrow(/unsupported key/);
+    expect(
+      parse((data) => {
+        subject(data).damageType = 'water';
+      }),
+    ).toThrow(/canonical damage type/);
+    expect(
+      parse((data) => {
+        operation(data).dice = '1d6+1';
+      }),
+    ).toThrow(/canonical NdN/);
+    expect(
+      parse((data) => {
+        operation(data).dice = '999999999999999999999d6';
+      }),
+    ).toThrow(/canonical NdN/);
+    expect(
+      parse((data) => {
+        operation(data).startSlotLevel = 9;
+      }),
+    ).toThrow(/through 8/);
+    expect(
+      parse((data) => {
+        operation(data).startSlotLevel = 8;
+        operation(data).everySlotLevels = 2;
+      }),
+    ).toThrow(/cannot apply to a legal spell slot/);
+    expect(
+      parse((data) => {
+        operation(data).kind = 'selected-slot-value';
+        operation(data).minSlotLevel = 4;
+        operation(data).value = 'selected-slot-level';
+        Reflect.deleteProperty(operation(data), 'dice');
+        Reflect.deleteProperty(operation(data), 'startSlotLevel');
+        Reflect.deleteProperty(operation(data), 'everySlotLevels');
+      }),
+    ).toThrow(/cannot modify damage-dice/);
+    expect(
+      parse((data) => {
+        upcast(data).disposition = 'existing-s1-typed-scaling';
+      }),
+    ).toThrow(/cannot duplicate operations/);
+    expect(
+      parse((data) => {
+        operation(data).choice = { groupId: 'g', optionId: '' };
+      }),
+    ).toThrow(/non-empty string/);
+    expect(
+      parse((data) => {
+        operation(data).choice = { groupId: 'g', optionId: 'only-option' };
+      }),
+    ).toThrow(/at least two options/);
+    expect(
+      parse((data) => {
+        subject(data).cardinalityMode = 'maximum-total';
+      }),
+    ).toThrow(/unsupported key/);
+    expect(
+      parse((data) => {
+        const original = operation(data);
+        (upcast(data).operations as unknown[]).push({
+          everySlotLevels: original.everySlotLevels,
+          startSlotLevel: original.startSlotLevel,
+          dice: original.dice,
+          subject: original.subject,
+          kind: original.kind,
+        });
+      }),
+    ).toThrow(/duplicates semantic operation/);
+    const thresholds = structuredClone(spell('spell:magic-weapon'));
+    const thresholdData = thresholds.data as Record<string, unknown>;
+    const thresholdOperations = (
+      thresholdData.upcast as Record<string, unknown>
+    ).operations as unknown[];
+    thresholdOperations.reverse();
+    expect(() =>
+      parseSpellUpcastSpec({
+        recordKey: thresholds.key,
+        data: thresholdData,
+        provenancePage: 161,
+      }),
+    ).toThrow(/strictly ordered/);
+    expect(
+      parse((data) => {
+        data.scalingSourceText = 'drift';
+      }),
+    ).toThrow(/source phrase must equal/);
+
+    const noMechanics = structuredClone(spell('spell:fireball'));
+    Reflect.deleteProperty(
+      noMechanics.data as Record<string, unknown>,
+      'mechanics',
+    );
+    expect(resolveSpellUpcast(noMechanics, 4).adjustments).toHaveLength(1);
+    const malformedS1 = structuredClone(spell('spell:conjure-animals'));
+    Reflect.deleteProperty(
+      malformedS1.data as Record<string, unknown>,
+      'mechanics',
+    );
+    expect(() => resolveSpellUpcast(malformedS1, 5)).toThrow(
+      /S1 upcast disposition requires mechanics effects/,
     );
   });
 
@@ -667,5 +1031,27 @@ describe('source-bound spell upcast resolver', () => {
         ),
       ),
     ).toBe(true);
+    const reviewedSemanticOracle = higher.map((record) => {
+      const data = record.data as Record<string, unknown>;
+      const upcast = data.upcast as Record<string, unknown>;
+      const projection = {
+        disposition: upcast.disposition,
+        operations: upcast.operations,
+        qualifier: upcast.qualifier ?? null,
+      };
+      const baseLevel = data.level as number;
+      const resolutions = Array.from({ length: 10 - baseLevel }, (_, index) =>
+        resolveSpellUpcast(record, baseLevel + index),
+      );
+      return {
+        spellRef: record.key,
+        spellName: record.name,
+        sourcePage: upcast.sourcePage,
+        sourcePhrase: upcast.sourcePhrase,
+        projection,
+        resolutions,
+      };
+    });
+    expect(reviewedSemanticOracle).toMatchSnapshot();
   });
 });

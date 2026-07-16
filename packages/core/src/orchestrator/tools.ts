@@ -49,6 +49,7 @@ import { resolveCheckTool } from './toolResolveCheck.js';
 import { resolveConcentrationTool } from './toolResolveConcentration.js';
 import { resolveContestTool } from './toolResolveContest.js';
 import { resolveDamageTool } from './toolResolveDamage.js';
+import { resolveSpellUpcastTool } from './toolResolveSpellUpcast.js';
 import {
   advanceTimeTool,
   completeLongRestTool,
@@ -56,7 +57,6 @@ import {
   finishShortRestRecoveryTool,
   spendRestHitDieTool,
 } from './toolRest.js';
-import { resolveSpellUpcastTool } from './toolResolveSpellUpcast.js';
 import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';

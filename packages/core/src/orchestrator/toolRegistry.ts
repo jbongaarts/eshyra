@@ -35,6 +35,8 @@ export interface ToolContext {
   actingCharacterId?: string;
   /** Resolve active adventure module source for module-backed tools. */
   resolveAdventureModule?: (moduleId: string) => AdventureModule | undefined;
+  /** Resolve exact campaign-bound base/add-on packs not bundled by core. */
+  resolveRulesPack?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver;
 }
 
 export interface Tool {

@@ -1,4 +1,8 @@
-import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
+import {
+  CampaignRulesBindingResolutionError,
+  lookupStrictCampaignRecord,
+  lookupStrictCampaignRecordByName,
+} from '../state/campaignRecordLookup.js';
 import { SpellSlotError, spendSpellSlot } from '../state/spellSlots.js';
 import { resolveSpellUpcast, SpellUpcastError } from './spellUpcast.js';
 import type { Tool } from './toolRegistry.js';
@@ -18,8 +22,9 @@ export const spendSpellSlotTool: Tool = {
     'resolved from the active rules pack; cantrips are at will. A leveled spell ' +
     'requires an available slot at its level or higher; omit ' +
     'slotLevel to spend the lowest legal available slot, or pass a higher ' +
-    'slotLevel for an intentional upcast. This only validates and spends the ' +
-    'slot; F9 owns the upcast scaling transform. The slot pool is derived from ' +
+    'slotLevel for an intentional upcast. The same atomic operation validates ' +
+    'and spends the slot and returns the canonical upcast scaling transform. ' +
+    'The slot pool is derived from ' +
     'the character sheet, never declared by the model.',
   inputSchema: {
     type: 'object',
@@ -30,6 +35,12 @@ export const spendSpellSlotTool: Tool = {
         description:
           'Canonical spell reference; its base level is resolved from the active rules pack.',
       },
+      spell: {
+        type: 'string',
+        minLength: 1,
+        description:
+          'Deprecated replay-compatible spell name. New calls must use spellRef.',
+      },
       slotLevel: {
         type: 'integer',
         minimum: 1,
@@ -38,7 +49,6 @@ export const spendSpellSlotTool: Tool = {
       },
       character: CHARACTER_TARGET_SCHEMA,
     },
-    required: ['spellRef'],
     additionalProperties: false,
   },
   run(args, ctx) {
@@ -47,17 +57,40 @@ export const spendSpellSlotTool: Tool = {
       return err('invalid_args', 'spend_spell_slot requires { spellRef }');
     }
     const spellRef = a.spellRef;
-    if (typeof spellRef !== 'string')
-      return err('invalid_args', 'spend_spell_slot requires { spellRef }');
+    const legacySpell = a.spell;
+    if (
+      (typeof spellRef !== 'string' && typeof legacySpell !== 'string') ||
+      (spellRef !== undefined && legacySpell !== undefined)
+    ) {
+      return err(
+        'invalid_args',
+        'spend_spell_slot requires exactly one of { spellRef } or legacy { spell }',
+      );
+    }
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) return target;
-    const spell = lookupStrictCampaignRecord(ctx.db, 'spell', spellRef);
-    if (spell === undefined)
-      return err(
-        'invalid_spell',
-        `spell reference '${spellRef}' does not resolve in the campaign rules binding`,
-      );
     try {
+      const spell =
+        typeof spellRef === 'string'
+          ? lookupStrictCampaignRecord(
+              ctx.db,
+              'spell',
+              spellRef,
+              ctx.resolveRulesPack,
+            )
+          : lookupStrictCampaignRecordByName(
+              ctx.db,
+              'spell',
+              legacySpell as string,
+              ctx.resolveRulesPack,
+            );
+      const requestedSpell =
+        typeof spellRef === 'string' ? spellRef : (legacySpell as string);
+      if (spell === undefined)
+        return err(
+          'invalid_spell',
+          `spell '${requestedSpell}' does not resolve unambiguously in the campaign rules binding`,
+        );
       const level =
         typeof spell.data === 'object' &&
         spell.data !== null &&
@@ -92,6 +125,8 @@ export const spendSpellSlotTool: Tool = {
         upcast,
       });
     } catch (e) {
+      if (e instanceof CampaignRulesBindingResolutionError)
+        return err('rules_binding_error', e.message);
       if (e instanceof SpellSlotError) {
         return err('spell_slot_error', e.message);
       }

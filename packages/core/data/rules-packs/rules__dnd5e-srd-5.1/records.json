@@ -105658,8 +105658,8 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "aid:effect",
-              "property": "hit-points"
+              "semanticId": "aid:current-and-maximum-hit-points",
+              "property": "current-and-maximum-hit-points"
             },
             "amount": 5,
             "startSlotLevel": 2,
@@ -105893,8 +105893,9 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "animal friendship:effect",
-              "property": "creature-count"
+              "semanticId": "animal friendship:additional-beast",
+              "property": "creature-count",
+              "creatureType": "beast"
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -105985,7 +105986,7 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "animal messenger:effect",
+              "semanticId": "animal messenger:duration",
               "property": "duration-hours"
             },
             "amount": 48,
@@ -107286,7 +107287,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "bane:effect",
+              "semanticId": "bane:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -107386,7 +107387,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "banishment:effect",
+              "semanticId": "banishment:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -107620,7 +107621,13 @@
               "property": "duration"
             },
             "atSlotLevel": 4,
-            "value": "concentration, up to 10 minutes"
+            "value": {
+              "kind": "duration",
+              "amount": 10,
+              "unit": "minute",
+              "concentration": true,
+              "upTo": true
+            }
           },
           {
             "kind": "threshold",
@@ -107630,7 +107637,12 @@
               "property": "duration"
             },
             "atSlotLevel": 5,
-            "value": "8 hours, no concentration"
+            "value": {
+              "kind": "duration",
+              "amount": 8,
+              "unit": "hour",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -107640,7 +107652,12 @@
               "property": "duration"
             },
             "atSlotLevel": 7,
-            "value": "24 hours, no concentration"
+            "value": {
+              "kind": "duration",
+              "amount": 24,
+              "unit": "hour",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -107650,7 +107667,11 @@
               "property": "duration"
             },
             "atSlotLevel": 9,
-            "value": "until dispelled, no concentration"
+            "value": {
+              "kind": "duration",
+              "ending": "until-dispelled",
+              "concentration": false
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -107880,7 +107901,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "bless:effect",
+              "semanticId": "bless:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -108075,7 +108096,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "blindness/deafness:effect",
+              "semanticId": "blindness/deafness:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -108649,8 +108670,10 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "chain lightning:effect",
-              "property": "target-count"
+              "semanticId": "chain lightning:leaping-bolt-to-new-target",
+              "property": "projectile-count",
+              "projectileOrigin": "first-target",
+              "projectileDestination": "different-target"
             },
             "count": 1,
             "startSlotLevel": 6,
@@ -108746,8 +108769,9 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "charm person:effect",
-              "property": "creature-count"
+              "semanticId": "charm person:additional-target",
+              "property": "creature-count",
+              "maximumSeparationFeet": 30
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -109328,8 +109352,9 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "command:effect",
-              "property": "creature-count"
+              "semanticId": "command:additional-target",
+              "property": "creature-count",
+              "maximumSeparationFeet": 30
             },
             "count": 1,
             "startSlotLevel": 1,
@@ -109767,7 +109792,7 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "confusion:effect",
+              "semanticId": "confusion:area-radius",
               "property": "radius-feet"
             },
             "amount": 5,
@@ -111610,21 +111635,17 @@
         "sourcePage": 131,
         "operations": [
           {
-            "kind": "threshold",
+            "kind": "selected-slot-value",
             "subject": {
               "kind": "effect",
-              "semanticId": "counterspell:effect",
-              "property": "other-quantity"
+              "semanticId": "counterspell:automatic-spell-level-threshold",
+              "property": "spell-level-threshold"
             },
-            "atSlotLevel": 4,
-            "value": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
+            "minSlotLevel": 4,
+            "value": "selected-slot-level"
           }
         ],
-        "qualifier": {
-          "text": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
-          "minSlotLevel": 4
-        },
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
       "scalingSourceKind": "higher-slot",
@@ -111766,15 +111787,17 @@
         "sourcePage": 132,
         "operations": [
           {
-            "kind": "count-per-slot",
+            "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
               "semanticId": "create or destroy water:volume",
-              "property": "volume-gallons",
-              "selection": "choose-one",
-              "choiceGroup": "create-or-destroy-water:scaled-mode"
+              "property": "volume-gallons"
             },
-            "count": 10,
+            "choice": {
+              "groupId": "create-or-destroy-water:scaled-mode",
+              "optionId": "water-volume"
+            },
+            "amount": 10,
             "startSlotLevel": 1,
             "everySlotLevels": 1
           },
@@ -111783,9 +111806,11 @@
             "subject": {
               "kind": "effect",
               "semanticId": "create or destroy water:cube-size",
-              "property": "cube-size-feet",
-              "selection": "choose-one",
-              "choiceGroup": "create-or-destroy-water:scaled-mode"
+              "property": "cube-size-feet"
+            },
+            "choice": {
+              "groupId": "create-or-destroy-water:scaled-mode",
+              "optionId": "cube-size"
             },
             "amount": 5,
             "startSlotLevel": 1,
@@ -112154,7 +112179,7 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "creation:effect",
+              "semanticId": "creation:cube-side-length",
               "property": "cube-size-feet"
             },
             "amount": 5,
@@ -113644,7 +113669,13 @@
               "property": "duration"
             },
             "atSlotLevel": 5,
-            "value": "concentration, up to 10 minutes"
+            "value": {
+              "kind": "duration",
+              "amount": 10,
+              "unit": "minute",
+              "concentration": true,
+              "upTo": true
+            }
           },
           {
             "kind": "threshold",
@@ -113654,7 +113685,13 @@
               "property": "duration"
             },
             "atSlotLevel": 6,
-            "value": "concentration, up to 1 hour"
+            "value": {
+              "kind": "duration",
+              "amount": 1,
+              "unit": "hour",
+              "concentration": true,
+              "upTo": true
+            }
           },
           {
             "kind": "threshold",
@@ -113664,7 +113701,13 @@
               "property": "duration"
             },
             "atSlotLevel": 7,
-            "value": "concentration, up to 8 hours"
+            "value": {
+              "kind": "duration",
+              "amount": 8,
+              "unit": "hour",
+              "concentration": true,
+              "upTo": true
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -113760,11 +113803,17 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "dominate monster:effect",
-              "property": "duration-hours"
+              "semanticId": "dominate monster:duration",
+              "property": "duration"
             },
             "atSlotLevel": 9,
-            "value": "concentration, up to 8 hours"
+            "value": {
+              "kind": "duration",
+              "amount": 8,
+              "unit": "hour",
+              "concentration": true,
+              "upTo": true
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -113863,7 +113912,13 @@
               "property": "duration"
             },
             "atSlotLevel": 6,
-            "value": "concentration, up to 10 minutes"
+            "value": {
+              "kind": "duration",
+              "amount": 10,
+              "unit": "minute",
+              "concentration": true,
+              "upTo": true
+            }
           },
           {
             "kind": "threshold",
@@ -113873,7 +113928,13 @@
               "property": "duration"
             },
             "atSlotLevel": 7,
-            "value": "concentration, up to 1 hour"
+            "value": {
+              "kind": "duration",
+              "amount": 1,
+              "unit": "hour",
+              "concentration": true,
+              "upTo": true
+            }
           },
           {
             "kind": "threshold",
@@ -113883,7 +113944,13 @@
               "property": "duration"
             },
             "atSlotLevel": 8,
-            "value": "concentration, up to 8 hours"
+            "value": {
+              "kind": "duration",
+              "amount": 8,
+              "unit": "hour",
+              "concentration": true,
+              "upTo": true
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -114259,7 +114326,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "enhance ability:effect",
+              "semanticId": "enhance ability:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -114584,7 +114651,9 @@
               "semanticId": "etherealness:willing-creature-maximum",
               "property": "creature-count",
               "cardinalityMode": "maximum-total",
-              "includesCaster": true
+              "includesCaster": true,
+              "willingTargets": true,
+              "allTargetsWithinFeetOfCaster": 10
             },
             "count": 3,
             "startSlotLevel": 7,
@@ -116417,7 +116486,7 @@
                 "radiant"
               ],
               "selection": "choose-one",
-              "semanticId": "flame strike:damage-choice",
+              "semanticId": "flame strike:chosen-damage-component",
               "property": "damage-dice"
             },
             "dice": "1d6",
@@ -116756,7 +116825,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "fly:effect",
+              "semanticId": "fly:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -116845,7 +116914,7 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "fog cloud:effect",
+              "semanticId": "fog cloud:area-radius",
               "property": "radius-feet"
             },
             "amount": 20,
@@ -117457,7 +117526,12 @@
               "property": "duration"
             },
             "atSlotLevel": 7,
-            "value": "1 year"
+            "value": {
+              "kind": "duration",
+              "amount": 1,
+              "unit": "year",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -117467,7 +117541,11 @@
               "property": "duration"
             },
             "atSlotLevel": 9,
-            "value": "until ended by an allowed spell"
+            "value": {
+              "kind": "duration",
+              "ending": "until-ended-by-allowed-spell",
+              "concentration": false
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -117860,7 +117938,7 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "globe of invulnerability:effect",
+              "semanticId": "globe of invulnerability:spell-level-threshold",
               "property": "spell-level-threshold"
             },
             "amount": 1,
@@ -117976,16 +118054,30 @@
               "semanticId": "glyph of warding:explosive-runes-damage",
               "property": "damage-dice"
             },
+            "choice": {
+              "groupId": "glyph-of-warding:mode",
+              "optionId": "explosive-runes"
+            },
             "dice": "1d8",
             "startSlotLevel": 3,
             "everySlotLevels": 1
+          },
+          {
+            "kind": "selected-slot-value",
+            "subject": {
+              "kind": "effect",
+              "semanticId": "glyph of warding:stored-spell-level-threshold",
+              "property": "spell-level-threshold"
+            },
+            "choice": {
+              "groupId": "glyph-of-warding:mode",
+              "optionId": "spell-glyph"
+            },
+            "minSlotLevel": 4,
+            "value": "selected-slot-level"
           }
         ],
-        "qualifier": {
-          "text": "If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
-          "minSlotLevel": 4
-        },
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "componentMaterials": "incense and powdered diamond worth at least 200 gp, which the spell consumes",
       "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
@@ -119370,7 +119462,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "heroism:effect",
+              "semanticId": "heroism:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -119560,8 +119652,9 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "hold monster:effect",
-              "property": "creature-count"
+              "semanticId": "hold monster:additional-target",
+              "property": "creature-count",
+              "maximumSeparationFeet": 30
             },
             "count": 1,
             "startSlotLevel": 5,
@@ -119668,19 +119761,17 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "hold person:effect",
-              "property": "other-quantity"
+              "semanticId": "hold person:additional-target",
+              "property": "creature-count",
+              "creatureType": "humanoid",
+              "maximumSeparationFeet": 30
             },
             "count": 1,
             "startSlotLevel": 2,
             "everySlotLevels": 1
           }
         ],
-        "qualifier": {
-          "text": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
-          "minSlotLevel": 3
-        },
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "componentMaterials": "a small, straight piece of iron",
       "higherLevels": "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
@@ -119842,7 +119933,13 @@
               "property": "duration"
             },
             "atSlotLevel": 3,
-            "value": "concentration, up to 8 hours"
+            "value": {
+              "kind": "duration",
+              "amount": 8,
+              "unit": "hour",
+              "concentration": true,
+              "upTo": true
+            }
           },
           {
             "kind": "threshold",
@@ -119852,7 +119949,13 @@
               "property": "duration"
             },
             "atSlotLevel": 5,
-            "value": "concentration, up to 24 hours"
+            "value": {
+              "kind": "duration",
+              "amount": 24,
+              "unit": "hour",
+              "concentration": true,
+              "upTo": true
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -120603,7 +120706,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "invisibility:effect",
+              "semanticId": "invisibility:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -121436,7 +121539,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "longstrider:effect",
+              "semanticId": "longstrider:additional-creature",
               "property": "creature-count"
             },
             "count": 1,
@@ -121672,7 +121775,7 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic circle:effect",
+              "semanticId": "magic circle:duration",
               "property": "duration-hours"
             },
             "amount": 1,
@@ -121811,7 +121914,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "magic missile:effect",
+              "semanticId": "magic missile:additional-dart",
               "property": "projectile-count"
             },
             "count": 1,
@@ -121961,7 +122064,10 @@
               "property": "bonus"
             },
             "atSlotLevel": 4,
-            "value": "+2"
+            "value": {
+              "kind": "bonus",
+              "amount": 2
+            }
           },
           {
             "kind": "threshold",
@@ -121971,7 +122077,10 @@
               "property": "bonus"
             },
             "atSlotLevel": 6,
-            "value": "+3"
+            "value": {
+              "kind": "bonus",
+              "amount": 3
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -122118,18 +122227,18 @@
             "kind": "threshold",
             "subject": {
               "kind": "effect",
-              "semanticId": "major image:effect",
-              "property": "other-quantity"
+              "semanticId": "major image:duration",
+              "property": "duration"
             },
             "atSlotLevel": 6,
-            "value": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
+            "value": {
+              "kind": "duration",
+              "ending": "until-dispelled",
+              "concentration": false
+            }
           }
         ],
-        "qualifier": {
-          "text": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
-          "minSlotLevel": 6
-        },
-        "disposition": "typed-core-with-model-qualifier"
+        "disposition": "complete-typed-upcast"
       },
       "componentMaterials": "a bit of fleece",
       "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.",
@@ -122451,7 +122560,12 @@
               "property": "duration"
             },
             "atSlotLevel": 7,
-            "value": "10 days"
+            "value": {
+              "kind": "duration",
+              "amount": 10,
+              "unit": "day",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -122461,7 +122575,12 @@
               "property": "duration"
             },
             "atSlotLevel": 8,
-            "value": "30 days"
+            "value": {
+              "kind": "duration",
+              "amount": 30,
+              "unit": "day",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -122471,7 +122590,13 @@
               "property": "duration"
             },
             "atSlotLevel": 9,
-            "value": "a year and a day"
+            "value": {
+              "kind": "duration",
+              "amount": 1,
+              "unit": "year",
+              "additionalDays": 1,
+              "concentration": false
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -123298,7 +123423,11 @@
               "property": "memory-age"
             },
             "atSlotLevel": 6,
-            "value": "up to 7 days ago"
+            "value": {
+              "kind": "memory-age",
+              "amount": 7,
+              "unit": "day"
+            }
           },
           {
             "kind": "threshold",
@@ -123308,7 +123437,11 @@
               "property": "memory-age"
             },
             "atSlotLevel": 7,
-            "value": "up to 30 days ago"
+            "value": {
+              "kind": "memory-age",
+              "amount": 30,
+              "unit": "day"
+            }
           },
           {
             "kind": "threshold",
@@ -123318,7 +123451,11 @@
               "property": "memory-age"
             },
             "atSlotLevel": 8,
-            "value": "up to 1 year ago"
+            "value": {
+              "kind": "memory-age",
+              "amount": 1,
+              "unit": "year"
+            }
           },
           {
             "kind": "threshold",
@@ -123328,7 +123465,10 @@
               "property": "memory-age"
             },
             "atSlotLevel": 9,
-            "value": "any time in the creature’s past"
+            "value": {
+              "kind": "memory-age",
+              "unrestricted": true
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -124104,7 +124244,12 @@
               "property": "duration"
             },
             "atSlotLevel": 6,
-            "value": "10 days"
+            "value": {
+              "kind": "duration",
+              "amount": 10,
+              "unit": "day",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -124114,7 +124259,12 @@
               "property": "duration"
             },
             "atSlotLevel": 7,
-            "value": "30 days"
+            "value": {
+              "kind": "duration",
+              "amount": 30,
+              "unit": "day",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -124124,7 +124274,12 @@
               "property": "duration"
             },
             "atSlotLevel": 8,
-            "value": "180 days"
+            "value": {
+              "kind": "duration",
+              "amount": 180,
+              "unit": "day",
+              "concentration": false
+            }
           },
           {
             "kind": "threshold",
@@ -124134,7 +124289,13 @@
               "property": "duration"
             },
             "atSlotLevel": 9,
-            "value": "a year and a day"
+            "value": {
+              "kind": "duration",
+              "amount": 1,
+              "unit": "year",
+              "additionalDays": 1,
+              "concentration": false
+            }
           }
         ],
         "disposition": "complete-typed-upcast"
@@ -124950,7 +125111,7 @@
             "kind": "flat-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "private sanctum:effect",
+              "semanticId": "private sanctum:cube-side-length",
               "property": "cube-size-feet"
             },
             "amount": 100,
@@ -126370,7 +126531,7 @@
             "kind": "count-per-slot",
             "subject": {
               "kind": "effect",
-              "semanticId": "scorching ray:effect",
+              "semanticId": "scorching ray:additional-ray",
               "property": "projectile-count"
             },
             "count": 1,
@@ -128228,8 +128389,8 @@
                 "radiant",
                 "necrotic"
               ],
-              "selection": "source-determined",
-              "semanticId": "spirit guardians:damage-choice",
+              "selection": "base-spell-determined",
+              "semanticId": "spirit guardians:base-spell-determined-damage-component",
               "property": "damage-dice"
             },
             "dice": "1d8",
@@ -130248,7 +130409,19 @@
             "subject": {
               "kind": "damage",
               "damageType": "fire",
-              "semanticId": "wall of fire:damage",
+              "semanticId": "wall of fire:appearing-wall-damage",
+              "property": "damage-dice"
+            },
+            "dice": "1d8",
+            "startSlotLevel": 4,
+            "everySlotLevels": 1
+          },
+          {
+            "kind": "dice-per-slot",
+            "subject": {
+              "kind": "damage",
+              "damageType": "fire",
+              "semanticId": "wall of fire:hot-side-or-entry-damage",
               "property": "damage-dice"
             },
             "dice": "1d8",
@@ -130583,7 +130756,7 @@
                 "slashing"
               ],
               "application": "all-components",
-              "semanticId": "wall of thorns:damage-choice",
+              "semanticId": "wall of thorns:all-damage-components",
               "property": "damage-dice"
             },
             "dice": "1d8",

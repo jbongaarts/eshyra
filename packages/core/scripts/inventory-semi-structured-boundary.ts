@@ -525,11 +525,11 @@ const rules: readonly ClassificationRule[] = [
           : retained && fieldPath === 'data.scalingSourceText'
             ? 'not-mechanical'
             : 'complete',
-        'spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast',
-        'closed source-kind/upcast schema validation rejects drift and unsupported operations',
-        'spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence',
+        'shared spell upcast contract, canonical compiler, and resolveSpellUpcast',
+        'one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift',
+        '92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence',
         'SpellUpcastSpec / SpellUpcastOperation',
-        'parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts',
+        'parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts',
         false,
         'data.higherLevels',
       );

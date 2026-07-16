@@ -1,111 +1,52 @@
-import { EXPECTED_HIGHER_SLOT_SOURCE_PAGES } from './spellUpcastInventory.js';
+import { createHash } from 'node:crypto';
+import type {
+  ParsedSpellUpcastSpec,
+  SpellUpcastQualifier,
+  UpcastDamageType,
+  UpcastOperation,
+  UpcastSubject,
+  UpcastThresholdValue,
+} from '../../../src/rules/spellUpcastContract.js';
+import {
+  EXPECTED_HIGHER_SLOT_SOURCE_PAGES,
+  EXPECTED_HIGHER_SLOT_SOURCE_SHA256,
+} from './spellUpcastInventory.js';
 import type { SpellExtraction } from './types.js';
 
-/** The deliberately closed D&D spell-upcast vocabulary emitted by the compiler. */
-export type UpcastSubject =
-  | {
-      readonly kind: 'damage';
-      readonly damageType?: string;
-      readonly damageTypes?: readonly string[];
-      readonly selection?: 'choose-one' | 'source-determined';
-      readonly application?: 'all-components';
-      readonly semanticId: string;
-      readonly property: 'damage-dice';
-    }
-  | {
-      readonly kind: 'healing';
-      readonly semanticId: string;
-      readonly property: 'healing-dice' | 'healing-points';
-    }
-  | {
-      readonly kind: 'affected-hit-points';
-      readonly semanticId: string;
-      readonly property: 'affected-hit-point-pool-dice';
-    }
-  | {
-      readonly kind: 'effect';
-      readonly semanticId: string;
-      readonly selection?: 'choose-one';
-      readonly choiceGroup?: string;
-      readonly cardinalityMode?: 'maximum-total';
-      readonly includesCaster?: true;
-      readonly property:
-        | 'duration-hours'
-        | 'hit-points'
-        | 'target-count'
-        | 'projectile-count'
-        | 'creature-count'
-        | 'object-count'
-        | 'volume-gallons'
-        | 'cube-size-feet'
-        | 'spell-level-threshold'
-        | 'duration'
-        | 'radius-feet'
-        | 'bonus'
-        | 'memory-age'
-        | 'temporary-hit-points'
-        | 'other-quantity';
-    };
-
-export type UpcastOperation =
-  | {
-      readonly kind: 'dice-per-slot';
-      readonly subject: UpcastSubject;
-      readonly dice: string;
-      readonly startSlotLevel: number;
-      readonly everySlotLevels: number;
-    }
-  | {
-      readonly kind: 'flat-per-slot';
-      readonly subject: UpcastSubject;
-      readonly amount: number;
-      readonly startSlotLevel: number;
-      readonly everySlotLevels: number;
-    }
-  | {
-      readonly kind: 'count-per-slot';
-      readonly subject: UpcastSubject;
-      readonly count: number;
-      readonly startSlotLevel: number;
-      readonly everySlotLevels: number;
-    }
-  | {
-      readonly kind: 'threshold';
-      readonly subject: UpcastSubject;
-      readonly atSlotLevel: number;
-      readonly value: string;
-    }
-  | {
-      readonly kind: 'selected-slot-value';
-      readonly subject: UpcastSubject;
-      readonly minSlotLevel: number;
-      readonly value: 'selected-slot-level';
-    };
-
-export interface SpellUpcastSpec {
-  readonly sourceKind: 'higher-slot';
-  readonly clauseId: string;
-  readonly sourcePhrase: string;
-  readonly sourcePage: number;
-  readonly operations: readonly UpcastOperation[];
-  readonly qualifier?: {
-    readonly text: string;
-    readonly minSlotLevel: number;
-  };
-  readonly disposition:
-    | 'complete-typed-upcast'
-    | 'existing-s1-typed-scaling'
-    | 'typed-core-with-model-qualifier';
-}
+export type SpellUpcastSpec = ParsedSpellUpcastSpec;
 
 interface ReviewedProjection {
   readonly operations: readonly UpcastOperation[];
-  readonly qualifier?: SpellUpcastSpec['qualifier'];
+  readonly qualifier?: SpellUpcastQualifier;
 }
 
 const REVIEWED_SOURCE_BINDINGS: Readonly<
   Record<string, { readonly page: number; readonly text: string }>
 > = {
+  aid: {
+    page: 114,
+    text: 'When you cast this spell using a spell slot of 3rd level or higher, a target’s hit points increase by an additional 5 for each slot level above 2nd.',
+  },
+  'animal-friendship': {
+    page: 115,
+    text: 'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.',
+  },
+  'chain-lightning': {
+    page: 124,
+    text: 'When you cast this spell using a spell slot of 7th level or higher, one additional bolt leaps from the first target to another target for each slot level above 6th.',
+  },
+  'charm-person': {
+    page: 124,
+    text: 'When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.',
+  },
+  command: {
+    page: 125,
+    text: 'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.',
+  },
+  counterspell: {
+    page: 131,
+    text: 'When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.',
+  },
   'dominate-beast': {
     page: 137,
     text: 'When you cast this spell with a 5th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 6th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 7th level or higher, the duration is concentration, up to 8 hours.',
@@ -113,6 +54,10 @@ const REVIEWED_SOURCE_BINDINGS: Readonly<
   'dominate-person': {
     page: 138,
     text: 'When you cast this spell using a 6th-level spell slot, the duration is concentration, up to 10 minutes. When you use a 7th-level spell slot, the duration is concentration, up to 1 hour. When you use a spell slot of 8th level or higher, the duration is concentration, up to 8 hours.',
+  },
+  'dominate-monster': {
+    page: 137,
+    text: 'When you cast this spell with a 9th-level spell slot, the duration is concentration, up to 8 hours.',
   },
   'mass-suggestion': {
     page: 163,
@@ -150,6 +95,18 @@ const REVIEWED_SOURCE_BINDINGS: Readonly<
     page: 149,
     text: 'When you cast this spell using a spell slot of 4th level or higher, the damage of an explosive runes glyph increases by 1d8 for each slot level above 3rd. If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.',
   },
+  'hold-monster': {
+    page: 154,
+    text: 'When you cast this spell using a spell slot of 6th level or higher, you can target one additional creature for each slot level above 5th. The creatures must be within 30 feet of each other when you target them.',
+  },
+  'hold-person': {
+    page: 154,
+    text: 'When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.',
+  },
+  'major-image': {
+    page: 162,
+    text: 'When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration.',
+  },
   'wall-of-ice': {
     page: 190,
     text: 'When you cast this spell using a spell slot of 7th level or higher, the damage the wall deals when it appears increases by 2d6, and the damage from passing through the sheet of frigid air increases by 1d6, for each slot level above 6th.',
@@ -166,55 +123,239 @@ const REVIEWED_SOURCE_BINDINGS: Readonly<
     page: 142,
     text: 'When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st.',
   },
+  'wall-of-fire': {
+    page: 190,
+    text: 'When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.',
+  },
 };
 
 const SCHEDULE_VALUES: Readonly<
-  Record<string, readonly { readonly slot: number; readonly value: string }[]>
+  Record<
+    string,
+    readonly { readonly slot: number; readonly value: UpcastThresholdValue }[]
+  >
 > = {
   'dominate-beast': [
-    { slot: 5, value: 'concentration, up to 10 minutes' },
-    { slot: 6, value: 'concentration, up to 1 hour' },
-    { slot: 7, value: 'concentration, up to 8 hours' },
+    {
+      slot: 5,
+      value: {
+        kind: 'duration',
+        amount: 10,
+        unit: 'minute',
+        concentration: true,
+        upTo: true,
+      },
+    },
+    {
+      slot: 6,
+      value: {
+        kind: 'duration',
+        amount: 1,
+        unit: 'hour',
+        concentration: true,
+        upTo: true,
+      },
+    },
+    {
+      slot: 7,
+      value: {
+        kind: 'duration',
+        amount: 8,
+        unit: 'hour',
+        concentration: true,
+        upTo: true,
+      },
+    },
   ],
   'dominate-person': [
-    { slot: 6, value: 'concentration, up to 10 minutes' },
-    { slot: 7, value: 'concentration, up to 1 hour' },
-    { slot: 8, value: 'concentration, up to 8 hours' },
+    {
+      slot: 6,
+      value: {
+        kind: 'duration',
+        amount: 10,
+        unit: 'minute',
+        concentration: true,
+        upTo: true,
+      },
+    },
+    {
+      slot: 7,
+      value: {
+        kind: 'duration',
+        amount: 1,
+        unit: 'hour',
+        concentration: true,
+        upTo: true,
+      },
+    },
+    {
+      slot: 8,
+      value: {
+        kind: 'duration',
+        amount: 8,
+        unit: 'hour',
+        concentration: true,
+        upTo: true,
+      },
+    },
   ],
   'mass-suggestion': [
-    { slot: 7, value: '10 days' },
-    { slot: 8, value: '30 days' },
-    { slot: 9, value: 'a year and a day' },
+    {
+      slot: 7,
+      value: {
+        kind: 'duration',
+        amount: 10,
+        unit: 'day',
+        concentration: false,
+      },
+    },
+    {
+      slot: 8,
+      value: {
+        kind: 'duration',
+        amount: 30,
+        unit: 'day',
+        concentration: false,
+      },
+    },
+    {
+      slot: 9,
+      value: {
+        kind: 'duration',
+        amount: 1,
+        unit: 'year',
+        additionalDays: 1,
+        concentration: false,
+      },
+    },
   ],
   'planar-binding': [
-    { slot: 6, value: '10 days' },
-    { slot: 7, value: '30 days' },
-    { slot: 8, value: '180 days' },
-    { slot: 9, value: 'a year and a day' },
+    {
+      slot: 6,
+      value: {
+        kind: 'duration',
+        amount: 10,
+        unit: 'day',
+        concentration: false,
+      },
+    },
+    {
+      slot: 7,
+      value: {
+        kind: 'duration',
+        amount: 30,
+        unit: 'day',
+        concentration: false,
+      },
+    },
+    {
+      slot: 8,
+      value: {
+        kind: 'duration',
+        amount: 180,
+        unit: 'day',
+        concentration: false,
+      },
+    },
+    {
+      slot: 9,
+      value: {
+        kind: 'duration',
+        amount: 1,
+        unit: 'year',
+        additionalDays: 1,
+        concentration: false,
+      },
+    },
   ],
   'modify-memory': [
-    { slot: 6, value: 'up to 7 days ago' },
-    { slot: 7, value: 'up to 30 days ago' },
-    { slot: 8, value: 'up to 1 year ago' },
-    { slot: 9, value: 'any time in the creature’s past' },
+    { slot: 6, value: { kind: 'memory-age', amount: 7, unit: 'day' } },
+    { slot: 7, value: { kind: 'memory-age', amount: 30, unit: 'day' } },
+    { slot: 8, value: { kind: 'memory-age', amount: 1, unit: 'year' } },
+    { slot: 9, value: { kind: 'memory-age', unrestricted: true } },
   ],
   'bestow-curse': [
-    { slot: 4, value: 'concentration, up to 10 minutes' },
-    { slot: 5, value: '8 hours, no concentration' },
-    { slot: 7, value: '24 hours, no concentration' },
-    { slot: 9, value: 'until dispelled, no concentration' },
+    {
+      slot: 4,
+      value: {
+        kind: 'duration',
+        amount: 10,
+        unit: 'minute',
+        concentration: true,
+        upTo: true,
+      },
+    },
+    {
+      slot: 5,
+      value: {
+        kind: 'duration',
+        amount: 8,
+        unit: 'hour',
+        concentration: false,
+      },
+    },
+    {
+      slot: 7,
+      value: {
+        kind: 'duration',
+        amount: 24,
+        unit: 'hour',
+        concentration: false,
+      },
+    },
+    {
+      slot: 9,
+      value: {
+        kind: 'duration',
+        ending: 'until-dispelled',
+        concentration: false,
+      },
+    },
   ],
   geas: [
-    { slot: 7, value: '1 year' },
-    { slot: 9, value: 'until ended by an allowed spell' },
+    {
+      slot: 7,
+      value: {
+        kind: 'duration',
+        amount: 1,
+        unit: 'year',
+        concentration: false,
+      },
+    },
+    {
+      slot: 9,
+      value: {
+        kind: 'duration',
+        ending: 'until-ended-by-allowed-spell',
+        concentration: false,
+      },
+    },
   ],
   'hunters-mark': [
-    { slot: 3, value: 'concentration, up to 8 hours' },
-    { slot: 5, value: 'concentration, up to 24 hours' },
+    {
+      slot: 3,
+      value: {
+        kind: 'duration',
+        amount: 8,
+        unit: 'hour',
+        concentration: true,
+        upTo: true,
+      },
+    },
+    {
+      slot: 5,
+      value: {
+        kind: 'duration',
+        amount: 24,
+        unit: 'hour',
+        concentration: true,
+        upTo: true,
+      },
+    },
   ],
   'magic-weapon': [
-    { slot: 4, value: '+2' },
-    { slot: 6, value: '+3' },
+    { slot: 4, value: { kind: 'bonus', amount: 2 } },
+    { slot: 6, value: { kind: 'bonus', amount: 3 } },
   ],
 };
 
@@ -222,10 +363,14 @@ function reviewedProjection(
   spell: SpellExtraction,
   spellSlug: string,
   text: string,
+  allowSyntheticSourceBinding: boolean,
 ): ReviewedProjection | undefined {
   const binding = REVIEWED_SOURCE_BINDINGS[spellSlug];
   if (binding === undefined) return undefined;
-  if (spell.sourcePage !== binding.page || text !== binding.text) {
+  if (
+    !allowSyntheticSourceBinding &&
+    (spell.sourcePage !== binding.page || text !== binding.text)
+  ) {
     throw new Error(
       `reviewed upcast source drift for spell:${spellSlug}: expected p.${binding.page} ${JSON.stringify(binding.text)}, got p.${spell.sourcePage} ${JSON.stringify(text)}`,
     );
@@ -252,21 +397,20 @@ function reviewedProjection(
     };
   }
   if (spellSlug === 'create-or-destroy-water') {
-    const choice = {
-      selection: 'choose-one' as const,
-      choiceGroup: 'create-or-destroy-water:scaled-mode',
-    };
     return {
       operations: [
         {
-          kind: 'count-per-slot',
+          kind: 'flat-per-slot',
           subject: {
             kind: 'effect',
             semanticId: 'create or destroy water:volume',
             property: 'volume-gallons',
-            ...choice,
           },
-          count: 10,
+          choice: {
+            groupId: 'create-or-destroy-water:scaled-mode',
+            optionId: 'water-volume',
+          },
+          amount: 10,
           startSlotLevel: 1,
           everySlotLevels: 1,
         },
@@ -276,7 +420,10 @@ function reviewedProjection(
             kind: 'effect',
             semanticId: 'create or destroy water:cube-size',
             property: 'cube-size-feet',
-            ...choice,
+          },
+          choice: {
+            groupId: 'create-or-destroy-water:scaled-mode',
+            optionId: 'cube-size',
           },
           amount: 5,
           startSlotLevel: 1,
@@ -297,15 +444,29 @@ function reviewedProjection(
             semanticId: 'glyph of warding:explosive-runes-damage',
             property: 'damage-dice',
           },
+          choice: {
+            groupId: 'glyph-of-warding:mode',
+            optionId: 'explosive-runes',
+          },
           dice: '1d8',
           startSlotLevel: 3,
           everySlotLevels: 1,
         },
+        {
+          kind: 'selected-slot-value',
+          subject: {
+            kind: 'effect',
+            semanticId: 'glyph of warding:stored-spell-level-threshold',
+            property: 'spell-level-threshold',
+          },
+          choice: {
+            groupId: 'glyph-of-warding:mode',
+            optionId: 'spell-glyph',
+          },
+          minSlotLevel: 4,
+          value: 'selected-slot-level',
+        },
       ],
-      qualifier: {
-        text: 'If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.',
-        minSlotLevel: 4,
-      },
     };
   }
   if (spellSlug === 'wall-of-ice') {
@@ -349,6 +510,8 @@ function reviewedProjection(
             property: 'creature-count',
             cardinalityMode: 'maximum-total',
             includesCaster: true,
+            willingTargets: true,
+            allTargetsWithinFeetOfCaster: 10,
           },
           count: 3,
           startSlotLevel: 7,
@@ -357,14 +520,14 @@ function reviewedProjection(
       ],
     };
   }
-  if (spellSlug === 'dispel-magic') {
+  if (spellSlug === 'dispel-magic' || spellSlug === 'counterspell') {
     return {
       operations: [
         {
           kind: 'selected-slot-value',
           subject: {
             kind: 'effect',
-            semanticId: 'dispel magic:automatic-spell-level-threshold',
+            semanticId: `${spell.name.toLowerCase()}:automatic-spell-level-threshold`,
             property: 'spell-level-threshold',
           },
           minSlotLevel: 4,
@@ -390,6 +553,160 @@ function reviewedProjection(
       ],
     };
   }
+  if (spellSlug === 'aid') {
+    return {
+      operations: [
+        {
+          kind: 'flat-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: 'aid:current-and-maximum-hit-points',
+            property: 'current-and-maximum-hit-points',
+          },
+          amount: 5,
+          startSlotLevel: 2,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'animal-friendship') {
+    return {
+      operations: [
+        {
+          kind: 'count-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: 'animal friendship:additional-beast',
+            property: 'creature-count',
+            creatureType: 'beast',
+          },
+          count: 1,
+          startSlotLevel: 1,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'chain-lightning') {
+    return {
+      operations: [
+        {
+          kind: 'count-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: 'chain lightning:leaping-bolt-to-new-target',
+            property: 'projectile-count',
+            projectileOrigin: 'first-target',
+            projectileDestination: 'different-target',
+          },
+          count: 1,
+          startSlotLevel: 6,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  if (
+    spellSlug === 'charm-person' ||
+    spellSlug === 'command' ||
+    spellSlug === 'hold-monster' ||
+    spellSlug === 'hold-person'
+  ) {
+    const startSlotLevel =
+      spellSlug === 'hold-monster' ? 5 : spellSlug === 'hold-person' ? 2 : 1;
+    return {
+      operations: [
+        {
+          kind: 'count-per-slot',
+          subject: {
+            kind: 'effect',
+            semanticId: `${spell.name.toLowerCase()}:additional-target`,
+            property: 'creature-count',
+            ...(spellSlug === 'hold-person'
+              ? { creatureType: 'humanoid' as const }
+              : {}),
+            maximumSeparationFeet: 30,
+          },
+          count: 1,
+          startSlotLevel,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'major-image') {
+    return {
+      operations: [
+        {
+          kind: 'threshold',
+          subject: {
+            kind: 'effect',
+            semanticId: 'major image:duration',
+            property: 'duration',
+          },
+          atSlotLevel: 6,
+          value: {
+            kind: 'duration',
+            ending: 'until-dispelled',
+            concentration: false,
+          },
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'dominate-monster') {
+    return {
+      operations: [
+        {
+          kind: 'threshold',
+          subject: {
+            kind: 'effect',
+            semanticId: 'dominate monster:duration',
+            property: 'duration',
+          },
+          atSlotLevel: 9,
+          value: {
+            kind: 'duration',
+            amount: 8,
+            unit: 'hour',
+            concentration: true,
+            upTo: true,
+          },
+        },
+      ],
+    };
+  }
+  if (spellSlug === 'wall-of-fire') {
+    return {
+      operations: [
+        {
+          kind: 'dice-per-slot',
+          subject: {
+            kind: 'damage',
+            damageType: 'fire',
+            semanticId: 'wall of fire:appearing-wall-damage',
+            property: 'damage-dice',
+          },
+          dice: '1d8',
+          startSlotLevel: 4,
+          everySlotLevels: 1,
+        },
+        {
+          kind: 'dice-per-slot',
+          subject: {
+            kind: 'damage',
+            damageType: 'fire',
+            semanticId: 'wall of fire:hot-side-or-entry-damage',
+            property: 'damage-dice',
+          },
+          dice: '1d8',
+          startSlotLevel: 4,
+          everySlotLevels: 1,
+        },
+      ],
+    };
+  }
   throw new Error(`reviewed upcast projection missing for spell:${spellSlug}`);
 }
 
@@ -405,9 +722,20 @@ const REVIEWED_CLAUSE_COVERAGE: Readonly<
       { operationCount: schedule.length, qualifier: false },
     ]),
   ),
+  aid: { operationCount: 1, qualifier: false },
+  'animal-friendship': { operationCount: 1, qualifier: false },
+  'chain-lightning': { operationCount: 1, qualifier: false },
+  'charm-person': { operationCount: 1, qualifier: false },
+  command: { operationCount: 1, qualifier: false },
+  counterspell: { operationCount: 1, qualifier: false },
   'create-or-destroy-water': { operationCount: 2, qualifier: false },
-  'glyph-of-warding': { operationCount: 1, qualifier: true },
+  'dominate-monster': { operationCount: 1, qualifier: false },
+  'glyph-of-warding': { operationCount: 2, qualifier: false },
+  'hold-monster': { operationCount: 1, qualifier: false },
+  'hold-person': { operationCount: 1, qualifier: false },
+  'major-image': { operationCount: 1, qualifier: false },
   'wall-of-ice': { operationCount: 2, qualifier: false },
+  'wall-of-fire': { operationCount: 2, qualifier: false },
   etherealness: { operationCount: 1, qualifier: false },
   'dispel-magic': { operationCount: 1, qualifier: false },
   'false-life': { operationCount: 1, qualifier: false },
@@ -450,37 +778,52 @@ function subject(
 ): UpcastSubject {
   const localTypes = [
     ...new Set(
-      [...text.matchAll(DAMAGE_TYPES)].map((match) => match[1].toLowerCase()),
+      [...text.matchAll(DAMAGE_TYPES)].map(
+        (match) => match[1].toLowerCase() as UpcastDamageType,
+      ),
     ),
   ];
   const descriptionTypes = [
     ...new Set(
-      [...spell.description.matchAll(DAMAGE_TYPES)].map((match) =>
-        match[1].toLowerCase(),
+      [...spell.description.matchAll(DAMAGE_TYPES)].map(
+        (match) => match[1].toLowerCase() as UpcastDamageType,
       ),
     ),
   ];
   const types = localTypes.length > 0 ? localTypes : descriptionTypes;
   if (kind === 'damage') {
+    const damageApplication =
+      types.length > 1 &&
+      /(?:acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder) damage\s+or\s+(?:the\s+)?(?:acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder) damage|your choice/i.test(
+        text,
+      )
+        ? ('choose-one' as const)
+        : types.length > 1 && /both types|both .*damage/i.test(text)
+          ? ('all-components' as const)
+          : types.length > 1
+            ? ('base-spell-determined' as const)
+            : undefined;
     return {
       kind,
       ...(types.length === 1 ? { damageType: types[0] } : {}),
       ...(types.length > 1
         ? {
             damageTypes: types,
-            ...(/(?:acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder) damage\s+or\s+(?:the\s+)?(?:acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder) damage|your choice/i.test(
-              text,
-            )
-              ? { selection: 'choose-one' as const }
-              : /both types|both .*damage/i.test(text)
-                ? { application: 'all-components' as const }
-                : { selection: 'source-determined' as const }),
+            ...(damageApplication === 'all-components'
+              ? { application: damageApplication }
+              : { selection: damageApplication }),
           }
         : {}),
       semanticId:
         semanticId ??
         (types.length > 1
-          ? `${spell.name.toLowerCase()}:damage-choice`
+          ? `${spell.name.toLowerCase()}:${
+              damageApplication === 'choose-one'
+                ? 'chosen-damage-component'
+                : damageApplication === 'all-components'
+                  ? 'all-damage-components'
+                  : 'base-spell-determined-damage-component'
+            }`
           : `${spell.name.toLowerCase()}:damage`),
       property: 'damage-dice',
     };
@@ -505,7 +848,7 @@ function subject(
     : /duration/i.test(text)
       ? 'duration'
       : /hit points?/i.test(text)
-        ? 'hit-points'
+        ? 'current-and-maximum-hit-points'
         : /radius.*(?:feet|foot)/i.test(text)
           ? 'radius-feet'
           : /bonus/i.test(text)
@@ -524,10 +867,43 @@ function subject(
                         ? 'creature-count'
                         : /objects?/i.test(text)
                           ? 'object-count'
-                          : 'other-quantity';
+                          : undefined;
+  if (property === undefined) {
+    throw new Error(
+      `unsupported deterministic upcast subject in ${spell.name}: ${JSON.stringify(text)}`,
+    );
+  }
+  const semanticAxis =
+    property === 'duration-hours' || property === 'duration'
+      ? 'duration'
+      : property === 'current-and-maximum-hit-points'
+        ? 'current-and-maximum-hit-points'
+        : property === 'radius-feet'
+          ? 'area-radius'
+          : property === 'bonus'
+            ? 'effect-bonus'
+            : property === 'volume-gallons'
+              ? 'water-volume'
+              : property === 'cube-size-feet'
+                ? 'cube-side-length'
+                : property === 'spell-level-threshold'
+                  ? 'spell-level-threshold'
+                  : property === 'projectile-count'
+                    ? /darts?/i.test(text)
+                      ? 'additional-dart'
+                      : /rays?/i.test(text)
+                        ? 'additional-ray'
+                        : /beams?/i.test(text)
+                          ? 'additional-beam'
+                          : 'additional-projectile'
+                    : property === 'object-count'
+                      ? 'additional-object'
+                      : /targets?/i.test(text)
+                        ? 'additional-target'
+                        : 'additional-creature';
   return {
     kind,
-    semanticId: semanticId ?? `${spell.name.toLowerCase()}:effect`,
+    semanticId: semanticId ?? `${spell.name.toLowerCase()}:${semanticAxis}`,
     property,
   };
 }
@@ -541,7 +917,7 @@ function componentDamageSubject(
   spell: SpellExtraction,
   text: string,
   semanticId: string,
-  damageType?: string,
+  damageType?: UpcastDamageType,
 ): UpcastSubject {
   if (damageType !== undefined) {
     return {
@@ -766,42 +1142,10 @@ function addPerSlotOperations(
   return operations;
 }
 
-function thresholdOperations(
-  spell: SpellExtraction,
-  text: string,
-): UpcastOperation[] {
-  if (/for (?:each|every)(?: two)? slot levels?/i.test(text)) return [];
-  const operations: UpcastOperation[] = [];
-  if (/spell slot/i.test(text)) {
-    for (const sentence of text.split(/(?<=\.)\s+/)) {
-      const levels = new Set(
-        [
-          ...sentence.matchAll(
-            /(?:slot|slots) (?:of |at |used for )?(\d+)(?:st|nd|rd|th)?/gi,
-          ),
-          ...sentence.matchAll(/(\d+)(?:st|nd|rd|th)[- ]level spell slot/gi),
-        ].map((match) => Number(match[1])),
-      );
-      const duration = /duration (?:is |increases to )([^.]+)/i.exec(
-        sentence,
-      )?.[1];
-      for (const level of levels) {
-        if (level >= 1 && level <= 9)
-          operations.push({
-            kind: 'threshold',
-            subject: subject(spell, 'effect', sentence),
-            atSlotLevel: level,
-            value: duration?.trim() ?? sentence.trim(),
-          });
-      }
-    }
-  }
-  return operations;
-}
-
 /** Compile one retained SRD clause. It is intentionally not a prose formula engine. */
 export function compileSpellUpcast(
   spell: SpellExtraction,
+  options: { readonly allowSyntheticSourceBinding?: true } = {},
 ): SpellUpcastSpec | undefined {
   if (
     spell.level === 0 ||
@@ -811,16 +1155,30 @@ export function compileSpellUpcast(
     return undefined;
   const spellKey = `spell:${spellSlug(spell.name)}`;
   const expectedPage = EXPECTED_HIGHER_SLOT_SOURCE_PAGES[spellKey];
-  // Small parser fixtures intentionally renumber their synthetic pages; the
-  // full SRD source (pages > 20) is the compiler's source-drift gate.
+  const expectedSourceHash = EXPECTED_HIGHER_SLOT_SOURCE_SHA256[spellKey];
   if (
-    expectedPage !== undefined &&
-    spell.sourcePage >= 100 &&
-    spell.sourcePage <= 200 &&
+    options.allowSyntheticSourceBinding !== true &&
+    (expectedPage === undefined || expectedSourceHash === undefined)
+  ) {
+    throw new Error(`unreviewed higher-slot source clause for ${spellKey}`);
+  }
+  if (
+    options.allowSyntheticSourceBinding !== true &&
     expectedPage !== spell.sourcePage
   ) {
     throw new Error(
       `source page drift for ${spellKey}: expected ${expectedPage}, got ${spell.sourcePage}`,
+    );
+  }
+  const sourceHash = createHash('sha256')
+    .update(spell.higherLevels)
+    .digest('hex');
+  if (
+    options.allowSyntheticSourceBinding !== true &&
+    sourceHash !== expectedSourceHash
+  ) {
+    throw new Error(
+      `source phrase drift for ${spellKey}: expected ${expectedSourceHash}, got ${sourceHash}`,
     );
   }
   const clauseId = `${spellSlug(spell.name)}:higher-slot`;
@@ -840,18 +1198,15 @@ export function compileSpellUpcast(
   }
   const reviewed = isS1
     ? undefined
-    : reviewedProjection(spell, spellKey.slice('spell:'.length), operationText);
+    : reviewedProjection(
+        spell,
+        spellKey.slice('spell:'.length),
+        operationText,
+        options.allowSyntheticSourceBinding === true,
+      );
   const operations = isS1
     ? []
-    : (reviewed?.operations ?? [
-        ...addPerSlotOperations(spell, operationText),
-        ...thresholdOperations(spell, operationText),
-      ]);
-  const hasUnqualifiedOperation = operations.some(
-    (operation) =>
-      operation.subject.kind === 'effect' &&
-      operation.subject.property === 'other-quantity',
-  );
+    : (reviewed?.operations ?? addPerSlotOperations(spell, operationText));
   const firstHigherSlot =
     Number(
       /(?:slot(?: of)? |a )(\d+)(?:st|nd|rd|th)[- ]level/i.exec(
@@ -860,7 +1215,7 @@ export function compileSpellUpcast(
     ) || spell.level + 1;
   const qualifier =
     reviewed?.qualifier ??
-    (!isS1 && (operations.length === 0 || hasUnqualifiedOperation)
+    (!isS1 && operations.length === 0
       ? { text: spell.higherLevels, minSlotLevel: firstHigherSlot }
       : undefined);
   const coverage = REVIEWED_CLAUSE_COVERAGE[spellKey.slice('spell:'.length)];

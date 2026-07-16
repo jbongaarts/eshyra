@@ -9,12 +9,12 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1284,
+  "rowCount": 1290,
   "dispositionCounts": {
-    "complete": 340,
+    "complete": 347,
     "model-adjudicated": 742,
     "not-mechanical": 193,
-    "typed-core-with-prose-qualifier": 3,
+    "typed-core-with-prose-qualifier": 2,
     "unsupported": 6
   },
   "rows": [
@@ -22097,13 +22097,13 @@
       ],
       "population": 102,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22121,13 +22121,13 @@
       ],
       "population": 102,
       "valueClass": "source prose",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "not-mechanical",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22193,13 +22193,13 @@
       ],
       "population": 92,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22210,18 +22210,17 @@
       "fieldPath": "data.upcast.disposition",
       "representativeValues": [
         "complete-typed-upcast",
-        "existing-s1-typed-scaling",
-        "typed-core-with-model-qualifier"
+        "existing-s1-typed-scaling"
       ],
       "population": 92,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22233,13 +22232,57 @@
       "representativeValues": [],
       "population": 9,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].choice.groupId",
+      "representativeValues": [
+        "create-or-destroy-water:scaled-mode",
+        "glyph-of-warding:mode"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].choice.optionId",
+      "representativeValues": [
+        "water-volume",
+        "cube-size",
+        "explosive-runes",
+        "spell-glyph"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22255,15 +22298,15 @@
         "1d8",
         "1d6"
       ],
-      "population": 44,
+      "population": 45,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22279,15 +22322,15 @@
         "threshold",
         "selected-slot-value"
       ],
-      "population": 105,
+      "population": 107,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22301,13 +22344,13 @@
       ],
       "population": 1,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22321,13 +22364,13 @@
       ],
       "population": 1,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22335,19 +22378,20 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.operations[].subject.choiceGroup",
+      "fieldPath": "data.upcast.operations[].subject.creatureType",
       "representativeValues": [
-        "create-or-destroy-water:scaled-mode"
+        "beast",
+        "humanoid"
       ],
       "population": 2,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22363,15 +22407,15 @@
         "necrotic",
         "radiant"
       ],
-      "population": 33,
+      "population": 34,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22389,13 +22433,13 @@
       ],
       "population": 4,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22410,15 +22454,55 @@
         "affected-hit-points",
         "healing"
       ],
-      "population": 105,
+      "population": 107,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].subject.projectileDestination",
+      "representativeValues": [
+        "different-target"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].subject.projectileOrigin",
+      "representativeValues": [
+        "first-target"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22429,20 +22513,20 @@
       "fieldPath": "data.upcast.operations[].subject.property",
       "representativeValues": [
         "damage-dice",
-        "hit-points",
+        "current-and-maximum-hit-points",
         "creature-count",
         "duration-hours",
         "duration"
       ],
-      "population": 105,
+      "population": 107,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22453,17 +22537,17 @@
       "fieldPath": "data.upcast.operations[].subject.selection",
       "representativeValues": [
         "choose-one",
-        "source-determined"
+        "base-spell-determined"
       ],
-      "population": 5,
+      "population": 3,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22475,19 +22559,19 @@
       "representativeValues": [
         "acid arrow:initial-damage",
         "acid arrow:later-damage",
-        "aid:effect",
-        "animal friendship:effect",
-        "animal messenger:effect"
+        "aid:current-and-maximum-hit-points",
+        "animal friendship:additional-beast",
+        "animal messenger:duration"
       ],
-      "population": 105,
+      "population": 107,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22497,21 +22581,17 @@
       ],
       "fieldPath": "data.upcast.operations[].value",
       "representativeValues": [
-        "concentration, up to 10 minutes",
-        "8 hours, no concentration",
-        "24 hours, no concentration",
-        "until dispelled, no concentration",
-        "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used."
+        "selected-slot-level"
       ],
-      "population": 31,
+      "population": 3,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22519,22 +22599,65 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.qualifier.text",
+      "fieldPath": "data.upcast.operations[].value.ending",
       "representativeValues": [
-        "When you cast this spell using a spell slot of 4th level or higher, the interrupted spell has no effect if its level is less than or equal to the level of the spell slot you used.",
-        "If you create a spell glyph, you can store any spell of up to the same level as the slot you use for the glyph of warding.",
-        "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
-        "When you cast this spell using a spell slot of 6th level or higher, the spell lasts until dispelled, without requiring your concentration."
+        "until-dispelled",
+        "until-ended-by-allowed-spell"
       ],
-      "population": 4,
-      "valueClass": "source prose",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
-      "disposition": "typed-core-with-prose-qualifier",
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].value.kind",
+      "representativeValues": [
+        "duration",
+        "bonus",
+        "memory-age"
+      ],
+      "population": 29,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.operations[].value.unit",
+      "representativeValues": [
+        "minute",
+        "hour",
+        "year",
+        "day"
+      ],
+      "population": 23,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22548,13 +22671,13 @@
       ],
       "population": 92,
       "valueClass": "scalar-like",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {
@@ -22572,13 +22695,13 @@
       ],
       "population": 92,
       "valueClass": "source prose",
-      "currentSchemaValidation": "closed source-kind/upcast schema validation rejects drift and unsupported operations",
-      "deterministicConsumers": "spell upcast compiler contract, source binding, kind schema, and resolveSpellUpcast",
-      "currentAuditReadiness": "spell upcast qualifier/source inventory and resolver retain exact source phrase/page/clause evidence",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
       "disposition": "complete",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
-      "owner": "parseSpells.ts, upcast.ts, spellUpcast.ts, and kindSchemas.ts",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
       "futureWork": false
     },
     {

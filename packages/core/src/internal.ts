@@ -934,6 +934,17 @@ export {
   featureGrantLevels,
 } from './rules/repeatedFeatureChoices.js';
 export type {
+  ParsedSpellUpcastSpec,
+  UpcastChoice,
+  UpcastOperation,
+  UpcastSubject,
+  UpcastThresholdValue,
+} from './rules/spellUpcastContract.js';
+export {
+  parseSpellUpcastSpec,
+  SpellUpcastContractError,
+} from './rules/spellUpcastContract.js';
+export type {
   SrdAuditCategory,
   SrdAuditFinding,
   SrdCoverageExpectations,
@@ -991,6 +1002,7 @@ export type {
   RulesAmbiguity,
   RulesAmbiguityInterpretation,
   RulesAmbiguitySource,
+  RulesPack,
   RulesPackSource,
   RulesRecord,
   RulesRecordKind,
@@ -1143,6 +1155,7 @@ export {
   endAttunement,
   listAttunements,
 } from './state/attunement.js';
+export type { CampaignRulesPackResolver } from './state/campaignRecordLookup.js';
 export type {
   AddConditionInput,
   AddConditionResult,

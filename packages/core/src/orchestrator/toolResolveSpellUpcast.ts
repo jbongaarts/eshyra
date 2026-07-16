@@ -1,4 +1,7 @@
-import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
+import {
+  CampaignRulesBindingResolutionError,
+  lookupStrictCampaignRecord,
+} from '../state/campaignRecordLookup.js';
 import { resolveSpellUpcast, SpellUpcastError } from './spellUpcast.js';
 import type { Tool } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
@@ -33,15 +36,22 @@ export const resolveSpellUpcastTool: Tool = {
         'invalid_args',
         'resolve_spell_upcast requires { spellRef, slotLevel }',
       );
-    const record = lookupStrictCampaignRecord(ctx.db, 'spell', a.spellRef);
-    if (record === undefined)
-      return err(
-        'invalid_spell',
-        `spell reference '${a.spellRef}' does not resolve in the campaign rules binding`,
-      );
     try {
+      const record = lookupStrictCampaignRecord(
+        ctx.db,
+        'spell',
+        a.spellRef,
+        ctx.resolveRulesPack,
+      );
+      if (record === undefined)
+        return err(
+          'invalid_spell',
+          `canonical spell reference '${a.spellRef}' does not resolve in the campaign rules binding`,
+        );
       return ok(resolveSpellUpcast(record, a.slotLevel));
     } catch (error) {
+      if (error instanceof CampaignRulesBindingResolutionError)
+        return err('rules_binding_error', error.message);
       if (error instanceof SpellUpcastError)
         return err('spell_upcast_error', error.message);
       throw error;

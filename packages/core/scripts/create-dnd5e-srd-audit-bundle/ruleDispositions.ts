@@ -281,7 +281,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
     'rule:casting-a-spell-at-a-higher-level': {
       class: 'engine-procedure',
       family: 'spellcasting',
-      note: 'spellcasting: F4 selects/spends the legal slot; F9 resolves the source-bound per-spell `upcast` transform. Choosing to upcast and source qualifiers remain DM/player choices.',
+      note: 'spellcasting: F4 atomically selects/spends the legal slot; the shared closed upcast contract resolves every reviewed higher-slot transform. Choosing to upcast, targets, and typed exclusive branches remains a DM/player choice.',
     },
     'rule:casting-a-spell-attack-rolls': {
       class: 'engine-procedure',
@@ -1852,16 +1852,20 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'spend_spell_slot', 'resolve_spell_upcast'],
     runtimeOwner: [
       'packages/core/src/orchestrator/spellUpcast.ts',
+      'packages/core/src/rules/spellUpcastContract.ts',
       'packages/core/src/orchestrator/toolResolveSpellUpcast.ts',
       'packages/core/src/orchestrator/toolSpendSpellSlot.ts',
+      'packages/core/src/orchestrator/turnTraceProjection.ts',
+      'packages/core/src/state/campaignRecordLookup.ts',
       'packages/core/src/state/spellSlots.ts',
     ],
     evidence: [
       'packages/core/test/spellUpcast.test.ts',
       'packages/core/test/spellSlots.test.ts',
+      'packages/core/test/turnTraceProjection.test.ts',
     ],
     contextRequirement:
-      'player/DM chooses whether to upcast; source qualifiers and target/branch choices remain model-adjudicated',
+      'player/DM chooses whether to upcast and selects targets or a typed exclusive branch; all resulting arithmetic, thresholds, constraints, and source provenance are tool-owned',
   },
   'rule:casting-a-spell-attack-rolls': {
     status: 'model-adjudicated-supported',

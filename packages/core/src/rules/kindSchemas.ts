@@ -13,6 +13,10 @@ import {
   isFeatureChoiceCategory,
 } from './featureChoices.js';
 import {
+  parseSpellUpcastSpec,
+  SpellUpcastContractError,
+} from './spellUpcastContract.js';
+import {
   summoningHasTransitionTrigger,
   validateS1SummoningEffect,
 } from './summoningSchema.js';
@@ -4448,6 +4452,13 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
         `${path}.data.higherLevels requires scalingSourceKind`,
       );
     }
+    if (
+      reqStr(data, 'scalingSourceText', `${path}.data`) !== data.higherLevels
+    ) {
+      throw new RulesPackError(
+        `${path}.data.scalingSourceText must equal higherLevels`,
+      );
+    }
   }
   if (sourceKind === 'character-level' && data.level !== 0) {
     throw new RulesPackError(
@@ -4455,170 +4466,36 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
     );
   }
   optMechanics(data, 'mechanics', `${path}.data`);
-  const upcast = data.upcast;
-  if (upcast !== undefined) {
-    const upcastObj = reqObj(data, 'upcast', `${path}.data`);
-    const upcastPath = `${path}.data.upcast`;
-    if (sourceKind !== 'higher-slot' || data.level === 0) {
-      throw new RulesPackError(
-        `${upcastPath} is only valid for leveled higher-slot spells`,
-      );
-    }
-    if (reqStr(upcastObj, 'sourceKind', upcastPath) !== 'higher-slot') {
-      throw new RulesPackError(`${upcastPath}.sourceKind must be higher-slot`);
-    }
-    reqStr(upcastObj, 'clauseId', upcastPath);
-    reqStr(upcastObj, 'sourcePhrase', upcastPath);
-    reqInt(upcastObj, 'sourcePage', upcastPath, 1);
-    const disposition = reqStr(upcastObj, 'disposition', upcastPath);
-    if (
-      ![
-        'complete-typed-upcast',
-        'existing-s1-typed-scaling',
-        'typed-core-with-model-qualifier',
-      ].includes(disposition)
-    ) {
-      throw new RulesPackError(
-        `${upcastPath}.disposition is not a closed upcast disposition`,
-      );
-    }
-    if (upcastObj.qualifier !== undefined) {
-      const qualifier = reqObj(upcastObj, 'qualifier', upcastPath);
-      reqStr(qualifier, 'text', `${upcastPath}.qualifier`);
-      reqInt(qualifier, 'minSlotLevel', `${upcastPath}.qualifier`, 1);
-    }
-    const operations = upcastObj.operations;
-    if (!Array.isArray(operations))
-      throw new RulesPackError(`${upcastPath}.operations must be an array`);
-    const operationKeys = new Set<string>();
-    operations.forEach((raw, i) => {
-      const operation = reqObj(
-        { value: raw },
-        'value',
-        `${upcastPath}.operations[${i}`,
-      );
-      const operationPath = `${upcastPath}.operations[${i}]`;
-      const operationKind = reqStr(operation, 'kind', operationPath);
-      if (
-        ![
-          'dice-per-slot',
-          'flat-per-slot',
-          'count-per-slot',
-          'threshold',
-          'selected-slot-value',
-        ].includes(operationKind)
-      ) {
-        throw new RulesPackError(
-          `${operationPath}.kind is not a closed upcast operation`,
-        );
-      }
-      const subject = reqObj(operation, 'subject', operationPath);
-      const subjectPath = `${operationPath}.subject`;
-      const subjectKind = reqStr(subject, 'kind', subjectPath);
-      reqStr(subject, 'semanticId', subjectPath);
-      const subjectProperty = reqStr(subject, 'property', subjectPath);
-      const allowedProperties: Record<string, readonly string[]> = {
-        damage: ['damage-dice'],
-        healing: ['healing-dice', 'healing-points'],
-        'affected-hit-points': ['affected-hit-point-pool-dice'],
-        effect: [
-          'duration-hours',
-          'hit-points',
-          'target-count',
-          'projectile-count',
-          'creature-count',
-          'object-count',
-          'volume-gallons',
-          'cube-size-feet',
-          'spell-level-threshold',
-          'duration',
-          'radius-feet',
-          'bonus',
-          'memory-age',
-          'temporary-hit-points',
-          'other-quantity',
-        ],
-      };
-      if (!allowedProperties[subjectKind]?.includes(subjectProperty)) {
-        throw new RulesPackError(
-          `${subjectPath}.property is not a closed semantic property for ${subjectKind}`,
-        );
-      }
-      if (subjectKind === 'damage') {
-        const damageType = subject.damageType;
-        const damageTypes = subject.damageTypes;
-        if (
-          damageType !== undefined &&
-          (typeof damageType !== 'string' || damageType.length === 0)
-        ) {
-          throw new RulesPackError(
-            `${subjectPath}.damageType must be a string`,
-          );
-        }
-        if (damageTypes !== undefined) {
-          if (
-            !Array.isArray(damageTypes) ||
-            damageTypes.length < 2 ||
-            damageTypes.some(
-              (type) => typeof type !== 'string' || type.length === 0,
-            ) ||
-            new Set(damageTypes).size !== damageTypes.length ||
-            !(
-              subject.selection === 'choose-one' ||
-              subject.selection === 'source-determined' ||
-              subject.application === 'all-components'
-            ) ||
-            (subject.selection !== undefined &&
-              subject.application !== undefined)
-          ) {
-            throw new RulesPackError(
-              `${subjectPath}.damageTypes must be unique and use one closed application mode`,
-            );
-          }
-        }
-        if (damageType !== undefined && damageTypes !== undefined) {
-          throw new RulesPackError(
-            `${subjectPath} cannot declare both damageType and damageTypes`,
-          );
-        }
-      }
-      if (
-        subject.cardinalityMode !== undefined &&
-        (subject.cardinalityMode !== 'maximum-total' ||
-          subject.includesCaster !== true)
-      ) {
-        throw new RulesPackError(
-          `${subjectPath} has invalid cardinality semantics`,
-        );
-      }
-      const key = JSON.stringify(operation);
-      if (operationKeys.has(key))
-        throw new RulesPackError(`${operationPath} duplicates an operation`);
-      operationKeys.add(key);
-      if (operationKind === 'threshold') {
-        reqInt(operation, 'atSlotLevel', operationPath, 1);
-        reqStr(operation, 'value', operationPath);
-      } else if (operationKind === 'selected-slot-value') {
-        reqInt(operation, 'minSlotLevel', operationPath, 1);
-        if (reqStr(operation, 'value', operationPath) !== 'selected-slot-level')
-          throw new RulesPackError(
-            `${operationPath}.value must be selected-slot-level`,
-          );
-      } else {
-        reqInt(operation, 'startSlotLevel', operationPath, 1);
-        reqInt(operation, 'everySlotLevels', operationPath, 1);
-        if (operationKind === 'dice-per-slot')
-          reqStr(operation, 'dice', operationPath);
-        else if (operationKind === 'flat-per-slot')
-          reqInt(operation, 'amount', operationPath, 1);
-        else reqInt(operation, 'count', operationPath, 1);
-      }
-    });
-  }
-  if (sourceKind === 'higher-slot' && upcast === undefined) {
-    throw new RulesPackError(
-      `${path}.data.higher-slot scaling requires a typed upcast payload`,
+  let upcast: ReturnType<typeof parseSpellUpcastSpec>;
+  try {
+    const provenancePage = Number(
+      /p(?:p)?\.\s*(\d+)/i.exec(record.source)?.[1],
     );
+    upcast = parseSpellUpcastSpec({
+      recordKey: record.key,
+      data,
+      ...(Number.isInteger(provenancePage) ? { provenancePage } : {}),
+    });
+  } catch (error) {
+    if (error instanceof SpellUpcastContractError) {
+      throw new RulesPackError(error.message);
+    }
+    throw error;
+  }
+  if (upcast?.disposition === 'existing-s1-typed-scaling') {
+    const mechanics = reqObj(data, 'mechanics', `${path}.data`);
+    const effects = objArray(mechanics, 'effects', `${path}.data.mechanics`);
+    const hasScaling = effects?.some(
+      (effect) =>
+        effect.kind === 'summoning' &&
+        Array.isArray(effect.scaling) &&
+        effect.scaling.length > 0,
+    );
+    if (!hasScaling) {
+      throw new RulesPackError(
+        `${path}.data.upcast S1 disposition requires usable summoning scaling`,
+      );
+    }
   }
 }
 
