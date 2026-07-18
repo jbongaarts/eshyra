@@ -1245,18 +1245,6 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     reason:
       'Reviewed residue after the eshyra-o9bd.18.7.5 projection passes: choice-picker features (Bonus Cantrip, Wizard Cantrips), linked spell-list features (Circle Spells), languages (Druidic, Thieves\u2019 Cant), open-ended senses/divination (Primeval Awareness, Tongue of the Sun and Moon), and meta features that modify other named features, spells, or costs (Peerless Skill, Archdruid, Beast Spells, Evocation Savant, Use Magic Device). Action economy, numeric formulas, movement rules, and resource changes are all typed.',
   },
-  'magic-item#partial-structure': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.7',
-    reason:
-      'Magic items with variant/table structure but no deterministic effect or charge-economy projection.',
-  },
-  'magic-item#prose-only': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.7',
-    reason:
-      'Magic items whose effects, charges, and bonuses are prose-only pending the phased effect-modeling epic.',
-  },
   'rule#partial-structure': {
     status: 'finding',
     bead: 'eshyra-o9bd.18.7.8',

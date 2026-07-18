@@ -288,6 +288,18 @@ function setInventoryField(db: Db, input: MutateStateInput): void {
     input.value,
     INVENTORY_FIELDS,
   );
+  if (
+    input.field === 'quantity' &&
+    typeof value === 'number' &&
+    value !== 1 &&
+    db
+      .prepare('SELECT 1 FROM item_state WHERE inventory_id = ?')
+      .get(input.id) !== undefined
+  ) {
+    throw new MutateStateError(
+      `stateful inventory item '${input.id}' must have quantity 1`,
+    );
+  }
 
   db.prepare(
     `INSERT INTO inventory(

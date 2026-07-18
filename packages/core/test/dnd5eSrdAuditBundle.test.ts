@@ -720,12 +720,14 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
       expect(disposition.count).toBeGreaterThan(0);
       expect(disposition.reason.length).toBeGreaterThan(0);
     }
-    // The broad buckets the 2026-07-01 review flagged are all present and
-    // linked to their modeling beads.
+    // Open broad buckets remain linked to their modeling beads. Magic-item
+    // prose-only and partial-structure buckets are absent after the complete
+    // eshyra-o9bd.18.7.7 executable-curation pass.
     const byKey = new Map(
       report.dispositions.map((d) => [`${d.kind}#${d.bucket}`, d]),
     );
-    expect(byKey.get('magic-item#prose-only')?.bead).toBe('eshyra-o9bd.18.7.7');
+    expect(byKey.get('magic-item#prose-only')).toBeUndefined();
+    expect(byKey.get('magic-item#partial-structure')).toBeUndefined();
     expect(byKey.get('rule#prose-only')?.bead).toBe('eshyra-o9bd.18.7.8');
     expect(byKey.get('equipment#prose-only')?.bead).toBe('eshyra-o9bd.18.7.6');
     // Feature runtime projections landed (eshyra-o9bd.18.7.5): the residual

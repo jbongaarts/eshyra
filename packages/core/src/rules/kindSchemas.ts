@@ -12,6 +12,7 @@ import {
   FEATURE_CHOICE_CATEGORIES,
   isFeatureChoiceCategory,
 } from './featureChoices.js';
+import { validateMagicItemMechanics } from './magicItemMechanics.js';
 import {
   parseSpellUpcastSpec,
   SpellUpcastContractError,
@@ -1693,7 +1694,7 @@ function markerWithOptionalCondition(effect: Obj, path: string): void {
   for (const key of Object.keys(effect)) {
     if (key !== 'kind' && key !== 'condition') {
       throw new RulesPackError(
-        `${path} is a marker effect with an optional condition; unexpected payload key ${JSON.stringify(key)}`,
+        `${path} is marker-only except for an optional condition; unexpected payload key ${JSON.stringify(key)}`,
       );
     }
   }
@@ -2961,7 +2962,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqEnum(effect, 'damageTaken', path, new Set(['none']));
     reqEnum(effect, 'healing', path, new Set(['damage-dealt']));
   },
-  earthGlide: markerOnly,
+  earthGlide: markerWithOptionalCondition,
   enterHostileSpace: markerOnly,
   hoveringWeapon: (effect, path) => {
     reqStr(effect, 'weapon', path);
@@ -4032,6 +4033,21 @@ function validateMechanicsEffect(effect: Obj, path: string): void {
     );
   }
   MECHANICS_EFFECT_PAYLOAD_VALIDATORS[kind]?.(effect, path);
+}
+
+function validateMagicItemEffect(effect: Obj, path: string): void {
+  // Magic-item operations bind effects by a sibling `id`. The shared effect
+  // payload contracts predate that binding key and several are deliberately
+  // closed, so validate their vocabulary against the payload with only the
+  // binding metadata removed. Other record kinds retain their exact contracts.
+  validateMechanicsEffect(
+    effect.id === undefined
+      ? effect
+      : Object.fromEntries(
+          Object.entries(effect).filter(([key]) => key !== 'id'),
+        ),
+    path,
+  );
 }
 
 // Optional level-by-level class progression (eshyra-4a7.6). Each row carries an
@@ -5323,21 +5339,30 @@ function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
         );
       }
       const variant = item as Obj;
-      reqStr(variant, 'name', `${path}.data.variants[${index}]`);
-      reqStr(variant, 'rarity', `${path}.data.variants[${index}]`);
-      reqStr(variant, 'text', `${path}.data.variants[${index}]`);
+      const variantPath = `${path}.data.variants[${index}]`;
+      reqStr(variant, 'name', variantPath);
+      reqStr(variant, 'rarity', variantPath);
+      reqStr(variant, 'text', variantPath);
+      if (variant.mechanics !== undefined) {
+        validateMagicItemMechanics(
+          variant.mechanics,
+          `${variantPath}.mechanics`,
+          validateMagicItemEffect,
+        );
+      }
     });
   }
   // An item that defines an inline combat stat block (Deck of Many Things ->
   // Avatar of Death) points at the emitted `stat-block` record(s) it summons or
   // becomes via `statBlockRefs` (eshyra-4a7.4). Optional: most items have none.
   optStrArray(data, 'statBlockRefs', `${path}.data`);
-  // Structured passive-modifier projection (eshyra-o9bd.18.7.7.5, M2+M3):
-  // reuses the shared `mechanics.effects` vocabulary already validated for
-  // creatures/spells/features/conditions. Most magic items carry no
-  // `mechanics` yet — the charge/combat-bonus/state-machine/curse clause
-  // families owned by sibling beads are out of scope here.
-  optMechanics(data, 'mechanics', `${path}.data`);
+  if (data.mechanics !== undefined) {
+    validateMagicItemMechanics(
+      data.mechanics,
+      `${path}.data.mechanics`,
+      validateMagicItemEffect,
+    );
+  }
 }
 
 function validatePf2eAncestry(record: RulesRecord, path: string): void {

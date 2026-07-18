@@ -195,6 +195,7 @@ describe('ToolRegistry', () => {
         'update_combatant',
         'unsuppress_effect',
         'use_inspiration',
+        'use_item',
         'world_query',
       ].sort(),
     );
@@ -1654,6 +1655,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'update_combatant',
         'unsuppress_effect',
         'use_inspiration',
+        'use_item',
         'world_query',
       ].sort(),
     );

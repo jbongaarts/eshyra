@@ -1,4 +1,13 @@
+import { withTransaction } from '../persistence/db.js';
+import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
 import { giveItem } from '../state/domainMutations.js';
+import {
+  createInitialItemState,
+  ItemStateError,
+  isStatefulMagicItem,
+  validatePackRef,
+  writeItemState,
+} from '../state/itemState.js';
 import { MutateStateError } from '../state/mutateState.js';
 import type { Tool } from './toolRegistry.js';
 import {
@@ -46,6 +55,12 @@ export const giveItemTool: Tool = {
         type: 'object',
         description: 'Arbitrary key-value properties for the item.',
       },
+      packRef: {
+        type: 'string',
+        description:
+          'Canonical magic-item rules ref (for example "magic-item:wand-of-fireballs").',
+        pattern: '^magic-item:[a-z0-9]+(?:-[a-z0-9]+)*$',
+      },
       character: CHARACTER_TARGET_SCHEMA,
     },
     required: ['id', 'name'],
@@ -60,43 +75,84 @@ export const giveItemTool: Tool = {
     ) {
       return err('invalid_args', 'give_item requires { id, name }');
     }
+    const requestedId = a.id;
+    const requestedName = a.name;
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) {
       return target;
     }
     try {
-      giveItem(
-        ctx.db,
-        {
-          id: a.id,
-          name: a.name,
-          quantity: typeof a.quantity === 'number' ? a.quantity : undefined,
-          location: typeof a.location === 'string' ? a.location : undefined,
-          properties:
-            typeof a.properties === 'object' &&
-            a.properties !== null &&
-            !Array.isArray(a.properties)
-              ? (a.properties as Record<string, unknown>)
-              : undefined,
-        },
-        {
-          provenance: `model:${ctx.turnId}`,
-          sessionId: ctx.sessionId,
-          at: ctx.at,
-          characterId: target.id,
-        },
-      );
+      const result = withTransaction(ctx.db, (txnDb) => {
+        const packRef =
+          a.packRef === undefined
+            ? undefined
+            : validatePackRef(a.packRef, 'give_item.packRef');
+        const hit =
+          packRef === undefined
+            ? undefined
+            : lookupStrictCampaignRecord(
+                txnDb,
+                'magic-item',
+                packRef,
+                ctx.resolveRulesPack,
+              );
+        if (packRef !== undefined && hit === undefined) {
+          throw new ItemStateError(
+            `packRef '${packRef}' does not resolve in the active campaign rules stack`,
+          );
+        }
+        const stateful =
+          hit === undefined ? false : isStatefulMagicItem(hit.record);
+        const granted = giveItem(
+          txnDb,
+          {
+            id: requestedId,
+            name: requestedName,
+            quantity: typeof a.quantity === 'number' ? a.quantity : undefined,
+            location: typeof a.location === 'string' ? a.location : undefined,
+            properties:
+              typeof a.properties === 'object' &&
+              a.properties !== null &&
+              !Array.isArray(a.properties)
+                ? (a.properties as Record<string, unknown>)
+                : undefined,
+            ...(packRef === undefined ? {} : { packRef }),
+            stateful,
+          },
+          {
+            provenance: `model:${ctx.turnId}`,
+            sessionId: ctx.sessionId,
+            at: ctx.at,
+            characterId: target.id,
+          },
+        );
+        if (stateful && hit !== undefined && packRef !== undefined) {
+          writeItemState(
+            txnDb,
+            granted.id,
+            createInitialItemState(packRef, hit.record),
+            {
+              provenance: `model:${ctx.turnId}`,
+              sessionId: ctx.sessionId,
+              at: ctx.at,
+            },
+          );
+        }
+        return { ...granted, packRef, stateful };
+      });
       return ok({
         applied: true,
-        id: a.id,
+        id: result.id,
         name: a.name,
         quantity: typeof a.quantity === 'number' ? a.quantity : 1,
         ...(typeof a.location === 'string' ? { location: a.location } : {}),
         ...(typeof a.character === 'string' ? { character: a.character } : {}),
         ...(target.id !== undefined ? { characterId: target.id } : {}),
+        ...(result.packRef === undefined ? {} : { packRef: result.packRef }),
+        ...(result.stateful ? { stateful: true } : {}),
       });
     } catch (e) {
-      if (e instanceof MutateStateError) {
+      if (e instanceof MutateStateError || e instanceof ItemStateError) {
         return err('mutate_error', e.message);
       }
       throw e;

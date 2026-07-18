@@ -924,6 +924,33 @@ export {
   lookupRulesRecord,
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
 } from './rules/lookup.js';
+export type {
+  MagicItemActivationSpec,
+  MagicItemContainment,
+  MagicItemCurse,
+  MagicItemCurseStateDefinition,
+  MagicItemDurationSpec,
+  MagicItemEconomy,
+  MagicItemEconomyKind,
+  MagicItemEffect,
+  MagicItemEntityGrant,
+  MagicItemInterItem,
+  MagicItemMechanics,
+  MagicItemOperation,
+  MagicItemRandomProcedure,
+  MagicItemRandomProcedureCardPoolState,
+  MagicItemRandomProcedureDefinition,
+  MagicItemRollManipulation,
+  MagicItemRollTransform,
+  MagicItemSpellContract,
+  MagicItemSpellContractEvent,
+  MagicItemSpellStore,
+  MagicItemStateMachine,
+} from './rules/magicItemMechanics.js';
+export {
+  isStatefulMagicItemMechanics,
+  validateMagicItemMechanics,
+} from './rules/magicItemMechanics.js';
 export {
   loadRulesPackFromDirectory,
   PACK_MANIFEST_FILE,
@@ -1248,6 +1275,23 @@ export {
   InspirationError,
   spendInspiration,
 } from './state/inspiration.js';
+export type {
+  ItemEconomyState,
+  ItemInstanceState,
+  UseItemInput,
+  UseItemResult,
+} from './state/itemState.js';
+export {
+  createInitialItemState,
+  ItemStateError,
+  isStatefulMagicItem,
+  readItemState,
+  useItem,
+  validateItemStateForRecord,
+  validateItemStateJson,
+  validatePackRef,
+  writeItemState,
+} from './state/itemState.js';
 // Read-only level-up eligibility detection.
 export type { LevelUpEligibility } from './state/levelUpEligibility.js';
 export {

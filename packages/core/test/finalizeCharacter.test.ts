@@ -45,6 +45,89 @@ function completeDraft(): CharacterDraft {
 }
 
 describe('finalizeCharacterDraft', () => {
+  it('finalizes a source-bounded custom background with durable identity and choices', () => {
+    let draft = completeDraft();
+    draft = engine.setBackground(draft, 'background:acolyte');
+    draft = engine.setBackgroundCustomization(draft, {
+      name: 'Temple Archivist',
+      skillProficiencies: ['Arcana', 'History'],
+      toolProficiencies: [],
+      languages: ['Elvish', 'Dwarvish'],
+      feature: 'background:acolyte#feature:shelter-of-the-faithful',
+    });
+    for (const entry of engine.mechanicalChoices(draft)) {
+      if (!entry.satisfied) {
+        draft = engine.setChoice(
+          draft,
+          entry.choice.id,
+          (entry.choice.from ?? []).slice(0, entry.choice.choose ?? 0),
+        );
+      }
+    }
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.character.background).toEqual({
+      key: 'background:acolyte',
+      name: 'Acolyte',
+    });
+    expect(result.character.backgroundCustomization).toMatchObject({
+      name: 'Temple Archivist',
+      skillProficiencies: ['Arcana', 'History'],
+      toolProficiencies: [],
+      languages: ['Elvish', 'Dwarvish'],
+      feature: {
+        key: 'background:acolyte#feature:shelter-of-the-faithful',
+        name: 'Shelter of the Faithful',
+      },
+    });
+    expect(result.character.skillProficiencies).toEqual(
+      expect.arrayContaining(['Arcana', 'History']),
+    );
+    expect(result.character.languages).toEqual(
+      expect.arrayContaining(['Elvish', 'Dwarvish']),
+    );
+    expect(result.character.equipment).toContain('holy symbol');
+  });
+
+  it('rejects invalid custom-background counts, domains, and invented features', () => {
+    const cases = [
+      {
+        name: 'Bad Skills',
+        skillProficiencies: ['Arcana'],
+        toolProficiencies: [],
+        languages: ['Elvish', 'Dwarvish'],
+        feature: 'background:acolyte#feature:shelter-of-the-faithful',
+      },
+      {
+        name: 'Bad Total',
+        skillProficiencies: ['Arcana', 'History'],
+        toolProficiencies: [],
+        languages: ['Elvish'],
+        feature: 'background:acolyte#feature:shelter-of-the-faithful',
+      },
+      {
+        name: 'Invented',
+        skillProficiencies: ['Arcana', 'History'],
+        toolProficiencies: [],
+        languages: ['Elvish', 'Dwarvish'],
+        feature: 'feature:my-cool-mechanic',
+      },
+    ] as const;
+    for (const custom of cases) {
+      let draft = engine.setBackground(completeDraft(), 'Acolyte');
+      draft = engine.setBackgroundCustomization(draft, custom);
+      expect(
+        draft.diagnostics.some(
+          (diagnostic) =>
+            diagnostic.field === 'backgroundCustomization' &&
+            diagnostic.severity === 'error',
+        ),
+      ).toBe(true);
+      expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    }
+  });
+
   it('preserves immutable roll evidence through assignment and finalization', () => {
     let draft = completeDraft();
     draft = engine.setAbilityScoreMethod(draft, 'rolled');

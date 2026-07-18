@@ -1,7 +1,8 @@
 /**
  * Exhaustive coverage/depth gate (eshyra-o9bd.18.7.7.5 PR #415 review): for
  * every one of the 58 uniquely M2/M3-tagged magic items, asserts the exact
- * projected `mechanics` value (or `undefined` for a tracked deferral) against
+ * projected parent `mechanics` value (including `undefined` for the three
+ * families whose effects correctly live only on structured variants) against
  * the real committed-pack description text. This is a depth assertion, not
  * just a membership check: a dropped clause, a missing source condition, or
  * an over-broad grant changes the expected value here and fails the test,
@@ -986,6 +987,18 @@ function item(name: string, description: string): MagicItemExtraction {
   };
 }
 
+function withoutEffectIds(
+  mechanics: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (mechanics === undefined) return undefined;
+  return {
+    ...mechanics,
+    effects: (mechanics.effects as readonly Record<string, unknown>[]).map(
+      ({ id: _id, ...effect }) => effect,
+    ),
+  };
+}
+
 describe('deriveMagicItemMechanics exhaustive coverage (eshyra-o9bd.18.7.7.5)', () => {
   it('the fixture has no duplicate item names', () => {
     const names = COVERAGE_CASES.map((c) => c.name);
@@ -998,7 +1011,7 @@ describe('deriveMagicItemMechanics exhaustive coverage (eshyra-o9bd.18.7.7.5)', 
     expectedMechanics,
   }) => {
     const mechanics = deriveMagicItemMechanics(item(name, description));
-    expect(mechanics).toEqual(expectedMechanics);
+    expect(withoutEffectIds(mechanics)).toEqual(expectedMechanics);
   });
 
   it('covers exactly the 58 uniquely M2/M3-tagged items (23 M2 + 38 M3 rows, 3 tagged both)', () => {

@@ -12,6 +12,7 @@ import {
   conditionImpliesIncapacitated,
 } from './activeEffects.js';
 import { resolveCampaignAdvancementPolicy } from './advancementPolicy.js';
+import { ItemStateError, validatePackRef } from './itemState.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import {
   MutateStateError,
@@ -165,33 +166,98 @@ export interface GiveItemInput {
   quantity?: number;
   location?: string | null;
   properties?: Record<string, unknown>;
+  /** Immutable rules-record identity, separate from this row/instance id. */
+  packRef?: string;
+  /** Derived from the resolved pack record by the model-facing grant path. */
+  stateful?: boolean;
 }
 
 export function giveItem(
   db: Db,
   item: GiveItemInput,
   ctx: DomainMutationContext,
-): void {
+): { id: string } {
   if (typeof item.id !== 'string' || item.id.length === 0) {
     throw new MutateStateError('item id must be a non-empty string');
   }
   if (typeof item.name !== 'string' || item.name.length === 0) {
     throw new MutateStateError('item name must be a non-empty string');
   }
+  if (item.packRef !== undefined) {
+    try {
+      validatePackRef(item.packRef, 'item packRef');
+    } catch (error) {
+      if (error instanceof ItemStateError) {
+        throw new MutateStateError(error.message);
+      }
+      throw error;
+    }
+  }
 
-  withTransaction(db, (txnDb) => {
+  return withTransaction(db, (txnDb) => {
     const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const quantity = item.quantity ?? 1;
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      throw new MutateStateError(
+        'item quantity must be a non-negative integer',
+      );
+    }
+    if (item.stateful === true && quantity !== 1) {
+      throw new MutateStateError('stateful pack items must have quantity 1');
+    }
+
+    let rowId = item.id;
+    if (item.stateful === true) {
+      if (item.packRef === undefined) {
+        throw new MutateStateError('stateful items require a packRef');
+      }
+      const base = item.packRef.slice('magic-item:'.length);
+      let suffix = 1;
+      while (
+        txnDb
+          .prepare('SELECT 1 FROM inventory WHERE id = ?')
+          .get(`${base}#${suffix}`) !== undefined
+      ) {
+        suffix += 1;
+      }
+      rowId = `${base}#${suffix}`;
+    } else {
+      const collision = txnDb
+        .prepare('SELECT character_id, pack_ref FROM inventory WHERE id = ?')
+        .get(rowId) as
+        | { character_id: string | null; pack_ref: string | null }
+        | undefined;
+      if (
+        item.packRef === undefined &&
+        collision?.pack_ref !== null &&
+        collision?.pack_ref !== undefined
+      ) {
+        throw new MutateStateError(
+          `inventory id '${rowId}' belongs to pack-bound instance '${collision.pack_ref}' and cannot be overwritten by an ad-hoc grant`,
+        );
+      }
+      if (
+        item.packRef !== undefined &&
+        collision !== undefined &&
+        (collision.character_id !== charId ||
+          collision.pack_ref !== item.packRef)
+      ) {
+        throw new MutateStateError(
+          `pack-bound inventory id '${rowId}' already belongs to another instance; choose a distinct id`,
+        );
+      }
+    }
 
     const base = {
       target: 'inventory' as const,
-      id: item.id,
+      id: rowId,
       op: 'set' as const,
       ...ctx,
     };
 
     const mutations: MutateStateInput[] = [
       { ...base, field: 'name', value: item.name },
-      { ...base, field: 'quantity', value: item.quantity ?? 1 },
+      { ...base, field: 'quantity', value: quantity },
     ];
 
     if (item.location !== undefined) {
@@ -209,8 +275,11 @@ export function giveItem(
     mutateStateBatch(txnDb, mutations);
 
     txnDb
-      .prepare('UPDATE inventory SET character_id = ? WHERE id = ?')
-      .run(charId, item.id);
+      .prepare(
+        'UPDATE inventory SET character_id = ?, pack_ref = ? WHERE id = ?',
+      )
+      .run(charId, item.packRef ?? null, rowId);
+    return { id: rowId };
   });
 }
 

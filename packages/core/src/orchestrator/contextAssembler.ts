@@ -46,6 +46,11 @@ import {
   listCombatants,
 } from '../state/encounterCombatants.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
+import {
+  type ItemInstanceState,
+  readItemState,
+  validatePackRef,
+} from '../state/itemState.js';
 import type {
   AbilityScores,
   CharacterConditionEntry,
@@ -171,6 +176,9 @@ export interface InventoryItem {
   quantity: number;
   location: string | undefined;
   properties: InventoryItemProperties;
+  packRef: string | undefined;
+  /** Validated, per-instance mutable magic-item state. */
+  state: ItemInstanceState | undefined;
 }
 
 export interface ClockSnapshot {
@@ -269,6 +277,7 @@ interface InventoryRow {
   quantity: number;
   location: string | null;
   properties_json: string;
+  pack_ref: string | null;
 }
 
 interface ClockRow {
@@ -305,7 +314,7 @@ export function readStateSnapshot(
 
   const inventoryRows = db
     .prepare(
-      `SELECT id, name, quantity, location, properties_json
+      `SELECT id, name, quantity, location, properties_json, pack_ref
        FROM inventory
        WHERE character_id = ?
        ORDER BY id`,
@@ -378,6 +387,11 @@ export function readStateSnapshot(
           rawProperties,
           `inventory[${row.id}].properties_json`,
         ),
+        packRef:
+          row.pack_ref === null
+            ? undefined
+            : validatePackRef(row.pack_ref, `inventory[${row.id}].pack_ref`),
+        state: readItemState(db, row.id),
       };
     }),
     attunements:
@@ -646,7 +660,13 @@ function renderState(state: StateSnapshot): string {
   if (state.inventory.length > 0) {
     lines.push(
       `Inventory: ${state.inventory
-        .map((i) => `${i.name} x${i.quantity}`)
+        .map((i) => {
+          const identity =
+            i.packRef === undefined ? '' : ` [${i.id}; ${i.packRef}]`;
+          const liveState =
+            i.state === undefined ? '' : ` state=${JSON.stringify(i.state)}`;
+          return `${i.name} x${i.quantity}${identity}${liveState}`;
+        })
         .join(', ')}`,
     );
   } else {

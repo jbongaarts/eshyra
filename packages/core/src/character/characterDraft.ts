@@ -85,6 +85,16 @@ export function parseStartingEquipmentMode(
 
 export type { StartingWealthResult } from './srdStartingWealth.js';
 
+/** Source-bounded selections for the SRD custom-background optional rule. */
+export interface BackgroundCustomization {
+  readonly name: string;
+  readonly skillProficiencies: readonly string[];
+  readonly toolProficiencies: readonly string[];
+  readonly languages: readonly string[];
+  /** Canonical inline feature ref (or its exact source name while editing). */
+  readonly feature: string;
+}
+
 /** Severity of an incremental draft diagnostic. */
 export type DraftDiagnosticSeverity = 'error' | 'warning' | 'pending';
 
@@ -133,6 +143,7 @@ export interface Dnd5eDraftSelections {
   readonly className?: string;
   readonly ancestry?: string;
   readonly background?: string;
+  readonly backgroundCustomization?: BackgroundCustomization;
   readonly abilityScoreMethod?: AbilityScoreMethod;
   readonly baseAbilityScores?: Partial<Record<AbilityScoreName, number>>;
   /** Immutable canonical F1 evidence for the rolled score pool. */
@@ -230,6 +241,10 @@ export interface CharacterCreationEngine {
   setBackground(
     draft: CharacterDraft,
     value: string | undefined,
+  ): CharacterDraft;
+  setBackgroundCustomization(
+    draft: CharacterDraft,
+    value: BackgroundCustomization | undefined,
   ): CharacterDraft;
   setAbilityScoreMethod(
     draft: CharacterDraft,
@@ -335,6 +350,97 @@ function ancestryAbilityScoreIncreases(
   return ancestry?.abilityScoreIncreases?.flatMap((entry) => entry.fixed) ?? [];
 }
 
+/** Apply a validated custom-background selection to its canonical source. */
+export function effectiveBackground(
+  selections: Dnd5eDraftSelections,
+  resolver: RulesPackCharacterResolver,
+): ResolvedBackgroundData | undefined {
+  if (selections.background === undefined) return undefined;
+  const result = resolver.resolveBackground(selections.background);
+  if (!result.ok) return undefined;
+  const custom = selections.backgroundCustomization;
+  if (custom === undefined) return result.record;
+  const feature = result.record.feature;
+  return {
+    ...result.record,
+    name: custom.name.trim(),
+    skillProficiencies: [...custom.skillProficiencies],
+    toolProficiencies: [...custom.toolProficiencies],
+    languages: [
+      {
+        fixed: [...custom.languages],
+        sourceText: 'Custom background language selections',
+      },
+    ],
+    ...(feature === undefined ? {} : { feature }),
+  };
+}
+
+function validateBackgroundCustomization(
+  selections: Dnd5eDraftSelections,
+  background: ResolvedBackgroundData | undefined,
+  resolver: RulesPackCharacterResolver,
+  diagnostics: CharacterCreationDiagnostic[],
+): void {
+  const custom = selections.backgroundCustomization;
+  if (custom === undefined) return;
+  const fail = (message: string, value?: unknown) =>
+    diagnostics.push({
+      field: 'backgroundCustomization',
+      severity: 'error',
+      message,
+      ...(value === undefined ? {} : { value }),
+    });
+  if (background === undefined) {
+    fail('custom background requires a canonical source background');
+    return;
+  }
+  if (custom.name.trim().length === 0)
+    fail('custom background name is required');
+  const skills = new Set(custom.skillProficiencies);
+  if (
+    custom.skillProficiencies.length !== 2 ||
+    skills.size !== 2 ||
+    [...skills].some((skill) => !SRD_5_1_SKILLS.includes(skill))
+  ) {
+    fail('custom background must choose exactly two distinct SRD skills');
+  }
+  const tools = new Set(custom.toolProficiencies);
+  const languages = new Set(custom.languages);
+  const languageDomain = new Set(
+    Array.isArray(background.languages)
+      ? background.languages.flatMap((grant) => [
+          ...grant.fixed,
+          ...(grant.from ?? []),
+        ])
+      : [],
+  );
+  if (
+    tools.size !== custom.toolProficiencies.length ||
+    [...tools].some((tool) => !resolver.listToolProficiencies().includes(tool))
+  ) {
+    fail('custom background contains an unknown or duplicate tool proficiency');
+  }
+  if (
+    languages.size !== custom.languages.length ||
+    [...languages].some((language) => !languageDomain.has(language))
+  ) {
+    fail('custom background contains an unknown or duplicate source language');
+  }
+  if (custom.toolProficiencies.length + custom.languages.length !== 2) {
+    fail('custom background must choose exactly two total tools and languages');
+  }
+  const feature = background.feature;
+  if (
+    feature === undefined ||
+    (custom.feature !== feature.key && custom.feature !== feature.name)
+  ) {
+    fail(
+      'custom background feature must be a structured feature from its source background',
+    );
+  }
+}
+
 function castsAtLevel1(classRecord: ResolvedClassData | undefined): boolean {
   const spellcasting = classRecord?.level1?.spellcasting;
   if (spellcasting === undefined) {
@@ -430,6 +536,14 @@ export function createCharacterCreationEngine(
         value: selections.ancestry,
       });
     }
+
+    const backgroundRecord = resolveBackground(selections.background);
+    validateBackgroundCustomization(
+      selections,
+      backgroundRecord,
+      resolver,
+      diagnostics,
+    );
 
     const validAbilityScores = validateAbilityScores(selections, diagnostics);
 
@@ -556,7 +670,7 @@ export function createCharacterCreationEngine(
     const all = enumerateLevel1RequiredChoices({
       classData: classRecord,
       ancestry: resolveAncestry(draft.selections.ancestry),
-      background: resolveBackground(draft.selections.background),
+      background: effectiveBackground(draft.selections, resolver),
       abilityModifiers: draft.derived.abilityModifiers,
     });
     const stored = draft.selections.choices ?? {};
@@ -575,7 +689,7 @@ export function createCharacterCreationEngine(
     return appendProficiencyReplacements(
       choices,
       classRecord,
-      resolveBackground(draft.selections.background),
+      effectiveBackground(draft.selections, resolver),
       stored,
       resolver,
     );
@@ -1060,7 +1174,26 @@ export function createCharacterCreationEngine(
     },
 
     setBackground(draft, value): CharacterDraft {
-      return withSelections(draft, { background: value });
+      return withSelections(draft, {
+        background: value,
+        ...(value !== draft.selections.background
+          ? { backgroundCustomization: undefined }
+          : {}),
+      });
+    },
+
+    setBackgroundCustomization(draft, value): CharacterDraft {
+      return withSelections(draft, {
+        backgroundCustomization:
+          value === undefined
+            ? undefined
+            : {
+                ...value,
+                skillProficiencies: [...value.skillProficiencies],
+                toolProficiencies: [...value.toolProficiencies],
+                languages: [...value.languages],
+              },
+      });
     },
 
     setAbilityScoreMethod(draft, method): CharacterDraft {

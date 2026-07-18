@@ -74,6 +74,7 @@ import { unsuppressEffectTool } from './toolUnsuppressEffect.js';
 import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
 import { useInspirationTool } from './toolUseInspiration.js';
+import { useItemTool } from './toolUseItem.js';
 import { worldQueryTool } from './toolWorldQuery.js';
 
 export const DEFAULT_TOOLS: readonly Tool[] = [
@@ -116,6 +117,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   spendCurrencyTool,
   convertCurrencyTool,
   giveItemTool,
+  useItemTool,
   removeItemTool,
   updateClockTool,
   advanceTimeTool,

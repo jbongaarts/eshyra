@@ -12,6 +12,7 @@ import {
   GRAM_SIZE,
   gramKey,
   isPageFooter,
+  isStrictProsePath,
   joinDehyphenated,
   locatorPages,
   pageTokens,
@@ -123,6 +124,17 @@ describe('isPageFooter', () => {
   it('matches the SRD running footer and nothing else', () => {
     expect(isPageFooter('System Reference Document 5.1 261')).toBe(true);
     expect(isPageFooter('The aboleth is ancient.')).toBe(false);
+  });
+});
+
+describe('isStrictProsePath', () => {
+  it('checks source prose but excludes typed executable-mechanics identifiers', () => {
+    expect(isStrictProsePath('description')).toBe(true);
+    expect(isStrictProsePath('effects[0]')).toBe(true);
+    expect(isStrictProsePath('mechanics.effects[0]')).toBe(false);
+    expect(
+      isStrictProsePath('variants[0].mechanics.effects[0].description'),
+    ).toBe(false);
   });
 });
 
