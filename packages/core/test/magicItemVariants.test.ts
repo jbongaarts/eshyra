@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateRecordKindSchema } from '../src/rules/kindSchemas.js';
 import {
+  canonicalMagicItemVariantId,
   effectiveMagicItemMechanics,
   mergeMagicItemVariantMechanics,
   resolveMagicItemVariant,
@@ -45,6 +46,15 @@ const AGILITY = {
 } as const;
 
 describe('canonical magic-item variant identity and effective mechanics', () => {
+  it('canonicalizes punctuation runs in one linear scan', () => {
+    expect(canonicalMagicItemVariantId('  Dragon’s Eye +2  ')).toBe(
+      'dragons-eye-2',
+    );
+    expect(
+      canonicalMagicItemVariantId(`air${'-'.repeat(100_000)}command`),
+    ).toBe('air-command');
+  });
+
   it('requires unique canonical variant ids in the persisted record schema', () => {
     const valid = record([AGILITY]);
     expect(() => validateRecordKindSchema(valid, 'record')).not.toThrow();

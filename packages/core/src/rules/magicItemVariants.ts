@@ -22,11 +22,20 @@ export class MagicItemVariantError extends Error {
 }
 
 export function canonicalMagicItemVariantId(name: string): string {
-  const id = name
-    .toLowerCase()
-    .replace(/[’']/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  let id = '';
+  let separatorPending = false;
+  for (const character of name.toLowerCase()) {
+    const code = character.charCodeAt(0);
+    const isAsciiLetter = code >= 97 && code <= 122;
+    const isAsciiDigit = code >= 48 && code <= 57;
+    if (isAsciiLetter || isAsciiDigit) {
+      if (separatorPending && id.length > 0) id += '-';
+      id += character;
+      separatorPending = false;
+    } else if (character !== "'" && character !== '’') {
+      separatorPending = true;
+    }
+  }
   if (id.length === 0)
     throw new MagicItemVariantError(
       'magic-item variant name has no canonical id',
