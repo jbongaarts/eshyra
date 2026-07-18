@@ -2520,6 +2520,57 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       );
     });
 
+    it('persists clause-level execution readiness and cannot report zero runtime gaps', () => {
+      const clauses = magicItems.flatMap((record) => {
+        const readiness = (
+          record.data as {
+            executionReadiness?: {
+              source?: unknown;
+              clauses?: readonly {
+                readonly clauseId?: string;
+                readonly readiness?: string;
+                readonly scope?: { readonly kind?: string };
+                readonly representation?: unknown;
+                readonly engineHooks?: readonly unknown[];
+                readonly missingHooks?: readonly unknown[];
+              }[];
+            };
+          }
+        ).executionReadiness;
+        expect(readiness?.source, record.key).toBe(
+          'derived-magic-item-clauses-v1',
+        );
+        expect(readiness?.clauses?.length, record.key).toBeGreaterThan(0);
+        return readiness?.clauses ?? [];
+      });
+      const counts = Object.fromEntries(
+        [...new Set(clauses.map(({ readiness }) => readiness))].map(
+          (status) => [
+            status,
+            clauses.filter(({ readiness }) => readiness === status).length,
+          ],
+        ),
+      );
+      expect(clauses).toHaveLength(1001);
+      expect(counts).toEqual({
+        'adjudicated-by-design': 2,
+        'design-blocked': 1,
+        'engine-pending': 781,
+        green: 217,
+      });
+      const pending = clauses.filter(
+        ({ readiness }) => readiness === 'engine-pending',
+      );
+      expect(pending.length).toBeGreaterThan(0);
+      for (const clause of pending) {
+        expect(clause.clauseId).toBeTypeOf('string');
+        expect(clause.representation).toBeDefined();
+        expect(clause.engineHooks?.length).toBeGreaterThan(0);
+        expect(clause.missingHooks).toEqual(clause.engineHooks);
+      }
+      expect(clauses.some(({ scope }) => scope?.kind === 'variant')).toBe(true);
+    });
+
     it('carries representative item type, rarity, and attunement and strips embedded tables to table records', () => {
       expect(magicItemData('magic-item:adamantine-armor')).toMatchObject({
         itemType: 'Armor (medium or heavy, but not hide)',

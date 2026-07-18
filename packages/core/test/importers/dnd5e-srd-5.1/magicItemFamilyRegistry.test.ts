@@ -131,12 +131,15 @@ describe('authoritative magic-item family registry', () => {
     ).toEqual([]);
     expect(
       readiness.filter((entry) => entry.readiness === 'design-blocked'),
-    ).toEqual([
+    ).toMatchObject([
       {
         itemKey: 'magic-item:orb-of-dragonkind',
         clauseId:
           'magic-item:orb-of-dragonkind/DB:Orb of Dragonkind:artifact-random-properties',
+        scope: { kind: 'parent' },
+        tag: 'DB',
         readiness: 'design-blocked',
+        representation: { designBlocked: true },
       },
     ]);
 

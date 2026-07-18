@@ -183,6 +183,41 @@ describe('addCondition / removeCondition', () => {
 });
 
 describe('giveItem', () => {
+  it('persists canonical pack variant identity and rejects invalid ids', () => {
+    const db = freshDb();
+    expect(() =>
+      giveItem(
+        db,
+        {
+          id: 'stone',
+          name: 'Ioun Stone',
+          packRef: 'magic-item:ioun-stone',
+          variantId: 'Greater Absorption',
+        },
+        CTX,
+      ),
+    ).toThrow(/canonical kebab-case/);
+    giveItem(
+      db,
+      {
+        id: 'stone',
+        name: 'Ioun Stone',
+        packRef: 'magic-item:ioun-stone',
+        variantId: 'greater-absorption',
+      },
+      CTX,
+    );
+    expect(
+      db
+        .prepare('SELECT pack_ref, variant_id FROM inventory WHERE id = ?')
+        .get('stone'),
+    ).toEqual({
+      pack_ref: 'magic-item:ioun-stone',
+      variant_id: 'greater-absorption',
+    });
+    db.close();
+  });
+
   it('creates a new inventory item', () => {
     const db = freshDb();
 

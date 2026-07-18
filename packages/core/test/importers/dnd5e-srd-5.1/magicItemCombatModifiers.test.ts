@@ -221,7 +221,11 @@ describe('C2 static combat modifier family projection', () => {
       validateRecordKindSchema(
         {
           ...source,
-          data: { ...source.data, mechanics: projection?.mechanics },
+          data: {
+            ...source.data,
+            executionReadiness: undefined,
+            mechanics: projection?.mechanics,
+          },
         },
         `magic-item:${name}`,
       );
@@ -247,6 +251,7 @@ describe('C2 static combat modifier family projection', () => {
           ...source,
           data: {
             ...source.data,
+            executionReadiness: undefined,
             variants: [{ ...variant, mechanics: projection?.mechanics }],
           },
         },

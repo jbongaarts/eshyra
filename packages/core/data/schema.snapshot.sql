@@ -470,7 +470,16 @@ CREATE TABLE inventory (
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL
 , pack_ref TEXT
-  CHECK (pack_ref IS NULL OR pack_ref GLOB 'magic-item:*'));
+  CHECK (pack_ref IS NULL OR pack_ref GLOB 'magic-item:*'), variant_id TEXT
+  CHECK (
+    variant_id IS NULL OR
+    pack_ref IS NOT NULL AND
+    variant_id GLOB '[a-z0-9]*' AND
+    variant_id NOT GLOB '*[^a-z0-9-]*' AND
+    variant_id NOT GLOB '*--*' AND
+    variant_id NOT GLOB '-*' AND
+    variant_id NOT GLOB '*-'
+  ));
 
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY

@@ -72,6 +72,7 @@ export const useItemTool: Tool = {
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
+          rng: ctx.rng,
         }),
       );
     } catch (error) {

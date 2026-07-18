@@ -722,6 +722,48 @@ describe('domain mutation tools', () => {
     });
   });
 
+  it('give_item requires and persists the exact canonical magic-item variant', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    const input = {
+      id: 'crystal-ball-instance',
+      name: 'Crystal Ball',
+      packRef: 'magic-item:crystal-ball',
+    };
+
+    expect(registry.invoke('give_item', input, c)).toMatchObject({ ok: false });
+    expect(
+      registry.invoke(
+        'give_item',
+        { ...input, variantId: 'Crystal Ball of Telepathy' },
+        c,
+      ),
+    ).toMatchObject({ ok: false });
+
+    const granted = registry.invoke(
+      'give_item',
+      { ...input, variantId: 'crystal-ball-of-telepathy' },
+      c,
+    );
+    expect(granted).toMatchObject({
+      ok: true,
+      data: { variantId: 'crystal-ball-of-telepathy' },
+    });
+    if (!granted.ok) throw new Error(granted.error.message);
+    const grantedId = (granted.data as { id: string }).id;
+    expect(
+      c.db
+        .prepare('SELECT variant_id FROM inventory WHERE id = ?')
+        .get(grantedId),
+    ).toEqual({ variant_id: 'crystal-ball-of-telepathy' });
+    const state = c.db
+      .prepare('SELECT state_json FROM item_state WHERE inventory_id = ?')
+      .get(grantedId) as { state_json: string };
+    expect(JSON.parse(state.state_json)).toMatchObject({
+      variantId: 'crystal-ball-of-telepathy',
+    });
+  });
+
   it('inventory mutation results carry comparable bounded audit evidence', () => {
     const c = ctx();
     const registry = createDefaultToolRegistry();

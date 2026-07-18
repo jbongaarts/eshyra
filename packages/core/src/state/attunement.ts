@@ -176,8 +176,12 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
     const character = resolveLivingCharacter(txnDb, input.characterRef);
 
     const item = txnDb
-      .prepare('SELECT name FROM inventory WHERE id = ? AND character_id = ?')
-      .get(input.itemId, character.id) as { name: string } | undefined;
+      .prepare(
+        'SELECT name, pack_ref FROM inventory WHERE id = ? AND character_id = ?',
+      )
+      .get(input.itemId, character.id) as
+      | { name: string; pack_ref: string | null }
+      | undefined;
     if (item === undefined) {
       throw new AttunementError(
         `${character.label} holds no inventory item '${input.itemId}'; attunement requires possessing the item`,
@@ -187,8 +191,18 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
     // Item identity and the requires-attunement gate come from the rules
     // record when one resolves; a homebrew/module item falls back to its
     // normalized name for the no-duplicates rule.
+    if (
+      item.pack_ref !== null &&
+      input.itemRef !== undefined &&
+      input.itemRef !== item.pack_ref
+    )
+      throw new AttunementError(
+        `itemRef '${input.itemRef}' does not match inventory packRef '${item.pack_ref}' for '${input.itemId}'`,
+      );
     const candidateRef =
-      input.itemRef ?? `magic-item:${normalizeItemKey(item.name)}`;
+      item.pack_ref ??
+      input.itemRef ??
+      `magic-item:${normalizeItemKey(item.name)}`;
     const record = lookupCampaignRecord(txnDb, 'magic-item', candidateRef);
     if (input.itemRef !== undefined && record === undefined) {
       throw new AttunementError(

@@ -37,7 +37,10 @@ import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { equipmentMechanicsFor } from './equipmentMechanics.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
-import { validateMagicItemClausesAndClassify } from './magicItemCompiler.js';
+import {
+  attachMagicItemExecutionReadiness,
+  validateMagicItemClausesAndClassify,
+} from './magicItemCompiler.js';
 import {
   buildMagicItemClausesByItemKey,
   compileMagicItemFamilies,
@@ -1349,6 +1352,7 @@ function buildMagicItemData(
     data.variants = item.variants.map((variant) => {
       const mechanics = compiled.variants.get(variant.name)?.mechanics;
       return {
+        id: slug(variant.name),
         name: variant.name,
         rarity: variant.rarity,
         text: variant.text,
@@ -1713,7 +1717,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // records that belong to their entry (eshyra-o9bd.8). Adds `data.tableRefs`
   // only; the de-flattened prose above is untouched.
   const linked = linkOwnedTables(stripped);
-  const records = linked.sort((a, b) =>
+  let records = linked.sort((a, b) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
   );
   // Clause integrity runs only after owner table links and every record exist.
@@ -1724,10 +1728,11 @@ export function buildPack(input: BuildPackInput): RulesPack {
       input.magicItems ?? [],
       records,
     );
-    validateMagicItemClausesAndClassify({
+    const readiness = validateMagicItemClausesAndClassify({
       records,
       clausesByItemKey: magicItemClauses,
     });
+    records = [...attachMagicItemExecutionReadiness(records, readiness)];
   }
   const includedKinds = uniqueKindsOf(records);
   const pack: RulesPack = {

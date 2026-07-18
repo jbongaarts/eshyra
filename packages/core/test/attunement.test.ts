@@ -69,6 +69,40 @@ describe('attuneItem', () => {
     expect(result.prerequisite).toBe('by a spellcaster');
   });
 
+  it('uses immutable inventory pack identity and rejects a conflicting itemRef', () => {
+    const { db } = setup();
+    giveItem(
+      db,
+      {
+        id: 'renamed-ring',
+        name: 'Grandmother’s Keepsake',
+        packRef: 'magic-item:ring-of-protection',
+      },
+      CTX,
+    );
+    expect(
+      attuneItem(db, {
+        campaignId: CAMPAIGN,
+        itemId: 'renamed-ring',
+        ...CTX,
+      }).attuned.itemKey,
+    ).toBe('magic-item:ring-of-protection');
+    endAttunement(db, {
+      campaignId: CAMPAIGN,
+      itemId: 'renamed-ring',
+      reason: 'voluntary',
+      ...CTX,
+    });
+    expect(() =>
+      attuneItem(db, {
+        campaignId: CAMPAIGN,
+        itemId: 'renamed-ring',
+        itemRef: 'magic-item:wand-of-fireballs',
+        ...CTX,
+      }),
+    ).toThrow(/does not match inventory packRef/);
+  });
+
   it('refuses an item whose record does not require attunement', () => {
     const { db } = setup();
     give(db, 'bag-1', 'Bag of Holding');

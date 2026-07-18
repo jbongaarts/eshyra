@@ -168,6 +168,8 @@ export interface GiveItemInput {
   properties?: Record<string, unknown>;
   /** Immutable rules-record identity, separate from this row/instance id. */
   packRef?: string;
+  /** Canonical emitted child identity when the pack record declares variants. */
+  variantId?: string;
   /** Derived from the resolved pack record by the model-facing grant path. */
   stateful?: boolean;
 }
@@ -176,7 +178,7 @@ export function giveItem(
   db: Db,
   item: GiveItemInput,
   ctx: DomainMutationContext,
-): { id: string } {
+): { id: string; variantId?: string } {
   if (typeof item.id !== 'string' || item.id.length === 0) {
     throw new MutateStateError('item id must be a non-empty string');
   }
@@ -193,6 +195,15 @@ export function giveItem(
       throw error;
     }
   }
+  if (
+    item.variantId !== undefined &&
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.variantId)
+  )
+    throw new MutateStateError(
+      'item variantId must be a canonical kebab-case id',
+    );
+  if (item.variantId !== undefined && item.packRef === undefined)
+    throw new MutateStateError('item variantId requires a packRef');
 
   return withTransaction(db, (txnDb) => {
     const charId = resolveCharacterId(txnDb, ctx.characterId);
@@ -223,9 +234,15 @@ export function giveItem(
       rowId = `${base}#${suffix}`;
     } else {
       const collision = txnDb
-        .prepare('SELECT character_id, pack_ref FROM inventory WHERE id = ?')
+        .prepare(
+          'SELECT character_id, pack_ref, variant_id FROM inventory WHERE id = ?',
+        )
         .get(rowId) as
-        | { character_id: string | null; pack_ref: string | null }
+        | {
+            character_id: string | null;
+            pack_ref: string | null;
+            variant_id: string | null;
+          }
         | undefined;
       if (
         item.packRef === undefined &&
@@ -240,7 +257,8 @@ export function giveItem(
         item.packRef !== undefined &&
         collision !== undefined &&
         (collision.character_id !== charId ||
-          collision.pack_ref !== item.packRef)
+          collision.pack_ref !== item.packRef ||
+          collision.variant_id !== (item.variantId ?? null))
       ) {
         throw new MutateStateError(
           `pack-bound inventory id '${rowId}' already belongs to another instance; choose a distinct id`,
@@ -276,10 +294,13 @@ export function giveItem(
 
     txnDb
       .prepare(
-        'UPDATE inventory SET character_id = ?, pack_ref = ? WHERE id = ?',
+        'UPDATE inventory SET character_id = ?, pack_ref = ?, variant_id = ? WHERE id = ?',
       )
-      .run(charId, item.packRef ?? null, rowId);
-    return { id: rowId };
+      .run(charId, item.packRef ?? null, item.variantId ?? null, rowId);
+    return {
+      id: rowId,
+      ...(item.variantId === undefined ? {} : { variantId: item.variantId }),
+    };
   });
 }
 

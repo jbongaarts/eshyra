@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { RulesPack, RulesRecord } from '../src/internal.js';
 import {
   createInitialItemState,
+  createSeededRng,
   getBundledDnd5eSrdPack,
   giveItem,
   isStatefulMagicItem,
+  magicItemVariantDefinitions,
   readItemState,
   readStateSnapshot,
   useItem,
@@ -40,6 +42,49 @@ function item(
       requiresAttunement,
       description: 'Test fixture.',
       mechanics,
+      executionReadiness: {
+        source: 'derived-magic-item-clauses-v1',
+        clauses: [
+          ...((mechanics.operations as { id: string }[] | undefined) ?? []).map(
+            ({ id }) => ({
+              clauseId: `test/operation:${id}`,
+              scope: { kind: 'parent' },
+              tag: 'M1',
+              readiness: 'green',
+              representation: { block: 'operations', operationId: id },
+            }),
+          ),
+          ...Object.keys(
+            (mechanics.economies as Record<string, unknown> | undefined) ?? {},
+          ).map((economyId) => ({
+            clauseId: `test/economy:${economyId}`,
+            scope: { kind: 'parent' },
+            tag: 'M1',
+            readiness: 'green',
+            representation: { block: 'economies', economyId },
+          })),
+          ...((mechanics.effects as { id?: string }[] | undefined) ?? [])
+            .filter((effect): effect is { id: string } => Boolean(effect.id))
+            .map(({ id }) => ({
+              clauseId: `test/effect:${id}`,
+              scope: { kind: 'parent' },
+              tag: 'M1',
+              readiness: 'green',
+              representation: { block: 'effects', effectId: id },
+            })),
+          ...(mechanics.stateMachine === undefined
+            ? []
+            : [
+                {
+                  clauseId: 'test/state-machine',
+                  scope: { kind: 'parent' },
+                  tag: 'M1',
+                  readiness: 'green',
+                  representation: { block: 'stateMachine' },
+                },
+              ]),
+        ],
+      },
     },
   };
 }
@@ -493,6 +538,58 @@ describe('magic-item live instance state', () => {
     ).toThrow(/not declared/);
   });
 
+  it('selects a card-pool variant from its declared percentage and audits the d100', () => {
+    const record = item('random-deck', {
+      randomProcedure: {
+        procedures: [
+          {
+            id: 'initial-deck',
+            kind: 'initial-state',
+            trigger: 'deck is found',
+            risk: { percent: 75 },
+            outcome:
+              '75 percent initializes the short deck variant; otherwise initialize the full deck variant',
+          },
+        ],
+        customState: {
+          kind: 'card-pool',
+          allowedCardIds: ['sun', 'moon'],
+          variants: [
+            { id: 'short-deck', initialCardIds: ['sun'] },
+            { id: 'full-deck', initialCardIds: ['sun', 'moon'] },
+          ],
+          remainingField: 'remainingCardIds',
+          returnedField: 'returnedCardIds',
+          nonReturningCardIds: [],
+        },
+      },
+    });
+    expect(() => createInitialItemState(record.key, record)).toThrow(
+      /seeded RNG is required/,
+    );
+    const low = createInitialItemState(record.key, record, {
+      rng: { nextInt: () => 0 },
+    });
+    expect(low.custom).toEqual({
+      variantId: 'short-deck',
+      remainingCardIds: ['sun'],
+      returnedCardIds: [],
+    });
+    expect(low.initializationRolls).toEqual([
+      {
+        purpose: 'custom:card-pool:variant',
+        notation: '1d100',
+        rolls: [1],
+        total: 1,
+      },
+    ]);
+    expect(
+      createInitialItemState(record.key, record, {
+        rng: { nextInt: () => 99 },
+      }).custom,
+    ).toMatchObject({ variantId: 'full-deck' });
+  });
+
   it('enforces singleton stateful grants and gives identical items independent state', () => {
     const db = freshDbWithSession();
     const record = item('wand-test', {
@@ -575,7 +672,7 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
-  it('does not invent initial numeric state for a rolled duration budget', () => {
+  it('requires seeded initialization and persists exact rolled duration evidence', () => {
     const record = item('rolled-duration-test', {
       economies: {
         duration: {
@@ -587,9 +684,118 @@ describe('magic-item live instance state', () => {
         },
       },
     });
-    expect(createInitialItemState(record.key, record)).toEqual({
-      packRef: record.key,
+    expect(() => createInitialItemState(record.key, record)).toThrow(
+      /seeded RNG is required/,
+    );
+    const initialized = createInitialItemState(record.key, record, {
+      rng: createSeededRng(42),
     });
+    expect(initialized.economies?.duration.remaining).toBeGreaterThanOrEqual(
+      60,
+    );
+    expect(initialized.economies?.duration.remaining).toBeLessThanOrEqual(480);
+    expect(initialized.initializationRolls).toEqual([
+      expect.objectContaining({
+        purpose: 'economy:duration:budget.total',
+        notation: '1d8',
+        total: (initialized.economies?.duration.remaining ?? 0) / 60,
+      }),
+    ]);
+  });
+
+  it('initializes single-use state for an otherwise stateful instance', () => {
+    const record = item(
+      'stateful-single-use',
+      {
+        economies: { dose: { kind: 'single-use' } },
+        stateMachine: {
+          initial: 'sealed',
+          states: [{ id: 'sealed' }, { id: 'used' }],
+          transitions: [{ from: 'sealed', to: 'used', via: 'drink' }],
+        },
+      },
+      false,
+    );
+    expect(createInitialItemState(record.key, record)).toMatchObject({
+      packRef: record.key,
+      economies: { dose: { remaining: 1 } },
+      machineState: 'sealed',
+    });
+  });
+
+  it('rolls declared spell-store initial levels or fails before partial state exists', () => {
+    const record = item('rolled-spell-store', {
+      spellStore: {
+        contracts: [
+          {
+            id: 'energy',
+            kind: 'spell-energy',
+            capacityLevels: 10,
+            initialLevels: '1d10',
+          },
+        ],
+      },
+    });
+    expect(() => createInitialItemState(record.key, record)).toThrow(
+      /seeded RNG is required/,
+    );
+    const initialized = createInitialItemState(record.key, record, {
+      rng: createSeededRng(9),
+    });
+    expect(initialized.spellStoreLevels?.energy).toBeGreaterThanOrEqual(1);
+    expect(initialized.spellStoreLevels?.energy).toBeLessThanOrEqual(10);
+    expect(initialized.initializationRolls?.[0]).toMatchObject({
+      purpose: 'spellStore:energy:initialLevels',
+      notation: '1d10',
+      total: initialized.spellStoreLevels?.energy,
+    });
+  });
+
+  it('gates attunement-required use against the authoritative table before state mutation', () => {
+    const db = freshDbWithSession();
+    const record = item(
+      'attuned-use-test',
+      { operations: [{ id: 'invoke' }] },
+      true,
+    );
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Attuned Use Test',
+        packRef: record.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    expect(() =>
+      useItem(db, useInput(pack(record), granted.id, 'invoke')),
+    ).toThrow(/requires authoritative attunement/);
+    expect(readItemState(db, granted.id)).toBeUndefined();
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      granted.id,
+      record.key,
+      record.name,
+      MUTATION.at,
+      MUTATION.provenance,
+      MUTATION.sessionId,
+      MUTATION.at,
+    );
+    expect(
+      useItem(db, useInput(pack(record), granted.id, 'invoke')),
+    ).toMatchObject({
+      operationId: 'invoke',
+      consumed: false,
+    });
+    expect(readItemState(db, granted.id)?.packRef).toBe(record.key);
+    db.close();
   });
 
   it('never transfers a pack-bound row to another character on an id collision', () => {
@@ -678,6 +884,169 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
+  it('preserves a consumed item while its declared activated lifecycle is live', () => {
+    const db = freshDbWithSession();
+    const bead = item('lifecycle-bead', {
+      economies: {
+        quantity: {
+          kind: 'single-use',
+          onDepleted: { becomes: 'destroyed' },
+        },
+      },
+      operations: [
+        {
+          id: 'throw-bead',
+          cost: [{ economy: 'quantity', amount: 1 }],
+        },
+      ],
+      stateMachine: {
+        initial: 'bead',
+        states: [{ id: 'bead' }, { id: 'sphere' }, { id: 'destroyed' }],
+        transitions: [
+          { from: 'bead', to: 'sphere', via: 'throw-bead' },
+          {
+            from: 'sphere',
+            to: 'destroyed',
+            timer: { amount: 1, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Lifecycle Bead',
+        packRef: bead.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    writeItemState(
+      db,
+      granted.id,
+      createInitialItemState(bead.key, bead),
+      MUTATION,
+    );
+
+    expect(
+      useItem(db, useInput(pack(bead), granted.id, 'throw-bead')),
+    ).toMatchObject({
+      consumed: true,
+      quantity: 1,
+      state: {
+        machineState: 'sphere',
+        economies: { quantity: { remaining: 0 } },
+        lifecycle: { status: 'consumed', pendingTerminal: 'destroyed' },
+        pendingTimers: [
+          {
+            from: 'sphere',
+            to: 'destroyed',
+            amount: 1,
+            unit: 'minute',
+            dueAt: '2026-07-18T12:01:00.000Z',
+          },
+        ],
+      },
+    });
+    expect(
+      db.prepare('SELECT quantity FROM inventory WHERE id = ?').get(granted.id),
+    ).toEqual({ quantity: 1 });
+    db.close();
+  });
+
+  it('keeps inert and nonmagical instances but deletes immediate destruction', () => {
+    for (const becomes of ['inert', 'nonmagical', 'destroyed'] as const) {
+      const db = freshDbWithSession();
+      const record = item(`depletion-${becomes}`, {
+        economies: {
+          uses: {
+            kind: 'charges',
+            charges: { max: 1 },
+            onDepleted: { becomes },
+          },
+        },
+        operations: [{ id: 'expend', cost: [{ economy: 'uses', amount: 1 }] }],
+      });
+      const granted = giveItem(
+        db,
+        {
+          id: 'ignored',
+          name: `Depletion ${becomes}`,
+          packRef: record.key,
+          stateful: true,
+        },
+        MUTATION,
+      );
+      writeItemState(
+        db,
+        granted.id,
+        createInitialItemState(record.key, record),
+        MUTATION,
+      );
+      const result = useItem(db, useInput(pack(record), granted.id, 'expend'));
+      if (becomes === 'destroyed') {
+        expect(result).toMatchObject({ consumed: true });
+        expect(
+          db.prepare('SELECT 1 FROM inventory WHERE id = ?').get(granted.id),
+        ).toBeUndefined();
+      } else {
+        expect(result.state?.lifecycle?.status).toBe(becomes);
+        expect(() =>
+          useItem(db, useInput(pack(record), granted.id, 'expend')),
+        ).toThrow(new RegExp(`is ${becomes}`));
+      }
+      db.close();
+    }
+  });
+
+  it('refuses engine-pending operation clauses before spending state', () => {
+    const db = freshDbWithSession();
+    const green = item('pending-operation', {
+      economies: { charges: { kind: 'charges', charges: { max: 2 } } },
+      operations: [{ id: 'blast', cost: [{ economy: 'charges', amount: 1 }] }],
+    });
+    const record: RulesRecord = {
+      ...green,
+      data: {
+        ...(green.data as Record<string, unknown>),
+        executionReadiness: {
+          source: 'derived-magic-item-clauses-v1',
+          clauses: [
+            {
+              clauseId: `${green.key}/operation:blast`,
+              scope: { kind: 'parent' },
+              tag: 'M1',
+              readiness: 'engine-pending',
+              representation: {
+                block: 'operations',
+                operationId: 'blast',
+              },
+              engineHooks: [{ engine: 'F9', hook: 'apply blast damage' }],
+              missingHooks: [{ engine: 'F9', hook: 'apply blast damage' }],
+              missingEngines: ['F9'],
+            },
+          ],
+        },
+      },
+    };
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Pending Operation',
+        packRef: record.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    expect(() =>
+      useItem(db, useInput(pack(record), granted.id, 'blast')),
+    ).toThrow(/not safely executable.*F9:apply blast damage/);
+    expect(readItemState(db, granted.id)).toBeUndefined();
+    db.close();
+  });
+
   it('exposes pack identity, instance id, and validated state in turn context', () => {
     const db = freshDbWithSession();
     const record = item('context-wand', {
@@ -708,5 +1077,33 @@ describe('magic-item live instance state', () => {
       state: { packRef: record.key, economies: { charges: { remaining: 7 } } },
     });
     db.close();
+  });
+
+  it('deterministically initializes every stateful parent and variant in the generated corpus', () => {
+    const magicItems = getBundledDnd5eSrdPack().records.filter(
+      (record) => record.kind === 'magic-item',
+    );
+    let initialized = 0;
+    for (const [recordIndex, record] of magicItems.entries()) {
+      const variants = magicItemVariantDefinitions(record);
+      const variantIds: readonly (string | undefined)[] =
+        variants.length === 0
+          ? [undefined]
+          : variants.map((variant) => variant.id);
+      for (const [variantIndex, variantId] of variantIds.entries()) {
+        if (!isStatefulMagicItem(record, variantId)) continue;
+        const label = `${record.key}${variantId === undefined ? '' : `:${variantId}`}`;
+        const state = createInitialItemState(record.key, record, {
+          variantId,
+          rng: createSeededRng(recordIndex * 101 + variantIndex + 1),
+        });
+        expect(
+          validateItemStateForRecord(state, record.key, record, variantId),
+          label,
+        ).toEqual(state);
+        initialized += 1;
+      }
+    }
+    expect(initialized).toBeGreaterThan(100);
   });
 });

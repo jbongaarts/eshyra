@@ -300,9 +300,28 @@ export type MagicItemReadiness =
 export interface MagicItemReadinessEntry {
   readonly itemKey: string;
   readonly clauseId?: string;
+  readonly scope?:
+    | { readonly kind: 'parent' }
+    | { readonly kind: 'variant'; readonly variantKey: string };
+  readonly tag?: MagicItemClauseTag;
   readonly readiness: MagicItemReadiness;
+  readonly representation?: ItemClauseRepresentation;
+  readonly engineHooks?: readonly EngineHookBinding[];
+  readonly missingHooks?: readonly EngineHookBinding[];
   readonly missingEngines?: readonly MagicItemEngineFamily[];
   readonly reason?: string;
+}
+
+export interface MagicItemExecutionReadiness {
+  readonly source: 'derived-magic-item-clauses-v1';
+  readonly clauses: readonly Omit<MagicItemReadinessEntry, 'itemKey'>[];
+}
+
+/** Stable identity for exact runtime-hook evidence. Family-only evidence is
+ * intentionally insufficient: F5 owning one clock path does not imply that
+ * every unrelated F5 hook has landed. */
+export function magicItemEngineHookKey(binding: EngineHookBinding): string {
+  return JSON.stringify([binding.engine, binding.hook]);
 }
 
 type Obj = Record<string, unknown>;
@@ -311,6 +330,20 @@ function asObject(value: unknown): Obj | undefined {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Obj)
     : undefined;
+}
+
+function clauseScope(
+  itemKey: string,
+  clauseId: string,
+): NonNullable<MagicItemReadinessEntry['scope']> {
+  const variantPrefix = `${itemKey}/variant:`;
+  if (!clauseId.startsWith(variantPrefix)) return { kind: 'parent' };
+  const variantKey = clauseId.slice(variantPrefix.length).split('/', 1)[0];
+  if (variantKey.length === 0)
+    throw new Error(
+      `magic-item clause integrity: ${clauseId} has an empty variant scope`,
+    );
+  return { kind: 'variant', variantKey };
 }
 
 function representationKind(representation: Obj): string {
@@ -464,7 +497,7 @@ export function validateMagicItemClausesAndClassify(input: {
     string,
     readonly ItemClauseExpectation[]
   >;
-  readonly landedEngineFamilies?: ReadonlySet<MagicItemEngineFamily>;
+  readonly landedEngineHooks?: ReadonlySet<string>;
   readonly transitionalItemKeys?: ReadonlySet<string>;
 }): readonly MagicItemReadinessEntry[] {
   const items = new Map(
@@ -486,7 +519,7 @@ export function validateMagicItemClausesAndClassify(input: {
       );
     }
   }
-  const landed = input.landedEngineFamilies ?? new Set<MagicItemEngineFamily>();
+  const landed = input.landedEngineHooks ?? new Set<string>();
   const transitional = input.transitionalItemKeys ?? new Set<string>();
   const engineVocabulary = new Set<string>(MAGIC_ITEM_ENGINE_FAMILIES);
   const result: MagicItemReadinessEntry[] = [];
@@ -539,11 +572,25 @@ export function validateMagicItemClausesAndClassify(input: {
           );
         }
       }
+      const declaredHooks =
+        (clause.engineHooks?.length ?? 0) === 0
+          ? undefined
+          : clause.engineHooks;
       if (disposition === 'adjudicated') {
         result.push({
           itemKey,
           clauseId: clause.id,
+          scope: clauseScope(itemKey, clause.id),
+          tag: clause.tag,
           readiness: 'adjudicated-by-design',
+          representation: clause.representation,
+          ...(declaredHooks === undefined
+            ? {}
+            : { engineHooks: declaredHooks }),
+          reason:
+            'note' in clause.representation
+              ? clause.representation.note
+              : undefined,
         });
         continue;
       }
@@ -551,7 +598,17 @@ export function validateMagicItemClausesAndClassify(input: {
         result.push({
           itemKey,
           clauseId: clause.id,
+          scope: clauseScope(itemKey, clause.id),
+          tag: clause.tag,
           readiness: 'design-blocked',
+          representation: clause.representation,
+          ...(declaredHooks === undefined
+            ? {}
+            : { engineHooks: declaredHooks }),
+          reason:
+            'reason' in clause.representation
+              ? clause.representation.reason
+              : undefined,
         });
         continue;
       }
@@ -560,20 +617,64 @@ export function validateMagicItemClausesAndClassify(input: {
           `magic-item clause integrity: ${clause.id} representation binding does not resolve in ${itemKey}`,
         );
       }
-      const missing = (clause.engineHooks ?? [])
-        .map((hook) => hook.engine)
-        .filter((engine) => !landed.has(engine));
+      const missingHooks = (declaredHooks ?? []).filter(
+        (hook) => !landed.has(magicItemEngineHookKey(hook)),
+      );
+      const common = {
+        itemKey,
+        clauseId: clause.id,
+        scope: clauseScope(itemKey, clause.id),
+        tag: clause.tag,
+        representation: clause.representation,
+        ...(declaredHooks === undefined ? {} : { engineHooks: declaredHooks }),
+      };
       result.push(
-        missing.length === 0
-          ? { itemKey, clauseId: clause.id, readiness: 'green' }
+        missingHooks.length === 0
+          ? { ...common, readiness: 'green' }
           : {
-              itemKey,
-              clauseId: clause.id,
+              ...common,
               readiness: 'engine-pending',
-              missingEngines: [...new Set(missing)].sort(),
+              missingHooks,
+              missingEngines: [
+                ...new Set(missingHooks.map(({ engine }) => engine)),
+              ].sort(),
             },
       );
     }
   }
   return result;
+}
+
+/** Persists the derived classifier output beside each source-grounded item.
+ * This is not a second registry: entries are copied directly from the clause
+ * registry/classifier result produced in the same compiler invocation. */
+export function attachMagicItemExecutionReadiness(
+  records: readonly RulesRecord[],
+  readiness: readonly MagicItemReadinessEntry[],
+): readonly RulesRecord[] {
+  const byItem = new Map<string, MagicItemReadinessEntry[]>();
+  for (const entry of readiness) {
+    const entries = byItem.get(entry.itemKey) ?? [];
+    entries.push(entry);
+    byItem.set(entry.itemKey, entries);
+  }
+  return records.map((record) => {
+    if (record.kind !== 'magic-item') return record;
+    const entries = byItem.get(record.key);
+    if (entries === undefined || entries.length === 0)
+      throw new Error(
+        `magic-item readiness persistence: no derived entries for ${record.key}`,
+      );
+    const clauses = entries.map(({ itemKey: _itemKey, ...entry }) => entry);
+    return {
+      ...record,
+      data: {
+        ...(record.data as Record<string, unknown>),
+        executionReadiness: {
+          source: 'derived-magic-item-clauses-v1',
+          clauses,
+        } satisfies MagicItemExecutionReadiness,
+      },
+    };
+  });
 }

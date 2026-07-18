@@ -951,6 +951,15 @@ export {
   isStatefulMagicItemMechanics,
   validateMagicItemMechanics,
 } from './rules/magicItemMechanics.js';
+export type { MagicItemVariantDefinition } from './rules/magicItemVariants.js';
+export {
+  canonicalMagicItemVariantId,
+  effectiveMagicItemMechanics,
+  MagicItemVariantError,
+  magicItemVariantDefinitions,
+  mergeMagicItemVariantMechanics,
+  resolveMagicItemVariant,
+} from './rules/magicItemVariants.js';
 export {
   loadRulesPackFromDirectory,
   PACK_MANIFEST_FILE,

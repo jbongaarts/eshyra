@@ -183,6 +183,40 @@ function hasKind(
 
 const rules: readonly ClassificationRule[] = [
   {
+    name: 'canonical magic-item variant identity',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('magic-item')({ recordKinds }) &&
+      fieldPath === 'data.variants[].id',
+    classify: () =>
+      result(
+        'identifier-like',
+        'complete',
+        'canonicalMagicItemVariantId / MagicItemVariantDefinition.id',
+        'D&D magic-item validator requires a canonical unique id for every variant',
+        'emitter, schema, variant resolver, grant, and instance-state regression tests',
+        'MagicItemVariantDefinition.id',
+        'magicItemVariants.ts and magic-item variant identity tests',
+      ),
+  },
+  {
+    name: 'derived magic-item execution readiness',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('magic-item')({ recordKinds }) &&
+      fieldPath.startsWith('data.executionReadiness'),
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'magic-item compiler classification persistence and audit-bundle readiness report',
+        'D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes',
+        'generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts',
+        'MagicItemExecutionReadiness / validateMagicItemExecutionReadiness',
+        'magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit',
+      ),
+  },
+  {
     name: 'explicit unsupported residuals',
     matches: ({ system, fieldPath, recordKinds }) =>
       system === 'dnd5e-srd' &&

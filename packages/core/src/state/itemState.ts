@@ -1,3 +1,5 @@
+import { rollDice } from '../orchestrator/dice.js';
+import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
@@ -5,11 +7,25 @@ import {
   isStatefulMagicItemMechanics,
   type MagicItemDurationSpec,
 } from '../rules/magicItemMechanics.js';
+import {
+  effectiveMagicItemMechanics,
+  MagicItemVariantError,
+  resolveMagicItemVariant,
+} from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
 import {
   type CampaignRulesPackResolver,
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
+import {
+  ItemDepletionError,
+  type ItemDepletionResolution,
+  resolveItemDepletion,
+} from './itemDepletion.js';
+import {
+  assertMagicItemOperationReady,
+  ItemExecutionReadinessError,
+} from './itemExecutionReadiness.js';
 
 type Obj = Record<string, unknown>;
 
@@ -21,7 +37,7 @@ export interface ItemEconomyState {
 
 export interface ItemInstanceState {
   readonly packRef: string;
-  readonly attunedTo?: string;
+  readonly variantId?: string;
   readonly economies?: Readonly<Record<string, ItemEconomyState>>;
   readonly machineState?: string;
   readonly storedSpells?: readonly {
@@ -30,8 +46,33 @@ export interface ItemInstanceState {
     readonly saveDc: number;
     readonly attackMod: number;
   }[];
+  readonly spellStoreLevels?: Readonly<Record<string, number>>;
   readonly curse?: { readonly attached: boolean; readonly revealed: boolean };
   readonly custom?: Readonly<Record<string, unknown>>;
+  readonly initializationRolls?: readonly {
+    readonly purpose: string;
+    readonly notation: string;
+    readonly rolls: readonly number[];
+    readonly total: number;
+  }[];
+  readonly depletions?: readonly ItemDepletionResolution[];
+  readonly lifecycle?: {
+    readonly status: 'consumed' | 'inert' | 'nonmagical';
+    readonly pendingTerminal?: 'destroyed';
+  };
+  readonly pendingTimers?: readonly {
+    readonly from: string;
+    readonly to: string;
+    readonly startedAt: string;
+    readonly amount: number;
+    readonly unit: 'round' | 'minute' | 'hour' | 'day';
+    readonly dueAt?: string;
+    readonly roll?: {
+      readonly notation: string;
+      readonly rolls: readonly number[];
+      readonly total: number;
+    };
+  }[];
 }
 
 export interface UseItemInput {
@@ -44,6 +85,7 @@ export interface UseItemInput {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly rng?: Rng;
 }
 
 export interface UseItemResult {
@@ -123,22 +165,27 @@ export function validateItemStateJson(
     state,
     [
       'packRef',
-      'attunedTo',
+      'variantId',
       'economies',
       'machineState',
       'storedSpells',
+      'spellStoreLevels',
       'curse',
       'custom',
+      'initializationRolls',
+      'depletions',
+      'lifecycle',
+      'pendingTimers',
     ],
     path,
   );
   validatePackRef(state.packRef, `${path}.packRef`);
   if (
-    state.attunedTo !== undefined &&
-    (typeof state.attunedTo !== 'string' || state.attunedTo.length === 0)
-  ) {
-    throw new ItemStateError(`${path}.attunedTo must be a non-empty string`);
-  }
+    state.variantId !== undefined &&
+    (typeof state.variantId !== 'string' ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(state.variantId))
+  )
+    throw new ItemStateError(`${path}.variantId must be canonical kebab-case`);
   if (
     state.machineState !== undefined &&
     (typeof state.machineState !== 'string' || state.machineState.length === 0)
@@ -199,6 +246,18 @@ export function validateItemStateJson(
       }
     });
   }
+  if (state.spellStoreLevels !== undefined) {
+    const levels = obj(state.spellStoreLevels, `${path}.spellStoreLevels`);
+    for (const [contractId, value] of Object.entries(levels))
+      if (
+        contractId.length === 0 ||
+        !Number.isInteger(value) ||
+        (value as number) < 0
+      )
+        throw new ItemStateError(
+          `${path}.spellStoreLevels must map non-empty contract ids to non-negative integers`,
+        );
+  }
   if (state.curse !== undefined) {
     const curse = obj(state.curse, `${path}.curse`);
     onlyKeys(curse, ['attached', 'revealed'], `${path}.curse`);
@@ -211,14 +270,170 @@ export function validateItemStateJson(
       );
   }
   if (state.custom !== undefined) obj(state.custom, `${path}.custom`);
+  if (state.initializationRolls !== undefined) {
+    if (!Array.isArray(state.initializationRolls))
+      throw new ItemStateError(`${path}.initializationRolls must be an array`);
+    state.initializationRolls.forEach((raw, index) => {
+      const roll = obj(raw, `${path}.initializationRolls[${index}]`);
+      onlyKeys(
+        roll,
+        ['purpose', 'notation', 'rolls', 'total'],
+        `${path}.initializationRolls[${index}]`,
+      );
+      if (typeof roll.purpose !== 'string' || roll.purpose.length === 0)
+        throw new ItemStateError(
+          `${path}.initializationRolls[${index}].purpose must be non-empty`,
+        );
+      if (typeof roll.notation !== 'string' || roll.notation.length === 0)
+        throw new ItemStateError(
+          `${path}.initializationRolls[${index}].notation must be non-empty`,
+        );
+      if (
+        !Array.isArray(roll.rolls) ||
+        !roll.rolls.every((value) => Number.isInteger(value) && value > 0)
+      )
+        throw new ItemStateError(
+          `${path}.initializationRolls[${index}].rolls must be positive integers`,
+        );
+      if (!Number.isInteger(roll.total))
+        throw new ItemStateError(
+          `${path}.initializationRolls[${index}].total must be an integer`,
+        );
+    });
+  }
+  if (state.depletions !== undefined) {
+    if (!Array.isArray(state.depletions))
+      throw new ItemStateError(`${path}.depletions must be an array`);
+    state.depletions.forEach((raw, index) => {
+      const depletion = obj(raw, `${path}.depletions[${index}]`);
+      onlyKeys(
+        depletion,
+        ['economyId', 'rolls', 'regain', 'loseProperty', 'becomes'],
+        `${path}.depletions[${index}]`,
+      );
+      if (
+        typeof depletion.economyId !== 'string' ||
+        depletion.economyId.length === 0 ||
+        !Array.isArray(depletion.rolls) ||
+        typeof depletion.loseProperty !== 'boolean'
+      )
+        throw new ItemStateError(
+          `${path}.depletions[${index}] has an invalid resolution shape`,
+        );
+      for (const [rollIndex, rawRoll] of depletion.rolls.entries()) {
+        const roll = obj(
+          rawRoll,
+          `${path}.depletions[${index}].rolls[${rollIndex}]`,
+        );
+        onlyKeys(
+          roll,
+          ['purpose', 'notation', 'rolls', 'total'],
+          `${path}.depletions[${index}].rolls[${rollIndex}]`,
+        );
+        if (
+          (roll.purpose !== 'depletion' && roll.purpose !== 'regain') ||
+          typeof roll.notation !== 'string' ||
+          !Array.isArray(roll.rolls) ||
+          !roll.rolls.every((value) => Number.isInteger(value) && value > 0) ||
+          !Number.isInteger(roll.total)
+        )
+          throw new ItemStateError(
+            `${path}.depletions[${index}].rolls[${rollIndex}] is invalid`,
+          );
+      }
+      if (
+        depletion.regain !== undefined &&
+        (typeof depletion.regain !== 'number' ||
+          !Number.isInteger(depletion.regain) ||
+          depletion.regain < 0)
+      )
+        throw new ItemStateError(
+          `${path}.depletions[${index}].regain must be a non-negative integer`,
+        );
+      if (
+        depletion.becomes !== undefined &&
+        depletion.becomes !== 'destroyed' &&
+        depletion.becomes !== 'inert' &&
+        depletion.becomes !== 'nonmagical' &&
+        (typeof depletion.becomes !== 'object' ||
+          depletion.becomes === null ||
+          Array.isArray(depletion.becomes) ||
+          typeof (depletion.becomes as Obj).itemRef !== 'string')
+      )
+        throw new ItemStateError(
+          `${path}.depletions[${index}].becomes is invalid`,
+        );
+    });
+  }
+  if (state.lifecycle !== undefined) {
+    const lifecycle = obj(state.lifecycle, `${path}.lifecycle`);
+    onlyKeys(lifecycle, ['status', 'pendingTerminal'], `${path}.lifecycle`);
+    if (
+      lifecycle.status !== 'consumed' &&
+      lifecycle.status !== 'inert' &&
+      lifecycle.status !== 'nonmagical'
+    )
+      throw new ItemStateError(`${path}.lifecycle.status is invalid`);
+    if (
+      lifecycle.pendingTerminal !== undefined &&
+      lifecycle.pendingTerminal !== 'destroyed'
+    )
+      throw new ItemStateError(`${path}.lifecycle.pendingTerminal is invalid`);
+  }
+  if (state.pendingTimers !== undefined) {
+    if (!Array.isArray(state.pendingTimers))
+      throw new ItemStateError(`${path}.pendingTimers must be an array`);
+    state.pendingTimers.forEach((raw, index) => {
+      const timer = obj(raw, `${path}.pendingTimers[${index}]`);
+      onlyKeys(
+        timer,
+        ['from', 'to', 'startedAt', 'amount', 'unit', 'dueAt', 'roll'],
+        `${path}.pendingTimers[${index}]`,
+      );
+      if (
+        typeof timer.from !== 'string' ||
+        typeof timer.to !== 'string' ||
+        typeof timer.startedAt !== 'string' ||
+        typeof timer.amount !== 'number' ||
+        !Number.isFinite(timer.amount) ||
+        timer.amount < 0 ||
+        !['round', 'minute', 'hour', 'day'].includes(String(timer.unit)) ||
+        (timer.dueAt !== undefined && typeof timer.dueAt !== 'string')
+      )
+        throw new ItemStateError(`${path}.pendingTimers[${index}] is invalid`);
+      if (timer.roll !== undefined) {
+        const roll = obj(timer.roll, `${path}.pendingTimers[${index}].roll`);
+        onlyKeys(
+          roll,
+          ['notation', 'rolls', 'total'],
+          `${path}.pendingTimers[${index}].roll`,
+        );
+        if (
+          typeof roll.notation !== 'string' ||
+          !Array.isArray(roll.rolls) ||
+          !roll.rolls.every((value) => Number.isInteger(value) && value > 0) ||
+          !Number.isInteger(roll.total)
+        )
+          throw new ItemStateError(
+            `${path}.pendingTimers[${index}].roll is invalid`,
+          );
+      }
+    });
+  }
   return state as unknown as ItemInstanceState;
 }
 
-function mechanicsFor(record: RulesRecord): Obj {
-  const data = obj(record.data, `${record.key}.data`);
-  return data.mechanics === undefined
-    ? {}
-    : obj(data.mechanics, `${record.key}.data.mechanics`);
+function mechanicsFor(record: RulesRecord, variantId?: string): Obj {
+  try {
+    const mechanics = effectiveMagicItemMechanics(record, variantId);
+    return mechanics === undefined
+      ? {}
+      : obj(mechanics, `${record.key}.effectiveMechanics`);
+  } catch (error) {
+    if (error instanceof MagicItemVariantError)
+      throw new ItemStateError(error.message);
+    throw error;
+  }
 }
 
 function licensesStoredSpells(mechanics: Obj): boolean {
@@ -303,24 +518,22 @@ function validateCardPoolCustomState(
   }
 }
 
-export function isStatefulMagicItem(record: RulesRecord): boolean {
+export function isStatefulMagicItem(
+  record: RulesRecord,
+  variantId?: string,
+): boolean {
   const data = obj(record.data, `${record.key}.data`);
   return isStatefulMagicItemMechanics(
-    data.mechanics,
+    effectiveMagicItemMechanics(record, variantId),
     data.requiresAttunement === true,
   );
 }
 
-function durationMinutes(raw: unknown): number | undefined {
+function durationMinutes(raw: unknown, amount: number): number | undefined {
   const duration = obj(raw, 'duration');
-  // Rolled durations stay unresolved until a seeded engine transition rolls
-  // the pack-declared expression. Never replace source dice with an average or
-  // other numeric placeholder during state initialization.
-  if (typeof duration.amount === 'string') return undefined;
   if (
-    typeof duration.amount !== 'number' ||
-    !Number.isFinite(duration.amount) ||
-    duration.amount < 0 ||
+    !Number.isFinite(amount) ||
+    amount < 0 ||
     typeof duration.unit !== 'string'
   )
     return undefined;
@@ -332,45 +545,252 @@ function durationMinutes(raw: unknown): number | undefined {
   };
   return multiplier[duration.unit] === undefined
     ? undefined
-    : duration.amount * multiplier[duration.unit];
+    : amount * multiplier[duration.unit];
 }
 
-function initialRemaining(raw: unknown): number | undefined {
+type InitializationRoll = NonNullable<
+  ItemInstanceState['initializationRolls']
+>[number];
+
+function resolvedInitialAmount(
+  value: unknown,
+  purpose: string,
+  rng: Rng | undefined,
+  rolls: InitializationRoll[],
+): number | undefined {
+  if (typeof value === 'number') return value;
+  if (typeof value !== 'string') return undefined;
+  if (rng === undefined)
+    throw new ItemStateError(
+      `${purpose} is dice-defined (${value}); seeded RNG is required for item initialization`,
+    );
+  const rolled = rollDice(value, rng);
+  rolls.push({
+    purpose,
+    notation: rolled.notation,
+    rolls: rolled.rolls,
+    total: rolled.total,
+  });
+  return rolled.total;
+}
+
+function initialRemaining(
+  raw: unknown,
+  economyId: string,
+  rng: Rng | undefined,
+  rolls: InitializationRoll[],
+): number | undefined {
   const economy = obj(raw, 'item economy');
   if (economy.kind === 'charges') {
     const charges = obj(economy.charges, 'item economy.charges');
-    return typeof charges.max === 'number' ? charges.max : undefined;
+    return resolvedInitialAmount(
+      charges.max,
+      `economy:${economyId}:charges.max`,
+      rng,
+      rolls,
+    );
   }
   if (economy.kind === 'per-day') {
     const perDay = obj(economy.perDay, 'item economy.perDay');
-    return typeof perDay.uses === 'number' ? perDay.uses : undefined;
+    return resolvedInitialAmount(
+      perDay.uses,
+      `economy:${economyId}:perDay.uses`,
+      rng,
+      rolls,
+    );
   }
-  if (economy.kind === 'budget')
-    return durationMinutes(obj(economy.budget, 'item economy.budget').total);
+  if (economy.kind === 'budget') {
+    const total = obj(economy.budget, 'item economy.budget').total;
+    const duration = obj(total, 'item economy.budget.total');
+    const amount = resolvedInitialAmount(
+      duration.amount,
+      `economy:${economyId}:budget.total`,
+      rng,
+      rolls,
+    );
+    return amount === undefined ? undefined : durationMinutes(total, amount);
+  }
   if (economy.kind === 'doses') {
     const doses = obj(economy.doses, 'item economy.doses');
-    return typeof doses.count === 'number' ? doses.count : undefined;
+    return resolvedInitialAmount(
+      doses.count,
+      `economy:${economyId}:doses.count`,
+      rng,
+      rolls,
+    );
   }
   if (economy.kind === 'cooldown') return 1;
+  if (economy.kind === 'single-use') return 1;
   return undefined;
+}
+
+export interface CreateInitialItemStateOptions {
+  readonly variantId?: string;
+  readonly rng?: Rng;
 }
 
 export function createInitialItemState(
   packRef: string,
   record: RulesRecord,
+  options: CreateInitialItemStateOptions = {},
 ): ItemInstanceState {
-  const mechanics = mechanicsFor(record);
+  const mechanics = mechanicsFor(record, options.variantId);
   const stateEconomies: Record<string, ItemEconomyState> = {};
+  const initializationRolls: InitializationRoll[] = [];
   if (mechanics.economies !== undefined) {
     for (const [id, raw] of Object.entries(
       obj(mechanics.economies, 'mechanics.economies'),
     )) {
-      const remaining = initialRemaining(raw);
+      const remaining = initialRemaining(
+        raw,
+        id,
+        options.rng,
+        initializationRolls,
+      );
       if (remaining !== undefined) stateEconomies[id] = { remaining };
+    }
+  }
+  let custom: Readonly<Record<string, unknown>> | undefined;
+  if (mechanics.randomProcedure !== undefined) {
+    const randomProcedure = obj(
+      mechanics.randomProcedure,
+      'mechanics.randomProcedure',
+    );
+    if (randomProcedure.customState !== undefined) {
+      const declaration = obj(
+        randomProcedure.customState,
+        'mechanics.randomProcedure.customState',
+      );
+      if (declaration.kind === 'card-pool') {
+        const variants = Array.isArray(declaration.variants)
+          ? declaration.variants.map((raw, index) =>
+              obj(
+                raw,
+                `mechanics.randomProcedure.customState.variants[${index}]`,
+              ),
+            )
+          : [];
+        if (variants.length === 0)
+          throw new ItemStateError(`${packRef} card-pool has no variants`);
+        let selected = variants[0];
+        if (variants.length > 1) {
+          if (options.rng === undefined)
+            throw new ItemStateError(
+              `${packRef} card-pool variant is dice-defined; seeded RNG is required for item initialization`,
+            );
+          const initialStateProcedure = Array.isArray(
+            randomProcedure.procedures,
+          )
+            ? randomProcedure.procedures
+                .map((raw, index) =>
+                  obj(raw, `mechanics.randomProcedure.procedures[${index}]`),
+                )
+                .find((procedure) => procedure.kind === 'initial-state')
+            : undefined;
+          const risk =
+            initialStateProcedure?.risk === undefined
+              ? undefined
+              : obj(initialStateProcedure.risk, 'initial-state.risk');
+          if (
+            typeof risk?.percent !== 'number' ||
+            !Number.isInteger(risk.percent) ||
+            risk.percent < 0 ||
+            risk.percent > 100
+          )
+            throw new ItemStateError(
+              `${packRef} multi-variant card-pool lacks an initial-state percentage`,
+            );
+          const rolled = rollDice('1d100', options.rng);
+          initializationRolls.push({
+            purpose: 'custom:card-pool:variant',
+            notation: rolled.notation,
+            rolls: rolled.rolls,
+            total: rolled.total,
+          });
+          const outcome = initialStateProcedure?.outcome;
+          if (typeof outcome !== 'string')
+            throw new ItemStateError(
+              `${packRef} card-pool initial-state procedure lacks an outcome`,
+            );
+          const normalizedOutcome = outcome.toLowerCase();
+          const outcomeNamesVariant = (prefix: string, id: string): boolean =>
+            [id, id.replaceAll('-', ' ')].some((label) =>
+              normalizedOutcome.includes(`${prefix}${label} variant`),
+            );
+          const thresholdVariant = variants.find(
+            ({ id }) =>
+              typeof id === 'string' &&
+              outcomeNamesVariant(
+                `${risk.percent} percent initializes the `,
+                id,
+              ),
+          );
+          const otherwiseVariant = variants.find(
+            ({ id }) =>
+              typeof id === 'string' &&
+              outcomeNamesVariant('otherwise initialize the ', id),
+          );
+          if (
+            thresholdVariant === undefined ||
+            otherwiseVariant === undefined ||
+            thresholdVariant === otherwiseVariant
+          )
+            throw new ItemStateError(
+              `${packRef} card-pool initial-state outcome does not unambiguously bind its declared variants`,
+            );
+          selected =
+            rolled.total <= risk.percent ? thresholdVariant : otherwiseVariant;
+        }
+        if (!Array.isArray(selected.initialCardIds))
+          throw new ItemStateError(
+            `${packRef} card-pool variant has no initial cards`,
+          );
+        custom = {
+          variantId: selected.id,
+          remainingCardIds: [...selected.initialCardIds],
+          returnedCardIds: [],
+        };
+      }
+    }
+  }
+  const spellStoreLevels: Record<string, number> = {};
+  if (mechanics.spellStore !== undefined) {
+    const spellStore = obj(mechanics.spellStore, 'mechanics.spellStore');
+    for (const [index, raw] of (Array.isArray(spellStore.contracts)
+      ? spellStore.contracts
+      : []
+    ).entries()) {
+      const contract = obj(raw, `mechanics.spellStore.contracts[${index}]`);
+      if (contract.initialLevels === undefined) continue;
+      if (typeof contract.id !== 'string' || contract.id.length === 0)
+        throw new ItemStateError(
+          'spell-store initialization contract needs id',
+        );
+      const levels = resolvedInitialAmount(
+        contract.initialLevels,
+        `spellStore:${contract.id}:initialLevels`,
+        options.rng,
+        initializationRolls,
+      );
+      if (levels === undefined)
+        throw new ItemStateError(
+          `${packRef} spell-store contract '${contract.id}' has invalid initialLevels`,
+        );
+      if (
+        typeof contract.capacityLevels === 'number' &&
+        levels > contract.capacityLevels
+      )
+        throw new ItemStateError(
+          `${packRef} spell-store contract '${contract.id}' initialized above capacity`,
+        );
+      spellStoreLevels[contract.id] = levels;
     }
   }
   const state: ItemInstanceState = {
     packRef,
+    ...(options.variantId === undefined
+      ? {}
+      : { variantId: options.variantId }),
     ...(Object.keys(stateEconomies).length === 0
       ? {}
       : { economies: stateEconomies }),
@@ -381,22 +801,36 @@ export function createInitialItemState(
             obj(mechanics.stateMachine, 'mechanics.stateMachine').initial,
           ),
         }),
+    ...(custom === undefined ? {} : { custom }),
+    ...(Object.keys(spellStoreLevels).length === 0 ? {} : { spellStoreLevels }),
+    ...(initializationRolls.length === 0 ? {} : { initializationRolls }),
   };
-  return validateItemStateForRecord(state, packRef, record);
+  return validateItemStateForRecord(state, packRef, record, options.variantId);
 }
 
 export function validateItemStateForRecord(
   value: unknown,
   packRef: string,
   record: RulesRecord,
+  variantId?: string,
 ): ItemInstanceState {
   const state = validateItemStateJson(value);
   if (state.packRef !== packRef)
     throw new ItemStateError(
       `item state packRef '${state.packRef}' does not match inventory packRef '${packRef}'`,
     );
-  const data = obj(record.data, `${record.key}.data`);
-  const mechanics = mechanicsFor(record);
+  if (state.variantId !== variantId)
+    throw new ItemStateError(
+      `item state variantId ${JSON.stringify(state.variantId)} does not match inventory variantId ${JSON.stringify(variantId)}`,
+    );
+  try {
+    resolveMagicItemVariant(record, variantId);
+  } catch (error) {
+    if (error instanceof MagicItemVariantError)
+      throw new ItemStateError(error.message);
+    throw error;
+  }
+  const mechanics = mechanicsFor(record, variantId);
   const declaredEconomies =
     mechanics.economies === undefined
       ? {}
@@ -407,11 +841,30 @@ export function validateItemStateForRecord(
         `item state economy '${id}' is not declared by ${packRef}`,
       );
   }
-  if (state.attunedTo !== undefined && data.requiresAttunement !== true)
-    throw new ItemStateError(`${packRef} does not license attunedTo state`);
+  for (const resolution of state.depletions ?? []) {
+    const declared = declaredEconomies[resolution.economyId];
+    if (declared === undefined)
+      throw new ItemStateError(
+        `item depletion economy '${resolution.economyId}' is not declared by ${packRef}`,
+      );
+    const onDepleted = obj(
+      declared,
+      `${packRef}.economies.${resolution.economyId}`,
+    ).onDepleted;
+    if (onDepleted === undefined)
+      throw new ItemStateError(
+        `${packRef} economy '${resolution.economyId}' does not license depletion state`,
+      );
+  }
+  if (state.lifecycle !== undefined && (state.depletions?.length ?? 0) === 0)
+    throw new ItemStateError(
+      `${packRef} lifecycle status requires a source-declared depletion resolution`,
+    );
   if (mechanics.stateMachine === undefined) {
     if (state.machineState !== undefined)
       throw new ItemStateError(`${packRef} does not license machineState`);
+    if ((state.pendingTimers?.length ?? 0) > 0)
+      throw new ItemStateError(`${packRef} does not license pendingTimers`);
   } else {
     const machine = obj(
       mechanics.stateMachine,
@@ -428,11 +881,43 @@ export function validateItemStateForRecord(
       throw new ItemStateError(
         `${packRef} machineState '${state.machineState}' is not declared`,
       );
+    const transitions = Array.isArray(machine.transitions)
+      ? machine.transitions.map((raw, index) =>
+          obj(raw, `${packRef}.mechanics.stateMachine.transitions[${index}]`),
+        )
+      : [];
+    for (const timer of state.pendingTimers ?? [])
+      if (
+        !transitions.some(
+          (transition) =>
+            transition.from === timer.from &&
+            transition.to === timer.to &&
+            transition.timer !== undefined,
+        )
+      )
+        throw new ItemStateError(
+          `${packRef} does not declare pending timer '${timer.from}' -> '${timer.to}'`,
+        );
   }
   if (state.storedSpells !== undefined && !licensesStoredSpells(mechanics))
     throw new ItemStateError(
       `${packRef} does not license storedSpells through a spell-storage contract`,
     );
+  if (state.spellStoreLevels !== undefined) {
+    const contracts = new Set(
+      mechanics.spellStore === undefined
+        ? []
+        : (Array.isArray(obj(mechanics.spellStore, 'spellStore').contracts)
+            ? (obj(mechanics.spellStore, 'spellStore').contracts as unknown[])
+            : []
+          ).map((raw) => String(obj(raw, 'spellStore.contract').id)),
+    );
+    for (const id of Object.keys(state.spellStoreLevels))
+      if (!contracts.has(id))
+        throw new ItemStateError(
+          `${packRef} does not license spellStoreLevels contract '${id}'`,
+        );
+  }
   if (state.curse !== undefined && mechanics.curse === undefined)
     throw new ItemStateError(`${packRef} does not license curse state`);
   if (state.custom !== undefined) {
@@ -731,14 +1216,79 @@ function costAmount(
   );
 }
 
+function resolvePendingTimerState(
+  transition: SelectedStateTransition | undefined,
+  at: string,
+  rng: Rng | undefined,
+): NonNullable<ItemInstanceState['pendingTimers']> {
+  const pending = transition?.result.pendingTimers ?? [];
+  return pending.map(({ to, timer }) => {
+    const resolved =
+      typeof timer.amount === 'number'
+        ? { amount: timer.amount }
+        : (() => {
+            if (rng === undefined)
+              throw new ItemStateError(
+                `state timer is dice-defined (${timer.amount}); seeded RNG is required before applying the transition`,
+              );
+            const rolled = rollDice(timer.amount, rng);
+            return {
+              amount: rolled.total,
+              roll: {
+                notation: rolled.notation,
+                rolls: rolled.rolls,
+                total: rolled.total,
+              },
+            };
+          })();
+    const milliseconds: Partial<Record<MagicItemDurationSpec['unit'], number>> =
+      {
+        minute: 60_000,
+        hour: 3_600_000,
+        day: 86_400_000,
+      };
+    const multiplier = milliseconds[timer.unit];
+    const started = Date.parse(at);
+    if (!Number.isFinite(started))
+      throw new ItemStateError('use_item.at must be an ISO timestamp');
+    return {
+      from: transition?.nextState ?? '',
+      to,
+      startedAt: at,
+      amount: resolved.amount,
+      unit: timer.unit,
+      ...(multiplier === undefined
+        ? {}
+        : {
+            dueAt: new Date(
+              started + resolved.amount * multiplier,
+            ).toISOString(),
+          }),
+      ...('roll' in resolved ? { roll: resolved.roll } : {}),
+    };
+  });
+}
+
+function isDeferredDestroyedLifecycle(
+  selectedTransition: SelectedStateTransition | undefined,
+): boolean {
+  if (selectedTransition === undefined) return false;
+  return !['destroyed', 'consumed'].includes(selectedTransition.nextState);
+}
+
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
       .prepare(
-        'SELECT id, pack_ref, quantity FROM inventory WHERE id = ? AND character_id = ?',
+        'SELECT id, pack_ref, variant_id, quantity FROM inventory WHERE id = ? AND character_id = ?',
       )
       .get(input.instanceId, input.characterId) as
-      | { id: string; pack_ref: string | null; quantity: number }
+      | {
+          id: string;
+          pack_ref: string | null;
+          variant_id: string | null;
+          quantity: number;
+        }
       | undefined;
     if (row === undefined)
       throw new ItemStateError(
@@ -749,6 +1299,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         `inventory instance '${input.instanceId}' is not bound to a rules-pack item`,
       );
     const packRef = validatePackRef(row.pack_ref, 'inventory.pack_ref');
+    const variantId = row.variant_id ?? undefined;
     const hit = lookupStrictCampaignRecord(
       txnDb,
       'magic-item',
@@ -759,7 +1310,22 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       throw new ItemStateError(
         `inventory packRef '${packRef}' does not resolve in the active campaign rules stack`,
       );
-    const mechanics = mechanicsFor(hit.record);
+    const itemData = obj(hit.record.data, `${packRef}.data`);
+    if (itemData.requiresAttunement === true) {
+      const attuned = txnDb
+        .prepare(
+          `SELECT item_key FROM attunement
+           WHERE campaign_id = ? AND character_id = ? AND item_id = ?`,
+        )
+        .get(input.campaignId, input.characterId, input.instanceId) as
+        | { item_key: string }
+        | undefined;
+      if (attuned === undefined || attuned.item_key !== packRef)
+        throw new ItemStateError(
+          `${packRef} requires authoritative attunement by character '${input.characterId}' before use`,
+        );
+    }
+    const mechanics = mechanicsFor(hit.record, variantId);
     const refs = validateRecordReferences(mechanics, packRef);
     let operation = refs.operations.find(
       (candidate) => candidate.id === input.operationId,
@@ -786,18 +1352,66 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       throw new ItemStateError(
         `${packRef} declares no operation '${input.operationId}'`,
       );
-    const stateful = isStatefulMagicItem(hit.record);
+    const operationEffectIds = Array.isArray(operation.effects)
+      ? (operation.effects as string[])
+      : [];
+    const machineForReadiness =
+      mechanics.stateMachine === undefined
+        ? undefined
+        : obj(mechanics.stateMachine, `${packRef}.mechanics.stateMachine`);
+    const operationTransitions = Array.isArray(machineForReadiness?.transitions)
+      ? machineForReadiness.transitions
+          .map((raw, index) =>
+            obj(raw, `${packRef}.mechanics.stateMachine.transitions[${index}]`),
+          )
+          .filter(({ via }) => via === input.operationId)
+      : [];
+    const possibleTransitionEffectIds = operationTransitions.flatMap(
+      (transition) =>
+        Array.isArray(transition.effects)
+          ? (transition.effects as string[])
+          : [],
+    );
+    try {
+      assertMagicItemOperationReady(hit.record, variantId, {
+        operationId: input.operationId,
+        economyIds: new Set(
+          (Array.isArray(operation.cost) ? operation.cost : []).map((raw) =>
+            String(obj(raw, 'operation cost').economy),
+          ),
+        ),
+        effectIds: new Set([
+          ...operationEffectIds,
+          ...possibleTransitionEffectIds,
+        ]),
+        usesStateMachine: operationTransitions.length > 0,
+      });
+    } catch (error) {
+      if (error instanceof ItemExecutionReadinessError)
+        throw new ItemStateError(error.message);
+      throw error;
+    }
+    const stateful = isStatefulMagicItem(hit.record, variantId);
     if (stateful && row.quantity !== 1)
       throw new ItemStateError(
         `stateful item '${input.instanceId}' must have quantity 1`,
       );
     let state = readItemState(txnDb, input.instanceId);
     if (stateful && state === undefined) {
-      state = createInitialItemState(packRef, hit.record);
-      writeItemState(txnDb, input.instanceId, state, input);
+      state = createInitialItemState(packRef, hit.record, {
+        variantId,
+        rng: input.rng,
+      });
     }
     if (state !== undefined)
-      state = validateItemStateForRecord(state, packRef, hit.record);
+      state = validateItemStateForRecord(state, packRef, hit.record, variantId);
+    if (
+      state?.lifecycle?.status === 'inert' ||
+      state?.lifecycle?.status === 'nonmagical'
+    )
+      throw new ItemStateError(
+        `${packRef} is ${state.lifecycle.status} and has no executable magic-item operations`,
+      );
 
     const selectedTransition = selectStateTransition(
       mechanics,
@@ -806,9 +1420,16 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       input.args,
       state?.machineState,
     );
+    const transitionEffectIds = selectedTransition?.effectIds ?? [];
+    const pendingTimers = resolvePendingTimerState(
+      selectedTransition,
+      input.at,
+      input.rng,
+    );
 
     const costs: { economy: string; amount: number }[] = [];
-    let singleUse = 0;
+    let stackedSingleUse = 0;
+    let spentStatefulSingleUse = false;
     const nextEconomies: Record<string, ItemEconomyState> = {
       ...(state?.economies ?? {}),
     };
@@ -819,10 +1440,11 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       const economy = obj(refs.economies[economyId], `economy '${economyId}'`);
       costs.push({ economy: economyId, amount });
       if (economy.kind === 'at-will') continue;
-      if (economy.kind === 'single-use') {
-        singleUse += amount;
+      if (economy.kind === 'single-use' && !stateful) {
+        stackedSingleUse += amount;
         continue;
       }
+      if (economy.kind === 'single-use') spentStatefulSingleUse = true;
       const current = nextEconomies[economyId];
       if (current === undefined)
         throw new ItemStateError(
@@ -837,15 +1459,45 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         remaining: current.remaining - amount,
       };
     }
-    if (singleUse > row.quantity)
+    if (stackedSingleUse > row.quantity)
       throw new ItemStateError(
-        `insufficient inventory quantity: ${row.quantity} remaining, ${singleUse} required`,
+        `insufficient inventory quantity: ${row.quantity} remaining, ${stackedSingleUse} required`,
       );
 
+    const depletionResolutions: ItemDepletionResolution[] = [];
+    for (const [economyId, next] of Object.entries(nextEconomies)) {
+      const previous = state?.economies?.[economyId];
+      if (
+        previous === undefined ||
+        previous.remaining === 0 ||
+        next.remaining !== 0
+      )
+        continue;
+      try {
+        const resolution = resolveItemDepletion(
+          economyId,
+          refs.economies[economyId],
+          input.rng,
+        );
+        if (resolution !== undefined) {
+          depletionResolutions.push(resolution);
+          if (resolution.regain !== undefined)
+            nextEconomies[economyId] = {
+              ...next,
+              remaining: resolution.regain,
+            };
+        }
+      } catch (error) {
+        if (error instanceof ItemDepletionError)
+          throw new ItemStateError(error.message);
+        throw error;
+      }
+    }
+
     let quantity = row.quantity;
-    let consumed = false;
-    if (singleUse > 0) {
-      quantity -= singleUse;
+    let consumed = spentStatefulSingleUse;
+    if (stackedSingleUse > 0) {
+      quantity -= stackedSingleUse;
       consumed = true;
       if (quantity === 0)
         txnDb
@@ -864,25 +1516,73 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
             input.instanceId,
           );
     } else if (state !== undefined) {
+      const becomes = depletionResolutions
+        .map((resolution) => resolution.becomes)
+        .filter((value) => value !== undefined);
+      const replacement = becomes.find((value) => typeof value === 'object');
+      if (replacement !== undefined)
+        throw new ItemStateError(
+          `${packRef} depletion replaces the instance with another item and requires a dedicated atomic replacement owner`,
+        );
+      const destroyed = becomes.includes('destroyed');
+      const deferredDestroyed =
+        destroyed && isDeferredDestroyedLifecycle(selectedTransition);
+      const status = becomes.includes('nonmagical')
+        ? 'nonmagical'
+        : becomes.includes('inert')
+          ? 'inert'
+          : deferredDestroyed
+            ? 'consumed'
+            : undefined;
       state = validateItemStateForRecord(
         {
           ...state,
           economies: nextEconomies,
+          ...(depletionResolutions.length === 0
+            ? {}
+            : {
+                depletions: [
+                  ...(state.depletions ?? []),
+                  ...depletionResolutions,
+                ],
+              }),
+          ...(status === undefined
+            ? {}
+            : {
+                lifecycle: {
+                  status,
+                  ...(deferredDestroyed
+                    ? { pendingTerminal: 'destroyed' as const }
+                    : {}),
+                },
+              }),
+          ...(pendingTimers.length === 0
+            ? {}
+            : {
+                pendingTimers: [
+                  ...(state.pendingTimers ?? []),
+                  ...pendingTimers,
+                ],
+              }),
           ...(selectedTransition === undefined
             ? {}
             : { machineState: selectedTransition.nextState }),
         },
         packRef,
         hit.record,
+        variantId,
       );
-      writeItemState(txnDb, input.instanceId, state, input);
+      if (destroyed && !deferredDestroyed) {
+        txnDb
+          .prepare('DELETE FROM inventory WHERE id = ?')
+          .run(input.instanceId);
+        quantity = 0;
+        consumed = true;
+      } else {
+        writeItemState(txnDb, input.instanceId, state, input);
+      }
     }
-    const effectIds = [
-      ...(Array.isArray(operation.effects)
-        ? (operation.effects as string[])
-        : []),
-      ...(selectedTransition?.effectIds ?? []),
-    ];
+    const effectIds = [...operationEffectIds, ...transitionEffectIds];
     return {
       instanceId: input.instanceId,
       packRef,

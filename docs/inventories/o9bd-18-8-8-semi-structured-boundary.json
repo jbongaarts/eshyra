@@ -9,9 +9,9 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1747,
+  "rowCount": 1768,
   "dispositionCounts": {
-    "complete": 358,
+    "complete": 379,
     "model-adjudicated": 1188,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 2,
@@ -15465,6 +15465,469 @@
       "recordKinds": [
         "magic-item"
       ],
+      "fieldPath": "data.executionReadiness.clauses[].clauseId",
+      "representativeValues": [
+        "magic-item:adamantine-armor/c2-static-adamantine-critical-normalization",
+        "magic-item:ammunition-1-2-or-3/c1-use",
+        "magic-item:ammunition-1-2-or-3/c2-static-ammunition-rarity-attack-damage",
+        "magic-item:amulet-of-health/m2-amulet-of-health-constitution-score-set",
+        "magic-item:amulet-of-proof-against-detection-and-location/c2-residual-proof-against-divination"
+      ],
+      "population": 1001,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].engineHooks[].engine",
+      "representativeValues": [
+        "F8",
+        "F1",
+        "F9",
+        "F2",
+        "F5"
+      ],
+      "population": 1483,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].engineHooks[].hook",
+      "representativeValues": [
+        "derived combat modifier application",
+        "condition and eligibility relations",
+        "roll mode and targeting modifiers",
+        "damage, range, cover, and forced movement",
+        "seeded dice, percentage, table, and pool selection"
+      ],
+      "population": 1483,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].missingEngines[]",
+      "representativeValues": [
+        "F8",
+        "F1",
+        "F9",
+        "F2",
+        "F5"
+      ],
+      "population": 781,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].missingHooks[].engine",
+      "representativeValues": [
+        "F8",
+        "F1",
+        "F9",
+        "F2",
+        "F5"
+      ],
+      "population": 1483,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].missingHooks[].hook",
+      "representativeValues": [
+        "derived combat modifier application",
+        "condition and eligibility relations",
+        "roll mode and targeting modifiers",
+        "damage, range, cover, and forced movement",
+        "seeded dice, percentage, table, and pool selection"
+      ],
+      "population": 1483,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].readiness",
+      "representativeValues": [
+        "engine-pending",
+        "green",
+        "adjudicated-by-design",
+        "design-blocked"
+      ],
+      "population": 1001,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].reason",
+      "representativeValues": [
+        "The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action.",
+        "The SRD 5.1 pack contains no minor/major beneficial or detrimental artifact-property tables; these properties require GM-supplied content.",
+        "The orb essence’s desired evil end is deliberately GM-adjudicated; casting, save DC, charm, and attunement lock remain deterministic."
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.block",
+      "representativeValues": [
+        "effects",
+        "economies",
+        "randomProcedure",
+        "stateMachine",
+        "structuredField"
+      ],
+      "population": 998,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.economyId",
+      "representativeValues": [
+        "use",
+        "uses",
+        "beans",
+        "quantity",
+        "speed"
+      ],
+      "population": 145,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.effectId",
+      "representativeValues": [
+        "c2-static-adamantine-critical-normalization",
+        "c2-static-ammunition-rarity-attack-damage",
+        "m2-amulet-of-health-constitution-score-set",
+        "c2-residual-proof-against-divination",
+        "c2-residual-plane-shift-check"
+      ],
+      "population": 446,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.field",
+      "representativeValues": [
+        "tableRefs",
+        "statBlockRefs",
+        "attunementRequirement",
+        "requiresAttunement",
+        "variants"
+      ],
+      "population": 94,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.note",
+      "representativeValues": [
+        "The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action.",
+        "The orb essence’s desired evil end is deliberately GM-adjudicated; casting, save DC, charm, and attunement lock remain deterministic."
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.operationId",
+      "representativeValues": [
+        "press-face-1",
+        "press-face-2",
+        "press-face-3",
+        "press-face-4",
+        "press-face-5"
+      ],
+      "population": 152,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.reason",
+      "representativeValues": [
+        "The SRD 5.1 pack contains no minor/major beneficial or detrimental artifact-property tables; these properties require GM-supplied content."
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].representation.ref",
+      "representativeValues": [
+        "table:apparatus-of-the-crab-levers",
+        "table:armor-of-resistance",
+        "table:bag-of-beans",
+        "table:gray-bag-of-tricks",
+        "table:rust-bag-of-tricks"
+      ],
+      "population": 68,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].scope.kind",
+      "representativeValues": [
+        "parent",
+        "variant"
+      ],
+      "population": 1001,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].scope.variantKey",
+      "representativeValues": [
+        "crystal-ball-of-telepathy",
+        "crystal-ball-of-true-seeing",
+        "absorption",
+        "agility",
+        "fortitude"
+      ],
+      "population": 36,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.clauses[].tag",
+      "representativeValues": [
+        "C2",
+        "C1",
+        "M2",
+        "M8",
+        "M5"
+      ],
+      "population": 1001,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.executionReadiness.source",
+      "representativeValues": [
+        "derived-magic-item-clauses-v1"
+      ],
+      "population": 240,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
+      "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
+      "currentAuditReadiness": "generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemExecutionReadiness / validateMagicItemExecutionReadiness",
+      "retainedProseBoundary": null,
+      "owner": "magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
       "fieldPath": "data.itemType",
       "representativeValues": [
         "Armor (medium or heavy, but not hide)",
@@ -24833,6 +25296,30 @@
       "typedSchemaOrConsumer": "domain-specific RulesRecord reference key",
       "retainedProseBoundary": null,
       "owner": "owning domain validator and rules/lookup.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.variants[].id",
+      "representativeValues": [
+        "crystal-ball-of-mind-reading",
+        "crystal-ball-of-telepathy",
+        "crystal-ball-of-true-seeing",
+        "bronze-griffon",
+        "ebony-fly"
+      ],
+      "population": 30,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "D&D magic-item validator requires a canonical unique id for every variant",
+      "deterministicConsumers": "canonicalMagicItemVariantId / MagicItemVariantDefinition.id",
+      "currentAuditReadiness": "emitter, schema, variant resolver, grant, and instance-state regression tests",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemVariantDefinition.id",
+      "retainedProseBoundary": null,
+      "owner": "magicItemVariants.ts and magic-item variant identity tests",
       "futureWork": false
     },
     {

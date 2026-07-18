@@ -950,6 +950,28 @@ describe('subclassExtractionsToRecords — record shape', () => {
     const [record] = subclassExtractionsToRecords([CHAMPION_SUBCLASS]);
     expect(record.provenance.locator).toBe('p. 72');
   });
+
+  it('emits stable canonical ids for inline magic-item variants', () => {
+    const item: MagicItemExtraction = {
+      ...ADAMANTINE_ARMOR,
+      name: 'Test Stone',
+      variants: [
+        {
+          name: 'Greater Absorption',
+          rarity: 'Very Rare',
+          text: 'Variant text.',
+        },
+      ],
+    };
+    expect(magicItemExtractionsToRecords([item])[0].data.variants).toEqual([
+      {
+        id: 'greater-absorption',
+        name: 'Greater Absorption',
+        rarity: 'Very Rare',
+        text: 'Variant text.',
+      },
+    ]);
+  });
 });
 
 describe('featureExtractionsToRecords — record shape', () => {

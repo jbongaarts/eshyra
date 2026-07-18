@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { SRD_5_1_LICENSE } from '../../../scripts/importers/dnd5e-srd-5.1/emit.js';
 import {
   aggregateMagicItemFamilyProjections,
+  attachMagicItemExecutionReadiness,
   type ItemClauseExpectation,
   MAGIC_ITEM_ENGINE_FAMILIES,
+  magicItemEngineHookKey,
   validateMagicItemClausesAndClassify,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemCompiler.js';
+import { validateRecordKindSchema } from '../../../src/rules/kindSchemas.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
 function itemRecord(data: Record<string, unknown>): RulesRecord {
@@ -261,7 +264,9 @@ describe('magic-item clause integrity and readiness', () => {
 
   it('resolves concrete effect bindings and rejects dangling operation references', () => {
     const record = itemRecord({
-      mechanics: { effects: [{ id: 'flight', kind: 'speedSet', value: 60 }] },
+      mechanics: {
+        effects: [{ id: 'flight', kind: 'speedSet', mode: 'fly', value: 60 }],
+      },
     });
     expect(
       validateMagicItemClausesAndClassify({
@@ -272,7 +277,10 @@ describe('magic-item clause integrity and readiness', () => {
       {
         itemKey: record.key,
         clauseId: effectClause.id,
+        scope: { kind: 'parent' },
+        tag: 'M3',
         readiness: 'green',
+        representation: { block: 'effects', effectId: 'flight' },
       },
     ]);
 
@@ -316,7 +324,7 @@ describe('magic-item clause integrity and readiness', () => {
     ).toThrow(/representation binding does not resolve/);
   });
 
-  it('keeps a multi-hook clause pending until every engine family lands', () => {
+  it('keeps a multi-hook clause pending until every exact hook lands', () => {
     const record = itemRecord({
       mechanics: { effects: [{ id: 'flight', kind: 'speedSet', value: 60 }] },
     });
@@ -330,18 +338,106 @@ describe('magic-item clause integrity and readiness', () => {
     const pending = validateMagicItemClausesAndClassify({
       records: [record],
       clausesByItemKey: new Map([[record.key, [clause]]]),
-      landedEngineFamilies: new Set(['F5']),
+      landedEngineHooks: new Set([
+        magicItemEngineHookKey(
+          clause.engineHooks?.[0] as {
+            engine: 'F5';
+            hook: string;
+          },
+        ),
+      ]),
     });
     expect(pending[0]).toMatchObject({
       readiness: 'engine-pending',
       missingEngines: ['F7'],
+      missingHooks: [{ engine: 'F7', hook: 'long-rest budget reset' }],
     });
     const green = validateMagicItemClausesAndClassify({
       records: [record],
       clausesByItemKey: new Map([[record.key, [clause]]]),
-      landedEngineFamilies: new Set(['F5', 'F7']),
+      landedEngineHooks: new Set(
+        clause.engineHooks?.map(magicItemEngineHookKey),
+      ),
     });
     expect(green[0].readiness).toBe('green');
+  });
+
+  it('persists no-landed hook evidence as trusted per-clause readiness', () => {
+    const record = itemRecord({
+      itemType: 'Wondrous item',
+      rarity: 'rare',
+      requiresAttunement: false,
+      description: 'Test fixture.',
+      mechanics: {
+        effects: [{ id: 'flight', kind: 'speedSet', mode: 'fly', value: 60 }],
+      },
+    });
+    const clause: ItemClauseExpectation = {
+      ...effectClause,
+      engineHooks: [{ engine: 'F5', hook: 'elapsed-time flight budget' }],
+    };
+    const classified = validateMagicItemClausesAndClassify({
+      records: [record],
+      clausesByItemKey: new Map([[record.key, [clause]]]),
+    });
+    const [persisted] = attachMagicItemExecutionReadiness([record], classified);
+    expect(
+      (persisted.data as Record<string, unknown>).executionReadiness,
+    ).toMatchObject({
+      source: 'derived-magic-item-clauses-v1',
+      clauses: [
+        {
+          clauseId: clause.id,
+          scope: { kind: 'parent' },
+          tag: 'M3',
+          readiness: 'engine-pending',
+          representation: { block: 'effects', effectId: 'flight' },
+          engineHooks: [{ engine: 'F5', hook: 'elapsed-time flight budget' }],
+          missingHooks: [{ engine: 'F5', hook: 'elapsed-time flight budget' }],
+        },
+      ],
+    });
+    expect(() =>
+      validateRecordKindSchema(persisted, 'records[0]'),
+    ).not.toThrow();
+    const data = persisted.data as Record<string, unknown>;
+    const executionReadiness = data.executionReadiness as {
+      readonly source: string;
+      readonly clauses: readonly Record<string, unknown>[];
+    };
+    expect(() =>
+      validateRecordKindSchema(
+        {
+          ...persisted,
+          data: {
+            ...data,
+            executionReadiness: {
+              ...executionReadiness,
+              clauses: [
+                ...executionReadiness.clauses,
+                executionReadiness.clauses[0],
+              ],
+            },
+          },
+        },
+        'records[0]',
+      ),
+    ).toThrow(/duplicate clauseId/);
+    expect(() =>
+      validateRecordKindSchema(
+        {
+          ...persisted,
+          data: {
+            ...data,
+            executionReadiness: {
+              ...executionReadiness,
+              unsupported: true,
+            },
+          },
+        },
+        'records[0]',
+      ),
+    ).toThrow(/unsupported key/);
   });
 
   it('reports unregistered items as red while rejecting unknown registry keys', () => {

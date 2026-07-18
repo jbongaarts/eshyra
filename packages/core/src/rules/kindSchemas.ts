@@ -13,6 +13,7 @@ import {
   isFeatureChoiceCategory,
 } from './featureChoices.js';
 import { validateMagicItemMechanics } from './magicItemMechanics.js';
+import { canonicalMagicItemVariantId } from './magicItemVariants.js';
 import {
   parseSpellUpcastSpec,
   SpellUpcastContractError,
@@ -5313,6 +5314,275 @@ function validateDnd5eAction(record: RulesRecord, path: string): void {
   optMechanics(data, 'mechanics', `${path}.data`);
 }
 
+const MAGIC_ITEM_READINESS_VALUES = new Set([
+  'green',
+  'engine-pending',
+  'adjudicated-by-design',
+  'design-blocked',
+  'transitional',
+  'red',
+]);
+const MAGIC_ITEM_CLAUSE_TAGS = new Set([
+  'C1',
+  'C2',
+  'S',
+  'DB',
+  ...Array.from({ length: 11 }, (_, index) => `M${index + 1}`),
+]);
+const MAGIC_ITEM_ENGINE_FAMILIES = new Set(
+  Array.from({ length: 10 }, (_, index) => `F${index + 1}`),
+);
+const MAGIC_ITEM_READINESS_BLOCKS = new Set([
+  'stateMachine',
+  'spellStore',
+  'curse',
+  'containment',
+  'entityGrant',
+  'randomProcedure',
+  'rollManipulation',
+  'interItem',
+  'economies',
+  'operations',
+  'effects',
+  'structuredField',
+]);
+
+function closedKeys(
+  value: Obj,
+  allowed: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(value))
+    if (!allowed.includes(key))
+      throw new RulesPackError(`${path} contains unsupported key '${key}'`);
+}
+
+function validateReadinessHooks(value: unknown, path: string): readonly Obj[] {
+  if (!Array.isArray(value) || value.length === 0)
+    throw new RulesPackError(`${path} must be a non-empty array`);
+  const seen = new Set<string>();
+  return value.map((raw, index) => {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
+      throw new RulesPackError(`${path}[${index}] must be an object`);
+    const hook = raw as Obj;
+    const hookPath = `${path}[${index}]`;
+    closedKeys(hook, ['engine', 'hook'], hookPath);
+    const engine = reqStr(hook, 'engine', hookPath);
+    const name = reqStr(hook, 'hook', hookPath);
+    if (!MAGIC_ITEM_ENGINE_FAMILIES.has(engine))
+      throw new RulesPackError(`${hookPath}.engine is not a known family`);
+    const identity = JSON.stringify([engine, name]);
+    if (seen.has(identity))
+      throw new RulesPackError(`${path} contains duplicate hook ${identity}`);
+    seen.add(identity);
+    return hook;
+  });
+}
+
+function validateReadinessRepresentation(value: unknown, path: string): void {
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    throw new RulesPackError(`${path} must be an object`);
+  const representation = value as Obj;
+  const dispositions = [
+    typeof representation.block === 'string',
+    representation.adjudicated === true,
+    representation.designBlocked === true,
+  ].filter(Boolean).length;
+  if (dispositions !== 1)
+    throw new RulesPackError(
+      `${path} must contain exactly one binding or terminal disposition`,
+    );
+  if (typeof representation.block === 'string') {
+    if (!MAGIC_ITEM_READINESS_BLOCKS.has(representation.block))
+      throw new RulesPackError(`${path}.block is not supported`);
+    const keyed: Record<string, string> = {
+      economies: 'economyId',
+      operations: 'operationId',
+      effects: 'effectId',
+      structuredField: 'field',
+    };
+    const required = keyed[representation.block];
+    const allowed = [
+      'block',
+      ...(required === undefined ? [] : [required]),
+      ...(representation.block === 'structuredField' ? ['ref'] : []),
+    ];
+    closedKeys(representation, allowed, path);
+    if (required !== undefined) reqStr(representation, required, path);
+    if (representation.ref !== undefined) reqStr(representation, 'ref', path);
+    return;
+  }
+  if (representation.adjudicated === true) {
+    closedKeys(representation, ['adjudicated', 'note'], path);
+    reqStr(representation, 'note', path);
+    return;
+  }
+  closedKeys(representation, ['designBlocked', 'reason'], path);
+  reqStr(representation, 'reason', path);
+}
+
+function validateMagicItemExecutionReadiness(
+  value: unknown,
+  path: string,
+  variantIds: ReadonlySet<string>,
+): void {
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    throw new RulesPackError(`${path} must be an object`);
+  const readiness = value as Obj;
+  closedKeys(readiness, ['source', 'clauses'], path);
+  if (readiness.source !== 'derived-magic-item-clauses-v1')
+    throw new RulesPackError(
+      `${path}.source must be 'derived-magic-item-clauses-v1'`,
+    );
+  if (!Array.isArray(readiness.clauses) || readiness.clauses.length === 0)
+    throw new RulesPackError(`${path}.clauses must be a non-empty array`);
+  const clauseIds = new Set<string>();
+  let itemLevelEntries = 0;
+  readiness.clauses.forEach((raw, index) => {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
+      throw new RulesPackError(`${path}.clauses[${index}] must be an object`);
+    const clause = raw as Obj;
+    const clausePath = `${path}.clauses[${index}]`;
+    closedKeys(
+      clause,
+      [
+        'clauseId',
+        'scope',
+        'tag',
+        'readiness',
+        'representation',
+        'engineHooks',
+        'missingHooks',
+        'missingEngines',
+        'reason',
+      ],
+      clausePath,
+    );
+    const status = reqStr(clause, 'readiness', clausePath);
+    if (!MAGIC_ITEM_READINESS_VALUES.has(status))
+      throw new RulesPackError(`${clausePath}.readiness is unsupported`);
+    if (clause.clauseId === undefined) {
+      itemLevelEntries += 1;
+      if (status !== 'red' && status !== 'transitional')
+        throw new RulesPackError(
+          `${clausePath} item-level readiness must be red or transitional`,
+        );
+      if (
+        clause.scope !== undefined ||
+        clause.tag !== undefined ||
+        clause.representation !== undefined
+      )
+        throw new RulesPackError(
+          `${clausePath} item-level readiness cannot declare clause bindings`,
+        );
+    } else {
+      if (status === 'red' || status === 'transitional')
+        throw new RulesPackError(
+          `${clausePath} clause readiness cannot be ${status}`,
+        );
+      const clauseId = reqStr(clause, 'clauseId', clausePath);
+      if (clauseIds.has(clauseId))
+        throw new RulesPackError(
+          `${path}.clauses contains duplicate clauseId '${clauseId}'`,
+        );
+      clauseIds.add(clauseId);
+      const tag = reqStr(clause, 'tag', clausePath);
+      if (!MAGIC_ITEM_CLAUSE_TAGS.has(tag))
+        throw new RulesPackError(`${clausePath}.tag is unsupported`);
+      const scope = reqObj(clause, 'scope', clausePath);
+      if (scope.kind === 'parent')
+        closedKeys(scope, ['kind'], `${clausePath}.scope`);
+      else if (scope.kind === 'variant') {
+        closedKeys(scope, ['kind', 'variantKey'], `${clausePath}.scope`);
+        const variantKey = reqStr(scope, 'variantKey', `${clausePath}.scope`);
+        if (!variantIds.has(variantKey))
+          throw new RulesPackError(
+            `${clausePath}.scope.variantKey '${variantKey}' is not declared by the item`,
+          );
+      } else
+        throw new RulesPackError(`${clausePath}.scope.kind is unsupported`);
+      validateReadinessRepresentation(
+        clause.representation,
+        `${clausePath}.representation`,
+      );
+    }
+    const hooks =
+      clause.engineHooks === undefined
+        ? []
+        : validateReadinessHooks(
+            clause.engineHooks,
+            `${clausePath}.engineHooks`,
+          );
+    const missing =
+      clause.missingHooks === undefined
+        ? []
+        : validateReadinessHooks(
+            clause.missingHooks,
+            `${clausePath}.missingHooks`,
+          );
+    const hookKeys = new Set(
+      hooks.map(({ engine, hook }) => JSON.stringify([engine, hook])),
+    );
+    for (const hook of missing) {
+      const identity = JSON.stringify([hook.engine, hook.hook]);
+      if (!hookKeys.has(identity))
+        throw new RulesPackError(
+          `${clausePath}.missingHooks contains undeclared hook ${identity}`,
+        );
+    }
+    if (status === 'engine-pending' && missing.length === 0)
+      throw new RulesPackError(
+        `${clausePath}.missingHooks is required for engine-pending readiness`,
+      );
+    if (status !== 'engine-pending' && missing.length > 0)
+      throw new RulesPackError(
+        `${clausePath}.missingHooks requires engine-pending readiness`,
+      );
+    if (clause.missingEngines !== undefined) {
+      const engines = reqStrArray(clause, 'missingEngines', clausePath);
+      if (engines.some((engine) => !MAGIC_ITEM_ENGINE_FAMILIES.has(engine)))
+        throw new RulesPackError(
+          `${clausePath}.missingEngines contains an unknown family`,
+        );
+      if (new Set(engines).size !== engines.length)
+        throw new RulesPackError(
+          `${clausePath}.missingEngines contains duplicates`,
+        );
+      const expected = [
+        ...new Set(missing.map(({ engine }) => engine as string)),
+      ].sort();
+      if (JSON.stringify([...engines].sort()) !== JSON.stringify(expected))
+        throw new RulesPackError(
+          `${clausePath}.missingEngines must exactly match missingHooks`,
+        );
+    } else if (missing.length > 0) {
+      throw new RulesPackError(
+        `${clausePath}.missingEngines is required when missingHooks is present`,
+      );
+    }
+    const representation =
+      typeof clause.representation === 'object' &&
+      clause.representation !== null &&
+      !Array.isArray(clause.representation)
+        ? (clause.representation as Obj)
+        : {};
+    if (status === 'design-blocked' && representation.designBlocked !== true)
+      throw new RulesPackError(
+        `${clausePath}.readiness design-blocked requires its matching representation`,
+      );
+    if (
+      status === 'adjudicated-by-design' &&
+      representation.adjudicated !== true
+    )
+      throw new RulesPackError(
+        `${clausePath}.readiness adjudicated-by-design requires its matching representation`,
+      );
+    optStr(clause, 'reason', clausePath);
+  });
+  if (itemLevelEntries > 1)
+    throw new RulesPackError(`${path}.clauses has multiple item-level entries`);
+}
+
 function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
   reqStr(data, 'itemType', `${path}.data`);
@@ -5325,6 +5595,7 @@ function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
   }
   optStr(data, 'attunementRequirement', `${path}.data`);
   reqStr(data, 'description', `${path}.data`);
+  const variantIds = new Set<string>();
   const variants = data.variants;
   if (variants !== undefined) {
     if (!Array.isArray(variants)) {
@@ -5340,9 +5611,19 @@ function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
       }
       const variant = item as Obj;
       const variantPath = `${path}.data.variants[${index}]`;
+      reqStr(variant, 'id', variantPath);
       reqStr(variant, 'name', variantPath);
       reqStr(variant, 'rarity', variantPath);
       reqStr(variant, 'text', variantPath);
+      if (variant.id !== canonicalMagicItemVariantId(variant.name as string))
+        throw new RulesPackError(
+          `${variantPath}.id must be the canonical slug of its name`,
+        );
+      if (variantIds.has(variant.id as string))
+        throw new RulesPackError(
+          `${path}.data.variants contains duplicate id '${variant.id as string}'`,
+        );
+      variantIds.add(variant.id as string);
       if (variant.mechanics !== undefined) {
         validateMagicItemMechanics(
           variant.mechanics,
@@ -5356,6 +5637,12 @@ function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
   // Avatar of Death) points at the emitted `stat-block` record(s) it summons or
   // becomes via `statBlockRefs` (eshyra-4a7.4). Optional: most items have none.
   optStrArray(data, 'statBlockRefs', `${path}.data`);
+  if (data.executionReadiness !== undefined)
+    validateMagicItemExecutionReadiness(
+      data.executionReadiness,
+      `${path}.data.executionReadiness`,
+      variantIds,
+    );
   if (data.mechanics !== undefined) {
     validateMagicItemMechanics(
       data.mechanics,

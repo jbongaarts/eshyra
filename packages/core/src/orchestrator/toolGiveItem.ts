@@ -1,10 +1,15 @@
 import { withTransaction } from '../persistence/db.js';
+import { isStatefulMagicItemMechanics } from '../rules/magicItemMechanics.js';
+import {
+  effectiveMagicItemMechanics,
+  MagicItemVariantError,
+  resolveMagicItemVariant,
+} from '../rules/magicItemVariants.js';
 import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
 import { giveItem } from '../state/domainMutations.js';
 import {
   createInitialItemState,
   ItemStateError,
-  isStatefulMagicItem,
   validatePackRef,
   writeItemState,
 } from '../state/itemState.js';
@@ -61,6 +66,12 @@ export const giveItemTool: Tool = {
           'Canonical magic-item rules ref (for example "magic-item:wand-of-fireballs").',
         pattern: '^magic-item:[a-z0-9]+(?:-[a-z0-9]+)*$',
       },
+      variantId: {
+        type: 'string',
+        description:
+          'Required canonical variant id when packRef declares variants.',
+        pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$',
+      },
       character: CHARACTER_TARGET_SCHEMA,
     },
     required: ['id', 'name'],
@@ -101,8 +112,30 @@ export const giveItemTool: Tool = {
             `packRef '${packRef}' does not resolve in the active campaign rules stack`,
           );
         }
+        const variantId =
+          a.variantId === undefined
+            ? undefined
+            : typeof a.variantId === 'string'
+              ? a.variantId
+              : (() => {
+                  throw new ItemStateError(
+                    'give_item.variantId must be a string',
+                  );
+                })();
+        if (hit === undefined) {
+          if (variantId !== undefined)
+            throw new ItemStateError('give_item.variantId requires packRef');
+        } else {
+          resolveMagicItemVariant(hit.record, variantId);
+        }
+        const data = hit?.record.data as Record<string, unknown> | undefined;
         const stateful =
-          hit === undefined ? false : isStatefulMagicItem(hit.record);
+          hit === undefined
+            ? false
+            : isStatefulMagicItemMechanics(
+                effectiveMagicItemMechanics(hit.record, variantId),
+                data?.requiresAttunement === true,
+              );
         const granted = giveItem(
           txnDb,
           {
@@ -117,6 +150,7 @@ export const giveItemTool: Tool = {
                 ? (a.properties as Record<string, unknown>)
                 : undefined,
             ...(packRef === undefined ? {} : { packRef }),
+            ...(variantId === undefined ? {} : { variantId }),
             stateful,
           },
           {
@@ -130,7 +164,10 @@ export const giveItemTool: Tool = {
           writeItemState(
             txnDb,
             granted.id,
-            createInitialItemState(packRef, hit.record),
+            createInitialItemState(packRef, hit.record, {
+              variantId,
+              rng: ctx.rng,
+            }),
             {
               provenance: `model:${ctx.turnId}`,
               sessionId: ctx.sessionId,
@@ -138,7 +175,7 @@ export const giveItemTool: Tool = {
             },
           );
         }
-        return { ...granted, packRef, stateful };
+        return { ...granted, packRef, variantId, stateful };
       });
       return ok({
         applied: true,
@@ -149,10 +186,17 @@ export const giveItemTool: Tool = {
         ...(typeof a.character === 'string' ? { character: a.character } : {}),
         ...(target.id !== undefined ? { characterId: target.id } : {}),
         ...(result.packRef === undefined ? {} : { packRef: result.packRef }),
+        ...(result.variantId === undefined
+          ? {}
+          : { variantId: result.variantId }),
         ...(result.stateful ? { stateful: true } : {}),
       });
     } catch (e) {
-      if (e instanceof MutateStateError || e instanceof ItemStateError) {
+      if (
+        e instanceof MutateStateError ||
+        e instanceof ItemStateError ||
+        e instanceof MagicItemVariantError
+      ) {
         return err('mutate_error', e.message);
       }
       throw e;

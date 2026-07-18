@@ -177,6 +177,7 @@ export interface InventoryItem {
   location: string | undefined;
   properties: InventoryItemProperties;
   packRef: string | undefined;
+  variantId?: string;
   /** Validated, per-instance mutable magic-item state. */
   state: ItemInstanceState | undefined;
 }
@@ -278,6 +279,7 @@ interface InventoryRow {
   location: string | null;
   properties_json: string;
   pack_ref: string | null;
+  variant_id: string | null;
 }
 
 interface ClockRow {
@@ -314,7 +316,7 @@ export function readStateSnapshot(
 
   const inventoryRows = db
     .prepare(
-      `SELECT id, name, quantity, location, properties_json, pack_ref
+      `SELECT id, name, quantity, location, properties_json, pack_ref, variant_id
        FROM inventory
        WHERE character_id = ?
        ORDER BY id`,
@@ -391,6 +393,7 @@ export function readStateSnapshot(
           row.pack_ref === null
             ? undefined
             : validatePackRef(row.pack_ref, `inventory[${row.id}].pack_ref`),
+        ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
         state: readItemState(db, row.id),
       };
     }),
